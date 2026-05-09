@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { AREAS } from "@/lib/types";
-import { POMODORO_TEMPLATES } from "@/lib/pomodoro-store";
+import { usePomodoroTemplatesList } from "@/lib/pomodoro-templates";
 import { pomodoroDefaults, usePomodoroDefaults } from "@/lib/pomodoro-defaults";
 import { pomodoroPrefs, usePomodoroPrefs } from "@/lib/pomodoro-prefs";
 import { playPomodoroChime } from "@/lib/pomodoro-chime";
+import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEditor";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -20,6 +21,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const defaults = usePomodoroDefaults();
   const prefs = usePomodoroPrefs();
+  const templates = usePomodoroTemplatesList();
   return (
     <div className="space-y-6">
       <SectionCard title="Your profile" subtitle={user?.email ?? "Signed in"} accent="warm">
@@ -74,7 +76,7 @@ export default function Settings() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">No default</SelectItem>
-                    {POMODORO_TEMPLATES.map(t => (
+                    {templates.map(t => (
                       <SelectItem key={t.id} value={t.id}>
                         {t.label} · {t.description}
                       </SelectItem>
@@ -88,6 +90,14 @@ export default function Settings() {
         <p className="mt-3 text-[11px] text-muted-foreground">
           When you start a Pomodoro for a task, the matching template's focus and break lengths fill in automatically.
         </p>
+      </SectionCard>
+
+      <SectionCard
+        title="Pomodoro templates"
+        subtitle="Edit the built-ins or add your own."
+        accent="warm"
+      >
+        <PomodoroTemplatesEditor />
       </SectionCard>
 
       <SectionCard
