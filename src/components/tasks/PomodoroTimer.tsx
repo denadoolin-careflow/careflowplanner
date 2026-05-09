@@ -5,6 +5,7 @@ import { pomodoro, usePomodoro } from "@/lib/pomodoro-store";
 import { pomodoroDefaults } from "@/lib/pomodoro-defaults";
 import { pomodoroPrefs } from "@/lib/pomodoro-prefs";
 import { playPomodoroChime } from "@/lib/pomodoro-chime";
+import { pomodoroHistory } from "@/lib/pomodoro-history";
 import { toast } from "sonner";
 import type { Task } from "@/lib/types";
 
@@ -15,6 +16,16 @@ function wireToasts() {
   wired = true;
   pomodoro.setOnSessionEnd((mode) => {
     const prefs = pomodoroPrefs.get();
+    if (mode === "focus") {
+      const s = pomodoro.get();
+      void pomodoroHistory.record({
+        templateId: s.templateId ?? null,
+        templateLabel: s.templateLabel ?? null,
+        taskId: s.taskId,
+        taskTitle: s.taskTitle,
+        focusSeconds: s.focusSeconds,
+      });
+    }
     if (prefs.toast) {
       if (mode === "focus") {
         toast.success("Focus session done — take a soft break.", {
