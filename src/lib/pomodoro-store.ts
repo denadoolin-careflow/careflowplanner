@@ -13,6 +13,14 @@ export interface PomodoroSession {
   running: boolean;
   completed: number;
   startedAt: number | null;
+  /** Per-session focus length (sec). Defaults to FOCUS_SECONDS. */
+  focusSeconds: number;
+  /** Per-session break length (sec). Defaults to BREAK_SECONDS. */
+  breakSeconds: number;
+  /** Optional template id, e.g. "cleaning". */
+  templateId?: string | null;
+  /** Friendly template label shown in UI. */
+  templateLabel?: string | null;
 }
 
 const initial: PomodoroSession = {
@@ -23,6 +31,10 @@ const initial: PomodoroSession = {
   running: false,
   completed: 0,
   startedAt: null,
+  focusSeconds: FOCUS_SECONDS,
+  breakSeconds: BREAK_SECONDS,
+  templateId: null,
+  templateLabel: null,
 };
 
 const STORAGE_KEY = "careflow:pomodoro:v1";
@@ -51,10 +63,10 @@ function hydrate(): PomodoroSession {
         if (mode === "focus") {
           completed += 1;
           mode = "break";
-          remaining = BREAK_SECONDS;
+          remaining = base.breakSeconds;
         } else {
           mode = "focus";
-          remaining = FOCUS_SECONDS;
+          remaining = base.focusSeconds;
           running = false; // breaks end paused, matching live behavior
           elapsed = 0;
           break;
@@ -92,10 +104,10 @@ function ensureLoop() {
       // session boundary
       if (state.mode === "focus") {
         const completed = state.completed + 1;
-        set({ mode: "break", remaining: BREAK_SECONDS, completed });
+        set({ mode: "break", remaining: state.breakSeconds, completed });
         onTickEvent?.("focus");
       } else {
-        set({ mode: "focus", remaining: FOCUS_SECONDS, running: false });
+        set({ mode: "focus", remaining: state.focusSeconds, running: false });
         onTickEvent?.("break");
       }
     } else {
@@ -124,32 +136,62 @@ if (typeof window !== "undefined") {
 
 export const pomodoro = {
   get(): PomodoroSession { return state; },
-  startForTask(task: Pick<Task, "id" | "title">) {
+  startForTask(
+    task: Pick<Task, "id" | "title">,
+    opts?: { focusSeconds?: number; breakSeconds?: number; templateId?: string; templateLabel?: string },
+  ) {
     ensureLoop();
+    const focusSeconds = opts?.focusSeconds ?? FOCUS_SECONDS;
+    const breakSeconds = opts?.breakSeconds ?? BREAK_SECONDS;
     if (state.taskId === task.id) {
-      set({ running: true, startedAt: Date.now() });
+      // If template/durations changed, reset cycle to the new focus length.
+      if (opts && (focusSeconds !== state.focusSeconds || breakSeconds !== state.breakSeconds)) {
+        set({
+          mode: "focus",
+          remaining: focusSeconds,
+          running: true,
+          startedAt: Date.now(),
+          focusSeconds,
+          breakSeconds,
+          templateId: opts.templateId ?? null,
+          templateLabel: opts.templateLabel ?? null,
+        });
+      } else {
+        set({ running: true, startedAt: Date.now() });
+      }
     } else {
       set({
         taskId: task.id,
         taskTitle: task.title,
         mode: "focus",
-        remaining: FOCUS_SECONDS,
+        remaining: focusSeconds,
         running: true,
         completed: 0,
         startedAt: Date.now(),
+        focusSeconds,
+        breakSeconds,
+        templateId: opts?.templateId ?? null,
+        templateLabel: opts?.templateLabel ?? null,
       });
     }
+  },
+  /** Quick-start a generic session (no task) with a template. */
+  startTemplate(opts: { label: string; focusSeconds: number; breakSeconds: number; templateId: string }) {
+    pomodoro.startForTask(
+      { id: `tpl:${opts.templateId}:${Date.now()}`, title: opts.label },
+      { focusSeconds: opts.focusSeconds, breakSeconds: opts.breakSeconds, templateId: opts.templateId, templateLabel: opts.label },
+    );
   },
   pause() { set({ running: false }); },
   resume() { ensureLoop(); set({ running: true }); },
   toggle() { state.running ? pomodoro.pause() : pomodoro.resume(); },
   reset() {
-    const total = state.mode === "focus" ? FOCUS_SECONDS : BREAK_SECONDS;
+    const total = state.mode === "focus" ? state.focusSeconds : state.breakSeconds;
     set({ remaining: total, running: false });
   },
   switchMode() {
     const next: PomodoroMode = state.mode === "focus" ? "break" : "focus";
-    set({ mode: next, remaining: next === "focus" ? FOCUS_SECONDS : BREAK_SECONDS, running: false });
+    set({ mode: next, remaining: next === "focus" ? state.focusSeconds : state.breakSeconds, running: false });
   },
   stop() {
     state = { ...initial };
@@ -173,6 +215,27 @@ export function formatPomoTime(s: number) {
   return `${m}:${ss}`;
 }
 
-export function pomoTotal(mode: PomodoroMode) {
-  return mode === "focus" ? FOCUS_SECONDS : BREAK_SECONDS;
+export function pomoTotal(mode: PomodoroMode, session?: PomodoroSession) {
+  const s = session ?? state;
+  return mode === "focus" ? s.focusSeconds : s.breakSeconds;
 }
+
+/* ---------------- Templates ---------------- */
+export interface PomodoroTemplate {
+  id: string;
+  label: string;
+  description: string;
+  focusSeconds: number;
+  breakSeconds: number;
+  /** lucide icon name resolved by the consumer */
+  icon: "Sparkles" | "BookOpen" | "Home" | "Brain" | "Heart" | "Coffee";
+}
+
+export const POMODORO_TEMPLATES: PomodoroTemplate[] = [
+  { id: "cleaning", label: "Cleaning sprint", description: "15 on · 5 off", focusSeconds: 15 * 60, breakSeconds: 5 * 60, icon: "Sparkles" },
+  { id: "homework", label: "Homework help",   description: "20 on · 5 off", focusSeconds: 20 * 60, breakSeconds: 5 * 60, icon: "BookOpen" },
+  { id: "reset",    label: "Home reset",      description: "10 on · 3 off", focusSeconds: 10 * 60, breakSeconds: 3 * 60, icon: "Home" },
+  { id: "deep",     label: "Deep focus",      description: "50 on · 10 off",focusSeconds: 50 * 60, breakSeconds: 10 * 60, icon: "Brain" },
+  { id: "selfcare", label: "Soft self-care",  description: "5 on · 5 off",  focusSeconds: 5 * 60,  breakSeconds: 5 * 60,  icon: "Heart" },
+  { id: "classic",  label: "Classic 25",      description: "25 on · 5 off", focusSeconds: 25 * 60, breakSeconds: 5 * 60,  icon: "Coffee" },
+];
