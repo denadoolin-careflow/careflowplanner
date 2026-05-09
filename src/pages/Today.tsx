@@ -16,6 +16,7 @@ import { MealEditor } from "@/components/meals/MealEditor";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { MoonPhaseWidget } from "@/components/widgets/MoonPhaseWidget";
 import { TaskProgressBar } from "@/components/cards/TaskProgressBar";
+import { dayPartSuggestion, useWeatherSnapshot } from "@/lib/weather-store";
 
 const PARTS = [
   { key: "Morning", icon: Coffee },
@@ -32,6 +33,7 @@ function PartDropZone({ id, children }: { id: string; children: React.ReactNode 
 export default function Today() {
   const { state, addTask, addJournal, updateTask } = useStore();
   const T = todayISO();
+  const weather = useWeatherSnapshot();
   const [quick, setQuick] = useState("");
   const [reflection, setReflection] = useState("");
   const [mealOpen, setMealOpen] = useState(false);
@@ -107,11 +109,24 @@ export default function Today() {
           <div className="space-y-4">
             {PARTS.map(({ key, icon: Icon }) => {
               const items = tasksToday.filter(t => t.dayPart === key);
+              const dp = weather?.dayParts.find(p => p.part === key);
+              const tip = dayPartSuggestion(dp);
               return (
                 <div key={key}>
-                  <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    <Icon className="h-3.5 w-3.5" /> {key}
+                  <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                    <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <Icon className="h-3.5 w-3.5" /> {key}
+                    </span>
+                    {dp && dp.conditionLabel !== "—" && (
+                      <span className="text-[11px] tabular-nums text-muted-foreground">
+                        · {dp.avgTempC}° {dp.conditionLabel.toLowerCase()}
+                        {dp.precipChance >= 30 && <> · 💧 {dp.precipChance}%</>}
+                      </span>
+                    )}
                   </div>
+                  {tip && (
+                    <p className="mb-1.5 text-[11.5px] italic text-foreground/70">{tip}</p>
+                  )}
                   <PartDropZone id={`part-${key}`}>
                     {items.length === 0
                       ? <p className="px-2 py-1 text-xs text-muted-foreground">— open block — drop a task here</p>
