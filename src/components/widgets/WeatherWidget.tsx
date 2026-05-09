@@ -11,11 +11,9 @@ import {
   fetchWeather, geocodeCity, loadSavedPlace, reverseLabel, savePlace, weatherNudge,
   type DayPartForecast, type GeoPlace, type WeatherCondition, type WeatherSnapshot,
 } from "@/lib/weather";
-import { setWeatherSnapshot } from "@/lib/weather-store";
+import { setWeatherSnapshot, useTempUnit, cToF, type TempUnit } from "@/lib/weather-store";
 
-type TempUnit = "C" | "F";
-const cToF = (c: number) => Math.round((c * 9) / 5 + 32);
-const fmtTemp = (c: number, u: TempUnit) => `${u === "F" ? cToF(c) : c}°`;
+const fmtTemp = (c: number, u: TempUnit) => `${u === "F" ? cToF(c) : Math.round(c)}°`;
 
 function ConditionIcon({ condition, isNight, className }: { condition: WeatherCondition; isNight?: boolean; className?: string }) {
   const cls = cn("h-5 w-5", className);
@@ -41,13 +39,11 @@ export interface WeatherWidgetProps {
 
 export function WeatherWidget({ compact = false, showDayParts = true }: WeatherWidgetProps) {
   const [snap, setSnap] = useState<WeatherSnapshot | null>(null);
-  const [unit, setUnit] = useState<TempUnit>(() => (localStorage.getItem("careflow:weather:unit") as TempUnit) ?? "F");
+  const [unit, setUnit] = useTempUnit();
   const [status, setStatus] = useState<"idle" | "loading" | "needs-location" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const triedRef = useRef(false);
-
-  useEffect(() => { localStorage.setItem("careflow:weather:unit", unit); }, [unit]);
 
   useEffect(() => {
     if (triedRef.current) return;
