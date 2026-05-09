@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { AREAS } from "@/lib/types";
-import { POMODORO_TEMPLATES } from "@/lib/pomodoro-store";
+import { usePomodoroTemplatesList } from "@/lib/pomodoro-templates";
 import { pomodoroDefaults, usePomodoroDefaults } from "@/lib/pomodoro-defaults";
 import { pomodoroPrefs, usePomodoroPrefs } from "@/lib/pomodoro-prefs";
 import { playPomodoroChime } from "@/lib/pomodoro-chime";
+import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEditor";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -20,6 +21,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const defaults = usePomodoroDefaults();
   const prefs = usePomodoroPrefs();
+  const templates = usePomodoroTemplatesList();
   return (
     <div className="space-y-6">
       <SectionCard title="Your profile" subtitle={user?.email ?? "Signed in"} accent="warm">
