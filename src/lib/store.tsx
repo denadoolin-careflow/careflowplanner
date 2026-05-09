@@ -351,7 +351,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (data) setState(s => ({ ...s, recipients: [recipFrom(data), ...s.recipients] }));
     },
     updateRecipient: async (id, patch) => {
-      const dbPatch: Record<string, unknown> = {};
+      const dbPatch: Record<string, any> = {};
       if (patch.name !== undefined) dbPatch.name = patch.name;
       if (patch.kind !== undefined) dbPatch.kind = patch.kind;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
@@ -359,7 +359,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.contacts !== undefined) dbPatch.contacts = patch.contacts ?? [];
       if (patch.meds !== undefined) dbPatch.meds = patch.meds ?? [];
       setState(s => ({ ...s, recipients: s.recipients.map(r => r.id === id ? { ...r, ...patch } : r) }));
-      await supabase.from("care_recipients").update(dbPatch).eq("id", id);
+      await supabase.from("care_recipients").update(dbPatch as any).eq("id", id);
     },
     deleteRecipient: async (id) => {
       setState(s => ({
