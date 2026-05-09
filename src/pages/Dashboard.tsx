@@ -82,6 +82,9 @@ export default function Dashboard() {
                 {format(now, "h:mm")}<span className="text-accent-foreground/50">:{format(now, "ss")}</span>
                 <span className="ml-1 text-sm font-medium text-accent-foreground/60">{format(now, "a")}</span>
               </div>
+              <span className="mt-0.5 text-[11px] font-medium text-accent-foreground/70">
+                {format(now, "EEE, MMM d")}
+              </span>
             </div>
             <EnergyCheckIn />
             {state.settings.lowEnergyMode && (

@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { Wand2 } from "lucide-react";
 import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
+import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
+import { Input } from "@/components/ui/input";
 
 function DayDropZone({ id, children, isToday }: { id: string; children: React.ReactNode; isToday: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id });
@@ -17,6 +19,45 @@ function DayDropZone({ id, children, isToday }: { id: string; children: React.Re
     <div ref={setNodeRef} className={cn("min-h-[60px] rounded-xl transition-colors", isOver && "bg-primary/10 ring-2 ring-primary/30", !isOver && isToday && "bg-primary/5")}>
       {children}
     </div>
+  );
+}
+
+function InlineAddTask({ onAdd, label }: { onAdd: (title: string) => void; label: string }) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+  if (!open) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mt-2 w-full justify-start text-xs text-muted-foreground"
+        onClick={() => setOpen(true)}
+      >
+        + add task
+      </Button>
+    );
+  }
+  const submit = () => {
+    const t = value.trim();
+    if (t) onAdd(t);
+    setValue("");
+    setOpen(false);
+  };
+  return (
+    <form
+      className="mt-2 flex gap-1"
+      onSubmit={(e) => { e.preventDefault(); submit(); }}
+    >
+      <Input
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={submit}
+        onKeyDown={(e) => { if (e.key === "Escape") { setValue(""); setOpen(false); } }}
+        placeholder={label}
+        className="h-7 text-xs"
+      />
+    </form>
   );
 }
 
@@ -76,12 +117,17 @@ export default function Week() {
                   ? <p className="px-2 py-3 text-xs text-muted-foreground">Drag a task here when you're ready.</p>
                   : <div className="space-y-1">{ts.slice(0,8).map(t => <TaskRow key={t.id} task={t} dense showArea={false} draggable />)}</div>}
               </DayDropZone>
-              <Button variant="ghost" size="sm" className="mt-2 w-full justify-start text-xs text-muted-foreground" onClick={() => { const title = prompt(`Add a task for ${format(d, "EEEE")}:`); if (title) addTask({ title, dueDate: d.toISOString().slice(0,10) }); }}>+ add task</Button>
+              <InlineAddTask
+                label={`Task for ${format(d, "EEEE")}`}
+                onAdd={(title) => addTask({ title, dueDate: iso })}
+              />
             </SectionCard>
           );
         })}
       </div>
       </DndContext>
+
+      <WeeklyWeather />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <SectionCard title="Weekly reset checklist" accent="warm">
