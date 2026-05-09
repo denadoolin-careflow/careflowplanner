@@ -13,6 +13,9 @@ import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSe
 import { cn } from "@/lib/utils";
 import type { DayPart, Meal } from "@/lib/types";
 import { MealEditor } from "@/components/meals/MealEditor";
+import { WeatherWidget } from "@/components/widgets/WeatherWidget";
+import { MoonPhaseWidget } from "@/components/widgets/MoonPhaseWidget";
+import { TaskProgressBar } from "@/components/cards/TaskProgressBar";
 
 const PARTS = [
   { key: "Morning", icon: Coffee },
@@ -81,6 +84,13 @@ export default function Today() {
           <EnergyCheckIn />
         </div>
       </div>
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="lg:col-span-2"><WeatherWidget /></div>
+        <MoonPhaseWidget />
+      </div>
+
+      <TaskProgressBar scope="today" />
 
       <SectionCard title="Top three" subtitle="The shape of a real day." accent="calm">
         {top3.length === 0
