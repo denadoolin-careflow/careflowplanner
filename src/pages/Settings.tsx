@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { AREAS } from "@/lib/types";
+import { usHolidaysRange } from "@/lib/us-holidays";
 import { usePomodoroTemplatesList } from "@/lib/pomodoro-templates";
 import { pomodoroDefaults, usePomodoroDefaults } from "@/lib/pomodoro-defaults";
 import { pomodoroPrefs, usePomodoroPrefs } from "@/lib/pomodoro-prefs";
@@ -17,11 +18,26 @@ import {
 } from "@/components/ui/select";
 
 export default function Settings() {
-  const { state, setName, setLowEnergyMode, updateProfile, signOut, user } = useStore();
+  const { state, setName, setLowEnergyMode, updateProfile, signOut, user, addHoliday } = useStore();
   const { theme, setTheme } = useTheme();
   const defaults = usePomodoroDefaults();
   const prefs = usePomodoroPrefs();
   const templates = usePomodoroTemplatesList();
+
+  const seedUSHolidays = async () => {
+    const year = new Date().getFullYear();
+    const candidates = usHolidaysRange(year, year + 1);
+    const existing = new Set(state.holidays.map(h => `${h.date}|${h.name.toLowerCase()}`));
+    const toAdd = candidates.filter(h => !existing.has(`${h.date}|${h.name.toLowerCase()}`));
+    if (toAdd.length === 0) {
+      toast("All US holidays already in your calendar.");
+      return;
+    }
+    for (const h of toAdd) {
+      await addHoliday({ name: h.name, date: h.date });
+    }
+    toast.success(`Added ${toAdd.length} US holidays for ${year}–${year + 1}.`);
+  };
   return (
     <div className="space-y-6">
       <SectionCard title="Your profile" subtitle={user?.email ?? "Signed in"} accent="warm">
@@ -54,6 +70,24 @@ export default function Settings() {
             <Button key={t} variant={theme === t ? "default" : "outline"} className="capitalize rounded-full" onClick={() => setTheme(t)}>{t}</Button>
           ))}
         </div>
+      </SectionCard>
+
+      <SectionCard
+        title="US holidays"
+        subtitle={`Auto-populate your calendar with US federal & popular holidays for ${new Date().getFullYear()}–${new Date().getFullYear() + 1}.`}
+        accent="warm"
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <Button onClick={seedUSHolidays} className="rounded-full">
+            Add US holidays
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {state.holidays.length} holiday{state.holidays.length === 1 ? "" : "s"} in your calendar.
+          </span>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Skips dates already present. Includes federal holidays plus Valentine's, Mother's & Father's Day, Halloween, and Christmas/New Year's Eve.
+        </p>
       </SectionCard>
 
       <SectionCard
