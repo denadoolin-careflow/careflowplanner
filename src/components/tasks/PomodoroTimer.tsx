@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PomodoroPanel } from "./PomodoroPanel";
 import { pomodoro, usePomodoro } from "@/lib/pomodoro-store";
+import { pomodoroDefaults } from "@/lib/pomodoro-defaults";
 import { toast } from "sonner";
 import type { Task } from "@/lib/types";
 
@@ -38,7 +39,8 @@ export function PomodoroTimer({
   useEffect(() => {
     if (!open) return;
     if (session.taskId !== task.id) {
-      pomodoro.startForTask({ id: task.id, title: task.title });
+      const opts = pomodoroDefaults.resolve(task.area);
+      pomodoro.startForTask({ id: task.id, title: task.title }, opts);
       pomodoro.pause(); // open in a ready-but-paused state
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
