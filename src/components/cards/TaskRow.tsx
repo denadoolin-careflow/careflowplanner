@@ -3,9 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { Trash2, GripVertical, Timer } from "lucide-react";
+import { Trash2, GripVertical, Timer, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { PomodoroTimer } from "@/components/tasks/PomodoroTimer";
 import { useDraggable } from "@dnd-kit/core";
@@ -13,10 +13,35 @@ import { toast } from "sonner";
 import { pickAffirmation } from "@/lib/affirmations";
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
-  const { toggleTask, deleteTask } = useStore();
+  const { toggleTask, deleteTask, updateTask } = useStore();
   const [open, setOpen] = useState(false);
   const [pomOpen, setPomOpen] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(task.title);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Keep draft synced when task changes externally (and we're not editing).
+  useEffect(() => { if (!editing) setDraft(task.title); }, [task.title, editing]);
+
+  // Autosize + focus when entering edit mode.
+  useEffect(() => {
+    if (!editing) return;
+    const el = inputRef.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [editing]);
+
+  const commit = () => {
+    const next = draft.trim();
+    setEditing(false);
+    if (!next) { setDraft(task.title); return; }
+    if (next !== task.title) void updateTask(task.id, { title: next });
+  };
+  const cancel = () => { setDraft(task.title); setEditing(false); };
 
   const handleToggle = () => {
     const wasDone = task.done;
@@ -32,9 +57,46 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
     <>
     <RowShell task={task} dense={dense} draggable={draggable} celebrate={celebrate}>
       <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-0.5" />
-      <button type="button" onClick={() => setOpen(true)} className="min-w-0 flex-1 cursor-pointer text-left">
-        <div className={cn("text-sm transition-all", task.done && "text-muted-foreground line-through", celebrate && "text-primary")}>{task.title}</div>
-        {(showArea || task.dayPart || task.priority === "high") && (
+      <div className="min-w-0 flex-1">
+        {editing ? (
+          <textarea
+            ref={inputRef}
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              const el = e.currentTarget;
+              el.style.height = "auto";
+              el.style.height = `${el.scrollHeight}px`;
+            }}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commit(); }
+              else if (e.key === "Escape") { e.preventDefault(); cancel(); }
+            }}
+            rows={1}
+            className={cn(
+              "w-full resize-none overflow-hidden rounded-md border-0 bg-transparent p-0 text-sm leading-snug",
+              "outline-none ring-0 focus:outline-none focus:ring-0",
+              "placeholder:text-muted-foreground",
+              task.done && "text-muted-foreground line-through",
+            )}
+            placeholder="Write a soft task…"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className={cn(
+              "block w-full cursor-text rounded-md text-left text-sm transition-all",
+              task.done && "text-muted-foreground line-through",
+              celebrate && "text-primary",
+            )}
+            aria-label="Edit task"
+          >
+            {task.title}
+          </button>
+        )}
+        {!editing && (showArea || task.dayPart || task.priority === "high") && (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {showArea && <Badge variant="secondary" className="rounded-full bg-muted text-[10px] font-normal">{task.area}</Badge>}
             {task.dayPart && <Badge variant="outline" className="rounded-full text-[10px] font-normal">{task.dayPart}</Badge>}
@@ -42,7 +104,10 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
             {task.energy && <Badge variant="outline" className="rounded-full text-[10px] font-normal capitalize">{task.energy} energy</Badge>}
           </div>
         )}
-      </button>
+      </div>
+      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setOpen(true)} aria-label="More options" title="Details">
+        <Settings2 className="h-3.5 w-3.5" />
+      </Button>
       <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setPomOpen(true)} aria-label="Start pomodoro" title="Pomodoro">
         <Timer className="h-3.5 w-3.5" />
       </Button>
