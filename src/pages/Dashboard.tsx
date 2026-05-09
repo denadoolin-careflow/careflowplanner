@@ -76,9 +76,12 @@ export default function Dashboard() {
             <p className="mt-1 max-w-xl text-sm text-muted-foreground">A soft start. One thing at a time. You don't have to do it all today.</p>
           </div>
           <div className="flex flex-col items-start gap-2 sm:items-end">
-            <div className="font-display text-3xl font-semibold tabular-nums tracking-tight sm:text-4xl">
-              {format(now, "h:mm")}<span className="text-muted-foreground">:{format(now, "ss")}</span>
-              <span className="ml-1 text-sm text-muted-foreground">{format(now, "a")}</span>
+            <div className="flex flex-col items-start sm:items-end">
+              <span className="text-[10px] uppercase tracking-[0.22em] text-accent-foreground/70">Today</span>
+              <div className="font-display text-3xl font-semibold tabular-nums tracking-tight text-accent-foreground sm:text-4xl">
+                {format(now, "h:mm")}<span className="text-accent-foreground/50">:{format(now, "ss")}</span>
+                <span className="ml-1 text-sm font-medium text-accent-foreground/60">{format(now, "a")}</span>
+              </div>
             </div>
             <EnergyCheckIn />
             {state.settings.lowEnergyMode && (
