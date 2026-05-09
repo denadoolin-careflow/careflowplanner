@@ -74,6 +74,7 @@ interface Ctx {
   deleteJournal: (id: string) => Promise<void>;
 
   addMeal: (m: Partial<Meal> & { name: string; date: string; slot: Meal["slot"] }) => Promise<void>;
+  updateMeal: (id: string, patch: Partial<Meal>) => Promise<void>;
   deleteMeal: (id: string) => Promise<void>;
 
   addGrocery: (name: string, category?: string) => Promise<void>;
