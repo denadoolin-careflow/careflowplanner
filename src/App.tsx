@@ -21,6 +21,8 @@ import Ideas from "./pages/Ideas";
 import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 
 const queryClient = new QueryClient();
 
@@ -33,7 +35,8 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route element={<AppLayout />}>
+              <Route path="/auth" element={<Auth />} />
+              <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/today" element={<Today />} />
                 <Route path="/week" element={<Week />} />
