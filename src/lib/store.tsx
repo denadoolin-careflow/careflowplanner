@@ -252,7 +252,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addHabit: async (h) => {
       if (!uid) return;
-      const { data } = await supabase.from("habits").insert({ user_id: uid, cadence: "daily", category: "self-care", ...h }).select().single();
+      const { data } = await supabase.from("habits").insert({ user_id: uid, title: h.title, cadence: h.cadence ?? "daily", category: h.category ?? "self-care" }).select().single();
       if (data) setState(s => ({ ...s, habits: [{ ...habitFrom(data), log: {} }, ...s.habits] }));
     },
     toggleHabit: async (id, date) => {
@@ -280,7 +280,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addMeal: async (m) => {
       if (!uid) return;
-      const { data } = await supabase.from("meals").insert({ user_id: uid, ...m, kid_safe: m.kidSafe ?? false }).select().single();
+      const { data } = await supabase.from("meals").insert({ user_id: uid, name: m.name, date: m.date, slot: m.slot, notes: m.notes ?? null, kid_safe: m.kidSafe ?? false }).select().single();
       if (data) setState(s => ({ ...s, meals: [mealFrom(data), ...s.meals] }));
     },
     deleteMeal: async (id) => {
@@ -305,7 +305,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addAppointment: async (a) => {
       if (!uid) return;
-      const { data } = await supabase.from("appointments").insert({ user_id: uid, type: "other", ...a, with_name: (a as any).with ?? null }).select().single();
+      const { data } = await supabase.from("appointments").insert({ user_id: uid, title: a.title, date: a.date, time: a.time ?? null, type: a.type ?? "other", location: a.location ?? null, recipient_id: a.recipientId ?? null, with_name: (a as any).with ?? null }).select().single();
       if (data) setState(s => ({ ...s, appointments: [apptFrom(data), ...s.appointments] }));
     },
     deleteAppointment: async (id) => {
@@ -384,7 +384,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addIdea: async (i) => {
       if (!uid) return;
-      const { data } = await supabase.from("ideas").insert({ user_id: uid, category: "future plans", ...i }).select().single();
+      const { data } = await supabase.from("ideas").insert({ user_id: uid, title: i.title, notes: i.notes ?? null, category: i.category ?? "future plans" }).select().single();
       if (data) setState(s => ({ ...s, ideas: [ideaFrom(data), ...s.ideas] }));
     },
     deleteIdea: async (id) => {
