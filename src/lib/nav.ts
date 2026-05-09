@@ -1,4 +1,4 @@
-import { LayoutDashboard, Sun, CalendarRange, CalendarDays, Calendar, Target, Sparkles, UtensilsCrossed, HeartHandshake, Sparkle, BookHeart, Lightbulb, CalendarCheck, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, Sun, CalendarRange, CalendarDays, Calendar, Target, Sparkles, UtensilsCrossed, HeartHandshake, Sparkle, BookHeart, Lightbulb, CalendarCheck, Timer, Settings as SettingsIcon } from "lucide-react";
 
 export const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -14,6 +14,7 @@ export const NAV = [
   { to: "/journal", label: "Journal", icon: BookHeart },
   { to: "/ideas", label: "Ideas", icon: Lightbulb },
   { to: "/calendar", label: "Calendar", icon: CalendarCheck },
+  { to: "/focus", label: "Focus", icon: Timer },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 

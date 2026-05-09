@@ -20,6 +20,7 @@ import Journal from "./pages/Journal";
 import Ideas from "./pages/Ideas";
 import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
+import PomodoroPicker from "./pages/PomodoroPicker";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="/journal" element={<Journal />} />
                 <Route path="/ideas" element={<Ideas />} />
                 <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/focus" element={<PomodoroPicker />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
