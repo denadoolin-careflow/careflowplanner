@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { MoonPhaseWidget } from "@/components/widgets/MoonPhaseWidget";
 import { TaskProgressBar } from "@/components/cards/TaskProgressBar";
+import { PomodoroPanel } from "@/components/tasks/PomodoroPanel";
 
 const PROMPTS = [
   "What's one small thing already going right today?",
@@ -83,7 +84,10 @@ export default function Dashboard() {
         <MoonPhaseWidget />
       </div>
 
-      <TaskProgressBar scope="today" />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <TaskProgressBar scope="today" />
+        <PomodoroPanel />
+      </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         <SectionCard title="Today's focus" subtitle="Your top three." accent="calm" action={<Link to="/today" className="text-xs text-primary hover:underline">Open today →</Link>}>
