@@ -76,7 +76,7 @@ export default function Settings() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">No default</SelectItem>
-                    {POMODORO_TEMPLATES.map(t => (
+                    {templates.map(t => (
                       <SelectItem key={t.id} value={t.id}>
                         {t.label} · {t.description}
                       </SelectItem>
