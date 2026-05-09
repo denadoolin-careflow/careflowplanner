@@ -9,7 +9,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Wand2 } from "lucide-react";
 import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
-import { DraggableTaskRow } from "@/components/tasks/DraggableTaskRow";
 import { cn } from "@/lib/utils";
 
 function DayDropZone({ id, children, isToday }: { id: string; children: React.ReactNode; isToday: boolean }) {
@@ -75,7 +74,7 @@ export default function Week() {
               <DayDropZone id={iso} isToday={isToday}>
                 {ts.length === 0
                   ? <p className="px-2 py-3 text-xs text-muted-foreground">Drag a task here when you're ready.</p>
-                  : <div className="space-y-1">{ts.slice(0,8).map(t => <DraggableTaskRow key={t.id} task={t} />)}</div>}
+                  : <div className="space-y-1">{ts.slice(0,8).map(t => <TaskRow key={t.id} task={t} dense showArea={false} draggable />)}</div>}
               </DayDropZone>
               <Button variant="ghost" size="sm" className="mt-2 w-full justify-start text-xs text-muted-foreground" onClick={() => { const title = prompt(`Add a task for ${format(d, "EEEE")}:`); if (title) addTask({ title, dueDate: d.toISOString().slice(0,10) }); }}>+ add task</Button>
             </SectionCard>
