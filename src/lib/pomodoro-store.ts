@@ -25,13 +25,64 @@ const initial: PomodoroSession = {
   startedAt: null,
 };
 
-let state: PomodoroSession = initial;
+const STORAGE_KEY = "careflow:pomodoro:v1";
+
+/** Load + fast-forward any persisted session to account for time spent away. */
+function hydrate(): PomodoroSession {
+  if (typeof localStorage === "undefined") return { ...initial };
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { ...initial };
+    const saved = JSON.parse(raw) as Partial<PomodoroSession> & { savedAt?: number };
+    const base: PomodoroSession = { ...initial, ...saved };
+    // No active task → nothing to restore.
+    if (!base.taskId) return { ...initial };
+
+    if (base.running && saved.savedAt) {
+      let elapsed = Math.floor((Date.now() - saved.savedAt) / 1000);
+      let mode = base.mode;
+      let remaining = base.remaining;
+      let completed = base.completed;
+      let running = true;
+
+      // Walk through any session boundaries that elapsed while away.
+      while (elapsed >= remaining) {
+        elapsed -= remaining;
+        if (mode === "focus") {
+          completed += 1;
+          mode = "break";
+          remaining = BREAK_SECONDS;
+        } else {
+          mode = "focus";
+          remaining = FOCUS_SECONDS;
+          running = false; // breaks end paused, matching live behavior
+          elapsed = 0;
+          break;
+        }
+      }
+      remaining -= elapsed;
+      return { ...base, mode, remaining, completed, running };
+    }
+    return base;
+  } catch {
+    return { ...initial };
+  }
+}
+
+let state: PomodoroSession = hydrate();
 const listeners = new Set<(s: PomodoroSession) => void>();
 let interval: number | null = null;
 let onTickEvent: ((mode: PomodoroMode) => void) | null = null;
 
+function persist() {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, savedAt: Date.now() }));
+  } catch { /* noop */ }
+}
+
 function emit() { listeners.forEach(l => l(state)); }
-function set(next: Partial<PomodoroSession>) { state = { ...state, ...next }; emit(); }
+function set(next: Partial<PomodoroSession>) { state = { ...state, ...next }; persist(); emit(); }
 
 function ensureLoop() {
   if (interval !== null) return;
@@ -51,6 +102,24 @@ function ensureLoop() {
       set({ remaining: state.remaining - 1 });
     }
   }, 1000);
+}
+
+// If we hydrated into a running state, resume the tick loop immediately.
+if (typeof window !== "undefined" && state.taskId && state.running) {
+  ensureLoop();
+}
+
+// Cross-tab sync: if another tab updates the session, mirror it here.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key !== STORAGE_KEY || !e.newValue) return;
+    try {
+      const saved = JSON.parse(e.newValue) as PomodoroSession;
+      state = { ...initial, ...saved };
+      if (state.running) ensureLoop();
+      emit();
+    } catch { /* noop */ }
+  });
 }
 
 export const pomodoro = {
@@ -82,7 +151,13 @@ export const pomodoro = {
     const next: PomodoroMode = state.mode === "focus" ? "break" : "focus";
     set({ mode: next, remaining: next === "focus" ? FOCUS_SECONDS : BREAK_SECONDS, running: false });
   },
-  stop() { set({ ...initial }); },
+  stop() {
+    state = { ...initial };
+    if (typeof localStorage !== "undefined") {
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
+    }
+    emit();
+  },
   setOnSessionEnd(fn: ((mode: PomodoroMode) => void) | null) { onTickEvent = fn; },
 };
 
