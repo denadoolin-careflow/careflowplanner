@@ -16,6 +16,7 @@ import { MealEditor } from "@/components/meals/MealEditor";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { MoonPhaseWidget } from "@/components/widgets/MoonPhaseWidget";
 import { TaskProgressBar } from "@/components/cards/TaskProgressBar";
+import { PomodoroPanel } from "@/components/tasks/PomodoroPanel";
 import { dayPartSuggestion, useWeatherSnapshot, formatTemp, useTempUnit } from "@/lib/weather-store";
 
 const PARTS = [
@@ -93,7 +94,10 @@ export default function Today() {
         <MoonPhaseWidget />
       </div>
 
-      <TaskProgressBar scope="today" />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <TaskProgressBar scope="today" />
+        <PomodoroPanel />
+      </div>
 
       <SectionCard title="Top three" subtitle="The shape of a real day." accent="calm">
         {top3.length === 0
