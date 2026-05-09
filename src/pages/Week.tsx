@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Wand2 } from "lucide-react";
 import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
-import { WeatherWidget } from "@/components/widgets/WeatherWidget";
+import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
 import { Input } from "@/components/ui/input";
 
 function DayDropZone({ id, children, isToday }: { id: string; children: React.ReactNode; isToday: boolean }) {
@@ -127,7 +127,7 @@ export default function Week() {
       </div>
       </DndContext>
 
-      <WeatherWidget showDayParts />
+      <WeeklyWeather />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <SectionCard title="Weekly reset checklist" accent="warm">
