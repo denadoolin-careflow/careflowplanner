@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { AREAS } from "@/lib/types";
 import { POMODORO_TEMPLATES } from "@/lib/pomodoro-store";
 import { pomodoroDefaults, usePomodoroDefaults } from "@/lib/pomodoro-defaults";
+import { pomodoroPrefs, usePomodoroPrefs } from "@/lib/pomodoro-prefs";
+import { playPomodoroChime } from "@/lib/pomodoro-chime";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -17,6 +19,7 @@ export default function Settings() {
   const { state, setName, setLowEnergyMode, updateProfile, signOut, user } = useStore();
   const { theme, setTheme } = useTheme();
   const defaults = usePomodoroDefaults();
+  const prefs = usePomodoroPrefs();
   return (
     <div className="space-y-6">
       <SectionCard title="Your profile" subtitle={user?.email ?? "Signed in"} accent="warm">
@@ -85,6 +88,46 @@ export default function Settings() {
         <p className="mt-3 text-[11px] text-muted-foreground">
           When you start a Pomodoro for a task, the matching template's focus and break lengths fill in automatically.
         </p>
+      </SectionCard>
+
+      <SectionCard
+        title="Pomodoro notifications"
+        subtitle="How you'd like to be nudged when a session ends."
+        accent="sage"
+      >
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label className="text-sm">Gentle chime</Label>
+              <p className="text-[11px] text-muted-foreground">A soft two-note tone at each transition.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm" variant="ghost"
+                className="h-7 rounded-full px-3 text-[11px]"
+                onClick={() => playPomodoroChime("focus")}
+                disabled={!prefs.sound}
+              >
+                Preview
+              </Button>
+              <Switch checked={prefs.sound} onCheckedChange={(v) => pomodoroPrefs.set({ sound: v })} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label className="text-sm">Visual flash</Label>
+              <p className="text-[11px] text-muted-foreground">A brief, soft wash across the screen.</p>
+            </div>
+            <Switch checked={prefs.flash} onCheckedChange={(v) => pomodoroPrefs.set({ flash: v })} />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label className="text-sm">Toast message</Label>
+              <p className="text-[11px] text-muted-foreground">A small message in the corner.</p>
+            </div>
+            <Switch checked={prefs.toast} onCheckedChange={(v) => pomodoroPrefs.set({ toast: v })} />
+          </div>
+        </div>
       </SectionCard>
 
       <SectionCard title="Account" subtitle="Synced across your devices." accent="warm">
