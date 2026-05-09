@@ -90,6 +90,8 @@ interface Ctx {
   deleteHoliday: (id: string) => Promise<void>;
 
   addRecipient: (r: Partial<CareRecipient> & { name: string; kind: CareRecipient["kind"] }) => Promise<void>;
+  updateRecipient: (id: string, patch: Partial<CareRecipient>) => Promise<void>;
+  deleteRecipient: (id: string) => Promise<void>;
   addCareNote: (n: Partial<CareNote> & { recipientId: string; body: string }) => Promise<void>;
   deleteCareNote: (id: string) => Promise<void>;
 
@@ -347,6 +349,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!uid) return;
       const { data } = await supabase.from("care_recipients").insert({ user_id: uid, ...r }).select().single();
       if (data) setState(s => ({ ...s, recipients: [recipFrom(data), ...s.recipients] }));
+    },
+    updateRecipient: async (id, patch) => {
+      const dbPatch: Record<string, any> = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.kind !== undefined) dbPatch.kind = patch.kind;
+      if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
+      if (patch.sensory !== undefined) dbPatch.sensory = patch.sensory ?? null;
+      if (patch.contacts !== undefined) dbPatch.contacts = patch.contacts ?? [];
+      if (patch.meds !== undefined) dbPatch.meds = patch.meds ?? [];
+      setState(s => ({ ...s, recipients: s.recipients.map(r => r.id === id ? { ...r, ...patch } : r) }));
+      await supabase.from("care_recipients").update(dbPatch as any).eq("id", id);
+    },
+    deleteRecipient: async (id) => {
+      setState(s => ({
+        ...s,
+        recipients: s.recipients.filter(r => r.id !== id),
+        careNotes: s.careNotes.filter(n => n.recipientId !== id),
+      }));
+      await supabase.from("care_recipients").delete().eq("id", id);
     },
     addCareNote: async (n) => {
       if (!uid) return;
