@@ -2,12 +2,19 @@ import { NavLink } from "react-router-dom";
 import { MOBILE_NAV, NAV } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, Moon, Sun, MoonStar } from "lucide-react";
 import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useTheme } from "next-themes";
+import { useStore } from "@/lib/store";
 
 export function BottomNav() {
   const [open, setOpen] = useState(false);
   const primary = MOBILE_NAV.slice(0, 4);
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const isDark = (resolvedTheme ?? theme) === "dark";
+  const { state, setLowEnergyMode } = useStore();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
       <div className="mx-auto max-w-screen-md border-t border-border/60 bg-card/90 backdrop-blur-md">
@@ -39,6 +46,30 @@ export function BottomNav() {
                 <SheetHeader>
                   <SheetTitle>Navigate</SheetTitle>
                 </SheetHeader>
+                <div className="mt-4 space-y-2 rounded-xl border border-border/60 bg-card/60 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="bn-dark" className="flex items-center gap-2 text-sm">
+                      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                      Dark mode
+                    </Label>
+                    <Switch
+                      id="bn-dark"
+                      checked={isDark}
+                      onCheckedChange={(v) => setTheme(v ? "dark" : "light")}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="bn-low" className="flex items-center gap-2 text-sm">
+                      <MoonStar className="h-4 w-4" />
+                      Low-energy mode
+                    </Label>
+                    <Switch
+                      id="bn-low"
+                      checked={state.settings.lowEnergyMode}
+                      onCheckedChange={setLowEnergyMode}
+                    />
+                  </div>
+                </div>
                 <ul className="mt-4 grid grid-cols-3 gap-2 pb-4">
                   {NAV.map(({ to, label, icon: Icon }) => (
                     <li key={to}>
