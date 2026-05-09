@@ -15,6 +15,7 @@ import {
   type CustomTemplate,
 } from "@/lib/pomodoro-templates";
 import { pomodoroDefaults } from "@/lib/pomodoro-defaults";
+import { PomodoroHistory } from "@/components/tasks/PomodoroHistory";
 
 const ICONS = { Sparkles, BookOpen, Home, Brain, Heart, Coffee } as const;
 const NO_TASK = "__none__";
@@ -173,6 +174,8 @@ export default function PomodoroPicker() {
       <p className="text-center text-[11px] italic text-muted-foreground">
         Tip: double-click a card to begin instantly. Customize templates in Settings.
       </p>
+
+      <PomodoroHistory />
     </div>
   );
 }
