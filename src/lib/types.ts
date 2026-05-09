@@ -6,6 +6,8 @@ export type Area =
 export type Energy = "low" | "medium" | "high";
 export type Priority = "low" | "medium" | "high";
 export type DayPart = "Morning" | "Afternoon" | "Evening" | "Late Night";
+export type RecurrenceType = "none" | "daily" | "weekly" | "monthly" | "custom";
+export type TaskStatus = "active" | "someday" | "this_week" | "waiting" | "done";
 
 export interface Task {
   id: string;
@@ -16,13 +18,21 @@ export interface Task {
   priority: Priority;
   area: Area;
   tags?: string[];
-  recurrence?: "none" | "daily" | "weekly" | "monthly";
   energy?: Energy;
   estMinutes?: number;
   goalId?: string;
+  recipientId?: string;
   dayPart?: DayPart;
   isTopThree?: boolean;
   createdAt: string;
+  status?: TaskStatus;
+  sortOrder?: number;
+  recurrenceType?: RecurrenceType;
+  recurrenceInterval?: number;
+  recurrenceDays?: number[];
+  nextDueDate?: string;
+  lastCompletedAt?: string;
+  autoReset?: boolean;
 }
 
 export interface Goal {
@@ -97,6 +107,12 @@ export interface CleaningTask {
   cadence: "daily" | "weekly" | "monthly" | "seasonal";
   done: boolean;
   lastDone?: string;
+  weekday?: number;
+  recurrenceType?: RecurrenceType;
+  recurrenceDays?: number[];
+  nextDueDate?: string;
+  autoReset?: boolean;
+  sortOrder?: number;
 }
 
 export interface ResetTemplate { id: string; name: string; items: string[]; }
@@ -106,6 +122,9 @@ export interface Settings {
   name: string;
   lowEnergyMode: boolean;
   theme?: "light" | "dark" | "system";
+  email?: string;
+  planningStyle?: string;
+  timeZone?: string;
 }
 
 export interface AppState {
