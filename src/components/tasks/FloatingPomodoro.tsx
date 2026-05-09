@@ -16,7 +16,7 @@ export function FloatingPomodoro() {
   // Hide entirely if no task is loaded.
   if (!s.taskId) return null;
 
-  const total = pomoTotal(s.mode);
+  const total = pomoTotal(s.mode, s);
   const pct = ((total - s.remaining) / total) * 100;
   const isFocus = s.mode === "focus";
 
