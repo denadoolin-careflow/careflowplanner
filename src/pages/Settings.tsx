@@ -8,12 +8,25 @@ import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
 export default function Settings() {
-  const { state, setName, setLowEnergyMode, resetAll } = useStore();
+  const { state, setName, setLowEnergyMode, updateProfile, signOut, user } = useStore();
   const { theme, setTheme } = useTheme();
   return (
     <div className="space-y-6">
-      <SectionCard title="Your name" subtitle="So your dashboard can greet you." accent="warm">
-        <Input value={state.settings.name} onChange={e => setName(e.target.value)} />
+      <SectionCard title="Your profile" subtitle={user?.email ?? "Signed in"} accent="warm">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label className="text-xs text-muted-foreground">Name</Label>
+            <Input value={state.settings.name} onChange={e => setName(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Preferred planning style</Label>
+            <Input placeholder="gentle, structured, flexible…" value={state.settings.planningStyle ?? ""} onChange={e => updateProfile({ planning_style: e.target.value })} />
+          </div>
+          <div className="sm:col-span-2">
+            <Label className="text-xs text-muted-foreground">Time zone</Label>
+            <Input placeholder="America/Los_Angeles" value={state.settings.timeZone ?? ""} onChange={e => updateProfile({ time_zone: e.target.value })} />
+          </div>
+        </div>
       </SectionCard>
 
       <SectionCard title="Low-energy mode" subtitle="Hide non-essentials when you need a softer day." accent="calm">
@@ -31,9 +44,9 @@ export default function Settings() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Data" subtitle="Stored locally on this device." accent="warm">
-        <p className="text-sm text-muted-foreground">Your CareFlow data lives in this browser. We can add cloud sync and sign-in next.</p>
-        <Button variant="destructive" className="mt-3" onClick={() => { if (confirm("Reset all data to seed example?")) { resetAll(); toast.success("Reset complete."); } }}>Reset to sample data</Button>
+      <SectionCard title="Account" subtitle="Synced across your devices." accent="warm">
+        <p className="text-sm text-muted-foreground">Your CareFlow data is saved to your account. Sign in on any device to see the same planner.</p>
+        <Button variant="outline" className="mt-3" onClick={async () => { await signOut(); toast.success("Signed out."); }}>Sign out</Button>
       </SectionCard>
     </div>
   );

@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Wand2 } from "lucide-react";
 
 export default function Week() {
-  const { state, addJournal, addCleaning, toggleCleaning, addTask } = useStore();
+  const { state, addJournal, toggleCleaning, addTask, regenerateWeeklyReset, resetThisWeek } = useStore();
   const start = startOfWeek(new Date(), { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const [reflection, setReflection] = useState("");
@@ -26,9 +26,14 @@ export default function Week() {
           <h2 className="font-display text-3xl font-semibold sm:text-4xl">{format(start, "MMMM d")} – {format(addDays(start, 6), "MMMM d")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">A weekly command center, gently held.</p>
         </div>
-        <Button onClick={() => { state.resetTemplates[0]?.items.forEach(item => addCleaning({ title: item, zone: "Whole home", cadence: "weekly" })); toast.success("Sunday reset added."); }}>
-          <Wand2 className="mr-2 h-4 w-4" />Generate weekly reset
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={async () => { await resetThisWeek(); toast.success("Fresh week, ready when you are."); }}>
+            Reset this week
+          </Button>
+          <Button onClick={async () => { await regenerateWeeklyReset(); toast.success("Your weekly rhythm is set."); }}>
+            <Wand2 className="mr-2 h-4 w-4" />Generate this week's reset
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -53,15 +58,19 @@ export default function Week() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <SectionCard title="Weekly reset checklist" accent="warm">
-          <ul className="space-y-1.5">
-            {reset.map(c => (
-              <li key={c.id} className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm hover:bg-muted/40">
-                <Checkbox checked={c.done} onCheckedChange={() => toggleCleaning(c.id)} />
-                <span className={c.done ? "text-muted-foreground line-through" : ""}>{c.title}</span>
-                <span className="ml-auto text-xs text-muted-foreground">{c.zone}</span>
-              </li>
-            ))}
-          </ul>
+          {reset.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Your weekly reset will appear here. Tap “Generate this week's reset” to begin.</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {reset.map(c => (
+                <li key={c.id} className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm hover:bg-muted/40">
+                  <Checkbox checked={c.done} onCheckedChange={() => toggleCleaning(c.id)} />
+                  <span className={c.done ? "text-muted-foreground line-through" : ""}>{c.title}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">{c.zone}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </SectionCard>
 
         <SectionCard title="This week's meal plan" accent="sage">
