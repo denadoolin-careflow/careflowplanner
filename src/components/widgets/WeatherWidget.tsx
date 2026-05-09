@@ -11,6 +11,7 @@ import {
   fetchWeather, geocodeCity, loadSavedPlace, reverseLabel, savePlace, weatherNudge,
   type DayPartForecast, type GeoPlace, type WeatherCondition, type WeatherSnapshot,
 } from "@/lib/weather";
+import { setWeatherSnapshot } from "@/lib/weather-store";
 
 type TempUnit = "C" | "F";
 const cToF = (c: number) => Math.round((c * 9) / 5 + 32);
@@ -72,7 +73,7 @@ export function WeatherWidget({ compact = false, showDayParts = true }: WeatherW
     setStatus("loading"); setErrorMsg(null);
     try {
       const s = await fetchWeather(place.lat, place.lon, place.name);
-      setSnap(s); setStatus("idle");
+      setSnap(s); setWeatherSnapshot(s); setStatus("idle");
       if (persist) savePlace(place);
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : "Could not load weather");
