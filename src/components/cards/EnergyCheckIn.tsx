@@ -13,16 +13,16 @@ export function EnergyCheckIn({ compact = false }: { compact?: boolean }) {
   const { state, setEnergyToday } = useStore();
   return (
     <div className={cn("flex items-center gap-2", compact ? "" : "flex-wrap")}>
-      {!compact && <span className="text-sm text-muted-foreground">How's your energy?</span>}
+      {!compact && <span className="text-xs text-muted-foreground">Energy?</span>}
       {OPTS.map(o => (
         <Button
           key={o.v}
           size="sm"
           variant={state.energyToday === o.v ? "default" : "outline"}
-          className="rounded-full"
+          className="h-7 rounded-full px-2.5 text-xs"
           onClick={() => setEnergyToday(o.v)}
         >
-          <span className="mr-1">{o.emoji}</span>{o.label}
+          <span className="mr-1 text-xs">{o.emoji}</span>{o.label}
         </Button>
       ))}
     </div>
