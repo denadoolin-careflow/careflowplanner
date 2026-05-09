@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Area } from "./types";
-import { POMODORO_TEMPLATES } from "./pomodoro-store";
+import { pomodoroTemplates } from "./pomodoro-templates";
 
 const STORAGE_KEY = "careflow:pomodoro:defaults:v1";
 
@@ -49,7 +49,7 @@ export const pomodoroDefaults = {
     if (!area) return undefined;
     const id = state[area];
     if (!id) return undefined;
-    const tpl = POMODORO_TEMPLATES.find(t => t.id === id);
+    const tpl = pomodoroTemplates.find(id);
     if (!tpl) return undefined;
     return {
       focusSeconds: tpl.focusSeconds,

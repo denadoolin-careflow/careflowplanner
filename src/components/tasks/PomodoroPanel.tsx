@@ -6,9 +6,9 @@ import {
   pomoTotal,
   pomodoro,
   usePomodoro,
-  POMODORO_TEMPLATES,
   type PomodoroTemplate,
 } from "@/lib/pomodoro-store";
+import { usePomodoroTemplatesList } from "@/lib/pomodoro-templates";
 
 const ICONS = { Sparkles, BookOpen, Home, Brain, Heart, Coffee } as const;
 
@@ -19,6 +19,7 @@ interface PomodoroPanelProps {
 
 export function PomodoroPanel({ className, compact = false }: PomodoroPanelProps) {
   const s = usePomodoro();
+  const templates = usePomodoroTemplatesList();
   const total = pomoTotal(s.mode, s);
   const pct = ((total - s.remaining) / total) * 100;
   const idle = !s.taskId && !s.running && s.remaining === total;
@@ -138,7 +139,7 @@ export function PomodoroPanel({ className, compact = false }: PomodoroPanelProps
             Quick start
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {POMODORO_TEMPLATES.map((t) => (
+            {templates.map((t) => (
               <TemplateChip key={t.id} template={t} />
             ))}
           </div>
