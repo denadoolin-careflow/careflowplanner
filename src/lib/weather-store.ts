@@ -22,6 +22,39 @@ export function useWeatherSnapshot(): WeatherSnapshot | null {
   return snap;
 }
 
+/* ---------------- Temperature unit (shared) ---------------- */
+export type TempUnit = "C" | "F";
+const UNIT_KEY = "careflow:weather:unit";
+
+function readUnit(): TempUnit {
+  if (typeof localStorage === "undefined") return "F";
+  return (localStorage.getItem(UNIT_KEY) as TempUnit) ?? "F";
+}
+
+let currentUnit: TempUnit = readUnit();
+const unitListeners = new Set<(u: TempUnit) => void>();
+
+export function getTempUnit(): TempUnit { return currentUnit; }
+
+export function setTempUnit(u: TempUnit) {
+  currentUnit = u;
+  try { localStorage.setItem(UNIT_KEY, u); } catch { /* noop */ }
+  unitListeners.forEach(l => l(u));
+}
+
+export function useTempUnit(): [TempUnit, (u: TempUnit) => void] {
+  const [u, setU] = useState<TempUnit>(currentUnit);
+  useEffect(() => {
+    unitListeners.add(setU);
+    return () => { unitListeners.delete(setU); };
+  }, []);
+  return [u, setTempUnit];
+}
+
+export const cToF = (c: number) => Math.round((c * 9) / 5 + 32);
+export const formatTemp = (c: number, u: TempUnit = currentUnit) =>
+  `${u === "F" ? cToF(c) : Math.round(c)}°`;
+
 /** Soft, caregiver-toned suggestion for a specific day part. */
 export function dayPartSuggestion(dp: DayPartForecast | undefined): string | null {
   if (!dp || dp.conditionLabel === "—") return null;
