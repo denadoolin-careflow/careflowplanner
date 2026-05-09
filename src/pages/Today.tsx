@@ -1,0 +1,131 @@
+import { useState } from "react";
+import { useStore, todayISO } from "@/lib/store";
+import { SectionCard } from "@/components/cards/SectionCard";
+import { TaskRow } from "@/components/cards/TaskRow";
+import { EnergyCheckIn } from "@/components/cards/EnergyCheckIn";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { format } from "date-fns";
+import { Coffee, Sun, Moon, MoonStar, Sparkles, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+
+const PARTS = [
+  { key: "Morning", icon: Coffee },
+  { key: "Afternoon", icon: Sun },
+  { key: "Evening", icon: Moon },
+  { key: "Late Night", icon: MoonStar },
+] as const;
+
+export default function Today() {
+  const { state, addTask, addJournal, updateTask } = useStore();
+  const T = todayISO();
+  const [quick, setQuick] = useState("");
+  const [reflection, setReflection] = useState("");
+
+  const tasksToday = state.tasks.filter(t => t.dueDate === T || t.isTopThree);
+  const top3 = state.tasks.filter(t => !t.done && t.isTopThree).slice(0, 3);
+  const flexible = state.tasks.filter(t => !t.done && !t.dayPart && t.dueDate === T && !t.isTopThree);
+  const family = state.tasks.filter(t => !t.done && (t.area === "Kids" || t.area === "Family" || t.area === "Caregiving"));
+  const meals = state.meals.filter(m => m.date === T);
+  const appts = state.appointments.filter(a => a.date === T).sort((a,b) => (a.time ?? "").localeCompare(b.time ?? ""));
+
+  const lowMode = state.settings.lowEnergyMode;
+
+  return (
+    <div className="space-y-6">
+      <div className="cozy-card overflow-hidden">
+        <div className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between gradient-calm">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{format(new Date(), "EEEE")}</p>
+            <h2 className="font-display text-3xl font-semibold sm:text-4xl">{format(new Date(), "MMMM d, yyyy")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{lowMode ? "Low-energy mode: only the essentials." : "What does today actually need?"}</p>
+          </div>
+          <EnergyCheckIn />
+        </div>
+      </div>
+
+      <SectionCard title="Top three" subtitle="The shape of a real day." accent="calm">
+        {top3.length === 0
+          ? <p className="text-sm text-muted-foreground">Pick three small things below and mark them as your top three.</p>
+          : <div className="space-y-1">{top3.map(t => <TaskRow key={t.id} task={t} />)}</div>}
+        <form className="mt-3 flex gap-2" onSubmit={e => { e.preventDefault(); if (!quick.trim()) return; addTask({ title: quick, dueDate: T, isTopThree: top3.length < 3 }); setQuick(""); }}>
+          <Input placeholder={top3.length < 3 ? "Add to top three…" : "Add a task for today…"} value={quick} onChange={e => setQuick(e.target.value)} />
+          <Button type="submit">Add</Button>
+        </form>
+      </SectionCard>
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <SectionCard title="Time blocks" subtitle="Drag energy through the day." accent="warm">
+          <div className="space-y-4">
+            {PARTS.map(({ key, icon: Icon }) => {
+              const items = tasksToday.filter(t => t.dayPart === key);
+              return (
+                <div key={key}>
+                  <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Icon className="h-3.5 w-3.5" /> {key}
+                  </div>
+                  <div className="space-y-1 rounded-xl border border-dashed border-border/60 p-2">
+                    {items.length === 0
+                      ? <p className="px-2 py-1 text-xs text-muted-foreground">— open block —</p>
+                      : items.map(t => <TaskRow key={t.id} task={t} dense showArea={false} />)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
+
+        <div className="space-y-5">
+          <SectionCard title="Flexible list" subtitle="Whenever there's a pocket of time." accent="sage">
+            {flexible.length === 0
+              ? <p className="text-sm text-muted-foreground">Nothing flexible right now. Breathe.</p>
+              : <div className="space-y-1">{flexible.map(t => <TaskRow key={t.id} task={t} dense />)}</div>}
+          </SectionCard>
+
+          {!lowMode && (
+            <SectionCard title="Family & caregiving" accent="warm">
+              {family.length === 0
+                ? <p className="text-sm text-muted-foreground">No outstanding people-tasks.</p>
+                : <div className="space-y-1">{family.slice(0, 6).map(t => <TaskRow key={t.id} task={t} dense />)}</div>}
+            </SectionCard>
+          )}
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <SectionCard title="Meals" accent="warm">
+              {meals.length === 0
+                ? <p className="text-sm text-muted-foreground">Nothing planned.</p>
+                : <ul className="space-y-1.5 text-sm">{meals.map(m => <li key={m.id} className="rounded-lg bg-muted/40 px-3 py-1.5"><span className="text-xs uppercase tracking-wider text-muted-foreground">{m.slot}</span><div>{m.name}</div></li>)}</ul>}
+            </SectionCard>
+            <SectionCard title="Appointments" accent="calm">
+              {appts.length === 0
+                ? <p className="text-sm text-muted-foreground">A free day.</p>
+                : <ul className="space-y-1.5 text-sm">{appts.map(a => <li key={a.id} className="rounded-lg bg-muted/40 px-3 py-1.5"><span className="text-xs text-muted-foreground">{a.time ?? "—"}</span><div>{a.title}</div></li>)}</ul>}
+            </SectionCard>
+          </div>
+        </div>
+      </div>
+
+      <SectionCard title="End-of-day reflection" subtitle="Soft, honest, brief." accent="warm">
+        <Textarea rows={4} placeholder="What worked? What was hard? What can wait? What I'm grateful for…" value={reflection} onChange={e => setReflection(e.target.value)} />
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button onClick={() => { if (!reflection.trim()) return; addJournal({ body: reflection, type: "daily", title: "Reflection" }); setReflection(""); toast.success("Saved to journal."); }}>Save reflection</Button>
+          <Button variant="outline" onClick={() => { addJournal({ body: "Resetting after a hard day. Drink water. Clear one surface. One note. Choose tomorrow's top task.", type: "daily", title: "Hard-day reset" }); toast("A small reset. Be gentle."); }}><Sparkles className="mr-2 h-4 w-4" />Reset after hard day</Button>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="What can wait?" subtitle="Defer without guilt." accent="sage">
+        <div className="space-y-1">
+          {state.tasks.filter(t => !t.done && t.priority !== "high").slice(0, 5).map(t => (
+            <div key={t.id} className="flex items-center justify-between gap-2 rounded-xl bg-muted/40 px-3 py-2 text-sm">
+              <span>{t.title}</span>
+              <Button size="sm" variant="ghost" className="rounded-full" onClick={() => { const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1); updateTask(t.id, { dueDate: tomorrow.toISOString().slice(0,10) }); toast("Moved to tomorrow."); }}>
+                Tomorrow <ChevronRight className="ml-1 h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  );
+}
