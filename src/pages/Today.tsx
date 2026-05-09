@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { Coffee, Sun, Moon, MoonStar, Sparkles, ChevronRight } from "lucide-react";
+import { Coffee, Sun, Moon, MoonStar, Sparkles, ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
-import type { DayPart } from "@/lib/types";
+import type { DayPart, Meal } from "@/lib/types";
+import { MealEditor } from "@/components/meals/MealEditor";
 
 const PARTS = [
   { key: "Morning", icon: Coffee },
@@ -30,6 +31,17 @@ export default function Today() {
   const T = todayISO();
   const [quick, setQuick] = useState("");
   const [reflection, setReflection] = useState("");
+  const [mealOpen, setMealOpen] = useState(false);
+  const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
+  const [mealSlot, setMealSlot] = useState<Meal["slot"]>("Dinner");
+
+  const openNewMeal = (slot: Meal["slot"] = "Dinner") => { setEditingMeal(null); setMealSlot(slot); setMealOpen(true); };
+  const openEditMeal = (m: Meal) => { setEditingMeal(m); setMealOpen(true); };
+
+  const quickAddTask = (extra: Partial<{ dayPart: DayPart; area: string }>) => {
+    const title = prompt(extra.dayPart ? `Add a task for ${extra.dayPart}:` : extra.area ? `Add a ${extra.area.toLowerCase()} task:` : "Add a flexible task:");
+    if (title?.trim()) addTask({ title: title.trim(), dueDate: T, ...extra } as any);
+  };
 
   const tasksToday = state.tasks.filter(t => t.dueDate === T || t.isTopThree);
   const top3 = state.tasks.filter(t => !t.done && t.isTopThree).slice(0, 3);
@@ -94,6 +106,7 @@ export default function Today() {
                     {items.length === 0
                       ? <p className="px-2 py-1 text-xs text-muted-foreground">— open block — drop a task here</p>
                       : items.map(t => <TaskRow key={t.id} task={t} dense showArea={false} draggable />)}
+                    <Button variant="ghost" size="sm" className="mt-1 w-full justify-start text-xs text-muted-foreground" onClick={() => quickAddTask({ dayPart: key })}><Plus className="mr-1 h-3 w-3" />add to {key.toLowerCase()}</Button>
                   </PartDropZone>
                 </div>
               );
@@ -108,6 +121,7 @@ export default function Today() {
                 ? <p className="px-2 py-1 text-sm text-muted-foreground">Nothing flexible right now. Breathe.</p>
                 : <div className="space-y-1">{flexible.map(t => <TaskRow key={t.id} task={t} dense draggable />)}</div>}
             </PartDropZoneFlexible>
+            <Button variant="ghost" size="sm" className="mt-2 w-full justify-start text-xs text-muted-foreground" onClick={() => quickAddTask({})}><Plus className="mr-1 h-3 w-3" />add a flexible task</Button>
           </SectionCard>
 
           {!lowMode && (
@@ -115,14 +129,26 @@ export default function Today() {
               {family.length === 0
                 ? <p className="text-sm text-muted-foreground">No outstanding people-tasks.</p>
                 : <div className="space-y-1">{family.slice(0, 6).map(t => <TaskRow key={t.id} task={t} dense draggable />)}</div>}
+              <div className="mt-2 flex flex-wrap gap-1">
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => quickAddTask({ area: "Family" as any })}><Plus className="mr-1 h-3 w-3" />family</Button>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => quickAddTask({ area: "Kids" as any })}><Plus className="mr-1 h-3 w-3" />kids</Button>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => quickAddTask({ area: "Caregiving" as any })}><Plus className="mr-1 h-3 w-3" />caregiving</Button>
+              </div>
             </SectionCard>
           )}
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <SectionCard title="Meals" accent="warm">
+            <SectionCard title="Meals" accent="warm" action={<button onClick={() => openNewMeal()} className="text-xs text-primary hover:underline">+ add</button>}>
               {meals.length === 0
-                ? <p className="text-sm text-muted-foreground">Nothing planned.</p>
-                : <ul className="space-y-1.5 text-sm">{meals.map(m => <li key={m.id} className="rounded-lg bg-muted/40 px-3 py-1.5"><span className="text-xs uppercase tracking-wider text-muted-foreground">{m.slot}</span><div>{m.name}</div></li>)}</ul>}
+                ? <p className="text-sm text-muted-foreground">Nothing planned. Cereal counts.</p>
+                : <ul className="space-y-1.5 text-sm">{meals.map(m => (
+                    <li key={m.id}>
+                      <button onClick={() => openEditMeal(m)} className="w-full rounded-lg bg-muted/40 px-3 py-1.5 text-left transition-colors hover:bg-muted/70">
+                        <span className="text-xs uppercase tracking-wider text-muted-foreground">{m.slot}{m.kidSafe ? " · kid-safe" : ""}</span>
+                        <div>{m.name}</div>
+                      </button>
+                    </li>
+                  ))}</ul>}
             </SectionCard>
             <SectionCard title="Appointments" accent="calm">
               {appts.length === 0
@@ -154,6 +180,7 @@ export default function Today() {
         </div>
       </SectionCard>
     </div>
+    <MealEditor open={mealOpen} onOpenChange={setMealOpen} meal={editingMeal} defaultDate={T} defaultSlot={mealSlot} />
     </DndContext>
   );
 }
