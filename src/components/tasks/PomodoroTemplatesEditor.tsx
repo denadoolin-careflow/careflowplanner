@@ -34,7 +34,10 @@ export function PomodoroTemplatesEditor() {
   return (
     <div className="space-y-3">
       {list.map((t) => (
-        <TemplateRow key={t.id} template={t} />
+        <TemplateRow
+          key={`${t.id}:${t.label}:${t.focusSeconds}:${t.breakSeconds}:${t.icon}`}
+          template={t}
+        />
       ))}
       <Button
         variant="outline"
