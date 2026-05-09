@@ -74,6 +74,7 @@ interface Ctx {
   deleteJournal: (id: string) => Promise<void>;
 
   addMeal: (m: Partial<Meal> & { name: string; date: string; slot: Meal["slot"] }) => Promise<void>;
+  updateMeal: (id: string, patch: Partial<Meal>) => Promise<void>;
   deleteMeal: (id: string) => Promise<void>;
 
   addGrocery: (name: string, category?: string) => Promise<void>;
@@ -282,6 +283,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!uid) return;
       const { data } = await supabase.from("meals").insert({ user_id: uid, name: m.name, date: m.date, slot: m.slot, notes: m.notes ?? null, kid_safe: m.kidSafe ?? false }).select().single();
       if (data) setState(s => ({ ...s, meals: [mealFrom(data), ...s.meals] }));
+    },
+    updateMeal: async (id, patch) => {
+      setState(s => ({ ...s, meals: s.meals.map(m => m.id === id ? { ...m, ...patch } : m) }));
+      const dbPatch: any = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.slot !== undefined) dbPatch.slot = patch.slot;
+      if (patch.date !== undefined) dbPatch.date = patch.date;
+      if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
+      if (patch.kidSafe !== undefined) dbPatch.kid_safe = patch.kidSafe;
+      await supabase.from("meals").update(dbPatch).eq("id", id);
     },
     deleteMeal: async (id) => {
       setState(s => ({ ...s, meals: s.meals.filter(m => m.id !== id) }));
