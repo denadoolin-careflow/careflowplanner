@@ -8,15 +8,38 @@ import { startOfWeek, addDays, format, parseISO } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Wand2 } from "lucide-react";
+import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
+import { DraggableTaskRow } from "@/components/tasks/DraggableTaskRow";
+import { cn } from "@/lib/utils";
+
+function DayDropZone({ id, children, isToday }: { id: string; children: React.ReactNode; isToday: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div ref={setNodeRef} className={cn("min-h-[60px] rounded-xl transition-colors", isOver && "bg-primary/10 ring-2 ring-primary/30", !isOver && isToday && "bg-primary/5")}>
+      {children}
+    </div>
+  );
+}
 
 export default function Week() {
-  const { state, addJournal, toggleCleaning, addTask, regenerateWeeklyReset, resetThisWeek } = useStore();
+  const { state, addJournal, toggleCleaning, addTask, updateTask, regenerateWeeklyReset, resetThisWeek } = useStore();
   const start = startOfWeek(new Date(), { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const [reflection, setReflection] = useState("");
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const tasksFor = (d: Date) => state.tasks.filter(t => t.dueDate === d.toISOString().slice(0, 10));
   const reset = state.cleaning.filter(c => c.cadence === "weekly");
+
+  const onDragEnd = async (e: DragEndEvent) => {
+    if (!e.over) return;
+    const taskId = String(e.active.id);
+    const newDate = String(e.over.id);
+    const t = state.tasks.find(x => x.id === taskId);
+    if (!t || t.dueDate === newDate) return;
+    await updateTask(taskId, { dueDate: newDate });
+    toast.success("Moved gently.");
+  };
 
   return (
     <div className="space-y-6">
@@ -36,10 +59,12 @@ export default function Week() {
         </div>
       </div>
 
+      <DndContext sensors={sensors} onDragEnd={onDragEnd}>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {days.map(d => {
           const isToday = d.toISOString().slice(0,10) === todayISO();
           const ts = tasksFor(d);
+          const iso = d.toISOString().slice(0,10);
           return (
             <SectionCard
               key={d.toISOString()}
@@ -47,14 +72,17 @@ export default function Week() {
               subtitle={format(d, "MMM d")}
               accent={isToday ? "calm" : "none"}
             >
-              {ts.length === 0
-                ? <p className="text-xs text-muted-foreground">— open day —</p>
-                : <div className="space-y-1">{ts.slice(0,5).map(t => <TaskRow key={t.id} task={t} dense showArea={false} />)}</div>}
+              <DayDropZone id={iso} isToday={isToday}>
+                {ts.length === 0
+                  ? <p className="px-2 py-3 text-xs text-muted-foreground">Drag a task here when you're ready.</p>
+                  : <div className="space-y-1">{ts.slice(0,8).map(t => <DraggableTaskRow key={t.id} task={t} />)}</div>}
+              </DayDropZone>
               <Button variant="ghost" size="sm" className="mt-2 w-full justify-start text-xs text-muted-foreground" onClick={() => { const title = prompt(`Add a task for ${format(d, "EEEE")}:`); if (title) addTask({ title, dueDate: d.toISOString().slice(0,10) }); }}>+ add task</Button>
             </SectionCard>
           );
         })}
       </div>
+      </DndContext>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <SectionCard title="Weekly reset checklist" accent="warm">
