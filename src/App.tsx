@@ -23,6 +23,8 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
+import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,8 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <PomodoroToastsBridge />
+            <FloatingPomodoro />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
