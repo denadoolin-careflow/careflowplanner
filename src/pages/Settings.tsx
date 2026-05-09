@@ -93,6 +93,14 @@ export default function Settings() {
       </SectionCard>
 
       <SectionCard
+        title="Pomodoro templates"
+        subtitle="Edit the built-ins or add your own."
+        accent="warm"
+      >
+        <PomodoroTemplatesEditor />
+      </SectionCard>
+
+      <SectionCard
         title="Pomodoro notifications"
         subtitle="How you'd like to be nudged when a session ends."
         accent="sage"
