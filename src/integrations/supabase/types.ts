@@ -504,6 +504,42 @@ export type Database = {
         }
         Relationships: []
       }
+      pomodoro_sessions: {
+        Row: {
+          completed_at: string
+          created_at: string
+          focus_seconds: number
+          id: string
+          task_id: string | null
+          task_title: string | null
+          template_id: string | null
+          template_label: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          focus_seconds?: number
+          id?: string
+          task_id?: string | null
+          task_title?: string | null
+          template_id?: string | null
+          template_label?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          focus_seconds?: number
+          id?: string
+          task_id?: string | null
+          task_title?: string | null
+          template_id?: string | null
+          template_label?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
