@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useStore, todayISO } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { TaskRow } from "@/components/cards/TaskRow";
@@ -34,6 +34,11 @@ function greeting() {
 export default function Dashboard() {
   const { state, toggleCleaning, toggleHabit } = useStore();
   const T = todayISO();
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const top3 = state.tasks.filter(t => t.isTopThree && !t.done).slice(0, 3);
   const apptsToday = state.appointments.filter(a => a.date === T).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
@@ -71,6 +76,10 @@ export default function Dashboard() {
             <p className="mt-1 max-w-xl text-sm text-muted-foreground">A soft start. One thing at a time. You don't have to do it all today.</p>
           </div>
           <div className="flex flex-col items-start gap-2 sm:items-end">
+            <div className="font-display text-3xl font-semibold tabular-nums tracking-tight sm:text-4xl">
+              {format(now, "h:mm")}<span className="text-muted-foreground">:{format(now, "ss")}</span>
+              <span className="ml-1 text-sm text-muted-foreground">{format(now, "a")}</span>
+            </div>
             <EnergyCheckIn />
             {state.settings.lowEnergyMode && (
               <Badge className="rounded-full bg-moon-soft text-moon-foreground hover:bg-moon-soft">Low-energy mode on</Badge>
