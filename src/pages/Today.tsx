@@ -16,7 +16,7 @@ import { MealEditor } from "@/components/meals/MealEditor";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { MoonPhaseWidget } from "@/components/widgets/MoonPhaseWidget";
 import { TaskProgressBar } from "@/components/cards/TaskProgressBar";
-import { dayPartSuggestion, useWeatherSnapshot } from "@/lib/weather-store";
+import { dayPartSuggestion, useWeatherSnapshot, formatTemp, useTempUnit } from "@/lib/weather-store";
 
 const PARTS = [
   { key: "Morning", icon: Coffee },
@@ -34,6 +34,7 @@ export default function Today() {
   const { state, addTask, addJournal, updateTask } = useStore();
   const T = todayISO();
   const weather = useWeatherSnapshot();
+  const [unit] = useTempUnit();
   const [quick, setQuick] = useState("");
   const [reflection, setReflection] = useState("");
   const [mealOpen, setMealOpen] = useState(false);
@@ -119,7 +120,7 @@ export default function Today() {
                     </span>
                     {dp && dp.conditionLabel !== "—" && (
                       <span className="text-[11px] tabular-nums text-muted-foreground">
-                        · {dp.avgTempC}° {dp.conditionLabel.toLowerCase()}
+                        · {formatTemp(dp.avgTempC, unit)} {dp.conditionLabel.toLowerCase()}
                         {dp.precipChance >= 30 && <> · 💧 {dp.precipChance}%</>}
                       </span>
                     )}
