@@ -6,10 +6,17 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
+import { AREAS } from "@/lib/types";
+import { POMODORO_TEMPLATES } from "@/lib/pomodoro-store";
+import { pomodoroDefaults, usePomodoroDefaults } from "@/lib/pomodoro-defaults";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 export default function Settings() {
   const { state, setName, setLowEnergyMode, updateProfile, signOut, user } = useStore();
   const { theme, setTheme } = useTheme();
+  const defaults = usePomodoroDefaults();
   return (
     <div className="space-y-6">
       <SectionCard title="Your profile" subtitle={user?.email ?? "Signed in"} accent="warm">
@@ -42,6 +49,42 @@ export default function Settings() {
             <Button key={t} variant={theme === t ? "default" : "outline"} className="capitalize rounded-full" onClick={() => setTheme(t)}>{t}</Button>
           ))}
         </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Pomodoro defaults"
+        subtitle="Auto-fill session length based on the task's area."
+        accent="calm"
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          {AREAS.map(area => {
+            const value = defaults[area] ?? "none";
+            return (
+              <div key={area} className="flex items-center justify-between gap-3">
+                <Label className="text-sm">{area}</Label>
+                <Select
+                  value={value}
+                  onValueChange={(v) => pomodoroDefaults.set(area, v === "none" ? null : v)}
+                >
+                  <SelectTrigger className="h-8 w-[180px] rounded-full text-xs">
+                    <SelectValue placeholder="No default" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No default</SelectItem>
+                    {POMODORO_TEMPLATES.map(t => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.label} · {t.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          When you start a Pomodoro for a task, the matching template's focus and break lengths fill in automatically.
+        </p>
       </SectionCard>
 
       <SectionCard title="Account" subtitle="Synced across your devices." accent="warm">
