@@ -15,7 +15,7 @@ import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
 import type { Meal } from "@/lib/types";
 
 export default function Meals() {
-  const { state, addMeal, deleteMeal, addGrocery, toggleGrocery, deleteGrocery, reloadAll } = useStore();
+  const { state, user, addMeal, deleteMeal, addGrocery, toggleGrocery, deleteGrocery, reloadAll } = useStore();
   const start = startOfWeek(new Date(), { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const slots = ["Breakfast","Lunch","Dinner","Snack"] as const;
@@ -40,11 +40,11 @@ export default function Meals() {
   };
 
   const onFillFromFavorites = async (replace: boolean) => {
-    if (!state.user?.id) return;
+    if (!user?.id) return;
     setFilling(true);
     try {
       const startISO = start.toISOString().slice(0, 10);
-      const res = await fillWeekFromFavorites(state.user.id, startISO, {
+      const res = await fillWeekFromFavorites(user.id, startISO, {
         replace, onlyEmpty: !replace, addGroceries: true,
       });
       await reloadAll();
