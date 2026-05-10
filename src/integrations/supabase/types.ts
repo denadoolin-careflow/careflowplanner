@@ -229,6 +229,48 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_meals: {
+        Row: {
+          created_at: string
+          id: string
+          ingredients: Json
+          name: string
+          notes: string | null
+          prep_minutes: number | null
+          slot: string | null
+          steps: Json
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredients?: Json
+          name: string
+          notes?: string | null
+          prep_minutes?: number | null
+          slot?: string | null
+          steps?: Json
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredients?: Json
+          name?: string
+          notes?: string | null
+          prep_minutes?: number | null
+          slot?: string | null
+          steps?: Json
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           category: string
@@ -534,15 +576,64 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_preferences: {
+        Row: {
+          allergies: string[]
+          budget_level: string
+          created_at: string
+          cuisines: string[]
+          diets: string[]
+          dislikes: string[]
+          family_size: number
+          low_energy: boolean
+          max_prep_minutes: number
+          picky_notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allergies?: string[]
+          budget_level?: string
+          created_at?: string
+          cuisines?: string[]
+          diets?: string[]
+          dislikes?: string[]
+          family_size?: number
+          low_energy?: boolean
+          max_prep_minutes?: number
+          picky_notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allergies?: string[]
+          budget_level?: string
+          created_at?: string
+          cuisines?: string[]
+          diets?: string[]
+          dislikes?: string[]
+          family_size?: number
+          low_energy?: boolean
+          max_prep_minutes?: number
+          picky_notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meals: {
         Row: {
           created_at: string
           date: string
           id: string
+          ingredients: Json
           kid_safe: boolean
           name: string
           notes: string | null
+          prep_minutes: number | null
           slot: string
+          steps: Json
+          tags: string[]
           updated_at: string
           user_id: string
         }
@@ -550,10 +641,14 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          ingredients?: Json
           kid_safe?: boolean
           name: string
           notes?: string | null
+          prep_minutes?: number | null
           slot: string
+          steps?: Json
+          tags?: string[]
           updated_at?: string
           user_id: string
         }
@@ -561,10 +656,44 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          ingredients?: Json
           kid_safe?: boolean
           name?: string
           notes?: string | null
+          prep_minutes?: number | null
           slot?: string
+          steps?: Json
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pantry_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          in_stock: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          in_stock?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          in_stock?: boolean
+          name?: string
           updated_at?: string
           user_id?: string
         }
