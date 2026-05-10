@@ -9,9 +9,9 @@ Deno.serve(async (req) => {
     const auth = req.headers.get("Authorization");
     if (!auth?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
-    const { data, error } = await supabase.auth.getClaims(auth.replace("Bearer ", ""));
-    if (error || !data?.claims) return json({ error: "Unauthorized" }, 401);
-    const userId = data.claims.sub as string;
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user) return json({ error: "Unauthorized" }, 401);
+    const userId = data.user.id;
 
     const { redirect_back } = await req.json().catch(() => ({ redirect_back: "" }));
     const clientId = Deno.env.get("GOOGLE_CALENDAR_CLIENT_ID")!;
