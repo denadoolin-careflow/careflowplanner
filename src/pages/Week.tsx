@@ -12,6 +12,7 @@ import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSe
 import { cn } from "@/lib/utils";
 import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
 import { Input } from "@/components/ui/input";
+import { DayWeatherMoon } from "@/components/widgets/DayWeatherMoon";
 
 function DayDropZone({ id, children, isToday }: { id: string; children: React.ReactNode; isToday: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id });
@@ -112,6 +113,7 @@ export default function Week() {
               subtitle={format(d, "MMM d")}
               accent={isToday ? "calm" : "none"}
             >
+              <DayWeatherMoon date={d} className="mb-2" />
               <DayDropZone id={iso} isToday={isToday}>
                 {ts.length === 0
                   ? <p className="px-2 py-3 text-xs text-muted-foreground">Drag a task here when you're ready.</p>

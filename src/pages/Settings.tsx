@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
+import { useThemePreset, type ThemePreset } from "@/lib/theme-preset";
 import { toast } from "sonner";
 import { AREAS } from "@/lib/types";
 import { usHolidaysRange } from "@/lib/us-holidays";
@@ -21,6 +22,7 @@ import {
 export default function Settings() {
   const { state, setName, setLowEnergyMode, updateProfile, signOut, user, addHoliday } = useStore();
   const { theme, setTheme } = useTheme();
+  const [preset, setPreset] = useThemePreset();
   const defaults = usePomodoroDefaults();
   const prefs = usePomodoroPrefs();
   const templates = usePomodoroTemplatesList();
@@ -66,10 +68,23 @@ export default function Settings() {
       </SectionCard>
 
       <SectionCard title="Theme" accent="sage">
-        <div className="flex flex-wrap gap-2">
-          {["light","dark","system"].map(t => (
-            <Button key={t} variant={theme === t ? "default" : "outline"} className="capitalize rounded-full" onClick={() => setTheme(t)}>{t}</Button>
-          ))}
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs text-muted-foreground">Mode</Label>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {["light","dark","system"].map(t => (
+                <Button key={t} variant={theme === t ? "default" : "outline"} className="capitalize rounded-full" onClick={() => setTheme(t)}>{t}</Button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Palette</Label>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {(["default","sage","dusk","mono"] as ThemePreset[]).map(p => (
+                <Button key={p} variant={preset === p ? "default" : "outline"} className="capitalize rounded-full" onClick={() => setPreset(p)}>{p}</Button>
+              ))}
+            </div>
+          </div>
         </div>
       </SectionCard>
 

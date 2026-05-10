@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Trash2, RefreshCw } from "lucide-react";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
+import { TimeGrid } from "@/components/calendar/TimeGrid";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -118,8 +119,15 @@ export default function CalendarPage() {
         accent="warm"
       >
         {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} />}
-        {view === "week" && <WeekView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} />}
-        {view === "day" && <DayView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} />}
+        {view === "week" && (
+          <TimeGrid
+            days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(cursor, { weekStartsOn: 0 }), i))}
+            appointmentsOn={eventsOn}
+          />
+        )}
+        {view === "day" && (
+          <TimeGrid days={[cursor]} appointmentsOn={eventsOn} />
+        )}
         {view === "year" && <YearView cursor={cursor} eventsOn={eventsOn} setCursor={setCursor} setView={setView} />}
       </SectionCard>
 

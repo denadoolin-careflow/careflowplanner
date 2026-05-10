@@ -229,6 +229,42 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          layout: Json
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+          widgets: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          layout?: Json
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+          widgets?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          layout?: Json
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+          widgets?: Json
+        }
+        Relationships: []
+      }
       favorite_meals: {
         Row: {
           created_at: string
@@ -786,6 +822,7 @@ export type Database = {
           email: string | null
           energy_date: string | null
           energy_today: string | null
+          header_image_url: string | null
           id: string
           low_energy_mode: boolean
           name: string
@@ -799,6 +836,7 @@ export type Database = {
           email?: string | null
           energy_date?: string | null
           energy_today?: string | null
+          header_image_url?: string | null
           id: string
           low_energy_mode?: boolean
           name?: string
@@ -812,6 +850,7 @@ export type Database = {
           email?: string | null
           energy_date?: string | null
           energy_today?: string | null
+          header_image_url?: string | null
           id?: string
           low_energy_mode?: boolean
           name?: string
@@ -900,6 +939,48 @@ export type Database = {
           sort_order?: number
           status?: string
           tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      time_blocks: {
+        Row: {
+          all_day: boolean
+          color: string
+          created_at: string
+          date: string
+          end_time: string
+          id: string
+          notes: string | null
+          start_time: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          all_day?: boolean
+          color?: string
+          created_at?: string
+          date: string
+          end_time: string
+          id?: string
+          notes?: string | null
+          start_time: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          all_day?: boolean
+          color?: string
+          created_at?: string
+          date?: string
+          end_time?: string
+          id?: string
+          notes?: string | null
+          start_time?: string
           title?: string
           updated_at?: string
           user_id?: string
