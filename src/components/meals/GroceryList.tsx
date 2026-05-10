@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Trash2, Copy, Download, Pencil, Check, X } from "lucide-react";
+import { Trash2, Copy, Download, Pencil, Check, X, BookmarkPlus } from "lucide-react";
 import { toast } from "sonner";
+import { SavedListsDialog } from "./SavedListsDialog";
 
 const CAT_ORDER = ["Produce", "Protein", "Dairy", "Bakery", "Frozen", "Pantry", "Other"];
 
@@ -16,6 +17,7 @@ export function GroceryList() {
   const [editing, setEditing] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editQty, setEditQty] = useState("");
+  const [savedOpen, setSavedOpen] = useState(false);
 
   const groceryByCat = state.grocery.reduce<Record<string, typeof state.grocery>>((acc, item) => {
     const k = item.category ?? "Other";
@@ -90,8 +92,11 @@ export function GroceryList() {
         <Button type="submit">Add</Button>
       </form>
 
-      {state.grocery.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2">
+      <div className="mb-3 flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" className="rounded-full" onClick={() => setSavedOpen(true)}>
+          <BookmarkPlus className="mr-1.5 h-3.5 w-3.5" />Saved lists
+        </Button>
+        {state.grocery.length > 0 && <>
           <Button size="sm" variant="outline" className="rounded-full" onClick={onCopy}>
             <Copy className="mr-1.5 h-3.5 w-3.5" />Copy
           </Button>
@@ -106,8 +111,10 @@ export function GroceryList() {
               <Button size="sm" variant="ghost" className="w-full justify-start" onClick={onExportCsv}>Spreadsheet (.csv)</Button>
             </PopoverContent>
           </Popover>
-        </div>
-      )}
+        </>}
+      </div>
+
+      <SavedListsDialog open={savedOpen} onOpenChange={setSavedOpen} />
 
       {state.grocery.length === 0 ? (
         <p className="text-xs text-muted-foreground">Your grocery list will fill in when you plan a week.</p>
