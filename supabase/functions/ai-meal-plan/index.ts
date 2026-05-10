@@ -188,17 +188,30 @@ Generate meals and a consolidated grocery list grouped by category.`;
     }
 
     if (plan.meals?.length) {
-      const rows = plan.meals.map((m) => ({
-        user_id: userId,
-        date: m.date, slot: m.slot, name: m.name,
-        prep_minutes: m.prep_minutes ?? null,
-        ingredients: m.ingredients ?? [],
-        steps: m.steps ?? [],
-        tags: m.tags ?? [],
-        kid_safe: m.kid_safe ?? false,
-      }));
+      const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+      const validSlots = new Set(["Breakfast", "Lunch", "Dinner", "Snack"]);
+      const rows = plan.meals
+        .filter((m: any) => m && typeof m.date === "string" && dateRe.test(m.date) && validSlots.has(m.slot) && typeof m.name === "string" && m.name.trim())
+        .map((m: any) => ({
+          user_id: userId,
+          date: m.date,
+          slot: m.slot,
+          name: String(m.name).slice(0, 200),
+          prep_minutes: typeof m.prep_minutes === "number" ? m.prep_minutes : null,
+          ingredients: Array.isArray(m.ingredients) ? m.ingredients.map(String) : [],
+          steps: Array.isArray(m.steps) ? m.steps.map(String) : [],
+          tags: Array.isArray(m.tags) ? m.tags.map(String) : [],
+          kid_safe: !!m.kid_safe,
+        }));
+      if (rows.length === 0) {
+        console.error("AI returned no valid meals. Raw:", JSON.stringify(plan).slice(0, 2000));
+        return json({ error: "AI returned an unusable plan. Please try again." }, 502);
+      }
       const { error: mErr } = await admin.from("meals").insert(rows);
-      if (mErr) return json({ error: mErr.message }, 500);
+      if (mErr) {
+        console.error("Meal insert error:", mErr.message, "First row:", JSON.stringify(rows[0]).slice(0, 500));
+        return json({ error: mErr.message }, 500);
+      }
     }
 
     if (plan.grocery?.length) {
@@ -210,12 +223,12 @@ Generate meals and a consolidated grocery list grouped by category.`;
         .eq("bought", false);
       const have = new Set((existing ?? []).map((g: any) => g.name.toLowerCase().trim()));
       const fresh = plan.grocery
-        .filter((g) => g.name && !have.has(g.name.toLowerCase().trim()))
-        .map((g) => ({
+        .filter((g: any) => g && typeof g.name === "string" && g.name.trim() && !have.has(g.name.toLowerCase().trim()))
+        .map((g: any) => ({
           user_id: userId,
-          name: g.name,
-          qty: g.qty ?? null,
-          category: g.category ?? "Other",
+          name: String(g.name).slice(0, 120),
+          qty: typeof g.qty === "string" ? g.qty.slice(0, 60) : null,
+          category: typeof g.category === "string" ? g.category : "Other",
           bought: false,
         }));
       if (fresh.length) {
@@ -243,7 +256,7 @@ async function callAI(apiKey: string, userMsg: string, tool: any): Promise<{ arg
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
+      model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: SYSTEM },
         { role: "user", content: userMsg },
