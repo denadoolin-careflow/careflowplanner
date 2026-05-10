@@ -125,7 +125,14 @@ export function GroceryList() {
 
   const renderItem = (item: GroceryItem) => {
     const isEditing = editing === item.id;
-    const inStock = item.stockStatus === "in";
+    const status = item.stockStatus;
+    const next = status === "in" ? "low" : status === "low" ? "out" : "in";
+    const stockLabel = status === "in" ? "In stock" : status === "low" ? "Low" : "Out";
+    const stockClass = status === "in"
+      ? "bg-primary/15 text-primary hover:bg-primary/25"
+      : status === "low"
+        ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
+        : "text-muted-foreground hover:bg-muted";
     const dim = highlightMealId && highlightMealId !== item.sourceMealId;
     return (
       <li key={item.id} className={`group flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-muted/40 ${dim ? "opacity-30" : ""}`}>
@@ -141,10 +148,10 @@ export function GroceryList() {
           <>
             <span className={item.bought ? "text-muted-foreground line-through" : ""}>{item.name}</span>
             {item.qty && <span className="text-[11px] text-muted-foreground">· {item.qty}</span>}
-            <button onClick={() => setGroceryStock(item.id, inStock ? "out" : "in")} title={inStock ? "Mark out of stock" : "Mark in stock"}>
-              <Badge variant={inStock ? "secondary" : "outline"}
-                className={`ml-1 cursor-pointer rounded-full text-[10px] ${inStock ? "bg-primary/15 text-primary hover:bg-primary/25" : "text-muted-foreground hover:bg-muted"}`}>
-                {inStock ? "In stock" : "Out"}
+            <button onClick={() => setGroceryStock(item.id, next)} title={`Mark ${next}`}>
+              <Badge variant={status === "out" ? "outline" : "secondary"}
+                className={`ml-1 cursor-pointer rounded-full text-[10px] ${stockClass}`}>
+                {stockLabel}
               </Badge>
             </button>
             {item.sourceMealName && groupBy === "category" && (
