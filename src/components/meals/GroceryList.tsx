@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Trash2, Copy, Download, Pencil, Check, X, BookmarkPlus, Utensils, ListTree } from "lucide-react";
+import { Trash2, Copy, Download, Pencil, Check, X, BookmarkPlus, Utensils, ListTree, ArrowDownAZ } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,18 +23,36 @@ export function GroceryList() {
   const [savedOpen, setSavedOpen] = useState(false);
   const [groupBy, setGroupBy] = useState<"category" | "meal">("category");
   const [highlightMealId, setHighlightMealId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "in" | "low" | "out">("all");
+  const [sortMode, setSortMode] = useState<"default" | "low_first" | "out_first" | "az">("default");
 
-  const groceryByCat = state.grocery.reduce<Record<string, GroceryItem[]>>((acc, item) => {
+  const stockRank = (s: GroceryItem["stockStatus"]) => (s === "low" ? 0 : s === "out" ? 1 : 2);
+  const filteredAll = state.grocery.filter(i => filter === "all" || i.stockStatus === filter);
+  const sorted = [...filteredAll].sort((a, b) => {
+    if (sortMode === "az") return a.name.localeCompare(b.name);
+    if (sortMode === "low_first") {
+      const r = stockRank(a.stockStatus) - stockRank(b.stockStatus);
+      if (r !== 0) return r;
+    } else if (sortMode === "out_first") {
+      const ar = a.stockStatus === "out" ? 0 : a.stockStatus === "low" ? 1 : 2;
+      const br = b.stockStatus === "out" ? 0 : b.stockStatus === "low" ? 1 : 2;
+      if (ar !== br) return ar - br;
+    }
+    return a.name.localeCompare(b.name);
+  });
+
+  const groceryByCat = sorted.reduce<Record<string, GroceryItem[]>>((acc, item) => {
     const k = item.category ?? "Other";
     (acc[k] = acc[k] ?? []).push(item);
     return acc;
   }, {});
-  const sortedCats = Object.keys(groceryByCat).sort((a, b) => {
+  const baseCatOrder = sortMode === "az" ? Object.keys(groceryByCat).sort() : Object.keys(groceryByCat).sort((a, b) => {
     const ai = CAT_ORDER.indexOf(a); const bi = CAT_ORDER.indexOf(b);
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
+  const sortedCats = baseCatOrder;
 
-  const mealGroups = state.grocery.reduce<Record<string, GroceryItem[]>>((acc, item) => {
+  const mealGroups = sorted.reduce<Record<string, GroceryItem[]>>((acc, item) => {
     const k = item.sourceMealId ?? "__manual__";
     (acc[k] = acc[k] ?? []).push(item);
     return acc;
