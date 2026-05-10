@@ -384,6 +384,10 @@ export type Database = {
           id: string
           name: string
           qty: string | null
+          source_date: string | null
+          source_meal_id: string | null
+          source_meal_name: string | null
+          source_slot: string | null
           stock_status: string
           updated_at: string
           user_id: string
@@ -395,6 +399,10 @@ export type Database = {
           id?: string
           name: string
           qty?: string | null
+          source_date?: string | null
+          source_meal_id?: string | null
+          source_meal_name?: string | null
+          source_slot?: string | null
           stock_status?: string
           updated_at?: string
           user_id: string
@@ -406,6 +414,10 @@ export type Database = {
           id?: string
           name?: string
           qty?: string | null
+          source_date?: string | null
+          source_meal_id?: string | null
+          source_meal_name?: string | null
+          source_slot?: string | null
           stock_status?: string
           updated_at?: string
           user_id?: string
