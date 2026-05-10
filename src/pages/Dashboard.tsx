@@ -13,6 +13,7 @@ import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { MoonPhaseWidget } from "@/components/widgets/MoonPhaseWidget";
 import { TaskProgressBar } from "@/components/cards/TaskProgressBar";
 import { PomodoroPanel } from "@/components/tasks/PomodoroPanel";
+import { EditableText } from "@/components/common/EditableText";
 
 const PROMPTS = [
   "What's one small thing already going right today?",
@@ -105,13 +106,22 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-        <SectionCard title="Today's focus" subtitle="Your top three." accent="calm" action={<Link to="/today" className="text-xs text-primary hover:underline">Open today →</Link>}>
+        <SectionCard
+          title={<EditableText widgetId="dash:today-focus" field="title" fallback="Today's focus" />}
+          subtitle={<EditableText widgetId="dash:today-focus" field="subtitle" fallback="Your top three." />}
+          accent="calm"
+          action={<Link to="/today" className="text-xs text-primary hover:underline">Open today →</Link>}
+        >
           {top3.length === 0
             ? <p className="text-sm text-muted-foreground">No top three set yet. Choose three small things.</p>
             : <div className="space-y-1">{top3.map(t => <TaskRow key={t.id} task={t} dense showArea={false} />)}</div>}
         </SectionCard>
 
-        <SectionCard title="Daily rhythm" subtitle="Morning → late night." accent="warm">
+        <SectionCard
+          title={<EditableText widgetId="dash:rhythm" field="title" fallback="Daily rhythm" />}
+          subtitle={<EditableText widgetId="dash:rhythm" field="subtitle" fallback="Morning → late night." />}
+          accent="warm"
+        >
           <div className="space-y-3">
             {dayParts.map(part => {
               const items = state.tasks.filter(t => !t.done && t.dayPart === part);
@@ -128,7 +138,11 @@ export default function Dashboard() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Appointments today" accent="sage" action={<Link to="/calendar" className="text-xs text-primary hover:underline">Calendar →</Link>}>
+        <SectionCard
+          title={<EditableText widgetId="dash:appts" field="title" fallback="Appointments today" />}
+          accent="sage"
+          action={<Link to="/calendar" className="text-xs text-primary hover:underline">Calendar →</Link>}
+        >
           {apptsToday.length === 0
             ? <p className="text-sm text-muted-foreground">A clear day. Enjoy it.</p>
             : <ul className="space-y-2">
@@ -146,7 +160,11 @@ export default function Dashboard() {
             </ul>}
         </SectionCard>
 
-        <SectionCard title="Meals today" accent="warm" action={<Link to="/meals" className="text-xs text-primary hover:underline">Plan week →</Link>}>
+        <SectionCard
+          title={<EditableText widgetId="dash:meals" field="title" fallback="Meals today" />}
+          accent="warm"
+          action={<Link to="/meals" className="text-xs text-primary hover:underline">Plan week →</Link>}
+        >
           {mealsToday.length === 0
             ? <p className="text-sm text-muted-foreground">Nothing planned. Cereal counts.</p>
             : <ul className="space-y-2">
@@ -162,7 +180,11 @@ export default function Dashboard() {
             </ul>}
         </SectionCard>
 
-        <SectionCard title="Caregiving check-ins" accent="calm" action={<Link to="/caregiving" className="text-xs text-primary hover:underline">Care hub →</Link>}>
+        <SectionCard
+          title={<EditableText widgetId="dash:care" field="title" fallback="Caregiving check-ins" />}
+          accent="calm"
+          action={<Link to="/caregiving" className="text-xs text-primary hover:underline">Care hub →</Link>}
+        >
           <div className="space-y-1.5">
             {state.recipients.slice(0,3).map(r => {
               const recent = state.careNotes.find(n => n.recipientId === r.id);
@@ -181,13 +203,20 @@ export default function Dashboard() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Family / kids tasks" accent="warm">
+        <SectionCard
+          title={<EditableText widgetId="dash:family" field="title" fallback="Family / kids tasks" />}
+          accent="warm"
+        >
           {familyTasks.length === 0
             ? <p className="text-sm text-muted-foreground">All caught up.</p>
             : <div className="space-y-1">{familyTasks.map(t => <TaskRow key={t.id} task={t} dense showArea={false} />)}</div>}
         </SectionCard>
 
-        <SectionCard title="Home reset progress" accent="sage" action={<Link to="/home-reset" className="text-xs text-primary hover:underline">Open →</Link>}>
+        <SectionCard
+          title={<EditableText widgetId="dash:reset" field="title" fallback="Home reset progress" />}
+          accent="sage"
+          action={<Link to="/home-reset" className="text-xs text-primary hover:underline">Open →</Link>}
+        >
           <div className="mb-3 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">{resetDone} of {reset.length} this week</span>
             <Sparkle className="h-4 w-4 text-secondary-foreground" />
@@ -203,7 +232,11 @@ export default function Dashboard() {
           </ul>
         </SectionCard>
 
-        <SectionCard title="Habit snapshot" accent="calm" action={<Link to="/habits" className="text-xs text-primary hover:underline">All habits →</Link>}>
+        <SectionCard
+          title={<EditableText widgetId="dash:habits" field="title" fallback="Habit snapshot" />}
+          accent="calm"
+          action={<Link to="/habits" className="text-xs text-primary hover:underline">All habits →</Link>}
+        >
           <div className="mb-3 text-sm text-muted-foreground">{habitsDone} of {habitToday.length} done today</div>
           <ul className="space-y-1.5">
             {habitToday.map(h => (
@@ -218,7 +251,10 @@ export default function Dashboard() {
           </ul>
         </SectionCard>
 
-        <SectionCard title="Upcoming birthdays" accent="warm">
+        <SectionCard
+          title={<EditableText widgetId="dash:bdays" field="title" fallback="Upcoming birthdays" />}
+          accent="warm"
+        >
           {upcomingBdays.length === 0
             ? <p className="text-sm text-muted-foreground">No birthdays coming up.</p>
             : <ul className="space-y-2">
@@ -234,7 +270,10 @@ export default function Dashboard() {
             </ul>}
         </SectionCard>
 
-        <SectionCard title="Upcoming holidays" accent="sage">
+        <SectionCard
+          title={<EditableText widgetId="dash:holidays" field="title" fallback="Upcoming holidays" />}
+          accent="sage"
+        >
           {upcomingHols.length === 0
             ? <p className="text-sm text-muted-foreground">Nothing on the horizon.</p>
             : <ul className="space-y-2">
@@ -250,7 +289,11 @@ export default function Dashboard() {
             </ul>}
         </SectionCard>
 
-        <SectionCard title="Weekly reset checklist" accent="calm" action={<Link to="/week" className="text-xs text-primary hover:underline">Week view →</Link>}>
+        <SectionCard
+          title={<EditableText widgetId="dash:weekly-reset" field="title" fallback="Weekly reset checklist" />}
+          accent="calm"
+          action={<Link to="/week" className="text-xs text-primary hover:underline">Week view →</Link>}
+        >
           <ul className="space-y-1">
             {(state.resetTemplates[0]?.items ?? []).slice(0, 6).map((it, i) => (
               <li key={i} className="flex items-center gap-2 text-sm"><ListChecks className="h-3.5 w-3.5 text-muted-foreground" />{it}</li>
@@ -258,7 +301,11 @@ export default function Dashboard() {
           </ul>
         </SectionCard>
 
-        <SectionCard title="This month's goals" accent="warm" action={<Link to="/goals" className="text-xs text-primary hover:underline">Goals →</Link>}>
+        <SectionCard
+          title={<EditableText widgetId="dash:goals" field="title" fallback="This month's goals" />}
+          accent="warm"
+          action={<Link to="/goals" className="text-xs text-primary hover:underline">Goals →</Link>}
+        >
           <div className="space-y-3">
             {goalsActive.map(g => (
               <div key={g.id}>
@@ -272,7 +319,11 @@ export default function Dashboard() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Idea inbox" accent="sage" action={<Link to="/ideas" className="text-xs text-primary hover:underline">All ideas →</Link>}>
+        <SectionCard
+          title={<EditableText widgetId="dash:ideas" field="title" fallback="Idea inbox" />}
+          accent="sage"
+          action={<Link to="/ideas" className="text-xs text-primary hover:underline">All ideas →</Link>}
+        >
           {ideas.length === 0
             ? <p className="text-sm text-muted-foreground">Empty inbox. Noted.</p>
             : <ul className="space-y-1.5">
@@ -285,14 +336,22 @@ export default function Dashboard() {
             </ul>}
         </SectionCard>
 
-        <SectionCard title="Journal prompt" subtitle="Just one line if that's what you have." accent="warm" action={<Link to="/journal" className="text-xs text-primary hover:underline">Journal →</Link>}>
+        <SectionCard
+          title={<EditableText widgetId="dash:journal" field="title" fallback="Journal prompt" />}
+          subtitle={<EditableText widgetId="dash:journal" field="subtitle" fallback="Just one line if that's what you have." />}
+          accent="warm"
+          action={<Link to="/journal" className="text-xs text-primary hover:underline">Journal →</Link>}
+        >
           <div className="rounded-xl bg-gradient-to-br from-accent-soft to-primary-soft p-4">
             <NotebookPen className="mb-2 h-4 w-4 text-foreground/70" />
             <p className="font-display text-base">{prompt}</p>
           </div>
         </SectionCard>
 
-        <SectionCard title="A soft moment" accent="calm">
+        <SectionCard
+          title={<EditableText widgetId="dash:soft" field="title" fallback="A soft moment" />}
+          accent="calm"
+        >
           <p className="font-display text-base leading-relaxed text-foreground/80">
             "You are not behind. You are exactly here, doing one thing at a time, holding more than anyone sees."
           </p>

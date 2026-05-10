@@ -786,6 +786,7 @@ export type Database = {
           created_at: string
           focus_seconds: number
           id: string
+          meal_name: string | null
           task_id: string | null
           task_title: string | null
           template_id: string | null
@@ -797,6 +798,7 @@ export type Database = {
           created_at?: string
           focus_seconds?: number
           id?: string
+          meal_name?: string | null
           task_id?: string | null
           task_title?: string | null
           template_id?: string | null
@@ -808,6 +810,7 @@ export type Database = {
           created_at?: string
           focus_seconds?: number
           id?: string
+          meal_name?: string | null
           task_id?: string | null
           task_title?: string | null
           template_id?: string | null
@@ -858,6 +861,39 @@ export type Database = {
           theme?: string
           time_zone?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      routines: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          notes: string | null
+          person_name: string
+          slot: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          person_name: string
+          slot: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          person_name?: string
+          slot?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -984,6 +1020,36 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      widget_text_overrides: {
+        Row: {
+          created_at: string
+          field: string
+          id: string
+          updated_at: string
+          user_id: string
+          value: string
+          widget_id: string
+        }
+        Insert: {
+          created_at?: string
+          field: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          value: string
+          widget_id: string
+        }
+        Update: {
+          created_at?: string
+          field?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          value?: string
+          widget_id?: string
         }
         Relationships: []
       }
