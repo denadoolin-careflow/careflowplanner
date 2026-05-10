@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { startOfWeek, addDays, format } from "date-fns";
 import { Sparkles, Settings2, Trash2, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { planWeek } from "@/lib/meal-ai";
+import { planWeek, fillWeekFromFavorites } from "@/lib/meal-ai";
 import { MealPrefsDialog } from "@/components/meals/MealPrefsDialog";
 import { RecipeDrawer } from "@/components/meals/RecipeDrawer";
 import { PantryPanel } from "@/components/meals/PantryPanel";
@@ -15,7 +15,7 @@ import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
 import type { Meal } from "@/lib/types";
 
 export default function Meals() {
-  const { state, addMeal, deleteMeal, addGrocery, toggleGrocery, deleteGrocery, reloadAll } = useStore();
+  const { state, user, addMeal, deleteMeal, addGrocery, toggleGrocery, deleteGrocery, reloadAll } = useStore();
   const start = startOfWeek(new Date(), { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const slots = ["Breakfast","Lunch","Dinner","Snack"] as const;
@@ -23,6 +23,7 @@ export default function Meals() {
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [activeMeal, setActiveMeal] = useState<Meal | null>(null);
   const [planning, setPlanning] = useState(false);
+  const [filling, setFilling] = useState(false);
 
   const onPlanWeek = async () => {
     setPlanning(true);
@@ -36,6 +37,22 @@ export default function Meals() {
     } finally {
       setPlanning(false);
     }
+  };
+
+  const onFillFromFavorites = async (replace: boolean) => {
+    if (!user?.id) return;
+    setFilling(true);
+    try {
+      const startISO = start.toISOString().slice(0, 10);
+      const res = await fillWeekFromFavorites(user.id, startISO, {
+        replace, onlyEmpty: !replace, addGroceries: true,
+      });
+      await reloadAll();
+      if (res.filled === 0) toast.info("No favorites yet — add a recipe first.");
+      else toast.success(`Filled ${res.filled} slots from favorites.`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't fill from favorites");
+    } finally { setFilling(false); }
   };
 
   // Group grocery items by category
@@ -60,6 +77,9 @@ export default function Meals() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="rounded-full" onClick={() => setPrefsOpen(true)}>
             <Settings2 className="mr-2 h-4 w-4" />Preferences
+          </Button>
+          <Button variant="outline" className="rounded-full" onClick={() => onFillFromFavorites(false)} disabled={filling}>
+            {filling ? "Filling…" : "Fill from favorites"}
           </Button>
           <Button onClick={onPlanWeek} disabled={planning} className="rounded-full">
             <Sparkles className={`mr-2 h-4 w-4 ${planning ? "animate-pulse" : ""}`} />
