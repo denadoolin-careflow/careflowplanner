@@ -5,21 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Trash2, Copy, Download, Pencil, Check, X, BookmarkPlus } from "lucide-react";
+import { Trash2, Copy, Download, Pencil, Check, X, BookmarkPlus, Utensils, ListTree } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 import { SavedListsDialog } from "./SavedListsDialog";
+import type { GroceryItem } from "@/lib/types";
 
 const CAT_ORDER = ["Produce", "Protein", "Dairy", "Bakery", "Frozen", "Pantry", "Other"];
 
 export function GroceryList() {
-  const { state, addGrocery, toggleGrocery, deleteGrocery, setGroceryStock, updateGroceryItem } = useStore();
+  const { state, user, addGrocery, toggleGrocery, deleteGrocery, setGroceryStock, updateGroceryItem, reloadAll } = useStore();
   const [g, setG] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editQty, setEditQty] = useState("");
   const [savedOpen, setSavedOpen] = useState(false);
+  const [groupBy, setGroupBy] = useState<"category" | "meal">("category");
+  const [highlightMealId, setHighlightMealId] = useState<string | null>(null);
 
-  const groceryByCat = state.grocery.reduce<Record<string, typeof state.grocery>>((acc, item) => {
+  const groceryByCat = state.grocery.reduce<Record<string, GroceryItem[]>>((acc, item) => {
     const k = item.category ?? "Other";
     (acc[k] = acc[k] ?? []).push(item);
     return acc;
@@ -27,6 +32,19 @@ export function GroceryList() {
   const sortedCats = Object.keys(groceryByCat).sort((a, b) => {
     const ai = CAT_ORDER.indexOf(a); const bi = CAT_ORDER.indexOf(b);
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
+  const mealGroups = state.grocery.reduce<Record<string, GroceryItem[]>>((acc, item) => {
+    const k = item.sourceMealId ?? "__manual__";
+    (acc[k] = acc[k] ?? []).push(item);
+    return acc;
+  }, {});
+  const mealGroupKeys = Object.keys(mealGroups).sort((a, b) => {
+    if (a === "__manual__") return 1;
+    if (b === "__manual__") return -1;
+    const da = mealGroups[a][0]?.sourceDate ?? "";
+    const db = mealGroups[b][0]?.sourceDate ?? "";
+    return da.localeCompare(db);
   });
 
   const buildText = () => {
@@ -37,7 +55,8 @@ export function GroceryList() {
         const tick = item.bought ? "[x]" : "[ ]";
         const stock = item.stockStatus === "in" ? " (in stock)" : "";
         const qty = item.qty ? ` — ${item.qty}` : "";
-        lines.push(`- ${tick} ${item.name}${qty}${stock}`);
+        const src = item.sourceMealName ? ` ← ${item.sourceMealName}` : "";
+        lines.push(`- ${tick} ${item.name}${qty}${stock}${src}`);
       });
       lines.push("");
     });
@@ -45,36 +64,26 @@ export function GroceryList() {
   };
 
   const onCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(buildText());
-      toast.success("Grocery list copied.");
-    } catch {
-      toast.error("Couldn't copy");
-    }
+    try { await navigator.clipboard.writeText(buildText()); toast.success("Grocery list copied."); }
+    catch { toast.error("Couldn't copy"); }
   };
-
-  const onExportTxt = () => {
-    const blob = new Blob([buildText()], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `grocery-${new Date().toISOString().slice(0,10)}.txt`;
-    a.click(); URL.revokeObjectURL(url);
-  };
-
+  const onExportTxt = () => download(buildText(), "txt", "text/plain");
   const onExportCsv = () => {
-    const rows = [["Category","Item","Qty","Bought","Stock"]];
-    sortedCats.forEach(cat => {
-      groceryByCat[cat].forEach(item => {
-        rows.push([cat, item.name, item.qty ?? "", item.bought ? "yes" : "no", item.stockStatus === "in" ? "in stock" : "out of stock"]);
-      });
-    });
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const rows = [["Category","Item","Qty","Bought","Stock","From meal","Slot","Date"]];
+    sortedCats.forEach(cat => groceryByCat[cat].forEach(item => {
+      rows.push([cat, item.name, item.qty ?? "", item.bought ? "yes" : "no",
+        item.stockStatus === "in" ? "in stock" : "out of stock",
+        item.sourceMealName ?? "", item.sourceSlot ?? "", item.sourceDate ?? ""]);
+    }));
+    download(rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n"), "csv", "text/csv");
+  };
+  function download(content: string, ext: string, mime: string) {
+    const blob = new Blob([content], { type: `${mime};charset=utf-8` });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `grocery-${new Date().toISOString().slice(0,10)}.csv`;
+    a.href = url; a.download = `grocery-${new Date().toISOString().slice(0,10)}.${ext}`;
     a.click(); URL.revokeObjectURL(url);
-  };
+  }
 
   const startEdit = (id: string, name: string, qty?: string) => {
     setEditing(id); setEditName(name); setEditQty(qty ?? "");
@@ -83,6 +92,64 @@ export function GroceryList() {
     if (!editName.trim()) { setEditing(null); return; }
     await updateGroceryItem(id, { name: editName.trim(), qty: editQty.trim() || null });
     setEditing(null);
+  };
+
+  const removeByMeal = async (mealId: string | null) => {
+    if (!user) return;
+    const items = mealId ? mealGroups[mealId] : mealGroups["__manual__"];
+    if (!items?.length) return;
+    const label = mealId ? items[0].sourceMealName : "manually added";
+    if (!confirm(`Remove ${items.length} item${items.length === 1 ? "" : "s"} from ${label}?`)) return;
+    await supabase.from("grocery_items").delete().in("id", items.map(i => i.id));
+    await reloadAll();
+    toast.success(`Removed ${items.length} item${items.length === 1 ? "" : "s"}.`);
+  };
+
+  const renderItem = (item: GroceryItem) => {
+    const isEditing = editing === item.id;
+    const inStock = item.stockStatus === "in";
+    const dim = highlightMealId && highlightMealId !== item.sourceMealId;
+    return (
+      <li key={item.id} className={`group flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-muted/40 ${dim ? "opacity-30" : ""}`}>
+        <Checkbox checked={item.bought} onCheckedChange={() => toggleGrocery(item.id)} />
+        {isEditing ? (
+          <div className="flex flex-1 items-center gap-1.5">
+            <Input value={editName} onChange={e => setEditName(e.target.value)} className="h-7 text-sm" autoFocus />
+            <Input value={editQty} onChange={e => setEditQty(e.target.value)} placeholder="qty" className="h-7 w-20 text-sm" />
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => saveEdit(item.id)}><Check className="h-3.5 w-3.5" /></Button>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditing(null)}><X className="h-3.5 w-3.5" /></Button>
+          </div>
+        ) : (
+          <>
+            <span className={item.bought ? "text-muted-foreground line-through" : ""}>{item.name}</span>
+            {item.qty && <span className="text-[11px] text-muted-foreground">· {item.qty}</span>}
+            <button onClick={() => setGroceryStock(item.id, inStock ? "out" : "in")} title={inStock ? "Mark out of stock" : "Mark in stock"}>
+              <Badge variant={inStock ? "secondary" : "outline"}
+                className={`ml-1 cursor-pointer rounded-full text-[10px] ${inStock ? "bg-primary/15 text-primary hover:bg-primary/25" : "text-muted-foreground hover:bg-muted"}`}>
+                {inStock ? "In stock" : "Out"}
+              </Badge>
+            </button>
+            {item.sourceMealName && groupBy === "category" && (
+              <button
+                onMouseEnter={() => setHighlightMealId(item.sourceMealId ?? null)}
+                onMouseLeave={() => setHighlightMealId(null)}
+                onClick={() => { setGroupBy("meal"); setHighlightMealId(item.sourceMealId ?? null); }}
+                title={`From ${item.sourceMealName}${item.sourceSlot ? " · " + item.sourceSlot : ""}${item.sourceDate ? " · " + item.sourceDate : ""}`}
+                className="ml-1"
+              >
+                <Badge variant="outline" className="rounded-full text-[10px] text-muted-foreground hover:bg-muted">
+                  <Utensils className="mr-0.5 h-2.5 w-2.5" />{item.sourceMealName}
+                </Badge>
+              </button>
+            )}
+            <div className="ml-auto flex items-center gap-1 opacity-0 transition group-hover:opacity-70">
+              <button onClick={() => startEdit(item.id, item.name, item.qty)} title="Edit"><Pencil className="h-3 w-3" /></button>
+              <button onClick={() => deleteGrocery(item.id)} title="Delete"><Trash2 className="h-3 w-3" /></button>
+            </div>
+          </>
+        )}
+      </li>
+    );
   };
 
   return (
@@ -116,54 +183,58 @@ export function GroceryList() {
 
       <SavedListsDialog open={savedOpen} onOpenChange={setSavedOpen} />
 
+      {state.grocery.length > 0 && (
+        <div className="mb-3 inline-flex rounded-full border border-border/60 p-0.5 text-xs">
+          <button onClick={() => setGroupBy("category")}
+            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 transition ${groupBy === "category" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}>
+            <ListTree className="h-3 w-3" />By category
+          </button>
+          <button onClick={() => setGroupBy("meal")}
+            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 transition ${groupBy === "meal" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}>
+            <Utensils className="h-3 w-3" />By meal
+          </button>
+        </div>
+      )}
+
       {state.grocery.length === 0 ? (
         <p className="text-xs text-muted-foreground">Your grocery list will fill in when you plan a week.</p>
-      ) : (
+      ) : groupBy === "category" ? (
         <div className="space-y-3">
           {sortedCats.map(cat => (
             <div key={cat}>
               <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{cat}</div>
-              <ul className="space-y-0.5">
-                {groceryByCat[cat].map(item => {
-                  const isEditing = editing === item.id;
-                  const inStock = item.stockStatus === "in";
-                  return (
-                    <li key={item.id} className="group flex items-center gap-2 rounded-lg px-2 py-1 text-sm hover:bg-muted/40">
-                      <Checkbox checked={item.bought} onCheckedChange={() => toggleGrocery(item.id)} />
-                      {isEditing ? (
-                        <div className="flex flex-1 items-center gap-1.5">
-                          <Input value={editName} onChange={e => setEditName(e.target.value)} className="h-7 text-sm" autoFocus />
-                          <Input value={editQty} onChange={e => setEditQty(e.target.value)} placeholder="qty" className="h-7 w-20 text-sm" />
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => saveEdit(item.id)}><Check className="h-3.5 w-3.5" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditing(null)}><X className="h-3.5 w-3.5" /></Button>
-                        </div>
-                      ) : (
-                        <>
-                          <span className={item.bought ? "text-muted-foreground line-through" : ""}>{item.name}</span>
-                          {item.qty && <span className="text-[11px] text-muted-foreground">· {item.qty}</span>}
-                          <button
-                            onClick={() => setGroceryStock(item.id, inStock ? "out" : "in")}
-                            title={inStock ? "Mark out of stock" : "Mark in stock"}
-                          >
-                            <Badge
-                              variant={inStock ? "secondary" : "outline"}
-                              className={`ml-1 cursor-pointer rounded-full text-[10px] ${inStock ? "bg-primary/15 text-primary hover:bg-primary/25" : "text-muted-foreground hover:bg-muted"}`}
-                            >
-                              {inStock ? "In stock" : "Out"}
-                            </Badge>
-                          </button>
-                          <div className="ml-auto flex items-center gap-1 opacity-0 transition group-hover:opacity-70">
-                            <button onClick={() => startEdit(item.id, item.name, item.qty)} title="Edit"><Pencil className="h-3 w-3" /></button>
-                            <button onClick={() => deleteGrocery(item.id)} title="Delete"><Trash2 className="h-3 w-3" /></button>
-                          </div>
-                        </>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
+              <ul className="space-y-0.5">{groceryByCat[cat].map(renderItem)}</ul>
             </div>
           ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {mealGroupKeys.map(key => {
+            const items = mealGroups[key];
+            const isManual = key === "__manual__";
+            const meal = items[0];
+            return (
+              <div key={key}>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {isManual ? "Manually added" : (
+                      <>
+                        <Utensils className="mr-1 inline h-3 w-3" />
+                        {meal.sourceMealName}
+                        {meal.sourceSlot && <span className="ml-1 normal-case tracking-normal text-muted-foreground/70">· {meal.sourceSlot}</span>}
+                        {meal.sourceDate && <span className="ml-1 normal-case tracking-normal text-muted-foreground/70">· {format(new Date(meal.sourceDate + "T00:00:00"), "EEE d")}</span>}
+                      </>
+                    )}
+                  </div>
+                  <button onClick={() => removeByMeal(isManual ? null : meal.sourceMealId!)}
+                    className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-destructive">
+                    Remove all ({items.length})
+                  </button>
+                </div>
+                <ul className="space-y-0.5">{items.map(renderItem)}</ul>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
