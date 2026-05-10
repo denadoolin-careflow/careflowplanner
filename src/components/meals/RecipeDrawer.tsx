@@ -8,10 +8,23 @@ import { regenerateMeal, saveFavorite } from "@/lib/meal-ai";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { useState } from "react";
+import { Timer } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { pomodoroTemplates } from "@/lib/pomodoro-templates";
+import { useNavigate } from "react-router-dom";
 
 export function RecipeDrawer({ meal, onClose, onChanged }: { meal: Meal | null; onClose: () => void; onChanged: () => void }) {
   const { state, user, deleteMeal, toggleGrocery, addGrocery } = useStore();
   const [loading, setLoading] = useState(false);
+  const [timerOpen, setTimerOpen] = useState(false);
+  const [timerLabel, setTimerLabel] = useState("");
+  const [focusMin, setFocusMin] = useState<number>(meal?.prepMinutes ?? 20);
+  const [breakMin, setBreakMin] = useState<number>(5);
+  const navigate = useNavigate();
 
   const regen = async () => {
     if (!meal) return;
@@ -40,6 +53,34 @@ export function RecipeDrawer({ meal, onClose, onChanged }: { meal: Meal | null; 
     if (!meal) return;
     await deleteMeal(meal.id);
     onClose();
+  };
+
+  const openTimerDialog = () => {
+    if (!meal) return;
+    setTimerLabel(`Recipe: ${meal.name}`);
+    setFocusMin(meal.prepMinutes ?? 20);
+    setBreakMin(5);
+    setTimerOpen(true);
+  };
+
+  const saveCustomTimer = () => {
+    if (!meal) return;
+    const label = timerLabel.trim() || `Recipe: ${meal.name}`;
+    const focus = Math.max(1, Math.round(focusMin));
+    const brk = Math.max(0, Math.round(breakMin));
+    const id = `meal-${meal.id}-${Date.now().toString(36)}`;
+    pomodoroTemplates.add({
+      id,
+      label,
+      description: `${focus} on · ${brk} off · from meal plan`,
+      focusSeconds: focus * 60,
+      breakSeconds: brk * 60,
+      icon: "Coffee",
+    });
+    setTimerOpen(false);
+    toast.success("Timer added — find it on the Focus page.", {
+      action: { label: "Open Focus", onClick: () => navigate("/focus") },
+    });
   };
 
   // Match an ingredient to a grocery item (prefer same source meal, then any name match).
@@ -131,6 +172,9 @@ export function RecipeDrawer({ meal, onClose, onChanged }: { meal: Meal | null; 
                 <Button onClick={fav} variant="outline" className="rounded-full">
                   <Heart className="mr-2 h-4 w-4" />Favorite
                 </Button>
+                <Button onClick={openTimerDialog} variant="outline" className="rounded-full">
+                  <Timer className="mr-2 h-4 w-4" />Add timer
+                </Button>
                 <Button onClick={remove} variant="ghost" className="rounded-full text-destructive">
                   <Trash2 className="mr-2 h-4 w-4" />Remove
                 </Button>
@@ -138,6 +182,37 @@ export function RecipeDrawer({ meal, onClose, onChanged }: { meal: Meal | null; 
             </div>
           </>
         )}
+
+        <Dialog open={timerOpen} onOpenChange={setTimerOpen}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Custom recipe timer</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Label</Label>
+                <Input value={timerLabel} onChange={(e) => setTimerLabel(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Focus (min)</Label>
+                  <Input type="number" min={1} value={focusMin} onChange={(e) => setFocusMin(Number(e.target.value) || 0)} />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Break (min)</Label>
+                  <Input type="number" min={0} value={breakMin} onChange={(e) => setBreakMin(Number(e.target.value) || 0)} />
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Saved as a custom Pomodoro template. Start it from the Focus page; sessions show up in your stats.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setTimerOpen(false)}>Cancel</Button>
+              <Button onClick={saveCustomTimer}>Save timer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </SheetContent>
     </Sheet>
   );
