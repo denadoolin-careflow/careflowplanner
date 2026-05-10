@@ -108,6 +108,8 @@ interface Ctx {
   setLowEnergyMode: (v: boolean) => Promise<void>;
   setName: (n: string) => Promise<void>;
   updateProfile: (patch: { name?: string; planning_style?: string; time_zone?: string; theme?: string }) => Promise<void>;
+
+  reloadAll: () => Promise<void>;
 }
 
 const StoreCtx = createContext<Ctx | null>(null);
