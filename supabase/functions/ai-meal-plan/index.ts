@@ -223,12 +223,12 @@ Generate meals and a consolidated grocery list grouped by category.`;
         .eq("bought", false);
       const have = new Set((existing ?? []).map((g: any) => g.name.toLowerCase().trim()));
       const fresh = plan.grocery
-        .filter((g) => g.name && !have.has(g.name.toLowerCase().trim()))
-        .map((g) => ({
+        .filter((g: any) => g && typeof g.name === "string" && g.name.trim() && !have.has(g.name.toLowerCase().trim()))
+        .map((g: any) => ({
           user_id: userId,
-          name: g.name,
-          qty: g.qty ?? null,
-          category: g.category ?? "Other",
+          name: String(g.name).slice(0, 120),
+          qty: typeof g.qty === "string" ? g.qty.slice(0, 60) : null,
+          category: typeof g.category === "string" ? g.category : "Other",
           bought: false,
         }));
       if (fresh.length) {
