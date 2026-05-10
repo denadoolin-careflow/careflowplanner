@@ -76,7 +76,7 @@ export interface Meal {
   tags?: string[];
 }
 
-export interface GroceryItem { id: string; name: string; qty?: string; bought: boolean; category?: string; }
+export interface GroceryItem { id: string; name: string; qty?: string; bought: boolean; category?: string; stockStatus: "in" | "out"; }
 
 export interface Appointment {
   id: string;

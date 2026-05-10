@@ -2,24 +2,22 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { startOfWeek, addDays, format } from "date-fns";
-import { Sparkles, Settings2, Trash2, Clock } from "lucide-react";
+import { Sparkles, Settings2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { planWeek, fillWeekFromFavorites } from "@/lib/meal-ai";
 import { MealPrefsDialog } from "@/components/meals/MealPrefsDialog";
 import { RecipeDrawer } from "@/components/meals/RecipeDrawer";
 import { PantryPanel } from "@/components/meals/PantryPanel";
 import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
+import { GroceryList } from "@/components/meals/GroceryList";
 import type { Meal } from "@/lib/types";
 
 export default function Meals() {
-  const { state, user, addMeal, deleteMeal, addGrocery, toggleGrocery, deleteGrocery, reloadAll } = useStore();
+  const { state, user, addMeal, deleteMeal, reloadAll } = useStore();
   const start = startOfWeek(new Date(), { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const slots = ["Breakfast","Lunch","Dinner","Snack"] as const;
-  const [g, setG] = useState("");
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [activeMeal, setActiveMeal] = useState<Meal | null>(null);
   const [planning, setPlanning] = useState(false);
@@ -54,18 +52,6 @@ export default function Meals() {
       toast.error(e?.message ?? "Couldn't fill from favorites");
     } finally { setFilling(false); }
   };
-
-  // Group grocery items by category
-  const groceryByCat = state.grocery.reduce<Record<string, typeof state.grocery>>((acc, item) => {
-    const k = item.category ?? "Other";
-    (acc[k] = acc[k] ?? []).push(item);
-    return acc;
-  }, {});
-  const catOrder = ["Produce", "Protein", "Dairy", "Bakery", "Frozen", "Pantry", "Other"];
-  const sortedCats = Object.keys(groceryByCat).sort((a, b) => {
-    const ai = catOrder.indexOf(a); const bi = catOrder.indexOf(b);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
 
   return (
     <div className="space-y-6">
@@ -133,31 +119,7 @@ export default function Meals() {
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <SectionCard title="Grocery list" subtitle="Auto-updated by your meal plan" accent="sage">
-          <form className="mb-3 flex gap-2" onSubmit={e => { e.preventDefault(); if (!g.trim()) return; addGrocery(g); setG(""); }}>
-            <Input placeholder="Add item…" value={g} onChange={e => setG(e.target.value)} />
-            <Button type="submit">Add</Button>
-          </form>
-          {state.grocery.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Your grocery list will fill in when you plan a week.</p>
-          ) : (
-            <div className="space-y-3">
-              {sortedCats.map(cat => (
-                <div key={cat}>
-                  <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{cat}</div>
-                  <ul className="space-y-0.5">
-                    {groceryByCat[cat].map(item => (
-                      <li key={item.id} className="group flex items-center gap-2 rounded-lg px-2 py-1 text-sm hover:bg-muted/40">
-                        <Checkbox checked={item.bought} onCheckedChange={() => toggleGrocery(item.id)} />
-                        <span className={item.bought ? "text-muted-foreground line-through" : ""}>{item.name}</span>
-                        {item.qty && <span className="text-[11px] text-muted-foreground">· {item.qty}</span>}
-                        <button onClick={() => deleteGrocery(item.id)} className="ml-auto opacity-0 transition group-hover:opacity-60"><Trash2 className="h-3 w-3" /></button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
+          <GroceryList />
         </SectionCard>
 
         <SectionCard title="Saved favorites" accent="warm">

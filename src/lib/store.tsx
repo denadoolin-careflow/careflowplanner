@@ -48,7 +48,7 @@ const mealFrom = (r: any): Meal => ({
   steps: r.steps ?? [],
   tags: r.tags ?? [],
 });
-const groceryFrom = (r: any): GroceryItem => ({ id: r.id, name: r.name, qty: r.qty ?? undefined, bought: r.bought, category: r.category ?? undefined });
+const groceryFrom = (r: any): GroceryItem => ({ id: r.id, name: r.name, qty: r.qty ?? undefined, bought: r.bought, category: r.category ?? undefined, stockStatus: (r.stock_status as "in" | "out") ?? "out" });
 const apptFrom = (r: any): Appointment => ({ id: r.id, date: r.date, time: r.time ?? undefined, title: r.title, with: r.with_name ?? undefined, location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined });
 const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined });
 const holidayFrom = (r: any): Holiday => ({ id: r.id, name: r.name, date: r.date, notes: r.notes ?? undefined });
@@ -87,6 +87,8 @@ interface Ctx {
   addGrocery: (name: string, category?: string) => Promise<void>;
   toggleGrocery: (id: string) => Promise<void>;
   deleteGrocery: (id: string) => Promise<void>;
+  setGroceryStock: (id: string, status: "in" | "out") => Promise<void>;
+  updateGroceryItem: (id: string, patch: { name?: string; qty?: string | null; category?: string | null }) => Promise<void>;
 
   addAppointment: (a: Partial<Appointment> & { title: string; date: string }) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
@@ -323,6 +325,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteGrocery: async (id) => {
       setState(s => ({ ...s, grocery: s.grocery.filter(g => g.id !== id) }));
       await supabase.from("grocery_items").delete().eq("id", id);
+    },
+    setGroceryStock: async (id, status) => {
+      setState(s => ({ ...s, grocery: s.grocery.map(g => g.id === id ? { ...g, stockStatus: status } : g) }));
+      await supabase.from("grocery_items").update({ stock_status: status }).eq("id", id);
+    },
+    updateGroceryItem: async (id, patch) => {
+      setState(s => ({ ...s, grocery: s.grocery.map(g => g.id === id ? { ...g, ...(patch.name !== undefined ? { name: patch.name } : {}), ...(patch.qty !== undefined ? { qty: patch.qty ?? undefined } : {}), ...(patch.category !== undefined ? { category: patch.category ?? undefined } : {}) } : g) }));
+      const dbPatch: any = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.qty !== undefined) dbPatch.qty = patch.qty;
+      if (patch.category !== undefined) dbPatch.category = patch.category;
+      await supabase.from("grocery_items").update(dbPatch).eq("id", id);
     },
 
     addAppointment: async (a) => {
