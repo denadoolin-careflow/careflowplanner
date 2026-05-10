@@ -412,6 +412,36 @@ export type Database = {
         }
         Relationships: []
       }
+      grocery_lists: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          name: string
+          updated_at: string
+          user_id: string
+          week_start: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          name: string
+          updated_at?: string
+          user_id: string
+          week_start?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          name?: string
+          updated_at?: string
+          user_id?: string
+          week_start?: string | null
+        }
+        Relationships: []
+      }
       habit_logs: {
         Row: {
           created_at: string
