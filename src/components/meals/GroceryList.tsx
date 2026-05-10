@@ -209,6 +209,35 @@ export function GroceryList() {
       <SavedListsDialog open={savedOpen} onOpenChange={setSavedOpen} />
 
       {state.grocery.length > 0 && (
+        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="text-muted-foreground">Show:</span>
+          {([
+            { v: "all",  label: `All (${state.grocery.length})` },
+            { v: "out",  label: `Out (${state.grocery.filter(i => i.stockStatus === "out").length})` },
+            { v: "low",  label: `Low (${state.grocery.filter(i => i.stockStatus === "low").length})` },
+            { v: "in",   label: `In stock (${state.grocery.filter(i => i.stockStatus === "in").length})` },
+          ] as const).map(opt => (
+            <button key={opt.v} onClick={() => setFilter(opt.v)}
+              className={`rounded-full border px-2.5 py-0.5 transition ${filter === opt.v ? "border-primary/40 bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted/40"}`}>
+              {opt.label}
+            </button>
+          ))}
+          <span className="ml-2 text-muted-foreground"><ArrowDownAZ className="inline h-3 w-3" /> Sort:</span>
+          {([
+            { v: "default",   label: "Default" },
+            { v: "low_first", label: "Low first" },
+            { v: "out_first", label: "Out first" },
+            { v: "az",        label: "A–Z" },
+          ] as const).map(opt => (
+            <button key={opt.v} onClick={() => setSortMode(opt.v)}
+              className={`rounded-full border px-2.5 py-0.5 transition ${sortMode === opt.v ? "border-primary/40 bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted/40"}`}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {state.grocery.length > 0 && (
         <div className="mb-3 inline-flex rounded-full border border-border/60 p-0.5 text-xs">
           <button onClick={() => setGroupBy("category")}
             className={`inline-flex items-center gap-1 rounded-full px-3 py-1 transition ${groupBy === "category" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}>
