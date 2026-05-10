@@ -1,4 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, RefreshCw, Trash2, Clock } from "lucide-react";
@@ -9,7 +10,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 
 export function RecipeDrawer({ meal, onClose, onChanged }: { meal: Meal | null; onClose: () => void; onChanged: () => void }) {
-  const { user, deleteMeal } = useStore();
+  const { state, user, deleteMeal, toggleGrocery, addGrocery } = useStore();
   const [loading, setLoading] = useState(false);
 
   const regen = async () => {
@@ -41,6 +42,25 @@ export function RecipeDrawer({ meal, onClose, onChanged }: { meal: Meal | null; 
     onClose();
   };
 
+  // Match an ingredient to a grocery item (prefer same source meal, then any name match).
+  const norm = (s: string) => s.toLowerCase().trim().replace(/\s+/g, " ");
+  const findMatch = (ingredient: string) => {
+    if (!meal) return undefined;
+    const key = norm(ingredient);
+    const sameMeal = state.grocery.find(g => g.sourceMealId === meal.id && norm(g.name) === key);
+    if (sameMeal) return sameMeal;
+    return state.grocery.find(g => norm(g.name) === key
+      || norm(g.name).includes(key) || key.includes(norm(g.name)));
+  };
+
+  const onToggleIngredient = async (ingredient: string) => {
+    const match = findMatch(ingredient);
+    if (match) { await toggleGrocery(match.id); return; }
+    // No grocery item — add one as already bought (so it shows as completed).
+    await addGrocery(ingredient.slice(0, 120));
+    toast.success("Added to grocery list");
+  };
+
   return (
     <Sheet open={!!meal} onOpenChange={(v) => !v && onClose()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-md">
@@ -57,12 +77,36 @@ export function RecipeDrawer({ meal, onClose, onChanged }: { meal: Meal | null; 
 
             <div className="mt-4 space-y-5">
               <section>
-                <h3 className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Ingredients</h3>
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-xs uppercase tracking-wider text-muted-foreground">Ingredients</h3>
+                  <span className="text-[10px] text-muted-foreground">Tap to mark bought</span>
+                </div>
                 {(meal.ingredients ?? []).length === 0 ? (
                   <p className="text-sm text-muted-foreground">No ingredients saved yet.</p>
                 ) : (
                   <ul className="space-y-1 text-sm">
-                    {(meal.ingredients ?? []).map((i, idx) => <li key={idx} className="rounded-lg bg-muted/40 px-3 py-1.5">{i}</li>)}
+                    {(meal.ingredients ?? []).map((i, idx) => {
+                      const match = findMatch(i);
+                      const checked = !!match?.bought;
+                      const inStock = match?.stockStatus === "in";
+                      return (
+                        <li key={idx} className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-1.5">
+                          <Checkbox checked={checked} onCheckedChange={() => onToggleIngredient(i)} />
+                          <span className={checked ? "text-muted-foreground line-through" : ""}>{i}</span>
+                          {match ? (
+                            inStock ? (
+                              <Badge variant="secondary" className="ml-auto rounded-full bg-primary/15 text-[10px] text-primary">In stock</Badge>
+                            ) : match.stockStatus === "low" ? (
+                              <Badge variant="secondary" className="ml-auto rounded-full bg-amber-500/20 text-[10px] text-amber-300">Low</Badge>
+                            ) : (
+                              <Badge variant="outline" className="ml-auto rounded-full text-[10px] text-muted-foreground">On list</Badge>
+                            )
+                          ) : (
+                            <Badge variant="outline" className="ml-auto rounded-full text-[10px] text-muted-foreground/60">Not on list</Badge>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </section>
