@@ -12,14 +12,14 @@ import { MealPrefsDialog } from "@/components/meals/MealPrefsDialog";
 import { RecipeDrawer } from "@/components/meals/RecipeDrawer";
 import { PantryPanel } from "@/components/meals/PantryPanel";
 import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
+import { GroceryList } from "@/components/meals/GroceryList";
 import type { Meal } from "@/lib/types";
 
 export default function Meals() {
-  const { state, user, addMeal, deleteMeal, addGrocery, toggleGrocery, deleteGrocery, reloadAll } = useStore();
+  const { state, user, addMeal, deleteMeal, reloadAll } = useStore();
   const start = startOfWeek(new Date(), { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const slots = ["Breakfast","Lunch","Dinner","Snack"] as const;
-  const [g, setG] = useState("");
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [activeMeal, setActiveMeal] = useState<Meal | null>(null);
   const [planning, setPlanning] = useState(false);
@@ -54,18 +54,6 @@ export default function Meals() {
       toast.error(e?.message ?? "Couldn't fill from favorites");
     } finally { setFilling(false); }
   };
-
-  // Group grocery items by category
-  const groceryByCat = state.grocery.reduce<Record<string, typeof state.grocery>>((acc, item) => {
-    const k = item.category ?? "Other";
-    (acc[k] = acc[k] ?? []).push(item);
-    return acc;
-  }, {});
-  const catOrder = ["Produce", "Protein", "Dairy", "Bakery", "Frozen", "Pantry", "Other"];
-  const sortedCats = Object.keys(groceryByCat).sort((a, b) => {
-    const ai = catOrder.indexOf(a); const bi = catOrder.indexOf(b);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
 
   return (
     <div className="space-y-6">
