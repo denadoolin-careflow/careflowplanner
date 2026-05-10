@@ -139,9 +139,9 @@ export default function CalendarPage() {
   );
 }
 
-type EventItem = { kind: "appt" | "bday" | "hol"; label: string; time?: string };
+type EventItem = { kind: "appt" | "bday" | "hol" | "gcal"; label: string; time?: string; color?: string };
 type EventsFn = (k: string) => EventItem[];
-type ColorFn = (k: "appt"|"bday"|"hol") => string;
+type ColorFn = (k: "appt"|"bday"|"hol"|"gcal") => string;
 
 function MonthView({ cursor, eventsOn, colorOf }: { cursor: Date; eventsOn: EventsFn; colorOf: ColorFn }) {
   const ms = startOfMonth(cursor);
