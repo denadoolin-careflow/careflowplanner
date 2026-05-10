@@ -2,11 +2,13 @@ import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { ThemeToggle } from "./ThemeToggle";
+import { ThemePicker } from "./ThemePicker";
 import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
 import { useStore } from "@/lib/store";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { NAV } from "@/lib/nav";
+import { RoutinesStrip } from "@/components/routines/RoutinesStrip";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
@@ -28,9 +30,11 @@ export function AppLayout() {
                 <Label htmlFor="low-energy" className="text-xs text-muted-foreground">Low-energy mode</Label>
                 <Switch id="low-energy" checked={state.settings.lowEnergyMode} onCheckedChange={setLowEnergyMode} />
               </div>
+              <ThemePicker />
               <ThemeToggle />
             </div>
           </header>
+          <RoutinesStrip />
           <main className="flex-1 px-4 pb-28 pt-6 lg:px-8 lg:pb-12 animate-fade-in">
             <div className="mx-auto w-full max-w-6xl">
               <Outlet />
