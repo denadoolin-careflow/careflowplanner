@@ -5,7 +5,7 @@ export interface SavedGroceryList {
   id: string;
   name: string;
   week_start: string | null;
-  items: Array<Pick<GroceryItem, "name" | "qty" | "category" | "bought" | "stockStatus">>;
+  items: Array<Pick<GroceryItem, "name" | "qty" | "category" | "bought" | "stockStatus" | "sourceMealId" | "sourceMealName" | "sourceSlot" | "sourceDate">>;
   created_at: string;
   updated_at: string;
 }
@@ -25,6 +25,10 @@ export async function saveCurrentList(
   const snapshot = items.map(i => ({
     name: i.name, qty: i.qty ?? null, category: i.category ?? null,
     bought: i.bought, stockStatus: i.stockStatus,
+    sourceMealId: i.sourceMealId ?? null,
+    sourceMealName: i.sourceMealName ?? null,
+    sourceSlot: i.sourceSlot ?? null,
+    sourceDate: i.sourceDate ?? null,
   }));
   const { data, error } = await supabase.from("grocery_lists" as any)
     .insert({ user_id: userId, name, week_start: weekStart ?? null, items: snapshot })
@@ -54,6 +58,10 @@ export async function loadSavedListIntoCurrent(userId: string, list: SavedGrocer
     category: i.category ?? null,
     bought: !!i.bought,
     stock_status: i.stockStatus ?? "out",
+    source_meal_id: (i as any).sourceMealId ?? null,
+    source_meal_name: (i as any).sourceMealName ?? null,
+    source_slot: (i as any).sourceSlot ?? null,
+    source_date: (i as any).sourceDate ?? null,
   }));
   if (rows.length) await supabase.from("grocery_items").insert(rows);
 }

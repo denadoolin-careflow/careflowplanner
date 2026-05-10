@@ -48,7 +48,14 @@ const mealFrom = (r: any): Meal => ({
   steps: r.steps ?? [],
   tags: r.tags ?? [],
 });
-const groceryFrom = (r: any): GroceryItem => ({ id: r.id, name: r.name, qty: r.qty ?? undefined, bought: r.bought, category: r.category ?? undefined, stockStatus: (r.stock_status as "in" | "out") ?? "out" });
+const groceryFrom = (r: any): GroceryItem => ({
+  id: r.id, name: r.name, qty: r.qty ?? undefined, bought: r.bought, category: r.category ?? undefined,
+  stockStatus: (r.stock_status as "in" | "out") ?? "out",
+  sourceMealId: r.source_meal_id ?? null,
+  sourceMealName: r.source_meal_name ?? null,
+  sourceSlot: r.source_slot ?? null,
+  sourceDate: r.source_date ?? null,
+});
 const apptFrom = (r: any): Appointment => ({ id: r.id, date: r.date, time: r.time ?? undefined, title: r.title, with: r.with_name ?? undefined, location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined });
 const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined });
 const holidayFrom = (r: any): Holiday => ({ id: r.id, name: r.name, date: r.date, notes: r.notes ?? undefined });

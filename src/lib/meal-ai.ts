@@ -135,11 +135,11 @@ export async function applyFavoriteToSlot(
   if (opts.replace) {
     await supabase.from("meals").delete().eq("user_id", userId).eq("date", date).eq("slot", slot);
   }
-  await supabase.from("meals").insert({
+  const { data: insertedMeal } = await supabase.from("meals").insert({
     user_id: userId, name: fav.name, date, slot,
     prep_minutes: fav.prep_minutes, ingredients: fav.ingredients,
     steps: fav.steps, tags: fav.tags, notes: fav.notes,
-  });
+  }).select().single();
   if (opts.addGroceries && fav.ingredients?.length) {
     // Skip pantry items
     const pantry = await supabase.from("pantry_items").select("name").eq("user_id", userId).eq("in_stock", true);
@@ -147,7 +147,13 @@ export async function applyFavoriteToSlot(
     const rows = fav.ingredients
       .map(i => String(i).trim())
       .filter(i => i && !stocked.has(i.toLowerCase()))
-      .map(name => ({ user_id: userId, name: name.slice(0, 120), category: guessCategory(name) }));
+      .map(name => ({
+        user_id: userId, name: name.slice(0, 120), category: guessCategory(name),
+        source_meal_id: insertedMeal?.id ?? null,
+        source_meal_name: fav.name,
+        source_slot: slot,
+        source_date: date,
+      }));
     if (rows.length) await supabase.from("grocery_items").insert(rows);
   }
 }

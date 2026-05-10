@@ -76,7 +76,13 @@ export interface Meal {
   tags?: string[];
 }
 
-export interface GroceryItem { id: string; name: string; qty?: string; bought: boolean; category?: string; stockStatus: "in" | "out"; }
+export interface GroceryItem {
+  id: string; name: string; qty?: string; bought: boolean; category?: string; stockStatus: "in" | "out";
+  sourceMealId?: string | null;
+  sourceMealName?: string | null;
+  sourceSlot?: string | null;
+  sourceDate?: string | null;
+}
 
 export interface Appointment {
   id: string;
