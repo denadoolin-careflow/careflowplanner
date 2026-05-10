@@ -50,7 +50,7 @@ const mealFrom = (r: any): Meal => ({
 });
 const groceryFrom = (r: any): GroceryItem => ({
   id: r.id, name: r.name, qty: r.qty ?? undefined, bought: r.bought, category: r.category ?? undefined,
-  stockStatus: (r.stock_status as "in" | "out") ?? "out",
+  stockStatus: (r.stock_status as "in" | "low" | "out") ?? "out",
   sourceMealId: r.source_meal_id ?? null,
   sourceMealName: r.source_meal_name ?? null,
   sourceSlot: r.source_slot ?? null,
@@ -94,7 +94,7 @@ interface Ctx {
   addGrocery: (name: string, category?: string) => Promise<void>;
   toggleGrocery: (id: string) => Promise<void>;
   deleteGrocery: (id: string) => Promise<void>;
-  setGroceryStock: (id: string, status: "in" | "out") => Promise<void>;
+  setGroceryStock: (id: string, status: "in" | "low" | "out") => Promise<void>;
   updateGroceryItem: (id: string, patch: { name?: string; qty?: string | null; category?: string | null }) => Promise<void>;
 
   addAppointment: (a: Partial<Appointment> & { title: string; date: string }) => Promise<void>;
