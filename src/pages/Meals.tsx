@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { startOfWeek, addDays, format } from "date-fns";
 import { Sparkles, Settings2, Trash2, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { planWeek } from "@/lib/meal-ai";
+import { planWeek, fillWeekFromFavorites } from "@/lib/meal-ai";
 import { MealPrefsDialog } from "@/components/meals/MealPrefsDialog";
 import { RecipeDrawer } from "@/components/meals/RecipeDrawer";
 import { PantryPanel } from "@/components/meals/PantryPanel";
@@ -23,6 +23,7 @@ export default function Meals() {
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [activeMeal, setActiveMeal] = useState<Meal | null>(null);
   const [planning, setPlanning] = useState(false);
+  const [filling, setFilling] = useState(false);
 
   const onPlanWeek = async () => {
     setPlanning(true);
@@ -36,6 +37,22 @@ export default function Meals() {
     } finally {
       setPlanning(false);
     }
+  };
+
+  const onFillFromFavorites = async (replace: boolean) => {
+    if (!state.user?.id) return;
+    setFilling(true);
+    try {
+      const startISO = start.toISOString().slice(0, 10);
+      const res = await fillWeekFromFavorites(state.user.id, startISO, {
+        replace, onlyEmpty: !replace, addGroceries: true,
+      });
+      await reloadAll();
+      if (res.filled === 0) toast.info("No favorites yet — add a recipe first.");
+      else toast.success(`Filled ${res.filled} slots from favorites.`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't fill from favorites");
+    } finally { setFilling(false); }
   };
 
   // Group grocery items by category
