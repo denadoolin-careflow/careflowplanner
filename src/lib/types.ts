@@ -77,7 +77,7 @@ export interface Meal {
 }
 
 export interface GroceryItem {
-  id: string; name: string; qty?: string; bought: boolean; category?: string; stockStatus: "in" | "out";
+  id: string; name: string; qty?: string; bought: boolean; category?: string; stockStatus: "in" | "low" | "out";
   sourceMealId?: string | null;
   sourceMealName?: string | null;
   sourceSlot?: string | null;
