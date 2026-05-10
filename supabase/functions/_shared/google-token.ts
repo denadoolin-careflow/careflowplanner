@@ -31,7 +31,7 @@ export async function authedUserId(req: Request): Promise<string | null> {
   const auth = req.headers.get("Authorization");
   if (!auth?.startsWith("Bearer ")) return null;
   const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: auth } } });
-  const { data, error } = await supa.auth.getClaims(auth.replace("Bearer ", ""));
-  if (error || !data?.claims) return null;
-  return data.claims.sub as string;
+  const { data, error } = await supa.auth.getUser();
+  if (error || !data?.user) return null;
+  return data.user.id;
 }
