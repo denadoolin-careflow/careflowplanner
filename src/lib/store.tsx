@@ -446,6 +446,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setState(s => ({ ...s, settings: { ...s.settings, name: patch.name ?? s.settings.name, planningStyle: patch.planning_style ?? s.settings.planningStyle, timeZone: patch.time_zone ?? s.settings.timeZone, theme: (patch.theme as any) ?? s.settings.theme } }));
       await supabase.from("profiles").update(patch).eq("id", uid);
     },
+
+    reloadAll: async () => {
+      if (!uid) return;
+      await reload(uid);
+    },
   };
 
   return <StoreCtx.Provider value={ctx}>{children}</StoreCtx.Provider>;
