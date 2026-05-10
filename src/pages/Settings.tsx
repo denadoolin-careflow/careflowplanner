@@ -13,6 +13,7 @@ import { pomodoroDefaults, usePomodoroDefaults } from "@/lib/pomodoro-defaults";
 import { pomodoroPrefs, usePomodoroPrefs } from "@/lib/pomodoro-prefs";
 import { playPomodoroChime } from "@/lib/pomodoro-chime";
 import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEditor";
+import { GoogleCalendarSection } from "@/components/calendar/GoogleCalendarSection";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -88,6 +89,14 @@ export default function Settings() {
         <p className="mt-2 text-[11px] text-muted-foreground">
           Skips dates already present. Includes federal holidays plus Valentine's, Mother's & Father's Day, Halloween, and Christmas/New Year's Eve.
         </p>
+      </SectionCard>
+
+      <SectionCard
+        title="Connected calendars"
+        subtitle="Bring Google Calendar events into your planner — read-only and color-coded."
+        accent="calm"
+      >
+        <GoogleCalendarSection />
       </SectionCard>
 
       <SectionCard
