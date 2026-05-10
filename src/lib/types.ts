@@ -70,6 +70,10 @@ export interface Meal {
   name: string;
   notes?: string;
   kidSafe?: boolean;
+  prepMinutes?: number;
+  ingredients?: string[];
+  steps?: string[];
+  tags?: string[];
 }
 
 export interface GroceryItem { id: string; name: string; qty?: string; bought: boolean; category?: string; }

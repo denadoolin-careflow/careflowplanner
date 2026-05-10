@@ -40,7 +40,14 @@ const taskTo = (t: Partial<Task>) => ({
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 const habitFrom = (r: any): Habit => ({ id: r.id, title: r.title, cadence: r.cadence, category: r.category, streak: r.streak, log: {} });
 const journalFrom = (r: any): JournalEntry => ({ id: r.id, date: r.date, type: r.type, title: r.title ?? undefined, body: r.body, mood: r.mood ?? undefined });
-const mealFrom = (r: any): Meal => ({ id: r.id, date: r.date, slot: r.slot, name: r.name, notes: r.notes ?? undefined, kidSafe: r.kid_safe });
+const mealFrom = (r: any): Meal => ({
+  id: r.id, date: r.date, slot: r.slot, name: r.name,
+  notes: r.notes ?? undefined, kidSafe: r.kid_safe,
+  prepMinutes: r.prep_minutes ?? undefined,
+  ingredients: r.ingredients ?? [],
+  steps: r.steps ?? [],
+  tags: r.tags ?? [],
+});
 const groceryFrom = (r: any): GroceryItem => ({ id: r.id, name: r.name, qty: r.qty ?? undefined, bought: r.bought, category: r.category ?? undefined });
 const apptFrom = (r: any): Appointment => ({ id: r.id, date: r.date, time: r.time ?? undefined, title: r.title, with: r.with_name ?? undefined, location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined });
 const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined });
@@ -108,6 +115,8 @@ interface Ctx {
   setLowEnergyMode: (v: boolean) => Promise<void>;
   setName: (n: string) => Promise<void>;
   updateProfile: (patch: { name?: string; planning_style?: string; time_zone?: string; theme?: string }) => Promise<void>;
+
+  reloadAll: () => Promise<void>;
 }
 
 const StoreCtx = createContext<Ctx | null>(null);
@@ -443,6 +452,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!uid) return;
       setState(s => ({ ...s, settings: { ...s.settings, name: patch.name ?? s.settings.name, planningStyle: patch.planning_style ?? s.settings.planningStyle, timeZone: patch.time_zone ?? s.settings.timeZone, theme: (patch.theme as any) ?? s.settings.theme } }));
       await supabase.from("profiles").update(patch).eq("id", uid);
+    },
+
+    reloadAll: async () => {
+      if (!uid) return;
+      await reload(uid);
     },
   };
 
