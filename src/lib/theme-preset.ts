@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
 
-export type ThemePreset = "default" | "sage" | "dusk" | "mono";
+export type ThemePreset =
+  | "default" | "sage" | "dusk" | "mono"
+  | "rose" | "ocean" | "sunset" | "forest" | "lavender";
+
+export const THEME_PRESETS: { id: ThemePreset; label: string; swatch: string }[] = [
+  { id: "default",  label: "Cream",    swatch: "hsl(258 45% 62%)" },
+  { id: "sage",     label: "Sage",     swatch: "hsl(160 40% 45%)" },
+  { id: "dusk",     label: "Dusk",     swatch: "hsl(270 50% 60%)" },
+  { id: "mono",     label: "Mono",     swatch: "hsl(0 0% 25%)"   },
+  { id: "rose",     label: "Rose",     swatch: "hsl(345 65% 58%)" },
+  { id: "ocean",    label: "Ocean",    swatch: "hsl(205 65% 50%)" },
+  { id: "sunset",   label: "Sunset",   swatch: "hsl(20 80% 58%)"  },
+  { id: "forest",   label: "Forest",   swatch: "hsl(140 35% 38%)" },
+  { id: "lavender", label: "Lavender", swatch: "hsl(255 60% 70%)" },
+];
 const KEY = "careflow:theme-preset";
 
 function read(): ThemePreset {
