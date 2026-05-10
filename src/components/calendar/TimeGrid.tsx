@@ -15,7 +15,7 @@ const PX_PER_HOUR = 56;
 const TOTAL_HOURS = HOUR_END - HOUR_START;
 const GRID_HEIGHT = TOTAL_HOURS * PX_PER_HOUR;
 
-type ApptLike = { id: string; title: string; time?: string | null; kind?: string };
+type ApptLike = { label: string; time?: string | null };
 
 interface Props {
   days: Date[];                                       // 1 day = day view, 7 = week view
@@ -95,8 +95,8 @@ export function TimeGrid({ days, appointmentsOn }: Props) {
                         <div key={`a-${idx}`}
                           className="pointer-events-none absolute left-0 right-1/2 mx-0.5 rounded-md bg-secondary-soft px-1.5 py-0.5 text-[10px] text-secondary-foreground shadow-sm"
                           style={{ top, height: PX_PER_HOUR - 4 }}
-                          title={a.title}>
-                          <span className="font-medium">{a.time?.slice(0,5)}</span> {a.title}
+                          title={a.label}>
+                          <span className="font-medium">{a.time?.slice(0,5)}</span> {a.label}
                         </div>
                       );
                     })}
