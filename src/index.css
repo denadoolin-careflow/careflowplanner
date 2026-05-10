@@ -161,6 +161,44 @@
   .gradient-warm { background: var(--gradient-warm); }
   .gradient-calm { background: var(--gradient-calm); }
   .gradient-sage { background: var(--gradient-sage); }
+  .hover-lift {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-cozy)];
+  }
+  .cozy-card { @apply transition-shadow duration-200; }
+  .cozy-card:hover { box-shadow: var(--shadow-cozy); }
+}
+
+/* Theme presets — applied via data-theme on html. Override semantic tokens. */
+:root[data-theme="sage"] {
+  --background: 145 30% 96%;
+  --primary: 160 40% 45%;
+  --primary-soft: 160 50% 92%;
+  --accent: 90 35% 78%;
+  --ring: 160 40% 45%;
+  --gradient-dawn: linear-gradient(160deg, hsl(145 30% 96%) 0%, hsl(160 40% 92%) 50%, hsl(90 40% 94%) 100%);
+}
+:root[data-theme="dusk"] {
+  --background: 240 25% 96%;
+  --primary: 270 50% 60%;
+  --primary-soft: 270 55% 93%;
+  --accent: 310 45% 82%;
+  --ring: 270 50% 60%;
+  --gradient-dawn: linear-gradient(160deg, hsl(240 30% 96%) 0%, hsl(270 45% 93%) 50%, hsl(310 50% 94%) 100%);
+}
+:root[data-theme="mono"] {
+  --background: 0 0% 98%;
+  --card: 0 0% 100%;
+  --primary: 0 0% 18%;
+  --primary-foreground: 0 0% 98%;
+  --primary-soft: 0 0% 92%;
+  --accent: 0 0% 88%;
+  --accent-foreground: 0 0% 18%;
+  --secondary: 0 0% 88%;
+  --ring: 0 0% 30%;
+  --gradient-dawn: linear-gradient(160deg, hsl(0 0% 98%) 0%, hsl(0 0% 95%) 100%);
+  --gradient-warm: linear-gradient(135deg, hsl(0 0% 97%), hsl(0 0% 93%));
+  --gradient-calm: linear-gradient(135deg, hsl(0 0% 96%), hsl(0 0% 92%));
+  --gradient-sage: linear-gradient(135deg, hsl(0 0% 95%), hsl(0 0% 98%));
 }
 
 /* Custom scrollbar */
