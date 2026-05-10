@@ -5,14 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { startOfWeek, addDays, format, parseISO } from "date-fns";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Wand2 } from "lucide-react";
+import { Wand2, CalendarHeart, Soup } from "lucide-react";
 import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
 import { Input } from "@/components/ui/input";
 import { DayWeatherMoon } from "@/components/widgets/DayWeatherMoon";
+import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 
 function DayDropZone({ id, children, isToday }: { id: string; children: React.ReactNode; isToday: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id });
@@ -68,8 +69,17 @@ export default function Week() {
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const [reflection, setReflection] = useState("");
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
+  useEffect(() => {
+    gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => { /* not connected, silent */ });
+  }, []);
 
   const tasksFor = (d: Date) => state.tasks.filter(t => t.dueDate === d.toISOString().slice(0, 10));
+  const eventsFor = (iso: string) => [
+    ...state.appointments.filter(a => a.date === iso).map(a => ({ id: a.id, title: a.title, time: a.time ?? null, kind: "appt" as const })),
+    ...gEvents.filter(g => g.date === iso).map(g => ({ id: g.id, title: g.title, time: g.time ?? null, kind: "gcal" as const })),
+  ].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+  const mealsFor = (iso: string) => state.meals.filter(m => m.date === iso);
   const reset = state.cleaning.filter(c => c.cadence === "weekly");
 
   const onDragEnd = async (e: DragEndEvent) => {
@@ -123,6 +133,49 @@ export default function Week() {
                 label={`Task for ${format(d, "EEEE")}`}
                 onAdd={(title) => addTask({ title, dueDate: iso })}
               />
+              {(() => {
+                const evs = eventsFor(iso);
+                const meals = mealsFor(iso);
+                if (evs.length === 0 && meals.length === 0) return null;
+                return (
+                  <div className="mt-3 space-y-2 border-t border-border/50 pt-2">
+                    {evs.length > 0 && (
+                      <div>
+                        <div className="mb-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          <CalendarHeart className="h-3 w-3" /> Events
+                        </div>
+                        <ul className="space-y-0.5">
+                          {evs.slice(0, 4).map(e => (
+                            <li key={`${e.kind}-${e.id}`} className={cn(
+                              "flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] transition-colors hover:bg-muted/60",
+                              e.kind === "gcal" ? "bg-muted/40" : "bg-secondary-soft/60 text-secondary-foreground"
+                            )}>
+                              {e.time && <span className="font-medium tabular-nums opacity-70">{e.time.slice(0,5)}</span>}
+                              <span className="truncate">{e.title}</span>
+                            </li>
+                          ))}
+                          {evs.length > 4 && <li className="px-1.5 text-[10px] text-muted-foreground">+{evs.length - 4} more</li>}
+                        </ul>
+                      </div>
+                    )}
+                    {meals.length > 0 && (
+                      <div>
+                        <div className="mb-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          <Soup className="h-3 w-3" /> Meals
+                        </div>
+                        <ul className="space-y-0.5">
+                          {meals.map(m => (
+                            <li key={m.id} className="flex items-center gap-1.5 rounded-md bg-warm-soft/60 px-1.5 py-0.5 text-[11px] text-warm-foreground">
+                              <span className="text-[9px] uppercase tracking-wider opacity-70">{m.slot.slice(0,3)}</span>
+                              <span className="truncate">{m.name}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </SectionCard>
           );
         })}
