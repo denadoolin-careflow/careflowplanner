@@ -207,37 +207,53 @@ Generate meals and a consolidated grocery list grouped by category.`;
         console.error("AI returned no valid meals. Raw:", JSON.stringify(plan).slice(0, 2000));
         return json({ error: "AI returned an unusable plan. Please try again." }, 502);
       }
-      const { error: mErr } = await admin.from("meals").insert(rows);
+      const { data: insertedMeals, error: mErr } = await admin.from("meals").insert(rows).select();
       if (mErr) {
         console.error("Meal insert error:", mErr.message, "First row:", JSON.stringify(rows[0]).slice(0, 500));
         return json({ error: mErr.message }, 500);
       }
-    }
 
-    if (plan.grocery?.length) {
-      // Append, dedupe by lowercased name against existing not-bought items
+      // Build grocery list from each meal's ingredients (so each item knows its source).
+      const stocked = new Set(pantryNames.map((n: string) => n.toLowerCase().trim()));
       const { data: existing } = await admin
         .from("grocery_items")
         .select("name")
         .eq("user_id", userId)
         .eq("bought", false);
-      const have = new Set((existing ?? []).map((g: any) => g.name.toLowerCase().trim()));
-      const fresh = plan.grocery
-        .filter((g: any) => g && typeof g.name === "string" && g.name.trim() && !have.has(g.name.toLowerCase().trim()))
-        .map((g: any) => ({
-          user_id: userId,
-          name: String(g.name).slice(0, 120),
-          qty: typeof g.qty === "string" ? g.qty.slice(0, 60) : null,
-          category: typeof g.category === "string" ? g.category : "Other",
-          bought: false,
-        }));
-      if (fresh.length) {
-        const { error: gErr } = await admin.from("grocery_items").insert(fresh);
+      const have = new Set((existing ?? []).map((g: any) => String(g.name).toLowerCase().trim()));
+      const aiCats: Record<string, string> = {};
+      (plan.grocery ?? []).forEach((g: any) => {
+        if (g?.name && g.category) aiCats[String(g.name).toLowerCase().trim()] = g.category;
+      });
+      const groceryRows: any[] = [];
+      for (const meal of insertedMeals ?? []) {
+        for (const ingRaw of (meal.ingredients ?? [])) {
+          const ing = String(ingRaw).trim();
+          if (!ing) continue;
+          const key = ing.toLowerCase();
+          if (stocked.has(key) || have.has(key)) continue;
+          have.add(key);
+          groceryRows.push({
+            user_id: userId,
+            name: ing.slice(0, 120),
+            qty: null,
+            category: aiCats[key] ?? guessCategory(ing),
+            bought: false,
+            source_meal_id: meal.id,
+            source_meal_name: meal.name,
+            source_slot: meal.slot,
+            source_date: meal.date,
+          });
+        }
+      }
+      if (groceryRows.length) {
+        const { error: gErr } = await admin.from("grocery_items").insert(groceryRows);
         if (gErr) return json({ error: gErr.message }, 500);
       }
+      return json({ ok: true, meals: rows.length, grocery: groceryRows.length });
     }
 
-    return json({ ok: true, meals: plan.meals.length, grocery: plan.grocery.length });
+    return json({ ok: true, meals: 0, grocery: 0 });
   } catch (e) {
     console.error("ai-meal-plan error:", e);
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
@@ -249,6 +265,17 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function guessCategory(item: string): string {
+  const s = item.toLowerCase();
+  if (/(chicken|beef|pork|turkey|fish|salmon|tuna|shrimp|tofu|egg|bacon|sausage)/.test(s)) return "Protein";
+  if (/(milk|cheese|yogurt|butter|cream)/.test(s)) return "Dairy";
+  if (/(bread|bun|tortilla|bagel|roll)/.test(s)) return "Bakery";
+  if (/(frozen|ice cream)/.test(s)) return "Frozen";
+  if (/(rice|pasta|flour|sugar|oil|sauce|bean|lentil|spice|salt|pepper|broth|stock|vinegar)/.test(s)) return "Pantry";
+  if (/(apple|banana|berry|tomato|onion|garlic|pepper|lettuce|spinach|carrot|potato|broccoli|cucumber|lemon|lime|avocado|herb|cilantro|parsley|basil)/.test(s)) return "Produce";
+  return "Other";
 }
 
 async function callAI(apiKey: string, userMsg: string, tool: any): Promise<{ args?: unknown; error?: string; status?: number }> {
