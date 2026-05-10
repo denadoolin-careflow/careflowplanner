@@ -9,8 +9,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, Trash2, RefreshCw } from "lucide-react";
+import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
+import { toast } from "sonner";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -19,13 +21,29 @@ export default function CalendarPage() {
   const [title, setTitle] = useState(""); const [date, setDate] = useState(""); const [time, setTime] = useState(""); const [type, setType] = useState<any>("other");
   const [view, setView] = useState<View>("month");
   const [cursor, setCursor] = useState<Date>(new Date());
+  const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
+  const [gLoading, setGLoading] = useState(false);
 
-  const colorOf = (k: "appt"|"bday"|"hol") => k === "appt" ? "bg-primary-soft text-foreground" : k === "bday" ? "bg-accent-soft text-accent-foreground" : "bg-secondary-soft text-secondary-foreground";
+  const loadGoogle = async () => {
+    setGLoading(true);
+    try {
+      const r = await gcalFetchEvents();
+      setGEvents(r.events ?? []);
+    } catch (e: any) {
+      // Silent on first load when not connected; show on manual refresh
+      console.warn("gcal load failed", e);
+    } finally { setGLoading(false); }
+  };
+
+  useEffect(() => { loadGoogle(); }, []);
+
+  const colorOf = (k: "appt"|"bday"|"hol"|"gcal") => k === "appt" ? "bg-primary-soft text-foreground" : k === "bday" ? "bg-accent-soft text-accent-foreground" : k === "hol" ? "bg-secondary-soft text-secondary-foreground" : "bg-muted text-foreground";
 
   const eventsOn = (k: string) => [
     ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, label: a.title, time: a.time })),
     ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, label: `🎂 ${b.name}`, time: undefined })),
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, label: `✨ ${h.name}`, time: undefined })),
+    ...gEvents.filter(g => g.date === k).map(g => ({ kind: "gcal" as const, label: g.title, time: g.time ?? undefined, color: g.color })),
   ];
 
   const shift = (dir: 1 | -1) => {
@@ -64,6 +82,13 @@ export default function CalendarPage() {
           <Button onClick={() => { if (!title || !date) return; addAppointment({ title, date, time, type }); setTitle(""); setDate(""); setTime(""); }}>Add</Button>
         </div>
       </SectionCard>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
+        <span>{gEvents.length > 0 ? `Showing ${gEvents.length} Google event${gEvents.length === 1 ? "" : "s"}.` : "Connect Google Calendar in Settings to see your events here."}</span>
+        <Button size="sm" variant="ghost" className="h-7 rounded-full" onClick={() => { loadGoogle(); toast("Refreshing Google events…"); }} disabled={gLoading}>
+          <RefreshCw className={`mr-1 h-3.5 w-3.5 ${gLoading ? "animate-spin" : ""}`} /> Refresh Google
+        </Button>
+      </div>
 
       <SectionCard
         title={
