@@ -78,6 +78,9 @@ export default function Meals() {
           <Button variant="outline" className="rounded-full" onClick={() => setPrefsOpen(true)}>
             <Settings2 className="mr-2 h-4 w-4" />Preferences
           </Button>
+          <Button variant="outline" className="rounded-full" onClick={() => onFillFromFavorites(false)} disabled={filling}>
+            {filling ? "Filling…" : "Fill from favorites"}
+          </Button>
           <Button onClick={onPlanWeek} disabled={planning} className="rounded-full">
             <Sparkles className={`mr-2 h-4 w-4 ${planning ? "animate-pulse" : ""}`} />
             {planning ? "Planning…" : "Plan my week"}
