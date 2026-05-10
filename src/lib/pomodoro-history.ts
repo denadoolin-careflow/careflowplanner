@@ -9,6 +9,7 @@ export interface PomodoroHistoryRow {
   task_id: string | null;
   task_title: string | null;
   focus_seconds: number;
+  meal_name?: string | null;
 }
 
 export interface PomodoroAggregate {
@@ -60,6 +61,7 @@ export const pomodoroHistory = {
     taskId?: string | null;
     taskTitle?: string | null;
     focusSeconds: number;
+    mealName?: string | null;
   }) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -70,6 +72,7 @@ export const pomodoroHistory = {
       task_id: entry.taskId ?? null,
       task_title: entry.taskTitle ?? null,
       focus_seconds: Math.round(entry.focusSeconds),
+      meal_name: entry.mealName ?? null,
     };
     const { data } = await supabase
       .from("pomodoro_sessions" as any)
