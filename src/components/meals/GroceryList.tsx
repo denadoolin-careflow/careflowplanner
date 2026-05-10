@@ -252,6 +252,8 @@ export function GroceryList() {
 
       {state.grocery.length === 0 ? (
         <p className="text-xs text-muted-foreground">Your grocery list will fill in when you plan a week.</p>
+      ) : sorted.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No items match this filter.</p>
       ) : groupBy === "category" ? (
         <div className="space-y-3">
           {sortedCats.map(cat => (
