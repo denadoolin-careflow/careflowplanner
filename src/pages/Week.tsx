@@ -20,6 +20,7 @@ import { useResetChecklists } from "@/lib/reset-checklists";
 import { ChecklistTree } from "@/components/reset/ChecklistTree";
 import { AIGenerateMenu } from "@/components/reset/AIGenerateMenu";
 import { motion, AnimatePresence } from "framer-motion";
+import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
 
 function DayDropZone({ id, children, isToday }: { id: string; children: React.ReactNode; isToday: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id });
@@ -149,6 +150,8 @@ export default function Week() {
           <AIGenerateMenu onGenerated={reset.refresh} weekStart={weekStartISO} />
         </div>
       </div>
+
+      <CustomizableGrid pageKey="week" />
 
       <AnimatePresence mode="wait">
       <motion.div key={weekStartISO} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>

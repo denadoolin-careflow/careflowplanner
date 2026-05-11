@@ -18,6 +18,7 @@ import { MoonPhaseWidget } from "@/components/widgets/MoonPhaseWidget";
 import { TaskProgressBar } from "@/components/cards/TaskProgressBar";
 import { PomodoroPanel } from "@/components/tasks/PomodoroPanel";
 import { dayPartSuggestion, useWeatherSnapshot, formatTemp, useTempUnit } from "@/lib/weather-store";
+import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
 
 const PARTS = [
   { key: "Morning", icon: Coffee },
@@ -98,6 +99,9 @@ export default function Today() {
         <TaskProgressBar scope="today" />
         <PomodoroPanel />
       </div>
+
+      <CustomizableGrid pageKey="today" />
+
 
       <SectionCard title="Top three" subtitle="The shape of a real day." accent="calm">
         {top3.length === 0
