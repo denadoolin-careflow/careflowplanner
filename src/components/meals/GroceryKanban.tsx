@@ -4,7 +4,7 @@ import { useGroceryCategories } from "@/lib/grocery-categories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, ChevronDown, ChevronRight, Trash2, ShoppingCart, X } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, Trash2, ShoppingCart, X, Eraser } from "lucide-react";
 import { DndContext, useDraggable, useDroppable, type DragEndEvent } from "@dnd-kit/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,9 +52,14 @@ export function GroceryKanban() {
     const list = grouped[name] ?? [];
     const visible = shoppingMode ? list.filter(i => !i.bought) : list;
     const colDone = list.filter(i => i.bought).length;
+    const clearAll = async () => {
+      if (list.length === 0) return;
+      if (!confirm(`Remove all ${list.length} item${list.length === 1 ? "" : "s"} from ${name}?`)) return;
+      await Promise.all(list.map(i => deleteGrocery(i.id)));
+    };
     return (
       <div ref={setNodeRef}
-        className={`flex w-64 shrink-0 flex-col rounded-2xl border p-3 transition
+        className={`group flex w-64 shrink-0 flex-col rounded-2xl border p-3 transition
           ${isOver ? "border-primary/50 bg-primary/5 shadow-[0_0_16px_hsl(var(--primary)/0.2)]" : "border-border/60 bg-card/40"}`}>
         <div className="mb-2 flex items-center justify-between gap-2">
           <button onClick={() => updateCat(id, { collapsed: !collapsed })} className="flex items-center gap-1.5 text-sm font-medium">
@@ -62,10 +67,17 @@ export function GroceryKanban() {
             <span style={color ? { color: `hsl(${color})` } : undefined}>{name}</span>
             <span className="text-[10px] text-muted-foreground">{colDone}/{list.length}</span>
           </button>
-          <button onClick={() => { if (confirm(`Remove ${name} category?`)) removeCat(id); }}
-            className="text-muted-foreground/60 opacity-0 transition hover:text-destructive group-hover:opacity-100">
-            <X className="h-3 w-3" />
-          </button>
+          <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+            <button onClick={clearAll} disabled={list.length === 0} title={`Clear all items in ${name}`}
+              className="text-muted-foreground/70 transition hover:text-destructive disabled:opacity-30">
+              <Eraser className="h-3 w-3" />
+            </button>
+            <button onClick={() => { if (confirm(`Remove ${name} category?`)) removeCat(id); }}
+              title={`Remove ${name} category`}
+              className="text-muted-foreground/70 transition hover:text-destructive">
+              <X className="h-3 w-3" />
+            </button>
+          </div>
         </div>
         {!collapsed && (
           <>
