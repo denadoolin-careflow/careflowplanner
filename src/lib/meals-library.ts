@@ -90,3 +90,80 @@ export function useMealsLibrary() {
 
   return { items, loading, refresh, create, update, remove, duplicate };
 }
+
+/** Insert one or more library meals into the meals plan. Optionally generate grocery rows. */
+export async function addLibraryMealsToWeek(
+  meals: LibraryMeal[],
+  targets: { date: string; slot: "Breakfast" | "Lunch" | "Dinner" | "Snack" }[],
+  opts: { mode: "fill_empty" | "replace"; addGroceries: boolean },
+): Promise<{ inserted: number; grocery: number }> {
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u.user?.id;
+  if (!uid || meals.length === 0 || targets.length === 0) return { inserted: 0, grocery: 0 };
+
+  const dates = Array.from(new Set(targets.map(t => t.date)));
+  const { data: existing } = await supabase
+    .from("meals").select("id,date,slot")
+    .eq("user_id", uid).in("date", dates);
+  const occupied = new Map<string, string>(); // `${date}|${slot}` -> existing id
+  (existing ?? []).forEach((e: any) => occupied.set(`${e.date}|${e.slot}`, e.id));
+
+  // Pair each target with a meal (cycle through meals).
+  const rows: any[] = [];
+  const replaceIds: string[] = [];
+  targets.forEach((t, i) => {
+    const key = `${t.date}|${t.slot}`;
+    const exists = occupied.get(key);
+    if (exists) {
+      if (opts.mode === "fill_empty") return;
+      replaceIds.push(exists);
+    }
+    const m = meals[i % meals.length];
+    rows.push({
+      user_id: uid,
+      date: t.date, slot: t.slot,
+      name: m.title,
+      prep_minutes: m.prep_minutes ?? null,
+      ingredients: m.ingredients ?? [],
+      steps: m.steps ?? [],
+      tags: m.tags ?? [],
+    });
+  });
+
+  if (replaceIds.length) {
+    await supabase.from("grocery_items").delete().in("source_meal_id", replaceIds);
+    await supabase.from("meals").delete().in("id", replaceIds);
+  }
+  if (rows.length === 0) return { inserted: 0, grocery: 0 };
+  const { data: inserted } = await supabase.from("meals").insert(rows).select();
+
+  let groceryCount = 0;
+  if (opts.addGroceries && inserted?.length) {
+    const { data: pantry } = await supabase
+      .from("pantry_items").select("name").eq("user_id", uid).eq("in_stock", true);
+    const stocked = new Set((pantry ?? []).map((p: any) => String(p.name).toLowerCase().trim()));
+    const { data: existingG } = await supabase
+      .from("grocery_items").select("name").eq("user_id", uid).eq("bought", false);
+    const have = new Set((existingG ?? []).map((g: any) => String(g.name).toLowerCase().trim()));
+    const gRows: any[] = [];
+    for (const meal of inserted) {
+      for (const ingRaw of (meal.ingredients ?? []) as string[]) {
+        const ing = String(ingRaw).trim();
+        if (!ing) continue;
+        const key = ing.toLowerCase();
+        if (stocked.has(key) || have.has(key)) continue;
+        have.add(key);
+        gRows.push({
+          user_id: uid, name: ing.slice(0, 120), category: null, bought: false,
+          source_meal_id: meal.id, source_meal_name: meal.name,
+          source_slot: meal.slot, source_date: meal.date,
+        });
+      }
+    }
+    if (gRows.length) {
+      await supabase.from("grocery_items").insert(gRows);
+      groceryCount = gRows.length;
+    }
+  }
+  return { inserted: rows.length, grocery: groceryCount };
+}
