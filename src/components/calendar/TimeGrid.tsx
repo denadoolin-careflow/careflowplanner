@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { format, isSameDay } from "date-fns";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -8,12 +8,39 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2 } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
+import { tap as hapticTap, pickup as hapticPickup, snap as hapticSnap } from "@/lib/haptics";
 
 const HOUR_START = 6;   // 6 AM
 const HOUR_END = 23;    // 11 PM
 const PX_PER_HOUR = 56;
 const TOTAL_HOURS = HOUR_END - HOUR_START;
 const GRID_HEIGHT = TOTAL_HOURS * PX_PER_HOUR;
+const SNAP_MIN = 15;
+const SNAP_PX = (PX_PER_HOUR / 60) * SNAP_MIN; // 14
+const DRAG_THRESHOLD = 5;
+
+function snap(h: number, step = SNAP_MIN / 60): number {
+  return Math.round(h / step) * step;
+}
+function fmtTime(hm: string) {
+  const [h, m] = hm.split(":").map(Number);
+  return format(new Date(2000, 0, 1, h, m), "h:mm a");
+}
+
+type DragState = {
+  blockId: string;
+  mode: "move" | "resize";
+  pointerId: number;
+  startClientY: number;
+  startClientX: number;
+  origStart: number;       // hours
+  origEnd: number;
+  origDate: string;
+  curStart: number;
+  curEnd: number;
+  curDate: string;
+  moved: boolean;
+};
 
 type ApptLike = { label: string; time?: string | null };
 
@@ -30,18 +57,110 @@ export function TimeGrid({ days, appointmentsOn }: Props) {
   const [editing, setEditing] = useState<TimeBlock | null>(null);
   const [draft, setDraft] = useState<{ date: string; start: string; end: string } | null>(null);
   const [now, setNow] = useState(new Date());
-  useEffect(() => { const id = setInterval(() => setNow(new Date()), 60000); return () => clearInterval(id); }, []);
+  useEffect(() => { const id = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(id); }, []);
+
+  const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [drag, setDrag] = useState<DragState | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const suppressClickUntil = useRef(0);
+  dragRef.current = drag;
 
   const startSlot = (date: Date, ev: React.MouseEvent<HTMLDivElement>) => {
+    if (Date.now() < suppressClickUntil.current) return;
     const el = ev.currentTarget;
     const rect = el.getBoundingClientRect();
     const y = ev.clientY - rect.top;
-    const startH = HOUR_START + Math.floor((y / PX_PER_HOUR) * 2) / 2; // snap 30 min
+    const startH = HOUR_START + snap(y / PX_PER_HOUR);
     const endH = Math.min(HOUR_END, startH + 1);
     setDraft({ date: date.toISOString().slice(0,10), start: hoursToHM(startH), end: hoursToHM(endH) });
   };
 
   const blocksFor = (iso: string) => blocks.filter(b => b.date === iso && !b.allDay);
+
+  const findDateAt = useCallback((clientX: number): string | null => {
+    for (const [iso, el] of Object.entries(colRefs.current)) {
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (clientX >= r.left && clientX <= r.right) return iso;
+    }
+    return null;
+  }, []);
+
+  const onPointerMove = useCallback((e: PointerEvent) => {
+    const d = dragRef.current;
+    if (!d || e.pointerId !== d.pointerId) return;
+    const dy = e.clientY - d.startClientY;
+    const dh = snap(dy / PX_PER_HOUR);
+    const dur = d.origEnd - d.origStart;
+    let nextStart = d.origStart;
+    let nextEnd = d.origEnd;
+    let nextDate = d.origDate;
+    if (d.mode === "move") {
+      nextStart = Math.min(HOUR_END - dur, Math.max(HOUR_START, d.origStart + dh));
+      nextEnd = nextStart + dur;
+      const overDate = findDateAt(e.clientX);
+      if (overDate) nextDate = overDate;
+    } else {
+      nextEnd = Math.min(HOUR_END, Math.max(d.origStart + SNAP_MIN / 60, d.origEnd + dh));
+    }
+    const moved = d.moved || Math.abs(dy) >= DRAG_THRESHOLD || Math.abs(e.clientX - d.startClientX) >= DRAG_THRESHOLD;
+    if (moved && !d.moved) hapticPickup();
+    if (moved && (nextStart !== d.curStart || nextEnd !== d.curEnd || nextDate !== d.curDate)) hapticSnap();
+    setDrag({ ...d, curStart: nextStart, curEnd: nextEnd, curDate: nextDate, moved });
+  }, [findDateAt]);
+
+  const endDrag = useCallback(async (e: PointerEvent) => {
+    const d = dragRef.current;
+    if (!d || e.pointerId !== d.pointerId) return;
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("pointercancel", endDrag);
+    const block = blocks.find(b => b.id === d.blockId);
+    if (d.moved && block) {
+      const patch: Partial<TimeBlock> = {
+        startTime: hoursToHM(d.curStart),
+        endTime: hoursToHM(d.curEnd),
+        date: d.curDate,
+      };
+      suppressClickUntil.current = Date.now() + 250;
+      await update(d.blockId, patch);
+      hapticTap();
+    } else if (block) {
+      // Treat as a tap — open editor
+      setEditing(block);
+    }
+    setDrag(null);
+  }, [onPointerMove, blocks, update]);
+
+  const beginDrag = (block: TimeBlock, mode: "move" | "resize", e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const d: DragState = {
+      blockId: block.id,
+      mode,
+      pointerId: e.pointerId,
+      startClientY: e.clientY,
+      startClientX: e.clientX,
+      origStart: hmToHours(block.startTime),
+      origEnd: hmToHours(block.endTime),
+      origDate: block.date,
+      curStart: hmToHours(block.startTime),
+      curEnd: hmToHours(block.endTime),
+      curDate: block.date,
+      moved: mode === "resize", // resize handle = drag intent confirmed
+    };
+    setDrag(d);
+    dragRef.current = d;
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+  };
+
+  useEffect(() => () => {
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("pointercancel", endDrag);
+  }, [onPointerMove, endDrag]);
 
   return (
     <>
@@ -73,6 +192,7 @@ export function TimeGrid({ days, appointmentsOn }: Props) {
                     <span className="font-semibold">{format(d, "d")}</span>
                   </div>
                   <div
+                    ref={el => { colRefs.current[iso] = el; }}
                     className="relative cursor-crosshair"
                     style={{ height: GRID_HEIGHT }}
                     onClick={(e) => startSlot(d, e)}
@@ -80,10 +200,11 @@ export function TimeGrid({ days, appointmentsOn }: Props) {
                     {/* Hour grid lines */}
                     {Array.from({ length: TOTAL_HOURS }, (_, i) => (
                       <div key={i}
-                        className={cn("absolute inset-x-0 border-t border-border/30",
-                          isToday && "hover:bg-primary/5")}
+                        className="pointer-events-none absolute inset-x-0 border-t border-border/30"
                         style={{ top: i * PX_PER_HOUR, height: PX_PER_HOUR }}
-                      />
+                      >
+                        <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-border/20" />
+                      </div>
                     ))}
 
                     {/* Appointments (read-only at left edge) */}
@@ -103,32 +224,54 @@ export function TimeGrid({ days, appointmentsOn }: Props) {
 
                     {/* Time blocks */}
                     {dayBlocks.map(b => {
-                      const top = (hmToHours(b.startTime) - HOUR_START) * PX_PER_HOUR;
-                      const height = Math.max(20, (hmToHours(b.endTime) - hmToHours(b.startTime)) * PX_PER_HOUR - 2);
+                      const isDragging = drag?.blockId === b.id;
+                      const startH = isDragging && drag!.curDate === iso ? drag!.curStart : hmToHours(b.startTime);
+                      const endH = isDragging && drag!.curDate === iso ? drag!.curEnd : hmToHours(b.endTime);
+                      // Hide original column position if dragged to another day
+                      if (isDragging && drag!.curDate !== iso) return null;
+                      const top = (startH - HOUR_START) * PX_PER_HOUR;
+                      const height = Math.max(24, (endH - startH) * PX_PER_HOUR - 2);
                       const c = colorClasses(b.color);
                       return (
-                        <button
+                        <div
                           key={b.id}
-                          onClick={(e) => { e.stopPropagation(); setEditing(b); }}
+                          onPointerDown={(e) => beginDrag(b, "move", e)}
                           className={cn(
-                            "absolute left-1/2 right-0.5 mx-0.5 rounded-md px-2 py-1 text-left text-[11px] shadow-sm ring-1 ring-inset transition-all hover:-translate-y-0.5 hover:shadow-md",
-                            c.bg, c.text, c.ring, "ring-opacity-30"
+                            "group absolute left-1/2 right-0.5 mx-0.5 select-none rounded-md px-2 py-1 text-left text-[11px] shadow-sm ring-1 ring-inset",
+                            c.bg, c.text, c.ring, "ring-opacity-30",
+                            isDragging
+                              ? "z-20 scale-[1.02] shadow-xl ring-opacity-100 transition-none"
+                              : "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md"
                           )}
-                          style={{ top, height }}
+                          style={{ top, height, touchAction: "none", cursor: isDragging ? "grabbing" : "grab" }}
+                          role="button"
+                          tabIndex={0}
                         >
-                          <div className="font-medium leading-tight">{b.title}</div>
-                          <div className="text-[10px] opacity-70">{b.startTime}–{b.endTime}</div>
-                        </button>
+                          <div className="pointer-events-none font-medium leading-tight">{b.title}</div>
+                          <div className="pointer-events-none text-[10px] opacity-70">
+                            {fmtTime(hoursToHM(startH))} – {fmtTime(hoursToHM(endH))}
+                          </div>
+                          {/* Resize handle */}
+                          <div
+                            onPointerDown={(e) => beginDrag(b, "resize", e)}
+                            className={cn(
+                              "absolute inset-x-1 bottom-0 h-3 cursor-ns-resize rounded-b-md",
+                              "after:mx-auto after:mt-1 after:block after:h-0.5 after:w-6 after:rounded-full after:bg-current after:opacity-30",
+                              "opacity-60 group-hover:opacity-100"
+                            )}
+                            style={{ touchAction: "none" }}
+                          />
+                        </div>
                       );
                     })}
 
                     {/* Now line */}
                     {showNowLine && (
                       <div
-                        className="pointer-events-none absolute inset-x-0 border-t-2 border-primary"
+                        className="pointer-events-none absolute inset-x-0 border-t-2 border-primary transition-[top] duration-500"
                         style={{ top: (nowH - HOUR_START) * PX_PER_HOUR }}
                       >
-                        <span className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-primary" />
+                        <span className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.15)]" />
                       </div>
                     )}
                   </div>
@@ -136,6 +279,17 @@ export function TimeGrid({ days, appointmentsOn }: Props) {
               );
             })}
           </div>
+
+          {/* Floating drag time chip */}
+          {drag && drag.moved && (
+            <div
+              className="pointer-events-none fixed z-50 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background shadow-lg"
+              style={{ left: 12, bottom: 12 }}
+            >
+              {fmtTime(hoursToHM(drag.curStart))} – {fmtTime(hoursToHM(drag.curEnd))}
+              <span className="ml-2 opacity-60">{drag.curDate}</span>
+            </div>
+          )}
         </div>
       </div>
 
