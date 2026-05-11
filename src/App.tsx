@@ -28,6 +28,7 @@ import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
 import { PomodoroBoundaryFlash } from "@/components/tasks/PomodoroBoundaryFlash";
+import { FullScreenFocus } from "@/components/tasks/FullScreenFocus";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
             <PomodoroToastsBridge />
             <FloatingPomodoro />
             <PomodoroBoundaryFlash />
+            <FullScreenFocus />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
