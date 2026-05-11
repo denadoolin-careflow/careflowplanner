@@ -3,7 +3,7 @@ import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { startOfWeek, addDays, format } from "date-fns";
-import { Sparkles, Settings2, Clock } from "lucide-react";
+import { Sparkles, Settings2, Clock, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { planWeek, fillWeekFromFavorites } from "@/lib/meal-ai";
 import { MealPrefsDialog } from "@/components/meals/MealPrefsDialog";
@@ -12,6 +12,11 @@ import { PantryPanel } from "@/components/meals/PantryPanel";
 import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
 import { GroceryList } from "@/components/meals/GroceryList";
 import type { Meal } from "@/lib/types";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Meals() {
   const { state, user, addMeal, deleteMeal, reloadAll } = useStore();
@@ -22,6 +27,8 @@ export default function Meals() {
   const [activeMeal, setActiveMeal] = useState<Meal | null>(null);
   const [planning, setPlanning] = useState(false);
   const [filling, setFilling] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
 
   const onPlanWeek = async () => {
     setPlanning(true);
@@ -53,6 +60,26 @@ export default function Meals() {
     } finally { setFilling(false); }
   };
 
+  const onResetWeek = async (thenGenerate: boolean) => {
+    setResetting(true);
+    try {
+      const startISO = start.toISOString().slice(0, 10);
+      const endISO = addDays(start, 6).toISOString().slice(0, 10);
+      const weekMeals = state.meals.filter(m => m.date >= startISO && m.date <= endISO);
+      const mealIds = weekMeals.map(m => m.id);
+      if (mealIds.length) {
+        await supabase.from("grocery_items").delete().in("source_meal_id", mealIds);
+        await supabase.from("meals").delete().in("id", mealIds);
+      }
+      await reloadAll();
+      toast.success("Meal plan cleared.");
+      setResetOpen(false);
+      if (thenGenerate) await onPlanWeek();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't reset");
+    } finally { setResetting(false); }
+  };
+
   return (
     <div className="space-y-6">
       <div className="cozy-card gradient-warm flex flex-col gap-3 p-6 sm:flex-row sm:items-end sm:justify-between">
@@ -67,6 +94,28 @@ export default function Meals() {
           <Button variant="outline" className="rounded-full" onClick={() => onFillFromFavorites(false)} disabled={filling}>
             {filling ? "Filling…" : "Fill from favorites"}
           </Button>
+          <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="rounded-full">
+                <RotateCcw className="mr-2 h-4 w-4" /> Reset meal plan
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove all meals for this week?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Clears planned meals and removes the grocery items linked to them. Your saved recipes and favorites stay safe.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep them</AlertDialogCancel>
+                <Button variant="outline" onClick={() => onResetWeek(false)} disabled={resetting}>Just clear</Button>
+                <AlertDialogAction onClick={() => onResetWeek(true)} disabled={resetting}>
+                  Clear & generate new
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button onClick={onPlanWeek} disabled={planning} className="rounded-full">
             <Sparkles className={`mr-2 h-4 w-4 ${planning ? "animate-pulse" : ""}`} />
             {planning ? "Planning…" : "Plan my week"}

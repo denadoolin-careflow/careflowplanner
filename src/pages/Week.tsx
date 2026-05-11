@@ -2,7 +2,6 @@ import { useStore, todayISO } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { startOfWeek, addDays, format, parseISO } from "date-fns";
 import { useEffect, useState } from "react";
@@ -16,6 +15,11 @@ import { DayWeatherMoon } from "@/components/widgets/DayWeatherMoon";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { HabitProgressBar } from "@/components/widgets/HabitProgressBar";
 import type { DayPart, Task } from "@/lib/types";
+import { WeekNavigator } from "@/components/week/WeekNavigator";
+import { useResetChecklists } from "@/lib/reset-checklists";
+import { ChecklistTree } from "@/components/reset/ChecklistTree";
+import { AIGenerateMenu } from "@/components/reset/AIGenerateMenu";
+import { motion, AnimatePresence } from "framer-motion";
 
 function DayDropZone({ id, children, isToday }: { id: string; children: React.ReactNode; isToday: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id });
@@ -66,8 +70,8 @@ function InlineAddTask({ onAdd, label }: { onAdd: (title: string) => void; label
 }
 
 export default function Week() {
-  const { state, addJournal, toggleCleaning, addTask, updateTask, regenerateWeeklyReset, resetThisWeek } = useStore();
-  const start = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const { state, addJournal, addTask, updateTask, resetThisWeek } = useStore();
+  const [start, setStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const [reflection, setReflection] = useState("");
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
@@ -80,13 +84,15 @@ export default function Week() {
     gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => { /* not connected, silent */ });
   }, []);
 
+  const weekStartISO = start.toISOString().slice(0, 10);
+  const reset = useResetChecklists({ weekStart: weekStartISO });
+
   const tasksFor = (d: Date) => state.tasks.filter(t => t.dueDate === d.toISOString().slice(0, 10));
   const eventsFor = (iso: string) => [
     ...state.appointments.filter(a => a.date === iso).map(a => ({ id: a.id, title: a.title, time: a.time ?? null, kind: "appt" as const })),
     ...gEvents.filter(g => g.date === iso).map(g => ({ id: g.id, title: g.title, time: g.time ?? null, kind: "gcal" as const })),
   ].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
   const mealsFor = (iso: string) => state.meals.filter(m => m.date === iso);
-  const reset = state.cleaning.filter(c => c.cadence === "weekly");
 
   const KANBAN_PARTS: DayPart[] = ["Morning", "Afternoon", "Evening"];
   const tasksByPart = (d: Date) => {
@@ -118,6 +124,7 @@ export default function Week() {
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Week of</p>
           <h2 className="font-display text-3xl font-semibold sm:text-4xl">{format(start, "MMMM d")} – {format(addDays(start, 6), "MMMM d")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">A weekly command center, gently held.</p>
+          <div className="mt-3"><WeekNavigator weekStart={start} onChange={setStart} /></div>
         </div>
         <div className="flex flex-wrap gap-2">
           <div className="flex rounded-full border border-border bg-card p-0.5">
@@ -139,12 +146,12 @@ export default function Week() {
           <Button variant="outline" onClick={async () => { await resetThisWeek(); toast.success("Fresh week, ready when you are."); }}>
             Reset this week
           </Button>
-          <Button onClick={async () => { await regenerateWeeklyReset(); toast.success("Your weekly rhythm is set."); }}>
-            <Wand2 className="mr-2 h-4 w-4" />Generate this week's reset
-          </Button>
+          <AIGenerateMenu onGenerated={reset.refresh} weekStart={weekStartISO} />
         </div>
       </div>
 
+      <AnimatePresence mode="wait">
+      <motion.div key={weekStartISO} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
       {view === "cards" ? (
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -278,23 +285,54 @@ export default function Week() {
       </div>
       )}
       </DndContext>
+      </motion.div>
+      </AnimatePresence>
 
       <WeeklyWeather />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <SectionCard title="Weekly reset checklist" accent="warm">
-          {reset.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Your weekly reset will appear here. Tap “Generate this week's reset” to begin.</p>
+        <SectionCard
+          title="Weekly reset"
+          subtitle="Editable, draggable, schedulable. Double-click to rename."
+          accent="warm"
+          className="lg:col-span-2"
+        >
+          {reset.lists.length === 0 ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">No checklists yet. Generate one with AI or create your own.</p>
+              <div className="flex flex-wrap gap-2">
+                <AIGenerateMenu onGenerated={reset.refresh} weekStart={weekStartISO} />
+                <Button variant="outline" onClick={async () => {
+                  const id = await reset.createList({ name: "My weekly reset", kind: "weekly", week_start: weekStartISO });
+                  if (id) toast.success("Checklist created");
+                }}>
+                  + New checklist
+                </Button>
+              </div>
+            </div>
           ) : (
-            <ul className="space-y-1.5">
-              {reset.map(c => (
-                <li key={c.id} className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm hover:bg-muted/40">
-                  <Checkbox checked={c.done} onCheckedChange={() => toggleCleaning(c.id)} />
-                  <span className={c.done ? "text-muted-foreground line-through" : ""}>{c.title}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{c.zone}</span>
-                </li>
+            <div className="space-y-6">
+              {reset.lists.map(list => (
+                <ChecklistTree
+                  key={list.id}
+                  list={list}
+                  onAdd={(item) => reset.addItem(list.id, item)}
+                  onUpdate={reset.updateItem}
+                  onDelete={reset.deleteItem}
+                  onDuplicate={reset.duplicateItem}
+                  onReorder={(parentId, ordered) => reset.reorderItems(list.id, parentId, ordered)}
+                  onRenameList={(name) => reset.renameList(list.id, name)}
+                  onDeleteList={() => reset.deleteList(list.id)}
+                  onSaveTemplate={() => { void reset.saveAsTemplate(list.id); toast.success("Saved as template"); }}
+                />
               ))}
-            </ul>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={async () => {
+                  const id = await reset.createList({ name: "New checklist", kind: "custom", week_start: weekStartISO });
+                  if (id) toast.success("Created");
+                }}>+ New checklist</Button>
+              </div>
+            </div>
           )}
         </SectionCard>
 
@@ -319,17 +357,6 @@ export default function Week() {
               <span className="text-xs text-muted-foreground">{format(parseISO(a.date), "EEE")} {a.time ?? ""}</span>
             </div>
           ))}
-        </SectionCard>
-
-        <SectionCard title="Cleaning zones this week" accent="sage">
-          <div className="grid grid-cols-2 gap-2">
-            {Array.from(new Set(reset.map(r => r.zone))).map(zone => (
-              <div key={zone} className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">{zone}</div>
-                <div className="mt-1 text-sm">{reset.filter(r => r.zone === zone && r.done).length} / {reset.filter(r => r.zone === zone).length} done</div>
-              </div>
-            ))}
-          </div>
         </SectionCard>
 
         <SectionCard title="Family & caregiving" accent="warm">

@@ -173,16 +173,21 @@ export type Database = {
         Row: {
           auto_reset: boolean
           cadence: string
+          category: string | null
           created_at: string
           done: boolean
+          est_minutes: number | null
           id: string
           last_completed_at: string | null
           last_done: string | null
           next_due_date: string | null
+          parent_id: string | null
           recurrence_days: number[]
           recurrence_interval: number
           recurrence_type: string
           sort_order: number
+          start_time: string | null
+          time_block: string | null
           title: string
           updated_at: string
           user_id: string
@@ -192,16 +197,21 @@ export type Database = {
         Insert: {
           auto_reset?: boolean
           cadence?: string
+          category?: string | null
           created_at?: string
           done?: boolean
+          est_minutes?: number | null
           id?: string
           last_completed_at?: string | null
           last_done?: string | null
           next_due_date?: string | null
+          parent_id?: string | null
           recurrence_days?: number[]
           recurrence_interval?: number
           recurrence_type?: string
           sort_order?: number
+          start_time?: string | null
+          time_block?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -211,23 +221,36 @@ export type Database = {
         Update: {
           auto_reset?: boolean
           cadence?: string
+          category?: string | null
           created_at?: string
           done?: boolean
+          est_minutes?: number | null
           id?: string
           last_completed_at?: string | null
           last_done?: string | null
           next_due_date?: string | null
+          parent_id?: string | null
           recurrence_days?: number[]
           recurrence_interval?: number
           recurrence_type?: string
           sort_order?: number
+          start_time?: string | null
+          time_block?: string | null
           title?: string
           updated_at?: string
           user_id?: string
           weekday?: number | null
           zone?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_tasks_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "cleaning_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dashboard_layouts: {
         Row: {
@@ -863,6 +886,120 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reset_checklists: {
+        Row: {
+          created_at: string
+          id: string
+          is_template: boolean
+          kind: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+          week_start: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_template?: boolean
+          kind?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+          week_start?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_template?: boolean
+          kind?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+          week_start?: string | null
+        }
+        Relationships: []
+      }
+      reset_items: {
+        Row: {
+          category: string | null
+          checklist_id: string
+          created_at: string
+          day_of_week: number | null
+          done: boolean
+          due_date: string | null
+          est_minutes: number | null
+          id: string
+          notes: string | null
+          parent_id: string | null
+          recurrence_days: number[]
+          recurrence_type: string
+          sort_order: number
+          start_time: string | null
+          time_block: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          checklist_id: string
+          created_at?: string
+          day_of_week?: number | null
+          done?: boolean
+          due_date?: string | null
+          est_minutes?: number | null
+          id?: string
+          notes?: string | null
+          parent_id?: string | null
+          recurrence_days?: number[]
+          recurrence_type?: string
+          sort_order?: number
+          start_time?: string | null
+          time_block?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          checklist_id?: string
+          created_at?: string
+          day_of_week?: number | null
+          done?: boolean
+          due_date?: string | null
+          est_minutes?: number | null
+          id?: string
+          notes?: string | null
+          parent_id?: string | null
+          recurrence_days?: number[]
+          recurrence_type?: string
+          sort_order?: number
+          start_time?: string | null
+          time_block?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reset_items_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "reset_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reset_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "reset_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       routines: {
         Row: {
