@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { Brain, Coffee, Maximize2, Minimize2, Pause, Play, RotateCcw, Sparkles, Square, Volume2, VolumeX, X } from "lucide-react";
+import { Brain, Coffee, Maximize2, Minimize2, Pause, Play, RotateCcw, Sparkles, Square, Volume2, VolumeX, X, NotebookPen, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { formatPomoTime, pomoTotal, pomodoro, usePomodoro } from "@/lib/pomodoro-store";
 import { SOUNDSCAPES, soundscapes, type SoundscapeId } from "@/lib/soundscapes";
 import { AFFIRMATIONS } from "@/lib/affirmations";
 import { useStore } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const FOCUS_FULLSCREEN_EVENT = "pomodoro:fullscreen";
 
@@ -22,6 +25,16 @@ export function FullScreenFocus() {
   const [open, setOpen] = useState(false);
   const [scape, setScape] = useState<SoundscapeId>(soundscapes.current());
   const [vol, setVol] = useState(soundscapes.getVolume());
+  const [worked, setWorked] = useState("");
+  const [hard, setHard] = useState("");
+  const [gratitude, setGratitude] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [savedFor, setSavedFor] = useState<string | null>(null);
+
+  // Reset reflection when the active task changes.
+  useEffect(() => {
+    setWorked(""); setHard(""); setGratitude(""); setSavedFor(null);
+  }, [s.taskId]);
 
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -76,6 +89,39 @@ export function FullScreenFocus() {
   const onVolume = (v: number) => {
     setVol(v);
     soundscapes.setVolume(v);
+  };
+
+  const saveReflection = async () => {
+    if (!s.taskId) return;
+    if (!worked.trim() && !hard.trim() && !gratitude.trim()) {
+      toast.message("Add a quick note first");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u?.user) throw new Error("Not signed in");
+      const body = [
+        `Task: ${s.taskTitle || "(untitled)"}`,
+        worked.trim() && `What worked: ${worked.trim()}`,
+        hard.trim() && `What felt hard: ${hard.trim()}`,
+        gratitude.trim() && `Gratitude: ${gratitude.trim()}`,
+      ].filter(Boolean).join("\n");
+      const { error } = await supabase.from("journal_entries").insert({
+        user_id: u.user.id,
+        type: "gratitude",
+        title: `Focus reflection · ${s.taskTitle || "task"}`.slice(0, 120),
+        body,
+        date: new Date().toISOString().slice(0, 10),
+      });
+      if (error) throw error;
+      setSavedFor(s.taskId);
+      toast.success("Reflection saved to journal");
+    } catch (e: any) {
+      toast.error(e?.message || "Could not save reflection");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -175,7 +221,7 @@ export function FullScreenFocus() {
       </div>
 
       {/* Bottom panels: soundscape + next task */}
-      <div className="relative z-10 grid gap-4 border-t border-border/50 bg-background/40 p-4 backdrop-blur-md sm:grid-cols-2 sm:p-6">
+      <div className="relative z-10 grid gap-4 border-t border-border/50 bg-background/40 p-4 backdrop-blur-md sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
         {/* Soundscape */}
         <div className="cozy-card rounded-3xl border border-border/60 bg-card/70 p-4">
           <div className="mb-3 flex items-center justify-between">
@@ -248,6 +294,54 @@ export function FullScreenFocus() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Quick reflection */}
+        <div className="cozy-card rounded-3xl border border-border/60 bg-card/70 p-4 sm:col-span-2 lg:col-span-1">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+              <NotebookPen className="h-3.5 w-3.5" /> Quick reflection
+            </div>
+            {savedFor === s.taskId && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-primary">
+                <Check className="h-3 w-3" /> saved
+              </span>
+            )}
+          </div>
+          <p className="mb-2 text-[11px] text-muted-foreground">
+            Tied to <span className="font-medium text-foreground">{s.taskTitle || "this task"}</span>
+          </p>
+          <div className="space-y-2">
+            <Textarea
+              value={worked}
+              onChange={(e) => setWorked(e.target.value)}
+              placeholder="What worked?"
+              rows={2}
+              className="resize-none bg-background/60 text-sm"
+            />
+            <Textarea
+              value={hard}
+              onChange={(e) => setHard(e.target.value)}
+              placeholder="What felt hard?"
+              rows={2}
+              className="resize-none bg-background/60 text-sm"
+            />
+            <Textarea
+              value={gratitude}
+              onChange={(e) => setGratitude(e.target.value)}
+              placeholder="One gratitude…"
+              rows={2}
+              className="resize-none bg-background/60 text-sm"
+            />
+          </div>
+          <Button
+            size="sm"
+            onClick={saveReflection}
+            disabled={saving}
+            className="mt-3 w-full rounded-full"
+          >
+            {saving ? "Saving…" : "Save to journal"}
+          </Button>
         </div>
       </div>
     </div>
