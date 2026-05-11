@@ -3,6 +3,7 @@ import {
   ListChecks, Coffee, CalendarHeart, Soup, Flame, HeartHandshake,
   Sparkle, Cake, Sparkles, Target, Lightbulb, NotebookPen, Heart,
   StickyNote, CheckSquare, CloudSun, Moon, Timer, BarChart3,
+  HeartPulse, Scale, Activity, Wallet, CalendarClock, TrendingDown, Users, Wrench,
 } from "lucide-react";
 import type { WidgetType } from "@/lib/dashboard-layouts";
 import { NoteWidget } from "./widgets/NoteWidget";
@@ -17,6 +18,11 @@ import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { MoonPhaseWidget } from "@/components/widgets/MoonPhaseWidget";
 import { TaskProgressBar } from "@/components/cards/TaskProgressBar";
 import { PomodoroPanel } from "@/components/tasks/PomodoroPanel";
+import {
+  HealthCheckinWidget, WeightTrendWidget, MovementWeekWidget,
+  BudgetSummaryWidget, UpcomingBillsWidget, DebtProgressWidget,
+  ChoreTodayWidget, HomeOverdueWidget,
+} from "./widgets/HealthWealthHomeWidgets";
 
 export interface WidgetSpec {
   type: WidgetType;
@@ -69,6 +75,14 @@ export const WIDGET_REGISTRY: Record<WidgetType, WidgetSpec> = {
   ideas: { type: "ideas", title: "Idea inbox", icon: Lightbulb, defaultSize: { w: 4, h: 5 }, Component: IdeasWidget },
   "journal-prompt": { type: "journal-prompt", title: "Journal prompt", icon: NotebookPen, defaultSize: { w: 4, h: 5 }, Component: JournalPromptWidget },
   "soft-moment": { type: "soft-moment", title: "A soft moment", icon: Sparkles, defaultSize: { w: 4, h: 5 }, Component: SoftMomentWidget },
+  "health-checkin": { type: "health-checkin", title: "Health check-in", icon: HeartPulse, defaultSize: { w: 4, h: 5 }, Component: HealthCheckinWidget },
+  "weight-trend": { type: "weight-trend", title: "Weight trend", icon: Scale, defaultSize: { w: 4, h: 5 }, Component: WeightTrendWidget },
+  "movement-week": { type: "movement-week", title: "Movement this week", icon: Activity, defaultSize: { w: 4, h: 4 }, Component: MovementWeekWidget },
+  "budget-summary": { type: "budget-summary", title: "Budget summary", icon: Wallet, defaultSize: { w: 4, h: 4 }, Component: BudgetSummaryWidget },
+  "upcoming-bills": { type: "upcoming-bills", title: "Upcoming bills", icon: CalendarClock, defaultSize: { w: 4, h: 5 }, Component: UpcomingBillsWidget },
+  "debt-progress": { type: "debt-progress", title: "Debt total", icon: TrendingDown, defaultSize: { w: 4, h: 4 }, Component: DebtProgressWidget },
+  "chore-today": { type: "chore-today", title: "Chores today", icon: Users, defaultSize: { w: 4, h: 5 }, Component: ChoreTodayWidget },
+  "home-overdue": { type: "home-overdue", title: "Overdue maintenance", icon: Wrench, defaultSize: { w: 4, h: 5 }, Component: HomeOverdueWidget },
 };
 
 export const ALL_WIDGET_TYPES = Object.keys(WIDGET_REGISTRY) as WidgetType[];
