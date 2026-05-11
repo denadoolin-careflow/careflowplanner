@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
-import { Responsive, WidthProvider, Layout } from "react-grid-layout";
+// Use legacy entry which still ships WidthProvider + Responsive HOC API
+import { Responsive, WidthProvider, type Layout } from "react-grid-layout/legacy";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { useDashboardLayout, type PageKey, type GridItem } from "@/lib/dashboard-layouts";
@@ -88,7 +89,13 @@ export function CustomizableGrid({ pageKey }: Props) {
 
       <ResponsiveGridLayout
         className="layout"
-        layouts={{ lg: visibleLayout as Layout[], md: visibleLayout as Layout[], sm: visibleLayout as Layout[], xs: visibleLayout as Layout[], xxs: visibleLayout as Layout[] }}
+        layouts={{
+          lg: visibleLayout as unknown as Layout,
+          md: visibleLayout as unknown as Layout,
+          sm: visibleLayout as unknown as Layout,
+          xs: visibleLayout as unknown as Layout,
+          xxs: visibleLayout as unknown as Layout,
+        }}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
         cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 1 }}
         rowHeight={64}
@@ -97,10 +104,10 @@ export function CustomizableGrid({ pageKey }: Props) {
         isDraggable={editing}
         isResizable={editing}
         draggableHandle=".drag-handle"
-        onLayoutChange={(l) => {
+        onLayoutChange={(l: any[]) => {
           if (!editing) return;
           // merge new positions back into full layout (preserve hidden item positions)
-          const map = new Map(l.map((x) => [x.i, x]));
+          const map = new Map(l.map((x: any) => [x.i, x]));
           const merged = data.layout.map((it) => {
             const u = map.get(it.i);
             return u ? { ...it, x: u.x, y: u.y, w: u.w, h: u.h } : it;
