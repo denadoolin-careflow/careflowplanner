@@ -22,7 +22,15 @@ export type WidgetType =
   | "goals"
   | "ideas"
   | "journal-prompt"
-  | "soft-moment";
+  | "soft-moment"
+  | "health-checkin"
+  | "weight-trend"
+  | "movement-week"
+  | "budget-summary"
+  | "upcoming-bills"
+  | "debt-progress"
+  | "chore-today"
+  | "home-overdue";
 
 export interface WidgetInstance {
   id: string;

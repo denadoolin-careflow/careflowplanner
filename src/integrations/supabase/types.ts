@@ -89,6 +89,42 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          kind: string
+          monthly_limit: number
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          monthly_limit?: number
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          monthly_limit?: number
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       care_notes: {
         Row: {
           body: string
@@ -166,6 +202,72 @@ export type Database = {
           sensory?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      chore_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          notes: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+          weekdays: number[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          notes?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+          weekdays?: number[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          notes?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+          weekdays?: number[]
+        }
+        Relationships: []
+      }
+      chore_completions: {
+        Row: {
+          assignment_id: string
+          done_at: string
+          id: string
+          member_id: string
+          user_id: string
+          week_start: string
+          weekday: number
+        }
+        Insert: {
+          assignment_id: string
+          done_at?: string
+          id?: string
+          member_id: string
+          user_id: string
+          week_start: string
+          weekday: number
+        }
+        Update: {
+          assignment_id?: string
+          done_at?: string
+          id?: string
+          member_id?: string
+          user_id?: string
+          week_start?: string
+          weekday?: number
         }
         Relationships: []
       }
@@ -285,6 +387,48 @@ export type Database = {
           updated_at?: string
           user_id?: string
           widgets?: Json
+        }
+        Relationships: []
+      }
+      debts: {
+        Row: {
+          apr: number
+          balance: number
+          created_at: string
+          id: string
+          min_payment: number
+          name: string
+          notes: string | null
+          strategy: string
+          target_payoff_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apr?: number
+          balance?: number
+          created_at?: string
+          id?: string
+          min_payment?: number
+          name: string
+          notes?: string | null
+          strategy?: string
+          target_payoff_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apr?: number
+          balance?: number
+          created_at?: string
+          id?: string
+          min_payment?: number
+          name?: string
+          notes?: string | null
+          strategy?: string
+          target_payoff_date?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -626,6 +770,81 @@ export type Database = {
         }
         Relationships: []
       }
+      health_checkins: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          meds_taken: boolean
+          mindfulness_minutes: number | null
+          mood: string | null
+          notes: string | null
+          sleep_hours: number | null
+          stress: string | null
+          updated_at: string
+          user_id: string
+          water_cups: number | null
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          meds_taken?: boolean
+          mindfulness_minutes?: number | null
+          mood?: string | null
+          notes?: string | null
+          sleep_hours?: number | null
+          stress?: string | null
+          updated_at?: string
+          user_id: string
+          water_cups?: number | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          meds_taken?: boolean
+          mindfulness_minutes?: number | null
+          mood?: string | null
+          notes?: string | null
+          sleep_hours?: number | null
+          stress?: string | null
+          updated_at?: string
+          user_id?: string
+          water_cups?: number | null
+        }
+        Relationships: []
+      }
+      health_goals: {
+        Row: {
+          goal_type: string
+          target_calories: number | null
+          target_protein_g: number | null
+          target_weight_lb: number | null
+          updated_at: string
+          user_id: string
+          weekly_movement_minutes: number
+        }
+        Insert: {
+          goal_type?: string
+          target_calories?: number | null
+          target_protein_g?: number | null
+          target_weight_lb?: number | null
+          updated_at?: string
+          user_id: string
+          weekly_movement_minutes?: number
+        }
+        Update: {
+          goal_type?: string
+          target_calories?: number | null
+          target_protein_g?: number | null
+          target_weight_lb?: number | null
+          updated_at?: string
+          user_id?: string
+          weekly_movement_minutes?: number
+        }
+        Relationships: []
+      }
       holidays: {
         Row: {
           created_at: string
@@ -651,6 +870,153 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      home_documents: {
+        Row: {
+          category: string | null
+          created_at: string
+          expires_on: string | null
+          file_path: string
+          id: string
+          mime_type: string | null
+          notes: string | null
+          size_bytes: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          expires_on?: string | null
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          size_bytes?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          expires_on?: string | null
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          size_bytes?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      home_maintenance: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          interval_months: number | null
+          last_done: string | null
+          next_due: string | null
+          notes: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          interval_months?: number | null
+          last_done?: string | null
+          next_due?: string | null
+          notes?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          interval_months?: number | null
+          last_done?: string | null
+          next_due?: string | null
+          notes?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      home_notes: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          pinned: boolean
+          sort_order: number
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      household_members: {
+        Row: {
+          avatar_emoji: string | null
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_emoji?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_emoji?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
           updated_at?: string
           user_id?: string
         }
@@ -935,6 +1301,42 @@ export type Database = {
         }
         Relationships: []
       }
+      movement_logs: {
+        Row: {
+          activity: string
+          created_at: string
+          date: string
+          id: string
+          intensity: string | null
+          minutes: number
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity: string
+          created_at?: string
+          date?: string
+          id?: string
+          intensity?: string | null
+          minutes?: number
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity?: string
+          created_at?: string
+          date?: string
+          id?: string
+          intensity?: string | null
+          minutes?: number
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pantry_items: {
         Row: {
           category: string | null
@@ -1055,6 +1457,48 @@ export type Database = {
           theme?: string
           time_zone?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      recurring_bills: {
+        Row: {
+          amount: number
+          auto_create_task: boolean
+          cadence: string
+          category_id: string | null
+          created_at: string
+          id: string
+          name: string
+          next_due_date: string | null
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          auto_create_task?: boolean
+          cadence?: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          next_due_date?: string | null
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          auto_create_task?: boolean
+          cadence?: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          next_due_date?: string | null
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1205,6 +1649,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          amount: number
+          cadence: string
+          category_id: string | null
+          created_at: string
+          id: string
+          name: string
+          next_charge_date: string | null
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          cadence?: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          next_charge_date?: string | null
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          cadence?: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          next_charge_date?: string | null
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           area: string
@@ -1331,6 +1814,45 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          account: string | null
+          amount: number
+          category_id: string | null
+          created_at: string
+          date: string
+          id: string
+          kind: string
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account?: string | null
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account?: string | null
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_pantry_colors: {
         Row: {
           created_at: string
@@ -1355,6 +1877,33 @@ export type Database = {
           out_color?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      weight_logs: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          user_id: string
+          weight_lb: number
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          user_id: string
+          weight_lb: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          user_id?: string
+          weight_lb?: number
         }
         Relationships: []
       }
