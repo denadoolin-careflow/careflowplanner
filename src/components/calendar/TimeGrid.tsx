@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2 } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
-import { tap as hapticTap, pickup as hapticPickup, snap as hapticSnap } from "@/lib/haptics";
+import { haptics } from "@/lib/haptics";
 
 const HOUR_START = 6;   // 6 AM
 const HOUR_END = 23;    // 11 PM
@@ -104,8 +104,8 @@ export function TimeGrid({ days, appointmentsOn }: Props) {
       nextEnd = Math.min(HOUR_END, Math.max(d.origStart + SNAP_MIN / 60, d.origEnd + dh));
     }
     const moved = d.moved || Math.abs(dy) >= DRAG_THRESHOLD || Math.abs(e.clientX - d.startClientX) >= DRAG_THRESHOLD;
-    if (moved && !d.moved) hapticPickup();
-    if (moved && (nextStart !== d.curStart || nextEnd !== d.curEnd || nextDate !== d.curDate)) hapticSnap();
+    if (moved && !d.moved) haptics.pickup();
+    if (moved && (nextStart !== d.curStart || nextEnd !== d.curEnd || nextDate !== d.curDate)) haptics.snap();
     setDrag({ ...d, curStart: nextStart, curEnd: nextEnd, curDate: nextDate, moved });
   }, [findDateAt]);
 
@@ -124,7 +124,7 @@ export function TimeGrid({ days, appointmentsOn }: Props) {
       };
       suppressClickUntil.current = Date.now() + 250;
       await update(d.blockId, patch);
-      hapticTap();
+      haptics.tap();
     } else if (block) {
       // Treat as a tap — open editor
       setEditing(block);
