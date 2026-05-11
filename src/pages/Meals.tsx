@@ -156,8 +156,8 @@ export default function Meals() {
               onClick: async () => {
                 if (inserted?.id) await supabase.from("meals").delete().eq("id", inserted.id);
                 await supabase.from("meals").insert({
-                  user_id: snapshot.user_id, date: snapshot.date, slot: snapshot.slot,
-                  name: snapshot.name, prep_minutes: snapshot.prep_minutes ?? null,
+                  user_id: user.id, date: snapshot.date, slot: snapshot.slot,
+                  name: snapshot.name, prep_minutes: snapshot.prepMinutes ?? null,
                   ingredients: snapshot.ingredients ?? [], steps: snapshot.steps ?? [],
                   tags: snapshot.tags ?? [],
                 });
