@@ -65,7 +65,7 @@ export function IngredientPopover({
     <button onClick={() => setStatus(s)}
       className={`flex flex-1 items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition
         ${status === s ? "border-foreground/30 shadow-[0_0_8px_hsl(var(--primary)/0.3)]" : "border-border/60 opacity-70 hover:opacity-100"}`}
-      style={{ background: status === s ? `hsl(${statusVar(s).replace("var(--pantry-","").replace(")","")} / 0.18)` : undefined }}>
+      style={{ background: status === s ? `hsl(${statusVar(s).slice(4,-1)} / 0.18)` : undefined }}>
       <span className="h-2 w-2 rounded-full" style={{ background: `hsl(${statusVar(s).slice(4,-1)})` }} />
       {statusLabel(s)}
     </button>
