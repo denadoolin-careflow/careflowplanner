@@ -1,55 +1,116 @@
 ## Goal
 
-Turn the Dashboard, Today, and Week pages into Evernote-style boards where every widget can be dragged, resized, hidden, or added — including free-form note and mini-task widgets — with smooth motion and haptic feedback. Each page keeps its own saved layout.
+Add three new top-level pages — **Health**, **Wealth**, and **Home** — wired into the sidebar/bottom nav, each backed by its own Supabase tables with RLS, and each surfacing key data as widgets in the customizable dashboard registry so users can pin them to Home / Today / Week.
 
-## Scope (this plan)
+This plan covers data model, routes, page UIs, and dashboard widgets. Calendar hourly DnD + time-blocking polish is tracked separately (next plan).
 
-Only the customizable dashboard system. Health, Wealth, Home/Chores, and calendar DnD will follow in separate plans.
+---
 
-## What you'll get
+## 1. Health page (`/health`)
 
-- A grid you can rearrange: long-press / grab a widget to move, drag a corner to resize (S / M / L / XL spans).
-- An "Edit layout" toggle in the page header. Outside edit mode, widgets behave normally (no accidental drags).
-- A "+ Add widget" gallery showing every available widget (existing ones like Top 3, Meals Today, Habits, Weather, etc.) plus new **Note** and **Mini Task List** widget types you can add multiple instances of.
-- Hide any widget from its corner menu; bring it back from the gallery.
-- Per-page layouts: Home (`/`), Today (`/today`), Week (`/week`) each remember their own arrangement.
-- Smooth framer-motion transitions on drag/drop/resize and Vibration API haptics on pickup, snap, and delete (no-ops on unsupported devices).
-- Layouts persist per user in the existing `dashboard_layouts` table (one row per page).
+**Sections (tabs):**
+- **Check-in** — daily self-care checklist (sleep hours, water, mood, stress, meds taken, mindfulness minutes). One row per day.
+- **Movement** — log workouts (type, duration, intensity, notes) + weekly minutes goal + simple streak.
+- **Weight** — log weight entries with date; line chart (recharts) + 7/30-day trend, optional goal weight.
+- **Meal plan goals** — pick a goal (lose / maintain / gain / high-protein / low-carb / heart-healthy / energy) and target calories/protein. Feeds a "tailored suggestions" panel that filters `meals_library` by tags matching the goal and offers one-click "Add to day".
 
-## Technical details
+**New tables**
+- `health_checkins` — `date`, `sleep_hours`, `water_cups`, `mood`, `stress`, `meds_taken bool`, `mindfulness_minutes`, `notes`
+- `movement_logs` — `date`, `activity`, `minutes`, `intensity`, `notes`
+- `weight_logs` — `date`, `weight_lb numeric`, `notes`
+- `health_goals` — singleton per user: `goal_type`, `target_weight_lb`, `target_calories`, `target_protein_g`, `weekly_movement_minutes`
 
-**Library**: `react-grid-layout` (responsive, supports drag + resize + serializable layout JSON). Already aligns with our Tailwind setup.
+---
 
-**Data model** — reuse existing `dashboard_layouts` table:
-- `name` = page key: `"home" | "today" | "week"`
-- `layout` = `react-grid-layout` array `[{ i, x, y, w, h, minW, minH }]`
-- `widgets` = `[{ id, type, props, hidden }]` where `type` is a registered widget key (`"top3"`, `"meals-today"`, `"note"`, `"mini-tasks"`, …) and `id` matches `layout[i].i`
+## 2. Wealth page (`/wealth`)
 
-**New files**
-- `src/lib/dashboard-layouts.ts` — load/save per-page layout, defaults, add/remove/hide helpers.
-- `src/lib/haptics.ts` — `tap()`, `pickup()`, `snap()` wrappers around `navigator.vibrate`.
-- `src/components/dashboard/WidgetRegistry.tsx` — central map: `type → { title, icon, defaultSize, component }`.
-- `src/components/dashboard/CustomizableGrid.tsx` — `react-grid-layout` wrapper, edit-mode chrome (drag handle, resize handle, hide button), framer-motion item transitions.
-- `src/components/dashboard/WidgetFrame.tsx` — shared card shell with title, hide/settings menu.
-- `src/components/dashboard/AddWidgetSheet.tsx` — gallery sheet to add hidden or new widgets.
-- `src/components/dashboard/widgets/NoteWidget.tsx` — rich-ish textarea note (title + body), autosaves to widget props.
-- `src/components/dashboard/widgets/MiniTasksWidget.tsx` — small inline checklist stored in widget props.
-- Wrappers around existing dashboard sections (Top 3, Meals Today, Habits, Weather, Moon, Pomodoro, Appointments, etc.) so they plug into the registry without duplicating logic.
+**Sections (tabs):**
+- **Overview** — month-to-date income, expenses, net, upcoming bills, debt total, subscription monthly cost. Small bar chart of spend by category.
+- **Budget** — category list with monthly limit + actual spend (progress bar). Add/edit categories.
+- **Transactions** — quick add income/expense (date, amount, category, note, account). Filter by month.
+- **Subscriptions** — name, amount, cadence (monthly / yearly), next charge date, category. Total summary.
+- **Debts** — name, balance, APR, min payment, target payoff date. Simple snowball/avalanche order toggle + estimated payoff.
+- **Recurring → calendar** — any subscription or recurring transaction with a `next_due_date` automatically appears as an event/appointment on the calendar via a derived view in code (no duplicate data).
 
-**Edited files**
-- `src/pages/Dashboard.tsx` — replace hand-built grid with `<CustomizableGrid pageKey="home" />`.
-- `src/pages/Today.tsx` and `src/pages/Week.tsx` — same treatment with their own `pageKey` and default widget sets.
-- `src/components/layout/AppLayout.tsx` — add an "Edit layout" toggle button in the header that's only active on supported pages.
+**New tables**
+- `budget_categories` — `name`, `monthly_limit numeric`, `kind` ('income'|'expense'), `color`, `sort_order`
+- `transactions` — `date`, `amount numeric`, `category_id` (nullable), `kind` ('income'|'expense'), `note`, `account`
+- `subscriptions` — `name`, `amount numeric`, `cadence`, `next_charge_date`, `category_id`, `notes`
+- `debts` — `name`, `balance numeric`, `apr numeric`, `min_payment numeric`, `target_payoff_date`, `strategy` ('snowball'|'avalanche'), `notes`
+- `recurring_bills` — `name`, `amount numeric`, `cadence`, `next_due_date`, `category_id`, `notes`, `auto_create_task bool`
 
-**Dependencies to add**: `react-grid-layout` and its CSS, `@types/react-grid-layout`.
+A small client helper `src/lib/wealth-calendar.ts` merges `subscriptions` + `recurring_bills` into the existing calendar view (read-only overlay; no DB triggers).
 
-**Defaults**: First load seeds each page with its current widgets in a sensible layout. Migration: a no-op SQL is not needed — `dashboard_layouts` already exists with the right shape. We will only insert default rows on first visit per page.
+---
 
-**Mobile**: Grid uses one column on `<sm` (the current 411px viewport). Drag/resize still works via touch; haptics fire on supported devices.
+## 3. Home page (`/home-areas`) — extends the existing `/home-reset`
 
-## Out of scope (future plans)
+Rather than replace `/home-reset`, add a new **Home** hub at `/home-areas` with:
 
-- Health page (self-care, movement, weight, goal-tailored meals)
-- Wealth page (budget, subscriptions, debt, recurring → calendar)
-- Calendar hourly DnD (move/resize events, drop tasks to time-block, recurring auto-appear)
-- Home cleaning zones / maintenance / documents / per-person chore checklist
+- **Cleaning zones** — reuses `cleaning_tasks` already in DB; grouped by zone with filter chips.
+- **Maintenance & improvement log** — recurring maintenance items (HVAC filter, gutters, smoke alarm, etc.) with `last_done`, `next_due`, `interval_months`, `notes`. Overdue items highlighted.
+- **Important documents** — file uploads (PDF, image) per category (Insurance, Warranties, Manuals, Medical, Financial, Other) with title, expiration date, notes. Stored in a new public-read-restricted Supabase Storage bucket `home-documents` with per-user folder RLS.
+- **Notes** — quick text notes scoped to Home (title + body, pinnable). Reuses generic note widget logic.
+- **Chore chart (per-person weekly checklist)** — list of household members + per-person weekly chores with weekday checkboxes; resets each Monday. (Per the earlier scope choice.)
+
+**New tables**
+- `home_maintenance` — `title`, `category`, `last_done date`, `next_due date`, `interval_months`, `notes`
+- `home_documents` — `title`, `category`, `file_path text`, `mime_type`, `size_bytes`, `expires_on date`, `notes`
+- `home_notes` — `title`, `body`, `pinned bool`, `sort_order`
+- `household_members` — `name`, `color`, `avatar_emoji`, `sort_order`
+- `chore_assignments` — `member_id`, `title`, `weekdays int[]`, `notes`, `sort_order`
+- `chore_completions` — `assignment_id`, `member_id`, `week_start date`, `weekday int`, `done_at timestamptz` (one row per check)
+
+**New storage bucket** `home-documents` (private). RLS on `storage.objects`: users can CRUD only inside `home-documents/{auth.uid()}/...`.
+
+---
+
+## 4. Navigation & routing
+
+- Add three routes in `src/App.tsx`: `/health`, `/wealth`, `/home-areas`.
+- Add three entries in `src/lib/nav.ts` `NAV` (sidebar), with Lucide icons (`HeartPulse`, `Wallet`, `Home`). Update `MOBILE_NAV` to include Health + Wealth (replacing `Journal` slot? — see question).
+
+---
+
+## 5. Dashboard widgets
+
+Register new widget types in `src/components/dashboard/WidgetRegistry.tsx` so they can be added to any customizable page:
+
+- `health-checkin` — today's check-in status + quick toggles
+- `weight-trend` — 30-day weight sparkline
+- `movement-week` — weekly minutes vs. goal
+- `budget-summary` — month spend vs. budget
+- `upcoming-bills` — next 7 days of subscriptions + recurring bills
+- `debt-progress` — total balance + payoff ETA
+- `chore-today` — per-person checklist for today
+- `home-overdue` — overdue maintenance items
+
+Each widget is a small wrapper around a query hook from `src/lib/{health,wealth,home}.ts`.
+
+---
+
+## 6. Files
+
+**New**
+- `src/pages/Health.tsx`, `src/pages/Wealth.tsx`, `src/pages/HomeAreas.tsx`
+- `src/lib/health.ts`, `src/lib/wealth.ts`, `src/lib/home-areas.ts`, `src/lib/wealth-calendar.ts`
+- `src/components/health/{CheckInPanel,MovementPanel,WeightPanel,GoalsPanel}.tsx`
+- `src/components/wealth/{OverviewPanel,BudgetPanel,TransactionsPanel,SubscriptionsPanel,DebtsPanel}.tsx`
+- `src/components/home-areas/{ZonesPanel,MaintenancePanel,DocumentsPanel,NotesPanel,ChoreChart}.tsx`
+- `src/components/dashboard/widgets/{HealthCheckinWidget,WeightTrendWidget,MovementWeekWidget,BudgetSummaryWidget,UpcomingBillsWidget,DebtProgressWidget,ChoreTodayWidget,HomeOverdueWidget}.tsx`
+- One Supabase migration creating all tables + RLS + storage bucket
+
+**Edited**
+- `src/App.tsx`, `src/lib/nav.ts`, `src/components/dashboard/WidgetRegistry.tsx`, `src/components/calendar/TimeGrid.tsx` (read-only overlay of recurring bills/subscriptions)
+
+---
+
+## Out of scope (next plans)
+- Calendar hourly DnD smoothness, event resize, drag tasks → time-block, recurring auto-creation as real tasks
+- Bank/Plaid sync, OCR for receipts, multi-currency
+- Family member auth (chore chart members are local labels, not separate logins)
+
+## Questions before I build
+1. **Mobile nav slot** — replace `Journal` with `Health` in the bottom 5-tab bar, or keep Journal and put Health/Wealth/Home only in the sidebar + "More"?
+2. **Money privacy** — add an optional "Hide amounts" toggle (blurs $ values) on the Wealth page?
+3. **Documents bucket** — confirm OK to create a private `home-documents` storage bucket (per-user folder RLS, max 20 MB per file)?
