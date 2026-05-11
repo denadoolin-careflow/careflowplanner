@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Brain, ChevronDown, ChevronUp, Coffee, GripVertical, Pause, Play, RotateCcw, Square } from "lucide-react";
+import { Brain, ChevronDown, ChevronUp, Coffee, GripVertical, Maximize2, Pause, Play, RotateCcw, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -8,6 +8,7 @@ import {
   pomodoro,
   usePomodoro,
 } from "@/lib/pomodoro-store";
+import { openFullScreenFocus } from "./FullScreenFocus";
 
 const POS_KEY = "floating-pomo-pos-v1";
 const MARGIN = 8;
@@ -168,6 +169,14 @@ export function FloatingPomodoro() {
         )}
 
         <div className="flex items-center gap-0.5">
+          <Button
+            size="icon" variant="ghost" className="h-7 w-7 rounded-full text-primary hover:bg-primary/10"
+            onClick={openFullScreenFocus}
+            aria-label="Open full screen focus"
+            title="Full screen focus"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+          </Button>
           <Button
             size="icon" variant="ghost" className="h-7 w-7 rounded-full"
             onClick={() => pomodoro.toggle()}
