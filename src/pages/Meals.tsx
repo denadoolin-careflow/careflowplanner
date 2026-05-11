@@ -3,23 +3,29 @@ import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { startOfWeek, addDays, format } from "date-fns";
-import { Sparkles, Settings2, Clock, RotateCcw } from "lucide-react";
+import { Sparkles, Settings2, RotateCcw, BookOpen, Wand2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { planWeek, fillWeekFromFavorites } from "@/lib/meal-ai";
 import { MealPrefsDialog } from "@/components/meals/MealPrefsDialog";
 import { RecipeDrawer } from "@/components/meals/RecipeDrawer";
 import { PantryPanel } from "@/components/meals/PantryPanel";
 import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
-import { GroceryList } from "@/components/meals/GroceryList";
+import { GroceryKanban } from "@/components/meals/GroceryKanban";
+import { MealCell } from "@/components/meals/MealCell";
 import type { Meal } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
+import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Meals() {
-  const { state, user, addMeal, deleteMeal, reloadAll } = useStore();
+  const { state, user, addMeal, updateMeal, reloadAll } = useStore();
   const start = startOfWeek(new Date(), { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const slots = ["Breakfast","Lunch","Dinner","Snack"] as const;
@@ -29,29 +35,29 @@ export default function Meals() {
   const [filling, setFilling] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
 
-  const onPlanWeek = async () => {
+  const onPlanWeek = async (mode?: string) => {
     setPlanning(true);
     try {
       const startISO = start.toISOString().slice(0, 10);
-      const res = await planWeek(startISO);
+      const { data, error } = await supabase.functions.invoke("ai-meal-plan", {
+        body: { action: "plan_week", start_date: startISO, replace: true, mode: mode ?? null },
+      });
+      if (error) throw error;
       await reloadAll();
-      toast.success(`Planned ${res.meals} meals · added ${res.grocery} grocery items.`);
+      toast.success(`Planned ${data.meals} meals · added ${data.grocery} grocery items.`);
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't plan the week");
-    } finally {
-      setPlanning(false);
-    }
+    } finally { setPlanning(false); setSuggesting(false); }
   };
 
-  const onFillFromFavorites = async (replace: boolean) => {
+  const onFillFromFavorites = async () => {
     if (!user?.id) return;
     setFilling(true);
     try {
       const startISO = start.toISOString().slice(0, 10);
-      const res = await fillWeekFromFavorites(user.id, startISO, {
-        replace, onlyEmpty: !replace, addGroceries: true,
-      });
+      const res = await fillWeekFromFavorites(user.id, startISO, { onlyEmpty: true, addGroceries: true });
       await reloadAll();
       if (res.filled === 0) toast.info("No favorites yet — add a recipe first.");
       else toast.success(`Filled ${res.filled} slots from favorites.`);
@@ -80,20 +86,63 @@ export default function Meals() {
     } finally { setResetting(false); }
   };
 
+  const onCreate = async (date: string, slot: Meal["slot"], data: any) => {
+    if (!user?.id) return;
+    const { data: inserted } = await supabase.from("meals").insert({
+      user_id: user.id, date, slot, name: data.name,
+      prep_minutes: data.prep_minutes ?? null,
+      ingredients: data.ingredients ?? [],
+      steps: data.steps ?? [],
+      tags: data.tags ?? [],
+    }).select().single();
+    await reloadAll();
+  };
+
+  const onDragEnd = async (e: DragEndEvent) => {
+    const id = e.active.data.current?.mealId as string | undefined;
+    const target = e.over?.data.current as { date?: string; slot?: string } | undefined;
+    if (!id || !target?.date || !target?.slot) return;
+    const meal = state.meals.find(m => m.id === id);
+    if (!meal) return;
+    if (meal.date === target.date && meal.slot === target.slot) return;
+    // If target occupied → swap
+    const occupant = state.meals.find(m => m.date === target.date && m.slot === target.slot);
+    if (occupant) {
+      await updateMeal(occupant.id, { date: meal.date, slot: meal.slot });
+    }
+    await updateMeal(id, { date: target.date, slot: target.slot as Meal["slot"] });
+  };
+
   return (
     <div className="space-y-6">
       <div className="cozy-card gradient-warm flex flex-col gap-3 p-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="font-display text-3xl font-semibold">Meals this week</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Simple, kid-safe, no decisions at 5pm.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Drag to rearrange · click to edit · pick from your library.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="rounded-full" asChild>
+            <Link to="/meals/library"><BookOpen className="mr-2 h-4 w-4" />Library</Link>
+          </Button>
           <Button variant="outline" className="rounded-full" onClick={() => setPrefsOpen(true)}>
             <Settings2 className="mr-2 h-4 w-4" />Preferences
           </Button>
-          <Button variant="outline" className="rounded-full" onClick={() => onFillFromFavorites(false)} disabled={filling}>
+          <Button variant="outline" className="rounded-full" onClick={onFillFromFavorites} disabled={filling}>
             {filling ? "Filling…" : "Fill from favorites"}
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="rounded-full" disabled={suggesting || planning}>
+                <Wand2 className={`mr-2 h-4 w-4 ${suggesting ? "animate-pulse" : ""}`} />Suggest <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => { setSuggesting(true); onPlanWeek("use_pantry"); }}>Use ingredients in stock</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { setSuggesting(true); onPlanWeek("low_budget"); }}>Low-budget meals</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { setSuggesting(true); onPlanWeek("sensory_safe"); }}>Sensory-safe meals</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { setSuggesting(true); onPlanWeek("low_energy"); }}>Low-energy meals</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="rounded-full">
@@ -102,9 +151,9 @@ export default function Meals() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Remove all meals for this week?</AlertDialogTitle>
+                <AlertDialogTitle>Remove all meals from this week?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Clears planned meals and removes the grocery items linked to them. Your saved recipes and favorites stay safe.
+                  Clears planned meals and removes the grocery items linked to them. Your saved recipes and library stay safe.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -116,7 +165,7 @@ export default function Meals() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button onClick={onPlanWeek} disabled={planning} className="rounded-full">
+          <Button onClick={() => onPlanWeek()} disabled={planning} className="rounded-full">
             <Sparkles className={`mr-2 h-4 w-4 ${planning ? "animate-pulse" : ""}`} />
             {planning ? "Planning…" : "Plan my week"}
           </Button>
@@ -124,68 +173,48 @@ export default function Meals() {
       </div>
 
       <SectionCard title="Weekly meal plan" accent="warm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase text-muted-foreground">
-                <th className="p-2"></th>
-                {days.map(d => <th key={d.toISOString()} className="p-2">{format(d, "EEE d")}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {slots.map(s => (
-                <tr key={s} className="border-t border-border/60">
-                  <td className="p-2 text-xs uppercase text-muted-foreground">{s}</td>
-                  {days.map(d => {
-                    const m = state.meals.find(x => x.date === d.toISOString().slice(0,10) && x.slot === s);
-                    return (
-                      <td key={d.toISOString()} className="p-1 align-top">
-                        {m ? (
-                          <button
-                            onClick={() => setActiveMeal(m)}
-                            className="group w-full rounded-lg bg-muted/40 px-2 py-1.5 text-left text-xs transition hover:bg-primary/15 hover:ring-1 hover:ring-primary/30"
-                          >
-                            <div className="line-clamp-2">{m.name}</div>
-                            {m.prepMinutes ? (
-                              <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                                <Clock className="h-2.5 w-2.5" />{m.prepMinutes}m
-                              </div>
-                            ) : null}
-                          </button>
-                        ) : (
-                          <button onClick={() => { const name = prompt(`${s} for ${format(d,"EEE")}:`); if (name) addMeal({ name, date: d.toISOString().slice(0,10), slot: s }); }}
-                            className="w-full rounded-lg border border-dashed border-border/60 px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/40">+</button>
-                        )}
-                      </td>
-                    );
-                  })}
+        <DndContext onDragEnd={onDragEnd}>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase text-muted-foreground">
+                  <th className="p-2"></th>
+                  {days.map(d => <th key={d.toISOString()} className="p-2">{format(d, "EEE d")}</th>)}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {slots.map(s => (
+                  <tr key={s} className="border-t border-border/60">
+                    <td className="p-2 text-xs uppercase text-muted-foreground">{s}</td>
+                    {days.map(d => {
+                      const date = d.toISOString().slice(0,10);
+                      const m = state.meals.find(x => x.date === date && x.slot === s) ?? null;
+                      return (
+                        <td key={d.toISOString()} className="p-1 align-top">
+                          <MealCell meal={m} date={date} slot={s} onOpen={setActiveMeal}
+                            onCreate={(data) => onCreate(date, s, data)}
+                            onRename={(id, name) => updateMeal(id, { name })} />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </DndContext>
+      </SectionCard>
+
+      <SectionCard title="Grocery list" subtitle="Kanban — drag between categories" accent="sage">
+        <GroceryKanban />
       </SectionCard>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <SectionCard title="Grocery list" subtitle="Auto-updated by your meal plan" accent="sage">
-          <GroceryList />
-        </SectionCard>
-
         <SectionCard title="Saved favorites" accent="warm">
           <FavoritesPanel />
         </SectionCard>
-
         <SectionCard title="Pantry staples" subtitle="Skipped from grocery generation" accent="sage">
           <PantryPanel />
-        </SectionCard>
-
-        <SectionCard title="How AI planning works" accent="calm">
-          <ul className="space-y-1.5 text-sm text-muted-foreground">
-            <li>Set your preferences once — diets, allergies, picky eaters, budget.</li>
-            <li>Tap <strong>Plan my week</strong> and AI fills all 7 days.</li>
-            <li>Click any meal for the full recipe, or to regenerate it.</li>
-            <li>Pantry items are skipped from the grocery list.</li>
-          </ul>
         </SectionCard>
       </div>
 
