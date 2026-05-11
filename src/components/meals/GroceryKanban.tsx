@@ -163,7 +163,9 @@ function KanbanItem({ item, onToggle, onDelete, onStock, onRename, shoppingMode 
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(item.name);
   const next = item.stockStatus === "in" ? "low" : item.stockStatus === "low" ? "out" : "in";
-  const dotColor = `hsl(${statusVar(item.stockStatus).slice(4,-1)})`;
+  const varName = statusVar(item.stockStatus).slice(4, -1);
+  const dotColor = `hsl(${varName})`;
+  const dotBg = `hsl(${varName} / 0.18)`;
   return (
     <motion.li ref={setNodeRef} {...attributes} {...listeners}
       initial={{ opacity: 0, y: -4 }}
@@ -192,7 +194,7 @@ function KanbanItem({ item, onToggle, onDelete, onStock, onRename, shoppingMode 
       )}
       <button onPointerDown={(e) => e.stopPropagation()} onClick={() => onStock(next)} title={`Mark ${next}`}
         className="rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wider transition hover:opacity-80"
-        style={{ background: `${dotColor.replace("hsl(", "hsl(").replace(")", " / 0.18)")}`, color: dotColor }}>
+        style={{ background: dotBg, color: dotColor }}>
         {statusLabel(item.stockStatus)}
       </button>
       <button onPointerDown={(e) => e.stopPropagation()} onClick={onDelete}
