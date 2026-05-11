@@ -1,42 +1,49 @@
-## AI-Generated Meals for Library
+## Open recipes, quick add to week, day view, side-by-side DnD
 
-Add an "AI Generate" button to the Meals Library page that creates new recipes (with AI-generated cover images) and saves them directly to the library.
+Three connected upgrades across `MealsLibrary` and `Meals`.
 
-### UI changes — `src/pages/MealsLibrary.tsx`
-- Add a gold-accented **"✨ AI Generate"** button in the header next to "New recipe".
-- Opens a small dialog (`AIGenerateMealsDialog.tsx`):
-  - **Count**: 1 / 3 / 5 / 10 recipes
-  - **Slot**: Any / Breakfast / Lunch / Dinner / Snack
-  - **Vibe / prompt** (optional textarea): e.g. "freezer-friendly low-energy dinners"
-  - **Tags toggles**: low-energy, sensory-safe, kid-friendly, quick, freezer
-  - **Generate images** toggle (default ON)
-  - Honors existing `meal_preferences` (diets, allergies, family size) automatically.
-- Shows progress while running ("Cooking up 5 recipes…", then "Painting 5 plates…"), then refreshes the library and toasts success.
+### 1) Open recipes from the library
 
-### New edge function — `supabase/functions/ai-library-meals/index.ts`
-- Auth-validated (Bearer token → `getUser`).
-- Loads the user's `meal_preferences`.
-- Calls Lovable AI gateway (`google/gemini-3-flash-preview`) with a `return_library_meals` tool returning an array of recipes: `title, description, slot, prep_minutes, cook_minutes, servings, ingredients[], steps[], tags[], energy_level, icon` (single emoji).
-- For each meal, if `with_images` is true:
-  - Calls `google/gemini-2.5-flash-image` with a cozy food-photography prompt built from the title + description.
-  - Extracts the base64 PNG and uploads to a new public Storage bucket `meal-images` at `{user_id}/{uuid}.png`.
-  - Stores the public URL on `meals_library.image_url`.
-- Inserts all rows into `meals_library` via service-role client and returns `{ created, failed }`.
+**`src/pages/MealsLibrary.tsx`** + new **`src/components/meals/LibraryRecipeViewer.tsx`**
+- Card title and image are now clickable → open a read-only `LibraryRecipeViewer` sheet (cover image, slot/prep/cook/servings/energy/rating chips, ingredients list, numbered steps, tags, notes).
+- Footer actions inside the viewer: **Edit**, **Duplicate**, **Add to this week** (opens the same picker described in #2), **Favorite/Unfavorite**, **Archive/Unarchive**.
+- Pencil button still opens the existing editor; double-click on title also opens viewer.
 
-### Storage / DB — single migration
-- Create public bucket `meal-images` with RLS:
-  - Public `SELECT` on objects where `bucket_id = 'meal-images'`.
-  - Authenticated users can `INSERT/UPDATE/DELETE` only inside their own `{auth.uid()}/…` folder.
-- (No table changes — `meals_library.image_url` already exists.)
+### 2) Quick add to weekly slots
 
-### Card rendering tweak — `MealsLibrary.tsx`
-- If `image_url` is set, render it inside the existing `h-20` thumbnail (object-cover, rounded) instead of the emoji fallback. Emoji stays as fallback.
+**`src/components/meals/AddToWeekDialog.tsx`** (new) + **`src/lib/meals-library.ts`** (small helper)
+- Multi-select on library cards: hovering a card reveals a checkbox; once 1+ selected, a sticky action bar slides in at the bottom (`framer-motion`) with: count, **Clear**, **Add to week**.
+- **Add to week** opens a compact dialog:
+  - **Week**: this week / next week (dropdown).
+  - **Days**: 7 day chips (multi-select; defaults to today's day).
+  - **Slot**: respects each meal's saved `slot`; meals without a slot get a single picker (Breakfast / Lunch / Dinner / Snack).
+  - **Mode**: *Replace existing* | *Only fill empty slots*.
+  - **Add groceries** toggle (default ON) — pushes ingredients into `grocery_items` like AI plan does, with `source_meal_*` linkage.
+- Inserts directly via `supabase.from("meals").insert(...)`. Toasts `Added N meals` and links to `/meals`.
+- Same dialog is reused from the recipe viewer (single-meal mode).
+
+### 3) Day view + side-by-side DnD on `Meals.tsx`
+
+**`src/pages/Meals.tsx`** + new **`src/components/meals/LibrarySidebar.tsx`**
+
+**View toggle** (segmented control near the page header):
+- **Week** — current 7-day grid (unchanged).
+- **Day** — single day, vertical list of the 4 slots as larger cards with full meal details inline; prev/next day arrows + date pill.
+- **2-day** — two adjacent days side by side (today + next, with ◀ ▶ to shift the pair). Drop targets accept DnD between the two days for easy comparison and rearrangement.
+
+State persisted to `localStorage` (`meals.viewMode`, `meals.focusedDate`).
+
+**Library sidebar** (drawer, available in all view modes):
+- Toggle button "📚 Library" in header opens a right-side `Sheet` listing favorite + recent library meals (image thumbnail, title, slot chip).
+- Each row is a `useDraggable` source with `data: { libraryMealId }`.
+- `Meals.tsx`'s existing `DndContext.onDragEnd` is extended: if `active.data.libraryMealId` is set and `over` is a slot droppable, insert a new `meals` row from that library meal (copies title, prep_minutes, ingredients, steps, tags). Existing meal-to-slot drag still works.
+- The sidebar stays open while dragging, so users can drop multiple meals into the grid in sequence.
 
 ### Files
-- **New**: `src/components/meals/AIGenerateMealsDialog.tsx`, `supabase/functions/ai-library-meals/index.ts`, migration for `meal-images` bucket + policies.
-- **Edited**: `src/pages/MealsLibrary.tsx` (button, image rendering).
+- **New**: `src/components/meals/LibraryRecipeViewer.tsx`, `src/components/meals/AddToWeekDialog.tsx`, `src/components/meals/LibrarySidebar.tsx`.
+- **Edited**: `src/pages/MealsLibrary.tsx` (selection, viewer, add-to-week button), `src/pages/Meals.tsx` (view modes, library sidebar trigger, extended `onDragEnd`), `src/lib/meals-library.ts` (small `addLibraryMealToSlot` helper used by sidebar + dialog).
 
 ### Notes
-- Uses Lovable AI (no extra keys needed); surfaces 429 / 402 errors as toasts.
-- Image generation runs sequentially per meal to avoid rate-limit spikes; the dialog stays open with a progress bar.
-- Generated meals default to `is_favorite: false`, `is_archived: false`, and current max `sort_order + 1`.
+- No DB migration needed — uses existing `meals_library`, `meals`, `grocery_items` tables.
+- All visuals stay on-brand: dark plum cards, gold accents on selection bar and CTA, rounded-2xl, soft motion.
+- Keyboard: `Esc` clears selection; arrow keys ←/→ in day/2-day view shift the focused date.

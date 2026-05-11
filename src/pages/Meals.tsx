@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
-import { startOfWeek, addDays, format } from "date-fns";
-import { Sparkles, Settings2, RotateCcw, BookOpen, Wand2, ChevronDown } from "lucide-react";
+import { startOfWeek, addDays, format, parseISO, isSameDay } from "date-fns";
+import { Sparkles, Settings2, RotateCcw, BookOpen, Wand2, ChevronDown, ChevronLeft, ChevronRight, Library as LibraryIcon } from "lucide-react";
 import { toast } from "sonner";
 import { planWeek, fillWeekFromFavorites } from "@/lib/meal-ai";
 import { MealPrefsDialog } from "@/components/meals/MealPrefsDialog";
@@ -12,6 +12,7 @@ import { PantryPanel } from "@/components/meals/PantryPanel";
 import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
 import { GroceryKanban } from "@/components/meals/GroceryKanban";
 import { MealCell } from "@/components/meals/MealCell";
+import { LibrarySidebar } from "@/components/meals/LibrarySidebar";
 import type { Meal } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -23,6 +24,10 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+type ViewMode = "week" | "two" | "day";
+const VIEW_KEY = "meals.viewMode";
+const FOCUS_KEY = "meals.focusedDate";
 
 export default function Meals() {
   const { state, user, addMeal, updateMeal, reloadAll } = useStore();
@@ -36,6 +41,25 @@ export default function Meals() {
   const [resetting, setResetting] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem(VIEW_KEY) as ViewMode) || "week");
+  const [focusedDate, setFocusedDate] = useState<Date>(() => {
+    const s = localStorage.getItem(FOCUS_KEY);
+    return s ? parseISO(s) : new Date();
+  });
+  const [libraryOpen, setLibraryOpen] = useState(false);
+
+  useEffect(() => { localStorage.setItem(VIEW_KEY, viewMode); }, [viewMode]);
+  useEffect(() => { localStorage.setItem(FOCUS_KEY, focusedDate.toISOString().slice(0, 10)); }, [focusedDate]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (viewMode === "week") return;
+      if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+      if (e.key === "ArrowLeft") setFocusedDate(d => addDays(d, -1));
+      if (e.key === "ArrowRight") setFocusedDate(d => addDays(d, 1));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewMode]);
 
   const onPlanWeek = async (mode?: string) => {
     setPlanning(true);
@@ -99,8 +123,40 @@ export default function Meals() {
   };
 
   const onDragEnd = async (e: DragEndEvent) => {
-    const id = e.active.data.current?.mealId as string | undefined;
     const target = e.over?.data.current as { date?: string; slot?: string } | undefined;
+    if (!target?.date || !target?.slot) return;
+
+    // Drag from library sidebar → insert new meal
+    const libId = e.active.data.current?.libraryMealId as string | undefined;
+    if (libId) {
+      try {
+        const { data: lib } = await supabase.from("meals_library").select("*").eq("id", libId).maybeSingle();
+        if (!lib || !user?.id) return;
+        // If slot occupied, ask before replacing
+        const occupant = state.meals.find(m => m.date === target.date && m.slot === target.slot);
+        if (occupant && !confirm(`Replace ${occupant.name} in ${target.slot}?`)) return;
+        if (occupant) {
+          await supabase.from("grocery_items").delete().eq("source_meal_id", occupant.id);
+          await supabase.from("meals").delete().eq("id", occupant.id);
+        }
+        await supabase.from("meals").insert({
+          user_id: user.id, date: target.date, slot: target.slot,
+          name: lib.title,
+          prep_minutes: lib.prep_minutes ?? null,
+          ingredients: lib.ingredients ?? [],
+          steps: lib.steps ?? [],
+          tags: lib.tags ?? [],
+        });
+        await reloadAll();
+        toast.success(`Added ${lib.title} to ${target.slot}`);
+      } catch (err: any) {
+        toast.error(err?.message ?? "Couldn't add");
+      }
+      return;
+    }
+
+    // Existing meal-to-slot drag
+    const id = e.active.data.current?.mealId as string | undefined;
     if (!id || !target?.date || !target?.slot) return;
     const meal = state.meals.find(m => m.id === id);
     if (!meal) return;
@@ -174,34 +230,95 @@ export default function Meals() {
 
       <SectionCard title="Weekly meal plan" accent="warm">
         <DndContext onDragEnd={onDragEnd}>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase text-muted-foreground">
-                  <th className="p-2"></th>
-                  {days.map(d => <th key={d.toISOString()} className="p-2">{format(d, "EEE d")}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {slots.map(s => (
-                  <tr key={s} className="border-t border-border/60">
-                    <td className="p-2 text-xs uppercase text-muted-foreground">{s}</td>
-                    {days.map(d => {
-                      const date = d.toISOString().slice(0,10);
-                      const m = state.meals.find(x => x.date === date && x.slot === s) ?? null;
-                      return (
-                        <td key={d.toISOString()} className="p-1 align-top">
-                          <MealCell meal={m} date={date} slot={s} onOpen={setActiveMeal}
-                            onCreate={(data) => onCreate(date, s, data)}
-                            onRename={(id, name) => updateMeal(id, { name })} />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="inline-flex rounded-full border border-border/60 bg-background/40 p-0.5 text-xs">
+              {(["week", "two", "day"] as ViewMode[]).map(v => (
+                <button key={v} onClick={() => setViewMode(v)}
+                  className={`rounded-full px-3 py-1 transition ${viewMode === v ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                  {v === "week" ? "Week" : v === "two" ? "2 days" : "Day"}
+                </button>
+              ))}
+            </div>
+            {viewMode !== "week" && (
+              <div className="flex items-center gap-1 text-xs">
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setFocusedDate(d => addDays(d, -1))}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+                <span className="rounded-full bg-muted/40 px-3 py-1 font-medium">
+                  {viewMode === "two"
+                    ? `${format(focusedDate, "EEE d")} – ${format(addDays(focusedDate, 1), "EEE d")}`
+                    : format(focusedDate, "EEEE, MMM d")}
+                </span>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setFocusedDate(d => addDays(d, 1))}><ChevronRight className="h-3.5 w-3.5" /></Button>
+                {!isSameDay(focusedDate, new Date()) && (
+                  <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setFocusedDate(new Date())}>Today</Button>
+                )}
+              </div>
+            )}
+            <Button size="sm" variant="outline" className="h-7 rounded-full text-xs" onClick={() => setLibraryOpen(true)}>
+              <LibraryIcon className="mr-1 h-3.5 w-3.5" />Library
+            </Button>
           </div>
+
+          {viewMode === "week" && (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase text-muted-foreground">
+                    <th className="p-2"></th>
+                    {days.map(d => <th key={d.toISOString()} className="p-2">{format(d, "EEE d")}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {slots.map(s => (
+                    <tr key={s} className="border-t border-border/60">
+                      <td className="p-2 text-xs uppercase text-muted-foreground">{s}</td>
+                      {days.map(d => {
+                        const date = d.toISOString().slice(0,10);
+                        const m = state.meals.find(x => x.date === date && x.slot === s) ?? null;
+                        return (
+                          <td key={d.toISOString()} className="p-1 align-top">
+                            <MealCell meal={m} date={date} slot={s} onOpen={setActiveMeal}
+                              onCreate={(data) => onCreate(date, s, data)}
+                              onRename={(id, name) => updateMeal(id, { name })} />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {viewMode !== "week" && (
+            <div className={`grid gap-3 ${viewMode === "two" ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}>
+              {(viewMode === "two" ? [focusedDate, addDays(focusedDate, 1)] : [focusedDate]).map(d => {
+                const date = d.toISOString().slice(0, 10);
+                return (
+                  <div key={date} className="rounded-2xl border border-border/60 bg-card/30 p-3">
+                    <div className="mb-2 flex items-baseline justify-between">
+                      <h3 className="font-display text-lg">{format(d, "EEEE")}</h3>
+                      <span className="text-xs text-muted-foreground">{format(d, "MMM d")}</span>
+                    </div>
+                    <div className="space-y-2">
+                      {slots.map(s => {
+                        const m = state.meals.find(x => x.date === date && x.slot === s) ?? null;
+                        return (
+                          <div key={s} className="rounded-lg bg-background/40 p-2">
+                            <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">{s}</div>
+                            <MealCell meal={m} date={date} slot={s} onOpen={setActiveMeal}
+                              onCreate={(data) => onCreate(date, s, data)}
+                              onRename={(id, name) => updateMeal(id, { name })} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <LibrarySidebar open={libraryOpen} onOpenChange={setLibraryOpen} />
         </DndContext>
       </SectionCard>
 
