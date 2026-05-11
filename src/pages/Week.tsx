@@ -93,7 +93,6 @@ export default function Week() {
     ...gEvents.filter(g => g.date === iso).map(g => ({ id: g.id, title: g.title, time: g.time ?? null, kind: "gcal" as const })),
   ].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
   const mealsFor = (iso: string) => state.meals.filter(m => m.date === iso);
-  const reset = state.cleaning.filter(c => c.cadence === "weekly");
 
   const KANBAN_PARTS: DayPart[] = ["Morning", "Afternoon", "Evening"];
   const tasksByPart = (d: Date) => {
