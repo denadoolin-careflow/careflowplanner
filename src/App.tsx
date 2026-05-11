@@ -23,6 +23,9 @@ import Ideas from "./pages/Ideas";
 import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
 import PomodoroPicker from "./pages/PomodoroPicker";
+import Health from "./pages/Health";
+import Wealth from "./pages/Wealth";
+import HomeAreas from "./pages/HomeAreas";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -59,6 +62,9 @@ const App = () => (
                 <Route path="/meals/library" element={<MealsLibrary />} />
                 <Route path="/caregiving" element={<Caregiving />} />
                 <Route path="/home-reset" element={<HomeReset />} />
+                <Route path="/health" element={<Health />} />
+                <Route path="/wealth" element={<Wealth />} />
+                <Route path="/home-areas" element={<HomeAreas />} />
                 <Route path="/journal" element={<Journal />} />
                 <Route path="/ideas" element={<Ideas />} />
                 <Route path="/calendar" element={<CalendarPage />} />
