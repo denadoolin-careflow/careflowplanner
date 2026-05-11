@@ -13,6 +13,9 @@ import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
 import { GroceryKanban } from "@/components/meals/GroceryKanban";
 import { MealCell } from "@/components/meals/MealCell";
 import { LibrarySidebar } from "@/components/meals/LibrarySidebar";
+import { calendarPanelOptions } from "@/components/meals/CalendarDropPanel";
+import { addLibraryMealsToWeek } from "@/lib/meals-library";
+import { applyThemeToDate, useMealThemes } from "@/lib/meal-themes";
 import type { Meal } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -31,6 +34,7 @@ const FOCUS_KEY = "meals.focusedDate";
 
 export default function Meals() {
   const { state, user, addMeal, updateMeal, reloadAll } = useStore();
+  const { items: themes } = useMealThemes();
   const start = startOfWeek(new Date(), { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const slots = ["Breakfast","Lunch","Dinner","Snack"] as const;
@@ -123,8 +127,54 @@ export default function Meals() {
   };
 
   const onDragEnd = async (e: DragEndEvent) => {
-    const target = e.over?.data.current as { date?: string; slot?: string } | undefined;
-    if (!target?.date || !target?.slot) return;
+    const overData = e.over?.data.current as
+      | { date?: string; slot?: string; calendarDate?: string; calendarSlot?: string }
+      | undefined;
+    if (!overData) return;
+
+    // Calendar drop (from sidebar calendar panel)
+    const calDate = overData.calendarDate;
+    const calSlot = overData.calendarSlot as Meal["slot"] | undefined;
+    const themeId = e.active.data.current?.themeId as string | undefined;
+    const libIdActive = e.active.data.current?.libraryMealId as string | undefined;
+
+    // THEME drop → apply to grid slot or calendar date
+    if (themeId) {
+      const theme = themes.find(t => t.id === themeId);
+      if (!theme) return;
+      if (!theme.meal_ids.length) { toast.info(`Add recipes to "${theme.name}" first.`); return; }
+      const date = calDate ?? overData.date;
+      const slot = (calSlot ?? overData.slot) as Meal["slot"] | undefined;
+      if (!date) return;
+      const opts = { mode: (calendarPanelOptions.getReplace() ? "replace" : "fill_empty") as "replace" | "fill_empty",
+                     addGroceries: calendarPanelOptions.getAddGroceries() };
+      const r = await applyThemeToDate(theme, date, slot, opts);
+      await reloadAll();
+      if (r.inserted === 0) toast.info("Slot taken — toggle Replace in the sidebar.");
+      else toast.success(`${theme.emoji ?? "🍽️"} ${theme.name} → ${r.meal?.title ?? ""}`, {
+        description: `${slot ?? r.meal?.slot ?? "Dinner"} · ${format(parseISO(date), "EEE MMM d")}`,
+      });
+      return;
+    }
+
+    // LIBRARY drop on calendar (date or slot chip)
+    if (libIdActive && calDate) {
+      const { data: lib } = await supabase.from("meals_library").select("*").eq("id", libIdActive).maybeSingle();
+      if (!lib) return;
+      const slot = (calSlot ?? (lib.slot as Meal["slot"]) ?? "Dinner") as "Breakfast" | "Lunch" | "Dinner" | "Snack";
+      const opts = { mode: (calendarPanelOptions.getReplace() ? "replace" : "fill_empty") as "replace" | "fill_empty",
+                     addGroceries: calendarPanelOptions.getAddGroceries() };
+      const r = await addLibraryMealsToWeek([lib as any], [{ date: calDate, slot }], opts);
+      await reloadAll();
+      if (r.inserted === 0) toast.info("Slot taken — toggle Replace in the sidebar.");
+      else toast.success(`Added ${lib.title}`, {
+        description: `${slot} · ${format(parseISO(calDate), "EEE MMM d")}${r.grocery ? ` · ${r.grocery} grocery items` : ""}`,
+      });
+      return;
+    }
+
+    const target = { date: overData.date, slot: overData.slot };
+    if (!target.date || !target.slot) return;
 
     // Drag from library sidebar → insert new meal
     const libId = e.active.data.current?.libraryMealId as string | undefined;

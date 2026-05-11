@@ -767,6 +767,51 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_themes: {
+        Row: {
+          color: string | null
+          created_at: string
+          default_slot: string | null
+          emoji: string | null
+          id: string
+          meal_ids: string[]
+          name: string
+          notes: string | null
+          sort_order: number
+          updated_at: string
+          user_id: string
+          weekday: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          default_slot?: string | null
+          emoji?: string | null
+          id?: string
+          meal_ids?: string[]
+          name: string
+          notes?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+          weekday?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          default_slot?: string | null
+          emoji?: string | null
+          id?: string
+          meal_ids?: string[]
+          name?: string
+          notes?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+          weekday?: number | null
+        }
+        Relationships: []
+      }
       meals: {
         Row: {
           created_at: string

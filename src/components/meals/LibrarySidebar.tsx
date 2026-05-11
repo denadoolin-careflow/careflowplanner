@@ -2,14 +2,21 @@ import { useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { useDraggable } from "@dnd-kit/core";
-import { Search, GripVertical, Heart } from "lucide-react";
+import { Search, GripVertical, Heart, Tags } from "lucide-react";
 import { useMealsLibrary, type LibraryMeal } from "@/lib/meals-library";
 import { Link } from "react-router-dom";
+import { CalendarDropPanel } from "./CalendarDropPanel";
+import { useMealThemes } from "@/lib/meal-themes";
+import { ThemeChip } from "./ThemeChip";
+import { ThemesManager } from "./ThemesManager";
+import { Button } from "@/components/ui/button";
 
 export function LibrarySidebar({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { items } = useMealsLibrary();
+  const { items: themes } = useMealThemes();
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<"favorites" | "all">("favorites");
+  const [themesOpen, setThemesOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return items
@@ -20,11 +27,33 @@ export function LibrarySidebar({ open, onOpenChange }: { open: boolean; onOpenCh
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
-      <SheetContent side="right" className="flex w-full flex-col gap-3 sm:max-w-sm">
+      <SheetContent side="right" className="flex w-full flex-col gap-3 overflow-y-auto sm:max-w-sm">
         <SheetHeader>
           <SheetTitle className="font-display text-xl">Drag from library</SheetTitle>
-          <p className="text-xs text-muted-foreground">Drag any recipe onto a slot in your weekly plan.</p>
+          <p className="text-xs text-muted-foreground">Drag any recipe onto a slot, a theme, or any date below.</p>
         </SheetHeader>
+
+        <CalendarDropPanel />
+
+        <div className="rounded-xl border border-border/60 bg-muted/10 p-2">
+          <div className="mb-1.5 flex items-center justify-between px-1">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium">
+              <Tags className="h-3.5 w-3.5 text-amber-400" />Themes
+            </span>
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px] text-amber-300"
+              onClick={() => setThemesOpen(true)}>Manage</Button>
+          </div>
+          {themes.length === 0 ? (
+            <button onClick={() => setThemesOpen(true)}
+              className="w-full rounded-md border border-dashed border-border/60 p-2 text-[11px] text-muted-foreground hover:bg-muted/30">
+              Create a theme like Taco Tuesday →
+            </button>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {themes.map(t => <ThemeChip key={t.id} theme={t} compact />)}
+            </div>
+          )}
+        </div>
 
         <div className="flex gap-1">
           <button onClick={() => setTab("favorites")}
@@ -49,6 +78,8 @@ export function LibrarySidebar({ open, onOpenChange }: { open: boolean; onOpenCh
             </div>
           ) : filtered.map(m => <DraggableLibraryRow key={m.id} m={m} />)}
         </div>
+
+        <ThemesManager open={themesOpen} onOpenChange={setThemesOpen} />
       </SheetContent>
     </Sheet>
   );

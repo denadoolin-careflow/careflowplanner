@@ -1,49 +1,79 @@
-## Open recipes, quick add to week, day view, side-by-side DnD
+## Drag-to-calendar from Library + Day Themes
 
-Three connected upgrades across `MealsLibrary` and `Meals`.
+Two additions, both on top of the existing Meals planner and Library.
 
-### 1) Open recipes from the library
+### 1) Drag library recipes onto a specific calendar date
 
-**`src/pages/MealsLibrary.tsx`** + new **`src/components/meals/LibraryRecipeViewer.tsx`**
-- Card title and image are now clickable → open a read-only `LibraryRecipeViewer` sheet (cover image, slot/prep/cook/servings/energy/rating chips, ingredients list, numbered steps, tags, notes).
-- Footer actions inside the viewer: **Edit**, **Duplicate**, **Add to this week** (opens the same picker described in #2), **Favorite/Unfavorite**, **Archive/Unarchive**.
-- Pencil button still opens the existing editor; double-click on title also opens viewer.
+Today the library sidebar (`LibrarySidebar.tsx`) only drops onto the existing week/day grid slots in `Meals.tsx`. We will add a **calendar drop surface** so users can target any future date directly — same Replace / Add-to-grocery options as the popover.
 
-### 2) Quick add to weekly slots
+**New component**: `src/components/meals/CalendarDropPanel.tsx`
+- Mini month calendar (reuse `Calendar` from `ui/calendar.tsx`, single-month, navigable).
+- Each day cell becomes a `useDroppable` zone with id `cal-day-{YYYY-MM-DD}`.
+- Below the calendar: a row of 4 slot droppables — Breakfast / Lunch / Dinner / Snack — labeled "Drop on slot for {selected date}".
+- Persistent options (saved to `localStorage`):
+  - `Replace if taken` toggle
+  - `Add to grocery list` toggle (default on)
+- When a library row is dropped on a day cell → use the recipe's saved `slot` (fallback Dinner) for that date.
+- When dropped on a slot chip → use the currently selected day + that slot.
+- Visual feedback: hovered day gets gold ring; dropping flashes a confirmation toast with Undo.
 
-**`src/components/meals/AddToWeekDialog.tsx`** (new) + **`src/lib/meals-library.ts`** (small helper)
-- Multi-select on library cards: hovering a card reveals a checkbox; once 1+ selected, a sticky action bar slides in at the bottom (`framer-motion`) with: count, **Clear**, **Add to week**.
-- **Add to week** opens a compact dialog:
-  - **Week**: this week / next week (dropdown).
-  - **Days**: 7 day chips (multi-select; defaults to today's day).
-  - **Slot**: respects each meal's saved `slot`; meals without a slot get a single picker (Breakfast / Lunch / Dinner / Snack).
-  - **Mode**: *Replace existing* | *Only fill empty slots*.
-  - **Add groceries** toggle (default ON) — pushes ingredients into `grocery_items` like AI plan does, with `source_meal_*` linkage.
-- Inserts directly via `supabase.from("meals").insert(...)`. Toasts `Added N meals` and links to `/meals`.
-- Same dialog is reused from the recipe viewer (single-meal mode).
+**Changes in `src/pages/Meals.tsx`**
+- Mount `<CalendarDropPanel/>` inside the existing `LibrarySidebar` Sheet (compact, collapsible "Drop on a date" section above the recipe list) so the same drag gesture works for both grid slots and the calendar.
+- Extend `onDragEnd`:
+  - If `over.id` starts with `cal-day-` → call `addLibraryMealsToWeek([lib], [{date, slot: lib.slot ?? "Dinner"}], { mode, addGroceries })`.
+  - If `over.id` starts with `cal-slot-` → use selected date + that slot.
+- Reuse the existing snapshot/Undo toast pattern already used for slot replacement.
 
-### 3) Day view + side-by-side DnD on `Meals.tsx`
+### 2) Day themes (Taco Tuesday, Meat Monday…)
 
-**`src/pages/Meals.tsx`** + new **`src/components/meals/LibrarySidebar.tsx`**
+Themes are reusable "tags" the user assigns to a weekday and to recipes; the planner can fill that day from the matching pool.
 
-**View toggle** (segmented control near the page header):
-- **Week** — current 7-day grid (unchanged).
-- **Day** — single day, vertical list of the 4 slots as larger cards with full meal details inline; prev/next day arrows + date pill.
-- **2-day** — two adjacent days side by side (today + next, with ◀ ▶ to shift the pair). Drop targets accept DnD between the two days for easy comparison and rearrangement.
+**DB migration** (one new table)
+```text
+meal_themes
+  id uuid pk
+  user_id uuid (RLS: own only)
+  name text                  e.g. "Taco Tuesday"
+  emoji text nullable        🌮
+  color text nullable        hsl token name
+  weekday int nullable       0–6, optional auto-suggest
+  meal_ids uuid[]            references meals_library.id (array, app-managed)
+  notes text nullable
+  sort_order int default 0
+  created_at, updated_at
+```
+RLS: standard `auth.uid() = user_id` ALL policy. No FK to `meals_library` (array of ids managed in app).
 
-State persisted to `localStorage` (`meals.viewMode`, `meals.focusedDate`).
+**New library/helpers**: `src/lib/meal-themes.ts`
+- `useMealThemes()` hook (list/create/update/remove/reorder).
+- `addThemeToDay(themeId, date, opts)` — picks a recipe from the theme's pool (random or round-robin), inserts into `meals` for the chosen slot, optional `addGroceries`.
+- `addThemeToWeek(themeId, weekStart, opts)` — applies to its `weekday` (or asks).
 
-**Library sidebar** (drawer, available in all view modes):
-- Toggle button "📚 Library" in header opens a right-side `Sheet` listing favorite + recent library meals (image thumbnail, title, slot chip).
-- Each row is a `useDraggable` source with `data: { libraryMealId }`.
-- `Meals.tsx`'s existing `DndContext.onDragEnd` is extended: if `active.data.libraryMealId` is set and `over` is a slot droppable, insert a new `meals` row from that library meal (copies title, prep_minutes, ingredients, steps, tags). Existing meal-to-slot drag still works.
-- The sidebar stays open while dragging, so users can drop multiple meals into the grid in sequence.
+**New UI**:
+1. `src/components/meals/ThemesManager.tsx` — modal/sheet to CRUD themes:
+   - Name, emoji, color swatch, optional weekday pin, default slot.
+   - Multi-select recipes from the user's `meals_library` (search + checkbox grid). Shows selected count.
+2. `src/components/meals/ThemeChip.tsx` — small draggable chip used in:
+   - The new "Themes" rail at the top of `LibrarySidebar` (horizontal scroll of chips).
+   - A "Themes" row above the planner header with quick "Apply to this week" buttons.
+3. `MealsLibrary.tsx`:
+   - New "Themes" button in the header opens `ThemesManager`.
+   - Per-recipe action menu gains "Add to theme…" → choose existing or create.
+
+**Planner integration in `Meals.tsx`**
+- Theme chips are also `useDraggable` with `data: { themeId }`.
+- `onDragEnd` handles `themeId` drops onto:
+  - a slot in the grid → pick a recipe from the pool, insert there.
+  - a `cal-day-*` cell from the new calendar panel → same.
+- Right-click / "..." on a planner day shows "Apply theme → …".
+- When the focused date's weekday matches a theme's `weekday`, show a subtle "🌮 Taco Tuesday — Apply" suggestion banner with one-click apply.
 
 ### Files
-- **New**: `src/components/meals/LibraryRecipeViewer.tsx`, `src/components/meals/AddToWeekDialog.tsx`, `src/components/meals/LibrarySidebar.tsx`.
-- **Edited**: `src/pages/MealsLibrary.tsx` (selection, viewer, add-to-week button), `src/pages/Meals.tsx` (view modes, library sidebar trigger, extended `onDragEnd`), `src/lib/meals-library.ts` (small `addLibraryMealToSlot` helper used by sidebar + dialog).
+- **New**: `src/components/meals/CalendarDropPanel.tsx`, `src/components/meals/ThemesManager.tsx`, `src/components/meals/ThemeChip.tsx`, `src/lib/meal-themes.ts`, migration for `meal_themes`.
+- **Edited**: `src/components/meals/LibrarySidebar.tsx` (mount calendar panel + themes rail), `src/pages/Meals.tsx` (extend `onDragEnd`, theme suggestion banner), `src/pages/MealsLibrary.tsx` ("Themes" button + per-card "Add to theme").
 
 ### Notes
-- No DB migration needed — uses existing `meals_library`, `meals`, `grocery_items` tables.
-- All visuals stay on-brand: dark plum cards, gold accents on selection bar and CTA, rounded-2xl, soft motion.
-- Keyboard: `Esc` clears selection; arrow keys ←/→ in day/2-day view shift the focused date.
+- No change to `meals` schema — themes only insert into existing `meals` rows.
+- Same `addLibraryMealsToWeek` reused for calendar drops to keep replace/grocery logic in one place.
+- Toasts keep the existing Undo pattern from drag-replace.
+- Empty themes are blocked from being applied (toast prompts adding recipes first).
