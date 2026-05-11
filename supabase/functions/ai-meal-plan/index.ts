@@ -156,6 +156,7 @@ Pantry already has: ${pantryNames.join(", ") || "nothing notable"}.`;
     const startDate: string = body.start_date;
     const slots: string[] = body.slots ?? ["Breakfast", "Lunch", "Dinner", "Snack"];
     const replace: boolean = body.replace ?? true;
+    const mode: string | null = body.mode ?? null;
     if (!startDate) return json({ error: "start_date required" }, 400);
 
     const dates: string[] = [];
@@ -164,6 +165,14 @@ Pantry already has: ${pantryNames.join(", ") || "nothing notable"}.`;
       const d = new Date(start); d.setDate(start.getDate() + i);
       dates.push(d.toISOString().slice(0, 10));
     }
+
+    const modeHints: Record<string, string> = {
+      use_pantry: "Heavily prioritize meals that can be made primarily from pantry items already in stock. Add as few new grocery items as possible.",
+      low_budget: "Generate budget-friendly meals using inexpensive proteins, beans, lentils, eggs, rice, pasta, seasonal produce. Avoid premium ingredients.",
+      sensory_safe: "Generate sensory-safe meals: mild flavors, soft textures, no strong smells, simple ingredients separated when possible. Avoid mixed textures.",
+      low_energy: "Force low_energy mode: prefer no-cook, sheet-pan, or 15-minute meals. Reuse leftovers across days.",
+    };
+    const modeNote = mode && modeHints[mode] ? `\nSpecial mode: ${modeHints[mode]}` : "";
 
     const userMsg = `Plan meals for these 7 dates: ${dates.join(", ")}.
 Slots per day: ${slots.join(", ")}.
@@ -176,7 +185,7 @@ Budget level: ${prefs.budget_level}.
 Max prep minutes: ${prefs.max_prep_minutes}.
 Low energy mode: ${prefs.low_energy}.
 Picky-eater notes: ${prefs.picky_notes ?? "none"}.
-Pantry already has: ${pantryNames.join(", ") || "nothing notable"} (don't add these to grocery list).
+Pantry already has: ${pantryNames.join(", ") || "nothing notable"} (don't add these to grocery list).${modeNote}
 Generate meals and a consolidated grocery list grouped by category.`;
 
     const ai = await callAI(LOVABLE_API_KEY, userMsg, planTool);

@@ -15,6 +15,7 @@ import Year from "./pages/Year";
 import Goals from "./pages/Goals";
 import Habits from "./pages/Habits";
 import Meals from "./pages/Meals";
+import MealsLibrary from "./pages/MealsLibrary";
 import Caregiving from "./pages/Caregiving";
 import HomeReset from "./pages/HomeReset";
 import Journal from "./pages/Journal";
@@ -55,6 +56,7 @@ const App = () => (
                 <Route path="/goals" element={<Goals />} />
                 <Route path="/habits" element={<Habits />} />
                 <Route path="/meals" element={<Meals />} />
+                <Route path="/meals/library" element={<MealsLibrary />} />
                 <Route path="/caregiving" element={<Caregiving />} />
                 <Route path="/home-reset" element={<HomeReset />} />
                 <Route path="/journal" element={<Journal />} />

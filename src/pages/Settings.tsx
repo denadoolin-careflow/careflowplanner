@@ -15,6 +15,7 @@ import { pomodoroPrefs, usePomodoroPrefs } from "@/lib/pomodoro-prefs";
 import { playPomodoroChime } from "@/lib/pomodoro-chime";
 import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEditor";
 import { GoogleCalendarSection } from "@/components/calendar/GoogleCalendarSection";
+import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -86,6 +87,10 @@ export default function Settings() {
             </div>
           </div>
         </div>
+      </SectionCard>
+
+      <SectionCard title="Pantry status colors" subtitle="Used across grocery, pantry, and ingredient popups." accent="warm">
+        <PantryColorPicker />
       </SectionCard>
 
       <SectionCard

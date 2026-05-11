@@ -435,6 +435,42 @@ export type Database = {
         }
         Relationships: []
       }
+      grocery_categories: {
+        Row: {
+          collapsed: boolean
+          color: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          collapsed?: boolean
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          collapsed?: boolean
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       grocery_items: {
         Row: {
           bought: boolean
@@ -442,7 +478,9 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          notes: string | null
           qty: string | null
+          sort_order: number
           source_date: string | null
           source_meal_id: string | null
           source_meal_name: string | null
@@ -457,7 +495,9 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          notes?: string | null
           qty?: string | null
+          sort_order?: number
           source_date?: string | null
           source_meal_id?: string | null
           source_meal_name?: string | null
@@ -472,7 +512,9 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          notes?: string | null
           qty?: string | null
+          sort_order?: number
           source_date?: string | null
           source_meal_id?: string | null
           source_meal_name?: string | null
@@ -773,6 +815,81 @@ export type Database = {
         }
         Relationships: []
       }
+      meals_library: {
+        Row: {
+          color: string | null
+          cook_minutes: number | null
+          created_at: string
+          description: string | null
+          energy_level: string
+          family_rating: number | null
+          icon: string | null
+          id: string
+          image_url: string | null
+          ingredients: Json
+          is_archived: boolean
+          is_favorite: boolean
+          notes: string | null
+          prep_minutes: number | null
+          servings: number | null
+          slot: string | null
+          sort_order: number
+          steps: Json
+          tags: string[]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          cook_minutes?: number | null
+          created_at?: string
+          description?: string | null
+          energy_level?: string
+          family_rating?: number | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          is_archived?: boolean
+          is_favorite?: boolean
+          notes?: string | null
+          prep_minutes?: number | null
+          servings?: number | null
+          slot?: string | null
+          sort_order?: number
+          steps?: Json
+          tags?: string[]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          cook_minutes?: number | null
+          created_at?: string
+          description?: string | null
+          energy_level?: string
+          family_rating?: number | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          is_archived?: boolean
+          is_favorite?: boolean
+          notes?: string | null
+          prep_minutes?: number | null
+          servings?: number | null
+          slot?: string | null
+          sort_order?: number
+          steps?: Json
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pantry_items: {
         Row: {
           category: string | null
@@ -780,6 +897,9 @@ export type Database = {
           id: string
           in_stock: boolean
           name: string
+          notes: string | null
+          qty: string | null
+          stock_status: string
           updated_at: string
           user_id: string
         }
@@ -789,6 +909,9 @@ export type Database = {
           id?: string
           in_stock?: boolean
           name: string
+          notes?: string | null
+          qty?: string | null
+          stock_status?: string
           updated_at?: string
           user_id: string
         }
@@ -798,6 +921,9 @@ export type Database = {
           id?: string
           in_stock?: boolean
           name?: string
+          notes?: string | null
+          qty?: string | null
+          stock_status?: string
           updated_at?: string
           user_id?: string
         }
@@ -1155,6 +1281,33 @@ export type Database = {
           notes?: string | null
           start_time?: string
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_pantry_colors: {
+        Row: {
+          created_at: string
+          in_stock_color: string
+          low_color: string
+          out_color: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          in_stock_color?: string
+          low_color?: string
+          out_color?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          in_stock_color?: string
+          low_color?: string
+          out_color?: string
           updated_at?: string
           user_id?: string
         }
