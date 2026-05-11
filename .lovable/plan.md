@@ -1,66 +1,81 @@
-## Scope
+# CareFlow Upgrade Plan
 
-Six related features across routines, widgets, weekly page, themes, and meal timers. I'll group them into a single coordinated implementation.
+A large, multi-area upgrade. Grouped into 7 milestones — I'll ship them in order, each verifiable on its own. Aesthetic preserved: dark plum + gold, soft glow, rounded cozy cards.
 
-### 1. Routines (per-person, per-slot, AI-generated)
-- New table `routines` (user_id, person_name, slot: morning|nap|evening, items jsonb [{id,text,done}], notes).
-- New `RoutinesStrip` component shown on every page via `AppLayout` (collapsible bar above main content).
-- Person selector (free-text "people" stored in routines rows themselves; pick existing or "+ Add person") and slot tabs (Morning / Nap / Evening).
-- Checklist items inline-editable, drag-free, simple add/remove.
-- "Generate ideas" button → calls existing `ai-meal-plan`-style edge function pattern; create new edge function `ai-routine-ideas` using Lovable AI Gateway (Gemini default) to suggest 5–8 routine items based on person + slot + planning style.
+## 1. Data model (one migration)
 
-### 2. Editable widget text
-- For modular widgets on Dashboard (and any SectionCard `title`/`subtitle` used as widget headers in the grid), wrap titles in an `EditableText` component. Persisted overrides keyed by widget id in a new `widget_text_overrides` table (user_id, widget_id, field, value).
-- Apply to dashboard widgets (Today, Weather, WeeklyWeather, Moon, Affirmation, etc.) — single-click to edit, Enter/blur to save.
+New tables / columns to support editable, schedulable, AI-generated checklists with subtasks and templates.
 
-### 3. Weekly page: Kanban toggle + time-of-day grouping + habits bar
-- In `Week.tsx`, add view toggle: "Cards" (current) ↔ "Kanban".
-- In Kanban mode: 7 columns (one per weekday). Each column groups tasks into Morning / Afternoon / Evening sections based on `tasks.day_part` (already exists). Drag isn't required — keep it as visual grouping with ability to change `day_part` via small dropdown on each task.
-- In both modes, add a thin **habit completion bar** at the top of each day card: % of habits done that day from `habit_logs`.
+- `reset_checklists` — id, user_id, name, kind (`weekly`|`deep`|`quick`|`low_energy`|`custom`), week_start (nullable, for "this week" instances), is_template, sort_order
+- `reset_items` — id, user_id, checklist_id, parent_id (subtasks), title, notes, category/zone, day_of_week (0-6, nullable), time_block (`morning`|`afternoon`|`evening`, nullable), start_time, est_minutes, recurrence_type, recurrence_days, due_date, done, sort_order
+- Extend `cleaning_tasks` with `parent_id`, `time_block`, `start_time`, `est_minutes`, `category` (room), `subtasks` support via parent_id
+- All RLS: `auth.uid() = user_id`
 
-### 4. Expanded color palettes + top-right picker
-- Extend `theme-preset.ts` with more presets: default, sage, dusk, mono, rose, ocean, sunset, forest, lavender.
-- Add CSS variables for each preset under both `:root[data-theme="x"]` (light) and `.dark[data-theme="x"]` (dark) in `index.css` so contrast holds in both modes.
-- Add `ThemePicker` popover in header (next to existing `ThemeToggle`) showing color swatches.
+## 2. Weekly Reset (Week page) — fully editable
 
-### 5. Meal recipe custom timers → Focus page
-- In `RecipeDrawer`, add "Add timer" button per recipe → opens small dialog (label, minutes), saves a `pomodoro_templates` user-template (existing system) tagged with `mealId`/`mealName`.
-- These appear in the existing Pomodoro picker / FloatingPomodoro and contribute to existing `pomodoro_sessions` stats automatically (no schema change needed beyond a `meal_name` column on `pomodoro_sessions` if we want stats grouping).
-- Add `meal_name` text column to `pomodoro_sessions` so Pomodoro history/stats can show "from Recipe: X".
+- New component `ChecklistTree` with:
+  - inline edit (double-click), add/delete/duplicate, drag-reorder via `@dnd-kit`
+  - nested subtasks (collapsible), checkable
+  - per-item popover: notes, category, day, time block, start time, duration, recurrence, due date
+- "Save as template" + "Load template" actions
+- Auto-persist on every change (debounced)
 
-## Technical Notes
+## 3. Time blocking + drag-to-day
 
-**Migrations (single migration):**
-- `routines` table + RLS (own routines all).
-- `widget_text_overrides` table + RLS.
-- `pomodoro_sessions.meal_name` text column (nullable).
+- Week page adds a 7-column × 3-row (morning/afternoon/evening) grid view toggle
+- Drag reset items between day/block cells (dnd-kit), soft animated transitions
+- Visual badges on items showing assigned day + block + time
 
-**Edge function:**
-- `ai-routine-ideas` — `verify_jwt = false`, uses `LOVABLE_API_KEY`, model `google/gemini-2.5-flash`. Input: `{ person, slot, style }`. Output: `{ ideas: string[] }`.
+## 4. Home Reset page — full editability + AI
 
-**New files:**
-- `src/components/routines/RoutinesStrip.tsx`, `src/lib/routines.ts`
-- `src/components/common/EditableText.tsx`, `src/lib/widget-text.ts`
-- `src/components/layout/ThemePicker.tsx`
-- `src/components/widgets/HabitProgressBar.tsx`
-- `supabase/functions/ai-routine-ideas/index.ts`
+- Replace static cleaning list with `ChecklistTree` per zone/cadence
+- Sticky "Add Cleaning Task" FAB with quick form
+- AI panel with 4 buttons: Generate Weekly / Deep / Quick / Low-Energy Reset
+- New edge function `ai-cleaning-checklist` (Lovable AI, gemini-3-flash-preview, structured tool output) takes home size, family size, energy, time, caregiving load → returns nested checklist (zone, items, subtasks, est minutes, time block)
+- Result is inserted as a new editable checklist the user can keep/discard
 
-**Edited files:**
-- `src/components/layout/AppLayout.tsx` (mount RoutinesStrip + ThemePicker in header)
-- `src/lib/theme-preset.ts` (more presets)
-- `src/index.css` (palette variables for light + dark per preset)
-- `src/pages/Week.tsx` (kanban toggle, day_part grouping, habits bar)
-- `src/pages/Dashboard.tsx` (wire EditableText for widget titles)
-- `src/components/meals/RecipeDrawer.tsx` (Add timer button)
-- `src/lib/pomodoro-templates.ts` / `pomodoro-history.ts` (meal_name passthrough)
-- `src/components/tasks/PomodoroHistory.tsx` (show meal name)
+## 5. Focus timer on every checklist item
 
-## Order of Work
-1. Migration (routines, widget_text_overrides, pomodoro_sessions.meal_name) — requires approval.
-2. Routines: table helpers, edge function, RoutinesStrip in AppLayout.
-3. Themes: palette expansion + header ThemePicker.
-4. Weekly: kanban toggle, time-of-day grouping, habit bar.
-5. Editable widget text on Dashboard.
-6. Recipe custom timers + pomodoro stats wiring.
+- Each item gets a ⏱ button → quick picker (5/10/15/25/custom) → starts existing pomodoro store with item title
+- Reuses existing `FloatingPomodoro` + `FullScreenFocus` (already pinned + has overlay + completion chime)
+- Add gentle confetti/glow celebration on session end
 
-No new third-party deps required.
+## 6. Meal page reset
+
+- "Reset Meal Plan" button in Meals header
+- AlertDialog confirm → delete `meals` for current week, delete `grocery_items` where `source_meal_id` belongs to that week (favorites/pantry untouched)
+- After reset: offer "Generate New Meal Plan" (calls existing `ai-meal-plan` function)
+
+## 7. Week page date picker + navigation
+
+- Header: « prev | week range + month (click → mini calendar popover) | next » | "This week"
+- All week-scoped queries (tasks, blocks, checklists, habits) keyed off selected `weekStart` state
+- Smooth slide/fade transition on week change (framer-motion)
+
+## Technical notes
+
+- Add `@dnd-kit/core` + `@dnd-kit/sortable` (drag-and-drop)
+- Add `framer-motion` if not present (already used in FullScreenFocus)
+- New files (high level):
+  - `src/components/reset/ChecklistTree.tsx`, `ChecklistItemRow.tsx`, `ItemDetailsPopover.tsx`
+  - `src/components/reset/ScheduleGrid.tsx` (7×3 day/block grid)
+  - `src/components/reset/AIGenerateMenu.tsx`
+  - `src/components/reset/QuickTimerMenu.tsx`
+  - `src/components/week/WeekNavigator.tsx`
+  - `src/lib/reset-checklists.ts` (CRUD hook)
+  - `supabase/functions/ai-cleaning-checklist/index.ts`
+- Edits: `src/pages/Week.tsx`, `src/pages/HomeReset.tsx`, `src/pages/Meals.tsx`
+- Auto-persist with debounced supabase upserts; optimistic local state
+
+## Order of delivery in this run
+
+1. Migration (await approval)
+2. Install dnd-kit
+3. Reset checklist core (ChecklistTree + hook) + wire into Week + HomeReset
+4. Schedule grid + drag-to-day
+5. AI cleaning edge function + buttons
+6. Quick timer menu on items
+7. Meal reset
+8. Week navigator
+
+I'll keep the dark plum/gold tokens already in `index.css`; no design-system changes needed.
