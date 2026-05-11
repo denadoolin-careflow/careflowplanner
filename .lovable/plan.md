@@ -1,79 +1,55 @@
-## Drag-to-calendar from Library + Day Themes
+## Goal
 
-Two additions, both on top of the existing Meals planner and Library.
+Turn the Dashboard, Today, and Week pages into Evernote-style boards where every widget can be dragged, resized, hidden, or added — including free-form note and mini-task widgets — with smooth motion and haptic feedback. Each page keeps its own saved layout.
 
-### 1) Drag library recipes onto a specific calendar date
+## Scope (this plan)
 
-Today the library sidebar (`LibrarySidebar.tsx`) only drops onto the existing week/day grid slots in `Meals.tsx`. We will add a **calendar drop surface** so users can target any future date directly — same Replace / Add-to-grocery options as the popover.
+Only the customizable dashboard system. Health, Wealth, Home/Chores, and calendar DnD will follow in separate plans.
 
-**New component**: `src/components/meals/CalendarDropPanel.tsx`
-- Mini month calendar (reuse `Calendar` from `ui/calendar.tsx`, single-month, navigable).
-- Each day cell becomes a `useDroppable` zone with id `cal-day-{YYYY-MM-DD}`.
-- Below the calendar: a row of 4 slot droppables — Breakfast / Lunch / Dinner / Snack — labeled "Drop on slot for {selected date}".
-- Persistent options (saved to `localStorage`):
-  - `Replace if taken` toggle
-  - `Add to grocery list` toggle (default on)
-- When a library row is dropped on a day cell → use the recipe's saved `slot` (fallback Dinner) for that date.
-- When dropped on a slot chip → use the currently selected day + that slot.
-- Visual feedback: hovered day gets gold ring; dropping flashes a confirmation toast with Undo.
+## What you'll get
 
-**Changes in `src/pages/Meals.tsx`**
-- Mount `<CalendarDropPanel/>` inside the existing `LibrarySidebar` Sheet (compact, collapsible "Drop on a date" section above the recipe list) so the same drag gesture works for both grid slots and the calendar.
-- Extend `onDragEnd`:
-  - If `over.id` starts with `cal-day-` → call `addLibraryMealsToWeek([lib], [{date, slot: lib.slot ?? "Dinner"}], { mode, addGroceries })`.
-  - If `over.id` starts with `cal-slot-` → use selected date + that slot.
-- Reuse the existing snapshot/Undo toast pattern already used for slot replacement.
+- A grid you can rearrange: long-press / grab a widget to move, drag a corner to resize (S / M / L / XL spans).
+- An "Edit layout" toggle in the page header. Outside edit mode, widgets behave normally (no accidental drags).
+- A "+ Add widget" gallery showing every available widget (existing ones like Top 3, Meals Today, Habits, Weather, etc.) plus new **Note** and **Mini Task List** widget types you can add multiple instances of.
+- Hide any widget from its corner menu; bring it back from the gallery.
+- Per-page layouts: Home (`/`), Today (`/today`), Week (`/week`) each remember their own arrangement.
+- Smooth framer-motion transitions on drag/drop/resize and Vibration API haptics on pickup, snap, and delete (no-ops on unsupported devices).
+- Layouts persist per user in the existing `dashboard_layouts` table (one row per page).
 
-### 2) Day themes (Taco Tuesday, Meat Monday…)
+## Technical details
 
-Themes are reusable "tags" the user assigns to a weekday and to recipes; the planner can fill that day from the matching pool.
+**Library**: `react-grid-layout` (responsive, supports drag + resize + serializable layout JSON). Already aligns with our Tailwind setup.
 
-**DB migration** (one new table)
-```text
-meal_themes
-  id uuid pk
-  user_id uuid (RLS: own only)
-  name text                  e.g. "Taco Tuesday"
-  emoji text nullable        🌮
-  color text nullable        hsl token name
-  weekday int nullable       0–6, optional auto-suggest
-  meal_ids uuid[]            references meals_library.id (array, app-managed)
-  notes text nullable
-  sort_order int default 0
-  created_at, updated_at
-```
-RLS: standard `auth.uid() = user_id` ALL policy. No FK to `meals_library` (array of ids managed in app).
+**Data model** — reuse existing `dashboard_layouts` table:
+- `name` = page key: `"home" | "today" | "week"`
+- `layout` = `react-grid-layout` array `[{ i, x, y, w, h, minW, minH }]`
+- `widgets` = `[{ id, type, props, hidden }]` where `type` is a registered widget key (`"top3"`, `"meals-today"`, `"note"`, `"mini-tasks"`, …) and `id` matches `layout[i].i`
 
-**New library/helpers**: `src/lib/meal-themes.ts`
-- `useMealThemes()` hook (list/create/update/remove/reorder).
-- `addThemeToDay(themeId, date, opts)` — picks a recipe from the theme's pool (random or round-robin), inserts into `meals` for the chosen slot, optional `addGroceries`.
-- `addThemeToWeek(themeId, weekStart, opts)` — applies to its `weekday` (or asks).
+**New files**
+- `src/lib/dashboard-layouts.ts` — load/save per-page layout, defaults, add/remove/hide helpers.
+- `src/lib/haptics.ts` — `tap()`, `pickup()`, `snap()` wrappers around `navigator.vibrate`.
+- `src/components/dashboard/WidgetRegistry.tsx` — central map: `type → { title, icon, defaultSize, component }`.
+- `src/components/dashboard/CustomizableGrid.tsx` — `react-grid-layout` wrapper, edit-mode chrome (drag handle, resize handle, hide button), framer-motion item transitions.
+- `src/components/dashboard/WidgetFrame.tsx` — shared card shell with title, hide/settings menu.
+- `src/components/dashboard/AddWidgetSheet.tsx` — gallery sheet to add hidden or new widgets.
+- `src/components/dashboard/widgets/NoteWidget.tsx` — rich-ish textarea note (title + body), autosaves to widget props.
+- `src/components/dashboard/widgets/MiniTasksWidget.tsx` — small inline checklist stored in widget props.
+- Wrappers around existing dashboard sections (Top 3, Meals Today, Habits, Weather, Moon, Pomodoro, Appointments, etc.) so they plug into the registry without duplicating logic.
 
-**New UI**:
-1. `src/components/meals/ThemesManager.tsx` — modal/sheet to CRUD themes:
-   - Name, emoji, color swatch, optional weekday pin, default slot.
-   - Multi-select recipes from the user's `meals_library` (search + checkbox grid). Shows selected count.
-2. `src/components/meals/ThemeChip.tsx` — small draggable chip used in:
-   - The new "Themes" rail at the top of `LibrarySidebar` (horizontal scroll of chips).
-   - A "Themes" row above the planner header with quick "Apply to this week" buttons.
-3. `MealsLibrary.tsx`:
-   - New "Themes" button in the header opens `ThemesManager`.
-   - Per-recipe action menu gains "Add to theme…" → choose existing or create.
+**Edited files**
+- `src/pages/Dashboard.tsx` — replace hand-built grid with `<CustomizableGrid pageKey="home" />`.
+- `src/pages/Today.tsx` and `src/pages/Week.tsx` — same treatment with their own `pageKey` and default widget sets.
+- `src/components/layout/AppLayout.tsx` — add an "Edit layout" toggle button in the header that's only active on supported pages.
 
-**Planner integration in `Meals.tsx`**
-- Theme chips are also `useDraggable` with `data: { themeId }`.
-- `onDragEnd` handles `themeId` drops onto:
-  - a slot in the grid → pick a recipe from the pool, insert there.
-  - a `cal-day-*` cell from the new calendar panel → same.
-- Right-click / "..." on a planner day shows "Apply theme → …".
-- When the focused date's weekday matches a theme's `weekday`, show a subtle "🌮 Taco Tuesday — Apply" suggestion banner with one-click apply.
+**Dependencies to add**: `react-grid-layout` and its CSS, `@types/react-grid-layout`.
 
-### Files
-- **New**: `src/components/meals/CalendarDropPanel.tsx`, `src/components/meals/ThemesManager.tsx`, `src/components/meals/ThemeChip.tsx`, `src/lib/meal-themes.ts`, migration for `meal_themes`.
-- **Edited**: `src/components/meals/LibrarySidebar.tsx` (mount calendar panel + themes rail), `src/pages/Meals.tsx` (extend `onDragEnd`, theme suggestion banner), `src/pages/MealsLibrary.tsx` ("Themes" button + per-card "Add to theme").
+**Defaults**: First load seeds each page with its current widgets in a sensible layout. Migration: a no-op SQL is not needed — `dashboard_layouts` already exists with the right shape. We will only insert default rows on first visit per page.
 
-### Notes
-- No change to `meals` schema — themes only insert into existing `meals` rows.
-- Same `addLibraryMealsToWeek` reused for calendar drops to keep replace/grocery logic in one place.
-- Toasts keep the existing Undo pattern from drag-replace.
-- Empty themes are blocked from being applied (toast prompts adding recipes first).
+**Mobile**: Grid uses one column on `<sm` (the current 411px viewport). Drag/resize still works via touch; haptics fire on supported devices.
+
+## Out of scope (future plans)
+
+- Health page (self-care, movement, weight, goal-tailored meals)
+- Wealth page (budget, subscriptions, debt, recurring → calendar)
+- Calendar hourly DnD (move/resize events, drop tasks to time-block, recurring auto-appear)
+- Home cleaning zones / maintenance / documents / per-person chore checklist
