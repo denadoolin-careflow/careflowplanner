@@ -3,8 +3,9 @@ import { useMealsLibrary, type LibraryMeal } from "@/lib/meals-library";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Heart, Star, Copy, Archive, Pencil, Clock, LayoutGrid, List as ListIcon, Search } from "lucide-react";
+import { Plus, Heart, Star, Copy, Archive, Pencil, Clock, LayoutGrid, List as ListIcon, Search, Sparkles } from "lucide-react";
 import { MealLibraryEditor } from "@/components/meals/MealLibraryEditor";
+import { AIGenerateMealsDialog } from "@/components/meals/AIGenerateMealsDialog";
 import { EmptyState } from "@/components/cards/EmptyState";
 import { motion } from "framer-motion";
 
@@ -12,7 +13,7 @@ const SLOT_TABS = ["All", "Breakfast", "Lunch", "Dinner", "Snack"] as const;
 const TAG_CHIPS = ["freezer", "low-energy", "sensory-safe", "quick", "kid-friendly"];
 
 export default function MealsLibrary() {
-  const { items, create, update, remove, duplicate } = useMealsLibrary();
+  const { items, create, update, remove, duplicate, refresh } = useMealsLibrary();
   const [view, setView] = useState<"cards" | "table">("cards");
   const [q, setQ] = useState("");
   const [slot, setSlot] = useState<string>("All");
@@ -21,6 +22,7 @@ export default function MealsLibrary() {
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<Partial<LibraryMeal> | null>(null);
   const [open, setOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return items.filter(i => {
@@ -51,6 +53,10 @@ export default function MealsLibrary() {
           <Button variant="outline" className="rounded-full" onClick={() => setView(v => v === "cards" ? "table" : "cards")}>
             {view === "cards" ? <ListIcon className="mr-1 h-4 w-4" /> : <LayoutGrid className="mr-1 h-4 w-4" />}
             {view === "cards" ? "Table" : "Cards"}
+          </Button>
+          <Button variant="outline" onClick={() => setAiOpen(true)}
+            className="rounded-full border-amber-400/40 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20 hover:text-amber-100">
+            <Sparkles className="mr-1 h-4 w-4" />AI generate
           </Button>
           <Button onClick={newMeal} className="rounded-full"><Plus className="mr-1 h-4 w-4" />New recipe</Button>
         </div>
@@ -98,8 +104,13 @@ export default function MealsLibrary() {
           {filtered.map(m => (
             <motion.div key={m.id} layout whileHover={{ y: -2 }}
               className="cozy-card group flex flex-col gap-2 p-4 transition hover:shadow-[0_0_20px_hsl(var(--primary)/0.18)]">
-              <div className="flex h-20 items-center justify-center rounded-lg bg-gradient-to-br from-primary/15 to-accent/15 text-3xl">
-                {m.icon ?? "🍽️"}
+              <div className="relative flex h-24 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-primary/15 to-accent/15 text-3xl">
+                {m.image_url ? (
+                  <img src={m.image_url} alt={m.title} loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <span>{m.icon ?? "🍽️"}</span>
+                )}
               </div>
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -155,6 +166,7 @@ export default function MealsLibrary() {
       )}
 
       <MealLibraryEditor meal={editing} open={open} onClose={() => setOpen(false)} onSave={onSave} />
+      <AIGenerateMealsDialog open={aiOpen} onOpenChange={setAiOpen} onDone={refresh} />
     </div>
   );
 }
