@@ -132,23 +132,52 @@ export default function Meals() {
       try {
         const { data: lib } = await supabase.from("meals_library").select("*").eq("id", libId).maybeSingle();
         if (!lib || !user?.id) return;
-        // If slot occupied, ask before replacing
         const occupant = state.meals.find(m => m.date === target.date && m.slot === target.slot);
-        if (occupant && !confirm(`Replace ${occupant.name} in ${target.slot}?`)) return;
+        // Snapshot occupant for undo
+        const snapshot = occupant ? { ...occupant } : null;
         if (occupant) {
           await supabase.from("grocery_items").delete().eq("source_meal_id", occupant.id);
           await supabase.from("meals").delete().eq("id", occupant.id);
         }
-        await supabase.from("meals").insert({
+        const { data: inserted } = await supabase.from("meals").insert({
           user_id: user.id, date: target.date, slot: target.slot,
           name: lib.title,
           prep_minutes: lib.prep_minutes ?? null,
           ingredients: lib.ingredients ?? [],
           steps: lib.steps ?? [],
           tags: lib.tags ?? [],
-        });
+        }).select().single();
         await reloadAll();
-        toast.success(`Added ${lib.title} to ${target.slot}`);
+        if (snapshot) {
+          toast.success(`Replaced ${snapshot.name} with ${lib.title}`, {
+            description: `${target.slot} · ${format(parseISO(target.date), "EEE MMM d")}`,
+            action: {
+              label: "Undo",
+              onClick: async () => {
+                if (inserted?.id) await supabase.from("meals").delete().eq("id", inserted.id);
+                await supabase.from("meals").insert({
+                  user_id: user.id, date: snapshot.date, slot: snapshot.slot,
+                  name: snapshot.name, prep_minutes: snapshot.prepMinutes ?? null,
+                  ingredients: snapshot.ingredients ?? [], steps: snapshot.steps ?? [],
+                  tags: snapshot.tags ?? [],
+                });
+                await reloadAll();
+                toast.message(`Restored ${snapshot.name}`);
+              },
+            },
+          });
+        } else {
+          toast.success(`Added ${lib.title}`, {
+            description: `${target.slot} · ${format(parseISO(target.date), "EEE MMM d")}`,
+            action: inserted?.id ? {
+              label: "Undo",
+              onClick: async () => {
+                await supabase.from("meals").delete().eq("id", inserted.id);
+                await reloadAll();
+              },
+            } : undefined,
+          });
+        }
       } catch (err: any) {
         toast.error(err?.message ?? "Couldn't add");
       }
@@ -161,12 +190,26 @@ export default function Meals() {
     const meal = state.meals.find(m => m.id === id);
     if (!meal) return;
     if (meal.date === target.date && meal.slot === target.slot) return;
-    // If target occupied → swap
     const occupant = state.meals.find(m => m.date === target.date && m.slot === target.slot);
+    const fromDate = meal.date, fromSlot = meal.slot;
     if (occupant) {
       await updateMeal(occupant.id, { date: meal.date, slot: meal.slot });
     }
     await updateMeal(id, { date: target.date, slot: target.slot as Meal["slot"] });
+    const whenLabel = `${target.slot} · ${format(parseISO(target.date), "EEE MMM d")}`;
+    toast.success(
+      occupant ? `Swapped ${meal.name} ↔ ${occupant.name}` : `Moved ${meal.name} to ${whenLabel}`,
+      {
+        description: occupant ? whenLabel : undefined,
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            await updateMeal(id, { date: fromDate, slot: fromSlot });
+            if (occupant) await updateMeal(occupant.id, { date: target.date!, slot: target.slot as Meal["slot"] });
+          },
+        },
+      }
+    );
   };
 
   return (
