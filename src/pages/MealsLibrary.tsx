@@ -3,12 +3,13 @@ import { useMealsLibrary, type LibraryMeal } from "@/lib/meals-library";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Heart, Star, Copy, Archive, Pencil, Clock, LayoutGrid, List as ListIcon, Search, Sparkles, CalendarPlus, CalendarDays, X, CheckSquare } from "lucide-react";
+import { Plus, Heart, Star, Copy, Archive, Pencil, Clock, LayoutGrid, List as ListIcon, Search, Sparkles, CalendarPlus, CalendarDays, X, CheckSquare, Tags } from "lucide-react";
 import { MealLibraryEditor } from "@/components/meals/MealLibraryEditor";
 import { AIGenerateMealsDialog } from "@/components/meals/AIGenerateMealsDialog";
 import { LibraryRecipeViewer } from "@/components/meals/LibraryRecipeViewer";
 import { AddToWeekDialog } from "@/components/meals/AddToWeekDialog";
 import { AddToDayPopover } from "@/components/meals/AddToDayPopover";
+import { ThemesManager } from "@/components/meals/ThemesManager";
 import { EmptyState } from "@/components/cards/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,6 +32,7 @@ export default function MealsLibrary() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [addQueue, setAddQueue] = useState<LibraryMeal[]>([]);
+  const [themesOpen, setThemesOpen] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && selected.size) setSelected(new Set()); };
@@ -77,6 +79,9 @@ export default function MealsLibrary() {
           <Button variant="outline" className="rounded-full" onClick={() => setView(v => v === "cards" ? "table" : "cards")}>
             {view === "cards" ? <ListIcon className="mr-1 h-4 w-4" /> : <LayoutGrid className="mr-1 h-4 w-4" />}
             {view === "cards" ? "Table" : "Cards"}
+          </Button>
+          <Button variant="outline" className="rounded-full" onClick={() => setThemesOpen(true)}>
+            <Tags className="mr-1 h-4 w-4" />Themes
           </Button>
           <Button variant="outline" onClick={() => setAiOpen(true)}
             className="rounded-full border-amber-400/40 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20 hover:text-amber-100">
@@ -225,6 +230,7 @@ export default function MealsLibrary() {
         onOpenChange={setAddOpen}
         onDone={() => setSelected(new Set())}
       />
+      <ThemesManager open={themesOpen} onOpenChange={setThemesOpen} />
 
       <AnimatePresence>
         {selected.size > 0 && (
