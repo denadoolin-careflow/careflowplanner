@@ -3,11 +3,12 @@ import { useMealsLibrary, type LibraryMeal } from "@/lib/meals-library";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Heart, Star, Copy, Archive, Pencil, Clock, LayoutGrid, List as ListIcon, Search, Sparkles, CalendarPlus, X, CheckSquare } from "lucide-react";
+import { Plus, Heart, Star, Copy, Archive, Pencil, Clock, LayoutGrid, List as ListIcon, Search, Sparkles, CalendarPlus, CalendarDays, X, CheckSquare } from "lucide-react";
 import { MealLibraryEditor } from "@/components/meals/MealLibraryEditor";
 import { AIGenerateMealsDialog } from "@/components/meals/AIGenerateMealsDialog";
 import { LibraryRecipeViewer } from "@/components/meals/LibraryRecipeViewer";
 import { AddToWeekDialog } from "@/components/meals/AddToWeekDialog";
+import { AddToDayPopover } from "@/components/meals/AddToDayPopover";
 import { EmptyState } from "@/components/cards/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -164,6 +165,9 @@ export default function MealsLibrary() {
                 ))}</div>
               ) : null}
               <div className="mt-auto flex gap-1 pt-1 opacity-0 transition group-hover:opacity-100">
+                <AddToDayPopover meals={[m]} trigger={
+                  <Button size="sm" variant="ghost" className="h-7 px-2 text-amber-400" title="Add to a day"><CalendarDays className="h-3 w-3" /></Button>
+                } />
                 <Button size="sm" variant="ghost" className="h-7 px-2 text-amber-400" title="Add to week" onClick={() => openAddSingle(m)}><CalendarPlus className="h-3 w-3" /></Button>
                 <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditing(m); setOpen(true); }}><Pencil className="h-3 w-3" /></Button>
                 <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => duplicate(m.id)}><Copy className="h-3 w-3" /></Button>
@@ -188,6 +192,9 @@ export default function MealsLibrary() {
                   <td className="p-2 text-center text-muted-foreground">{m.energy_level}</td>
                   <td className="p-2 text-center text-muted-foreground">{m.family_rating ?? "—"}</td>
                   <td className="p-2 text-right">
+                    <AddToDayPopover meals={[m]} trigger={
+                      <Button size="sm" variant="ghost" className="h-7 text-amber-400" title="Add to a day"><CalendarDays className="h-3 w-3" /></Button>
+                    } />
                     <Button size="sm" variant="ghost" className="h-7 text-amber-400" onClick={() => openAddSingle(m)}>Add</Button>
                     <Button size="sm" variant="ghost" className="h-7" onClick={() => { setEditing(m); setOpen(true); }}>Edit</Button>
                     <Button size="sm" variant="ghost" className="h-7" onClick={() => duplicate(m.id)}>Dup</Button>
@@ -228,6 +235,16 @@ export default function MealsLibrary() {
             className="fixed inset-x-0 bottom-4 z-40 mx-auto flex w-fit items-center gap-2 rounded-full border border-amber-400/40 bg-background/95 px-3 py-2 shadow-[0_0_24px_hsl(45_90%_55%/0.25)] backdrop-blur">
             <CheckSquare className="h-4 w-4 text-amber-400" />
             <span className="text-sm">{selected.size} selected</span>
+            <AddToDayPopover
+              meals={items.filter(i => selected.has(i.id))}
+              onDone={() => setSelected(new Set())}
+              align="center"
+              trigger={
+                <Button size="sm" variant="outline" className="rounded-full">
+                  <CalendarDays className="mr-1 h-3.5 w-3.5" />Add to day
+                </Button>
+              }
+            />
             <Button size="sm" onClick={openAddSelected} className="rounded-full">
               <CalendarPlus className="mr-1 h-3.5 w-3.5" />Add to week
             </Button>
