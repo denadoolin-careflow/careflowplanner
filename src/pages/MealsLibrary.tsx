@@ -1,13 +1,16 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useMealsLibrary, type LibraryMeal } from "@/lib/meals-library";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Heart, Star, Copy, Archive, Pencil, Clock, LayoutGrid, List as ListIcon, Search, Sparkles } from "lucide-react";
+import { Plus, Heart, Star, Copy, Archive, Pencil, Clock, LayoutGrid, List as ListIcon, Search, Sparkles, CalendarPlus, X, CheckSquare } from "lucide-react";
 import { MealLibraryEditor } from "@/components/meals/MealLibraryEditor";
 import { AIGenerateMealsDialog } from "@/components/meals/AIGenerateMealsDialog";
+import { LibraryRecipeViewer } from "@/components/meals/LibraryRecipeViewer";
+import { AddToWeekDialog } from "@/components/meals/AddToWeekDialog";
 import { EmptyState } from "@/components/cards/EmptyState";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const SLOT_TABS = ["All", "Breakfast", "Lunch", "Dinner", "Snack"] as const;
 const TAG_CHIPS = ["freezer", "low-energy", "sensory-safe", "quick", "kid-friendly"];
@@ -23,6 +26,26 @@ export default function MealsLibrary() {
   const [editing, setEditing] = useState<Partial<LibraryMeal> | null>(null);
   const [open, setOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [viewing, setViewing] = useState<LibraryMeal | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [addOpen, setAddOpen] = useState(false);
+  const [addQueue, setAddQueue] = useState<LibraryMeal[]>([]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && selected.size) setSelected(new Set()); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected.size]);
+
+  const toggleSel = (id: string) => setSelected(s => {
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+  const openAddSelected = () => {
+    const ms = items.filter(i => selected.has(i.id));
+    if (!ms.length) return;
+    setAddQueue(ms); setAddOpen(true);
+  };
+  const openAddSingle = (m: LibraryMeal) => { setAddQueue([m]); setAddOpen(true); };
 
   const filtered = useMemo(() => {
     return items.filter(i => {
@@ -103,18 +126,27 @@ export default function MealsLibrary() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map(m => (
             <motion.div key={m.id} layout whileHover={{ y: -2 }}
-              className="cozy-card group flex flex-col gap-2 p-4 transition hover:shadow-[0_0_20px_hsl(var(--primary)/0.18)]">
-              <div className="relative flex h-24 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-primary/15 to-accent/15 text-3xl">
+              className={`cozy-card group relative flex flex-col gap-2 p-4 transition hover:shadow-[0_0_20px_hsl(var(--primary)/0.18)]
+                ${selected.has(m.id) ? "ring-2 ring-amber-400/60 shadow-[0_0_18px_hsl(45_90%_55%/0.25)]" : ""}`}>
+              <div onClick={(e) => { e.stopPropagation(); toggleSel(m.id); }}
+                className={`absolute left-2 top-2 z-10 grid h-5 w-5 cursor-pointer place-items-center rounded-md border bg-background/80 backdrop-blur transition
+                  ${selected.has(m.id) ? "border-amber-400/60 bg-amber-400/20 opacity-100" : "border-border/60 opacity-0 group-hover:opacity-100"}`}>
+                <Checkbox checked={selected.has(m.id)} className="pointer-events-none h-3 w-3" />
+              </div>
+              <button onClick={() => setViewing(m)}
+                className="relative flex h-24 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-primary/15 to-accent/15 text-3xl">
                 {m.image_url ? (
                   <img src={m.image_url} alt={m.title} loading="lazy"
                     className="absolute inset-0 h-full w-full object-cover" />
                 ) : (
                   <span>{m.icon ?? "🍽️"}</span>
                 )}
-              </div>
+              </button>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-medium leading-tight">{m.title}</div>
+                  <button onClick={() => setViewing(m)} className="text-left font-medium leading-tight hover:text-primary">
+                    {m.title}
+                  </button>
                   {m.description && <div className="line-clamp-2 text-[11px] text-muted-foreground">{m.description}</div>}
                 </div>
                 <button onClick={() => update(m.id, { is_favorite: !m.is_favorite })}>
@@ -132,6 +164,7 @@ export default function MealsLibrary() {
                 ))}</div>
               ) : null}
               <div className="mt-auto flex gap-1 pt-1 opacity-0 transition group-hover:opacity-100">
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-amber-400" title="Add to week" onClick={() => openAddSingle(m)}><CalendarPlus className="h-3 w-3" /></Button>
                 <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditing(m); setOpen(true); }}><Pencil className="h-3 w-3" /></Button>
                 <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => duplicate(m.id)}><Copy className="h-3 w-3" /></Button>
                 <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => update(m.id, { is_archived: !m.is_archived })}><Archive className="h-3 w-3" /></Button>
@@ -143,17 +176,19 @@ export default function MealsLibrary() {
         <div className="cozy-card overflow-x-auto p-2">
           <table className="w-full text-sm">
             <thead className="text-xs uppercase text-muted-foreground">
-              <tr><th className="p-2 text-left">Title</th><th className="p-2">Slot</th><th className="p-2">Prep</th><th className="p-2">Energy</th><th className="p-2">Rating</th><th></th></tr>
+              <tr><th className="p-2"></th><th className="p-2 text-left">Title</th><th className="p-2">Slot</th><th className="p-2">Prep</th><th className="p-2">Energy</th><th className="p-2">Rating</th><th></th></tr>
             </thead>
             <tbody>
               {filtered.map(m => (
                 <tr key={m.id} className="border-t border-border/40">
-                  <td className="p-2">{m.title}</td>
+                  <td className="p-2"><Checkbox checked={selected.has(m.id)} onCheckedChange={() => toggleSel(m.id)} /></td>
+                  <td className="p-2"><button onClick={() => setViewing(m)} className="text-left hover:text-primary">{m.title}</button></td>
                   <td className="p-2 text-center text-muted-foreground">{m.slot ?? "—"}</td>
                   <td className="p-2 text-center text-muted-foreground">{m.prep_minutes ?? "—"}</td>
                   <td className="p-2 text-center text-muted-foreground">{m.energy_level}</td>
                   <td className="p-2 text-center text-muted-foreground">{m.family_rating ?? "—"}</td>
                   <td className="p-2 text-right">
+                    <Button size="sm" variant="ghost" className="h-7 text-amber-400" onClick={() => openAddSingle(m)}>Add</Button>
                     <Button size="sm" variant="ghost" className="h-7" onClick={() => { setEditing(m); setOpen(true); }}>Edit</Button>
                     <Button size="sm" variant="ghost" className="h-7" onClick={() => duplicate(m.id)}>Dup</Button>
                     <Button size="sm" variant="ghost" className="h-7 text-destructive" onClick={() => { if (confirm("Remove?")) remove(m.id); }}>Del</Button>
@@ -167,6 +202,41 @@ export default function MealsLibrary() {
 
       <MealLibraryEditor meal={editing} open={open} onClose={() => setOpen(false)} onSave={onSave} />
       <AIGenerateMealsDialog open={aiOpen} onOpenChange={setAiOpen} onDone={refresh} />
+      <LibraryRecipeViewer
+        meal={viewing}
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        onEdit={(m) => { setViewing(null); setEditing(m); setOpen(true); }}
+        onDuplicate={(id) => duplicate(id)}
+        onToggleFavorite={(m) => update(m.id, { is_favorite: !m.is_favorite })}
+        onToggleArchive={(m) => update(m.id, { is_archived: !m.is_archived })}
+        onAddToWeek={(m) => openAddSingle(m)}
+      />
+      <AddToWeekDialog
+        meals={addQueue}
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onDone={() => setSelected(new Set())}
+      />
+
+      <AnimatePresence>
+        {selected.size > 0 && (
+          <motion.div
+            initial={{ y: 60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 60, opacity: 0 }}
+            className="fixed inset-x-0 bottom-4 z-40 mx-auto flex w-fit items-center gap-2 rounded-full border border-amber-400/40 bg-background/95 px-3 py-2 shadow-[0_0_24px_hsl(45_90%_55%/0.25)] backdrop-blur">
+            <CheckSquare className="h-4 w-4 text-amber-400" />
+            <span className="text-sm">{selected.size} selected</span>
+            <Button size="sm" onClick={openAddSelected} className="rounded-full">
+              <CalendarPlus className="mr-1 h-3.5 w-3.5" />Add to week
+            </Button>
+            <button onClick={() => setSelected(new Set())} className="rounded-full p-1 text-muted-foreground hover:text-foreground">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
