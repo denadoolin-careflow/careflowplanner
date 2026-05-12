@@ -33,6 +33,7 @@ import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
 import { PomodoroBoundaryFlash } from "@/components/tasks/PomodoroBoundaryFlash";
 import { FullScreenFocus } from "@/components/tasks/FullScreenFocus";
+import { AIAssistantFab } from "@/components/ai/AIAssistantFab";
 
 const queryClient = new QueryClient();
 
