@@ -8,9 +8,14 @@ import { WIDGET_REGISTRY } from "./WidgetRegistry";
 import { WidgetFrame } from "./WidgetFrame";
 import { AddWidgetSheet } from "./AddWidgetSheet";
 import { Button } from "@/components/ui/button";
-import { Pencil, Check, Plus, RotateCcw } from "lucide-react";
+import { Pencil, Check, Plus, RotateCcw, Palette, Layers, Trash2 } from "lucide-react";
 import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
+import { WidgetThemePicker } from "./WidgetThemePicker";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -22,6 +27,8 @@ export function CustomizableGrid({ pageKey }: Props) {
   const {
     data, loading, updateLayout, addWidget, removeWidget,
     hideWidget, updateWidgetProps, resetToDefault,
+    setPageTheme, setWidgetTheme, toggleCollapsed,
+    preset, presets, switchPreset, createPreset, deletePreset,
   } = useDashboardLayout(pageKey);
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -56,6 +63,63 @@ export function CustomizableGrid({ pageKey }: Props) {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="font-medium">
+              <Layers className="mr-1 h-4 w-4" /> {preset}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Layout presets</DropdownMenuLabel>
+            {presets.map((name) => (
+              <DropdownMenuItem
+                key={name}
+                onClick={() => { switchPreset(name); haptics.tap(); }}
+                className={name === preset ? "bg-muted/60" : ""}
+              >
+                <Layers className="mr-2 h-3.5 w-3.5 opacity-60" />
+                <span className="flex-1">{name}</span>
+                {name !== "Default" && (
+                  <Trash2
+                    className="ml-2 h-3.5 w-3.5 text-destructive opacity-70 hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Delete preset "${name}"?`)) {
+                        deletePreset(name);
+                        haptics.delete();
+                        toast("Preset deleted.");
+                      }
+                    }}
+                  />
+                )}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                const name = prompt("Name this preset (e.g. Recovery day, Workday):");
+                if (name?.trim()) {
+                  createPreset(name.trim(), true);
+                  haptics.snap();
+                  toast.success(`Saved preset "${name.trim()}".`);
+                }
+              }}
+            >
+              <Plus className="mr-2 h-3.5 w-3.5" /> Save current as new preset…
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <WidgetThemePicker
+          value={data.pageTheme}
+          onChange={(t) => { setPageTheme(t); haptics.tap(); }}
+          trigger={
+            <Button variant="outline" size="sm">
+              <Palette className="mr-1 h-4 w-4" /> Page theme
+            </Button>
+          }
+        />
+
         {editing && (
           <>
             <Button variant="outline" size="sm" onClick={() => { setAddOpen(true); haptics.tap(); }}>
@@ -129,6 +193,11 @@ export function CustomizableGrid({ pageKey }: Props) {
                 icon={spec.icon}
                 editing={editing}
                 bare={spec.bare}
+                pageTheme={data.pageTheme}
+                widgetTheme={w.theme}
+                onThemeChange={spec.bare ? undefined : (t) => { setWidgetTheme(w.id, t); haptics.tap(); }}
+                collapsed={!spec.bare && !!w.collapsed}
+                onToggleCollapse={spec.bare ? undefined : () => { toggleCollapsed(w.id); haptics.tap(); }}
                 onHide={() => { hideWidget(w.id, true); haptics.tap(); toast("Hidden — find it in Add widget."); }}
                 onRemove={() => { removeWidget(w.id); haptics.delete(); toast("Widget removed."); }}
               >
