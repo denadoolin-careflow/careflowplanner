@@ -4,6 +4,7 @@ import { BottomNav } from "./BottomNav";
 import { ThemeToggle } from "./ThemeToggle";
 import { ThemePicker } from "./ThemePicker";
 import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
+import { AIAssistantFab } from "@/components/ai/AIAssistantFab";
 import { useStore } from "@/lib/store";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,7 @@ export function AppLayout() {
         </div>
       </div>
       <QuickAddFab />
+      <AIAssistantFab />
       <BottomNav />
     </div>
   );
