@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,26 +9,55 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useStore, todayISO } from "@/lib/store";
 import { AREAS } from "@/lib/types";
 import { toast } from "sonner";
+import { useDraggableFab } from "@/hooks/use-draggable-fab";
+import { haptics } from "@/lib/haptics";
+import { cn } from "@/lib/utils";
 
 export function QuickAddFab() {
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<string>("task");
+  const drag = useDraggableFab("careflow:fab:quickadd", { right: 16, bottom: 88 });
+
+  // Listen for widget "+" broadcasts to open with the right tab.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ tab?: string }>).detail;
+      const allowed = ["task","appointment","journal","meal","habit","idea","birthday","holiday","cleaning","care"];
+      const next = detail?.tab && allowed.includes(detail.tab) ? detail.tab : "task";
+      setTab(next);
+      setOpen(true);
+      haptics.pickup();
+    };
+    window.addEventListener("careflow:quick-add", handler as EventListener);
+    return () => window.removeEventListener("careflow:quick-add", handler as EventListener);
+  }, []);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          size="icon"
-          className="fixed bottom-20 right-4 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-cozy hover:scale-105 hover:bg-primary/90 lg:bottom-8 lg:right-8 lg:h-16 lg:w-16"
-          aria-label="Quick add"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
-      </DialogTrigger>
+      <button
+        ref={drag.ref}
+        {...drag.handlers}
+        onClick={(e) => {
+          if (drag.dragging) { e.preventDefault(); return; }
+          haptics.tap();
+          setOpen(true);
+        }}
+        aria-label="Quick add"
+        style={drag.style}
+        className={cn(
+          "fixed z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-cozy",
+          "transition-transform hover:scale-105 active:scale-95",
+          drag.dragging && "scale-110 ring-2 ring-primary/40",
+        )}
+      >
+        <Plus className="h-6 w-6" />
+      </button>
       <DialogContent className="max-w-lg p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle className="font-display text-2xl">Quick add</DialogTitle>
           <p className="text-sm text-muted-foreground">A small thing, captured.</p>
         </DialogHeader>
-        <Tabs defaultValue="task" className="px-6 pb-6">
+        <Tabs value={tab} onValueChange={setTab} className="px-6 pb-6">
           <TabsList className="mt-3 flex w-full flex-wrap justify-start gap-1 bg-muted/60 p-1 h-auto">
             {["task","appointment","journal","meal","habit","idea","birthday","holiday","cleaning","care"].map(k => (
               <TabsTrigger key={k} value={k} className="capitalize text-xs data-[state=active]:bg-card data-[state=active]:shadow-soft">{k}</TabsTrigger>

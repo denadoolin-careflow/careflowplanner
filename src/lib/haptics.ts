@@ -14,4 +14,5 @@ export const haptics = {
   pickup: () => vibrate(14),
   snap: () => vibrate([6, 24, 10]),
   delete: () => vibrate([10, 30, 10, 30]),
+  magnet: () => vibrate([4, 16]),
 };

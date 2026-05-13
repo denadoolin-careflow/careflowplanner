@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore, todayISO } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { TaskRow } from "@/components/cards/TaskRow";
@@ -21,15 +21,49 @@ import { dayPartSuggestion, useWeatherSnapshot, formatTemp, useTempUnit } from "
 import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
 
 const PARTS = [
-  { key: "Morning", icon: Coffee },
-  { key: "Afternoon", icon: Sun },
-  { key: "Evening", icon: Moon },
-  { key: "Late Night", icon: MoonStar },
+  {
+    key: "Morning",
+    icon: Coffee,
+    range: "5–12",
+    /** sunrise gold/plum */
+    gradient: "linear-gradient(135deg, hsl(36 70% 70% / 0.28) 0%, hsl(316 36% 38% / 0.22) 100%)",
+    accent: "hsl(36 80% 60%)",
+  },
+  {
+    key: "Afternoon",
+    icon: Sun,
+    range: "12–17",
+    /** warm lavender */
+    gradient: "linear-gradient(135deg, hsl(280 40% 70% / 0.26) 0%, hsl(316 36% 42% / 0.22) 100%)",
+    accent: "hsl(280 60% 70%)",
+  },
+  {
+    key: "Evening",
+    icon: Moon,
+    range: "17–21",
+    /** deep plum/night */
+    gradient: "linear-gradient(135deg, hsl(316 36% 32% / 0.4) 0%, hsl(258 40% 22% / 0.4) 100%)",
+    accent: "hsl(316 60% 75%)",
+  },
+  {
+    key: "Late Night",
+    icon: MoonStar,
+    range: "21–5",
+    gradient: "linear-gradient(135deg, hsl(258 40% 18% / 0.5) 0%, hsl(220 30% 14% / 0.5) 100%)",
+    accent: "hsl(220 50% 80%)",
+  },
 ] as const;
 
 function PartDropZone({ id, children }: { id: string; children: React.ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id });
-  return <div ref={setNodeRef} className={cn("space-y-1 rounded-xl border border-dashed border-border/60 p-2 transition-colors", isOver && "border-primary/40 bg-primary/10")}>{children}</div>;
+  return <div ref={setNodeRef} className={cn("space-y-1 rounded-xl border border-dashed border-white/10 p-2 transition-colors", isOver && "border-primary/40 bg-primary/15")}>{children}</div>;
+}
+
+function partOfHour(h: number): typeof PARTS[number]["key"] {
+  if (h >= 5 && h < 12) return "Morning";
+  if (h >= 12 && h < 17) return "Afternoon";
+  if (h >= 17 && h < 21) return "Evening";
+  return "Late Night";
 }
 
 export default function Today() {
@@ -42,6 +76,12 @@ export default function Today() {
   const [mealOpen, setMealOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
   const [mealSlot, setMealSlot] = useState<Meal["slot"]>("Dinner");
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const currentPart = partOfHour(now.getHours());
 
   const openNewMeal = (slot: Meal["slot"] = "Dinner") => { setEditingMeal(null); setMealSlot(slot); setMealOpen(true); };
   const openEditMeal = (m: Meal) => { setEditingMeal(m); setMealOpen(true); };
@@ -115,33 +155,63 @@ export default function Today() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <SectionCard title="Time blocks" subtitle="Drag energy through the day." accent="warm">
-          <div className="space-y-4">
-            {PARTS.map(({ key, icon: Icon }) => {
+          <div className="space-y-3">
+            {PARTS.map(({ key, icon: Icon, range, gradient, accent }) => {
               const items = tasksToday.filter(t => t.dayPart === key);
               const dp = weather?.dayParts.find(p => p.part === key);
               const tip = dayPartSuggestion(dp);
+              const isNow = currentPart === key;
               return (
-                <div key={key}>
-                  <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                    <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      <Icon className="h-3.5 w-3.5" /> {key}
+                <div
+                  key={key}
+                  className={cn(
+                    "relative overflow-hidden rounded-2xl border border-white/10 p-3 transition-all",
+                    isNow && "ring-1 ring-primary/40 shadow-[0_0_24px_-4px_hsl(var(--primary)/0.4)]",
+                  )}
+                  style={{ background: gradient }}
+                >
+                  {/* Glow accent strip */}
+                  <span
+                    className="pointer-events-none absolute inset-y-0 left-0 w-[3px]"
+                    style={{ background: accent, boxShadow: `0 0 16px ${accent}` }}
+                  />
+                  <div className="mb-2 flex flex-wrap items-center gap-2 pl-2">
+                    <span
+                      className="grid h-7 w-7 place-items-center rounded-full"
+                      style={{ background: `${accent}22`, color: accent }}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
                     </span>
+                    <span className="font-display text-sm font-semibold uppercase tracking-wider">
+                      {key}
+                    </span>
+                    <span className="text-[10px] tabular-nums text-muted-foreground">{range}</span>
+                    {isNow && (
+                      <span
+                        className="ml-auto flex items-center gap-1 rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary"
+                        style={{ animation: "soft-pulse 2.6s ease-out infinite" }}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" /> now
+                      </span>
+                    )}
                     {dp && dp.conditionLabel !== "—" && (
-                      <span className="text-[11px] tabular-nums text-muted-foreground">
-                        · {formatTemp(dp.avgTempC, unit)} {dp.conditionLabel.toLowerCase()}
+                      <span className={cn("text-[11px] tabular-nums text-muted-foreground", isNow && "ml-0")}>
+                        {formatTemp(dp.avgTempC, unit)} {dp.conditionLabel.toLowerCase()}
                         {dp.precipChance >= 30 && <> · 💧 {dp.precipChance}%</>}
                       </span>
                     )}
                   </div>
                   {tip && (
-                    <p className="mb-1.5 text-[11.5px] italic text-foreground/70">{tip}</p>
+                    <p className="mb-2 pl-2 text-[11.5px] italic text-foreground/70">{tip}</p>
                   )}
-                  <PartDropZone id={`part-${key}`}>
-                    {items.length === 0
-                      ? <p className="px-2 py-1 text-xs text-muted-foreground">— open block — drop a task here</p>
-                      : items.map(t => <TaskRow key={t.id} task={t} dense showArea={false} draggable />)}
-                    <Button variant="ghost" size="sm" className="mt-1 w-full justify-start text-xs text-muted-foreground" onClick={() => quickAddTask({ dayPart: key })}><Plus className="mr-1 h-3 w-3" />add to {key.toLowerCase()}</Button>
-                  </PartDropZone>
+                  <div className="pl-2">
+                    <PartDropZone id={`part-${key}`}>
+                      {items.length === 0
+                        ? <p className="px-2 py-1 text-xs text-muted-foreground">— open block — drop a task here</p>
+                        : items.map(t => <TaskRow key={t.id} task={t} dense showArea={false} draggable />)}
+                      <Button variant="ghost" size="sm" className="mt-1 w-full justify-start text-xs text-muted-foreground hover:text-foreground" onClick={() => quickAddTask({ dayPart: key })}><Plus className="mr-1 h-3 w-3" />add to {key.toLowerCase()}</Button>
+                    </PartDropZone>
+                  </div>
                 </div>
               );
             })}

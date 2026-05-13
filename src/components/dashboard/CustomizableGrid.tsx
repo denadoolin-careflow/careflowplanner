@@ -16,8 +16,27 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
+
+/** Group widgets into themed sections for the mobile swipeable view. */
+const MOBILE_SECTIONS: Array<{ id: string; label: string; types: string[] }> = [
+  { id: "focus", label: "Today Focus", types: ["top3", "task-progress", "pomodoro", "rhythm"] },
+  { id: "calendar", label: "Calendar", types: ["appointments-today", "weather", "moon", "holidays", "birthdays"] },
+  { id: "meals", label: "Meals", types: ["meals-today"] },
+  { id: "reset", label: "Weekly Reset", types: ["weekly-reset", "home-reset", "chore-today", "home-overdue"] },
+  { id: "care", label: "Care & Health", types: ["habits-today", "health-checkin", "weight-trend", "movement-week", "care-checkins", "family-tasks"] },
+  { id: "wealth", label: "Wealth", types: ["budget-summary", "upcoming-bills", "debt-progress"] },
+  { id: "reflect", label: "Reflect", types: ["goals", "ideas", "journal-prompt", "soft-moment", "note", "mini-tasks"] },
+];
+
+/** Quick-add bus: WidgetFrame "+" buttons broadcast, QuickAddFab listens. */
+function broadcastQuickAdd(event: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: event } }));
+}
 
 interface Props {
   pageKey: PageKey;
@@ -32,6 +51,8 @@ export function CustomizableGrid({ pageKey }: Props) {
   } = useDashboardLayout(pageKey);
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const [activeSection, setActiveSection] = useState(MOBILE_SECTIONS[0].id);
 
   // Inject minimal CSS to taste the grid handles
   useEffect(() => {
@@ -55,6 +76,21 @@ export function CustomizableGrid({ pageKey }: Props) {
     const ids = new Set(visibleWidgets.map((w) => w.id));
     return data.layout.filter((l) => ids.has(l.i));
   }, [data, visibleWidgets]);
+
+  // Group widgets by mobile section for the swipeable layout.
+  const mobileGrouped = useMemo(() => {
+    const order = new Map(MOBILE_SECTIONS.map((s, i) => [s.id, i] as const));
+    const sections = MOBILE_SECTIONS.map((s) => ({
+      ...s,
+      widgets: visibleWidgets.filter((w) => s.types.includes(w.type)),
+    }));
+    const claimed = new Set(sections.flatMap((s) => s.widgets.map((w) => w.id)));
+    const leftovers = visibleWidgets.filter((w) => !claimed.has(w.id));
+    if (leftovers.length) sections.push({ id: "more", label: "More", types: [], widgets: leftovers });
+    return sections.filter((s) => s.widgets.length).sort(
+      (a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99),
+    );
+  }, [visibleWidgets]);
 
   if (loading || !data) {
     return <div className="grid place-items-center py-20 text-sm text-muted-foreground">Loading layout…</div>;
@@ -151,6 +187,73 @@ export function CustomizableGrid({ pageKey }: Props) {
         </Button>
       </div>
 
+      {isMobile ? (
+        <div className="space-y-3">
+          {/* Section pills */}
+          <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {mobileGrouped.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => { setActiveSection(s.id); haptics.tap(); document.getElementById(`mob-section-${s.id}`)?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" }); }}
+                className={cn(
+                  "shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-all",
+                  activeSection === s.id
+                    ? "border-primary/40 bg-primary/15 text-primary shadow-[0_0_12px_-2px_hsl(var(--primary)/0.5)]"
+                    : "border-border/60 bg-card/60 text-muted-foreground",
+                )}
+              >
+                {s.label}
+                <span className="ml-1 opacity-60">{s.widgets.length}</span>
+              </button>
+            ))}
+          </div>
+          {/* Swipeable sections — horizontal scroll-snap, single column inside */}
+          <div
+            className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              const idx = Math.round(el.scrollLeft / el.clientWidth);
+              const id = mobileGrouped[idx]?.id;
+              if (id && id !== activeSection) setActiveSection(id);
+            }}
+          >
+            {mobileGrouped.map((s) => (
+              <section
+                id={`mob-section-${s.id}`}
+                key={s.id}
+                className="w-full shrink-0 snap-start space-y-3"
+                style={{ minWidth: "100%" }}
+              >
+                {s.widgets.map((w) => {
+                  const spec = WIDGET_REGISTRY[w.type];
+                  if (!spec) return null;
+                  const Comp = spec.Component;
+                  return (
+                    <div key={w.id} className="min-h-[260px]">
+                      <WidgetFrame
+                        title={spec.title}
+                        icon={spec.icon}
+                        editing={false}
+                        bare={spec.bare}
+                        pageTheme={data.pageTheme}
+                        widgetTheme={w.theme}
+                        pageHref={spec.pageHref}
+                        onQuickAdd={spec.quickAddEvent ? () => { broadcastQuickAdd(spec.quickAddEvent!); haptics.tap(); } : undefined}
+                        collapsed={!spec.bare && !!w.collapsed}
+                        onToggleCollapse={spec.bare ? undefined : () => { toggleCollapsed(w.id); haptics.tap(); }}
+                        onHide={() => { hideWidget(w.id, true); }}
+                        onRemove={() => { removeWidget(w.id); }}
+                      >
+                        <Comp props={w.props} onChange={(next: Record<string, any>) => updateWidgetProps(w.id, next)} />
+                      </WidgetFrame>
+                    </div>
+                  );
+                })}
+              </section>
+            ))}
+          </div>
+        </div>
+      ) : (
       <ResponsiveGridLayout
         className="layout"
         layouts={{
@@ -198,6 +301,8 @@ export function CustomizableGrid({ pageKey }: Props) {
                 onThemeChange={spec.bare ? undefined : (t) => { setWidgetTheme(w.id, t); haptics.tap(); }}
                 collapsed={!spec.bare && !!w.collapsed}
                 onToggleCollapse={spec.bare ? undefined : () => { toggleCollapsed(w.id); haptics.tap(); }}
+                pageHref={spec.pageHref}
+                onQuickAdd={spec.quickAddEvent ? () => { broadcastQuickAdd(spec.quickAddEvent!); haptics.tap(); } : undefined}
                 onHide={() => { hideWidget(w.id, true); haptics.tap(); toast("Hidden — find it in Add widget."); }}
                 onRemove={() => { removeWidget(w.id); haptics.delete(); toast("Widget removed."); }}
               >
@@ -207,6 +312,7 @@ export function CustomizableGrid({ pageKey }: Props) {
           );
         })}
       </ResponsiveGridLayout>
+      )}
 
       <AddWidgetSheet
         open={addOpen}
