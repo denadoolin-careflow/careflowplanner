@@ -9,20 +9,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useStore, todayISO } from "@/lib/store";
 import { AREAS } from "@/lib/types";
 import { toast } from "sonner";
+import { useDraggableFab } from "@/hooks/use-draggable-fab";
+import { haptics } from "@/lib/haptics";
+import { cn } from "@/lib/utils";
 
 export function QuickAddFab() {
   const [open, setOpen] = useState(false);
+  const drag = useDraggableFab("careflow:fab:quickadd", { right: 16, bottom: 88 });
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          size="icon"
-          className="fixed bottom-20 right-4 z-30 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-cozy hover:scale-105 hover:bg-primary/90 lg:bottom-8 lg:right-8 lg:h-16 lg:w-16"
-          aria-label="Quick add"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
-      </DialogTrigger>
+      <button
+        ref={drag.ref}
+        {...drag.handlers}
+        onClick={(e) => {
+          if (drag.dragging) { e.preventDefault(); return; }
+          haptics.tap();
+          setOpen(true);
+        }}
+        aria-label="Quick add"
+        style={drag.style}
+        className={cn(
+          "fixed z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-cozy",
+          "transition-transform hover:scale-105 active:scale-95",
+          drag.dragging && "scale-110 ring-2 ring-primary/40",
+        )}
+      >
+        <Plus className="h-6 w-6" />
+      </button>
       <DialogContent className="max-w-lg p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle className="font-display text-2xl">Quick add</DialogTitle>

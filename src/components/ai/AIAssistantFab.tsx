@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useDraggableFab } from "@/hooks/use-draggable-fab";
 
 type Msg = { role: "user" | "assistant"; content: string; plan?: any };
 
@@ -23,6 +24,7 @@ export function AIAssistantFab() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const drag = useDraggableFab("careflow:fab:ai", { right: 16, bottom: 160 });
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
@@ -70,12 +72,20 @@ export function AIAssistantFab() {
   return (
     <>
       <button
+        ref={drag.ref}
+        {...drag.handlers}
         type="button"
         aria-label="AI planning assistant"
-        onClick={() => { setOpen(true); haptics.pickup(); }}
+        onClick={(e) => {
+          if (drag.dragging) { e.preventDefault(); return; }
+          setOpen(true);
+          haptics.pickup();
+        }}
+        style={drag.style}
         className={cn(
-          "fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full text-primary-foreground shadow-[var(--shadow-glow)] transition-transform hover:scale-105 active:scale-95 sm:bottom-6 sm:right-6",
+          "fixed z-40 flex h-14 w-14 items-center justify-center rounded-full text-primary-foreground shadow-[var(--shadow-glow)] transition-transform hover:scale-105 active:scale-95",
           "bg-gradient-to-br from-primary to-accent",
+          drag.dragging && "scale-110 ring-2 ring-accent/50",
         )}
       >
         <Sparkles className="h-6 w-6" />
