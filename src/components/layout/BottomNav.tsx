@@ -8,39 +8,61 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "next-themes";
 import { useStore } from "@/lib/store";
+import { haptics } from "@/lib/haptics";
 
 export function BottomNav() {
   const [open, setOpen] = useState(false);
-  const primary = MOBILE_NAV.slice(0, 4);
+  const primary = MOBILE_NAV.slice(0, 5);
   const { theme, setTheme, resolvedTheme } = useTheme();
   const isDark = (resolvedTheme ?? theme) === "dark";
   const { state, setLowEnergyMode } = useStore();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
-      <div className="mx-auto max-w-screen-md border-t border-border/60 bg-card/90 backdrop-blur-md">
-        <ul className="grid grid-cols-5">
+      <div className="mx-auto max-w-screen-md border-t border-border/60 bg-card/85 px-1 pb-[env(safe-area-inset-bottom,0)] pt-1 backdrop-blur-xl">
+        <ul className="grid grid-cols-6">
           {primary.map(({ to, label, icon: Icon }) => (
             <li key={to}>
               <NavLink
                 to={to}
-                end={to === "/"}
+                onClick={() => haptics.tap()}
                 className={({ isActive }) =>
                   cn(
-                    "flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium",
-                    isActive ? "text-primary" : "text-muted-foreground"
+                    "group relative flex flex-col items-center gap-0.5 rounded-xl py-2 text-[10.5px] font-medium transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   )
                 }
               >
-                <Icon className="h-5 w-5" />
-                {label}
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        "grid h-9 w-9 place-items-center rounded-2xl transition-all",
+                        isActive
+                          ? "bg-gradient-to-br from-primary/20 to-accent/20 shadow-[0_0_18px_-2px_hsl(var(--primary)/0.55)]"
+                          : "bg-transparent"
+                      )}
+                    >
+                      <Icon className={cn("h-[18px] w-[18px] transition-transform", isActive && "scale-110")} />
+                    </span>
+                    <span className="leading-none">{label}</span>
+                    {isActive && (
+                      <span className="absolute -top-0.5 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary/80 shadow-[0_0_8px_hsl(var(--primary)/0.7)]" />
+                    )}
+                  </>
+                )}
               </NavLink>
             </li>
           ))}
           <li>
             <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger className="flex w-full flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium text-muted-foreground">
-                <Menu className="h-5 w-5" />
-                Menu
+              <SheetTrigger
+                onClick={() => haptics.tap()}
+                className="flex w-full flex-col items-center gap-0.5 rounded-xl py-2 text-[10.5px] font-medium text-muted-foreground hover:text-foreground"
+              >
+                <span className="grid h-9 w-9 place-items-center rounded-2xl">
+                  <Menu className="h-[18px] w-[18px]" />
+                </span>
+                <span className="leading-none">More</span>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
                 <SheetHeader>
