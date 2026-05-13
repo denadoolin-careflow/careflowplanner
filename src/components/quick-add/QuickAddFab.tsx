@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +15,23 @@ import { cn } from "@/lib/utils";
 
 export function QuickAddFab() {
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<string>("task");
   const drag = useDraggableFab("careflow:fab:quickadd", { right: 16, bottom: 88 });
+
+  // Listen for widget "+" broadcasts to open with the right tab.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ tab?: string }>).detail;
+      const allowed = ["task","appointment","journal","meal","habit","idea","birthday","holiday","cleaning","care"];
+      const next = detail?.tab && allowed.includes(detail.tab) ? detail.tab : "task";
+      setTab(next);
+      setOpen(true);
+      haptics.pickup();
+    };
+    window.addEventListener("careflow:quick-add", handler as EventListener);
+    return () => window.removeEventListener("careflow:quick-add", handler as EventListener);
+  }, []);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <button
@@ -41,7 +57,7 @@ export function QuickAddFab() {
           <DialogTitle className="font-display text-2xl">Quick add</DialogTitle>
           <p className="text-sm text-muted-foreground">A small thing, captured.</p>
         </DialogHeader>
-        <Tabs defaultValue="task" className="px-6 pb-6">
+        <Tabs value={tab} onValueChange={setTab} className="px-6 pb-6">
           <TabsList className="mt-3 flex w-full flex-wrap justify-start gap-1 bg-muted/60 p-1 h-auto">
             {["task","appointment","journal","meal","habit","idea","birthday","holiday","cleaning","care"].map(k => (
               <TabsTrigger key={k} value={k} className="capitalize text-xs data-[state=active]:bg-card data-[state=active]:shadow-soft">{k}</TabsTrigger>
