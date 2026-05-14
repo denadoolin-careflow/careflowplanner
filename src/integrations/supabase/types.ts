@@ -1771,6 +1771,7 @@ export type Database = {
           due_date: string | null
           est_minutes: number | null
           id: string
+          linked_task_id: string | null
           notes: string | null
           parent_id: string | null
           recurrence_days: number[]
@@ -1791,6 +1792,7 @@ export type Database = {
           due_date?: string | null
           est_minutes?: number | null
           id?: string
+          linked_task_id?: string | null
           notes?: string | null
           parent_id?: string | null
           recurrence_days?: number[]
@@ -1811,6 +1813,7 @@ export type Database = {
           due_date?: string | null
           est_minutes?: number | null
           id?: string
+          linked_task_id?: string | null
           notes?: string | null
           parent_id?: string | null
           recurrence_days?: number[]
@@ -1828,6 +1831,13 @@ export type Database = {
             columns: ["checklist_id"]
             isOneToOne: false
             referencedRelation: "reset_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reset_items_linked_task_fk"
+            columns: ["linked_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
           {
@@ -1935,6 +1945,7 @@ export type Database = {
           recurrence_days: number[]
           recurrence_interval: number
           recurrence_type: string
+          reset_item_id: string | null
           sort_order: number
           status: string
           tags: string[]
@@ -1965,6 +1976,7 @@ export type Database = {
           recurrence_days?: number[]
           recurrence_interval?: number
           recurrence_type?: string
+          reset_item_id?: string | null
           sort_order?: number
           status?: string
           tags?: string[]
@@ -1995,6 +2007,7 @@ export type Database = {
           recurrence_days?: number[]
           recurrence_interval?: number
           recurrence_type?: string
+          reset_item_id?: string | null
           sort_order?: number
           status?: string
           tags?: string[]
@@ -2015,6 +2028,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_reset_item_fk"
+            columns: ["reset_item_id"]
+            isOneToOne: false
+            referencedRelation: "reset_items"
             referencedColumns: ["id"]
           },
         ]

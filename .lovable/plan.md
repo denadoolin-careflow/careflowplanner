@@ -1,90 +1,66 @@
-## Goal
+## 1. Bottom navigation
 
-Let any note attach to any number of tasks, appointments, time blocks, projects, goals, or habits — and let each of those entities show its linked notes inline. One note can be linked to many things; each thing can have many notes.
+Replace the current 5 + More layout with **6 tabs + More**:
 
-## Approach
-
-Add a single `note_links` join table that points a note at any entity type via `(entity_type, entity_id)`. This avoids adding columns to six different tables and lets us add more types later.
-
-```text
-notes ─┬─ note_links ─┬─ tasks
-       │              ├─ projects
-       │              ├─ goals
-       │              ├─ habits
-       │              ├─ appointments
-       │              └─ time_blocks
+```
+Inbox · Today · Calendar · Home · Meals · Notes · More
 ```
 
-## Database (one migration)
+- `MOBILE_NAV` in `src/lib/nav.ts` becomes the six items above. `Calendar` points to `/calendar` (the existing combined view) instead of separate Week/Month/Year tabs — those stay reachable from More and the desktop sidebar.
+- `BottomNav.tsx`: switch the grid from `grid-cols-6` to `grid-cols-7`, tighten icon/label sizing so 7 cells still fit on small phones (icon 16px, label 10px, reduced gap). More sheet keeps full nav.
 
-New table `public.note_links`:
-- `note_id` (uuid, FK → notes, cascade delete)
-- `entity_type` (text, one of: `task`, `project`, `goal`, `habit`, `appointment`, `time_block`)
-- `entity_id` (uuid)
-- `user_id` (uuid, for RLS)
-- timestamps
-- unique `(note_id, entity_type, entity_id)`
-- indexes on `(entity_type, entity_id)` and `(note_id)`
-- RLS: users can only see/modify their own rows (`auth.uid() = user_id`)
+## 2. Home page reset section
 
-## Backend helpers (`src/lib/note-links.ts`)
+Home is already an editable customizable grid (drag/resize/add/remove, presets, themes). Two changes:
 
-- `EntityType` union + label/icon map
-- `linkNote(noteId, entityType, entityId)` / `unlinkNote(...)`
-- `listLinksForEntity(entityType, entityId)` → notes attached to a task/project/etc.
-- `listLinksForNote(noteId)` → entities a note is attached to (resolved against the local store + a notes lookup so we can render names)
-- `useEntityNotes(entityType, entityId)` hook — fetches linked notes for a panel
+- **Default layout**: add the existing `home-reset` widget plus a new `home-reset-checklist` widget to the Home preset in `src/lib/dashboard-layouts.ts` so they appear out of the box. Existing users get them via a one-time migration that appends them if missing.
+- **New widget `home-reset-checklist`** (`src/components/dashboard/widgets/HomeResetChecklistWidget.tsx`): inline interactive checklist showing the user's primary reset list — check off items, add quickly, drag to reorder, expand/collapse subtasks. Reuses `useResetChecklists` and a trimmed `ChecklistTree`. Registered in `WidgetRegistry.tsx` with `pageHref="/home-reset"` and `quickAddEvent="cleaning"`. Default size 8×6 so it reads as a proper section, not a tile.
 
-## UI
+The mobile section grouping in `CustomizableGrid.tsx` already has a "Weekly Reset" section — both widgets land there automatically.
 
-### 1. Reusable `LinkedNotesPanel` component
-Drop-in panel showing notes attached to one entity, with:
-- list of linked notes (title + snippet + open button → `/notes/:id`)
-- "+ Link a note" combobox (search existing notes by title)
-- "+ New note" button (creates a note, auto-links it, opens the editor)
-- unlink (×) per row
+## 3. Reset items behave as tasks (two-way unified)
 
-Used inside:
-- `TaskEditor` → new "Notes" section under the existing fields
-- `ProjectDetail` → new section in the side rail
-- `Goals` → expandable per-goal panel
-- `Habits` → expandable per-habit panel
-- `AppointmentEditor` → notes section
-- `TimeGrid`'s time-block edit dialog → notes section
+Each `reset_items` row gets an optional mirrored task; the two stay in sync.
 
-### 2. Reverse view in `NoteDetail`
-Add a "Linked to" sidebar listing every entity this note is attached to, grouped by type (Tasks, Projects, Goals, Habits, Schedule). Click → navigate to that entity. Includes an "Attach to…" button that opens a picker with tabs per type.
+### Schema
 
-### 3. Universal search bar
-Extend `UniversalSearchBar`: when a note result is shown, surface its link count as a small badge. When a task/project/etc. is shown and has notes, show a 📝 badge.
+- Add `linked_task_id uuid` to `reset_items` (nullable, FK to `tasks.id` with `ON DELETE SET NULL`).
+- Add `reset_item_id uuid` to `tasks` (nullable, indexed) so a task knows it came from a reset item.
+- A Postgres trigger keeps `title`, `notes`, `done`, `due_date`, `est_minutes` in sync in both directions; updating one side updates the other without recursion (guarded by a session variable).
+- Backfill: existing reset items get a mirrored task in area `Home` with `inbox = false`. Items already done stay done on both sides.
 
-### 4. Existing single `note.projectId` field
-Keep it for now (used in note creation flow), but also write a `note_link` row whenever a note is created with a `projectId` so everything flows through the unified system. A small one-time migration backfills existing `notes.project_id` values into `note_links`.
+### Behavior
 
-## Out of scope (not in this plan)
-- Mentions/`[[wiki-links]]` already exist in `notes.ts`; we keep them as-is and don't auto-create `note_links` from them.
-- Realtime sync of link changes.
-- Bulk link management UI.
+- Editing a reset item's title/notes/done from the Home Reset page updates the linked task.
+- Editing or completing the task in Inbox/Today/Upcoming/Calendar updates the reset item — checkbox feedback flows through the trigger.
+- Scheduling a task on the calendar (drag onto a day/time) writes `due_date` back to the reset item.
+- Deleting the reset item nulls the task's `reset_item_id` but leaves the task in place; deleting the task nulls the reset item's link but leaves it in place. Users can sever or re-link from a small badge on each row.
+
+### UI surfacing
+
+- In task rows (`TaskListPage`, `Inbox`, `Today`, `Upcoming`), show a small `Sparkle` badge "Reset" when `reset_item_id` is set, linking to `/home-reset`.
+- In `ChecklistTree` rows, show a "Task" badge when `linked_task_id` exists, linking to the task.
+
+## Out of scope
+
+- Recurrence rules on reset items don't propagate to recurring tasks yet — they remain reset-side only.
+- No bulk "convert all reset items to tasks" UI; the backfill handles existing data once.
+- No realtime cross-device push; sync happens on next refresh / mutation.
 
 ## Files
 
 **New**
-- `supabase/migrations/<ts>_note_links.sql`
-- `src/lib/note-links.ts`
-- `src/components/notes/LinkedNotesPanel.tsx`
-- `src/components/notes/NoteLinksSidebar.tsx`
-- `src/components/notes/NotePicker.tsx` (search + attach existing note)
+- `src/components/dashboard/widgets/HomeResetChecklistWidget.tsx`
+- `supabase/migrations/<ts>_reset_task_link.sql` (columns, trigger, backfill, default-layout patch)
 
 **Edited**
-- `src/components/tasks/TaskEditor.tsx` — embed `LinkedNotesPanel`
-- `src/components/calendar/AppointmentEditor.tsx` — embed `LinkedNotesPanel`
-- `src/components/calendar/TimeGrid.tsx` — embed `LinkedNotesPanel` in EditForm
-- `src/pages/ProjectDetail.tsx` — embed `LinkedNotesPanel`
-- `src/pages/Goals.tsx` — per-goal expandable notes
-- `src/pages/Habits.tsx` — per-habit expandable notes
-- `src/pages/NoteDetail.tsx` — add `NoteLinksSidebar`
-- `src/components/search/UniversalSearchBar.tsx` — small link badges
-
-## Open question
-
-Currently a note has a single `projectId`. Should I keep that field and additionally mirror it into `note_links`, or fully drop it in favor of the join table? My plan keeps both for backward compatibility, but I can remove it if you prefer the cleaner model.
+- `src/lib/nav.ts` — new `MOBILE_NAV`
+- `src/components/layout/BottomNav.tsx` — 7-cell grid, tighter sizing
+- `src/lib/dashboard-layouts.ts` — add reset widgets to Home default
+- `src/components/dashboard/WidgetRegistry.tsx` — register new widget
+- `src/components/dashboard/CustomizableGrid.tsx` — include new widget type in the "Weekly Reset" mobile section
+- `src/lib/reset-checklists.ts` — pass `linked_task_id` through; helper to read it
+- `src/lib/store.tsx` — when toggling a task's `done`, no extra work needed (trigger handles it); expose `reset_item_id` on the Task type
+- `src/lib/types.ts` — add `resetItemId?: string` to `Task`
+- `src/components/reset/ChecklistTree.tsx` — render "Task" badge
+- Task row components in `src/components/tasks/` — render "Reset" badge
