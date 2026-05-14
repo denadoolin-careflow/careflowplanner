@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
+import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 
@@ -60,6 +61,7 @@ export default function Month() {
           </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={() => setCursor(subMonths(cursor, 1))} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
+            <DayPickerButton date={cursor} onChange={setCursor} label={format(cursor, "MMM yyyy")} />
             <Button variant="ghost" size="sm" className="h-8 px-3 text-xs" onClick={() => setCursor(new Date())}>Today</Button>
             <Button variant="ghost" size="icon" onClick={() => setCursor(addMonths(cursor, 1))} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
           </div>

@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Trash2 } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useStore } from "@/lib/store";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const HOUR_START = 6;   // 6 AM
 const HOUR_END = 23;    // 11 PM
@@ -370,20 +373,52 @@ function CreateForm({ draft, onCreate, onCancel }: {
   onCreate: (b: Omit<TimeBlock, "id">) => void;
   onCancel: () => void;
 }) {
+  const { state, updateTask } = useStore();
   const [title, setTitle] = useState("");
   const [start, setStart] = useState(draft.start);
   const [end, setEnd] = useState(draft.end);
   const [color, setColor] = useState<string>("primary");
   const [notes, setNotes] = useState("");
+  const [mode, setMode] = useState<"new" | "task" | "meal">("new");
+  const [pickQ, setPickQ] = useState("");
+
+  const openTasks = state.tasks.filter(t => !t.done && !t.parentTaskId);
+  const filteredTasks = openTasks.filter(t =>
+    !pickQ.trim() || t.title.toLowerCase().includes(pickQ.toLowerCase())
+  ).slice(0, 60);
+
+  const meals = state.meals ?? [];
+  const filteredMeals = meals.filter(m =>
+    !pickQ.trim() || m.name.toLowerCase().includes(pickQ.toLowerCase())
+  ).slice(0, 60);
+
+  const attach = async (label: string, taskId?: string) => {
+    onCreate({ date: draft.date, startTime: start, endTime: end, title: label, notes, color, allDay: false });
+    if (taskId) {
+      try { await updateTask(taskId, { dueDate: draft.date, inbox: false }); } catch {}
+    }
+  };
+
   return (
     <div className="space-y-3">
-      <div>
-        <Label className="text-xs">Title</Label>
-        <Input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="Focus block, errands, rest…" />
-      </div>
+      <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="new">New</TabsTrigger>
+          <TabsTrigger value="task">Task</TabsTrigger>
+          <TabsTrigger value="meal">Meal</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="grid grid-cols-2 gap-2">
         <div><Label className="text-xs">Start</Label><Input type="time" value={start} onChange={e => setStart(e.target.value)} /></div>
         <div><Label className="text-xs">End</Label><Input type="time" value={end} onChange={e => setEnd(e.target.value)} /></div>
+      </div>
+
+      {mode === "new" && (
+      <>
+      <div>
+        <Label className="text-xs">Title</Label>
+        <Input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="Focus block, errands, rest…" />
       </div>
       <div>
         <Label className="text-xs">Color</Label>
@@ -406,6 +441,74 @@ function CreateForm({ draft, onCreate, onCancel }: {
           Add block
         </Button>
       </DialogFooter>
+      </>
+      )}
+
+      {mode === "task" && (
+        <div className="space-y-2">
+          <Input autoFocus placeholder="Search open tasks…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
+          <ScrollArea className="h-64 rounded-md border">
+            {filteredTasks.length === 0 ? (
+              <div className="p-6 text-center text-xs text-muted-foreground">No matching tasks.</div>
+            ) : (
+              <ul className="divide-y">
+                {filteredTasks.map(t => {
+                  const project = t.projectId ? state.projects?.find(p => p.id === t.projectId) : undefined;
+                  return (
+                    <li key={t.id}>
+                      <button
+                        className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
+                        onClick={() => attach(t.title, t.id)}
+                      >
+                        <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border border-muted-foreground/40" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium">{t.title}</span>
+                          {(project || t.area) && (
+                            <span className="block truncate text-[10px] text-muted-foreground">
+                              {project?.name}{project && t.area ? " · " : ""}{t.area}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </ScrollArea>
+          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+        </div>
+      )}
+
+      {mode === "meal" && (
+        <div className="space-y-2">
+          <Input autoFocus placeholder="Search meals…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
+          <ScrollArea className="h-64 rounded-md border">
+            {filteredMeals.length === 0 ? (
+              <div className="p-6 text-center text-xs text-muted-foreground">No meals planned.</div>
+            ) : (
+              <ul className="divide-y">
+                {filteredMeals.map(m => (
+                  <li key={m.id}>
+                    <button
+                      className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
+                      onClick={() => attach(`🍽 ${m.name}`)}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{m.name}</span>
+                        <span className="block truncate text-[10px] text-muted-foreground capitalize">
+                          {m.slot} · {m.date}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </ScrollArea>
+          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+        </div>
+      )}
     </div>
   );
 }
