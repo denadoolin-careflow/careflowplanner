@@ -1,83 +1,102 @@
-# CareFlow → Caregiver Life OS Refactor
+# Phase 2 — Things-style Hierarchy
 
-This is a large, multi-system evolution. To keep the app stable, I'll ship it in **5 sequenced phases** rather than one massive rewrite. Each phase is self-contained, releasable, and builds on the existing architecture (no rebuild from scratch).
+Add **Areas → Projects → Tasks → Subtasks** to CareFlow without breaking the existing dashboard, Today/Week/Month, or current task data.
 
-Before I start, I need you to confirm the **phase order** and **scope limits** below.
+## What changes
 
----
+### 1. Database (additive, no destructive edits)
 
-## Phase 1 — Universal Quick Add + Natural Language Tasks
-**Goal:** Make capture instant and powerful (TickTick / Things style).
+New tables:
 
-- Rebuild `QuickAddFab` into a **command palette** (cmdk-based) with:
-  - Keyboard-first entry (`⌘K` / long-press on mobile)
-  - Type-ahead category switcher (task, event, meal, idea, journal, habit, cleaning, care note, grocery, focus session, bookmark, routine)
-  - Customizable categories: user-defined icon, color, default area/project, template body, hotkey
-  - Saved templates (e.g. "Doctor visit", "Weekly reset")
-- **Natural-language parser** for the task field:
-  - Dates ("tomorrow 3pm", "next Tue")
-  - Recurrence ("every Sunday evening", "weekdays")
-  - Tags (`#meals`), priority (`p1–p4`), area (`@home`), duration (`for 30m`), reminders (`!1h`)
-  - Live chip preview of what was parsed
-- Persist user customization in a new `quick_add_presets` table.
+- `areas` — user's top-level life buckets (we already have a fixed `Area` enum in code; this gives them custom name/icon/color/sort and lets us add more). Seeded from existing 10 areas on first load.
+  - `id, user_id, name, icon, color, sort_order, is_archived, created_at, updated_at`
+- `projects` — Things-style projects inside an area.
+  - `id, user_id, area_id (nullable), name, notes, icon, color, status (active|paused|done|someday), deadline, sort_order, archived_at, created_at, updated_at`
 
-## Phase 2 — Task System Refactor (Things 3 hierarchy)
-**Goal:** Real Areas → Projects → Tasks → Subtasks.
+Extend `tasks`:
+- `project_id uuid` (nullable — null = loose task in inbox/area)
+- `parent_task_id uuid` (nullable — enables **subtasks**, single level deep for now)
+- `inbox bool default false` (Things "Inbox" until triaged)
 
-- New `projects` table (area, status, deadline, notes, color, sort_order).
-- Extend `tasks`: `project_id`, `parent_task_id` (subtasks), `status` (inbox/today/upcoming/anytime/someday/waiting/done), `reminder_at`, `depends_on_task_id[]`.
-- New left-rail navigation: **Inbox · Today · Upcoming · Anytime · Someday · Waiting · Logbook**, plus expandable Areas → Projects tree.
-- Inline editing everywhere (title, date, priority, tags) using existing `EditableText` patterns.
-- Multi-select + bulk actions (move, schedule, complete, delete, change project).
-- Drag-and-drop reordering and cross-list moves (dnd-kit, already present).
-- Project detail page with progress ring, milestones, linked notes/events.
+Extend `quick_add_presets`:
+- `default_project_id` already exists ✅
 
-## Phase 3 — Unified Calendar Hub
-**Goal:** Calendar becomes the central planning surface.
+RLS: own-row policies mirroring existing tables.
 
-- Refactor `CalendarPage` to ingest a single feed of: tasks (with due/scheduled time), time-blocks, appointments, meals, cleaning, habits, routines, focus sessions, Google events.
-- Views: **Day · 3-Day · Week · Month · Agenda · Timeline**.
-- Drag-to-schedule from any list (sidebar "unscheduled" tray).
-- Drag-resize for duration; recurrence editor; color-coded by area / priority / category (user toggles legend).
-- Inline focus-session launch from any scheduled task.
+### 2. Store + types
 
-## Phase 4 — Notion/Capacities-style Knowledge Layer
-**Goal:** Connected second brain.
+- `Area` stays as the enum label, but we add `AreaRecord`, `Project`, and `subtasks: Task[]` derivation.
+- `useStore` gets: `areas`, `projects`, `addProject`, `updateProject`, `archiveProject`, `addSubtask`, `moveTask({projectId, parentId, areaName})`.
+- Existing `tasks` array unchanged in shape — just two new optional fields, so all current widgets keep working.
 
-- New `pages` table (rich text/blocks JSON, type, parent_id, icon, cover) + `page_links` table for backlinks.
-- Block editor (TipTap) supporting headings, lists, todo, image, embed, callouts, nested pages, mentions of tasks/projects/notes (`@`).
-- Per-collection views: **Card · Gallery · Kanban · Table · Timeline** (saved per page).
-- Backlinks panel + graph-lite "linked from" list.
-- Templates (Daily journal, Project brief, Recipe, Care log).
-- Rebuild Journal / Ideas / Care Notes on top of the new pages engine (data-migrated, not destroyed).
+### 3. Navigation (Things-style left rail)
 
-## Phase 5 — AI Planning Companion + Focus Analytics + Dashboard polish
-**Goal:** Active AI helper + measurable productivity.
+Update `src/lib/nav.ts` + `Sidebar.tsx`:
 
-- Expand `ai-planner` edge function with intents: *plan-my-day · break-down-project · turn-note-into-tasks · what-can-wait · generate-reset · organize-week · low-energy-alt*.
-- AI panel can write back: schedule tasks, create subtasks, propose time blocks (with confirm step).
-- Focus analytics (sessions/day, streaks, focus-by-area) on Dashboard + dedicated `/focus/stats` page.
-- Dashboard widget pass: ensure all widgets are draggable/resizable/collapsible (already started); add new widgets — Today Timeline, Calendar Preview, Focus Session, AI Suggestions, Weekly Progress, Focus Analytics.
-- Final visual polish pass: motion (framer-motion) on list reorders, sheet transitions, swipe actions on mobile rows, consistent lucide icon system, refined typography scale.
+```text
+Inbox
+Today
+Upcoming
+Anytime
+Someday
+Logbook
+─────────
+Areas
+  ▸ Family
+      • Summer trip      ← project
+      • Doctor visits
+  ▸ Home
+      • Kitchen reno
+  …
+```
 
----
+Areas expand to show their projects. Projects route to a new `/projects/:id` page. Each list (Inbox/Today/Upcoming/Anytime/Someday/Logbook) is a filtered view over `tasks`.
 
-## Technical Notes (for reference)
+### 4. New pages
 
-- **No rewrite**: existing `store.tsx`, Supabase tables, and pages are kept; new tables added side-by-side; legacy types extended, not replaced.
-- **Migrations** introduced: `projects`, `quick_add_presets`, `pages`, `page_links`, plus task column additions. Each phase ships its own migration.
-- **NLP parsing**: lightweight in-browser parser (chrono-node for dates) — no extra AI cost on the capture path.
-- **Block editor**: TipTap (already React/Tailwind friendly).
-- **Drag-and-drop**: dnd-kit (in tree).
-- **Realtime**: opt-in per table later, not in this scope.
+- `/inbox` — `tasks` where `inbox=true` and not done
+- `/upcoming` — due in future, grouped by date
+- `/anytime` — no due date, has project or area, not someday
+- `/someday` — `status='someday'`
+- `/logbook` — `done=true`, grouped by completion week
+- `/projects/:id` — project header (progress ring, deadline, notes), task list with inline add, subtask expand/collapse, drag-to-reorder
 
----
+Today/Week/Month pages unchanged — they keep filtering by `dueDate`.
 
-## What I need from you to start
+### 5. Quick Add wiring
 
-1. **Phase order** — ship in the order above (1 → 5), or re-prioritize?
-2. **Scope per round** — one phase per turn (recommended, ~safe), or bundle 1+2 / 3+4 together (faster but riskier on a live app)?
-3. **Migration safety** — OK to migrate existing Journal / Ideas / Care Notes records into the new `pages` table in Phase 4, or keep them as separate legacy tables and only use `pages` for new content?
-4. **Quick Add categories** — should I seed a default set (task, event, meal, idea, journal, habit, cleaning, care, grocery, focus) and let you customize, or wait for you to define the list?
+`QuickAddFab` already parses NLP. Add:
+- A **project picker** row in the palette (shows after typing or via `/project name`)
+- New tokens in `nlp-task.ts`: `+ProjectName` → resolves to project, falls back to area
+- Default routing rules:
+  - No date + no project → **Inbox**
+  - Date set → **Today/Upcoming** (unchanged behavior)
+  - `someday` token or `~someday` → `status='someday'`
+- Presets with `default_project_id` drop the new task straight into that project.
 
-Once you answer, I'll start Phase 1 immediately.
+### 6. Subtasks UI
+
+`TaskRow` gets a chevron when `subtasks.length > 0`, expanding indented `TaskRow`s. A `+ subtask` button appears on hover. Subtasks inherit `project_id` and `area` from parent.
+
+## Migration order
+
+1. SQL migration: create `areas`, `projects`, alter `tasks`, alter `quick_add_presets` (no-op if already there).
+2. Backfill: seed `areas` rows from the 10 enum values per user on first store load.
+3. Store + types update.
+4. Sidebar + nav update + new list pages.
+5. `/projects/:id` page.
+6. Quick Add project picker + NLP `+project` token.
+7. Subtask expand in `TaskRow`.
+
+## Out of scope this round
+
+- Drag-and-drop between projects (queued for Phase 3 calendar pass — easier to do alongside the unified scheduler)
+- Multi-level nested subtasks (single level only for now)
+- Migrating existing journal/ideas into projects (Phase 4)
+
+## Questions before I start
+
+1. **Areas as records vs. enum** — OK to introduce the `areas` table and let users rename/add/reorder them, while keeping the existing 10 as defaults? (Recommended — required for true Things-style.)
+2. **Inbox default** — should *all* new tasks with no date and no project land in Inbox, or only ones created via Quick Add without context?
+3. **Logbook retention** — keep completed tasks forever, or auto-archive after 90 days?
+4. **One PR or two?** — bundle schema + nav + pages + Quick Add together (one big batch, ~10 files), or split into (a) schema + store + sidebar, then (b) project page + quick add + subtasks?

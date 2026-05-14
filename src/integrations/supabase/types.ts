@@ -56,6 +56,42 @@ export type Database = {
         }
         Relationships: []
       }
+      areas: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_archived: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_archived?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_archived?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       birthdays: {
         Row: {
           created_at: string
@@ -1460,6 +1496,65 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          archived_at: string | null
+          area_id: string | null
+          area_name: string | null
+          color: string | null
+          created_at: string
+          deadline: string | null
+          icon: string | null
+          id: string
+          name: string
+          notes: string | null
+          sort_order: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          area_id?: string | null
+          area_name?: string | null
+          color?: string | null
+          created_at?: string
+          deadline?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          area_id?: string | null
+          area_name?: string | null
+          color?: string | null
+          created_at?: string
+          deadline?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quick_add_presets: {
         Row: {
           color: string | null
@@ -1751,11 +1846,14 @@ export type Database = {
           est_minutes: number | null
           goal_id: string | null
           id: string
+          inbox: boolean
           is_top_three: boolean
           last_completed_at: string | null
           next_due_date: string | null
           notes: string | null
+          parent_task_id: string | null
           priority: string
+          project_id: string | null
           recipient_id: string | null
           recurrence_days: number[]
           recurrence_interval: number
@@ -1778,11 +1876,14 @@ export type Database = {
           est_minutes?: number | null
           goal_id?: string | null
           id?: string
+          inbox?: boolean
           is_top_three?: boolean
           last_completed_at?: string | null
           next_due_date?: string | null
           notes?: string | null
+          parent_task_id?: string | null
           priority?: string
+          project_id?: string | null
           recipient_id?: string | null
           recurrence_days?: number[]
           recurrence_interval?: number
@@ -1805,11 +1906,14 @@ export type Database = {
           est_minutes?: number | null
           goal_id?: string | null
           id?: string
+          inbox?: boolean
           is_top_three?: boolean
           last_completed_at?: string | null
           next_due_date?: string | null
           notes?: string | null
+          parent_task_id?: string | null
           priority?: string
+          project_id?: string | null
           recipient_id?: string | null
           recurrence_days?: number[]
           recurrence_interval?: number
@@ -1821,7 +1925,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       time_blocks: {
         Row: {
