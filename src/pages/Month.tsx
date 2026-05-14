@@ -18,15 +18,19 @@ import { haptics } from "@/lib/haptics";
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
+import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
+import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
+const APPT_DRAG_MIME = "application/x-careflow-appt";
 
 export default function Month() {
-  const { state, updateTask } = useStore();
+  const { state, updateTask, updateAppointment } = useStore();
   const [cursor, setCursor] = useState(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   const [hoverISO, setHoverISO] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editApptId, setEditApptId] = useState<string | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [view, setView] = useState<CalView>("schedule");
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
@@ -43,9 +47,9 @@ export default function Month() {
     : k === "task" ? "bg-warm-soft text-warm-foreground border border-primary/30"
     : "bg-muted text-foreground";
 
-  type EvItem = { kind: "appt"|"bday"|"hol"|"gcal"|"task"; label: string; taskId?: string };
+  type EvItem = { kind: "appt"|"bday"|"hol"|"gcal"|"task"; label: string; taskId?: string; apptId?: string; time?: string | null };
   const eventsOn = (k: string): EvItem[] => [
-    ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, label: a.title })),
+    ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, label: a.title, apptId: a.id, time: a.time })),
     ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, label: `🎂 ${b.name}` })),
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, label: `✨ ${h.name}` })),
     ...gEvents.filter(g => g.date === k).map(g => ({ kind: "gcal" as const, label: g.title })),
@@ -62,6 +66,16 @@ export default function Month() {
     haptics.tap();
     toast(`Moved “${t.title}” to ${format(new Date(iso), "MMM d")}`);
   };
+
+  const handleApptDayDrop = async (apptId: string, iso: string) => {
+    const a = state.appointments.find(x => x.id === apptId);
+    if (!a || a.date === iso) return;
+    await updateAppointment(apptId, { date: iso });
+    haptics.tap();
+    toast(`Moved “${a.title}” to ${format(new Date(iso), "MMM d")}`);
+  };
+
+  const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
 
   return (
     <div className="flex gap-6">
@@ -80,12 +94,18 @@ export default function Month() {
           </div>
         </div>
 
-        <SectionCard title="Calendar" accent="calm" action={<CalendarViewToggle value={view} onChange={setView} />}>
+        <SectionCard title="Calendar" accent="calm" action={
+          <div className="flex items-center gap-2">
+            <QuickAddCalendarPopover days={[cursor]} />
+            <CalendarViewToggle value={view} onChange={setView} />
+          </div>
+        }>
           {view === "agenda" ? (
             <AgendaView
               days={monthDays}
-              appointmentsOn={(k) => eventsOn(k).map(e => ({ label: e.label }))}
+              appointmentsOn={(k) => eventsOn(k).map(e => ({ label: e.label, time: e.time, id: e.apptId, kind: e.kind === "task" ? undefined : (e.kind as any) }))}
               onTaskDropAt={(id, iso) => handleDayDrop(id, iso)}
+              onApptClick={setEditApptId}
             />
           ) : (
           <>
@@ -102,17 +122,20 @@ export default function Month() {
                 <div
                   key={k}
                   onDragOver={(e) => {
-                    if (!Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) return;
+                    const types = Array.from(e.dataTransfer.types);
+                    if (!types.includes(TASK_DRAG_MIME) && !types.includes(APPT_DRAG_MIME)) return;
                     e.preventDefault();
                     e.dataTransfer.dropEffect = "move";
                     setHoverISO(k);
                   }}
                   onDragLeave={() => setHoverISO(p => p === k ? null : p)}
                   onDrop={(e) => {
-                    const id = e.dataTransfer.getData(TASK_DRAG_MIME);
-                    if (!id) return;
+                    const taskId = e.dataTransfer.getData(TASK_DRAG_MIME);
+                    const apptId = e.dataTransfer.getData(APPT_DRAG_MIME);
+                    if (!taskId && !apptId) return;
                     e.preventDefault();
-                    handleDayDrop(id, k);
+                    if (taskId) handleDayDrop(taskId, k);
+                    if (apptId) handleApptDayDrop(apptId, k);
                     setHoverISO(null);
                     setDraggingTaskId(null);
                   }}
@@ -127,29 +150,38 @@ export default function Month() {
                   <div className="mt-0.5 space-y-0.5">
                     {ev.slice(0,3).map((it, i) => {
                       const isTask = it.kind === "task" && !!it.taskId;
+                      const isAppt = it.kind === "appt" && !!it.apptId;
                       const isBeingDragged = isTask && draggingTaskId === it.taskId;
                       return (
                         <div
                           key={i}
-                          draggable={isTask}
-                          onDragStart={isTask ? (e) => {
+                          draggable={isTask || isAppt}
+                          onDragStart={(isTask || isAppt) ? (e) => {
                             e.stopPropagation();
-                            e.dataTransfer.setData(TASK_DRAG_MIME, it.taskId!);
+                            if (isTask) {
+                              e.dataTransfer.setData(TASK_DRAG_MIME, it.taskId!);
+                              setDraggingTaskId(it.taskId!);
+                            } else if (isAppt) {
+                              e.dataTransfer.setData(APPT_DRAG_MIME, it.apptId!);
+                            }
                             e.dataTransfer.setData("text/plain", it.label);
                             e.dataTransfer.effectAllowed = "move";
-                            setDraggingTaskId(it.taskId!);
                             haptics.pickup();
                           } : undefined}
                           onDragEnd={isTask ? () => setDraggingTaskId(null) : undefined}
-                          onClick={isTask ? (e) => {
+                          onClick={(isTask || isAppt) ? (e) => {
                             e.stopPropagation();
-                            const t = state.tasks.find(x => x.id === it.taskId);
-                            if (t) setEditingTask(t);
+                            if (isTask) {
+                              const t = state.tasks.find(x => x.id === it.taskId);
+                              if (t) setEditingTask(t);
+                            } else if (isAppt) {
+                              setEditApptId(it.apptId!);
+                            }
                           } : undefined}
                           className={cn(
                             "truncate rounded px-1 py-0.5 text-[10px] transition-all duration-150",
                             colorOf(it.kind),
-                            isTask && "cursor-grab hover:scale-[1.04] hover:shadow-sm hover:ring-1 hover:ring-primary/40 active:cursor-grabbing",
+                            (isTask || isAppt) && "cursor-grab hover:scale-[1.04] hover:shadow-sm hover:ring-1 hover:ring-primary/40 active:cursor-grabbing",
                             isBeingDragged && "opacity-40 scale-95",
                           )}
                           title={it.label}
@@ -175,6 +207,7 @@ export default function Month() {
       {editingTask && (
         <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditingTask(null)} />
       )}
+      <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
     </div>
   );
 }

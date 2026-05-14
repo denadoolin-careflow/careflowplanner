@@ -45,19 +45,29 @@ type DragState = {
   moved: boolean;
 };
 
-type ApptLike = { label: string; time?: string | null };
+export type ApptLike = {
+  label: string;
+  time?: string | null;
+  id?: string;
+  kind?: "appt" | "gcal" | "task" | "bday" | "hol";
+};
 
 interface Props {
   days: Date[];                                       // 1 day = day view, 7 = week view
   appointmentsOn: (iso: string) => ApptLike[];        // existing appointments per day (incl. gcal)
   /** Called when a task chip from the right rail is dropped on a slot. */
   onTaskDropAt?: (taskId: string, date: string, startHour: number) => void;
+  /** Called when an appointment chip is dropped on a slot (move/reschedule). */
+  onApptDropAt?: (apptId: string, date: string, startHour: number) => void;
+  /** Called when an appointment chip is clicked (for editing). */
+  onApptClick?: (apptId: string) => void;
 }
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const EVENT_DRAG_MIME = "application/x-careflow-event";
+const APPT_DRAG_MIME = "application/x-careflow-appt";
 
-export function TimeGrid({ days, appointmentsOn, onTaskDropAt }: Props) {
+export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onApptClick }: Props) {
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks, add, update, remove } = useTimeBlocks(fromISO, toISO);
@@ -209,7 +219,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt }: Props) {
                       const types = Array.from(e.dataTransfer.types);
                       const hasTask = types.includes(TASK_DRAG_MIME);
                       const hasEvent = types.includes(EVENT_DRAG_MIME);
-                      if (!hasTask && !hasEvent) return;
+                      const hasAppt = types.includes(APPT_DRAG_MIME);
+                      if (!hasTask && !hasEvent && !hasAppt) return;
                       e.preventDefault();
                       e.dataTransfer.dropEffect = hasTask ? "move" : "copy";
                       const rect = e.currentTarget.getBoundingClientRect();
@@ -221,12 +232,19 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt }: Props) {
                     onDrop={(e) => {
                       const taskId = e.dataTransfer.getData(TASK_DRAG_MIME);
                       const eventRaw = e.dataTransfer.getData(EVENT_DRAG_MIME);
-                      if (!taskId && !eventRaw) return;
+                      const apptId = e.dataTransfer.getData(APPT_DRAG_MIME);
+                      if (!taskId && !eventRaw && !apptId) return;
                       e.preventDefault();
                       const rect = e.currentTarget.getBoundingClientRect();
                       const y = e.clientY - rect.top;
                       const startH = HOUR_START + snap(y / PX_PER_HOUR);
                       const endH = Math.min(HOUR_END, startH + 1);
+                      if (apptId && onApptDropAt) {
+                        onApptDropAt(apptId, iso, startH);
+                        setDropHover(null);
+                        haptics.tap();
+                        return;
+                      }
                       let title = e.dataTransfer.getData("text/plain") || "Event";
                       let color: string = "primary";
                       if (eventRaw) {
@@ -267,9 +285,24 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt }: Props) {
                       const h = hmToHours(a.time!.slice(0,5));
                       if (h < HOUR_START || h > HOUR_END) return null;
                       const top = (h - HOUR_START) * PX_PER_HOUR;
+                      const isAppt = a.kind === "appt" && !!a.id;
                       return (
                         <div key={`a-${idx}`}
-                          className="pointer-events-none absolute left-0 right-1/2 mx-0.5 rounded-md bg-secondary-soft px-1.5 py-0.5 text-[10px] text-secondary-foreground shadow-sm"
+                          draggable={isAppt}
+                          onDragStart={isAppt ? (e) => {
+                            e.stopPropagation();
+                            e.dataTransfer.setData(APPT_DRAG_MIME, a.id!);
+                            e.dataTransfer.setData("text/plain", a.label);
+                            e.dataTransfer.effectAllowed = "move";
+                            haptics.pickup();
+                          } : undefined}
+                          onClick={isAppt && onApptClick ? (e) => { e.stopPropagation(); onApptClick(a.id!); } : undefined}
+                          className={cn(
+                            "absolute left-0 right-1/2 mx-0.5 rounded-md bg-secondary-soft px-1.5 py-0.5 text-[10px] text-secondary-foreground shadow-sm transition-all",
+                            isAppt
+                              ? "cursor-grab hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-primary/40 active:cursor-grabbing"
+                              : "pointer-events-none"
+                          )}
                           style={{ top, height: PX_PER_HOUR - 4 }}
                           title={a.label}>
                           <span className="font-medium">{a.time?.slice(0,5)}</span> {a.label}

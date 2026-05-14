@@ -8,21 +8,24 @@ import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
+import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
+import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { WeekNavigator } from "@/components/week/WeekNavigator";
 import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 
 export default function Week() {
-  const { state, updateTask } = useStore();
+  const { state, updateTask, updateAppointment } = useStore();
   const [start, setStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [view, setView] = useState<CalView>("schedule");
+  const [editApptId, setEditApptId] = useState<string | null>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
 
   const eventsOn = (k: string) => [
-    ...state.appointments.filter(a => a.date === k).map(a => ({ label: a.title, time: a.time })),
-    ...gEvents.filter(g => g.date === k).map(g => ({ label: g.title, time: g.time ?? undefined })),
+    ...state.appointments.filter(a => a.date === k).map(a => ({ label: a.title, time: a.time, id: a.id, kind: "appt" as const })),
+    ...gEvents.filter(g => g.date === k).map(g => ({ label: g.title, time: g.time ?? undefined, kind: "gcal" as const })),
     ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
       label: `○ ${t.title}`, time: undefined as string | undefined,
     })),
@@ -34,6 +37,15 @@ export default function Week() {
     await updateTask(taskId, { dueDate: dateISO, inbox: false });
     toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
   };
+
+  const handleApptDrop = async (apptId: string, dateISO: string, startHour: number) => {
+    const a = state.appointments.find(x => x.id === apptId);
+    if (!a) return;
+    await updateAppointment(apptId, { date: dateISO, time: hoursToHM(startHour) });
+    toast(`Moved “${a.title}”`);
+  };
+
+  const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
 
   return (
     <div className="flex gap-6">
@@ -49,15 +61,21 @@ export default function Week() {
           </div>
         </div>
 
-        <SectionCard title="This week" accent="warm" action={<CalendarViewToggle value={view} onChange={setView} />}>
+        <SectionCard title="This week" accent="warm" action={
+          <div className="flex items-center gap-2">
+            <QuickAddCalendarPopover days={days} />
+            <CalendarViewToggle value={view} onChange={setView} />
+          </div>
+        }>
           {view === "schedule"
-            ? <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
-            : <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />}
+            ? <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
+            : <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />}
         </SectionCard>
 
         <CalendarTasksPanel days={days} />
       </div>
       <UnscheduledTasksRail />
+      <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
     </div>
   );
 }

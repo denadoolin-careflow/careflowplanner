@@ -118,6 +118,7 @@ interface Ctx {
 
   addAppointment: (a: Partial<Appointment> & { title: string; date: string }) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
+  updateAppointment: (id: string, patch: Partial<Appointment>) => Promise<void>;
 
   addBirthday: (b: Partial<Birthday> & { name: string; date: string }) => Promise<void>;
   deleteBirthday: (id: string) => Promise<void>;
@@ -421,6 +422,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteAppointment: async (id) => {
       setState(s => ({ ...s, appointments: s.appointments.filter(a => a.id !== id) }));
       await supabase.from("appointments").delete().eq("id", id);
+    },
+    updateAppointment: async (id, patch) => {
+      const dbPatch: any = {};
+      if (patch.title !== undefined) dbPatch.title = patch.title;
+      if (patch.date !== undefined) dbPatch.date = patch.date;
+      if (patch.time !== undefined) dbPatch.time = patch.time;
+      if (patch.location !== undefined) dbPatch.location = patch.location;
+      if (patch.type !== undefined) dbPatch.type = patch.type;
+      if ((patch as any).with !== undefined) dbPatch.with_name = (patch as any).with;
+      setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch } : a) }));
+      await supabase.from("appointments").update(dbPatch).eq("id", id);
     },
 
     addBirthday: async (b) => {

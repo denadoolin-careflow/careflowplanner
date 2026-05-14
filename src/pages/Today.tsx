@@ -10,21 +10,24 @@ import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
+import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
+import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { hoursToHM } from "@/lib/time-blocks";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Today() {
-  const { state, updateTask } = useStore();
+  const { state, updateTask, updateAppointment } = useStore();
   const [day, setDay] = useState<Date>(new Date());
   const [view, setView] = useState<CalView>("schedule");
+  const [editApptId, setEditApptId] = useState<string | null>(null);
   const today = day;
   const isReallyToday = isSameDay(day, new Date());
   const lowMode = state.settings.lowEnergyMode;
 
   const eventsOn = (k: string) => [
-    ...state.appointments.filter(a => a.date === k).map(a => ({ label: a.title, time: a.time })),
+    ...state.appointments.filter(a => a.date === k).map(a => ({ label: a.title, time: a.time, id: a.id, kind: "appt" as const })),
     ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
       label: `○ ${t.title}`, time: undefined as string | undefined,
     })),
@@ -36,6 +39,15 @@ export default function Today() {
     await updateTask(taskId, { dueDate: dateISO, inbox: false });
     toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
   };
+
+  const handleApptDrop = async (apptId: string, dateISO: string, startHour: number) => {
+    const a = state.appointments.find(x => x.id === apptId);
+    if (!a) return;
+    await updateAppointment(apptId, { date: dateISO, time: hoursToHM(startHour) });
+    toast(`Moved “${a.title}” to ${hoursToHM(startHour)}`);
+  };
+
+  const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
 
   return (
     <div className="flex gap-6">
@@ -84,16 +96,22 @@ export default function Today() {
           title="Today"
           subtitle={view === "schedule" ? "Click a slot to add a time block, or drag a task in." : "Chronological view of everything on your day."}
           accent="warm"
-          action={<CalendarViewToggle value={view} onChange={setView} />}
+          action={
+            <div className="flex items-center gap-2">
+              <QuickAddCalendarPopover days={[today]} />
+              <CalendarViewToggle value={view} onChange={setView} />
+            </div>
+          }
         >
           {view === "schedule"
-            ? <TimeGrid days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
-            : <AgendaView days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />}
+            ? <TimeGrid days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
+            : <AgendaView days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />}
         </SectionCard>
 
         <CalendarTasksPanel days={[today]} />
       </div>
       <UnscheduledTasksRail />
+      <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
     </div>
   );
 }
