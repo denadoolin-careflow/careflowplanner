@@ -45,6 +45,11 @@ export default function CalendarPage() {
     ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, label: `🎂 ${b.name}`, time: undefined })),
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, label: `✨ ${h.name}`, time: undefined })),
     ...gEvents.filter(g => g.date === k).map(g => ({ kind: "gcal" as const, label: g.title, time: g.time ?? undefined, color: g.color })),
+    ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
+      kind: "task" as const,
+      label: `${t.done ? "✓" : "○"} ${t.title}`,
+      time: undefined,
+    })),
   ];
 
   const shift = (dir: 1 | -1) => {
