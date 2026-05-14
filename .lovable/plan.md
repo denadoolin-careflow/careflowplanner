@@ -1,118 +1,90 @@
-# Phase 2 — Things-style Hierarchy
+## Goal
 
-Add **Areas → Projects → Tasks → Subtasks** to CareFlow without breaking the existing dashboard, Today/Week/Month, or current task data.
+Let any note attach to any number of tasks, appointments, time blocks, projects, goals, or habits — and let each of those entities show its linked notes inline. One note can be linked to many things; each thing can have many notes.
 
-## What changes
+## Approach
 
-### 1. Database (additive, no destructive edits)
-
-New tables:
-
-- `areas` — user's top-level life buckets (we already have a fixed `Area` enum in code; this gives them custom name/icon/color/sort and lets us add more). Seeded from existing 10 areas on first load.
-  - `id, user_id, name, icon, color, sort_order, is_archived, created_at, updated_at`
-- `projects` — Things-style projects inside an area.
-  - `id, user_id, area_id (nullable), name, notes, icon, color, status (active|paused|done|someday), deadline, sort_order, archived_at, created_at, updated_at`
-
-Extend `tasks`:
-- `project_id uuid` (nullable — null = loose task in inbox/area)
-- `parent_task_id uuid` (nullable — enables **subtasks**, single level deep for now)
-- `inbox bool default false` (Things "Inbox" until triaged)
-
-Extend `quick_add_presets`:
-- `default_project_id` already exists ✅
-
-RLS: own-row policies mirroring existing tables.
-
-### 2. Store + types
-
-- `Area` stays as the enum label, but we add `AreaRecord`, `Project`, and `subtasks: Task[]` derivation.
-- `useStore` gets: `areas`, `projects`, `addProject`, `updateProject`, `archiveProject`, `addSubtask`, `moveTask({projectId, parentId, areaName})`.
-- Existing `tasks` array unchanged in shape — just two new optional fields, so all current widgets keep working.
-
-### 3. Navigation (Things-style left rail)
-
-Update `src/lib/nav.ts` + `Sidebar.tsx`:
+Add a single `note_links` join table that points a note at any entity type via `(entity_type, entity_id)`. This avoids adding columns to six different tables and lets us add more types later.
 
 ```text
-Inbox
-Today
-Upcoming
-Anytime
-Someday
-Logbook
-─────────
-Areas
-  ▸ Family
-      • Summer trip      ← project
-      • Doctor visits
-  ▸ Home
-      • Kitchen reno
-  …
+notes ─┬─ note_links ─┬─ tasks
+       │              ├─ projects
+       │              ├─ goals
+       │              ├─ habits
+       │              ├─ appointments
+       │              └─ time_blocks
 ```
 
-Areas expand to show their projects. Projects route to a new `/projects/:id` page. Each list (Inbox/Today/Upcoming/Anytime/Someday/Logbook) is a filtered view over `tasks`.
+## Database (one migration)
 
-### 4. New pages
+New table `public.note_links`:
+- `note_id` (uuid, FK → notes, cascade delete)
+- `entity_type` (text, one of: `task`, `project`, `goal`, `habit`, `appointment`, `time_block`)
+- `entity_id` (uuid)
+- `user_id` (uuid, for RLS)
+- timestamps
+- unique `(note_id, entity_type, entity_id)`
+- indexes on `(entity_type, entity_id)` and `(note_id)`
+- RLS: users can only see/modify their own rows (`auth.uid() = user_id`)
 
-- `/inbox` — `tasks` where `inbox=true` and not done
-- `/upcoming` — due in future, grouped by date
-- `/anytime` — no due date, has project or area, not someday
-- `/someday` — `status='someday'`
-- `/logbook` — `done=true`, grouped by completion week
-- `/projects/:id` — project header (progress ring, deadline, notes), task list with inline add, subtask expand/collapse, drag-to-reorder
+## Backend helpers (`src/lib/note-links.ts`)
 
-Today/Week/Month pages unchanged — they keep filtering by `dueDate`.
+- `EntityType` union + label/icon map
+- `linkNote(noteId, entityType, entityId)` / `unlinkNote(...)`
+- `listLinksForEntity(entityType, entityId)` → notes attached to a task/project/etc.
+- `listLinksForNote(noteId)` → entities a note is attached to (resolved against the local store + a notes lookup so we can render names)
+- `useEntityNotes(entityType, entityId)` hook — fetches linked notes for a panel
 
-### 5. Quick Add wiring
+## UI
 
-`QuickAddFab` already parses NLP. Add:
-- A **project picker** row in the palette (shows after typing or via `/project name`)
-- New tokens in `nlp-task.ts`: `+ProjectName` → resolves to project, falls back to area
-- Default routing rules:
-  - No date + no project → **Inbox**
-  - Date set → **Today/Upcoming** (unchanged behavior)
-  - `someday` token or `~someday` → `status='someday'`
-- Presets with `default_project_id` drop the new task straight into that project.
+### 1. Reusable `LinkedNotesPanel` component
+Drop-in panel showing notes attached to one entity, with:
+- list of linked notes (title + snippet + open button → `/notes/:id`)
+- "+ Link a note" combobox (search existing notes by title)
+- "+ New note" button (creates a note, auto-links it, opens the editor)
+- unlink (×) per row
 
-### 6. Subtasks UI
+Used inside:
+- `TaskEditor` → new "Notes" section under the existing fields
+- `ProjectDetail` → new section in the side rail
+- `Goals` → expandable per-goal panel
+- `Habits` → expandable per-habit panel
+- `AppointmentEditor` → notes section
+- `TimeGrid`'s time-block edit dialog → notes section
 
-`TaskRow` gets a chevron when `subtasks.length > 0`, expanding indented `TaskRow`s. A `+ subtask` button appears on hover. Subtasks inherit `project_id` and `area` from parent.
+### 2. Reverse view in `NoteDetail`
+Add a "Linked to" sidebar listing every entity this note is attached to, grouped by type (Tasks, Projects, Goals, Habits, Schedule). Click → navigate to that entity. Includes an "Attach to…" button that opens a picker with tabs per type.
 
-## Migration order
+### 3. Universal search bar
+Extend `UniversalSearchBar`: when a note result is shown, surface its link count as a small badge. When a task/project/etc. is shown and has notes, show a 📝 badge.
 
-1. SQL migration: create `areas`, `projects`, alter `tasks`, alter `quick_add_presets` (no-op if already there).
-2. Backfill: seed `areas` rows from the 10 enum values per user on first store load.
-3. Store + types update.
-4. Sidebar + nav update + new list pages.
-5. `/projects/:id` page.
-6. Quick Add project picker + NLP `+project` token.
-7. Subtask expand in `TaskRow`.
+### 4. Existing single `note.projectId` field
+Keep it for now (used in note creation flow), but also write a `note_link` row whenever a note is created with a `projectId` so everything flows through the unified system. A small one-time migration backfills existing `notes.project_id` values into `note_links`.
 
-## Out of scope this round
+## Out of scope (not in this plan)
+- Mentions/`[[wiki-links]]` already exist in `notes.ts`; we keep them as-is and don't auto-create `note_links` from them.
+- Realtime sync of link changes.
+- Bulk link management UI.
 
-- Drag-and-drop between projects (queued for Phase 3 calendar pass — easier to do alongside the unified scheduler)
-- Multi-level nested subtasks (single level only for now)
-- Migrating existing journal/ideas into projects (Phase 4)
+## Files
 
-## Questions before I start
+**New**
+- `supabase/migrations/<ts>_note_links.sql`
+- `src/lib/note-links.ts`
+- `src/components/notes/LinkedNotesPanel.tsx`
+- `src/components/notes/NoteLinksSidebar.tsx`
+- `src/components/notes/NotePicker.tsx` (search + attach existing note)
 
-1. **Areas as records vs. enum** — OK to introduce the `areas` table and let users rename/add/reorder them, while keeping the existing 10 as defaults? (Recommended — required for true Things-style.)
-2. **Inbox default** — should *all* new tasks with no date and no project land in Inbox, or only ones created via Quick Add without context?
-3. **Logbook retention** — keep completed tasks forever, or auto-archive after 90 days?
-4. **One PR or two?** — bundle schema + nav + pages + Quick Add together (one big batch, ~10 files), or split into (a) schema + store + sidebar, then (b) project page + quick add + subtasks?
+**Edited**
+- `src/components/tasks/TaskEditor.tsx` — embed `LinkedNotesPanel`
+- `src/components/calendar/AppointmentEditor.tsx` — embed `LinkedNotesPanel`
+- `src/components/calendar/TimeGrid.tsx` — embed `LinkedNotesPanel` in EditForm
+- `src/pages/ProjectDetail.tsx` — embed `LinkedNotesPanel`
+- `src/pages/Goals.tsx` — per-goal expandable notes
+- `src/pages/Habits.tsx` — per-habit expandable notes
+- `src/pages/NoteDetail.tsx` — add `NoteLinksSidebar`
+- `src/components/search/UniversalSearchBar.tsx` — small link badges
 
----
+## Open question
 
-# Phase 3 — Unified Scheduler + DnD (next)
-
-- Calendar grid renders `tasks` with `dueDate` alongside appointments / GCal events (✓ shipped this batch as read-only).
-- Drag a task from any list onto a calendar cell to set/move `due_date`; drop on a time slot to also create/attach a `time_block`.
-- DnD reorder for tasks within a project (sort_order) and projects between areas (area_name + sort_order). Use `@dnd-kit/core` (already a dep).
-- Recurring tasks materialize as repeating chips on the week/day grid (read from `recurrence_*` fields).
-
-# Phase 4 — Second brain + AI weekly review
-
-- Promote `journal_entries` + `ideas` into a unified `notes` model with rich text (Tiptap), `[[backlinks]]`, daily-notes, and a `notes/:id` page.
-- Capacities-style "objects" — pin a Project, Recipient, or Habit into a note via `@mention`.
-- AI weekly review (Sun nights): summarize logbook, surface stale projects, propose next week's top 3 from inbox + due tasks. Edge function `ai-weekly-review` using Lovable AI Gateway.
-- Smart inbox triage: AI suggests Project + Area + Status for each inbox item; one-tap accept.
+Currently a note has a single `projectId`. Should I keep that field and additionally mirror it into `note_links`, or fully drop it in favor of the join table? My plan keeps both for backward compatibility, but I can remove it if you prefer the cleaner model.
