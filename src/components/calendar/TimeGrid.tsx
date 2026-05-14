@@ -45,19 +45,29 @@ type DragState = {
   moved: boolean;
 };
 
-type ApptLike = { label: string; time?: string | null };
+export type ApptLike = {
+  label: string;
+  time?: string | null;
+  id?: string;
+  kind?: "appt" | "gcal" | "task" | "bday" | "hol";
+};
 
 interface Props {
   days: Date[];                                       // 1 day = day view, 7 = week view
   appointmentsOn: (iso: string) => ApptLike[];        // existing appointments per day (incl. gcal)
   /** Called when a task chip from the right rail is dropped on a slot. */
   onTaskDropAt?: (taskId: string, date: string, startHour: number) => void;
+  /** Called when an appointment chip is dropped on a slot (move/reschedule). */
+  onApptDropAt?: (apptId: string, date: string, startHour: number) => void;
+  /** Called when an appointment chip is clicked (for editing). */
+  onApptClick?: (apptId: string) => void;
 }
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const EVENT_DRAG_MIME = "application/x-careflow-event";
+const APPT_DRAG_MIME = "application/x-careflow-appt";
 
-export function TimeGrid({ days, appointmentsOn, onTaskDropAt }: Props) {
+export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onApptClick }: Props) {
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks, add, update, remove } = useTimeBlocks(fromISO, toISO);
