@@ -1,0 +1,86 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const ACTIONS: Record<string, { system: string; user: (body: string, title: string, extra?: string) => string }> = {
+  ideas: {
+    system: "You are a thoughtful brainstorming partner. Return 5-8 concise, varied ideas as a markdown bullet list. No preamble.",
+    user: (b, t) => `Generate ideas related to this note.\n\nTitle: ${t || "(untitled)"}\n\nNote:\n${b || "(empty)"}`,
+  },
+  prompts: {
+    system: "You generate writing prompts. Return 5 open-ended prompts as a markdown bullet list. Each prompt one sentence. No preamble.",
+    user: (b, t) => `Suggest writing prompts to expand this note.\n\nTitle: ${t}\n\nNote:\n${b || "(empty)"}`,
+  },
+  summarize: {
+    system: "You summarize notes. Return a tight 3-5 bullet summary in markdown. No preamble.",
+    user: (b) => `Summarize:\n\n${b}`,
+  },
+  expand: {
+    system: "You expand notes by fleshing out ideas while keeping the author's voice. Return only the rewritten/expanded note in markdown. No preamble.",
+    user: (b, t) => `Expand and develop this note. Keep tone and structure.\n\nTitle: ${t}\n\nNote:\n${b}`,
+  },
+  polish: {
+    system: "You edit notes for clarity, flow, and grammar without changing meaning or voice. Return only the edited note in markdown. No preamble, no explanation.",
+    user: (b) => `Polish this note:\n\n${b}`,
+  },
+  continue: {
+    system: "You continue notes naturally where the author left off. Return only the new continuation (1-3 short paragraphs) — do not repeat the existing text. No preamble.",
+    user: (b, t) => `Continue writing this note.\n\nTitle: ${t}\n\nExisting:\n${b}`,
+  },
+  custom: {
+    system: "You are a helpful writing assistant. Apply the user's instruction to their note. Return only the resulting note text in markdown unless the instruction asks for something else. No preamble.",
+    user: (b, t, extra) => `Instruction: ${extra}\n\nTitle: ${t}\n\nNote:\n${b}`,
+  },
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  try {
+    const auth = req.headers.get("Authorization");
+    if (!auth) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: auth } } },
+    );
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const { action, title = "", body = "", instruction = "" } = await req.json();
+    const cfg = ACTIONS[action];
+    if (!cfg) return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!apiKey) return new Response(JSON.stringify({ error: "AI not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: cfg.system },
+          { role: "user", content: cfg.user(body, title, instruction) },
+        ],
+      }),
+    });
+
+    if (resp.status === 429) return new Response(JSON.stringify({ error: "Rate limit reached. Please try again in a moment." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (resp.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted. Add credits in Settings." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!resp.ok) {
+      const t = await resp.text();
+      console.error("AI gateway error", resp.status, t);
+      return new Response(JSON.stringify({ error: "AI request failed" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const data = await resp.json();
+    const text = data.choices?.[0]?.message?.content ?? "";
+    return new Response(JSON.stringify({ text }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  } catch (e) {
+    console.error("ai-notes error", e);
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+});
