@@ -17,8 +17,10 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { hoursToHM } from "@/lib/time-blocks";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, ChevronDown } from "lucide-react";
 import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
+import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function Today() {
   const { state, updateTask, updateAppointment } = useStore();
@@ -61,6 +63,7 @@ export default function Today() {
 
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
+  const [widgetsOpen, setWidgetsOpen] = useState(false);
 
   return (
     <div className="flex gap-6">
@@ -134,6 +137,22 @@ export default function Today() {
         </SectionCard>
 
         <CalendarTasksPanel days={[today]} />
+
+        <Collapsible open={widgetsOpen} onOpenChange={setWidgetsOpen}>
+          <div className="cozy-card p-4">
+            <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left">
+              <div className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4 text-primary" />
+                <span className="font-display text-base font-semibold">Widgets</span>
+                <span className="text-xs text-muted-foreground">Weather, Pomodoro, Habits & more</span>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${widgetsOpen ? "rotate-180" : ""}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-3">
+              <CustomizableGrid pageKey="today" />
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
       </div>
       <UnscheduledTasksRail onTaskClick={setEditTaskId} />
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
