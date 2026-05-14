@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Sunrise, Sun, Moon, CheckCircle2, Circle } from "lucide-react";
+import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { hmToHours } from "@/lib/time-blocks";
@@ -202,6 +202,9 @@ function DayPartItem({
         <span className="w-12 shrink-0 font-mono text-[10px] text-muted-foreground">{it.time?.slice(0, 5) ?? ""}</span>
       ) : null}
       <span className="min-w-0 flex-1 truncate">{it.label}</span>
+      {it.kind === "task" && (
+        <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
+      )}
     </li>
   );
 }
