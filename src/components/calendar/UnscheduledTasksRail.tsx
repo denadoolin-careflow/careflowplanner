@@ -8,6 +8,7 @@ import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 
 export const TASK_DRAG_MIME = "application/x-careflow-task";
+export const EVENT_DRAG_MIME = "application/x-careflow-event";
 
 export function UnscheduledTasksRail() {
   const { state } = useStore();
@@ -38,14 +39,14 @@ export function UnscheduledTasksRail() {
   const today = startOfDay(new Date());
   const horizon = addDays(today, 30);
   const upcomingEvents = useMemo(() => {
-    const items: { date: string; time?: string; label: string; kind: "appt" | "bday" | "hol" | "gcal" | "task" }[] = [];
+    const items: { date: string; time?: string; label: string; kind: "appt" | "bday" | "hol" | "gcal" | "task"; taskId?: string }[] = [];
     for (const a of state.appointments) items.push({ date: a.date, time: a.time, label: a.title, kind: "appt" });
     for (const b of state.birthdays) items.push({ date: b.date, label: `🎂 ${b.name}`, kind: "bday" });
     for (const h of state.holidays) items.push({ date: h.date, label: `✨ ${h.name}`, kind: "hol" });
     for (const g of gEvents) items.push({ date: g.date, time: g.time ?? undefined, label: g.title, kind: "gcal" });
     for (const t of state.tasks) {
       if (t.done || t.parentTaskId || !t.dueDate) continue;
-      items.push({ date: t.dueDate, label: `○ ${t.title}`, kind: "task" });
+      items.push({ date: t.dueDate, label: `○ ${t.title}`, kind: "task", taskId: t.id });
     }
     return items
       .filter(i => {
@@ -70,6 +71,14 @@ export function UnscheduledTasksRail() {
     : k === "hol" ? "bg-secondary-soft text-secondary-foreground"
     : k === "task" ? "bg-warm-soft text-warm-foreground"
     : "bg-muted text-foreground";
+
+  const onEventDragStart = (e: React.DragEvent, ev: { label: string; kind: string; taskId?: string }) => {
+    if (ev.taskId) e.dataTransfer.setData(TASK_DRAG_MIME, ev.taskId);
+    const color = ev.kind === "bday" ? "accent" : ev.kind === "hol" ? "secondary" : ev.kind === "task" ? "warm" : "primary";
+    e.dataTransfer.setData(EVENT_DRAG_MIME, JSON.stringify({ title: ev.label, color }));
+    e.dataTransfer.setData("text/plain", ev.label);
+    e.dataTransfer.effectAllowed = "copy";
+  };
 
   return (
     <aside className="hidden xl:flex sticky top-20 max-h-[calc(100vh-6rem)] w-72 shrink-0 flex-col rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm shadow-soft">
@@ -194,7 +203,17 @@ export function UnscheduledTasksRail() {
                 </div>
                 <ul className="space-y-1">
                   {evs.map((ev, i) => (
-                    <li key={i} className={cn("flex items-start gap-2 rounded-lg px-2 py-1.5 text-xs", kindClass(ev.kind))}>
+                    <li
+                      key={i}
+                      draggable
+                      onDragStart={e => onEventDragStart(e, ev)}
+                      className={cn(
+                        "group flex cursor-grab items-start gap-2 rounded-lg px-2 py-1.5 text-xs active:cursor-grabbing",
+                        kindClass(ev.kind),
+                      )}
+                      title="Drag onto a time slot to schedule"
+                    >
+                      <GripVertical className="mt-0.5 h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
                       {ev.time && <span className="shrink-0 font-mono text-[10px] opacity-70">{ev.time.slice(0,5)}</span>}
                       <span className="min-w-0 flex-1 truncate">{ev.label}</span>
                     </li>
