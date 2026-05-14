@@ -96,6 +96,8 @@ interface Ctx {
   updateProject: (id: string, patch: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
 
+  updateArea: (id: string, patch: Partial<AreaRecord>) => Promise<void>;
+
   addGoal: (g: Partial<Goal> & { title: string }) => Promise<void>;
   updateGoal: (id: string, patch: Partial<Goal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
@@ -324,6 +326,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteProject: async (id) => {
       setState(s => ({ ...s, projects: (s.projects ?? []).filter(p => p.id !== id) }));
       await supabase.from("projects").delete().eq("id", id);
+    },
+
+    updateArea: async (id, patch) => {
+      setState(s => ({ ...s, areas: (s.areas ?? []).map(a => a.id === id ? { ...a, ...patch } : a) }));
+      const dbPatch: any = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
+      if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
+      if (patch.sortOrder !== undefined) dbPatch.sort_order = patch.sortOrder;
+      if (patch.isArchived !== undefined) dbPatch.is_archived = patch.isArchived;
+      await supabase.from("areas").update(dbPatch).eq("id", id);
     },
 
     addGoal: async (g) => {

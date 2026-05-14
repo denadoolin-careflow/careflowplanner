@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FolderOpen, Plus } from "lucide-react";
 import { AREAS } from "@/lib/types";
 import { toast } from "sonner";
+import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
 
 export default function Projects() {
-  const { state, addProject } = useStore();
+  const { state, addProject, updateArea } = useStore();
   const projects = (state.projects ?? []).filter(p => p.status !== "done");
   const [name, setName] = useState("");
   const [areaName, setAreaName] = useState<string>("Personal");
@@ -55,9 +56,30 @@ export default function Projects() {
         </div>
       )}
 
-      {grouped.map(({ area, items }) => (
+      {grouped.map(({ area, items }) => {
+        const rec = (state.areas ?? []).find(a => a.name === area);
+        const AreaIcon = getAreaIcon(rec?.icon);
+        return (
         <section key={area} className="space-y-2">
-          <div className="px-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{area}</div>
+          <div className="flex items-center gap-2 px-1">
+            {rec ? (
+              <AreaIconColorPicker
+                icon={rec.icon}
+                color={rec.color}
+                onChange={(p) => updateArea(rec.id, p)}
+                trigger={
+                  <button
+                    type="button"
+                    className="grid h-6 w-6 place-items-center rounded hover:bg-muted"
+                    aria-label="Edit area icon and color"
+                  >
+                    <AreaIcon className="h-3.5 w-3.5" style={rec.color ? { color: rec.color } : undefined} />
+                  </button>
+                }
+              />
+            ) : null}
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{area}</div>
+          </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {items.map(p => (
               <Link
@@ -79,7 +101,8 @@ export default function Projects() {
             ))}
           </div>
         </section>
-      ))}
+        );
+      })}
 
       {noArea.length > 0 && (
         <section className="space-y-2">

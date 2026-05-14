@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon },
@@ -39,7 +40,7 @@ export function Sidebar() {
   useEffect(() => {
     try { window.localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0"); } catch {}
   }, [collapsed]);
-  const { state } = useStore();
+  const { state, updateArea } = useStore();
   // Dedupe areas by name as a defensive guard against any prior duplicates.
   const areas = (() => {
     const seen = new Set<string>();
@@ -148,24 +149,40 @@ export function Sidebar() {
                 const key = `area:${area.name}`;
                 const open = !!openMap[key];
                 const hasActive = areaProjects.some(p => pathname === `/projects/${p.id}`);
+                const AreaIcon = getAreaIcon(area.icon);
                 return (
                   <div key={area.id}>
-                    <button
-                      type="button"
-                      onClick={() => toggle(key)}
+                    <div
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm",
+                        "group flex w-full items-center gap-1 rounded-lg px-1 py-1 text-sm",
                         "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
                         hasActive && "text-foreground",
                       )}
                     >
-                      <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
-                      <Folder className="h-3.5 w-3.5 opacity-70" style={area.color ? { color: area.color } : undefined} />
-                      <span className="flex-1 text-left truncate">{area.name}</span>
+                      <button type="button" onClick={() => toggle(key)} className="grid h-5 w-5 place-items-center">
+                        <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
+                      </button>
+                      <AreaIconColorPicker
+                        icon={area.icon}
+                        color={area.color}
+                        onChange={(p) => updateArea(area.id, p)}
+                        trigger={
+                          <button
+                            type="button"
+                            className="grid h-6 w-6 place-items-center rounded hover:bg-sidebar-accent/60"
+                            aria-label="Edit area icon and color"
+                          >
+                            <AreaIcon className="h-3.5 w-3.5 opacity-80" style={area.color ? { color: area.color } : undefined} />
+                          </button>
+                        }
+                      />
+                      <button type="button" onClick={() => toggle(key)} className="flex-1 truncate text-left">
+                        {area.name}
+                      </button>
                       {areaProjects.length > 0 && (
                         <span className="text-[10px] text-sidebar-foreground/50">{areaProjects.length}</span>
                       )}
-                    </button>
+                    </div>
                     <div className={cn(
                       "grid overflow-hidden transition-[grid-template-rows] duration-200 ease-out",
                       open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
