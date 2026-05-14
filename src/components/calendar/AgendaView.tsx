@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { format, parseISO, isSameDay } from "date-fns";
 import { useStore } from "@/lib/store";
-import { useTimeBlocks, colorClasses, fmt12 } from "@/lib/time-blocks";
+import { useTimeBlocks, colorClasses } from "@/lib/time-blocks";
 import { CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
@@ -73,12 +73,15 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt }: Props) {
               {format(d, "EEEE, MMM d")} {today && <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] normal-case tracking-normal">Today</span>}
             </div>
             <ul className="space-y-1">
-              {rows.map((r, i) => (
-                <li key={i} className={cn("flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm", r.kind === "block" && r.color ? colorClasses(r.color as any) : "bg-muted/40")}>
-                  <span className="w-16 shrink-0 font-mono text-[11px] opacity-70">{r.time ? fmt12(r.time) : "All day"}</span>
+              {rows.map((r, i) => {
+                const cls = r.kind === "block" && r.color ? colorClasses(r.color) : null;
+                return (
+                <li key={i} className={cn("flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm", cls ? `${cls.bg} ${cls.text}` : "bg-muted/40")}>
+                  <span className="w-16 shrink-0 font-mono text-[11px] opacity-70">{r.time ? r.time : "All day"}</span>
                   <span className="min-w-0 flex-1 truncate">{r.label}</span>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </div>
         );
