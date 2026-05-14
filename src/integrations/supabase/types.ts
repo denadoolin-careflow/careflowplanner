@@ -1373,6 +1373,48 @@ export type Database = {
         }
         Relationships: []
       }
+      notes: {
+        Row: {
+          archived: boolean
+          body: string
+          created_at: string
+          date: string | null
+          id: string
+          kind: string
+          pinned: boolean
+          project_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          body?: string
+          created_at?: string
+          date?: string | null
+          id?: string
+          kind?: string
+          pinned?: boolean
+          project_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          body?: string
+          created_at?: string
+          date?: string | null
+          id?: string
+          kind?: string
+          pinned?: boolean
+          project_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pantry_items: {
         Row: {
           category: string | null
