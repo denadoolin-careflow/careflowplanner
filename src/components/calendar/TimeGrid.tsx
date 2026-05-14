@@ -55,6 +55,7 @@ interface Props {
 }
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
+const EVENT_DRAG_MIME = "application/x-careflow-event";
 
 export function TimeGrid({ days, appointmentsOn, onTaskDropAt }: Props) {
   const fromISO = days[0].toISOString().slice(0, 10);
@@ -205,10 +206,12 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt }: Props) {
                     style={{ height: GRID_HEIGHT }}
                     onClick={(e) => startSlot(d, e)}
                     onDragOver={(e) => {
-                      if (!onTaskDropAt) return;
-                      if (!Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) return;
+                      const types = Array.from(e.dataTransfer.types);
+                      const hasTask = types.includes(TASK_DRAG_MIME);
+                      const hasEvent = types.includes(EVENT_DRAG_MIME);
+                      if (!hasTask && !hasEvent) return;
                       e.preventDefault();
-                      e.dataTransfer.dropEffect = "move";
+                      e.dataTransfer.dropEffect = hasTask ? "move" : "copy";
                       const rect = e.currentTarget.getBoundingClientRect();
                       const y = e.clientY - rect.top;
                       const startH = HOUR_START + snap(y / PX_PER_HOUR);
@@ -216,26 +219,28 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt }: Props) {
                     }}
                     onDragLeave={() => setDropHover(p => p?.iso === iso ? null : p)}
                     onDrop={(e) => {
-                      if (!onTaskDropAt) return;
-                      const id = e.dataTransfer.getData(TASK_DRAG_MIME);
-                      if (!id) return;
+                      const taskId = e.dataTransfer.getData(TASK_DRAG_MIME);
+                      const eventRaw = e.dataTransfer.getData(EVENT_DRAG_MIME);
+                      if (!taskId && !eventRaw) return;
                       e.preventDefault();
                       const rect = e.currentTarget.getBoundingClientRect();
                       const y = e.clientY - rect.top;
                       const startH = HOUR_START + snap(y / PX_PER_HOUR);
                       const endH = Math.min(HOUR_END, startH + 1);
-                      const title = e.dataTransfer.getData("text/plain") || "Task";
-                      // Create the time block locally so the grid updates instantly.
+                      let title = e.dataTransfer.getData("text/plain") || "Event";
+                      let color: string = "primary";
+                      if (eventRaw) {
+                        try { const p = JSON.parse(eventRaw); title = p.title ?? title; color = p.color ?? color; } catch {}
+                      }
                       void add({
                         date: iso,
                         startTime: hoursToHM(startH),
                         endTime: hoursToHM(endH),
                         title,
-                        color: "primary",
+                        color,
                         allDay: false,
                       });
-                      // Let parent persist the task.dueDate change.
-                      onTaskDropAt(id, iso, startH);
+                      if (taskId && onTaskDropAt) onTaskDropAt(taskId, iso, startH);
                       setDropHover(null);
                       haptics.tap();
                     }}
