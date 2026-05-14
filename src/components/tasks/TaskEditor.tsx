@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Task, AREAS, DayPart, Priority, Energy, RecurrenceType } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
+import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void; task: Task | null };
 
@@ -119,6 +120,7 @@ export function TaskEditor({ open, onOpenChange, task }: Props) {
             </div>
             <Switch checked={!!draft.isTopThree} onCheckedChange={v => set("isTopThree", v)} />
           </div>
+          <LinkedNotesPanel entityType="task" entityId={draft.id} contextTitle={draft.title} compact />
         </div>
         <DialogFooter className="mt-2 flex-col gap-2 sm:flex-row sm:justify-between">
           <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={async () => { await deleteTask(draft.id); toast("This can wait."); onOpenChange(false); }}>

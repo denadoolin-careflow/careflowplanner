@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Trash2 } from "lucide-react";
 import { Goal } from "@/lib/types";
+import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 
 const CATS: Goal["category"][] = ["Family","Home","Health","Creative","Financial","Relationship","Personal","Caregiving"];
 
@@ -50,6 +51,9 @@ export default function Goals() {
               <div className="mt-3">
                 <div className="mb-1 flex justify-between text-xs text-muted-foreground"><span>Progress</span><span>{g.progress}%</span></div>
                 <Slider value={[g.progress]} max={100} step={5} onValueChange={(v) => updateGoal(g.id, { progress: v[0] })} />
+              </div>
+              <div className="mt-3">
+                <LinkedNotesPanel entityType="goal" entityId={g.id} contextTitle={g.title} compact />
               </div>
             </div>
           ))}

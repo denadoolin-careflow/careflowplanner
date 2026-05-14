@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { Appointment } from "@/lib/types";
+import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 
 interface Props {
   appointment: Appointment | null;
@@ -68,6 +69,7 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
             <Label className="text-xs">Location</Label>
             <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Optional" />
           </div>
+          <LinkedNotesPanel entityType="appointment" entityId={appointment.id} contextTitle={appointment.title} compact />
         </div>
         <DialogFooter className="flex items-center justify-between sm:justify-between">
           <Button variant="ghost" size="sm" onClick={del} className="text-destructive hover:text-destructive">
