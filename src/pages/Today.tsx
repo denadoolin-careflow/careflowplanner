@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
-import { EnergyCheckIn } from "@/components/cards/EnergyCheckIn";
+import { DateBarStrip } from "@/components/cards/DateBarStrip";
 import { format, isSameDay, addDays } from "date-fns";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
@@ -36,7 +36,7 @@ export default function Today() {
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-6">
         <div className="cozy-card overflow-hidden">
-          <div className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between gradient-calm">
+          <div className="flex flex-col gap-4 p-6 gradient-calm">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{format(today, "EEEE")}</p>
               <h2 className="font-display text-3xl font-semibold sm:text-4xl">{format(today, "MMMM d, yyyy")}</h2>
@@ -56,7 +56,7 @@ export default function Today() {
                 )}
               </div>
             </div>
-            <EnergyCheckIn />
+            <DateBarStrip date={today} />
           </div>
         </div>
 
