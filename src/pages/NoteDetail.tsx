@@ -10,6 +10,7 @@ import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
+import { NoteAIButton } from "@/components/notes/NoteAIButton";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -89,6 +90,11 @@ export default function NoteDetail() {
           >
             <Eye className="h-3.5 w-3.5" /> Preview
           </Button>
+          <NoteAIButton
+            title={title}
+            body={body}
+            onApply={(next) => { setBody(next); save({ body: next }); setView("edit"); }}
+          />
           <Button variant="ghost" size="icon" onClick={togglePin} aria-label="Pin">
             <Pin className={cn("h-4 w-4", note.pinned && "fill-current text-accent-foreground")} />
           </Button>
