@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Download, Pin, ChevronDown, Plus, Sparkles } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link } from "react-router-dom";
 import { useResetChecklists } from "@/lib/reset-checklists";
 import { ChecklistTree } from "@/components/reset/ChecklistTree";
@@ -29,6 +30,8 @@ function ZonesPanel({ uid }: { uid: string }) {
   const [editingZone, setEditingZone] = useState<string | null>(null);
   const [zoneDraft, setZoneDraft] = useState("");
   const [quickAdd, setQuickAdd] = useState<Record<string, string>>({});
+  const [aiFocus, setAiFocus] = useState<Record<string, string>>({});
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
 
   async function load() {
     const { data } = await supabase.from("cleaning_tasks").select("*").eq("user_id", uid).order("zone");
@@ -78,6 +81,24 @@ function ZonesPanel({ uid }: { uid: string }) {
     load();
   }
 
+  async function aiGenerate(zone: string) {
+    setAiBusy(zone);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-cleaning-checklist-zone", {
+        body: { zone, focus: aiFocus[zone] ?? "", energy: "medium", minutes: 30 },
+      });
+      if (error) throw error;
+      const n = (data as any)?.inserted ?? 0;
+      toast.success(`Added ${n} task${n === 1 ? "" : "s"} to ${zone}`);
+      setAiFocus(s => ({ ...s, [zone]: "" }));
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "AI failed");
+    } finally {
+      setAiBusy(null);
+    }
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -114,7 +135,28 @@ function ZonesPanel({ uid }: { uid: string }) {
                   {zone}
                 </button>
               )}
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{items.length} task{items.length === 1 ? "" : "s"}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{items.length} task{items.length === 1 ? "" : "s"}</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs" disabled={aiBusy === zone}>
+                      <Sparkles className="h-3.5 w-3.5" /> {aiBusy === zone ? "…" : "AI"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 space-y-2">
+                    <div className="text-xs font-medium">Generate tasks for {zone}</div>
+                    <Textarea
+                      rows={2}
+                      placeholder="Optional focus (e.g. deep clean, guests coming)"
+                      value={aiFocus[zone] ?? ""}
+                      onChange={e => setAiFocus(s => ({ ...s, [zone]: e.target.value }))}
+                    />
+                    <Button size="sm" className="w-full gap-1" disabled={aiBusy === zone} onClick={() => aiGenerate(zone)}>
+                      <Sparkles className="h-3.5 w-3.5" /> Generate
+                    </Button>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <ul className="space-y-1">
               {items.map(t => (
