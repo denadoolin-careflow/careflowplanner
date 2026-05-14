@@ -14,11 +14,14 @@ import { ChevronLeft, ChevronRight, Trash2, RefreshCw } from "lucide-react";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
+import { UnscheduledTasksRail, TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
+import { supabase } from "@/integrations/supabase/client";
+import { hoursToHM } from "@/lib/time-blocks";
 
 type View = "day" | "week" | "month" | "year";
 
 export default function CalendarPage() {
-  const { state, addAppointment, deleteAppointment } = useStore();
+  const { state, addAppointment, deleteAppointment, updateTask } = useStore();
   const [title, setTitle] = useState(""); const [date, setDate] = useState(""); const [time, setTime] = useState(""); const [type, setType] = useState<any>("other");
   const [view, setView] = useState<View>("month");
   const [cursor, setCursor] = useState<Date>(new Date());
@@ -57,6 +60,37 @@ export default function CalendarPage() {
     })),
   ];
 
+  /** Drop a task onto a day — sets due date only. */
+  const handleDayDrop = async (taskId: string, dateISO: string) => {
+    const t = state.tasks.find(x => x.id === taskId);
+    if (!t) return;
+    await updateTask(taskId, { dueDate: dateISO, inbox: false });
+    toast(`Scheduled “${t.title}” for ${dateISO}`);
+  };
+
+  /** Drop onto a time slot (week/day) — sets due date AND creates a 1h time block. */
+  const handleTimeDrop = async (taskId: string, dateISO: string, startHour: number) => {
+    const t = state.tasks.find(x => x.id === taskId);
+    if (!t) return;
+    await updateTask(taskId, { dueDate: dateISO, inbox: false });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const startH = Math.max(6, Math.min(22, startHour));
+    const endH = Math.min(23, startH + 1);
+    await supabase.from("time_blocks").insert({
+      user_id: user.id,
+      date: dateISO,
+      start_time: hoursToHM(startH),
+      end_time: hoursToHM(endH),
+      title: t.title,
+      color: "primary",
+      all_day: false,
+    });
+    toast(`Scheduled “${t.title}” at ${hoursToHM(startH)}`);
+    // TimeGrid reads via its own hook; nudge a refresh by touching state.
+    window.dispatchEvent(new CustomEvent("careflow:time-blocks-changed"));
+  };
+
   const shift = (dir: 1 | -1) => {
     setCursor(c => {
       if (view === "day") return addDays(c, dir);
@@ -75,7 +109,8 @@ export default function CalendarPage() {
         : format(cursor, "yyyy");
 
   return (
-    <div className="space-y-6">
+    <div className="flex gap-6">
+      <div className="min-w-0 flex-1 space-y-6">
       <div className="cozy-card gradient-calm p-6">
         <h2 className="font-display text-3xl font-semibold">Calendar</h2>
         <p className="mt-1 text-sm text-muted-foreground">Appointments, birthdays, holidays — color-coded and gentle.</p>
@@ -128,15 +163,16 @@ export default function CalendarPage() {
         }
         accent="warm"
       >
-        {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} />}
+        {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} onTaskDropDay={handleDayDrop} />}
         {view === "week" && (
           <TimeGrid
             days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(cursor, { weekStartsOn: 0 }), i))}
             appointmentsOn={eventsOn}
+            onTaskDropAt={handleTimeDrop}
           />
         )}
         {view === "day" && (
-          <TimeGrid days={[cursor]} appointmentsOn={eventsOn} />
+          <TimeGrid days={[cursor]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
         )}
         {view === "year" && <YearView cursor={cursor} eventsOn={eventsOn} setCursor={setCursor} setView={setView} />}
       </SectionCard>
@@ -153,6 +189,8 @@ export default function CalendarPage() {
           ))}
         </ul>
       </SectionCard>
+      </div>
+      <UnscheduledTasksRail />
     </div>
   );
 }
@@ -161,10 +199,11 @@ type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task"; label: strin
 type EventsFn = (k: string) => EventItem[];
 type ColorFn = (k: "appt"|"bday"|"hol"|"gcal"|"task") => string;
 
-function MonthView({ cursor, eventsOn, colorOf }: { cursor: Date; eventsOn: EventsFn; colorOf: ColorFn }) {
+function MonthView({ cursor, eventsOn, colorOf, onTaskDropDay }: { cursor: Date; eventsOn: EventsFn; colorOf: ColorFn; onTaskDropDay?: (taskId: string, dateISO: string) => void }) {
   const ms = startOfMonth(cursor);
   const gs = startOfWeek(ms, { weekStartsOn: 0 });
   const days = eachDayOfInterval({ start: gs, end: addDays(gs, 41) });
+  const [hoverISO, setHoverISO] = useState<string | null>(null);
   return (
     <>
       <div className="grid grid-cols-7 gap-1 text-xs uppercase tracking-wider text-muted-foreground">
@@ -177,7 +216,31 @@ function MonthView({ cursor, eventsOn, colorOf }: { cursor: Date; eventsOn: Even
           const today = isSameDay(d, new Date());
           const inMonth = isSameMonth(d, cursor);
           return (
-            <div key={k} className={cn("min-h-24 rounded-lg border p-1.5 text-xs", inMonth ? "border-border/60 bg-card" : "border-transparent text-muted-foreground/50", today && "ring-2 ring-primary")}>
+            <div
+              key={k}
+              onDragOver={(e) => {
+                if (!onTaskDropDay) return;
+                if (!Array.from(e.dataTransfer.types).includes("application/x-careflow-task")) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setHoverISO(k);
+              }}
+              onDragLeave={() => setHoverISO(p => p === k ? null : p)}
+              onDrop={(e) => {
+                if (!onTaskDropDay) return;
+                const id = e.dataTransfer.getData("application/x-careflow-task");
+                if (!id) return;
+                e.preventDefault();
+                onTaskDropDay(id, k);
+                setHoverISO(null);
+              }}
+              className={cn(
+                "min-h-24 rounded-lg border p-1.5 text-xs transition-colors",
+                inMonth ? "border-border/60 bg-card" : "border-transparent text-muted-foreground/50",
+                today && "ring-2 ring-primary",
+                hoverISO === k && "ring-2 ring-primary bg-primary/10",
+              )}
+            >
               <div className="text-right text-[11px] font-medium">{format(d, "d")}</div>
               <div className="mt-0.5 space-y-0.5">
                 {ev.map((e, i) => <div key={i} className={cn("truncate rounded px-1 py-0.5 text-[10px]", colorOf(e.kind))}>{e.label}</div>)}
