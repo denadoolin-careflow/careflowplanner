@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Plus } from "lucide-react";
+import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Plus, Sparkle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -113,13 +113,20 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
             {task.title}
           </button>
         )}
-        {!editing && (showArea || task.dayPart || task.priority === "high") && (
+        {!editing && (showArea || task.dayPart || task.priority === "high" || task.resetItemId) && (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {showArea && <Badge variant="secondary" className="rounded-full bg-muted text-[10px] font-normal">{task.area}</Badge>}
             {task.dayPart && <Badge variant="outline" className="rounded-full text-[10px] font-normal">{task.dayPart}</Badge>}
             {task.priority === "high" && <Badge className="rounded-full bg-accent text-accent-foreground text-[10px] font-normal hover:bg-accent">priority</Badge>}
             {task.energy && <Badge variant="outline" className="rounded-full text-[10px] font-normal capitalize">{task.energy} energy</Badge>}
             {hasSubs && <Badge variant="outline" className="rounded-full text-[10px] font-normal">{subtasks.filter(s=>s.done).length}/{subtasks.length}</Badge>}
+            {task.resetItemId && (
+              <a href="/home-reset" className="inline-flex">
+                <Badge variant="outline" className="rounded-full border-secondary/60 bg-secondary/30 text-[10px] font-normal">
+                  <Sparkle className="mr-0.5 h-2.5 w-2.5" /> Reset
+                </Badge>
+              </a>
+            )}
           </div>
         )}
       </div>
