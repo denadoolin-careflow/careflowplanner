@@ -14,8 +14,7 @@ import { ChevronLeft, ChevronRight, Trash2, RefreshCw } from "lucide-react";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
-import { UnscheduledTasksRail, TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
-import { supabase } from "@/integrations/supabase/client";
+import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { hoursToHM } from "@/lib/time-blocks";
 
 type View = "day" | "week" | "month" | "year";
