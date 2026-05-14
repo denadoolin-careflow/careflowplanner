@@ -26,7 +26,7 @@ const MOBILE_SECTIONS: Array<{ id: string; label: string; types: string[] }> = [
   { id: "focus", label: "Today Focus", types: ["top3", "task-progress", "pomodoro", "rhythm"] },
   { id: "calendar", label: "Calendar", types: ["appointments-today", "weather", "moon", "holidays", "birthdays"] },
   { id: "meals", label: "Meals", types: ["meals-today"] },
-  { id: "reset", label: "Weekly Reset", types: ["weekly-reset", "home-reset", "chore-today", "home-overdue"] },
+  { id: "reset", label: "Weekly Reset", types: ["weekly-reset", "home-reset", "home-reset-checklist", "chore-today", "home-overdue"] },
   { id: "care", label: "Care & Health", types: ["habits-today", "health-checkin", "weight-trend", "movement-week", "care-checkins", "family-tasks"] },
   { id: "wealth", label: "Wealth", types: ["budget-summary", "upcoming-bills", "debt-progress"] },
   { id: "reflect", label: "Reflect", types: ["goals", "ideas", "journal-prompt", "soft-moment", "note", "mini-tasks"] },
