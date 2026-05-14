@@ -1,0 +1,58 @@
+import { useStore, todayISO } from "@/lib/store";
+import { TaskRow } from "@/components/cards/TaskRow";
+import { LucideIcon } from "lucide-react";
+import type { Task } from "@/lib/types";
+
+type Variant = "upcoming" | "anytime" | "someday" | "logbook";
+
+const META: Record<Variant, { title: string; subtitle: string }> = {
+  upcoming: { title: "Upcoming", subtitle: "Scheduled for the days ahead." },
+  anytime: { title: "Anytime", subtitle: "Things you can do whenever." },
+  someday: { title: "Someday", subtitle: "Ideas to revisit later — no pressure." },
+  logbook: { title: "Logbook", subtitle: "Everything you've completed." },
+};
+
+function filterTasks(all: Task[], variant: Variant): Task[] {
+  const today = todayISO();
+  const root = all.filter(t => !t.parentTaskId);
+  switch (variant) {
+    case "upcoming":
+      return root.filter(t => !t.done && t.dueDate && t.dueDate > today)
+                 .sort((a,b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
+    case "anytime":
+      return root.filter(t => !t.done && !t.dueDate && t.status !== "someday" && !t.inbox);
+    case "someday":
+      return root.filter(t => !t.done && t.status === "someday");
+    case "logbook":
+      return root.filter(t => t.done)
+                 .sort((a,b) => (b.lastCompletedAt ?? "").localeCompare(a.lastCompletedAt ?? ""));
+  }
+}
+
+export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: LucideIcon }) {
+  const { state } = useStore();
+  const items = filterTasks(state.tasks, variant);
+  const meta = META[variant];
+  return (
+    <div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
+      <header className="flex items-center gap-3">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{meta.title}</h1>
+          <p className="text-sm text-muted-foreground">{meta.subtitle} {items.length} {items.length === 1 ? "item" : "items"}.</p>
+        </div>
+      </header>
+      <div className="rounded-2xl border border-border/60 bg-card/60 p-2">
+        {items.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">Nothing here yet ✨</div>
+        ) : (
+          <div className="space-y-1">
+            {items.map(t => <TaskRow key={t.id} task={t} />)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
