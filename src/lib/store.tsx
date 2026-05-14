@@ -96,6 +96,8 @@ interface Ctx {
   updateProject: (id: string, patch: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
 
+  updateArea: (id: string, patch: Partial<AreaRecord>) => Promise<void>;
+
   addGoal: (g: Partial<Goal> & { title: string }) => Promise<void>;
   updateGoal: (id: string, patch: Partial<Goal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
