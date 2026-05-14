@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, ShoppingBasket, Plus } from "lucide-react";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator,
 } from "@/components/ui/command";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type NoteHit = { id: string; title: string; body: string };
 
@@ -13,7 +14,7 @@ export function UniversalSearchBar() {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [notes, setNotes] = useState<NoteHit[]>([]);
-  const { state } = useStore();
+  const { state, addGrocery } = useStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,8 +52,18 @@ export function UniversalSearchBar() {
   const meals = useMemo(() => term ? state.meals.filter(m => match(m.name)).slice(0, 6) : [], [state.meals, term]);
   const appts = useMemo(() => term ? state.appointments.filter(a => match(a.title) || match(a.location ?? "")).slice(0, 6) : [], [state.appointments, term]);
   const ideas = useMemo(() => term ? (state.ideas ?? []).filter((i: any) => match(i.title) || match(i.notes)).slice(0, 6) : [], [state.ideas, term]);
+  const groceries = useMemo(() => term ? (state.groceries ?? []).filter((g: any) => match(g.name)).slice(0, 6) : [], [state.groceries, term]);
 
   const go = (to: string) => { setOpen(false); navigate(to); };
+
+  const addToGrocery = async () => {
+    const name = q.trim();
+    if (!name) return;
+    await addGrocery(name);
+    toast(`Added “${name}” to grocery list`);
+    setQ("");
+    setOpen(false);
+  };
 
   return (
     <>
@@ -77,6 +88,31 @@ export function UniversalSearchBar() {
         <CommandInput placeholder="Search tasks, notes, projects, events, meals…" value={q} onValueChange={setQ} />
         <CommandList>
           <CommandEmpty>{term ? "Nothing found." : "Type to search across everything."}</CommandEmpty>
+
+          {term && (
+            <CommandGroup heading="Quick add">
+              <CommandItem value={`__add-grocery-${term}`} onSelect={addToGrocery}>
+                <ShoppingBasket className="mr-2 h-4 w-4 text-secondary-foreground" />
+                <span>Add “{q.trim()}” to grocery list</span>
+                <Plus className="ml-auto h-3.5 w-3.5 opacity-60" />
+              </CommandItem>
+            </CommandGroup>
+          )}
+
+          {groceries.length > 0 && (
+            <>
+              <CommandSeparator />
+              <CommandGroup heading="Grocery list">
+                {groceries.map((g: any) => (
+                  <CommandItem key={g.id} value={`grocery-${g.id}-${g.name}`} onSelect={() => go("/meals")}>
+                    <ShoppingBasket className="mr-2 h-4 w-4 opacity-60" />
+                    <span className="truncate">{g.name}</span>
+                    {g.qty && <span className="ml-auto text-[10px] text-muted-foreground">{g.qty}</span>}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
 
           {tasks.length > 0 && (
             <CommandGroup heading="Tasks">
