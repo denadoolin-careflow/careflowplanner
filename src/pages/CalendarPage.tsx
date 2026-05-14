@@ -68,27 +68,12 @@ export default function CalendarPage() {
     toast(`Scheduled “${t.title}” for ${dateISO}`);
   };
 
-  /** Drop onto a time slot (week/day) — sets due date AND creates a 1h time block. */
+  /** Drop onto a time slot (week/day) — TimeGrid creates the block; we set the task's due date. */
   const handleTimeDrop = async (taskId: string, dateISO: string, startHour: number) => {
     const t = state.tasks.find(x => x.id === taskId);
     if (!t) return;
     await updateTask(taskId, { dueDate: dateISO, inbox: false });
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const startH = Math.max(6, Math.min(22, startHour));
-    const endH = Math.min(23, startH + 1);
-    await supabase.from("time_blocks").insert({
-      user_id: user.id,
-      date: dateISO,
-      start_time: hoursToHM(startH),
-      end_time: hoursToHM(endH),
-      title: t.title,
-      color: "primary",
-      all_day: false,
-    });
-    toast(`Scheduled “${t.title}” at ${hoursToHM(startH)}`);
-    // TimeGrid reads via its own hook; nudge a refresh by touching state.
-    window.dispatchEvent(new CustomEvent("careflow:time-blocks-changed"));
+    toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
   };
 
   const shift = (dir: 1 | -1) => {
