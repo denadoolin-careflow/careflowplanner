@@ -13,6 +13,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
+import { AREAS } from "@/lib/types";
+
+const CLEANING_ZONES = ["Kitchen","Bathroom","Bedrooms","Living","Laundry","Entryway","Outdoor","Whole home"] as const;
 
 const HOUR_START = 6;   // 6 AM
 const HOUR_END = 23;    // 11 PM
@@ -428,7 +431,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
   const [end, setEnd] = useState(draft.end);
   const [color, setColor] = useState<string>("primary");
   const [notes, setNotes] = useState("");
-  const [mode, setMode] = useState<"new" | "task" | "meal">("new");
+  const [mode, setMode] = useState<"new" | "task" | "meal" | "zone" | "area">("new");
   const [pickQ, setPickQ] = useState("");
 
   const openTasks = state.tasks.filter(t => !t.done && !t.parentTaskId);
@@ -451,10 +454,12 @@ function CreateForm({ draft, onCreate, onCancel }: {
   return (
     <div className="space-y-3">
       <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="new">New</TabsTrigger>
           <TabsTrigger value="task">Task</TabsTrigger>
           <TabsTrigger value="meal">Meal</TabsTrigger>
+          <TabsTrigger value="zone">Zone</TabsTrigger>
+          <TabsTrigger value="area">Area</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -555,6 +560,46 @@ function CreateForm({ draft, onCreate, onCancel }: {
               </ul>
             )}
           </ScrollArea>
+          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+        </div>
+      )}
+
+      {mode === "zone" && (
+        <div className="space-y-2">
+          <Label className="text-xs">Pick a home zone</Label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {CLEANING_ZONES.map(z => (
+              <button
+                key={z}
+                onClick={() => attach(`🧽 ${z} reset`)}
+                className="rounded-md border border-border/60 bg-card/60 px-3 py-2 text-left text-xs font-medium hover:border-primary/40 hover:bg-primary/10"
+              >
+                {z}
+              </button>
+            ))}
+          </div>
+          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+        </div>
+      )}
+
+      {mode === "area" && (
+        <div className="space-y-2">
+          <Label className="text-xs">Pick an area</Label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {AREAS.map(a => {
+              const rec = (state.areas ?? []).find(x => x.name === a);
+              return (
+                <button
+                  key={a}
+                  onClick={() => attach(`📁 ${a}`)}
+                  className="rounded-md border border-border/60 bg-card/60 px-3 py-2 text-left text-xs font-medium hover:border-primary/40 hover:bg-primary/10"
+                  style={rec?.color ? { borderColor: rec.color + "55" } : undefined}
+                >
+                  {a}
+                </button>
+              );
+            })}
+          </div>
           <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
         </div>
       )}

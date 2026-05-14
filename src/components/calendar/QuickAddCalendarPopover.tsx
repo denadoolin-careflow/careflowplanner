@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, CheckSquare, CalendarHeart } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
@@ -23,15 +24,16 @@ export function QuickAddCalendarPopover({ days, label = "Quick add" }: Props) {
   const defaultDate = days[0].toISOString().slice(0, 10);
   const [date, setDate] = useState(defaultDate);
   const [time, setTime] = useState("");
+  const [dayPart, setDayPart] = useState<"" | "Morning" | "Afternoon" | "Evening" | "Late Night">("");
 
-  useEffect(() => { if (open) { setDate(defaultDate); setTitle(""); setTime(""); } }, [open, defaultDate]);
+  useEffect(() => { if (open) { setDate(defaultDate); setTitle(""); setTime(""); setDayPart(""); } }, [open, defaultDate]);
 
   const submit = async () => {
     const t = title.trim();
     if (!t) return;
     if (tab === "task") {
-      await addTask({ title: t, dueDate: date, area: "Personal", priority: "medium", inbox: false } as any);
-      toast(`Task added for ${format(new Date(date), "MMM d")}`);
+      await addTask({ title: t, dueDate: date, area: "Personal", priority: "medium", inbox: false, ...(dayPart ? { dayPart } : {}) } as any);
+      toast(`Task added for ${format(new Date(date), "MMM d")}${dayPart ? ` · ${dayPart}` : ""}`);
     } else {
       await addAppointment({ title: t, date, time: time || undefined });
       toast(`Appointment added for ${format(new Date(date), "MMM d")}${time ? ` at ${time}` : ""}`);
@@ -59,9 +61,24 @@ export function QuickAddCalendarPopover({ days, label = "Quick add" }: Props) {
               <Input autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="What needs doing?" />
             </div>
-            <div>
-              <Label className="text-xs">Due date</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Due date</Label>
+                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Day part</Label>
+                <Select value={dayPart || "any"} onValueChange={(v) => setDayPart(v === "any" ? "" : v as any)}>
+                  <SelectTrigger><SelectValue placeholder="Any time" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any time</SelectItem>
+                    <SelectItem value="Morning">Morning</SelectItem>
+                    <SelectItem value="Afternoon">Afternoon</SelectItem>
+                    <SelectItem value="Evening">Evening</SelectItem>
+                    <SelectItem value="Late Night">Late Night</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="appointment" className="mt-3 space-y-3">

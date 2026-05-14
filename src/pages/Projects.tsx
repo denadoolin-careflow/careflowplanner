@@ -8,12 +8,14 @@ import { FolderOpen, Plus } from "lucide-react";
 import { AREAS } from "@/lib/types";
 import { toast } from "sonner";
 import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
+import { AreaDetailDialog } from "@/components/areas/AreaDetailDialog";
 
 export default function Projects() {
   const { state, addProject, updateArea } = useStore();
   const projects = (state.projects ?? []).filter(p => p.status !== "done");
   const [name, setName] = useState("");
   const [areaName, setAreaName] = useState<string>("Personal");
+  const [openArea, setOpenArea] = useState<string | null>(null);
 
   const grouped = AREAS.map(a => ({ area: a, items: projects.filter(p => p.areaName === a) })).filter(g => g.items.length);
   const noArea = projects.filter(p => !p.areaName);
@@ -78,7 +80,13 @@ export default function Projects() {
                 }
               />
             ) : null}
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{area}</div>
+            <button
+              onClick={() => setOpenArea(area)}
+              className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary"
+              title="Open area · goals & subtasks"
+            >
+              {area}
+            </button>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {items.map(p => (
@@ -116,6 +124,10 @@ export default function Projects() {
             ))}
           </div>
         </section>
+      )}
+
+      {openArea && (
+        <AreaDetailDialog area={openArea as any} open={!!openArea} onOpenChange={(o) => !o && setOpenArea(null)} />
       )}
     </div>
   );
