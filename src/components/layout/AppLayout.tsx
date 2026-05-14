@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { NAV } from "@/lib/nav";
 import { RoutinesStrip } from "@/components/routines/RoutinesStrip";
+import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
@@ -27,6 +28,7 @@ export function AppLayout() {
               <h1 className="font-display text-xl font-semibold leading-tight sm:text-2xl">{current.label}</h1>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
+              <UniversalSearchBar />
               <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 sm:flex">
                 <Label htmlFor="low-energy" className="text-xs text-muted-foreground">Low-energy mode</Label>
                 <Switch id="low-energy" checked={state.settings.lowEnergyMode} onCheckedChange={setLowEnergyMode} />

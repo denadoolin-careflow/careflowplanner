@@ -7,6 +7,9 @@ import { format, isSameDay, addDays } from "date-fns";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
+import { AgendaView } from "@/components/calendar/AgendaView";
+import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
+import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { hoursToHM } from "@/lib/time-blocks";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { Button } from "@/components/ui/button";
@@ -15,6 +18,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 export default function Today() {
   const { state, updateTask } = useStore();
   const [day, setDay] = useState<Date>(new Date());
+  const [view, setView] = useState<CalView>("schedule");
   const today = day;
   const isReallyToday = isSameDay(day, new Date());
   const lowMode = state.settings.lowEnergyMode;
@@ -76,9 +80,18 @@ export default function Today() {
           </div>
         </div>
 
-        <SectionCard title="Today" subtitle="Click a slot to add a time block, or drag a task in." accent="warm">
-          <TimeGrid days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
+        <SectionCard
+          title="Today"
+          subtitle={view === "schedule" ? "Click a slot to add a time block, or drag a task in." : "Chronological view of everything on your day."}
+          accent="warm"
+          action={<CalendarViewToggle value={view} onChange={setView} />}
+        >
+          {view === "schedule"
+            ? <TimeGrid days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
+            : <AgendaView days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />}
         </SectionCard>
+
+        <CalendarTasksPanel days={[today]} />
       </div>
       <UnscheduledTasksRail />
     </div>
