@@ -31,6 +31,10 @@ import Auth from "./pages/Auth";
 import Inbox from "./pages/Inbox";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
+import Upcoming from "./pages/Upcoming";
+import Anytime from "./pages/Anytime";
+import Someday from "./pages/Someday";
+import Logbook from "./pages/Logbook";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -56,6 +60,10 @@ const App = () => (
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/inbox" element={<Inbox />} />
+                <Route path="/upcoming" element={<Upcoming />} />
+                <Route path="/anytime" element={<Anytime />} />
+                <Route path="/someday" element={<Someday />} />
+                <Route path="/logbook" element={<Logbook />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/today" element={<Today />} />
