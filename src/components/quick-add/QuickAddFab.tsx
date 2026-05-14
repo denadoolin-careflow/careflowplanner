@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Plus, Sparkles, X, CornerDownLeft } from "lucide-react";
+import { Plus, Sparkles, X, CornerDownLeft, FolderOpen, Layers, Flag, Check } from "lucide-react";
 import * as LucideIcons from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { useStore, todayISO } from "@/lib/store";
-import { AREAS } from "@/lib/types";
+import { AREAS, type TaskStatus, type Area } from "@/lib/types";
 import { toast } from "sonner";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
@@ -19,6 +21,14 @@ import { parseTaskInput } from "@/lib/nlp-task";
 import { useQuickAddPresets, type QuickAddKind, type QuickAddPreset } from "@/lib/quick-add-presets";
 
 type Mode = QuickAddKind | "command";
+
+const STATUS_LABEL: Record<TaskStatus, string> = {
+  active: "Active",
+  this_week: "This week",
+  someday: "Someday",
+  waiting: "Waiting",
+  done: "Done",
+};
 
 export function QuickAddFab() {
   const [open, setOpen] = useState(false);
@@ -115,11 +125,28 @@ function CommandPalette({
   onClose: () => void;
 }) {
   const { addTask, addProject, state } = useStore();
+  const navigate = useNavigate();
   const parsed = useMemo(() => parseTaskInput(value), [value]);
   const hasText = value.trim().length > 0;
   const projects = state.projects ?? [];
+  const areas = state.areas ?? [];
+
+  // Overrides set by the picker chips. Undefined = follow NLP defaults.
+  const [pickedProjectId, setPickedProjectId] = useState<string | undefined | null>(undefined); // null = explicit "no project"
+  const [pickedStatus, setPickedStatus] = useState<TaskStatus | undefined>(undefined);
+  const [pickedArea, setPickedArea] = useState<Area | undefined>(undefined);
+
+  const effectiveProject = pickedProjectId === null
+    ? undefined
+    : pickedProjectId
+      ? projects.find(p => p.id === pickedProjectId)
+      : undefined;
+  const effectiveStatus: TaskStatus = pickedStatus ?? (parsed.someday ? "someday" : "active");
+  const effectiveArea: Area = (pickedArea ?? effectiveProject?.areaName as Area | undefined ?? parsed.area ?? "Personal") as Area;
 
   const resolveProject = async (): Promise<string | undefined> => {
+    if (pickedProjectId === null) return undefined;
+    if (pickedProjectId) return pickedProjectId;
     if (!parsed.projectName) return undefined;
     const lower = parsed.projectName.toLowerCase();
     const existing = projects.find(p => p.name.toLowerCase() === lower);
@@ -128,13 +155,24 @@ function CommandPalette({
     return created?.id;
   };
 
+  const routeAfterCapture = (opts: { projectId?: string; status: TaskStatus; dueDate?: string }) => {
+    if (opts.projectId) return navigate(`/projects/${opts.projectId}`);
+    if (opts.status === "someday") return navigate("/inbox");
+    if (opts.dueDate) {
+      if (opts.dueDate === todayISO()) return navigate("/today");
+      return navigate("/week");
+    }
+    return navigate("/inbox");
+  };
+
   const submitAsTask = async () => {
     if (!parsed.title) return;
     const projectId = await resolveProject();
-    const inboxBound = !parsed.dueDate && !projectId && !parsed.someday;
+    const status = effectiveStatus;
+    const inboxBound = !parsed.dueDate && !projectId && status === "active";
     await addTask({
       title: parsed.title,
-      area: (parsed.area ?? "Personal") as any,
+      area: effectiveArea as any,
       priority: parsed.priority ?? "medium",
       dueDate: parsed.dueDate,
       tags: parsed.tags,
@@ -144,13 +182,17 @@ function CommandPalette({
       recurrenceDays: parsed.recurrenceDays,
       projectId,
       inbox: inboxBound,
-      status: parsed.someday ? "someday" : "active",
+      status,
     });
-    toast.success(
-      projectId ? "Added to project." : parsed.someday ? "Saved to Someday." : inboxBound ? "Captured to Inbox." : "Captured.",
-      { description: parsed.title }
-    );
+    const destLabel = projectId
+      ? (effectiveProject?.name ?? "project")
+      : status === "someday" ? "Someday"
+      : parsed.dueDate === todayISO() ? "Today"
+      : parsed.dueDate ? "Upcoming"
+      : "Inbox";
+    toast.success(`Added to ${destLabel}`, { description: parsed.title });
     haptics.tap();
+    routeAfterCapture({ projectId, status, dueDate: parsed.dueDate });
     onClose();
   };
 
@@ -182,6 +224,103 @@ function CommandPalette({
             <span className="ml-auto text-[10px] text-muted-foreground">⌘↵ to add as task</span>
           </div>
         )}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 px-2 pb-1">
+          {/* Project picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-[11px] hover:bg-muted/60",
+                effectiveProject && "border-primary/40 bg-primary/10 text-primary"
+              )}>
+                <FolderOpen className="h-3 w-3" />
+                {effectiveProject?.name ?? (pickedProjectId === null ? "No project" : "Project")}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search projects…" />
+                <CommandList>
+                  <CommandEmpty>No projects.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem value="__none__" onSelect={() => setPickedProjectId(null)}>
+                      <span className="flex-1">No project</span>
+                      {pickedProjectId === null && <Check className="h-3.5 w-3.5" />}
+                    </CommandItem>
+                    {projects.map(p => (
+                      <CommandItem key={p.id} value={p.name} onSelect={() => setPickedProjectId(p.id)}>
+                        <FolderOpen className="mr-2 h-3.5 w-3.5 text-primary" />
+                        <span className="flex-1 truncate">{p.name}</span>
+                        <span className="ml-2 text-[10px] text-muted-foreground">{p.areaName ?? ""}</span>
+                        {pickedProjectId === p.id && <Check className="ml-2 h-3.5 w-3.5" />}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* Area picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-[11px] hover:bg-muted/60",
+                pickedArea && "border-primary/40 bg-primary/10 text-primary"
+              )}>
+                <Layers className="h-3 w-3" />
+                {effectiveArea}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-0" align="start">
+              <Command>
+                <CommandList>
+                  <CommandGroup>
+                    {(areas.length ? areas.map(a => a.name) : AREAS).map(name => (
+                      <CommandItem key={name} value={name} onSelect={() => setPickedArea(name as Area)}>
+                        <span className="flex-1">{name}</span>
+                        {effectiveArea === name && <Check className="h-3.5 w-3.5" />}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* Status picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-[11px] hover:bg-muted/60",
+                pickedStatus && "border-primary/40 bg-primary/10 text-primary"
+              )}>
+                <Flag className="h-3 w-3" />
+                {STATUS_LABEL[effectiveStatus]}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-0" align="start">
+              <Command>
+                <CommandList>
+                  <CommandGroup>
+                    {(["active","this_week","someday","waiting"] as TaskStatus[]).map(s => (
+                      <CommandItem key={s} value={s} onSelect={() => setPickedStatus(s)}>
+                        <span className="flex-1">{STATUS_LABEL[s]}</span>
+                        {effectiveStatus === s && <Check className="h-3.5 w-3.5" />}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {(pickedProjectId !== undefined || pickedStatus || pickedArea) && (
+            <button
+              onClick={() => { setPickedProjectId(undefined); setPickedStatus(undefined); setPickedArea(undefined); }}
+              className="ml-auto text-[10px] text-muted-foreground hover:text-foreground"
+            >Reset</button>
+          )}
+        </div>
       </div>
 
       <CommandList className="max-h-[420px]">
