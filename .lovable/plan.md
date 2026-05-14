@@ -100,3 +100,19 @@ Today/Week/Month pages unchanged — they keep filtering by `dueDate`.
 2. **Inbox default** — should *all* new tasks with no date and no project land in Inbox, or only ones created via Quick Add without context?
 3. **Logbook retention** — keep completed tasks forever, or auto-archive after 90 days?
 4. **One PR or two?** — bundle schema + nav + pages + Quick Add together (one big batch, ~10 files), or split into (a) schema + store + sidebar, then (b) project page + quick add + subtasks?
+
+---
+
+# Phase 3 — Unified Scheduler + DnD (next)
+
+- Calendar grid renders `tasks` with `dueDate` alongside appointments / GCal events (✓ shipped this batch as read-only).
+- Drag a task from any list onto a calendar cell to set/move `due_date`; drop on a time slot to also create/attach a `time_block`.
+- DnD reorder for tasks within a project (sort_order) and projects between areas (area_name + sort_order). Use `@dnd-kit/core` (already a dep).
+- Recurring tasks materialize as repeating chips on the week/day grid (read from `recurrence_*` fields).
+
+# Phase 4 — Second brain + AI weekly review
+
+- Promote `journal_entries` + `ideas` into a unified `notes` model with rich text (Tiptap), `[[backlinks]]`, daily-notes, and a `notes/:id` page.
+- Capacities-style "objects" — pin a Project, Recipient, or Habit into a note via `@mention`.
+- AI weekly review (Sun nights): summarize logbook, surface stale projects, propose next week's top 3 from inbox + due tasks. Edge function `ai-weekly-review` using Lovable AI Gateway.
+- Smart inbox triage: AI suggests Project + Area + Status for each inbox item; one-tap accept.

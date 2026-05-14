@@ -2,11 +2,12 @@ import { NavLink, useLocation } from "react-router-dom";
 import { NAV_GROUPS } from "@/lib/nav";
 import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
-  Layers, Moon, Archive, FolderOpen, Folder,
+  Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon },
@@ -18,6 +19,7 @@ const LISTS = [
 ] as const;
 
 const STORAGE_KEY = "careflow:sidebar:open-groups";
+const COLLAPSED_KEY = "careflow:sidebar:collapsed";
 
 function loadOpen(): Record<string, boolean> {
   if (typeof window === "undefined") return {};
@@ -30,8 +32,25 @@ function loadOpen(): Record<string, boolean> {
 export function Sidebar() {
   const { pathname } = useLocation();
   const [openMap, setOpenMap] = useState<Record<string, boolean>>(() => loadOpen());
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(COLLAPSED_KEY) === "1";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0"); } catch {}
+  }, [collapsed]);
   const { state } = useStore();
-  const areas = (state.areas ?? []).filter(a => !a.isArchived);
+  // Dedupe areas by name as a defensive guard against any prior duplicates.
+  const areas = (() => {
+    const seen = new Set<string>();
+    return (state.areas ?? []).filter(a => {
+      if (a.isArchived) return false;
+      const k = a.name.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  })();
   const projects = (state.projects ?? []).filter(p => !p.archivedAt && p.status !== "done");
 
   // Auto-open the group that contains the current route on first load.
@@ -64,38 +83,60 @@ export function Sidebar() {
     setOpenMap(prev => prev[key] ? prev : { ...prev, [key]: true });
   }, [pathname, projects]);
 
+  const wrapItem = (label: string, node: React.ReactNode) => collapsed ? (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>{node as any}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  ) : node;
+
   return (
-    <aside className="hidden lg:flex w-64 shrink-0 flex-col gap-2 border-r border-sidebar-border bg-sidebar p-4">
-      <div className="flex items-center gap-2 px-2 py-3">
+    <TooltipProvider>
+    <aside className={cn(
+      "hidden lg:flex shrink-0 flex-col gap-2 border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 ease-out",
+      collapsed ? "w-[68px] items-center" : "w-64",
+    )}>
+      <div className={cn("flex items-center gap-2 px-1 py-2 w-full", collapsed && "justify-center")}>
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-glow">
           <Heart className="h-4 w-4" fill="currentColor" />
         </div>
-        <div>
-          <div className="font-display text-lg font-semibold leading-none">CareFlow</div>
-          <div className="text-xs text-muted-foreground">a gentle planner</div>
-        </div>
+        {!collapsed && (
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-lg font-semibold leading-none">CareFlow</div>
+            <div className="text-xs text-muted-foreground truncate">a gentle planner</div>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setCollapsed(c => !c)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+        </button>
       </div>
-      <nav className="mt-2 flex flex-col gap-1 overflow-y-auto pr-1">
+      <nav className={cn("mt-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden w-full", !collapsed && "pr-1")}>
         {/* Things-style Lists rail */}
         <div className="mb-3 flex flex-col gap-0.5">
-          {LISTS.map(({ to, label, icon: Icon }) => (
+          {LISTS.map(({ to, label, icon: Icon }) => wrapItem(label,
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) => cn(
-                "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
+                "group flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
                 "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                collapsed ? "justify-center h-10 w-10 mx-auto" : "px-3 py-2",
                 isActive && "bg-primary-soft text-foreground shadow-soft",
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              <span>{label}</span>
+              {!collapsed && <span>{label}</span>}
             </NavLink>
           ))}
         </div>
 
         {/* Areas → Projects tree */}
-        {areas.length > 0 && (
+        {areas.length > 0 && !collapsed && (
           <div className="mb-2">
             <div className="flex items-center justify-between px-2 py-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60">Areas</span>
@@ -161,6 +202,26 @@ export function Sidebar() {
           const open = !!openMap[group.id];
           const GroupIcon = group.icon;
           const hasActive = group.items.some((it) => it.to === pathname);
+          if (collapsed) {
+            return (
+              <div key={group.id} className="mb-1 flex flex-col items-center gap-0.5">
+                {group.items.map(({ to, label, icon: Icon }) => wrapItem(label,
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={to === "/"}
+                    className={({ isActive }) => cn(
+                      "grid h-10 w-10 place-items-center rounded-xl transition-all",
+                      "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      isActive && "bg-primary-soft text-foreground shadow-soft",
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </NavLink>
+                ))}
+              </div>
+            );
+          }
           return (
             <div key={group.id} className="mb-1">
               <button
@@ -211,5 +272,6 @@ export function Sidebar() {
         })}
       </nav>
     </aside>
+    </TooltipProvider>
   );
 }

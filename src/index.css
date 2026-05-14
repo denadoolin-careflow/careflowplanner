@@ -323,6 +323,141 @@
   --gradient-dawn: linear-gradient(160deg, hsl(255 28% 12%) 0%, hsl(255 32% 18%) 50%, hsl(290 28% 18%) 100%);
 }
 
+/* Plum — deep cozy plum */
+:root[data-theme="plum"] {
+  --background: 290 30% 97%;
+  --primary: 285 50% 45%;
+  --primary-soft: 285 55% 92%;
+  --accent: 320 50% 80%;
+  --ring: 285 50% 45%;
+  --gradient-dawn: linear-gradient(160deg, hsl(290 30% 97%) 0%, hsl(285 45% 92%) 50%, hsl(320 50% 94%) 100%);
+}
+.dark[data-theme="plum"] {
+  --primary: 285 60% 72%;
+  --primary-soft: 285 35% 24%;
+  --accent: 320 45% 65%;
+  --ring: 285 60% 72%;
+  --gradient-dawn: linear-gradient(160deg, hsl(285 28% 11%) 0%, hsl(285 32% 17%) 50%, hsl(320 28% 18%) 100%);
+}
+
+/* Midnight — deep navy */
+:root[data-theme="midnight"] {
+  --background: 220 35% 96%;
+  --primary: 220 60% 38%;
+  --primary-soft: 220 60% 92%;
+  --accent: 195 55% 78%;
+  --ring: 220 60% 38%;
+  --gradient-dawn: linear-gradient(160deg, hsl(220 35% 96%) 0%, hsl(220 55% 92%) 50%, hsl(195 50% 94%) 100%);
+}
+.dark[data-theme="midnight"] {
+  --background: 222 35% 8%;
+  --card: 222 30% 12%;
+  --primary: 220 70% 70%;
+  --primary-soft: 220 35% 22%;
+  --accent: 195 50% 60%;
+  --ring: 220 70% 70%;
+  --gradient-dawn: linear-gradient(160deg, hsl(222 35% 8%) 0%, hsl(220 32% 16%) 50%, hsl(195 28% 16%) 100%);
+}
+
+/* Moss — earthy green */
+:root[data-theme="moss"] {
+  --background: 95 25% 96%;
+  --primary: 95 38% 36%;
+  --primary-soft: 95 40% 90%;
+  --accent: 50 45% 78%;
+  --ring: 95 38% 36%;
+  --gradient-dawn: linear-gradient(160deg, hsl(95 25% 96%) 0%, hsl(95 35% 90%) 50%, hsl(50 40% 94%) 100%);
+}
+.dark[data-theme="moss"] {
+  --primary: 95 45% 60%;
+  --primary-soft: 95 28% 20%;
+  --accent: 50 40% 55%;
+  --ring: 95 45% 60%;
+  --gradient-dawn: linear-gradient(160deg, hsl(95 22% 10%) 0%, hsl(95 26% 15%) 50%, hsl(50 20% 14%) 100%);
+}
+
+/* Ember — fiery red-orange */
+:root[data-theme="ember"] {
+  --background: 10 45% 97%;
+  --primary: 8 75% 50%;
+  --primary-soft: 10 70% 92%;
+  --accent: 35 70% 78%;
+  --ring: 8 75% 50%;
+  --gradient-dawn: linear-gradient(160deg, hsl(10 45% 97%) 0%, hsl(10 65% 92%) 50%, hsl(35 65% 93%) 100%);
+}
+.dark[data-theme="ember"] {
+  --primary: 12 80% 65%;
+  --primary-soft: 10 35% 22%;
+  --accent: 35 55% 58%;
+  --ring: 12 80% 65%;
+  --gradient-dawn: linear-gradient(160deg, hsl(10 25% 10%) 0%, hsl(10 30% 17%) 50%, hsl(35 24% 16%) 100%);
+}
+
+/* Sand — warm beige */
+:root[data-theme="sand"] {
+  --background: 38 50% 96%;
+  --primary: 32 55% 48%;
+  --primary-soft: 35 60% 91%;
+  --accent: 18 55% 80%;
+  --ring: 32 55% 48%;
+  --gradient-dawn: linear-gradient(160deg, hsl(38 50% 96%) 0%, hsl(35 55% 91%) 50%, hsl(18 50% 94%) 100%);
+}
+.dark[data-theme="sand"] {
+  --primary: 35 60% 65%;
+  --primary-soft: 32 30% 22%;
+  --accent: 18 45% 58%;
+  --ring: 35 60% 65%;
+  --gradient-dawn: linear-gradient(160deg, hsl(32 22% 11%) 0%, hsl(32 26% 17%) 50%, hsl(18 22% 17%) 100%);
+}
+
+/* Blossom — magenta pink */
+:root[data-theme="blossom"] {
+  --background: 320 40% 97%;
+  --primary: 320 60% 55%;
+  --primary-soft: 320 60% 93%;
+  --accent: 280 50% 82%;
+  --ring: 320 60% 55%;
+  --gradient-dawn: linear-gradient(160deg, hsl(320 40% 97%) 0%, hsl(320 55% 93%) 50%, hsl(280 50% 94%) 100%);
+}
+.dark[data-theme="blossom"] {
+  --primary: 320 70% 72%;
+  --primary-soft: 320 30% 24%;
+  --accent: 280 45% 65%;
+  --ring: 320 70% 72%;
+  --gradient-dawn: linear-gradient(160deg, hsl(320 25% 11%) 0%, hsl(320 30% 18%) 50%, hsl(280 25% 18%) 100%);
+}
+
+/* Noir — near-black with cool slate accent */
+:root[data-theme="noir"] {
+  --background: 240 12% 96%;
+  --primary: 240 15% 22%;
+  --primary-foreground: 240 10% 98%;
+  --primary-soft: 240 18% 90%;
+  --accent: 240 14% 80%;
+  --ring: 240 20% 30%;
+  --gradient-dawn: linear-gradient(160deg, hsl(240 12% 96%) 0%, hsl(240 14% 92%) 100%);
+}
+.dark[data-theme="noir"] {
+  --background: 240 12% 6%;
+  --card: 240 12% 10%;
+  --primary: 240 18% 88%;
+  --primary-foreground: 240 14% 10%;
+  --primary-soft: 240 14% 20%;
+  --accent: 240 14% 28%;
+  --ring: 240 18% 70%;
+  --gradient-dawn: linear-gradient(160deg, hsl(240 12% 6%) 0%, hsl(240 14% 12%) 100%);
+}
+
+/* ===== Hero gradients in dark mode — make all page header cards
+   that use gradient-warm/calm/sage feel cohesive with the chosen
+   palette instead of the default plum. We tint them with the
+   current --primary so they always read "dark + on-brand". */
+.dark {
+  --gradient-warm: linear-gradient(135deg, hsl(var(--primary) / 0.18), hsl(var(--accent) / 0.18)), hsl(var(--card));
+  --gradient-calm: linear-gradient(135deg, hsl(var(--primary) / 0.20), hsl(var(--moon) / 0.18)), hsl(var(--card));
+  --gradient-sage: linear-gradient(135deg, hsl(var(--secondary) / 0.20), hsl(var(--primary) / 0.16)), hsl(var(--card));
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }

@@ -213,11 +213,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       projects: (projects as any[]).map(projectFrom).sort((a,b) => a.sortOrder - b.sortOrder),
       resetTemplates: seedState().resetTemplates,
     });
-    // Seed default areas from enum on first load
+    // Seed default areas from enum on first load (idempotent thanks to UNIQUE(user_id,name))
     if (!areas.length) {
       const seedAreas = AREAS.map((name, i) => ({ user_id: uid, name, sort_order: i }));
-      await supabase.from("areas").insert(seedAreas);
-      const { data: newAreas } = await supabase.from("areas").select("*").order("sort_order", { ascending: true });
+      await supabase.from("areas").upsert(seedAreas as any, { onConflict: "user_id,name", ignoreDuplicates: true });
+      const { data: newAreas } = await supabase.from("areas").select("*").eq("user_id", uid).order("sort_order", { ascending: true });
       setState(s => ({ ...s, areas: (newAreas ?? []).map(areaFrom) }));
     }
     // first-time seed: if no tasks AND no cleaning, insert sample data
