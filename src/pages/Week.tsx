@@ -10,6 +10,8 @@ import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
+import { TaskEditor } from "@/components/tasks/TaskEditor";
+import { DayPartsView } from "@/components/calendar/DayPartsView";
 import { WeekNavigator } from "@/components/week/WeekNavigator";
 import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
@@ -19,6 +21,7 @@ export default function Week() {
   const [start, setStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [view, setView] = useState<CalView>("schedule");
   const [editApptId, setEditApptId] = useState<string | null>(null);
+  const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
@@ -46,6 +49,7 @@ export default function Week() {
   };
 
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
+  const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
 
   return (
     <div className="flex gap-6">
@@ -67,15 +71,22 @@ export default function Week() {
             <CalendarViewToggle value={view} onChange={setView} />
           </div>
         }>
-          {view === "schedule"
-            ? <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
-            : <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />}
+          {view === "schedule" && (
+            <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
+          )}
+          {view === "agenda" && (
+            <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
+          )}
+          {view === "dayparts" && (
+            <DayPartsView days={days.slice(0, 1)} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} onTaskClick={setEditTaskId} />
+          )}
         </SectionCard>
 
         <CalendarTasksPanel days={days} />
       </div>
       <UnscheduledTasksRail />
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
+      <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
     </div>
   );
 }
