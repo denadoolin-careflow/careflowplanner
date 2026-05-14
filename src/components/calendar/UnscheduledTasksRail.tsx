@@ -1,15 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { Inbox, GripVertical, Search, X, CalendarDays, ListTodo } from "lucide-react";
+import {
+  Inbox, GripVertical, Search, X, CalendarDays, ListTodo,
+  UtensilsCrossed, Repeat, Target, FolderKanban, Sparkles, Check,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
+import { Link } from "react-router-dom";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongPressDrag } from "@/lib/long-press-drag";
 
 export const TASK_DRAG_MIME = "application/x-careflow-task";
 export const EVENT_DRAG_MIME = "application/x-careflow-event";
+
+type RailTab = "tasks" | "calendar" | "meals" | "habits" | "goals" | "projects" | "zones";
+const TABS: { id: RailTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "tasks", label: "Tasks", icon: ListTodo },
+  { id: "calendar", label: "Calendar", icon: CalendarDays },
+  { id: "meals", label: "Meals", icon: UtensilsCrossed },
+  { id: "habits", label: "Habits", icon: Repeat },
+  { id: "goals", label: "Goals", icon: Target },
+  { id: "projects", label: "Projects", icon: FolderKanban },
+  { id: "zones", label: "Zones", icon: Sparkles },
+];
 
 interface RailProps {
   /** Click on a task → open editor for that task. */
@@ -17,8 +32,8 @@ interface RailProps {
 }
 
 export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
-  const { state } = useStore();
-  const [tab, setTab] = useState<"tasks" | "calendar">("tasks");
+  const { state, toggleHabit, toggleCleaning } = useStore();
+  const [tab, setTab] = useState<RailTab>("tasks");
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"unscheduled" | "all">("unscheduled");
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
@@ -88,25 +103,28 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
 
   return (
     <aside className="hidden xl:flex sticky top-20 max-h-[calc(100vh-6rem)] w-72 shrink-0 flex-col rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm shadow-soft">
-      <div className="flex items-center gap-1 border-b border-border/60 p-1.5">
-        <button
-          onClick={() => setTab("tasks")}
-          className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors",
-            tab === "tasks" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <ListTodo className="h-3.5 w-3.5" /> Tasks
-        </button>
-        <button
-          onClick={() => setTab("calendar")}
-          className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors",
-            tab === "calendar" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <CalendarDays className="h-3.5 w-3.5" /> Calendar
-        </button>
+      <div className="flex items-center gap-0.5 border-b border-border/60 p-1">
+        {TABS.map(t => {
+          const Icon = t.icon;
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              title={t.label}
+              aria-label={t.label}
+              className={cn(
+                "flex flex-1 items-center justify-center rounded-md px-1 py-1.5 transition-colors",
+                active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          );
+        })}
+      </div>
+      <div className="border-b border-border/60 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {TABS.find(t => t.id === tab)?.label}
       </div>
 
       {tab === "tasks" && (
@@ -214,6 +232,12 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
         )}
       </div>
       )}
+
+      {tab === "meals" && <MealsTab />}
+      {tab === "habits" && <HabitsTab onToggle={toggleHabit} />}
+      {tab === "goals" && <GoalsTab />}
+      {tab === "projects" && <ProjectsTab />}
+      {tab === "zones" && <ZonesTab onToggle={toggleCleaning} />}
     </aside>
   );
 }
