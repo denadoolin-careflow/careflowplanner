@@ -9,6 +9,7 @@ import { deleteNote, extractBacklinks, findBacklinksTo, getNote, updateNote, typ
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -160,6 +161,8 @@ export default function NoteDetail() {
           )}
         </div>
       )}
+
+      <NoteLinksSidebar noteId={note.id} />
     </div>
   );
 }
