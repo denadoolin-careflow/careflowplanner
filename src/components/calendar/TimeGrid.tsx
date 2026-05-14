@@ -145,7 +145,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       };
       suppressClickUntil.current = Date.now() + 250;
       await update(d.blockId, patch);
-      haptics.tap();
+      haptics.pickup();
     } else if (block) {
       // Treat as a tap — open editor
       setEditing(block);
