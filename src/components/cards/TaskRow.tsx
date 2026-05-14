@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { Trash2, GripVertical, Timer, Settings2 } from "lucide-react";
+import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -11,15 +11,22 @@ import { PomodoroTimer } from "@/components/tasks/PomodoroTimer";
 import { useDraggable } from "@dnd-kit/core";
 import { toast } from "sonner";
 import { pickAffirmation } from "@/lib/affirmations";
+import { Input } from "@/components/ui/input";
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
-  const { toggleTask, deleteTask, updateTask } = useStore();
+  const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
   const [open, setOpen] = useState(false);
   const [pomOpen, setPomOpen] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
+  const [expanded, setExpanded] = useState(false);
+  const [addingSub, setAddingSub] = useState(false);
+  const [subDraft, setSubDraft] = useState("");
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const subtasks = state.tasks.filter(t => t.parentTaskId === task.id);
+  const hasSubs = subtasks.length > 0;
 
   // Keep draft synced when task changes externally (and we're not editing).
   useEffect(() => { if (!editing) setDraft(task.title); }, [task.title, editing]);
@@ -57,6 +64,16 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
     <>
     <RowShell task={task} dense={dense} draggable={draggable} celebrate={celebrate}>
       <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-0.5" />
+      {(hasSubs || addingSub) && (
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="mt-0.5 grid h-5 w-5 place-items-center rounded text-muted-foreground hover:text-foreground"
+          aria-label={expanded ? "Collapse subtasks" : "Expand subtasks"}
+        >
+          <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-90")} />
+        </button>
+      )}
       <div className="min-w-0 flex-1">
         {editing ? (
           <textarea
@@ -102,9 +119,18 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
             {task.dayPart && <Badge variant="outline" className="rounded-full text-[10px] font-normal">{task.dayPart}</Badge>}
             {task.priority === "high" && <Badge className="rounded-full bg-accent text-accent-foreground text-[10px] font-normal hover:bg-accent">priority</Badge>}
             {task.energy && <Badge variant="outline" className="rounded-full text-[10px] font-normal capitalize">{task.energy} energy</Badge>}
+            {hasSubs && <Badge variant="outline" className="rounded-full text-[10px] font-normal">{subtasks.filter(s=>s.done).length}/{subtasks.length}</Badge>}
           </div>
         )}
       </div>
+      <Button
+        variant="ghost" size="icon"
+        className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+        onClick={() => { setExpanded(true); setAddingSub(true); }}
+        aria-label="Add subtask" title="Add subtask"
+      >
+        <Plus className="h-3.5 w-3.5" />
+      </Button>
       <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setOpen(true)} aria-label="More options" title="Details">
         <Settings2 className="h-3.5 w-3.5" />
       </Button>
@@ -120,6 +146,37 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
         </span>
       )}
     </RowShell>
+    {expanded && (
+      <div className="ml-8 space-y-1 border-l border-border/40 pl-2">
+        {subtasks.map(s => <TaskRow key={s.id} task={s} dense showArea={false} />)}
+        {addingSub && (
+          <div className="flex gap-1 py-1">
+            <Input
+              autoFocus
+              value={subDraft}
+              onChange={e => setSubDraft(e.target.value)}
+              placeholder="Subtask…"
+              className="h-8 text-sm"
+              onBlur={() => { if (!subDraft.trim()) setAddingSub(false); }}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && subDraft.trim()) {
+                  await addTask({
+                    title: subDraft.trim(),
+                    area: task.area,
+                    parentTaskId: task.id,
+                    projectId: task.projectId,
+                  });
+                  setSubDraft("");
+                } else if (e.key === "Escape") {
+                  setSubDraft("");
+                  setAddingSub(false);
+                }
+              }}
+            />
+          </div>
+        )}
+      </div>
+    )}
     <TaskEditor open={open} onOpenChange={setOpen} task={task} />
     <PomodoroTimer open={pomOpen} onOpenChange={setPomOpen} task={task} />
     </>

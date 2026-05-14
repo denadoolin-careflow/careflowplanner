@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import type {
   AppState, Task, Goal, Habit, JournalEntry, Meal, GroceryItem,
   Appointment, Birthday, Holiday, CareNote, CleaningTask, Idea,
-  CareRecipient, Energy,
+  CareRecipient, Energy, AreaRecord, Project,
 } from "./types";
 import { seedState, newUserSeed } from "./seed";
+import { AREAS } from "./types";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 export { todayISO };
@@ -22,6 +23,9 @@ const taskFrom = (r: any): Task => ({
   recurrenceType: r.recurrence_type, recurrenceInterval: r.recurrence_interval,
   recurrenceDays: r.recurrence_days ?? [], nextDueDate: r.next_due_date ?? undefined,
   lastCompletedAt: r.last_completed_at ?? undefined, autoReset: r.auto_reset,
+  projectId: r.project_id ?? undefined,
+  parentTaskId: r.parent_task_id ?? undefined,
+  inbox: !!r.inbox,
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, done: t.done,
@@ -36,6 +40,9 @@ const taskTo = (t: Partial<Task>) => ({
   next_due_date: t.nextDueDate ?? null,
   last_completed_at: t.lastCompletedAt ?? null,
   auto_reset: t.autoReset ?? false,
+  project_id: t.projectId ?? null,
+  parent_task_id: t.parentTaskId ?? null,
+  inbox: t.inbox ?? false,
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 const habitFrom = (r: any): Habit => ({ id: r.id, title: r.title, cadence: r.cadence, category: r.category, streak: r.streak, log: {} });
@@ -63,6 +70,14 @@ const recipFrom = (r: any): CareRecipient => ({ id: r.id, name: r.name, kind: r.
 const careNoteFrom = (r: any): CareNote => ({ id: r.id, recipientId: r.recipient_id, date: r.date, body: r.body, tag: r.tag ?? undefined });
 const cleanFrom = (r: any): CleaningTask => ({ id: r.id, title: r.title, zone: r.zone, cadence: r.cadence, done: r.done, lastDone: r.last_done ?? undefined, weekday: r.weekday ?? undefined, recurrenceType: r.recurrence_type, recurrenceDays: r.recurrence_days ?? [], nextDueDate: r.next_due_date ?? undefined, autoReset: r.auto_reset, sortOrder: r.sort_order });
 const ideaFrom = (r: any): Idea => ({ id: r.id, title: r.title, notes: r.notes ?? undefined, category: r.category, createdAt: r.created_at });
+const areaFrom = (r: any): AreaRecord => ({ id: r.id, name: r.name, icon: r.icon ?? undefined, color: r.color ?? undefined, sortOrder: r.sort_order ?? 0, isArchived: !!r.is_archived });
+const projectFrom = (r: any): Project => ({
+  id: r.id, areaId: r.area_id ?? undefined, areaName: r.area_name ?? undefined,
+  name: r.name, notes: r.notes ?? undefined, icon: r.icon ?? undefined, color: r.color ?? undefined,
+  status: r.status ?? "active", deadline: r.deadline ?? undefined,
+  sortOrder: r.sort_order ?? 0, archivedAt: r.archived_at ?? undefined,
+  createdAt: r.created_at,
+});
 
 /* ---------- context ---------- */
 interface Ctx {
@@ -75,6 +90,10 @@ interface Ctx {
   toggleTask: (id: string) => Promise<void>;
   updateTask: (id: string, patch: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
+
+  addProject: (p: Partial<Project> & { name: string }) => Promise<Project | null>;
+  updateProject: (id: string, patch: Partial<Project>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
 
   addGoal: (g: Partial<Goal> & { title: string }) => Promise<void>;
   updateGoal: (id: string, patch: Partial<Goal>) => Promise<void>;
@@ -153,12 +172,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const tables = [
       "tasks", "goals", "habits", "habit_logs", "journal_entries", "meals",
       "grocery_items", "appointments", "birthdays", "holidays", "care_recipients",
-      "care_notes", "cleaning_tasks", "ideas", "profiles",
+      "care_notes", "cleaning_tasks", "ideas", "profiles", "areas", "projects",
     ] as const;
     const results = await Promise.all(tables.map(t =>
       supabase.from(t).select("*").order("created_at", { ascending: false } as any)
     ));
-    const [tasks, goals, habits, habitLogs, journal, meals, grocery, appts, bdays, holidays, recipients, careNotes, cleaning, ideas, profiles] = results.map(r => r.data ?? []);
+    const [tasks, goals, habits, habitLogs, journal, meals, grocery, appts, bdays, holidays, recipients, careNotes, cleaning, ideas, profiles, areas, projects] = results.map(r => r.data ?? []);
     const profile: any = profiles[0] ?? {};
     // attach habit logs
     const logsByHabit: Record<string, Record<string, boolean>> = {};
@@ -190,8 +209,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       careNotes: (careNotes as any[]).map(careNoteFrom),
       cleaning: (cleaning as any[]).map(cleanFrom).sort((a,b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
       ideas: (ideas as any[]).map(ideaFrom),
+      areas: (areas as any[]).map(areaFrom).sort((a,b) => a.sortOrder - b.sortOrder),
+      projects: (projects as any[]).map(projectFrom).sort((a,b) => a.sortOrder - b.sortOrder),
       resetTemplates: seedState().resetTemplates,
     });
+    // Seed default areas from enum on first load
+    if (!areas.length) {
+      const seedAreas = AREAS.map((name, i) => ({ user_id: uid, name, sort_order: i }));
+      await supabase.from("areas").insert(seedAreas);
+      const { data: newAreas } = await supabase.from("areas").select("*").order("sort_order", { ascending: true });
+      setState(s => ({ ...s, areas: (newAreas ?? []).map(areaFrom) }));
+    }
     // first-time seed: if no tasks AND no cleaning, insert sample data
     if (!seededRef.current && tasks.length === 0 && cleaning.length === 0) {
       seededRef.current = true;
@@ -255,6 +283,45 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteTask: async (id) => {
       setState(s => ({ ...s, tasks: s.tasks.filter(t => t.id !== id) }));
       await supabase.from("tasks").delete().eq("id", id);
+    },
+
+    addProject: async (p) => {
+      if (!uid) return null;
+      const dbRow: any = {
+        user_id: uid,
+        name: p.name,
+        area_id: p.areaId ?? null,
+        area_name: p.areaName ?? null,
+        notes: p.notes ?? null,
+        icon: p.icon ?? null,
+        color: p.color ?? null,
+        status: p.status ?? "active",
+        deadline: p.deadline ?? null,
+        sort_order: p.sortOrder ?? 0,
+      };
+      const { data } = await supabase.from("projects").insert(dbRow).select().single();
+      if (!data) return null;
+      const proj = projectFrom(data);
+      setState(s => ({ ...s, projects: [proj, ...(s.projects ?? [])] }));
+      return proj;
+    },
+    updateProject: async (id, patch) => {
+      setState(s => ({ ...s, projects: (s.projects ?? []).map(p => p.id === id ? { ...p, ...patch } : p) }));
+      const dbPatch: any = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.notes !== undefined) dbPatch.notes = patch.notes;
+      if (patch.areaId !== undefined) dbPatch.area_id = patch.areaId ?? null;
+      if (patch.areaName !== undefined) dbPatch.area_name = patch.areaName ?? null;
+      if (patch.status !== undefined) dbPatch.status = patch.status;
+      if (patch.deadline !== undefined) dbPatch.deadline = patch.deadline ?? null;
+      if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
+      if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
+      if (patch.sortOrder !== undefined) dbPatch.sort_order = patch.sortOrder;
+      await supabase.from("projects").update(dbPatch).eq("id", id);
+    },
+    deleteProject: async (id) => {
+      setState(s => ({ ...s, projects: (s.projects ?? []).filter(p => p.id !== id) }));
+      await supabase.from("projects").delete().eq("id", id);
     },
 
     addGoal: async (g) => {

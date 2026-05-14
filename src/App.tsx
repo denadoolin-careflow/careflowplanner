@@ -28,6 +28,9 @@ import Wealth from "./pages/Wealth";
 import HomeAreas from "./pages/HomeAreas";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import Inbox from "./pages/Inbox";
+import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -52,6 +55,9 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/inbox" element={<Inbox />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/today" element={<Today />} />
                 <Route path="/week" element={<Week />} />
                 <Route path="/month" element={<Month />} />

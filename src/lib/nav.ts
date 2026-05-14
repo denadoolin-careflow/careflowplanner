@@ -2,11 +2,13 @@ import {
   LayoutDashboard, Sun, CalendarRange, CalendarDays, Calendar, Target, Sparkles,
   UtensilsCrossed, HeartHandshake, Sparkle, BookHeart, Lightbulb, CalendarCheck,
   Timer, Settings as SettingsIcon, BookOpen, HeartPulse, Wallet, Home,
-  ShoppingBasket, Compass, Leaf, Flower2,
+  ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen,
 } from "lucide-react";
 
 export const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/inbox", label: "Inbox", icon: Inbox },
+  { to: "/projects", label: "Projects", icon: FolderOpen },
   { to: "/today", label: "Today", icon: Sun },
   { to: "/week", label: "Week", icon: CalendarRange },
   { to: "/month", label: "Month", icon: CalendarDays },
@@ -43,6 +45,8 @@ export const NAV_GROUPS = [
     icon: Compass,
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/inbox", label: "Inbox", icon: Inbox },
+      { to: "/projects", label: "Projects", icon: FolderOpen },
     ],
   },
   {
