@@ -372,6 +372,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setState(s => ({ ...s, habits: s.habits.filter(h => h.id !== id) }));
       await supabase.from("habits").delete().eq("id", id);
     },
+    updateHabit: async (id, patch) => {
+      setState(s => ({ ...s, habits: s.habits.map(h => h.id === id ? { ...h, ...patch } : h) }));
+      const dbPatch: any = {};
+      if (patch.title !== undefined) dbPatch.title = patch.title;
+      if (patch.cadence !== undefined) dbPatch.cadence = patch.cadence;
+      if (patch.category !== undefined) dbPatch.category = patch.category;
+      if (Object.keys(dbPatch).length) await supabase.from("habits").update(dbPatch).eq("id", id);
+    },
 
     addJournal: async (j) => {
       if (!uid) return;
@@ -522,6 +530,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteCleaning: async (id) => {
       setState(s => ({ ...s, cleaning: s.cleaning.filter(c => c.id !== id) }));
       await supabase.from("cleaning_tasks").delete().eq("id", id);
+    },
+    updateCleaning: async (id, patch) => {
+      setState(s => ({ ...s, cleaning: s.cleaning.map(c => c.id === id ? { ...c, ...patch } : c) }));
+      const dbPatch: any = {};
+      if (patch.title !== undefined) dbPatch.title = patch.title;
+      if (patch.zone !== undefined) dbPatch.zone = patch.zone;
+      if (patch.cadence !== undefined) dbPatch.cadence = patch.cadence;
+      if (patch.weekday !== undefined) dbPatch.weekday = patch.weekday;
+      if (patch.recurrenceType !== undefined) dbPatch.recurrence_type = patch.recurrenceType;
+      if (patch.recurrenceDays !== undefined) dbPatch.recurrence_days = patch.recurrenceDays;
+      if (patch.autoReset !== undefined) dbPatch.auto_reset = patch.autoReset;
+      if (patch.sortOrder !== undefined) dbPatch.sort_order = patch.sortOrder;
+      if (Object.keys(dbPatch).length) await supabase.from("cleaning_tasks").update(dbPatch).eq("id", id);
     },
     regenerateWeeklyReset: async () => {
       if (!uid) return;
