@@ -18,6 +18,7 @@ import { hoursToHM } from "@/lib/time-blocks";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
 
 export default function Today() {
   const { state, updateTask, updateAppointment } = useStore();
@@ -39,7 +40,8 @@ export default function Today() {
   const handleTimeDrop = async (taskId: string, dateISO: string, startHour: number) => {
     const t = state.tasks.find(x => x.id === taskId);
     if (!t) return;
-    await updateTask(taskId, { dueDate: dateISO, inbox: false });
+    const dayPart = hourToDayPart(startHour) ?? undefined;
+    await updateTask(taskId, { dueDate: dateISO, inbox: false, ...(dayPart ? { dayPart } : {}) });
     toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
   };
 
@@ -49,6 +51,12 @@ export default function Today() {
     await updateAppointment(apptId, { date: dateISO, time: hoursToHM(startHour) });
     toast(`Moved “${a.title}” to ${hoursToHM(startHour)}`);
   };
+
+  useLongDropListener((d) => {
+    if (d.payload.type !== "task" || !d.part) return;
+    const iso = d.iso ?? today.toISOString().slice(0, 10);
+    void handleTimeDrop(d.payload.id, iso, partDropHour(d.part));
+  });
 
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
@@ -126,7 +134,7 @@ export default function Today() {
 
         <CalendarTasksPanel days={[today]} />
       </div>
-      <UnscheduledTasksRail />
+      <UnscheduledTasksRail onTaskClick={setEditTaskId} />
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
     </div>
