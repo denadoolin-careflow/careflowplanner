@@ -12,6 +12,7 @@ import { haptics } from "@/lib/haptics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useStore } from "@/lib/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 
 const HOUR_START = 6;   // 6 AM
 const HOUR_END = 23;    // 11 PM
@@ -579,6 +580,7 @@ function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: P
         </div>
       </div>
       <div><Label className="text-xs">Notes</Label><Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></div>
+      <LinkedNotesPanel entityType="time_block" entityId={block.id} contextTitle={block.title} compact />
       <DialogFooter className="justify-between">
         <Button variant="ghost" className="text-destructive" onClick={onDelete}><Trash2 className="mr-1 h-4 w-4" /> Delete</Button>
         <Button onClick={() => onSave({ title, startTime: start, endTime: end, color, notes })}>Save</Button>
