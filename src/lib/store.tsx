@@ -104,6 +104,7 @@ interface Ctx {
 
   addHabit: (h: Partial<Habit> & { title: string }) => Promise<void>;
   toggleHabit: (id: string, date?: string) => Promise<void>;
+  updateHabit: (id: string, patch: Partial<Habit>) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
 
   addJournal: (j: Partial<JournalEntry> & { body: string }) => Promise<void>;
@@ -136,6 +137,7 @@ interface Ctx {
 
   addCleaning: (c: Partial<CleaningTask> & { title: string; zone: CleaningTask["zone"] }) => Promise<void>;
   toggleCleaning: (id: string) => Promise<void>;
+  updateCleaning: (id: string, patch: Partial<CleaningTask>) => Promise<void>;
   deleteCleaning: (id: string) => Promise<void>;
   regenerateWeeklyReset: () => Promise<void>;
   resetThisWeek: () => Promise<void>;
