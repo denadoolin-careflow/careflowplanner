@@ -3,10 +3,11 @@ import { useStore } from "@/lib/store";
 import {
   Inbox, GripVertical, Search, X, CalendarDays, ListTodo,
   UtensilsCrossed, Repeat, Target, FolderKanban, Sparkles, Check,
+  Trash2, Pencil, Minus, Plus, Pause, Play, CheckCircle2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { Task } from "@/lib/types";
+import type { Task, Meal, Habit, Goal, Project, CleaningTask } from "@/lib/types";
 import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
 import { Link } from "react-router-dom";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
@@ -32,7 +33,8 @@ interface RailProps {
 }
 
 export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
-  const { state, toggleHabit, toggleCleaning } = useStore();
+  const store = useStore();
+  const { state, toggleHabit, toggleCleaning } = store;
   const [tab, setTab] = useState<RailTab>("tasks");
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"unscheduled" | "all">("unscheduled");
