@@ -47,9 +47,13 @@ type ApptLike = { label: string; time?: string | null };
 interface Props {
   days: Date[];                                       // 1 day = day view, 7 = week view
   appointmentsOn: (iso: string) => ApptLike[];        // existing appointments per day (incl. gcal)
+  /** Called when a task chip from the right rail is dropped on a slot. */
+  onTaskDropAt?: (taskId: string, date: string, startHour: number) => void;
 }
 
-export function TimeGrid({ days, appointmentsOn }: Props) {
+const TASK_DRAG_MIME = "application/x-careflow-task";
+
+export function TimeGrid({ days, appointmentsOn, onTaskDropAt }: Props) {
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks, add, update, remove } = useTimeBlocks(fromISO, toISO);
@@ -61,6 +65,7 @@ export function TimeGrid({ days, appointmentsOn }: Props) {
 
   const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [dropHover, setDropHover] = useState<{ iso: string; hour: number } | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const suppressClickUntil = useRef(0);
   dragRef.current = drag;
@@ -196,7 +201,37 @@ export function TimeGrid({ days, appointmentsOn }: Props) {
                     className="relative cursor-crosshair"
                     style={{ height: GRID_HEIGHT }}
                     onClick={(e) => startSlot(d, e)}
+                    onDragOver={(e) => {
+                      if (!onTaskDropAt) return;
+                      if (!Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top;
+                      const startH = HOUR_START + snap(y / PX_PER_HOUR);
+                      setDropHover({ iso, hour: startH });
+                    }}
+                    onDragLeave={() => setDropHover(p => p?.iso === iso ? null : p)}
+                    onDrop={(e) => {
+                      if (!onTaskDropAt) return;
+                      const id = e.dataTransfer.getData(TASK_DRAG_MIME);
+                      if (!id) return;
+                      e.preventDefault();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top;
+                      const startH = HOUR_START + snap(y / PX_PER_HOUR);
+                      onTaskDropAt(id, iso, startH);
+                      setDropHover(null);
+                      haptics.tap();
+                    }}
                   >
+                    {/* Drop indicator */}
+                    {dropHover?.iso === iso && (
+                      <div
+                        className="pointer-events-none absolute inset-x-1 z-30 rounded-md border-2 border-dashed border-primary/70 bg-primary/15"
+                        style={{ top: (dropHover.hour - HOUR_START) * PX_PER_HOUR, height: PX_PER_HOUR }}
+                      />
+                    )}
                     {/* Hour grid lines */}
                     {Array.from({ length: TOTAL_HOURS }, (_, i) => (
                       <div key={i}
