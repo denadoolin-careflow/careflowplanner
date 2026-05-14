@@ -530,3 +530,11 @@
 /* Picker polish — tighten the daypicker / popovers / selects with a softer feel. */
 .rdp-day_today { font-weight: 700; }
 .rdp-button:focus-visible { outline: 2px solid hsl(var(--ring) / 0.6); outline-offset: 2px; }
+
+/* Long-press drag drop-target highlight */
+[data-droppart-active] {
+  outline: 2px dashed hsl(var(--primary) / 0.7);
+  outline-offset: -2px;
+  background: hsl(var(--primary) / 0.08) !important;
+  transition: background 120ms ease;
+}
