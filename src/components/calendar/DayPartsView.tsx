@@ -58,7 +58,8 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
       const already = (out.morning.items as any[]).concat(out.afternoon.items, out.evening.items, anytime).some((x: any) => x.label?.includes(t.title));
       if (already) continue;
       const item = { label: t.title, kind: "task", taskId: t.id, done: t.done };
-      const p = t.dayPart === "morning" || t.dayPart === "afternoon" || t.dayPart === "evening" ? t.dayPart : null;
+      const dp = (t.dayPart ?? "").toLowerCase();
+      const p = dp === "morning" || dp === "afternoon" || dp === "evening" ? dp : null;
       if (p) (out as any)[p].items.push(item);
       else anytime.push(item);
     }
