@@ -16,7 +16,7 @@ import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 
 const HOUR_START = 6;   // 6 AM
 const HOUR_END = 23;    // 11 PM
-const PX_PER_HOUR = 56;
+const PX_PER_HOUR = 64;
 const TOTAL_HOURS = HOUR_END - HOUR_START;
 const GRID_HEIGHT = TOTAL_HOURS * PX_PER_HOUR;
 const SNAP_MIN = 15;
@@ -83,6 +83,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const [dropHover, setDropHover] = useState<{ iso: string; hour: number } | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const suppressClickUntil = useRef(0);
+  const lastHoverIdRef = useRef<string | null>(null);
   dragRef.current = drag;
 
   const startSlot = (date: Date, ev: React.MouseEvent<HTMLDivElement>) => {
@@ -299,14 +300,14 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                           } : undefined}
                           onClick={isAppt && onApptClick ? (e) => { e.stopPropagation(); onApptClick(a.id!); } : undefined}
                           className={cn(
-                            "absolute left-0 right-1/2 mx-0.5 rounded-md bg-secondary-soft px-1.5 py-0.5 text-[10px] text-secondary-foreground shadow-sm transition-all",
+                            "absolute left-0.5 right-0.5 z-10 truncate rounded-md bg-secondary-soft px-2 py-0.5 text-[11px] text-secondary-foreground shadow-sm transition-all",
                             isAppt
                               ? "cursor-grab hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-primary/40 active:cursor-grabbing"
                               : "pointer-events-none"
                           )}
-                          style={{ top, height: PX_PER_HOUR - 4 }}
+                          style={{ top, height: PX_PER_HOUR - 6 }}
                           title={a.label}>
-                          <span className="font-medium">{a.time?.slice(0,5)}</span> {a.label}
+                          <span className="font-medium">{a.time?.slice(0,5)}</span> <span className="truncate">{a.label}</span>
                         </div>
                       );
                     })}
@@ -324,19 +325,28 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       return (
                         <div
                           key={b.id}
-                          onPointerDown={(e) => beginDrag(b, "move", e)}
+                          onPointerDown={(e) => { haptics.tap(); beginDrag(b, "move", e); }}
+                          onPointerEnter={() => {
+                            if (lastHoverIdRef.current !== b.id) {
+                              lastHoverIdRef.current = b.id;
+                              haptics.magnet();
+                            }
+                          }}
+                          onPointerLeave={() => {
+                            if (lastHoverIdRef.current === b.id) lastHoverIdRef.current = null;
+                          }}
                           className={cn(
-                            "group absolute left-1/2 right-0.5 mx-0.5 select-none rounded-md px-2 py-1 text-left text-[11px] shadow-sm ring-1 ring-inset",
+                            "group absolute left-0.5 right-0.5 z-20 select-none overflow-hidden rounded-md px-2 py-1 text-left text-[11px] shadow-sm ring-1 ring-inset",
                             c.bg, c.text, c.ring, "ring-opacity-30",
                             isDragging
-                              ? "z-20 scale-[1.02] shadow-xl ring-opacity-100 transition-none"
+                              ? "z-30 scale-[1.02] shadow-xl ring-opacity-100 transition-none"
                               : "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md"
                           )}
                           style={{ top, height, touchAction: "none", cursor: isDragging ? "grabbing" : "grab" }}
                           role="button"
                           tabIndex={0}
                         >
-                          <div className="pointer-events-none font-medium leading-tight">{b.title}</div>
+                          <div className="pointer-events-none truncate font-medium leading-tight">{b.title}</div>
                           <div className="pointer-events-none text-[10px] opacity-70">
                             {fmtTime(hoursToHM(startH))} – {fmtTime(hoursToHM(endH))}
                           </div>
