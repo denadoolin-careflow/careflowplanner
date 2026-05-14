@@ -30,11 +30,12 @@ export const NAV = [
 ] as const;
 
 export const MOBILE_NAV = [
+  { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/today", label: "Today", icon: Sun },
-  { to: "/week", label: "Week", icon: CalendarRange },
-  { to: "/month", label: "Month", icon: CalendarDays },
-  { to: "/meals", label: "Meals", icon: UtensilsCrossed },
+  { to: "/calendar", label: "Calendar", icon: CalendarCheck },
   { to: "/home-areas", label: "Home", icon: Home },
+  { to: "/meals", label: "Meals", icon: UtensilsCrossed },
+  { to: "/notes", label: "Notes", icon: NotebookPen },
 ] as const;
 
 /** Grouped navigation for the categorized sidebar. */
