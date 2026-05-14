@@ -239,11 +239,20 @@ export function useDashboardLayout(page: PageKey) {
       setPresets(all);
       if (row && Array.isArray((row as any).widgets) && (row as any).widgets.length) {
         const lc = readLayoutCol((row as any).layout);
-        setData({
-          widgets: (row as any).widgets,
-          layout: lc.items,
-          pageTheme: lc.pageTheme,
-        });
+        const widgets: WidgetInstance[] = (row as any).widgets;
+        const layout = lc.items;
+        // Auto-add the Home reset checklist widget for existing users on the home page.
+        if (page === "home" && !widgets.some((w) => w.type === "home-reset-checklist")) {
+          const id = uid();
+          widgets.push({ id, type: "home-reset-checklist" });
+          const maxY = layout.reduce((m, l) => Math.max(m, l.y + l.h), 0);
+          layout.push({ i: id, x: 0, y: maxY, w: 8, h: 6, minW: 3, minH: 3 });
+          const next = { widgets, layout, pageTheme: lc.pageTheme };
+          setData(next);
+          upsertRow(page, preset, next).catch(() => {});
+        } else {
+          setData({ widgets, layout, pageTheme: lc.pageTheme });
+        }
       } else {
         const def = defaultLayout(page);
         setData(def);
