@@ -114,12 +114,24 @@ function CommandPalette({
   onPick: (k: QuickAddKind) => void;
   onClose: () => void;
 }) {
-  const { addTask } = useStore();
+  const { addTask, addProject, state } = useStore();
   const parsed = useMemo(() => parseTaskInput(value), [value]);
   const hasText = value.trim().length > 0;
+  const projects = state.projects ?? [];
+
+  const resolveProject = async (): Promise<string | undefined> => {
+    if (!parsed.projectName) return undefined;
+    const lower = parsed.projectName.toLowerCase();
+    const existing = projects.find(p => p.name.toLowerCase() === lower);
+    if (existing) return existing.id;
+    const created = await addProject({ name: parsed.projectName, areaName: parsed.area });
+    return created?.id;
+  };
 
   const submitAsTask = async () => {
     if (!parsed.title) return;
+    const projectId = await resolveProject();
+    const inboxBound = !parsed.dueDate && !projectId && !parsed.someday;
     await addTask({
       title: parsed.title,
       area: (parsed.area ?? "Personal") as any,
@@ -130,8 +142,14 @@ function CommandPalette({
       recurrenceType: parsed.recurrenceType,
       recurrenceInterval: parsed.recurrenceInterval,
       recurrenceDays: parsed.recurrenceDays,
+      projectId,
+      inbox: inboxBound,
+      status: parsed.someday ? "someday" : "active",
     });
-    toast.success("Captured.", { description: parsed.title });
+    toast.success(
+      projectId ? "Added to project." : parsed.someday ? "Saved to Someday." : inboxBound ? "Captured to Inbox." : "Captured.",
+      { description: parsed.title }
+    );
     haptics.tap();
     onClose();
   };
@@ -179,6 +197,36 @@ function CommandPalette({
           </CommandGroup>
         )}
 
+        {hasText && projects.length > 0 && (
+          <CommandGroup heading="Add to project">
+            {projects.slice(0, 6).map((p) => (
+              <CommandItem
+                key={p.id}
+                value={`project ${p.name}`}
+                onSelect={async () => {
+                  await addTask({
+                    title: parsed.title,
+                    area: (parsed.area ?? p.areaName ?? "Personal") as any,
+                    priority: parsed.priority ?? "medium",
+                    dueDate: parsed.dueDate,
+                    tags: parsed.tags,
+                    estMinutes: parsed.estMinutes,
+                    projectId: p.id,
+                  });
+                  toast.success(`Added to ${p.name}`);
+                  haptics.tap();
+                  onClose();
+                }}
+                className="gap-3"
+              >
+                <PresetIcon name="FolderOpen" className="h-4 w-4 text-primary" />
+                <span className="flex-1 truncate text-sm">{p.name}</span>
+                <span className="text-[10px] text-muted-foreground">{p.areaName ?? ""}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
         <CommandGroup heading="New">
           {presets.map((p) => (
             <CommandItem
@@ -206,7 +254,7 @@ function CommandPalette({
       </CommandList>
 
       <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-[11px] text-muted-foreground">
-        <span>Tips: <code className="rounded bg-muted px-1">tomorrow 3pm</code> · <code className="rounded bg-muted px-1">#tag</code> · <code className="rounded bg-muted px-1">@home</code> · <code className="rounded bg-muted px-1">p1-p4</code> · <code className="rounded bg-muted px-1">every sunday</code></span>
+        <span>Tips: <code className="rounded bg-muted px-1">tomorrow 3pm</code> · <code className="rounded bg-muted px-1">#tag</code> · <code className="rounded bg-muted px-1">@home</code> · <code className="rounded bg-muted px-1">+project</code> · <code className="rounded bg-muted px-1">~someday</code> · <code className="rounded bg-muted px-1">p1-p4</code></span>
         <button onClick={onClose} className="rounded p-1 hover:bg-muted/60"><X className="h-3.5 w-3.5" /></button>
       </div>
     </Command>
@@ -244,7 +292,7 @@ function TaskForm({ onClose, initialText }: { onClose: () => void; initialText: 
   const { addTask } = useStore();
   const [text, setText] = useState(initialText);
   const parsed = useMemo(() => parseTaskInput(text), [text]);
-  const [area, setArea] = useState(parsed.area ?? "Personal");
+  const [area, setArea] = useState<string>(parsed.area ?? "Personal");
   useEffect(() => { if (parsed.area) setArea(parsed.area); }, [parsed.area]);
 
   return (
