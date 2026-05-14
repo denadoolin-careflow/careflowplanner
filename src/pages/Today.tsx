@@ -8,10 +8,12 @@ import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { AgendaView } from "@/components/calendar/AgendaView";
+import { DayPartsView } from "@/components/calendar/DayPartsView";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
+import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { hoursToHM } from "@/lib/time-blocks";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,7 @@ export default function Today() {
   const [day, setDay] = useState<Date>(new Date());
   const [view, setView] = useState<CalView>("schedule");
   const [editApptId, setEditApptId] = useState<string | null>(null);
+  const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const today = day;
   const isReallyToday = isSameDay(day, new Date());
   const lowMode = state.settings.lowEnergyMode;
@@ -48,6 +51,7 @@ export default function Today() {
   };
 
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
+  const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
 
   return (
     <div className="flex gap-6">
@@ -103,15 +107,28 @@ export default function Today() {
             </div>
           }
         >
-          {view === "schedule"
-            ? <TimeGrid days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
-            : <AgendaView days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />}
+          {view === "schedule" && (
+            <TimeGrid days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
+          )}
+          {view === "agenda" && (
+            <AgendaView days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
+          )}
+          {view === "dayparts" && (
+            <DayPartsView
+              days={[today]}
+              appointmentsOn={eventsOn}
+              onTaskDropAt={handleTimeDrop}
+              onApptClick={setEditApptId}
+              onTaskClick={setEditTaskId}
+            />
+          )}
         </SectionCard>
 
         <CalendarTasksPanel days={[today]} />
       </div>
       <UnscheduledTasksRail />
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
+      <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
     </div>
   );
 }

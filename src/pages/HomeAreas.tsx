@@ -4,9 +4,13 @@ import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Download, Pin } from "lucide-react";
+import { Trash2, Download, Pin, ChevronDown, Plus, Sparkles } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Link } from "react-router-dom";
+import { useResetChecklists } from "@/lib/reset-checklists";
+import { ChecklistTree } from "@/components/reset/ChecklistTree";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -21,6 +25,11 @@ function useUser() {
 
 function ZonesPanel({ uid }: { uid: string }) {
   const [tasks, setTasks] = useState<any[]>([]);
+  const [newZone, setNewZone] = useState("");
+  const [editingZone, setEditingZone] = useState<string | null>(null);
+  const [zoneDraft, setZoneDraft] = useState("");
+  const [quickAdd, setQuickAdd] = useState<Record<string, string>>({});
+
   async function load() {
     const { data } = await supabase.from("cleaning_tasks").select("*").eq("user_id", uid).order("zone");
     setTasks(data ?? []);
@@ -35,22 +44,118 @@ function ZonesPanel({ uid }: { uid: string }) {
     await supabase.from("cleaning_tasks").update({ done: !t.done, last_done: !t.done ? today() : t.last_done }).eq("id", t.id);
     load();
   }
+  async function addTask(zone: string) {
+    const title = (quickAdd[zone] ?? "").trim();
+    if (!title) return;
+    const { error } = await supabase.from("cleaning_tasks").insert({ user_id: uid, title, zone, cadence: "weekly" });
+    if (error) return toast.error(error.message);
+    setQuickAdd(s => ({ ...s, [zone]: "" }));
+    load();
+  }
+  async function delTask(id: string) {
+    await supabase.from("cleaning_tasks").delete().eq("id", id);
+    load();
+  }
+  async function renameTask(id: string, title: string) {
+    if (!title.trim()) return;
+    await supabase.from("cleaning_tasks").update({ title }).eq("id", id);
+    load();
+  }
+  async function renameZone(oldName: string, newName: string) {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === oldName) { setEditingZone(null); return; }
+    await supabase.from("cleaning_tasks").update({ zone: trimmed }).eq("user_id", uid).eq("zone", oldName);
+    setEditingZone(null);
+    load();
+  }
+  async function addZone() {
+    const name = newZone.trim();
+    if (!name) return;
+    if (grouped[name]) { toast("Zone already exists"); return; }
+    // create a placeholder seed task so the zone shows up
+    await supabase.from("cleaning_tasks").insert({ user_id: uid, title: "First task", zone: name, cadence: "weekly" });
+    setNewZone("");
+    load();
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {Object.entries(grouped).map(([zone, items]) => (
-        <SectionCard key={zone} title={zone} accent="sage">
-          <ul className="space-y-1">
-            {items.map(t => (
-              <li key={t.id} className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-sm">
-                <input type="checkbox" checked={t.done} onChange={() => toggle(t)} />
-                <span className={t.done ? "line-through text-muted-foreground flex-1" : "flex-1"}>{t.title}</span>
-                <span className="text-xs text-muted-foreground">{t.cadence}</span>
-              </li>
-            ))}
-          </ul>
-        </SectionCard>
-      ))}
-      {Object.keys(grouped).length === 0 && <p className="text-sm text-muted-foreground">No cleaning tasks yet — add some on Home Reset.</p>}
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="New zone name (e.g. Kitchen)"
+          value={newZone}
+          onChange={e => setNewZone(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && addZone()}
+          className="h-8 max-w-xs text-sm"
+        />
+        <Button size="sm" variant="outline" onClick={addZone} className="h-8 gap-1">
+          <Plus className="h-3.5 w-3.5" /> Add zone
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {Object.entries(grouped).map(([zone, items]) => (
+          <div key={zone} id={`zone-${zone}`} className="rounded-2xl border border-border/60 bg-card/60 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              {editingZone === zone ? (
+                <Input
+                  autoFocus
+                  value={zoneDraft}
+                  onChange={e => setZoneDraft(e.target.value)}
+                  onBlur={() => renameZone(zone, zoneDraft)}
+                  onKeyDown={e => { if (e.key === "Enter") renameZone(zone, zoneDraft); if (e.key === "Escape") setEditingZone(null); }}
+                  className="h-7 max-w-[12rem] text-sm font-semibold"
+                />
+              ) : (
+                <button
+                  className="font-display text-base font-semibold hover:text-primary"
+                  onClick={() => { setEditingZone(zone); setZoneDraft(zone); }}
+                  title="Click to rename"
+                >
+                  {zone}
+                </button>
+              )}
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{items.length} task{items.length === 1 ? "" : "s"}</span>
+            </div>
+            <ul className="space-y-1">
+              {items.map(t => (
+                <li key={t.id} className="group flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 text-sm">
+                  <input type="checkbox" checked={t.done} onChange={() => toggle(t)} className="shrink-0" />
+                  <input
+                    defaultValue={t.title}
+                    onBlur={e => { if (e.target.value !== t.title) renameTask(t.id, e.target.value); }}
+                    onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                    className={cn(
+                      "min-w-0 flex-1 border-0 bg-transparent p-0 text-sm outline-none ring-0 focus:ring-0",
+                      t.done && "line-through text-muted-foreground"
+                    )}
+                  />
+                  <span className="text-[10px] text-muted-foreground">{t.cadence}</span>
+                  <button
+                    onClick={() => delTask(t.id)}
+                    className="opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label="Delete"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-2 flex items-center gap-1.5">
+              <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={quickAdd[zone] ?? ""}
+                onChange={e => setQuickAdd(s => ({ ...s, [zone]: e.target.value }))}
+                onKeyDown={e => { if (e.key === "Enter") addTask(zone); }}
+                placeholder="Quick add task…"
+                className="h-7 border-0 bg-transparent px-0 text-xs focus-visible:ring-0"
+              />
+            </div>
+          </div>
+        ))}
+        {Object.keys(grouped).length === 0 && (
+          <p className="text-sm text-muted-foreground">No zones yet — add one above.</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -292,29 +397,78 @@ function ChoreChart({ uid }: { uid: string }) {
   );
 }
 
+function ResetSection({ uid }: { uid: string }) {
+  const reset = useResetChecklists({});
+  const lists = reset.lists.filter(l => !l.is_template);
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">Quick reset checklists. Tick items as you go.</p>
+        <Link to="/home-reset" className="text-xs text-primary hover:underline">Open full Reset →</Link>
+      </div>
+      {lists.length === 0 ? (
+        <p className="rounded-lg bg-muted/40 p-4 text-sm text-muted-foreground">
+          No checklists yet. <Link to="/home-reset" className="text-primary hover:underline">Create one</Link>.
+        </p>
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-2">
+          {lists.slice(0, 2).map(list => (
+            <div key={list.id} className="rounded-2xl border border-border/60 bg-card/60 p-3">
+              <div className="mb-1 text-sm font-semibold">{list.name}</div>
+              <ChecklistTree
+                list={list}
+                onAdd={(item) => reset.addItem(list.id, item)}
+                onUpdate={reset.updateItem}
+                onDelete={reset.deleteItem}
+                onDuplicate={reset.duplicateItem}
+                onReorder={(parentId, ordered) => reset.reorderItems(list.id, parentId, ordered)}
+                onRenameList={(name) => reset.renameList(list.id, name)}
+                onDeleteList={() => reset.deleteList(list.id)}
+                onSaveTemplate={() => { void reset.saveAsTemplate(list.id); toast.success("Saved as template"); }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Section({ title, defaultOpen = true, badge, children }: { title: string; defaultOpen?: boolean; badge?: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div className="cozy-card overflow-hidden">
+        <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-muted/40">
+          <div className="flex items-center gap-2">
+            <span className="font-display text-lg font-semibold">{title}</span>
+            {badge && <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{badge}</span>}
+          </div>
+          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="px-5 pb-5">
+          {children}
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+}
+
 export default function HomeAreas() {
   const uid = useUser();
   if (!uid) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="cozy-card gradient-sage p-6">
         <h2 className="font-display text-3xl font-semibold">Home</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Cleaning, maintenance, documents, notes, and chores.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Reset, zones, maintenance, documents, notes, and chores — all in one place.</p>
       </div>
-      <Tabs defaultValue="zones">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="zones">Zones</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-          <TabsTrigger value="docs">Documents</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="chores">Chores</TabsTrigger>
-        </TabsList>
-        <TabsContent value="zones"><ZonesPanel uid={uid} /></TabsContent>
-        <TabsContent value="maintenance"><MaintenancePanel uid={uid} /></TabsContent>
-        <TabsContent value="docs"><DocumentsPanel uid={uid} /></TabsContent>
-        <TabsContent value="notes"><NotesPanel uid={uid} /></TabsContent>
-        <TabsContent value="chores"><ChoreChart uid={uid} /></TabsContent>
-      </Tabs>
+      <Section title="Reset" badge="checklists" defaultOpen><ResetSection uid={uid} /></Section>
+      <Section title="Zones" badge="cleaning" defaultOpen><ZonesPanel uid={uid} /></Section>
+      <Section title="Maintenance" defaultOpen={false}><MaintenancePanel uid={uid} /></Section>
+      <Section title="Documents" defaultOpen={false}><DocumentsPanel uid={uid} /></Section>
+      <Section title="Notes" defaultOpen={false}><NotesPanel uid={uid} /></Section>
+      <Section title="Chores" defaultOpen={false}><ChoreChart uid={uid} /></Section>
     </div>
   );
 }
