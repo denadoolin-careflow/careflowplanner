@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { useStore, todayISO } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { EnergyCheckIn } from "@/components/cards/EnergyCheckIn";
-import { format } from "date-fns";
+import { format, isSameDay, addDays } from "date-fns";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { hoursToHM } from "@/lib/time-blocks";
+import { DayPickerButton } from "@/components/calendar/DayPickerButton";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Today() {
   const { state, updateTask } = useStore();
-  const T = todayISO();
-  const today = new Date();
+  const [day, setDay] = useState<Date>(new Date());
+  const today = day;
+  const isReallyToday = isSameDay(day, new Date());
   const lowMode = state.settings.lowEnergyMode;
 
   const eventsOn = (k: string) => [
@@ -39,6 +43,18 @@ export default function Today() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {lowMode ? "Low-energy mode: only the essentials." : "Drag tasks from the right onto your day."}
               </p>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDay(addDays(day, -1))} aria-label="Previous day">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <DayPickerButton date={day} onChange={setDay} />
+                <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDay(addDays(day, 1))} aria-label="Next day">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                {!isReallyToday && (
+                  <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => setDay(new Date())}>Today</Button>
+                )}
+              </div>
             </div>
             <EnergyCheckIn />
           </div>
