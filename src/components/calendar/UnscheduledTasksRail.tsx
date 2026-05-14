@@ -3,10 +3,11 @@ import { useStore } from "@/lib/store";
 import {
   Inbox, GripVertical, Search, X, CalendarDays, ListTodo,
   UtensilsCrossed, Repeat, Target, FolderKanban, Sparkles, Check,
+  Trash2, Pencil, Minus, Plus, Pause, Play, CheckCircle2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { Task } from "@/lib/types";
+import type { Task, Meal, Habit, Goal, Project, CleaningTask } from "@/lib/types";
 import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
 import { Link } from "react-router-dom";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
@@ -32,7 +33,8 @@ interface RailProps {
 }
 
 export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
-  const { state, toggleHabit, toggleCleaning } = useStore();
+  const store = useStore();
+  const { state, toggleHabit, toggleCleaning } = store;
   const [tab, setTab] = useState<RailTab>("tasks");
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"unscheduled" | "all">("unscheduled");
@@ -291,7 +293,7 @@ function TaskRailItem({
 
 /* ---------- Meals ---------- */
 function MealsTab() {
-  const { state } = useStore();
+  const { state, updateMeal, deleteMeal } = useStore();
   const today = startOfDay(new Date());
   const horizon = addDays(today, 14);
   const items = useMemo(() => {
@@ -302,6 +304,11 @@ function MealsTab() {
       .sort((a, b) => (a.date + a.slot).localeCompare(b.date + b.slot))
       .slice(0, 60);
   }, [state.meals, today, horizon]);
+  const slots: Meal["slot"][] = ["Breakfast", "Lunch", "Dinner", "Snack"];
+  const cycleSlot = (m: Meal) => {
+    const i = slots.indexOf(m.slot);
+    void updateMeal(m.id, { slot: slots[(i + 1) % slots.length] });
+  };
   return (
     <div className="flex-1 overflow-y-auto px-2 py-2">
       {items.length === 0 ? (
@@ -309,18 +316,23 @@ function MealsTab() {
       ) : (
         <ul className="space-y-1">
           {items.map(m => (
-            <li key={m.id}>
-              <Link
-                to="/meals"
-                className="block rounded-lg px-2 py-1.5 text-xs hover:bg-muted/50"
-                title="Open meals"
-              >
-                <div className="truncate font-medium leading-snug">{m.name}</div>
-                <div className="mt-0.5 text-[10px] text-muted-foreground">
-                  {format(parseISO(m.date), "EEE, MMM d")} · {m.slot}
-                </div>
-              </Link>
-            </li>
+            <RowShell key={m.id} onDelete={() => deleteMeal(m.id)}>
+              <InlineEditableTitle
+                value={m.name}
+                onSave={(v) => updateMeal(m.id, { name: v })}
+              />
+              <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                <span>{format(parseISO(m.date), "EEE, MMM d")}</span>
+                <span>·</span>
+                <button
+                  onClick={() => cycleSlot(m)}
+                  className="rounded bg-muted/60 px-1.5 py-0.5 font-medium hover:bg-muted"
+                  title="Cycle slot"
+                >
+                  {m.slot}
+                </button>
+              </div>
+            </RowShell>
           ))}
         </ul>
       )}
@@ -330,9 +342,15 @@ function MealsTab() {
 
 /* ---------- Habits ---------- */
 function HabitsTab({ onToggle }: { onToggle: (id: string, date?: string) => Promise<void> }) {
-  const { state } = useStore();
+  const { state, updateHabit, deleteHabit } = useStore() as any;
   const todayKey = format(new Date(), "yyyy-MM-dd");
   const habits = state.habits ?? [];
+  const cadences: Habit["cadence"][] = ["daily", "weekly", "monthly"];
+  const cycleCadence = (h: Habit) => {
+    if (!updateHabit) return;
+    const i = cadences.indexOf(h.cadence);
+    void updateHabit(h.id, { cadence: cadences[(i + 1) % cadences.length] });
+  };
   return (
     <div className="flex-1 overflow-y-auto px-2 py-2">
       {habits.length === 0 ? (
@@ -342,24 +360,37 @@ function HabitsTab({ onToggle }: { onToggle: (id: string, date?: string) => Prom
           {habits.map(h => {
             const done = !!h.log?.[todayKey];
             return (
-              <li key={h.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-muted/40">
-                <button
-                  onClick={() => onToggle(h.id)}
-                  className={cn(
-                    "grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors",
-                    done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary/60",
-                  )}
-                  aria-label={done ? "Mark undone" : "Mark done"}
-                >
-                  {done && <Check className="h-3 w-3" />}
-                </button>
-                <Link to="/habits" className="min-w-0 flex-1">
-                  <div className="truncate font-medium leading-snug">{h.title}</div>
-                  <div className="mt-0.5 text-[10px] text-muted-foreground capitalize">
-                    {h.cadence} · streak {h.streak}
-                  </div>
-                </Link>
-              </li>
+              <RowShell
+                key={h.id}
+                onDelete={deleteHabit ? () => deleteHabit(h.id) : undefined}
+                leading={
+                  <button
+                    onClick={() => onToggle(h.id)}
+                    className={cn(
+                      "grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors",
+                      done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary/60",
+                    )}
+                    aria-label={done ? "Mark undone" : "Mark done"}
+                  >
+                    {done && <Check className="h-3 w-3" />}
+                  </button>
+                }
+              >
+                <InlineEditableTitle
+                  value={h.title}
+                  onSave={updateHabit ? (v) => updateHabit(h.id, { title: v }) : undefined}
+                />
+                <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground capitalize">
+                  <button
+                    onClick={() => cycleCadence(h)}
+                    className="rounded bg-muted/60 px-1.5 py-0.5 font-medium hover:bg-muted"
+                    title="Cycle cadence"
+                  >
+                    {h.cadence}
+                  </button>
+                  <span>· streak {h.streak}</span>
+                </div>
+              </RowShell>
             );
           })}
         </ul>
@@ -370,8 +401,17 @@ function HabitsTab({ onToggle }: { onToggle: (id: string, date?: string) => Prom
 
 /* ---------- Goals ---------- */
 function GoalsTab() {
-  const { state } = useStore();
+  const { state, updateGoal, deleteGoal } = useStore();
   const goals = (state.goals ?? []).filter(g => g.status !== "done").slice(0, 80);
+  const bumpProgress = (g: Goal, delta: number) => {
+    const next = Math.max(0, Math.min(100, g.progress + delta));
+    void updateGoal(g.id, { progress: next, status: next >= 100 ? "done" : g.status });
+  };
+  const cycleStatus = (g: Goal) => {
+    const order: Goal["status"][] = ["active", "paused", "done"];
+    const i = order.indexOf(g.status);
+    void updateGoal(g.id, { status: order[(i + 1) % order.length] });
+  };
   return (
     <div className="flex-1 overflow-y-auto px-2 py-2">
       {goals.length === 0 ? (
@@ -379,21 +419,42 @@ function GoalsTab() {
       ) : (
         <ul className="space-y-1">
           {goals.map(g => (
-            <li key={g.id}>
-              <Link
-                to="/goals"
-                className="block rounded-lg px-2 py-1.5 text-xs hover:bg-muted/50"
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="truncate font-medium leading-snug">{g.title}</div>
-                  <span className="shrink-0 text-[10px] text-muted-foreground">{g.progress}%</span>
-                </div>
-                <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${g.progress}%` }} />
-                </div>
-                <div className="mt-1 text-[10px] text-muted-foreground">{g.category} · {g.timeline}</div>
-              </Link>
-            </li>
+            <RowShell key={g.id} onDelete={() => deleteGoal(g.id)}>
+              <div className="flex items-baseline justify-between gap-2">
+                <InlineEditableTitle
+                  value={g.title}
+                  onSave={(v) => updateGoal(g.id, { title: v })}
+                />
+                <span className="shrink-0 text-[10px] text-muted-foreground">{g.progress}%</span>
+              </div>
+              <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
+                <div className="h-full rounded-full bg-primary" style={{ width: `${g.progress}%` }} />
+              </div>
+              <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                <button
+                  onClick={() => bumpProgress(g, -10)}
+                  className="grid h-4 w-4 place-items-center rounded bg-muted/60 hover:bg-muted"
+                  title="-10%"
+                >
+                  <Minus className="h-2.5 w-2.5" />
+                </button>
+                <button
+                  onClick={() => bumpProgress(g, 10)}
+                  className="grid h-4 w-4 place-items-center rounded bg-muted/60 hover:bg-muted"
+                  title="+10%"
+                >
+                  <Plus className="h-2.5 w-2.5" />
+                </button>
+                <button
+                  onClick={() => cycleStatus(g)}
+                  className="ml-1 rounded bg-muted/60 px-1.5 py-0.5 font-medium capitalize hover:bg-muted"
+                  title="Cycle status"
+                >
+                  {g.status}
+                </button>
+                <span className="ml-auto truncate">{g.category} · {g.timeline}</span>
+              </div>
+            </RowShell>
           ))}
         </ul>
       )}
@@ -403,8 +464,12 @@ function GoalsTab() {
 
 /* ---------- Projects ---------- */
 function ProjectsTab() {
-  const { state } = useStore();
+  const { state, updateProject, deleteProject } = useStore();
   const projects = (state.projects ?? []).filter(p => p.status === "active" || p.status === "paused");
+  const cycleStatus = (p: Project) => {
+    const next = p.status === "active" ? "paused" : "active";
+    void updateProject(p.id, { status: next });
+  };
   return (
     <div className="flex-1 overflow-y-auto px-2 py-2">
       {projects.length === 0 ? (
@@ -412,26 +477,40 @@ function ProjectsTab() {
       ) : (
         <ul className="space-y-1">
           {projects.map(p => (
-            <li key={p.id}>
-              <Link
-                to={`/projects/${p.id}`}
-                className="block rounded-lg px-2 py-1.5 text-xs hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ background: p.color || "hsl(var(--primary))" }}
-                  />
-                  <div className="min-w-0 flex-1 truncate font-medium leading-snug">{p.name}</div>
-                  {p.status === "paused" && <span className="text-[9px] uppercase text-muted-foreground">paused</span>}
+            <RowShell
+              key={p.id}
+              onDelete={() => deleteProject(p.id)}
+              leading={
+                <span
+                  className="mt-1 h-2 w-2 shrink-0 rounded-full"
+                  style={{ background: p.color || "hsl(var(--primary))" }}
+                />
+              }
+              extraActions={
+                <button
+                  onClick={() => cycleStatus(p)}
+                  className="grid h-5 w-5 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title={p.status === "active" ? "Pause" : "Resume"}
+                >
+                  {p.status === "active" ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                </button>
+              }
+            >
+              <div className="flex items-center gap-2">
+                <InlineEditableTitle
+                  value={p.name}
+                  onSave={(v) => updateProject(p.id, { name: v })}
+                />
+                {p.status === "paused" && <span className="text-[9px] uppercase text-muted-foreground">paused</span>}
+              </div>
+              {(p.areaName || p.deadline) && (
+                <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                  <Link to={`/projects/${p.id}`} className="hover:underline">
+                    {p.areaName}{p.areaName && p.deadline ? " · " : ""}{p.deadline} →
+                  </Link>
                 </div>
-                {(p.areaName || p.deadline) && (
-                  <div className="mt-0.5 truncate pl-4 text-[10px] text-muted-foreground">
-                    {p.areaName}{p.areaName && p.deadline ? " · " : ""}{p.deadline}
-                  </div>
-                )}
-              </Link>
-            </li>
+              )}
+            </RowShell>
           ))}
         </ul>
       )}
@@ -441,8 +520,14 @@ function ProjectsTab() {
 
 /* ---------- Zones (cleaning) ---------- */
 function ZonesTab({ onToggle }: { onToggle: (id: string) => Promise<void> }) {
-  const { state } = useStore();
+  const { state, updateCleaning, deleteCleaning } = useStore() as any;
   const tasks = state.cleaning ?? [];
+  const cadences: CleaningTask["cadence"][] = ["daily", "weekly", "monthly", "seasonal"];
+  const cycleCadence = (t: CleaningTask) => {
+    if (!updateCleaning) return;
+    const i = cadences.indexOf(t.cadence);
+    void updateCleaning(t.id, { cadence: cadences[(i + 1) % cadences.length] });
+  };
   const zones = useMemo(() => {
     const m = new Map<string, typeof tasks>();
     for (const t of tasks) {
@@ -471,22 +556,38 @@ function ZonesTab({ onToggle }: { onToggle: (id: string) => Promise<void> }) {
                 </Link>
                 <ul className="space-y-1">
                   {items.slice(0, 6).map(i => (
-                    <li key={i.id} className="flex items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-muted/40">
-                      <button
-                        onClick={() => onToggle(i.id)}
-                        className={cn(
-                          "grid h-4 w-4 shrink-0 place-items-center rounded-full border transition-colors",
-                          i.done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary/60",
-                        )}
-                        aria-label={i.done ? "Mark undone" : "Mark done"}
-                      >
-                        {i.done && <Check className="h-2.5 w-2.5" />}
-                      </button>
-                      <span className={cn("min-w-0 flex-1 truncate", i.done && "text-muted-foreground line-through")}>
-                        {i.title}
-                      </span>
-                      <span className="shrink-0 text-[9px] uppercase text-muted-foreground">{i.cadence}</span>
-                    </li>
+                    <RowShell
+                      key={i.id}
+                      compact
+                      onDelete={deleteCleaning ? () => deleteCleaning(i.id) : undefined}
+                      leading={
+                        <button
+                          onClick={() => onToggle(i.id)}
+                          className={cn(
+                            "grid h-4 w-4 shrink-0 place-items-center rounded-full border transition-colors",
+                            i.done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary/60",
+                          )}
+                          aria-label={i.done ? "Mark undone" : "Mark done"}
+                        >
+                          {i.done && <Check className="h-2.5 w-2.5" />}
+                        </button>
+                      }
+                      extraActions={
+                        <button
+                          onClick={() => cycleCadence(i)}
+                          className="rounded bg-muted/60 px-1.5 py-0.5 text-[9px] uppercase text-muted-foreground hover:bg-muted hover:text-foreground"
+                          title="Cycle cadence"
+                        >
+                          {i.cadence}
+                        </button>
+                      }
+                    >
+                      <InlineEditableTitle
+                        value={i.title}
+                        onSave={updateCleaning ? (v) => updateCleaning(i.id, { title: v }) : undefined}
+                        className={cn(i.done && "text-muted-foreground line-through")}
+                      />
+                    </RowShell>
                   ))}
                 </ul>
               </li>
@@ -504,5 +605,95 @@ function EmptyMsg({ children, cta, to }: { children: React.ReactNode; cta: strin
       <div>{children}</div>
       <Link to={to} className="mt-2 inline-block text-primary hover:underline">{cta} →</Link>
     </div>
+  );
+}
+
+/* ---------- Inline edit primitives ---------- */
+function InlineEditableTitle({
+  value,
+  onSave,
+  className,
+}: {
+  value: string;
+  onSave?: (v: string) => void | Promise<void>;
+  className?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  useEffect(() => { setDraft(value); }, [value]);
+  const commit = () => {
+    const v = draft.trim();
+    setEditing(false);
+    if (!v || v === value || !onSave) return;
+    void onSave(v);
+  };
+  if (editing && onSave) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => {
+          if (e.key === "Enter") { e.preventDefault(); commit(); }
+          if (e.key === "Escape") { setDraft(value); setEditing(false); }
+        }}
+        onClick={e => e.stopPropagation()}
+        className={cn(
+          "min-w-0 flex-1 truncate rounded border border-primary/40 bg-background/80 px-1 py-0 text-xs font-medium leading-snug outline-none",
+          className,
+        )}
+      />
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => onSave && setEditing(true)}
+      title={onSave ? "Click to edit" : undefined}
+      className={cn(
+        "min-w-0 flex-1 cursor-text truncate text-left text-xs font-medium leading-snug",
+        onSave && "hover:text-primary",
+        className,
+      )}
+    >
+      {value}
+    </button>
+  );
+}
+
+function RowShell({
+  children,
+  leading,
+  extraActions,
+  onDelete,
+  compact,
+}: {
+  children: React.ReactNode;
+  leading?: React.ReactNode;
+  extraActions?: React.ReactNode;
+  onDelete?: () => void | Promise<void>;
+  compact?: boolean;
+}) {
+  return (
+    <li className={cn(
+      "group flex items-start gap-2 rounded-lg px-2 text-xs hover:bg-muted/40",
+      compact ? "py-1" : "py-1.5",
+    )}>
+      {leading}
+      <div className="min-w-0 flex-1">{children}</div>
+      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+        {extraActions}
+        {onDelete && (
+          <button
+            onClick={() => onDelete()}
+            className="grid h-5 w-5 place-items-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            title="Delete"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+    </li>
   );
 }
