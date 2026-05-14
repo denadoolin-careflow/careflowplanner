@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, FolderOpen, Plus, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -106,6 +107,8 @@ export default function ProjectDetail() {
           </div>
         )}
       </div>
+
+      <LinkedNotesPanel entityType="project" entityId={project.id} contextTitle={project.name} />
     </div>
   );
 }
