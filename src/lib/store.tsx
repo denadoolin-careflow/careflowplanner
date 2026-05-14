@@ -26,6 +26,7 @@ const taskFrom = (r: any): Task => ({
   projectId: r.project_id ?? undefined,
   parentTaskId: r.parent_task_id ?? undefined,
   inbox: !!r.inbox,
+  resetItemId: r.reset_item_id ?? undefined,
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, done: t.done,
