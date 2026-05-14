@@ -1460,6 +1460,57 @@ export type Database = {
         }
         Relationships: []
       }
+      quick_add_presets: {
+        Row: {
+          color: string | null
+          created_at: string
+          default_area: string | null
+          default_project_id: string | null
+          hotkey: string | null
+          icon: string | null
+          id: string
+          kind: string
+          label: string
+          pinned: boolean
+          sort_order: number
+          template_body: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          default_area?: string | null
+          default_project_id?: string | null
+          hotkey?: string | null
+          icon?: string | null
+          id?: string
+          kind: string
+          label: string
+          pinned?: boolean
+          sort_order?: number
+          template_body?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          default_area?: string | null
+          default_project_id?: string | null
+          hotkey?: string | null
+          icon?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          pinned?: boolean
+          sort_order?: number
+          template_body?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       recurring_bills: {
         Row: {
           amount: number
