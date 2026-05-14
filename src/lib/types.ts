@@ -33,6 +33,35 @@ export interface Task {
   nextDueDate?: string;
   lastCompletedAt?: string;
   autoReset?: boolean;
+  projectId?: string;
+  parentTaskId?: string;
+  inbox?: boolean;
+}
+
+export interface AreaRecord {
+  id: string;
+  name: string;
+  icon?: string;
+  color?: string;
+  sortOrder: number;
+  isArchived?: boolean;
+}
+
+export type ProjectStatus = "active" | "paused" | "done" | "someday";
+
+export interface Project {
+  id: string;
+  areaId?: string;
+  areaName?: string;
+  name: string;
+  notes?: string;
+  icon?: string;
+  color?: string;
+  status: ProjectStatus;
+  deadline?: string;
+  sortOrder: number;
+  archivedAt?: string;
+  createdAt: string;
 }
 
 export interface Goal {
@@ -155,6 +184,8 @@ export interface AppState {
   settings: Settings;
   energyToday?: Energy;
   energyDate?: string;
+  areas?: AreaRecord[];
+  projects?: Project[];
 }
 
 export const AREAS: Area[] = ["Family","Kids","Caregiving","Home","Meals","Appointments","Holidays & Birthdays","Personal","Creative Projects","Money"];
