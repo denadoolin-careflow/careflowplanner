@@ -1,66 +1,89 @@
-## 1. Bottom navigation
+## 1. Today — Morning / Afternoon / Evening view
 
-Replace the current 5 + More layout with **6 tabs + More**:
+- Extend `CalendarViewToggle` with a third option `dayparts` (`Schedule | Agenda | Day Parts`).
+- New `DayPartsView.tsx` (in `src/components/calendar/`): three stacked sections — Morning (5–12), Afternoon (12–17), Evening (17–23).
+  - Each section lists that day's appointments + due/scheduled tasks, sorted by time, with checkbox for tasks and click-to-open editor for events.
+  - Drop targets: dragging a task from `UnscheduledTasksRail` onto a section sets `dueDate` and a default start time (8:00 / 13:00 / 19:00).
+  - Empty state: "Nothing planned for the morning — drag a task here."
+- Wire into `Today.tsx` so when `view === "dayparts"` we render `DayPartsView` instead of `TimeGrid`/`AgendaView`.
 
-```
-Inbox · Today · Calendar · Home · Meals · Notes · More
-```
+## 2. Home — single dashboard with collapsible sections + Reset tab
 
-- `MOBILE_NAV` in `src/lib/nav.ts` becomes the six items above. `Calendar` points to `/calendar` (the existing combined view) instead of separate Week/Month/Year tabs — those stay reachable from More and the desktop sidebar.
-- `BottomNav.tsx`: switch the grid from `grid-cols-6` to `grid-cols-7`, tighten icon/label sizing so 7 cells still fit on small phones (icon 16px, label 10px, reduced gap). More sheet keeps full nav.
+Rebuild `src/pages/HomeAreas.tsx` as one scrollable page using `Collapsible` sections (default-open: Reset, Zones; collapsed: Maintenance, Documents, Notes). Keep current `/home-areas` route; remove the inner `Tabs`.
 
-## 2. Home page reset section
+Sections (top to bottom):
 
-Home is already an editable customizable grid (drag/resize/add/remove, presets, themes). Two changes:
+1. **Reset** — embeds `ChecklistTree` for the active weekly/daily reset checklist (same component used on `/home-reset`). "Open full Reset" link to `/home-reset`.
+2. **Zones** — inline-editable grid:
+   - Each zone = one `cleaning_tasks.zone` group, header is editable text (rename updates `zone` on all tasks in the group).
+   - "+ Add zone" button creates an empty group (stored as a placeholder task or in a small new `zones` setting — simplest: create a hidden seed task so the zone appears).
+   - Per-zone "+" quick-add input adds a `cleaning_tasks` row directly in that zone (title only; defaults: weekly cadence, no due date).
+   - Each row: checkbox (toggle done), inline-editable title (blur → save), trash icon.
+3. **Maintenance** — keep current `MaintenancePanel`.
+4. **Documents** — keep current `DocumentsPanel`.
+5. **Home notes** — keep current `HomeNotesPanel`.
 
-- **Default layout**: add the existing `home-reset` widget plus a new `home-reset-checklist` widget to the Home preset in `src/lib/dashboard-layouts.ts` so they appear out of the box. Existing users get them via a one-time migration that appends them if missing.
-- **New widget `home-reset-checklist`** (`src/components/dashboard/widgets/HomeResetChecklistWidget.tsx`): inline interactive checklist showing the user's primary reset list — check off items, add quickly, drag to reorder, expand/collapse subtasks. Reuses `useResetChecklists` and a trimmed `ChecklistTree`. Registered in `WidgetRegistry.tsx` with `pageHref="/home-reset"` and `quickAddEvent="cleaning"`. Default size 8×6 so it reads as a proper section, not a tile.
+## 3. Daily / Weekly / Monthly notes with AI + slash-linking
 
-The mobile section grouping in `CustomizableGrid.tsx` already has a "Weekly Reset" section — both widgets land there automatically.
+**Schema** (migration):
 
-## 3. Reset items behave as tasks (two-way unified)
+- Extend `notes.kind` enum-style values to allow `'weekly' | 'monthly'` in addition to `'note' | 'daily'`. Store ISO week / month start in `notes.date`.
+- Add helpers in `src/lib/notes.ts`: `getOrCreateWeeklyNote(weekStartISO)`, `getOrCreateMonthlyNote(monthStartISO)`.
 
-Each `reset_items` row gets an optional mirrored task; the two stay in sync.
+**UI**
 
-### Schema
+- In `src/pages/Notes.tsx`, add a top "Periodic notes" strip with three pill buttons: **Today**, **This Week**, **This Month** → opens the corresponding daily/weekly/monthly note.
+- AI editing: add an "AI" button in `NoteDetail.tsx` header that opens a popover with actions (Summarize, Expand, Rewrite, Tidy). Calls a new edge function `notes-ai` using Lovable AI Gateway (`google/gemini-3-flash-preview`) — non-streaming `supabase.functions.invoke` returning replacement body, applied to a selected range or whole note.
 
-- Add `linked_task_id uuid` to `reset_items` (nullable, FK to `tasks.id` with `ON DELETE SET NULL`).
-- Add `reset_item_id uuid` to `tasks` (nullable, indexed) so a task knows it came from a reset item.
-- A Postgres trigger keeps `title`, `notes`, `done`, `due_date`, `est_minutes` in sync in both directions; updating one side updates the other without recursion (guarded by a session variable).
-- Backfill: existing reset items get a mirrored task in area `Home` with `inbox = false`. Items already done stay done on both sides.
+**Slash command — link to existing entity**
 
-### Behavior
+- New `src/components/notes/SlashLinkMenu.tsx`: floating popover anchored at caret. Triggered when user types `/` at start of a word in the `Textarea` (or any position with whitespace before).
+- Tabs/categories: Date, Note, Task, Project, Area, Goal, Habit, Event (appointment).
+- Search input filters across the chosen category (uses store + supabase queries).
+- Selecting an item inserts a markdown link at the caret using existing route conventions:
+  - Note → `[[Title]]` (already supported by `NoteMarkdown`)
+  - Project → `@ProjectName` (already supported)
+  - Task → `[task: title](/today?task=ID)`
+  - Area → `[area: name](/home-areas#zone-Name)`
+  - Goal → `[goal: title](/goals#ID)`
+  - Habit → `[habit: title](/habits#ID)`
+  - Event → `[event: title](/calendar?appt=ID)`
+  - Date → `[Mon, May 14](/today?d=YYYY-MM-DD)`
+- Extend `NoteMarkdown` link handler so these internal `/...` links keep working as `<Link>`s.
 
-- Editing a reset item's title/notes/done from the Home Reset page updates the linked task.
-- Editing or completing the task in Inbox/Today/Upcoming/Calendar updates the reset item — checkbox feedback flows through the trigger.
-- Scheduling a task on the calendar (drag onto a day/time) writes `due_date` back to the reset item.
-- Deleting the reset item nulls the task's `reset_item_id` but leaves the task in place; deleting the task nulls the reset item's link but leaves it in place. Users can sever or re-link from a small badge on each row.
+## 4. Calendar — click-to-edit + drag-to-move everything
 
-### UI surfacing
-
-- In task rows (`TaskListPage`, `Inbox`, `Today`, `Upcoming`), show a small `Sparkle` badge "Reset" when `reset_item_id` is set, linking to `/home-reset`.
-- In `ChecklistTree` rows, show a "Task" badge when `linked_task_id` exists, linking to the task.
+- **Tasks on grid**: extend `TimeGrid` so task chips are draggable (same drag mechanism as the rail) — drop on a different time slot updates `due_date` + a stored start time (reuse `start_time` on task or write to a calendar block); drop on a different day updates `due_date`.
+- **Appointments on grid**: already draggable for time; add cross-day drop in week view (`days.length > 1`) — `onApptDropAt` already accepts `dateISO`.
+- **Click-to-edit**: 
+  - Appointments → `AppointmentEditor` (already wired on Today; ensure same wiring on `/calendar` Week/Month views).
+  - Tasks on grid/agenda → open `TaskEditor` dialog (already exists). Add `onTaskClick` prop to `TimeGrid`/`AgendaView`/`DayPartsView` and Month cells.
+- **Month view**: make each event/task pill clickable → opens its editor. Add HTML5 drag to drop a pill onto another day cell → updates `due_date` (task) or `date` (appointment).
+- **Week view**: same as Month for cross-day drags; intra-day uses `TimeGrid`.
 
 ## Out of scope
 
-- Recurrence rules on reset items don't propagate to recurring tasks yet — they remain reset-side only.
-- No bulk "convert all reset items to tasks" UI; the backfill handles existing data once.
-- No realtime cross-device push; sync happens on next refresh / mutation.
+- Recurring-task edit semantics (move only this occurrence vs series) — single-occurrence move only.
+- Real-time multi-device sync.
+- Resize-by-drag for time blocks (only move).
+- AI on slash menu (separate feature).
 
 ## Files
 
 **New**
-- `src/components/dashboard/widgets/HomeResetChecklistWidget.tsx`
-- `supabase/migrations/<ts>_reset_task_link.sql` (columns, trigger, backfill, default-layout patch)
+- `src/components/calendar/DayPartsView.tsx`
+- `src/components/notes/SlashLinkMenu.tsx`
+- `supabase/functions/notes-ai/index.ts`
+- migration: extend allowed `notes.kind` values, add helpful index on `(user_id, kind, date)`.
 
 **Edited**
-- `src/lib/nav.ts` — new `MOBILE_NAV`
-- `src/components/layout/BottomNav.tsx` — 7-cell grid, tighter sizing
-- `src/lib/dashboard-layouts.ts` — add reset widgets to Home default
-- `src/components/dashboard/WidgetRegistry.tsx` — register new widget
-- `src/components/dashboard/CustomizableGrid.tsx` — include new widget type in the "Weekly Reset" mobile section
-- `src/lib/reset-checklists.ts` — pass `linked_task_id` through; helper to read it
-- `src/lib/store.tsx` — when toggling a task's `done`, no extra work needed (trigger handles it); expose `reset_item_id` on the Task type
-- `src/lib/types.ts` — add `resetItemId?: string` to `Task`
-- `src/components/reset/ChecklistTree.tsx` — render "Task" badge
-- Task row components in `src/components/tasks/` — render "Reset" badge
+- `src/components/calendar/CalendarViewToggle.tsx` — add `dayparts`.
+- `src/pages/Today.tsx` — render `DayPartsView` when selected.
+- `src/pages/HomeAreas.tsx` — full rewrite to collapsible dashboard with Reset + inline-edit Zones.
+- `src/components/calendar/TimeGrid.tsx` — task drag, click handlers.
+- `src/components/calendar/AgendaView.tsx` — task click handler.
+- `src/pages/Week.tsx`, `src/pages/Month.tsx`, `src/pages/CalendarPage.tsx` — wire click-to-edit + cross-day drag for tasks & appointments.
+- `src/lib/notes.ts` — weekly/monthly helpers.
+- `src/pages/Notes.tsx` — periodic strip.
+- `src/pages/NoteDetail.tsx` — AI button, mount `SlashLinkMenu` on textarea.
+- `src/components/notes/NoteMarkdown.tsx` — handle new internal link prefixes.
