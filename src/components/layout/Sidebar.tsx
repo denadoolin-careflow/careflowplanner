@@ -40,8 +40,7 @@ export function Sidebar() {
   useEffect(() => {
     try { window.localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0"); } catch {}
   }, [collapsed]);
-  const { state } = useStore();
-  const { updateArea } = useStore();
+  const { state, updateArea } = useStore();
   // Dedupe areas by name as a defensive guard against any prior duplicates.
   const areas = (() => {
     const seen = new Set<string>();
