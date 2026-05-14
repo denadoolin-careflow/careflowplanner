@@ -6,11 +6,17 @@ import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
+import { useLongPressDrag } from "@/lib/long-press-drag";
 
 export const TASK_DRAG_MIME = "application/x-careflow-task";
 export const EVENT_DRAG_MIME = "application/x-careflow-event";
 
-export function UnscheduledTasksRail() {
+interface RailProps {
+  /** Click on a task → open editor for that task. */
+  onTaskClick?: (taskId: string) => void;
+}
+
+export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
   const { state } = useStore();
   const [tab, setTab] = useState<"tasks" | "calendar">("tasks");
   const [q, setQ] = useState("");
@@ -155,31 +161,14 @@ export function UnscheduledTasksRail() {
             {tasks.map(t => {
               const project = t.projectId ? state.projects?.find(p => p.id === t.projectId) : undefined;
               return (
-                <li
+                <TaskRailItem
                   key={t.id}
-                  draggable
-                  onDragStart={e => onDragStart(e, t)}
-                  className={cn(
-                    "group flex cursor-grab items-start gap-2 rounded-lg border border-transparent px-2 py-1.5 text-xs",
-                    "hover:border-border/60 hover:bg-muted/40 active:cursor-grabbing",
-                  )}
-                  title={t.title}
-                >
-                  <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60 opacity-0 transition-opacity group-hover:opacity-100" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium leading-snug">{t.title}</div>
-                    <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                      {project && (
-                        <span className="truncate" style={project.color ? { color: project.color } : undefined}>
-                          {project.name}
-                        </span>
-                      )}
-                      {project && t.area && <span>·</span>}
-                      {t.area && <span className="truncate">{t.area}</span>}
-                      {t.dueDate && <span className="ml-auto shrink-0">{t.dueDate.slice(5)}</span>}
-                    </div>
-                  </div>
-                </li>
+                  task={t}
+                  projectName={project?.name}
+                  projectColor={project?.color}
+                  onClick={onTaskClick}
+                  onDragStart={onDragStart}
+                />
               );
             })}
           </ul>
@@ -226,5 +215,52 @@ export function UnscheduledTasksRail() {
       </div>
       )}
     </aside>
+  );
+}
+
+function TaskRailItem({
+  task,
+  projectName,
+  projectColor,
+  onClick,
+  onDragStart,
+}: {
+  task: Task;
+  projectName?: string;
+  projectColor?: string;
+  onClick?: (id: string) => void;
+  onDragStart: (e: React.DragEvent, t: Task) => void;
+}) {
+  const drag = useLongPressDrag(
+    () => ({ type: "task", id: task.id, label: task.title }),
+    { onClick: () => onClick?.(task.id) },
+  );
+  return (
+    <li
+      draggable
+      onDragStart={e => onDragStart(e, task)}
+      onPointerDown={drag.onPointerDown}
+      className={cn(
+        "group flex cursor-grab touch-none items-start gap-2 rounded-lg border border-transparent px-2 py-1.5 text-xs",
+        "hover:border-border/60 hover:bg-muted/40 active:cursor-grabbing",
+        onClick && "hover:bg-primary/10",
+      )}
+      title={onClick ? "Click to edit · long-press to drag" : task.title}
+    >
+      <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60 opacity-0 transition-opacity group-hover:opacity-100" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-medium leading-snug">{task.title}</div>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          {projectName && (
+            <span className="truncate" style={projectColor ? { color: projectColor } : undefined}>
+              {projectName}
+            </span>
+          )}
+          {projectName && task.area && <span>·</span>}
+          {task.area && <span className="truncate">{task.area}</span>}
+          {task.dueDate && <span className="ml-auto shrink-0">{task.dueDate.slice(5)}</span>}
+        </div>
+      </div>
+    </li>
   );
 }

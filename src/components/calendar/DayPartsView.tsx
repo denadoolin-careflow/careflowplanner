@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { hmToHours } from "@/lib/time-blocks";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
+import { useLongPressDrag } from "@/lib/long-press-drag";
 
 type ApptLike = {
   label: string;
@@ -77,6 +78,8 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
         return (
           <div
             key={p.key}
+            data-droppart={p.key}
+            data-dropdate={iso}
             onDragOver={e => { if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) e.preventDefault(); }}
             onDrop={e => {
               const id = e.dataTransfer.getData(TASK_DRAG_MIME);
@@ -105,32 +108,14 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                 </li>
               )}
               {items.map((it, i) => {
-                const clickable = (it.kind === "appt" && it.id && onApptClick) || (it.kind === "task" && it.taskId && onTaskClick);
                 return (
-                  <li
+                  <DayPartItem
                     key={i}
-                    onClick={() => {
-                      if (it.kind === "appt" && it.id && onApptClick) onApptClick(it.id);
-                      else if (it.kind === "task" && it.taskId && onTaskClick) onTaskClick(it.taskId);
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 text-sm",
-                      clickable && "cursor-pointer hover:bg-primary/10",
-                    )}
-                  >
-                    {it.kind === "task" ? (
-                      <button
-                        onClick={e => { e.stopPropagation(); if (it.taskId) void toggleTask(it.taskId); }}
-                        className="text-muted-foreground hover:text-primary"
-                        aria-label="Toggle task"
-                      >
-                        {it.done ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4" />}
-                      </button>
-                    ) : (
-                      <span className="w-12 shrink-0 font-mono text-[10px] text-muted-foreground">{it.time?.slice(0, 5) ?? ""}</span>
-                    )}
-                    <span className="min-w-0 flex-1 truncate">{it.label}</span>
-                  </li>
+                    it={it}
+                    onApptClick={onApptClick}
+                    onTaskClick={onTaskClick}
+                    onToggle={toggleTask}
+                  />
                 );
               })}
             </ul>
@@ -138,39 +123,85 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
         );
       })}
       {(grouped as any).anytime.length > 0 && (
-        <div className="md:col-span-3 rounded-2xl border border-border/60 bg-card/40 p-3">
+        <div
+          className="md:col-span-3 rounded-2xl border border-border/60 bg-card/40 p-3"
+          data-droppart="morning"
+          data-dropdate={iso}
+        >
           <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Any time today</div>
           <ul className="grid gap-1 sm:grid-cols-2 md:grid-cols-3">
-            {(grouped as any).anytime.map((it: any, i: number) => {
-              const clickable = (it.kind === "appt" && it.id && onApptClick) || (it.kind === "task" && it.taskId && onTaskClick);
-              return (
-                <li
-                  key={i}
-                  onClick={() => {
-                    if (it.kind === "appt" && it.id && onApptClick) onApptClick(it.id);
-                    else if (it.kind === "task" && it.taskId && onTaskClick) onTaskClick(it.taskId);
-                  }}
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 text-sm",
-                    clickable && "cursor-pointer hover:bg-primary/10",
-                  )}
-                >
-                  {it.kind === "task" ? (
-                    <button
-                      onClick={e => { e.stopPropagation(); if (it.taskId) void toggleTask(it.taskId); }}
-                      className="text-muted-foreground hover:text-primary"
-                      aria-label="Toggle task"
-                    >
-                      {it.done ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4" />}
-                    </button>
-                  ) : null}
-                  <span className="min-w-0 flex-1 truncate">{it.label}</span>
-                </li>
-              );
-            })}
+            {(grouped as any).anytime.map((it: any, i: number) => (
+              <DayPartItem
+                key={i}
+                it={it}
+                onApptClick={onApptClick}
+                onTaskClick={onTaskClick}
+                onToggle={toggleTask}
+                hideTime
+              />
+            ))}
           </ul>
         </div>
       )}
     </div>
+  );
+}
+
+function DayPartItem({
+  it,
+  onApptClick,
+  onTaskClick,
+  onToggle,
+  hideTime,
+}: {
+  it: { time?: string; label: string; kind: string; id?: string; done?: boolean; taskId?: string };
+  onApptClick?: (id: string) => void;
+  onTaskClick?: (id: string) => void;
+  onToggle: (id: string) => void | Promise<void>;
+  hideTime?: boolean;
+}) {
+  const clickable =
+    (it.kind === "appt" && it.id && onApptClick) ||
+    (it.kind === "task" && it.taskId && onTaskClick);
+  const drag = useLongPressDrag(
+    () =>
+      it.kind === "task" && it.taskId
+        ? { type: "task", id: it.taskId, label: it.label }
+        : null,
+    {
+      onClick: () => {
+        if (it.kind === "appt" && it.id && onApptClick) onApptClick(it.id);
+        else if (it.kind === "task" && it.taskId && onTaskClick) onTaskClick(it.taskId);
+      },
+    },
+  );
+  return (
+    <li
+      onPointerDown={it.kind === "task" ? drag.onPointerDown : undefined}
+      onClick={
+        it.kind === "task"
+          ? undefined
+          : () => { if (it.kind === "appt" && it.id && onApptClick) onApptClick(it.id); }
+      }
+      className={cn(
+        "flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 text-sm",
+        clickable && "cursor-pointer hover:bg-primary/10",
+        it.kind === "task" && "touch-none",
+      )}
+    >
+      {it.kind === "task" ? (
+        <button
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); if (it.taskId) void onToggle(it.taskId); }}
+          className="text-muted-foreground hover:text-primary"
+          aria-label="Toggle task"
+        >
+          {it.done ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4" />}
+        </button>
+      ) : !hideTime ? (
+        <span className="w-12 shrink-0 font-mono text-[10px] text-muted-foreground">{it.time?.slice(0, 5) ?? ""}</span>
+      ) : null}
+      <span className="min-w-0 flex-1 truncate">{it.label}</span>
+    </li>
   );
 }
