@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { DateBarStrip } from "@/components/cards/DateBarStrip";
+import { AuroraClock } from "@/components/cards/AuroraClock";
 import { format, isSameDay, addDays } from "date-fns";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
@@ -36,27 +37,42 @@ export default function Today() {
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-6">
         <div className="cozy-card overflow-hidden">
-          <div className="flex flex-col gap-4 p-6 gradient-calm">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{format(today, "EEEE")}</p>
-              <h2 className="font-display text-3xl font-semibold sm:text-4xl">{format(today, "MMMM d, yyyy")}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {lowMode ? "Low-energy mode: only the essentials." : "Drag tasks from the right onto your day."}
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDay(addDays(day, -1))} aria-label="Previous day">
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <DayPickerButton date={day} onChange={setDay} />
-                <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDay(addDays(day, 1))} aria-label="Next day">
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                {!isReallyToday && (
-                  <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => setDay(new Date())}>Today</Button>
-                )}
+          <div className="relative gradient-calm p-6">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-60"
+              style={{
+                background:
+                  "radial-gradient(60% 80% at 85% 30%, hsl(var(--primary)/0.18), transparent 70%), radial-gradient(50% 70% at 15% 90%, hsl(var(--moon, var(--primary))/0.15), transparent 70%)",
+              }}
+            />
+            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{format(today, "EEEE")}</p>
+                <h2 className="text-gradient-glow font-display text-3xl font-semibold sm:text-4xl">
+                  {format(today, "MMMM d, yyyy")}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {lowMode ? "Low-energy mode: only the essentials." : "Drag tasks from the right onto your day."}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDay(addDays(day, -1))} aria-label="Previous day">
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <DayPickerButton date={day} onChange={setDay} />
+                  <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDay(addDays(day, 1))} aria-label="Next day">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  {!isReallyToday && (
+                    <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => setDay(new Date())}>Today</Button>
+                  )}
+                </div>
               </div>
+              <AuroraClock className="sm:self-center" />
             </div>
-            <DateBarStrip date={today} />
+            <div className="relative mt-5">
+              <DateBarStrip date={today} />
+            </div>
           </div>
         </div>
 
