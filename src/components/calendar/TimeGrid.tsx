@@ -151,6 +151,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       haptics.pickup();
     } else if (block) {
       // Treat as a tap — open editor
+      haptics.snap();
       setEditing(block);
     }
     setDrag(null);

@@ -1,15 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { Inbox, GripVertical, Search, X, CalendarDays, ListTodo } from "lucide-react";
+import {
+  Inbox, GripVertical, Search, X, CalendarDays, ListTodo,
+  UtensilsCrossed, Repeat, Target, FolderKanban, Sparkles, Check,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
+import { Link } from "react-router-dom";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongPressDrag } from "@/lib/long-press-drag";
 
 export const TASK_DRAG_MIME = "application/x-careflow-task";
 export const EVENT_DRAG_MIME = "application/x-careflow-event";
+
+type RailTab = "tasks" | "calendar" | "meals" | "habits" | "goals" | "projects" | "zones";
+const TABS: { id: RailTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "tasks", label: "Tasks", icon: ListTodo },
+  { id: "calendar", label: "Calendar", icon: CalendarDays },
+  { id: "meals", label: "Meals", icon: UtensilsCrossed },
+  { id: "habits", label: "Habits", icon: Repeat },
+  { id: "goals", label: "Goals", icon: Target },
+  { id: "projects", label: "Projects", icon: FolderKanban },
+  { id: "zones", label: "Zones", icon: Sparkles },
+];
 
 interface RailProps {
   /** Click on a task → open editor for that task. */
@@ -17,8 +32,8 @@ interface RailProps {
 }
 
 export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
-  const { state } = useStore();
-  const [tab, setTab] = useState<"tasks" | "calendar">("tasks");
+  const { state, toggleHabit, toggleCleaning } = useStore();
+  const [tab, setTab] = useState<RailTab>("tasks");
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"unscheduled" | "all">("unscheduled");
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
@@ -88,25 +103,28 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
 
   return (
     <aside className="hidden xl:flex sticky top-20 max-h-[calc(100vh-6rem)] w-72 shrink-0 flex-col rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm shadow-soft">
-      <div className="flex items-center gap-1 border-b border-border/60 p-1.5">
-        <button
-          onClick={() => setTab("tasks")}
-          className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors",
-            tab === "tasks" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <ListTodo className="h-3.5 w-3.5" /> Tasks
-        </button>
-        <button
-          onClick={() => setTab("calendar")}
-          className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors",
-            tab === "calendar" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <CalendarDays className="h-3.5 w-3.5" /> Calendar
-        </button>
+      <div className="flex items-center gap-0.5 border-b border-border/60 p-1">
+        {TABS.map(t => {
+          const Icon = t.icon;
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              title={t.label}
+              aria-label={t.label}
+              className={cn(
+                "flex flex-1 items-center justify-center rounded-md px-1 py-1.5 transition-colors",
+                active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          );
+        })}
+      </div>
+      <div className="border-b border-border/60 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {TABS.find(t => t.id === tab)?.label}
       </div>
 
       {tab === "tasks" && (
@@ -214,6 +232,12 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
         )}
       </div>
       )}
+
+      {tab === "meals" && <MealsTab />}
+      {tab === "habits" && <HabitsTab onToggle={toggleHabit} />}
+      {tab === "goals" && <GoalsTab />}
+      {tab === "projects" && <ProjectsTab />}
+      {tab === "zones" && <ZonesTab onToggle={toggleCleaning} />}
     </aside>
   );
 }
@@ -262,5 +286,223 @@ function TaskRailItem({
         </div>
       </div>
     </li>
+  );
+}
+
+/* ---------- Meals ---------- */
+function MealsTab() {
+  const { state } = useStore();
+  const today = startOfDay(new Date());
+  const horizon = addDays(today, 14);
+  const items = useMemo(() => {
+    return (state.meals ?? [])
+      .filter(m => {
+        try { const d = parseISO(m.date); return !isAfter(today, d) && !isAfter(d, horizon); } catch { return false; }
+      })
+      .sort((a, b) => (a.date + a.slot).localeCompare(b.date + b.slot))
+      .slice(0, 60);
+  }, [state.meals, today, horizon]);
+  return (
+    <div className="flex-1 overflow-y-auto px-2 py-2">
+      {items.length === 0 ? (
+        <EmptyMsg cta="Plan meals" to="/meals">No meals planned in the next 2 weeks.</EmptyMsg>
+      ) : (
+        <ul className="space-y-1">
+          {items.map(m => (
+            <li key={m.id}>
+              <Link
+                to="/meals"
+                className="block rounded-lg px-2 py-1.5 text-xs hover:bg-muted/50"
+                title="Open meals"
+              >
+                <div className="truncate font-medium leading-snug">{m.name}</div>
+                <div className="mt-0.5 text-[10px] text-muted-foreground">
+                  {format(parseISO(m.date), "EEE, MMM d")} · {m.slot}
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Habits ---------- */
+function HabitsTab({ onToggle }: { onToggle: (id: string, date?: string) => Promise<void> }) {
+  const { state } = useStore();
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const habits = state.habits ?? [];
+  return (
+    <div className="flex-1 overflow-y-auto px-2 py-2">
+      {habits.length === 0 ? (
+        <EmptyMsg cta="Add habits" to="/habits">No habits yet.</EmptyMsg>
+      ) : (
+        <ul className="space-y-1">
+          {habits.map(h => {
+            const done = !!h.log?.[todayKey];
+            return (
+              <li key={h.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-muted/40">
+                <button
+                  onClick={() => onToggle(h.id)}
+                  className={cn(
+                    "grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors",
+                    done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary/60",
+                  )}
+                  aria-label={done ? "Mark undone" : "Mark done"}
+                >
+                  {done && <Check className="h-3 w-3" />}
+                </button>
+                <Link to="/habits" className="min-w-0 flex-1">
+                  <div className="truncate font-medium leading-snug">{h.title}</div>
+                  <div className="mt-0.5 text-[10px] text-muted-foreground capitalize">
+                    {h.cadence} · streak {h.streak}
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Goals ---------- */
+function GoalsTab() {
+  const { state } = useStore();
+  const goals = (state.goals ?? []).filter(g => g.status !== "done").slice(0, 80);
+  return (
+    <div className="flex-1 overflow-y-auto px-2 py-2">
+      {goals.length === 0 ? (
+        <EmptyMsg cta="Set goals" to="/goals">No active goals.</EmptyMsg>
+      ) : (
+        <ul className="space-y-1">
+          {goals.map(g => (
+            <li key={g.id}>
+              <Link
+                to="/goals"
+                className="block rounded-lg px-2 py-1.5 text-xs hover:bg-muted/50"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="truncate font-medium leading-snug">{g.title}</div>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">{g.progress}%</span>
+                </div>
+                <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${g.progress}%` }} />
+                </div>
+                <div className="mt-1 text-[10px] text-muted-foreground">{g.category} · {g.timeline}</div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Projects ---------- */
+function ProjectsTab() {
+  const { state } = useStore();
+  const projects = (state.projects ?? []).filter(p => p.status === "active" || p.status === "paused");
+  return (
+    <div className="flex-1 overflow-y-auto px-2 py-2">
+      {projects.length === 0 ? (
+        <EmptyMsg cta="Add a project" to="/projects">No active projects.</EmptyMsg>
+      ) : (
+        <ul className="space-y-1">
+          {projects.map(p => (
+            <li key={p.id}>
+              <Link
+                to={`/projects/${p.id}`}
+                className="block rounded-lg px-2 py-1.5 text-xs hover:bg-muted/50"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: p.color || "hsl(var(--primary))" }}
+                  />
+                  <div className="min-w-0 flex-1 truncate font-medium leading-snug">{p.name}</div>
+                  {p.status === "paused" && <span className="text-[9px] uppercase text-muted-foreground">paused</span>}
+                </div>
+                {(p.areaName || p.deadline) && (
+                  <div className="mt-0.5 truncate pl-4 text-[10px] text-muted-foreground">
+                    {p.areaName}{p.areaName && p.deadline ? " · " : ""}{p.deadline}
+                  </div>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Zones (cleaning) ---------- */
+function ZonesTab({ onToggle }: { onToggle: (id: string) => Promise<void> }) {
+  const { state } = useStore();
+  const tasks = state.cleaning ?? [];
+  const zones = useMemo(() => {
+    const m = new Map<string, typeof tasks>();
+    for (const t of tasks) {
+      const arr = m.get(t.zone) ?? [];
+      arr.push(t);
+      m.set(t.zone, arr);
+    }
+    return Array.from(m.entries());
+  }, [tasks]);
+  return (
+    <div className="flex-1 overflow-y-auto px-2 py-2">
+      {zones.length === 0 ? (
+        <EmptyMsg cta="Open Home Reset" to="/home-reset">No zone tasks yet.</EmptyMsg>
+      ) : (
+        <ul className="space-y-3">
+          {zones.map(([zone, items]) => {
+            const left = items.filter(i => !i.done).length;
+            return (
+              <li key={zone}>
+                <Link
+                  to="/home-reset"
+                  className="flex items-baseline justify-between px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                >
+                  <span>{zone}</span>
+                  <span>{left} left</span>
+                </Link>
+                <ul className="space-y-1">
+                  {items.slice(0, 6).map(i => (
+                    <li key={i.id} className="flex items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-muted/40">
+                      <button
+                        onClick={() => onToggle(i.id)}
+                        className={cn(
+                          "grid h-4 w-4 shrink-0 place-items-center rounded-full border transition-colors",
+                          i.done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary/60",
+                        )}
+                        aria-label={i.done ? "Mark undone" : "Mark done"}
+                      >
+                        {i.done && <Check className="h-2.5 w-2.5" />}
+                      </button>
+                      <span className={cn("min-w-0 flex-1 truncate", i.done && "text-muted-foreground line-through")}>
+                        {i.title}
+                      </span>
+                      <span className="shrink-0 text-[9px] uppercase text-muted-foreground">{i.cadence}</span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function EmptyMsg({ children, cta, to }: { children: React.ReactNode; cta: string; to: string }) {
+  return (
+    <div className="m-2 rounded-xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+      <div>{children}</div>
+      <Link to={to} className="mt-2 inline-block text-primary hover:underline">{cta} →</Link>
+    </div>
   );
 }
