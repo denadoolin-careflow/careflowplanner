@@ -220,6 +220,18 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt }: Props) {
                       const rect = e.currentTarget.getBoundingClientRect();
                       const y = e.clientY - rect.top;
                       const startH = HOUR_START + snap(y / PX_PER_HOUR);
+                      const endH = Math.min(HOUR_END, startH + 1);
+                      const title = e.dataTransfer.getData("text/plain") || "Task";
+                      // Create the time block locally so the grid updates instantly.
+                      void add({
+                        date: iso,
+                        startTime: hoursToHM(startH),
+                        endTime: hoursToHM(endH),
+                        title,
+                        color: "primary",
+                        allDay: false,
+                      });
+                      // Let parent persist the task.dueDate change.
                       onTaskDropAt(id, iso, startH);
                       setDropHover(null);
                       haptics.tap();
