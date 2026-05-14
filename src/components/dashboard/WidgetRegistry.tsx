@@ -8,6 +8,7 @@ import {
 import type { WidgetType } from "@/lib/dashboard-layouts";
 import { NoteWidget } from "./widgets/NoteWidget";
 import { MiniTasksWidget } from "./widgets/MiniTasksWidget";
+import { HomeResetChecklistWidget } from "./widgets/HomeResetChecklistWidget";
 import {
   Top3Widget, RhythmWidget, AppointmentsTodayWidget, MealsTodayWidget,
   HabitsTodayWidget, FamilyTasksWidget, CareCheckinsWidget, HomeResetWidget,
@@ -72,6 +73,7 @@ export const WIDGET_REGISTRY: Record<WidgetType, WidgetSpec> = {
   "family-tasks": { type: "family-tasks", title: "Family / kids tasks", icon: Heart, defaultSize: { w: 4, h: 5 }, Component: FamilyTasksWidget, pageHref: "/today", quickAddEvent: "task" },
   "care-checkins": { type: "care-checkins", title: "Caregiving check-ins", icon: HeartHandshake, defaultSize: { w: 4, h: 5 }, Component: CareCheckinsWidget, pageHref: "/caregiving", quickAddEvent: "care" },
   "home-reset": { type: "home-reset", title: "Home reset progress", icon: Sparkle, defaultSize: { w: 4, h: 5 }, Component: HomeResetWidget, pageHref: "/home-reset", quickAddEvent: "cleaning" },
+  "home-reset-checklist": { type: "home-reset-checklist", title: "Home reset checklist", icon: ListChecks, defaultSize: { w: 8, h: 6 }, Component: HomeResetChecklistWidget, pageHref: "/home-reset", quickAddEvent: "cleaning" },
   birthdays: { type: "birthdays", title: "Upcoming birthdays", icon: Cake, defaultSize: { w: 4, h: 5 }, Component: BirthdaysWidget, quickAddEvent: "birthday" },
   holidays: { type: "holidays", title: "Upcoming holidays", icon: Sparkles, defaultSize: { w: 4, h: 5 }, Component: HolidaysWidget, quickAddEvent: "holiday" },
   "weekly-reset": { type: "weekly-reset", title: "Weekly reset checklist", icon: ListChecks, defaultSize: { w: 4, h: 5 }, Component: WeeklyResetWidget, pageHref: "/home-reset", quickAddEvent: "cleaning" },
