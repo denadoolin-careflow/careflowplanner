@@ -22,6 +22,14 @@ import { useQuickAddPresets, type QuickAddKind, type QuickAddPreset } from "@/li
 
 type Mode = QuickAddKind | "command";
 
+const STATUS_LABEL: Record<TaskStatus, string> = {
+  active: "Active",
+  this_week: "This week",
+  someday: "Someday",
+  waiting: "Waiting",
+  done: "Done",
+};
+
 export function QuickAddFab() {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("command");
