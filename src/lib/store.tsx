@@ -118,6 +118,7 @@ interface Ctx {
 
   addAppointment: (a: Partial<Appointment> & { title: string; date: string }) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
+  updateAppointment: (id: string, patch: Partial<Appointment>) => Promise<void>;
 
   addBirthday: (b: Partial<Birthday> & { name: string; date: string }) => Promise<void>;
   deleteBirthday: (id: string) => Promise<void>;
