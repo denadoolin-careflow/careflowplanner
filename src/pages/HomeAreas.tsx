@@ -4,9 +4,13 @@ import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Download, Pin } from "lucide-react";
+import { Trash2, Download, Pin, ChevronDown, Plus, Sparkles } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Link } from "react-router-dom";
+import { useResetChecklists } from "@/lib/reset-checklists";
+import { ChecklistTree } from "@/components/reset/ChecklistTree";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const today = () => new Date().toISOString().slice(0, 10);
