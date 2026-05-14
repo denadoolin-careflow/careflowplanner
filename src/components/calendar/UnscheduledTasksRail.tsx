@@ -1,16 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { Inbox, GripVertical, Search, X } from "lucide-react";
+import { Inbox, GripVertical, Search, X, CalendarDays, ListTodo } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
+import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
+import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 
 export const TASK_DRAG_MIME = "application/x-careflow-task";
 
 export function UnscheduledTasksRail() {
   const { state } = useStore();
+  const [tab, setTab] = useState<"tasks" | "calendar">("tasks");
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"unscheduled" | "all">("unscheduled");
+  const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
+  useEffect(() => {
+    if (tab !== "calendar") return;
+    gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {});
+  }, [tab]);
 
   const tasks = useMemo(() => {
     const root = state.tasks.filter(t => !t.done && !t.parentTaskId);
@@ -26,9 +34,69 @@ export function UnscheduledTasksRail() {
     e.dataTransfer.effectAllowed = "move";
   };
 
+  // Calendar tab events
+  const today = startOfDay(new Date());
+  const horizon = addDays(today, 30);
+  const upcomingEvents = useMemo(() => {
+    const items: { date: string; time?: string; label: string; kind: "appt" | "bday" | "hol" | "gcal" | "task" }[] = [];
+    for (const a of state.appointments) items.push({ date: a.date, time: a.time, label: a.title, kind: "appt" });
+    for (const b of state.birthdays) items.push({ date: b.date, label: `🎂 ${b.name}`, kind: "bday" });
+    for (const h of state.holidays) items.push({ date: h.date, label: `✨ ${h.name}`, kind: "hol" });
+    for (const g of gEvents) items.push({ date: g.date, time: g.time ?? undefined, label: g.title, kind: "gcal" });
+    for (const t of state.tasks) {
+      if (t.done || t.parentTaskId || !t.dueDate) continue;
+      items.push({ date: t.dueDate, label: `○ ${t.title}`, kind: "task" });
+    }
+    return items
+      .filter(i => {
+        try { const d = parseISO(i.date); return !isAfter(today, d) && !isAfter(d, horizon); } catch { return false; }
+      })
+      .sort((a, b) => (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")));
+  }, [state.appointments, state.birthdays, state.holidays, state.tasks, gEvents, today, horizon]);
+
+  const eventsByDay = useMemo(() => {
+    const m = new Map<string, typeof upcomingEvents>();
+    for (const ev of upcomingEvents) {
+      const arr = m.get(ev.date) ?? [];
+      arr.push(ev);
+      m.set(ev.date, arr);
+    }
+    return Array.from(m.entries());
+  }, [upcomingEvents]);
+
+  const kindClass = (k: string) =>
+    k === "appt" ? "bg-primary-soft text-foreground"
+    : k === "bday" ? "bg-accent-soft text-accent-foreground"
+    : k === "hol" ? "bg-secondary-soft text-secondary-foreground"
+    : k === "task" ? "bg-warm-soft text-warm-foreground"
+    : "bg-muted text-foreground";
+
   return (
     <aside className="hidden xl:flex sticky top-20 max-h-[calc(100vh-6rem)] w-72 shrink-0 flex-col rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm shadow-soft">
-      <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2.5">
+      <div className="flex items-center gap-1 border-b border-border/60 p-1.5">
+        <button
+          onClick={() => setTab("tasks")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors",
+            tab === "tasks" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <ListTodo className="h-3.5 w-3.5" /> Tasks
+        </button>
+        <button
+          onClick={() => setTab("calendar")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors",
+            tab === "calendar" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <CalendarDays className="h-3.5 w-3.5" /> Calendar
+        </button>
+      </div>
+
+      {tab === "tasks" && (
+      <>
+      <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
         <div className="grid h-7 w-7 place-items-center rounded-lg bg-primary/15 text-primary">
           <Inbox className="h-3.5 w-3.5" />
         </div>
@@ -108,6 +176,36 @@ export function UnscheduledTasksRail() {
           </ul>
         )}
       </div>
+      </>
+      )}
+
+      {tab === "calendar" && (
+      <div className="flex-1 overflow-y-auto px-2 py-2">
+        {eventsByDay.length === 0 ? (
+          <div className="m-2 rounded-xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+            No events in the next 30 days.
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {eventsByDay.map(([date, evs]) => (
+              <li key={date}>
+                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {format(parseISO(date), "EEE, MMM d")}
+                </div>
+                <ul className="space-y-1">
+                  {evs.map((ev, i) => (
+                    <li key={i} className={cn("flex items-start gap-2 rounded-lg px-2 py-1.5 text-xs", kindClass(ev.kind))}>
+                      {ev.time && <span className="shrink-0 font-mono text-[10px] opacity-70">{ev.time.slice(0,5)}</span>}
+                      <span className="min-w-0 flex-1 truncate">{ev.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      )}
     </aside>
   );
 }
