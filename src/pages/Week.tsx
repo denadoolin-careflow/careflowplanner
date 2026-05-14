@@ -15,6 +15,7 @@ import { DayPartsView } from "@/components/calendar/DayPartsView";
 import { WeekNavigator } from "@/components/week/WeekNavigator";
 import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
+import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
@@ -37,7 +38,9 @@ export default function Week() {
   const handleTimeDrop = async (taskId: string, dateISO: string, startHour: number) => {
     const t = state.tasks.find(x => x.id === taskId);
     if (!t) return;
-    await updateTask(taskId, { dueDate: dateISO, inbox: false });
+    const dp = hourToDayPart(startHour);
+    const dayPart = dp ? (dp[0].toUpperCase() + dp.slice(1)) as any : undefined;
+    await updateTask(taskId, { dueDate: dateISO, inbox: false, ...(dayPart ? { dayPart } : {}) });
     toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
   };
 
@@ -47,6 +50,12 @@ export default function Week() {
     await updateAppointment(apptId, { date: dateISO, time: hoursToHM(startHour) });
     toast(`Moved “${a.title}”`);
   };
+
+  useLongDropListener((d) => {
+    if (d.payload.type !== "task" || !d.part) return;
+    const iso = d.iso ?? days[0].toISOString().slice(0, 10);
+    void handleTimeDrop(d.payload.id, iso, partDropHour(d.part));
+  });
 
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
@@ -84,7 +93,7 @@ export default function Week() {
 
         <CalendarTasksPanel days={days} />
       </div>
-      <UnscheduledTasksRail />
+      <UnscheduledTasksRail onTaskClick={setEditTaskId} />
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
     </div>
