@@ -17,6 +17,7 @@ export type WidgetType =
   | "family-tasks"
   | "care-checkins"
   | "home-reset"
+  | "home-reset-checklist"
   | "birthdays"
   | "holidays"
   | "weekly-reset"
@@ -92,6 +93,7 @@ export function defaultLayout(page: PageKey): DashboardLayoutData {
       { type: "meals-today", w: 4, h: 5 },
       { type: "habits-today", w: 4, h: 5 },
       { type: "home-reset", w: 4, h: 5 },
+      { type: "home-reset-checklist", w: 8, h: 6 },
       { type: "family-tasks", w: 4, h: 5 },
       { type: "care-checkins", w: 4, h: 5 },
       { type: "birthdays", w: 4, h: 5 },
