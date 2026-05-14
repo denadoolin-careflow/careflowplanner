@@ -328,6 +328,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await supabase.from("projects").delete().eq("id", id);
     },
 
+    updateArea: async (id, patch) => {
+      setState(s => ({ ...s, areas: (s.areas ?? []).map(a => a.id === id ? { ...a, ...patch } : a) }));
+      const dbPatch: any = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
+      if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
+      if (patch.sortOrder !== undefined) dbPatch.sort_order = patch.sortOrder;
+      if (patch.isArchived !== undefined) dbPatch.is_archived = patch.isArchived;
+      await supabase.from("areas").update(dbPatch).eq("id", id);
+    },
+
     addGoal: async (g) => {
       if (!uid) return;
       const { data } = await supabase.from("goals").insert({ user_id: uid, category: "Personal", timeline: "Q1", progress: 0, ...g }).select().single();
