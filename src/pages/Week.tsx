@@ -5,6 +5,9 @@ import { startOfWeek, addDays, format } from "date-fns";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
+import { AgendaView } from "@/components/calendar/AgendaView";
+import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
+import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { WeekNavigator } from "@/components/week/WeekNavigator";
 import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
@@ -12,6 +15,7 @@ import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 export default function Week() {
   const { state, updateTask } = useStore();
   const [start, setStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [view, setView] = useState<CalView>("schedule");
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
@@ -45,9 +49,13 @@ export default function Week() {
           </div>
         </div>
 
-        <SectionCard title="This week" accent="warm">
-          <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
+        <SectionCard title="This week" accent="warm" action={<CalendarViewToggle value={view} onChange={setView} />}>
+          {view === "schedule"
+            ? <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
+            : <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />}
         </SectionCard>
+
+        <CalendarTasksPanel days={days} />
       </div>
       <UnscheduledTasksRail />
     </div>

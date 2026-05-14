@@ -15,6 +15,9 @@ import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import type { Task } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
+import { AgendaView } from "@/components/calendar/AgendaView";
+import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
+import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 
@@ -25,11 +28,13 @@ export default function Month() {
   const [hoverISO, setHoverISO] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const [view, setView] = useState<CalView>("schedule");
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
 
   const monthStart = startOfMonth(cursor);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
   const days = eachDayOfInterval({ start: gridStart, end: addDays(gridStart, 41) });
+  const monthDays = days.filter(d => isSameMonth(d, cursor));
 
   const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task") =>
     k === "appt" ? "bg-primary-soft text-foreground"
@@ -75,7 +80,15 @@ export default function Month() {
           </div>
         </div>
 
-        <SectionCard title="Calendar" accent="calm">
+        <SectionCard title="Calendar" accent="calm" action={<CalendarViewToggle value={view} onChange={setView} />}>
+          {view === "agenda" ? (
+            <AgendaView
+              days={monthDays}
+              appointmentsOn={(k) => eventsOn(k).map(e => ({ label: e.label }))}
+              onTaskDropAt={(id, iso) => handleDayDrop(id, iso)}
+            />
+          ) : (
+          <>
           <div className="grid grid-cols-7 gap-1 text-xs uppercase tracking-wider text-muted-foreground">
             {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => <div key={d} className="px-2 py-1 text-center">{d}</div>)}
           </div>
@@ -151,7 +164,11 @@ export default function Month() {
               );
             })}
           </div>
+          </>
+          )}
         </SectionCard>
+
+        <CalendarTasksPanel days={monthDays} title={`Tasks · ${format(cursor, "MMMM yyyy")}`} />
       </div>
       <UnscheduledTasksRail />
 

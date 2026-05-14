@@ -84,7 +84,7 @@ export default function Today() {
           title="Today"
           subtitle={view === "schedule" ? "Click a slot to add a time block, or drag a task in." : "Chronological view of everything on your day."}
           accent="warm"
-          headerRight={<CalendarViewToggle value={view} onChange={setView} />}
+          action={<CalendarViewToggle value={view} onChange={setView} />}
         >
           {view === "schedule"
             ? <TimeGrid days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
