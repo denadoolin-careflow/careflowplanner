@@ -40,7 +40,8 @@ export default function Today() {
   const handleTimeDrop = async (taskId: string, dateISO: string, startHour: number) => {
     const t = state.tasks.find(x => x.id === taskId);
     if (!t) return;
-    const dayPart = hourToDayPart(startHour) ?? undefined;
+    const dp = hourToDayPart(startHour);
+    const dayPart = dp ? (dp[0].toUpperCase() + dp.slice(1)) as any : undefined;
     await updateTask(taskId, { dueDate: dateISO, inbox: false, ...(dayPart ? { dayPart } : {}) });
     toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
   };
