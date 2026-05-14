@@ -1,7 +1,10 @@
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Progress } from "@/components/ui/progress";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfYear, endOfYear, addDays, getDay, differenceInCalendarDays } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 export default function Year() {
   const { state } = useStore();
@@ -10,6 +13,62 @@ export default function Year() {
   const habitsAvg = state.habits.length ? Math.round(state.habits.reduce((s, h) => s + Math.min(100, h.streak * 5), 0) / state.habits.length) : 0;
   const goalsAvg = state.goals.length ? Math.round(state.goals.reduce((s, g) => s + g.progress, 0) / state.goals.length) : 0;
 
+  const [tbDates, setTbDates] = useState<string[]>([]);
+  const year = new Date().getFullYear();
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase
+        .from("time_blocks")
+        .select("date")
+        .gte("date", `${year}-01-01`)
+        .lte("date", `${year}-12-31`);
+      setTbDates((data ?? []).map((r: any) => r.date));
+    })();
+  }, [year]);
+
+  const counts = useMemo(() => {
+    const m = new Map<string, number>();
+    const bump = (k: string) => m.set(k, (m.get(k) ?? 0) + 1);
+    state.tasks.forEach(t => {
+      if (!t.done) return;
+      const k = (t.lastCompletedAt ?? "").slice(0, 10) || t.dueDate;
+      if (k && k.startsWith(String(year))) bump(k);
+    });
+    state.appointments.forEach(a => { if (a.date?.startsWith(String(year))) bump(a.date); });
+    tbDates.forEach(d => bump(d));
+    return m;
+  }, [state.tasks, state.appointments, tbDates, year]);
+
+  const max = Math.max(1, ...counts.values());
+  const intensity = (n: number) => {
+    if (!n) return 0;
+    const r = n / max;
+    if (r > 0.66) return 4;
+    if (r > 0.33) return 3;
+    if (r > 0.15) return 2;
+    return 1;
+  };
+  const bgFor = (lvl: number) => {
+    const a = [0, 0.12, 0.28, 0.5, 0.78][lvl];
+    return lvl === 0 ? "hsl(var(--muted) / 0.5)" : `hsl(var(--primary) / ${a})`;
+  };
+
+  // Build columns of weeks. Start from first Sunday on/before Jan 1 so weeks align.
+  const yStart = startOfYear(new Date(year, 0, 1));
+  const yEnd = endOfYear(yStart);
+  const gridStart = addDays(yStart, -getDay(yStart)); // back up to Sunday
+  const totalDays = differenceInCalendarDays(yEnd, gridStart) + 1;
+  const weeks = Math.ceil(totalDays / 7);
+  const monthLabels: { col: number; label: string }[] = [];
+  let lastMonth = -1;
+  for (let w = 0; w < weeks; w++) {
+    const d = addDays(gridStart, w * 7);
+    if (d.getMonth() !== lastMonth && d.getFullYear() === year) {
+      monthLabels.push({ col: w, label: format(d, "MMM") });
+      lastMonth = d.getMonth();
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="cozy-card gradient-dawn p-6">
@@ -17,6 +76,48 @@ export default function Year() {
         <h2 className="font-display text-3xl font-semibold sm:text-4xl">{new Date().getFullYear()}</h2>
         <p className="mt-1 text-sm text-muted-foreground">A long, gentle horizon.</p>
       </div>
+
+      <SectionCard title="Activity heatmap" subtitle={`${year} · tasks completed, appointments, time blocks`} accent="calm">
+        <div className="overflow-x-auto">
+          <div className="inline-block">
+            <div className="ml-7 mb-1 grid" style={{ gridTemplateColumns: `repeat(${weeks}, 14px)`, columnGap: 2 }}>
+              {Array.from({ length: weeks }, (_, w) => {
+                const lbl = monthLabels.find(m => m.col === w);
+                return <div key={w} className="text-[9px] text-muted-foreground">{lbl?.label ?? ""}</div>;
+              })}
+            </div>
+            <div className="flex">
+              <div className="mr-1 flex flex-col justify-between py-0.5 text-[9px] text-muted-foreground" style={{ height: 7 * 14 - 2 }}>
+                <span>Sun</span><span>Wed</span><span>Sat</span>
+              </div>
+              <div className="grid" style={{ gridTemplateColumns: `repeat(${weeks}, 12px)`, gridAutoRows: 12, columnGap: 2, rowGap: 2 }}>
+                {Array.from({ length: weeks * 7 }, (_, idx) => {
+                  const w = Math.floor(idx / 7);
+                  const dow = idx % 7;
+                  const d = addDays(gridStart, w * 7 + dow);
+                  const inYear = d.getFullYear() === year;
+                  const iso = d.toISOString().slice(0, 10);
+                  const n = counts.get(iso) ?? 0;
+                  const lvl = intensity(n);
+                  return (
+                    <div
+                      key={idx}
+                      title={inYear ? `${iso}: ${n} item${n === 1 ? "" : "s"}` : ""}
+                      className={cn("h-3 w-3 rounded-[3px]", !inYear && "opacity-0")}
+                      style={{ gridColumn: w + 1, gridRow: dow + 1, background: bgFor(lvl) }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+            <div className="ml-7 mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <span>Less</span>
+              {[0,1,2,3,4].map(l => <span key={l} className="h-3 w-3 rounded-[3px]" style={{ background: bgFor(l) }} />)}
+              <span>More</span>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {months.map(m => (

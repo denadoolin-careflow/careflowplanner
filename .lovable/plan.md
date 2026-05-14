@@ -1,89 +1,55 @@
-## 1. Today — Morning / Afternoon / Evening view
+## 1. Make time blocks fill the full hour width (Day & Week)
 
-- Extend `CalendarViewToggle` with a third option `dayparts` (`Schedule | Agenda | Day Parts`).
-- New `DayPartsView.tsx` (in `src/components/calendar/`): three stacked sections — Morning (5–12), Afternoon (12–17), Evening (17–23).
-  - Each section lists that day's appointments + due/scheduled tasks, sorted by time, with checkbox for tasks and click-to-open editor for events.
-  - Drop targets: dragging a task from `UnscheduledTasksRail` onto a section sets `dueDate` and a default start time (8:00 / 13:00 / 19:00).
-  - Empty state: "Nothing planned for the morning — drag a task here."
-- Wire into `Today.tsx` so when `view === "dayparts"` we render `DayPartsView` instead of `TimeGrid`/`AgendaView`.
+`src/components/calendar/TimeGrid.tsx`
+- Time blocks currently render `left-1/2 right-0.5` and appointments render `left-0 right-1/2`, so each only uses half the column — labels get clipped.
+- Change both to occupy the **full width** of the column with a small inset (`left-0.5 right-0.5`). When an appointment and a block overlap on the same hour, stack the appointment chip above the block (z-order) instead of side-by-side, since collisions are rare and full-width text is the priority.
+- Bump `PX_PER_HOUR` from `56` → `64` so each hour row is taller and labels (title + time range) breathe. Block height calc already uses `PX_PER_HOUR`, so it follows automatically.
+- Tighten interior layout: title on line 1 (truncate w/ `truncate`), time range on line 2 in `text-[10px]`, ensures legibility down to 30‑min blocks.
 
-## 2. Home — single dashboard with collapsible sections + Reset tab
+## 2. Drag-anywhere + snap-to-grid + haptic feedback
 
-Rebuild `src/pages/HomeAreas.tsx` as one scrollable page using `Collapsible` sections (default-open: Reset, Zones; collapsed: Maintenance, Documents, Notes). Keep current `/home-areas` route; remove the inner `Tabs`.
+`src/components/calendar/TimeGrid.tsx`
+- Hover affordance: on `onPointerEnter` of a block, fire `haptics.magnet()` once per enter (track via `lastHoverIdRef`) so users feel the block "wake up" when their finger/cursor lands on it.
+- Click affordance: on initial `onPointerDown` of a block (before drag threshold), fire `haptics.tap()` so taps are confirmed even when no drag follows.
+- Drag-anywhere: the existing `beginDrag` already attaches `pointermove`/`pointerup` to `window`, so cross-day drag works. Reinforce by:
+  - Removing the `HOUR_END - dur` ceiling clamp so a block can be dragged into the last hour without snapping back, and allow `nextStart` to snap below `HOUR_START` only as far as `HOUR_START` (current behavior is correct, just verify after PX change).
+  - Keep snap step at 15 min via `snap()`; add a stronger `haptics.snap()` only when the snapped slot **changes** (already implemented — keep).
+  - On successful drop (`endDrag` with `moved`), upgrade `haptics.tap()` → `haptics.pickup()` so the "landed" feel is distinct from in-flight snaps.
+- Drop indicator: keep the dashed primary outline; widen it to match new full-width inset.
 
-Sections (top to bottom):
+## 3. Year page heatmap
 
-1. **Reset** — embeds `ChecklistTree` for the active weekly/daily reset checklist (same component used on `/home-reset`). "Open full Reset" link to `/home-reset`.
-2. **Zones** — inline-editable grid:
-   - Each zone = one `cleaning_tasks.zone` group, header is editable text (rename updates `zone` on all tasks in the group).
-   - "+ Add zone" button creates an empty group (stored as a placeholder task or in a small new `zones` setting — simplest: create a hidden seed task so the zone appears).
-   - Per-zone "+" quick-add input adds a `cleaning_tasks` row directly in that zone (title only; defaults: weekly cadence, no due date).
-   - Each row: checkbox (toggle done), inline-editable title (blur → save), trash icon.
-3. **Maintenance** — keep current `MaintenancePanel`.
-4. **Documents** — keep current `DocumentsPanel`.
-5. **Home notes** — keep current `HomeNotesPanel`.
+`src/pages/Year.tsx` (+ small helper)
+- Add a new "Activity heatmap" `SectionCard` above the months grid.
+- Compute a per-day count for the current year by combining:
+  - `state.tasks.filter(t => t.done && t.completedAt)` bucketed by date
+  - `state.appointments` bucketed by `date`
+  - Optionally `time_blocks` via a lightweight `supabase.from("time_blocks").select("date").gte/lte` for the year (single query).
+- Render a GitHub-style 53×7 grid of squares (weeks × weekdays). Each cell is a `div` with size `w-3 h-3 rounded-sm` and a background using `hsl(var(--primary) / X)` where X scales with count (0/0.08/0.2/0.4/0.7). Month labels along the top, weekday labels (M, W, F) along the left.
+- Hover tooltip via `title` attribute: `"{date}: N items"`. Click a cell → navigate to `/today?date=YYYY-MM-DD` (Today already accepts current date; deep-link is a nice-to-have, can be added later).
+- Pure presentational — no schema changes.
 
-## 3. Daily / Weekly / Monthly notes with AI + slash-linking
+## 4. AI checklist button per zone
 
-**Schema** (migration):
+`src/pages/HomeAreas.tsx` → `ZonesPanel`
+- Next to each zone header (right of the count badge, before the rename area) add a small `Button` with `Sparkles` icon labeled "AI tasks".
+- On click: open a tiny popover with a textarea (optional focus, e.g. "deep clean", "guests coming") and a "Generate" action. Default behavior with no input still works.
+- Calls `supabase.functions.invoke("ai-cleaning-checklist-zone", { body: { zone, focus, energy: "medium", minutes: 30 } })`.
+- New edge function `supabase/functions/ai-cleaning-checklist-zone/index.ts` (modeled on the existing `ai-cleaning-checklist`):
+  - Validates JWT, takes `{ zone, focus?, energy?, minutes? }`.
+  - Prompts Gemini for **5–8 short tasks specific to that zone**, returned via tool call (`{ tasks: [{ title, cadence }] }` where `cadence ∈ {daily, weekly, monthly, quarterly}`).
+  - Inserts each into `cleaning_tasks` with `zone`, `cadence`, `done=false`, `user_id`.
+  - Returns `{ inserted: N }`.
+- After success, `ZonesPanel.load()` is re-run and a toast `Added N tasks to {zone}` appears.
 
-- Extend `notes.kind` enum-style values to allow `'weekly' | 'monthly'` in addition to `'note' | 'daily'`. Store ISO week / month start in `notes.date`.
-- Add helpers in `src/lib/notes.ts`: `getOrCreateWeeklyNote(weekStartISO)`, `getOrCreateMonthlyNote(monthStartISO)`.
+## Technical notes
 
-**UI**
-
-- In `src/pages/Notes.tsx`, add a top "Periodic notes" strip with three pill buttons: **Today**, **This Week**, **This Month** → opens the corresponding daily/weekly/monthly note.
-- AI editing: add an "AI" button in `NoteDetail.tsx` header that opens a popover with actions (Summarize, Expand, Rewrite, Tidy). Calls a new edge function `notes-ai` using Lovable AI Gateway (`google/gemini-3-flash-preview`) — non-streaming `supabase.functions.invoke` returning replacement body, applied to a selected range or whole note.
-
-**Slash command — link to existing entity**
-
-- New `src/components/notes/SlashLinkMenu.tsx`: floating popover anchored at caret. Triggered when user types `/` at start of a word in the `Textarea` (or any position with whitespace before).
-- Tabs/categories: Date, Note, Task, Project, Area, Goal, Habit, Event (appointment).
-- Search input filters across the chosen category (uses store + supabase queries).
-- Selecting an item inserts a markdown link at the caret using existing route conventions:
-  - Note → `[[Title]]` (already supported by `NoteMarkdown`)
-  - Project → `@ProjectName` (already supported)
-  - Task → `[task: title](/today?task=ID)`
-  - Area → `[area: name](/home-areas#zone-Name)`
-  - Goal → `[goal: title](/goals#ID)`
-  - Habit → `[habit: title](/habits#ID)`
-  - Event → `[event: title](/calendar?appt=ID)`
-  - Date → `[Mon, May 14](/today?d=YYYY-MM-DD)`
-- Extend `NoteMarkdown` link handler so these internal `/...` links keep working as `<Link>`s.
-
-## 4. Calendar — click-to-edit + drag-to-move everything
-
-- **Tasks on grid**: extend `TimeGrid` so task chips are draggable (same drag mechanism as the rail) — drop on a different time slot updates `due_date` + a stored start time (reuse `start_time` on task or write to a calendar block); drop on a different day updates `due_date`.
-- **Appointments on grid**: already draggable for time; add cross-day drop in week view (`days.length > 1`) — `onApptDropAt` already accepts `dateISO`.
-- **Click-to-edit**: 
-  - Appointments → `AppointmentEditor` (already wired on Today; ensure same wiring on `/calendar` Week/Month views).
-  - Tasks on grid/agenda → open `TaskEditor` dialog (already exists). Add `onTaskClick` prop to `TimeGrid`/`AgendaView`/`DayPartsView` and Month cells.
-- **Month view**: make each event/task pill clickable → opens its editor. Add HTML5 drag to drop a pill onto another day cell → updates `due_date` (task) or `date` (appointment).
-- **Week view**: same as Month for cross-day drags; intra-day uses `TimeGrid`.
+- No DB migrations needed — `cleaning_tasks` already has the columns we use.
+- Edge function follows the same pattern as `ai-cleaning-checklist` (tool-calling, 429/402 handling, `LOVABLE_API_KEY`, model `google/gemini-3-flash-preview`).
+- Year heatmap reads existing in-memory store; the optional `time_blocks` fetch is a one-shot effect on mount.
+- Haptics calls are already a no-op on unsupported devices via `src/lib/haptics.ts`.
 
 ## Out of scope
 
-- Recurring-task edit semantics (move only this occurrence vs series) — single-occurrence move only.
-- Real-time multi-device sync.
-- Resize-by-drag for time blocks (only move).
-- AI on slash menu (separate feature).
-
-## Files
-
-**New**
-- `src/components/calendar/DayPartsView.tsx`
-- `src/components/notes/SlashLinkMenu.tsx`
-- `supabase/functions/notes-ai/index.ts`
-- migration: extend allowed `notes.kind` values, add helpful index on `(user_id, kind, date)`.
-
-**Edited**
-- `src/components/calendar/CalendarViewToggle.tsx` — add `dayparts`.
-- `src/pages/Today.tsx` — render `DayPartsView` when selected.
-- `src/pages/HomeAreas.tsx` — full rewrite to collapsible dashboard with Reset + inline-edit Zones.
-- `src/components/calendar/TimeGrid.tsx` — task drag, click handlers.
-- `src/components/calendar/AgendaView.tsx` — task click handler.
-- `src/pages/Week.tsx`, `src/pages/Month.tsx`, `src/pages/CalendarPage.tsx` — wire click-to-edit + cross-day drag for tasks & appointments.
-- `src/lib/notes.ts` — weekly/monthly helpers.
-- `src/pages/Notes.tsx` — periodic strip.
-- `src/pages/NoteDetail.tsx` — AI button, mount `SlashLinkMenu` on textarea.
-- `src/components/notes/NoteMarkdown.tsx` — handle new internal link prefixes.
+- Conflict layout (overlapping blocks side-by-side) — left full-width as a deliberate trade-off for legibility per the user's request.
+- Persistent heatmap drilldown / range picker — current year only.
