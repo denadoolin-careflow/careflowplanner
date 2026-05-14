@@ -57,7 +57,10 @@ export async function createNote(patch: Partial<Note> = {}): Promise<Note> {
 }
 
 export async function updateNote(id: string, patch: Partial<Note>): Promise<void> {
-  const row: Record<string, unknown> = {};
+  const row: {
+    title?: string; body?: string; pinned?: boolean; archived?: boolean;
+    project_id?: string | null;
+  } = {};
   if (patch.title !== undefined) row.title = patch.title;
   if (patch.body !== undefined) row.body = patch.body;
   if (patch.pinned !== undefined) row.pinned = patch.pinned;
