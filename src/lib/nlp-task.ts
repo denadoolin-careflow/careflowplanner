@@ -15,7 +15,9 @@ export interface ParsedTask {
   recurrenceInterval?: number;
   recurrenceDays?: number[];
   reminderMinutes?: number;
-  chips: { label: string; kind: "date" | "time" | "priority" | "area" | "tag" | "duration" | "recur" | "remind" }[];
+  projectName?: string;
+  someday?: boolean;
+  chips: { label: string; kind: "date" | "time" | "priority" | "area" | "tag" | "duration" | "recur" | "remind" | "project" | "someday" }[];
 }
 
 const WEEKDAYS: Record<string, number> = {
@@ -76,6 +78,21 @@ export function parseTaskInput(raw: string): ParsedTask {
   text = consume(text, /\s#([a-z0-9_-]+)/gi, (m) => {
     out.tags = [...(out.tags ?? []), m[1]];
     out.chips.push({ kind: "tag", label: `#${m[1]}` });
+  });
+
+  // Project: +ProjectName  (allows hyphen/underscore/space-with-quotes)
+  text = consume(text, /\s\+("([^"]+)"|([\w-]+(?:\s[\w-]+)?))/g, (m) => {
+    const name = (m[2] ?? m[3] ?? "").trim();
+    if (name) {
+      out.projectName = name;
+      out.chips.push({ kind: "project", label: `+${name}` });
+    }
+  });
+
+  // Someday token: ~someday
+  text = consume(text, /\s~someday\b/gi, () => {
+    out.someday = true;
+    out.chips.push({ kind: "someday", label: "someday" });
   });
 
   // Area
