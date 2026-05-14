@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Area, Priority, TaskStatus } from "@/lib/types";
+import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 
 interface Suggestion {
   task_id: string;
@@ -65,7 +66,8 @@ export default function Inbox() {
     setSuggestions(p => { const n = { ...p }; delete n[taskId]; return n; });
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
+    <div className="flex gap-6">
+      <div className="min-w-0 flex-1 mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
       <header className="flex items-center gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary">
           <InboxIcon className="h-5 w-5" />
@@ -123,6 +125,8 @@ export default function Inbox() {
           </div>
         )}
       </div>
+      </div>
+      <UnscheduledTasksRail />
     </div>
   );
 }

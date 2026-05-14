@@ -6,6 +6,7 @@ import { LucideIcon } from "lucide-react";
 import type { Task } from "@/lib/types";
 import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { TaskSortMenu, sortTasks, type SortMode } from "@/components/tasks/TaskSortMenu";
+import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 
 type Variant = "upcoming" | "anytime" | "someday" | "logbook";
 
@@ -52,7 +53,8 @@ export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: 
     : {};
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
+    <div className="flex gap-6">
+      <div className="min-w-0 flex-1 mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
       <header className="flex items-center gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary">
           <Icon className="h-5 w-5" />
@@ -77,6 +79,8 @@ export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: 
           </div>
         )}
       </div>
+      </div>
+      <UnscheduledTasksRail />
     </div>
   );
 }
