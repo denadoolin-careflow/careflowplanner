@@ -52,7 +52,7 @@ export function UniversalSearchBar() {
   const meals = useMemo(() => term ? state.meals.filter(m => match(m.name)).slice(0, 6) : [], [state.meals, term]);
   const appts = useMemo(() => term ? state.appointments.filter(a => match(a.title) || match(a.location ?? "")).slice(0, 6) : [], [state.appointments, term]);
   const ideas = useMemo(() => term ? (state.ideas ?? []).filter((i: any) => match(i.title) || match(i.notes)).slice(0, 6) : [], [state.ideas, term]);
-  const groceries = useMemo(() => term ? (state.groceries ?? []).filter((g: any) => match(g.name)).slice(0, 6) : [], [state.groceries, term]);
+  const groceries = useMemo(() => term ? (state.grocery ?? []).filter((g: any) => match(g.name)).slice(0, 6) : [], [state.grocery, term]);
 
   const go = (to: string) => { setOpen(false); navigate(to); };
 
