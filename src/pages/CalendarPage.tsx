@@ -38,7 +38,12 @@ export default function CalendarPage() {
 
   useEffect(() => { loadGoogle(); }, []);
 
-  const colorOf = (k: "appt"|"bday"|"hol"|"gcal") => k === "appt" ? "bg-primary-soft text-foreground" : k === "bday" ? "bg-accent-soft text-accent-foreground" : k === "hol" ? "bg-secondary-soft text-secondary-foreground" : "bg-muted text-foreground";
+  const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task") =>
+    k === "appt" ? "bg-primary-soft text-foreground"
+    : k === "bday" ? "bg-accent-soft text-accent-foreground"
+    : k === "hol" ? "bg-secondary-soft text-secondary-foreground"
+    : k === "task" ? "bg-warm-soft text-warm-foreground border border-primary/30"
+    : "bg-muted text-foreground";
 
   const eventsOn = (k: string) => [
     ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, label: a.title, time: a.time })),
@@ -152,9 +157,9 @@ export default function CalendarPage() {
   );
 }
 
-type EventItem = { kind: "appt" | "bday" | "hol" | "gcal"; label: string; time?: string; color?: string };
+type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task"; label: string; time?: string; color?: string };
 type EventsFn = (k: string) => EventItem[];
-type ColorFn = (k: "appt"|"bday"|"hol"|"gcal") => string;
+type ColorFn = (k: "appt"|"bday"|"hol"|"gcal"|"task") => string;
 
 function MonthView({ cursor, eventsOn, colorOf }: { cursor: Date; eventsOn: EventsFn; colorOf: ColorFn }) {
   const ms = startOfMonth(cursor);
