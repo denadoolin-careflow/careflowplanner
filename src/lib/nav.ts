@@ -45,7 +45,6 @@ export const NAV_GROUPS = [
     icon: Compass,
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/inbox", label: "Inbox", icon: Inbox },
       { to: "/projects", label: "Projects", icon: FolderOpen },
     ],
   },
@@ -54,7 +53,6 @@ export const NAV_GROUPS = [
     label: "Planning",
     icon: CalendarDays,
     items: [
-      { to: "/today", label: "Today", icon: Sun },
       { to: "/week", label: "Week", icon: CalendarRange },
       { to: "/month", label: "Month", icon: CalendarDays },
       { to: "/year", label: "Year", icon: Calendar },
