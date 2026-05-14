@@ -6,28 +6,29 @@ import { CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
 
-type ApptLike = { label: string; time?: string | null };
+type ApptLike = { label: string; time?: string | null; id?: string; kind?: "appt" | "gcal" | "task" | "bday" | "hol" };
 
 interface Props {
   days: Date[];
   appointmentsOn: (iso: string) => ApptLike[];
   onTaskDropAt?: (taskId: string, date: string, startHour: number) => void;
+  onApptClick?: (apptId: string) => void;
 }
 
-export function AgendaView({ days, appointmentsOn, onTaskDropAt }: Props) {
+export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick }: Props) {
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks } = useTimeBlocks(fromISO, toISO);
 
   const items = useMemo(() => {
-    const rows: { iso: string; time?: string; label: string; color?: string; kind: "block" | "appt" }[] = [];
+    const rows: { iso: string; time?: string; label: string; color?: string; kind: "block" | "appt"; apptId?: string; apptKind?: string }[] = [];
     for (const d of days) {
       const iso = d.toISOString().slice(0, 10);
       for (const b of blocks.filter(x => x.date === iso)) {
         rows.push({ iso, time: b.allDay ? undefined : b.startTime, label: b.title, color: b.color, kind: "block" });
       }
       for (const a of appointmentsOn(iso)) {
-        rows.push({ iso, time: a.time ?? undefined, label: a.label, kind: "appt" });
+        rows.push({ iso, time: a.time ?? undefined, label: a.label, kind: "appt", apptId: a.id, apptKind: a.kind });
       }
     }
     rows.sort((a, b) => (a.iso + (a.time ?? "z")).localeCompare(b.iso + (b.time ?? "z")));
@@ -75,8 +76,15 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt }: Props) {
             <ul className="space-y-1">
               {rows.map((r, i) => {
                 const cls = r.kind === "block" && r.color ? colorClasses(r.color) : null;
+                const clickable = r.apptKind === "appt" && r.apptId && onApptClick;
                 return (
-                <li key={i} className={cn("flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm", cls ? `${cls.bg} ${cls.text}` : "bg-muted/40")}>
+                <li key={i}
+                  onClick={clickable ? () => onApptClick!(r.apptId!) : undefined}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                    cls ? `${cls.bg} ${cls.text}` : "bg-muted/40",
+                    clickable && "cursor-pointer hover:bg-primary/10"
+                  )}>
                   <span className="w-16 shrink-0 font-mono text-[11px] opacity-70">{r.time ? r.time : "All day"}</span>
                   <span className="min-w-0 flex-1 truncate">{r.label}</span>
                 </li>
