@@ -16,7 +16,6 @@ import { QuickScheduleButton } from "@/components/tasks/QuickScheduleButton";
 import { QuickEditPopover } from "@/components/tasks/QuickEditPopover";
 import { haptics } from "@/lib/haptics";
 import { formatRelativeDate } from "@/lib/date-format";
-import { cn as _cn } from "@/lib/utils";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
