@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake, Sparkles } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
