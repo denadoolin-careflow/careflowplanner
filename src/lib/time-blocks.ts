@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type CSSProperties } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface TimeBlock {
@@ -85,7 +85,7 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
   return { blocks, loading, add, update, remove, refresh };
 }
 
-export function colorClasses(c: string): { bg: string; ring: string; text: string; style?: React.CSSProperties } {
+export function colorClasses(c: string): { bg: string; ring: string; text: string; style?: CSSProperties } {
   if (typeof c === "string" && c.startsWith("#")) {
     return {
       bg: "",
