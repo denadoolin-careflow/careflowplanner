@@ -125,8 +125,10 @@ interface Ctx {
   updateAppointment: (id: string, patch: Partial<Appointment>) => Promise<void>;
 
   addBirthday: (b: Partial<Birthday> & { name: string; date: string }) => Promise<void>;
+  updateBirthday: (id: string, patch: Partial<Birthday>) => Promise<void>;
   deleteBirthday: (id: string) => Promise<void>;
   addHoliday: (h: Partial<Holiday> & { name: string; date: string }) => Promise<void>;
+  updateHoliday: (id: string, patch: Partial<Holiday>) => Promise<void>;
   deleteHoliday: (id: string) => Promise<void>;
 
   addRecipient: (r: Partial<CareRecipient> & { name: string; kind: CareRecipient["kind"] }) => Promise<void>;
@@ -468,6 +470,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setState(s => ({ ...s, birthdays: s.birthdays.filter(b => b.id !== id) }));
       await supabase.from("birthdays").delete().eq("id", id);
     },
+    updateBirthday: async (id, patch) => {
+      const dbPatch: any = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.date !== undefined) dbPatch.date = patch.date;
+      if (patch.relation !== undefined) dbPatch.relation = patch.relation ?? null;
+      if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
+      setState(s => ({ ...s, birthdays: s.birthdays.map(b => b.id === id ? { ...b, ...patch } : b) }));
+      await supabase.from("birthdays").update(dbPatch).eq("id", id);
+    },
     addHoliday: async (h) => {
       if (!uid) return;
       const { data } = await supabase.from("holidays").insert({ user_id: uid, ...h }).select().single();
@@ -476,6 +487,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteHoliday: async (id) => {
       setState(s => ({ ...s, holidays: s.holidays.filter(h => h.id !== id) }));
       await supabase.from("holidays").delete().eq("id", id);
+    },
+    updateHoliday: async (id, patch) => {
+      const dbPatch: any = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.date !== undefined) dbPatch.date = patch.date;
+      if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
+      setState(s => ({ ...s, holidays: s.holidays.map(h => h.id === id ? { ...h, ...patch } : h) }));
+      await supabase.from("holidays").update(dbPatch).eq("id", id);
     },
 
     addRecipient: async (r) => {
