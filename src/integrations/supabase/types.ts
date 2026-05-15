@@ -1093,8 +1093,15 @@ export type Database = {
           body: string
           created_at: string
           date: string
+          energy: string | null
+          gratitude_items: Json
           id: string
+          linked_ids: Json
           mood: string | null
+          pinned: boolean
+          prompts: Json
+          tags: string[]
+          template: string | null
           title: string | null
           type: string
           updated_at: string
@@ -1104,8 +1111,15 @@ export type Database = {
           body: string
           created_at?: string
           date?: string
+          energy?: string | null
+          gratitude_items?: Json
           id?: string
+          linked_ids?: Json
           mood?: string | null
+          pinned?: boolean
+          prompts?: Json
+          tags?: string[]
+          template?: string | null
           title?: string | null
           type?: string
           updated_at?: string
@@ -1115,8 +1129,15 @@ export type Database = {
           body?: string
           created_at?: string
           date?: string
+          energy?: string | null
+          gratitude_items?: Json
           id?: string
+          linked_ids?: Json
           mood?: string | null
+          pinned?: boolean
+          prompts?: Json
+          tags?: string[]
+          template?: string | null
           title?: string | null
           type?: string
           updated_at?: string
