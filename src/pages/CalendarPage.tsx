@@ -26,7 +26,7 @@ import { BirthdayHolidayEditor } from "@/components/calendar/BirthdayHolidayEdit
 type View = "day" | "week" | "month" | "year";
 
 export default function CalendarPage() {
-  const { state, addTask, deleteAppointment, updateTask, updateAppointment } = useStore();
+  const { state, addTask, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday } = useStore();
   const [taskTitle, setTaskTitle] = useState("");
   const [toInbox, setToInbox] = useState(true);
   const [view, setView] = useState<View>("month");
@@ -291,7 +291,11 @@ export default function CalendarPage() {
                 await updateTask(item.id, { dueDate: dateISO, inbox: false });
                 toast(`Rescheduled task to ${format(parseISO(dateISO), "MMM d")}`);
               } else if (item.kind === "bday" && item.id) {
-                await useStore.getState ? null : null;
+                await updateBirthday(item.id, { date: dateISO });
+                toast(`Moved “${item.label}” to ${format(parseISO(dateISO), "MMM d")}`);
+              } else if (item.kind === "hol" && item.id) {
+                await updateHoliday(item.id, { date: dateISO });
+                toast(`Moved “${item.label}” to ${format(parseISO(dateISO), "MMM d")}`);
               }
             }}
           />
