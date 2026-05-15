@@ -421,6 +421,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       const height = Math.max(24, (endH - startH) * PX_PER_HOUR - 2);
                       const c = colorClasses(b.color);
                       const isConflict = conflicts.has(`b:${b.id}`);
+                      const linkedTask = b.taskId ? state.tasks.find(t => t.id === b.taskId) : undefined;
+                      const taskDone = !!linkedTask?.done;
                       return (
                         <div
                           key={b.id}
@@ -445,7 +447,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             isDragging
                               ? "z-30 scale-[1.02] shadow-xl ring-opacity-100 transition-none"
                               : "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md",
-                            isConflict && !isDragging && "ring-2 ring-destructive/80 ring-opacity-100 shadow-[0_0_0_3px_hsl(var(--destructive)/0.18)]"
+                            isConflict && !isDragging && "ring-2 ring-destructive/80 ring-opacity-100 shadow-[0_0_0_3px_hsl(var(--destructive)/0.18)]",
+                            taskDone && "opacity-60"
                           )}
                           style={{ top, height, cursor: isDragging ? "grabbing" : "pointer" }}
                           role="button"
@@ -479,9 +482,24 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                           >
                             <GripHorizontal className="h-4 w-4" />
                           </div>
-                          <div className="pointer-events-none flex items-center gap-1 truncate pr-8 font-medium leading-tight">
+                          <div className={cn("flex items-center gap-1 truncate pr-8 font-medium leading-tight", !linkedTask && "pointer-events-none")}>
                             {isConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
-                            <span className="truncate">{b.title}</span>
+                            {linkedTask && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); haptics.tap(); void toggleTask(linkedTask.id); }}
+                                aria-label={taskDone ? "Mark task not done" : "Mark task done"}
+                                className={cn(
+                                  "group/cb grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 transition-colors",
+                                  taskDone
+                                    ? "border-current bg-current text-background"
+                                    : "border-current/60 bg-background/40 hover:bg-current hover:text-background"
+                                )}
+                              >
+                                <Check className={cn("h-2.5 w-2.5 transition-opacity", taskDone ? "opacity-100" : "opacity-0 group-hover/cb:opacity-100")} />
+                              </button>
+                            )}
+                            <span className={cn("truncate", taskDone && "line-through")}>{b.title}</span>
+                          </div>
                           </div>
                           <div className="pointer-events-none pr-8 text-[10px] opacity-70">
                             {fmtTime(hoursToHM(startH))} – {fmtTime(hoursToHM(endH))}
