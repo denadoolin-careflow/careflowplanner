@@ -142,38 +142,7 @@ export default function CalendarPage() {
         <p className="mt-1 text-sm text-muted-foreground">Appointments, birthdays, holidays — color-coded and gentle.</p>
       </div>
 
-      <SectionCard title="Quick add task" accent="calm">
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const title = taskTitle.trim();
-            if (!title) return;
-            await addTask({
-              title,
-              inbox: toInbox,
-              dueDate: toInbox ? undefined : cursor.toISOString().slice(0, 10),
-            });
-            setTaskTitle("");
-            toast(toInbox ? `Added “${title}” to Inbox` : `Scheduled “${title}” for ${format(cursor, "MMM d")}`);
-          }}
-          className="flex flex-col gap-2 sm:flex-row sm:items-center"
-        >
-          <Input
-            placeholder="What needs to get done?"
-            value={taskTitle}
-            onChange={(e) => setTaskTitle(e.target.value)}
-            className="flex-1"
-          />
-          <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5">
-            {toInbox ? <InboxIcon className="h-3.5 w-3.5 text-muted-foreground" /> : <CalendarPlus className="h-3.5 w-3.5 text-muted-foreground" />}
-            <Label htmlFor="cal-inbox-toggle" className="text-xs text-muted-foreground">
-              {toInbox ? "To Inbox" : `Schedule ${format(cursor, "MMM d")}`}
-            </Label>
-            <Switch id="cal-inbox-toggle" checked={toInbox} onCheckedChange={setToInbox} />
-          </div>
-          <Button type="submit" disabled={!taskTitle.trim()}>Add</Button>
-        </form>
-      </SectionCard>
+      <InboxCapture defaultDate={cursor} />
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
         <span>{gEvents.length > 0 ? `Showing ${gEvents.length} Google event${gEvents.length === 1 ? "" : "s"}.` : "Connect Google Calendar in Settings to see your events here."}</span>
