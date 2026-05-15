@@ -268,6 +268,7 @@ export function BlockEditor({
   const navigate = useNavigate();
   const refsRef = useRef<RefItem[]>([]);
   refsRef.current = useMemo(() => buildReferences(state), [state]);
+  const lastSyncedRef = useRef<string>(body);
 
   const slashExtension = useMemo(() => Extension.create({
     name: "slashCommand",
@@ -354,12 +355,13 @@ export function BlockEditor({
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      onChange(htmlToMarkdown(html), html);
+      const md = htmlToMarkdown(html);
+      lastSyncedRef.current = md;
+      onChange(md, html);
     },
   }, []);
 
   // Sync external body changes (e.g. AI replace) without losing focus
-  const lastSyncedRef = useRef<string>(body);
   useEffect(() => {
     if (!editor) return;
     if (body === lastSyncedRef.current) return;
