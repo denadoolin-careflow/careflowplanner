@@ -58,6 +58,7 @@ export type ApptLike = {
   time?: string | null;
   id?: string;
   kind?: "appt" | "gcal" | "task" | "bday" | "hol";
+  done?: boolean;
 };
 
 interface Props {
