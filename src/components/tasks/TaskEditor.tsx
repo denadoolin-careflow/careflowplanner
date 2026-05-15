@@ -16,7 +16,13 @@ import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 
-type Props = { open: boolean; onOpenChange: (v: boolean) => void; task: Task | null };
+type Props = {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  task: Task | null;
+  onUnschedule?: () => void | Promise<void>;
+  unscheduleLabel?: string;
+};
 
 function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof Task>(k: K, v: Task[K]) => void }) {
   const { state } = useStore();
@@ -47,7 +53,7 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
   );
 }
 
-export function TaskEditor({ open, onOpenChange, task }: Props) {
+export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleLabel = "Unschedule" }: Props) {
   const { updateTask, deleteTask } = useStore();
   const [draft, setDraft] = useState<Task | null>(task);
 
@@ -185,6 +191,14 @@ export function TaskEditor({ open, onOpenChange, task }: Props) {
             Delete
           </Button>
           <div className="flex gap-2">
+            {onUnschedule && (
+              <Button
+                variant="outline"
+                onClick={async () => { await onUnschedule(); onOpenChange(false); }}
+              >
+                {unscheduleLabel}
+              </Button>
+            )}
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button onClick={save}>Save</Button>
           </div>
