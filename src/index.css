@@ -560,3 +560,17 @@
 .block-editor .ProseMirror mark { background: hsl(var(--primary) / 0.18); border-radius: 3px; padding: 0 2px; }
 .block-editor .ProseMirror code { background: hsl(var(--muted)); padding: 1px 4px; border-radius: 4px; font-size: 0.85em; }
 .block-editor .ProseMirror blockquote { border-left: 3px solid hsl(var(--primary) / 0.6); padding-left: 0.75rem; color: hsl(var(--muted-foreground)); }
+.block-editor .ProseMirror a.ref-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+.block-editor .ProseMirror a.ref-chip:hover { background: hsl(var(--primary) / 0.2); }
