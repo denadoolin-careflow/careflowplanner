@@ -7,12 +7,9 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2, RefreshCw, Inbox as InboxIcon, CalendarPlus, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
@@ -27,9 +24,7 @@ import { InboxCapture } from "@/components/calendar/InboxCapture";
 type View = "day" | "week" | "month" | "year";
 
 export default function CalendarPage() {
-  const { state, addTask, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday } = useStore();
-  const [taskTitle, setTaskTitle] = useState("");
-  const [toInbox, setToInbox] = useState(true);
+  const { state, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday } = useStore();
   const [view, setView] = useState<View>("month");
   const [layout, setLayout] = useState<"grid" | "schedule">("grid");
   const [cursor, setCursor] = useState<Date>(new Date());
