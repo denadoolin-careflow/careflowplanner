@@ -1,5 +1,6 @@
 import type { Task, Priority, Project } from "./types";
 import { todayISO } from "./store";
+import { formatRelativeDate } from "./date-format";
 
 export type GroupMode = "none" | "project" | "area" | "priority" | "date" | "energy" | "status";
 export type SortMode = "manual" | "date" | "priority" | "title" | "created" | "energy" | "estMinutes";
@@ -82,7 +83,9 @@ export function groupTasks(list: Task[], mode: GroupMode, projects: Project[] = 
     } else if (mode === "priority") {
       push(t.priority, t.priority[0].toUpperCase() + t.priority.slice(1), t);
     } else if (mode === "date") {
-      push(t.dueDate ?? "_none", t.dueDate ?? "No date", t);
+      const key = t.dueDate ?? "_none";
+      const label = t.dueDate ? formatRelativeDate(t.dueDate) : "No date";
+      push(key, label, t);
     } else if (mode === "energy") {
       push(t.energy ?? "_none", t.energy ?? "No energy", t);
     } else if (mode === "status") {
@@ -96,6 +99,13 @@ export function groupTasks(list: Task[], mode: GroupMode, projects: Project[] = 
     : null;
   const entries = Array.from(map.entries());
   if (order) entries.sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
+  else if (mode === "date") {
+    entries.sort((a, b) => {
+      if (a[0] === "_none") return 1;
+      if (b[0] === "_none") return -1;
+      return a[0].localeCompare(b[0]);
+    });
+  }
   else entries.sort((a, b) => a[1].label.localeCompare(b[1].label));
   return entries.map(([key, v]) => ({ key, label: v.label, tasks: v.tasks }));
 }
