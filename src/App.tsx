@@ -26,6 +26,7 @@ import PomodoroPicker from "./pages/PomodoroPicker";
 import Health from "./pages/Health";
 import Wealth from "./pages/Wealth";
 import HomeAreas from "./pages/HomeAreas";
+import AreaPage from "./pages/AreaPage";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Inbox from "./pages/Inbox";
@@ -72,6 +73,7 @@ const App = () => (
                 <Route path="/review" element={<Review />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:id" element={<ProjectDetail />} />
+                <Route path="/areas/:name" element={<AreaPage />} />
                 <Route path="/today" element={<Today />} />
                 <Route path="/week" element={<Week />} />
                 <Route path="/month" element={<Month />} />
