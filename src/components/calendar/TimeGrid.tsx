@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { format, isSameDay } from "date-fns";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, AlertTriangle, GripHorizontal, Check, Clock, Plus, CheckSquare, Utensils, Sparkles, MapPin, FolderKanban } from "lucide-react";
+import { Trash2, AlertTriangle, GripHorizontal, Check, Clock, Plus, CheckSquare, Utensils, Sparkles, MapPin, FolderKanban, Pencil, X, Move } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -88,6 +88,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const [editingTaskBlockId, setEditingTaskBlockId] = useState<string | null>(null);
   const editingTask = editingTaskId ? state.tasks.find(t => t.id === editingTaskId) ?? null : null;
   const [draft, setDraft] = useState<{ date: string; start: string; end: string } | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 15000); return () => clearInterval(id); }, []);
 
@@ -118,6 +119,29 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       setEditing(block);
     }
   }, []);
+
+  const selectBlock = useCallback((block: TimeBlock) => {
+    setSelectedId(prev => (prev === block.id ? null : block.id));
+    haptics.snap();
+  }, []);
+
+  // Dismiss selection on outside click / escape
+  useEffect(() => {
+    if (!selectedId) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSelectedId(null); };
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
+      if (t.closest("[data-block-selection]") || t.closest("[data-block-id='" + selectedId + "']")) return;
+      setSelectedId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onDown);
+    };
+  }, [selectedId]);
 
   const startSlot = (date: Date, ev: React.MouseEvent<HTMLDivElement>) => {
     if (Date.now() < suppressClickUntil.current) return;
@@ -210,12 +234,11 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       await update(d.blockId, patch);
       haptics.pickup();
     } else if (block) {
-      // Treat as a tap — open editor
-      haptics.snap();
-      openBlockEditor(block);
+      // Treat as a tap — show selection + action popover instead of opening editor immediately.
+      selectBlock(block);
     }
     setDrag(null);
-  }, [onPointerMove, blocks, update, openBlockEditor]);
+  }, [onPointerMove, blocks, update, selectBlock]);
 
   const beginDrag = (block: TimeBlock, mode: "move" | "resize" | "resize-top", e: React.PointerEvent) => {
     e.stopPropagation();
@@ -491,9 +514,13 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       const isConflict = conflicts.has(`b:${b.id}`);
                       const linkedTask = b.taskId ? state.tasks.find(t => t.id === b.taskId) : undefined;
                       const taskDone = !!linkedTask?.done;
+                      const isSelected = selectedId === b.id && !isDragging;
+                      // Position popover above the block, or below if there isn't room.
+                      const popoverAbove = top > 76;
                       return (
+                        <Fragment key={b.id}>
                         <div
-                          key={b.id}
+                          data-block-id={b.id}
                           onPointerDown={(e) => {
                             // Touch/pen: require long-press (450ms) to start dragging — a tap opens the editor.
                             // Mouse: start drag immediately; tap-vs-drag is decided by the movement threshold in endDrag().
@@ -531,8 +558,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             if (longPressTimerRef.current != null) {
                               cancelLongPress();
                               if (Date.now() >= suppressClickUntil.current) {
-                                haptics.snap();
-                                openBlockEditor(b);
+                                selectBlock(b);
                               }
                             }
                           }}
@@ -555,6 +581,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                               ? "z-30 scale-[1.02] shadow-xl ring-opacity-100 transition-none"
                               : "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md",
                             isConflict && !isDragging && "ring-2 ring-destructive/80 ring-opacity-100 shadow-[0_0_0_3px_hsl(var(--destructive)/0.18)]",
+                            isSelected && "z-30 scale-[1.03] ring-2 ring-primary/80 ring-opacity-100 shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_18px_40px_-12px_hsl(var(--primary)/0.5)] animate-scale-in",
                             taskDone && "opacity-60"
                           )}
                           style={{ top, height, cursor: isDragging ? "grabbing" : "grab", touchAction: "none" }}
@@ -625,6 +652,66 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             style={{ touchAction: "none" }}
                           />
                         </div>
+                        {isSelected && (
+                          <div
+                            data-block-selection
+                            className={cn(
+                              "absolute left-0.5 right-0.5 z-40 animate-fade-in",
+                            )}
+                            style={popoverAbove
+                              ? { top: Math.max(0, top - 64) }
+                              : { top: top + height + 6 }}
+                          >
+                            <div className="mx-auto flex w-max max-w-full items-center gap-1 rounded-full border border-border/60 bg-popover/95 px-1.5 py-1 shadow-xl backdrop-blur-md ring-1 ring-primary/20">
+                              <button
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  haptics.tap();
+                                  setSelectedId(null);
+                                  if (linkedTask) {
+                                    setEditingTaskId(linkedTask.id);
+                                    setEditingTaskBlockId(b.id);
+                                  } else {
+                                    setEditing(b);
+                                  }
+                                }}
+                                className="flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground shadow-sm transition-transform hover:scale-105 active:scale-95"
+                              >
+                                <Pencil className="h-3 w-3" />
+                                Edit {linkedTask ? "task" : "block"}
+                              </button>
+                              {linkedTask && (
+                                <button
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    haptics.tap();
+                                    setSelectedId(null);
+                                    setEditing(b);
+                                  }}
+                                  className="flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-foreground transition-transform hover:scale-105 active:scale-95"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                  Block
+                                </button>
+                              )}
+                              <span className="flex items-center gap-1 rounded-full px-2 py-1 text-[10px] text-muted-foreground">
+                                <Move className="h-3 w-3" />
+                                Drag to move
+                              </span>
+                              <button
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => { e.stopPropagation(); haptics.tap(); setSelectedId(null); }}
+                                aria-label="Close"
+                                className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        </Fragment>
                       );
                     })}
 
