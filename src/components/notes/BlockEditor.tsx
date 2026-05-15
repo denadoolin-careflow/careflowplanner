@@ -3,6 +3,19 @@ import { EditorContent, useEditor, ReactRenderer, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
+const RefLink = Link.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      class: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).getAttribute("class"),
+        renderHTML: (attrs) => (attrs.class ? { class: attrs.class } : {}),
+      },
+    };
+  },
+});
+
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Typography from "@tiptap/extension-typography";
@@ -77,28 +90,28 @@ type RefItem = { id: string; label: string; type: string; href?: string; icon: R
 function buildReferences(state: ReturnType<typeof useStore>["state"]): RefItem[] {
   const items: RefItem[] = [];
   state.tasks.slice(0, 200).forEach(t => items.push({
-    id: t.id, label: t.title, type: "Task", icon: CheckCircle2, insertText: `[[Task: ${t.title}]]`,
+    id: t.id, label: t.title, type: "Task", icon: CheckCircle2, href: "/anytime", insertText: t.title,
   }));
   state.projects.forEach(p => items.push({
-    id: p.id, label: p.name, type: "Project", href: `/projects/${p.id}`, icon: Folder, insertText: `@${p.name}`,
+    id: p.id, label: p.name, type: "Project", href: `/projects/${p.id}`, icon: Folder, insertText: p.name,
   }));
   state.goals.forEach(g => items.push({
-    id: g.id, label: g.title, type: "Goal", icon: Target, insertText: `[[Goal: ${g.title}]]`,
+    id: g.id, label: g.title, type: "Goal", href: "/goals", icon: Target, insertText: g.title,
   }));
   state.habits.forEach(h => items.push({
-    id: h.id, label: h.title, type: "Habit", icon: Sparkles, insertText: `[[Habit: ${h.title}]]`,
+    id: h.id, label: h.title, type: "Habit", href: "/habits", icon: Sparkles, insertText: h.title,
   }));
   state.recipients.forEach(p => items.push({
-    id: p.id, label: p.name, type: "Person", icon: Users, insertText: `[[${p.name}]]`,
+    id: p.id, label: p.name, type: "Person", href: "/caregiving", icon: Users, insertText: p.name,
   }));
   state.appointments.slice(0, 50).forEach(a => items.push({
-    id: a.id, label: a.title, type: "Appointment", icon: CalendarDays, insertText: `[[Appt: ${a.title}]]`,
+    id: a.id, label: a.title, type: "Appointment", href: "/calendar", icon: CalendarDays, insertText: a.title,
   }));
   state.meals.slice(0, 80).forEach(m => items.push({
-    id: m.id, label: m.name, type: "Meal", icon: Utensils, insertText: `[[Meal: ${m.name}]]`,
+    id: m.id, label: m.name, type: "Meal", href: "/meals", icon: Utensils, insertText: m.name,
   }));
   state.journal.slice(0, 80).forEach(j => items.push({
-    id: j.id, label: j.title || j.body.slice(0, 40), type: "Journal", icon: BookOpen, insertText: `[[Journal: ${j.title || j.date}]]`,
+    id: j.id, label: j.title || j.body.slice(0, 40), type: "Journal", href: "/journal", icon: BookOpen, insertText: j.title || j.date,
   }));
   return items;
 }
@@ -311,14 +324,15 @@ export function BlockEditor({
           return refsRef.current.filter(r => r.label.toLowerCase().includes(q)).slice(0, 10);
         },
         onSelect: (item, range, editor) => {
-          if (item.href) {
-            editor.chain().focus().deleteRange(range)
-              .insertContent({ type: "text", text: `@${item.label}`, marks: [{ type: "link", attrs: { href: item.href } }] })
-              .insertContent(" ")
-              .run();
-          } else {
-            editor.chain().focus().deleteRange(range).insertContent(`${item.insertText} `).run();
-          }
+          const href = item.href || "#";
+          editor.chain().focus().deleteRange(range)
+            .insertContent({
+              type: "text",
+              text: `@${item.label}`,
+              marks: [{ type: "link", attrs: { href, class: "ref-chip" } }],
+            })
+            .insertContent(" ")
+            .run();
         },
         render: (item, active) => (
           <span className="flex items-center gap-2">
@@ -339,7 +353,7 @@ export function BlockEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       Placeholder.configure({ placeholder, emptyEditorClass: "is-editor-empty" }),
-      Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { class: "text-primary underline-offset-2 hover:underline" } }),
+      RefLink.configure({ openOnClick: false, autolink: true, HTMLAttributes: { class: "text-primary underline-offset-2 hover:underline" } }),
       TaskList,
       TaskItem.configure({ nested: true }),
       Typography,
