@@ -1,15 +1,42 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { getAreaIcon } from "@/components/areas/AreaIconColorPicker";
 import { FolderOpen, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Task } from "@/lib/types";
+
+type SortKey = "manual" | "due" | "created" | "priority" | "title";
+const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
+function sortTasks(tasks: Task[], key: SortKey): Task[] {
+  const arr = [...tasks];
+  switch (key) {
+    case "due":
+      return arr.sort((a, b) => {
+        const av = a.dueDate ?? "9999-12-31";
+        const bv = b.dueDate ?? "9999-12-31";
+        return av.localeCompare(bv);
+      });
+    case "created":
+      return arr.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    case "priority":
+      return arr.sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9));
+    case "title":
+      return arr.sort((a, b) => a.title.localeCompare(b.title));
+    case "manual":
+    default:
+      return arr.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  }
+}
 
 export default function AreaPage() {
   const { name = "" } = useParams();
   const areaName = decodeURIComponent(name);
   const { state } = useStore();
+  const [sortKey, setSortKey] = useState<SortKey>("due");
 
   const areaRec = (state.areas ?? []).find(a => a.name === areaName);
   const AreaIcon = getAreaIcon(areaRec?.icon);
@@ -26,9 +53,9 @@ export default function AreaPage() {
 
   const grouped = projects.map(p => ({
     project: p,
-    items: tasks.filter(t => t.projectId === p.id),
+    items: sortTasks(tasks.filter(t => t.projectId === p.id), sortKey),
   }));
-  const noProject = tasks.filter(t => !t.projectId);
+  const noProject = sortTasks(tasks.filter(t => !t.projectId), sortKey);
 
   const total = tasks.length;
 
@@ -51,6 +78,20 @@ export default function AreaPage() {
           </div>
         </div>
       </header>
+
+      <div className="flex items-center justify-end gap-2 px-1">
+        <span className="text-xs text-muted-foreground">Sort tasks by</span>
+        <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+          <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="due">Due date</SelectItem>
+            <SelectItem value="priority">Priority</SelectItem>
+            <SelectItem value="created">Created (newest)</SelectItem>
+            <SelectItem value="title">Title (A–Z)</SelectItem>
+            <SelectItem value="manual">Manual order</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {total === 0 && projects.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-10 text-center text-sm text-muted-foreground">
