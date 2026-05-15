@@ -209,7 +209,9 @@ export default function CalendarPage() {
         }
         accent="warm"
       >
-        {layout === "schedule" ? (
+        {layout === "plan" && view === "month" ? (
+          <MonthPlanningDashboard cursor={cursor} onJumpToDate={(d) => { setCursor(d); setLayout("grid"); setView("day"); }} />
+        ) : layout === "schedule" ? (
           <>
           <div className="mb-3 flex flex-wrap gap-1.5">
             {([
