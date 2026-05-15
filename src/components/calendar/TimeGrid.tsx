@@ -518,9 +518,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       // Position popover above the block, or below if there isn't room.
                       const popoverAbove = top > 76;
                       return (
-                        <>
+                        <Fragment key={b.id}>
                         <div
-                          key={b.id}
                           data-block-id={b.id}
                           onPointerDown={(e) => {
                             // Touch/pen: require long-press (450ms) to start dragging — a tap opens the editor.
