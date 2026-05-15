@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2, RefreshCw, Inbox as InboxIcon, CalendarPlus, List, LayoutGrid } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, RefreshCw, Inbox as InboxIcon, CalendarPlus, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { formatRelativeDate } from "@/lib/date-format";
@@ -31,6 +31,14 @@ export default function CalendarPage() {
   const [view, setView] = useState<View>("month");
   const [layout, setLayout] = useState<"grid" | "schedule">("grid");
   const [cursor, setCursor] = useState<Date>(new Date());
+  const ALL_KINDS = ["task","appt","care","meal","bday","hol","gcal"] as const;
+  type Kind = typeof ALL_KINDS[number];
+  const [kindFilter, setKindFilter] = useState<Set<Kind>>(() => new Set(ALL_KINDS));
+  const toggleKind = (k: Kind) => setKindFilter(prev => {
+    const next = new Set(prev);
+    next.has(k) ? next.delete(k) : next.add(k);
+    return next;
+  });
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   const [gLoading, setGLoading] = useState(false);
   const [editApptId, setEditApptId] = useState<string | null>(null);
@@ -51,11 +59,13 @@ export default function CalendarPage() {
 
   useEffect(() => { loadGoogle(); }, []);
 
-  const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task") =>
+  const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task"|"care"|"meal") =>
     k === "appt" ? "bg-primary-soft text-foreground"
     : k === "bday" ? "bg-accent-soft text-accent-foreground"
     : k === "hol" ? "bg-secondary-soft text-secondary-foreground"
     : k === "task" ? "bg-warm-soft text-warm-foreground border border-primary/30"
+    : k === "care" ? "bg-rose-100 text-rose-900 border border-rose-300/50 dark:bg-rose-900/30 dark:text-rose-100"
+    : k === "meal" ? "bg-amber-100 text-amber-900 border border-amber-300/50 dark:bg-amber-900/30 dark:text-amber-100"
     : "bg-muted text-foreground";
 
   const eventsOn = (k: string) => [
@@ -64,9 +74,15 @@ export default function CalendarPage() {
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, label: `✨ ${h.name}`, time: undefined })),
     ...gEvents.filter(g => g.date === k).map(g => ({ kind: "gcal" as const, label: g.title, time: g.time ?? undefined, color: g.color })),
     ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
-      kind: "task" as const,
+      kind: (t.area === "Caregiving" ? "care" : "task") as "care" | "task",
       id: t.id,
       label: `${t.done ? "✓" : "○"} ${t.title}`,
+      time: undefined,
+    })),
+    ...(state.meals ?? []).filter(m => m.date === k).map(m => ({
+      kind: "meal" as const,
+      id: m.id,
+      label: `${m.slot}: ${m.name}`,
       time: undefined,
     })),
   ];
@@ -204,25 +220,65 @@ export default function CalendarPage() {
         accent="warm"
       >
         {layout === "schedule" ? (
+          <>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {([
+              { k: "task" as Kind, label: "Tasks", Icon: CheckSquare },
+              { k: "appt" as Kind, label: "Appointments", Icon: CalendarClock },
+              { k: "care" as Kind, label: "Caregiving", Icon: HeartPulse },
+              { k: "meal" as Kind, label: "Meals", Icon: UtensilsCrossed },
+              { k: "bday" as Kind, label: "Birthdays", Icon: Cake },
+              { k: "hol" as Kind, label: "Holidays", Icon: Cake },
+              { k: "gcal" as Kind, label: "Google", Icon: CalendarClock },
+            ] as const).map(({ k, label, Icon }) => {
+              const on = kindFilter.has(k);
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => toggleKind(k)}
+                  aria-pressed={on}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
+                    on
+                      ? "border-primary/40 bg-primary-soft text-foreground shadow-sm"
+                      : "border-border/50 bg-muted/40 text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-3 w-3" /> {label}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setKindFilter(new Set(ALL_KINDS))}
+              className="ml-auto text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+            >
+              All
+            </button>
+          </div>
           <ScheduleView
             view={view}
             cursor={cursor}
             eventsOn={eventsOn}
             colorOf={colorOf}
+            kindFilter={kindFilter}
             onItemClick={(item) => {
               if (item.kind === "appt" && item.id) setEditApptId(item.id);
               else if (item.kind === "task" && item.id) setEditTaskId(item.id);
+              else if (item.kind === "care" && item.id) setEditTaskId(item.id);
             }}
             onItemReschedule={async (item, dateISO) => {
               if (item.kind === "appt" && item.id) {
                 await updateAppointment(item.id, { date: dateISO });
                 toast(`Moved “${item.label}” to ${format(parseISO(dateISO), "MMM d")}`);
-              } else if (item.kind === "task" && item.id) {
+              } else if ((item.kind === "task" || item.kind === "care") && item.id) {
                 await updateTask(item.id, { dueDate: dateISO, inbox: false });
                 toast(`Rescheduled task to ${format(parseISO(dateISO), "MMM d")}`);
               }
             }}
           />
+          </>
         ) : (
           <>
             {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} onTaskDropDay={handleDayDrop} />}
@@ -261,9 +317,9 @@ export default function CalendarPage() {
   );
 }
 
-type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task"; id?: string; label: string; time?: string; color?: string };
+type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task" | "care" | "meal"; id?: string; label: string; time?: string; color?: string };
 type EventsFn = (k: string) => EventItem[];
-type ColorFn = (k: "appt"|"bday"|"hol"|"gcal"|"task") => string;
+type ColorFn = (k: EventItem["kind"]) => string;
 
 function MonthView({ cursor, eventsOn, colorOf, onTaskDropDay }: { cursor: Date; eventsOn: EventsFn; colorOf: ColorFn; onTaskDropDay?: (taskId: string, dateISO: string) => void }) {
   const ms = startOfMonth(cursor);
@@ -415,7 +471,7 @@ function YearView({ cursor, eventsOn, setCursor, setView }: { cursor: Date; even
 
 const SCHED_DRAG_MIME = "application/x-careflow-sched";
 
-function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick, onItemReschedule }: { view: View; cursor: Date; eventsOn: EventsFn; colorOf: ColorFn; onItemClick?: (item: EventItem) => void; onItemReschedule?: (item: EventItem, dateISO: string) => void | Promise<void> }) {
+function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick, onItemReschedule, kindFilter }: { view: View; cursor: Date; eventsOn: EventsFn; colorOf: ColorFn; onItemClick?: (item: EventItem) => void; onItemReschedule?: (item: EventItem, dateISO: string) => void | Promise<void>; kindFilter?: Set<EventItem["kind"]> }) {
   const [dragging, setDragging] = useState<EventItem | null>(null);
   const [hoverISO, setHoverISO] = useState<string | null>(null);
   let start: Date, end: Date;
@@ -425,8 +481,9 @@ function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick, onItemResc
   else { start = startOfYear(cursor); end = endOfYear(cursor); }
 
   const days = eachDayOfInterval({ start, end });
+  const filterFn = (it: EventItem) => !kindFilter || kindFilter.has(it.kind);
   const sections = days
-    .map(d => ({ date: d, iso: d.toISOString().slice(0, 10), items: eventsOn(d.toISOString().slice(0, 10)).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")) }))
+    .map(d => ({ date: d, iso: d.toISOString().slice(0, 10), items: eventsOn(d.toISOString().slice(0, 10)).filter(filterFn).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")) }))
     .filter(s => s.items.length > 0);
 
   // For drop targets, use ALL days in the range so users can drop on empty days too.
