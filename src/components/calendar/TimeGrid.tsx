@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Trash2, AlertTriangle, GripHorizontal } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -40,7 +40,7 @@ function fmtTime(hm: string) {
 
 type DragState = {
   blockId: string;
-  mode: "move" | "resize";
+  mode: "move" | "resize" | "resize-top";
   pointerId: number;
   startClientY: number;
   startClientX: number;
@@ -157,8 +157,10 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       nextEnd = nextStart + dur;
       const overDate = findDateAt(e.clientX);
       if (overDate) nextDate = overDate;
-    } else {
+    } else if (d.mode === "resize") {
       nextEnd = Math.min(HOUR_END, Math.max(d.origStart + step, d.origEnd + dh));
+    } else {
+      nextStart = Math.max(HOUR_START, Math.min(d.origEnd - step, d.origStart + dh));
     }
     const moved = d.moved || Math.abs(dy) >= DRAG_THRESHOLD || Math.abs(e.clientX - d.startClientX) >= DRAG_THRESHOLD;
     if (moved && !d.moved) haptics.pickup();
@@ -190,9 +192,10 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     setDrag(null);
   }, [onPointerMove, blocks, update]);
 
-  const beginDrag = (block: TimeBlock, mode: "move" | "resize", e: React.PointerEvent) => {
+  const beginDrag = (block: TimeBlock, mode: "move" | "resize" | "resize-top", e: React.PointerEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch {}
     const d: DragState = {
       blockId: block.id,
       mode,
@@ -205,7 +208,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       curStart: hmToHours(block.startTime),
       curEnd: hmToHours(block.endTime),
       curDate: block.date,
-      moved: mode === "resize", // resize handle = drag intent confirmed
+      moved: mode !== "move", // resize handle = drag intent confirmed
     };
     setDrag(d);
     dragRef.current = d;
@@ -382,7 +385,12 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       return (
                         <div
                           key={b.id}
-                          onPointerDown={(e) => { haptics.tap(); beginDrag(b, "move", e); }}
+                          onClick={(e) => {
+                            if (Date.now() < suppressClickUntil.current) return;
+                            e.stopPropagation();
+                            haptics.snap();
+                            setEditing(b);
+                          }}
                           onPointerEnter={() => {
                             if (lastHoverIdRef.current !== b.id) {
                               lastHoverIdRef.current = b.id;
@@ -400,25 +408,55 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                               : "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md",
                             isConflict && !isDragging && "ring-2 ring-destructive/80 ring-opacity-100 shadow-[0_0_0_3px_hsl(var(--destructive)/0.18)]"
                           )}
-                          style={{ top, height, touchAction: "none", cursor: isDragging ? "grabbing" : "grab" }}
+                          style={{ top, height, cursor: isDragging ? "grabbing" : "pointer" }}
                           role="button"
                           tabIndex={0}
                         >
-                          <div className="pointer-events-none flex items-center gap-1 truncate font-medium leading-tight">
+                          {/* Top resize handle */}
+                          <div
+                            onPointerDown={(e) => { haptics.tap(); beginDrag(b, "resize-top", e); }}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Resize start"
+                            className={cn(
+                              "absolute inset-x-0 top-0 z-10 flex h-3 items-center justify-center rounded-t-md cursor-ns-resize",
+                              "before:block before:h-0.5 before:w-8 before:rounded-full before:bg-current before:opacity-40",
+                              "opacity-70 group-hover:opacity-100 md:h-2"
+                            )}
+                            style={{ touchAction: "none" }}
+                          />
+                          {/* Move/grip handle */}
+                          <div
+                            onPointerDown={(e) => { haptics.tap(); beginDrag(b, "move", e); }}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Drag to move"
+                            className={cn(
+                              "absolute right-0.5 top-1/2 z-10 -translate-y-1/2 flex h-9 w-7 items-center justify-center rounded-md",
+                              "bg-background/40 text-current backdrop-blur-sm ring-1 ring-inset ring-current/20",
+                              "opacity-80 group-hover:opacity-100 active:bg-background/70",
+                              isDragging && "bg-background/70 opacity-100",
+                              "md:h-7 md:w-5"
+                            )}
+                            style={{ touchAction: "none", cursor: isDragging ? "grabbing" : "grab" }}
+                          >
+                            <GripHorizontal className="h-4 w-4" />
+                          </div>
+                          <div className="pointer-events-none flex items-center gap-1 truncate pr-8 font-medium leading-tight">
                             {isConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
                             <span className="truncate">{b.title}</span>
                           </div>
-                          <div className="pointer-events-none text-[10px] opacity-70">
+                          <div className="pointer-events-none pr-8 text-[10px] opacity-70">
                             {fmtTime(hoursToHM(startH))} – {fmtTime(hoursToHM(endH))}
                             {isConflict && <span className="ml-1 font-semibold text-destructive">· conflict</span>}
                           </div>
-                          {/* Resize handle */}
+                          {/* Bottom resize handle */}
                           <div
-                            onPointerDown={(e) => beginDrag(b, "resize", e)}
+                            onPointerDown={(e) => { haptics.tap(); beginDrag(b, "resize", e); }}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Resize end"
                             className={cn(
-                              "absolute inset-x-1 bottom-0 h-3 cursor-ns-resize rounded-b-md",
-                              "after:mx-auto after:mt-1 after:block after:h-0.5 after:w-6 after:rounded-full after:bg-current after:opacity-30",
-                              "opacity-60 group-hover:opacity-100"
+                              "absolute inset-x-0 bottom-0 z-10 flex h-5 items-end justify-center cursor-ns-resize rounded-b-md pb-1",
+                              "after:block after:h-1 after:w-10 after:rounded-full after:bg-current after:opacity-50",
+                              "opacity-80 group-hover:opacity-100 md:h-3"
                             )}
                             style={{ touchAction: "none" }}
                           />
