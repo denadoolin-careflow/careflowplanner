@@ -447,7 +447,6 @@ function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick, onItemResc
         const isDropTarget = !!dragging && (!s || dragging.id ? true : false);
         // Skip rendering empty days unless we're actively dragging
         if (!s && !dragging) return null;
-        const today = isSameDay(s.date, new Date());
         return (
           <div
             key={iso}
