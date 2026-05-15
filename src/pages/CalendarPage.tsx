@@ -25,7 +25,7 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 type View = "day" | "week" | "month" | "year";
 
 export default function CalendarPage() {
-  const { state, addTask, deleteAppointment, updateTask } = useStore();
+  const { state, addTask, deleteAppointment, updateTask, updateAppointment } = useStore();
   const [taskTitle, setTaskTitle] = useState("");
   const [toInbox, setToInbox] = useState(true);
   const [view, setView] = useState<View>("month");
@@ -212,6 +212,15 @@ export default function CalendarPage() {
             onItemClick={(item) => {
               if (item.kind === "appt" && item.id) setEditApptId(item.id);
               else if (item.kind === "task" && item.id) setEditTaskId(item.id);
+            }}
+            onItemReschedule={async (item, dateISO) => {
+              if (item.kind === "appt" && item.id) {
+                await updateAppointment(item.id, { date: dateISO });
+                toast(`Moved “${item.label}” to ${format(parseISO(dateISO), "MMM d")}`);
+              } else if (item.kind === "task" && item.id) {
+                await updateTask(item.id, { dueDate: dateISO, inbox: false });
+                toast(`Rescheduled task to ${format(parseISO(dateISO), "MMM d")}`);
+              }
             }}
           />
         ) : (
@@ -404,7 +413,11 @@ function YearView({ cursor, eventsOn, setCursor, setView }: { cursor: Date; even
   );
 }
 
-function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick }: { view: View; cursor: Date; eventsOn: EventsFn; colorOf: ColorFn; onItemClick?: (item: EventItem) => void }) {
+const SCHED_DRAG_MIME = "application/x-careflow-sched";
+
+function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick, onItemReschedule }: { view: View; cursor: Date; eventsOn: EventsFn; colorOf: ColorFn; onItemClick?: (item: EventItem) => void; onItemReschedule?: (item: EventItem, dateISO: string) => void | Promise<void> }) {
+  const [dragging, setDragging] = useState<EventItem | null>(null);
+  const [hoverISO, setHoverISO] = useState<string | null>(null);
   let start: Date, end: Date;
   if (view === "day") { start = cursor; end = cursor; }
   else if (view === "week") { start = startOfWeek(cursor, { weekStartsOn: 0 }); end = endOfWeek(cursor, { weekStartsOn: 0 }); }
@@ -416,37 +429,82 @@ function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick }: { view: 
     .map(d => ({ date: d, iso: d.toISOString().slice(0, 10), items: eventsOn(d.toISOString().slice(0, 10)).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")) }))
     .filter(s => s.items.length > 0);
 
-  if (sections.length === 0) {
+  // For drop targets, use ALL days in the range so users can drop on empty days too.
+  const dropDays = days;
+
+  if (sections.length === 0 && !dragging) {
     return <p className="rounded-lg bg-muted/40 px-3 py-8 text-center text-sm text-muted-foreground">Nothing scheduled in this {view}.</p>;
   }
 
+  // Map for quick lookup of section by iso
+  const byIso = new Map(sections.map(s => [s.iso, s] as const));
+
   return (
     <div className="space-y-4">
-      {sections.map(s => {
-        const today = isSameDay(s.date, new Date());
+      {dropDays.map(d => {
+        const iso = d.toISOString().slice(0, 10);
+        const s = byIso.get(iso);
+        const isDropTarget = !!dragging && (!s || dragging.id ? true : false);
+        // Skip rendering empty days unless we're actively dragging
+        if (!s && !dragging) return null;
         return (
-          <div key={s.iso}>
+          <div
+            key={iso}
+            onDragOver={(ev) => {
+              if (!onItemReschedule || !dragging) return;
+              if (!Array.from(ev.dataTransfer.types).includes(SCHED_DRAG_MIME)) return;
+              ev.preventDefault();
+              ev.dataTransfer.dropEffect = "move";
+              setHoverISO(iso);
+            }}
+            onDragLeave={() => setHoverISO(p => p === iso ? null : p)}
+            onDrop={(ev) => {
+              if (!onItemReschedule || !dragging) return;
+              ev.preventDefault();
+              const item = dragging;
+              setHoverISO(null);
+              setDragging(null);
+              if (item) void onItemReschedule(item, iso);
+            }}
+            className={cn(
+              "rounded-xl transition-colors",
+              hoverISO === iso && "bg-primary/10 ring-2 ring-primary p-2",
+            )}
+          >
             <div className="sticky top-0 z-10 mb-1.5 flex items-baseline gap-2 bg-card/80 py-1 backdrop-blur-sm">
-              <span className={cn("font-display text-sm font-semibold", today && "text-primary")}>
-                {formatRelativeDate(s.iso)}
+              <span className={cn("font-display text-sm font-semibold", isSameDay(d, new Date()) && "text-primary")}>
+                {formatRelativeDate(iso)}
               </span>
-              <span className="text-[11px] text-muted-foreground">{format(s.date, "EEE, MMM d")}</span>
-              <span className="ml-auto text-[10px] text-muted-foreground">{s.items.length} item{s.items.length === 1 ? "" : "s"}</span>
+              <span className="text-[11px] text-muted-foreground">{format(d, "EEE, MMM d")}</span>
+              {s && <span className="ml-auto text-[10px] text-muted-foreground">{s.items.length} item{s.items.length === 1 ? "" : "s"}</span>}
             </div>
+            {!s ? (
+              <p className="rounded-lg border border-dashed border-border/60 px-3 py-3 text-center text-[11px] text-muted-foreground">Drop here to schedule</p>
+            ) : (
             <ul className="space-y-1">
               {s.items.map((e, i) => (
                 (() => {
                   const clickable = !!onItemClick && (e.kind === "appt" || e.kind === "task") && !!e.id;
+                  const draggable = !!onItemReschedule && (e.kind === "appt" || e.kind === "task") && !!e.id;
                   return (
                     <li key={i}>
                       <button
                         type="button"
                         disabled={!clickable}
                         onClick={() => clickable && onItemClick!(e)}
+                        draggable={draggable}
+                        onDragStart={draggable ? (ev) => {
+                          ev.dataTransfer.setData(SCHED_DRAG_MIME, e.id!);
+                          ev.dataTransfer.effectAllowed = "move";
+                          setDragging(e);
+                        } : undefined}
+                        onDragEnd={() => { setDragging(null); setHoverISO(null); }}
                         className={cn(
                           "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-all",
                           colorOf(e.kind),
                           clickable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                          draggable && "active:cursor-grabbing",
+                          dragging?.id === e.id && "opacity-50",
                           !clickable && "cursor-default",
                         )}
                       >
@@ -459,6 +517,7 @@ function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick }: { view: 
                 })()
               ))}
             </ul>
+            )}
           </div>
         );
       })}
