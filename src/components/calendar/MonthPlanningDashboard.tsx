@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { format, isWithinInterval, parseISO, startOfMonth, endOfMonth, addMonths, isSameMonth } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles, Heart, Star, Target, Compass, Cake, PartyPopper, CalendarHeart,
+  Sparkles, Heart, Star, Target, Compass, Cake, PartyPopper,
   DollarSign, Receipt, Repeat, Briefcase, NotebookPen, ArrowRight, Plus, X,
-  CheckCircle2, Quote, Image as ImageIcon, ListTodo, Activity, Eye,
+  Quote, Image as ImageIcon, Activity, Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import { useMonthlyPlan, type MonthlyIntention } from "@/hooks/useMonthlyPlan";
+import { useMonthlyPlan } from "@/hooks/useMonthlyPlan";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -149,13 +149,6 @@ export function MonthPlanningDashboard({ cursor, onJumpToDate }: { cursor: Date;
     return state.tasks.filter(t => !t.done && t.dueDate && isWithinInterval(parseISO(t.dueDate), { start, end }));
   }, [state.tasks, cursor]);
   const isCurrentMonth = isSameMonth(cursor, new Date());
-
-  const carryOver = async () => {
-    if (!carryOverCandidates.length) { toast("Nothing to carry over."); return; }
-    const today = format(monthStart, "yyyy-MM-dd");
-    const { updateTask } = useStore.prototype as any; // not used; using closure below
-    // use store method via hook (re-grab)
-  };
 
   const { updateTask } = useStore();
 
