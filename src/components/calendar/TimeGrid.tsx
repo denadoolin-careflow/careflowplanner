@@ -711,7 +711,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             </div>
                           </div>
                         )}
-                        </>
+                        </Fragment>
                       );
                     })}
 
