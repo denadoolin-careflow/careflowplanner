@@ -7,12 +7,8 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2, RefreshCw, Inbox as InboxIcon, CalendarPlus, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
@@ -22,13 +18,12 @@ import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { BirthdayHolidayEditor } from "@/components/calendar/BirthdayHolidayEditor";
+import { InboxCapture } from "@/components/calendar/InboxCapture";
 
 type View = "day" | "week" | "month" | "year";
 
 export default function CalendarPage() {
-  const { state, addTask, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday } = useStore();
-  const [taskTitle, setTaskTitle] = useState("");
-  const [toInbox, setToInbox] = useState(true);
+  const { state, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday } = useStore();
   const [view, setView] = useState<View>("month");
   const [layout, setLayout] = useState<"grid" | "schedule">("grid");
   const [cursor, setCursor] = useState<Date>(new Date());
@@ -141,38 +136,7 @@ export default function CalendarPage() {
         <p className="mt-1 text-sm text-muted-foreground">Appointments, birthdays, holidays — color-coded and gentle.</p>
       </div>
 
-      <SectionCard title="Quick add task" accent="calm">
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const title = taskTitle.trim();
-            if (!title) return;
-            await addTask({
-              title,
-              inbox: toInbox,
-              dueDate: toInbox ? undefined : cursor.toISOString().slice(0, 10),
-            });
-            setTaskTitle("");
-            toast(toInbox ? `Added “${title}” to Inbox` : `Scheduled “${title}” for ${format(cursor, "MMM d")}`);
-          }}
-          className="flex flex-col gap-2 sm:flex-row sm:items-center"
-        >
-          <Input
-            placeholder="What needs to get done?"
-            value={taskTitle}
-            onChange={(e) => setTaskTitle(e.target.value)}
-            className="flex-1"
-          />
-          <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5">
-            {toInbox ? <InboxIcon className="h-3.5 w-3.5 text-muted-foreground" /> : <CalendarPlus className="h-3.5 w-3.5 text-muted-foreground" />}
-            <Label htmlFor="cal-inbox-toggle" className="text-xs text-muted-foreground">
-              {toInbox ? "To Inbox" : `Schedule ${format(cursor, "MMM d")}`}
-            </Label>
-            <Switch id="cal-inbox-toggle" checked={toInbox} onCheckedChange={setToInbox} />
-          </div>
-          <Button type="submit" disabled={!taskTitle.trim()}>Add</Button>
-        </form>
-      </SectionCard>
+      <InboxCapture defaultDate={cursor} />
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
         <span>{gEvents.length > 0 ? `Showing ${gEvents.length} Google event${gEvents.length === 1 ? "" : "s"}.` : "Connect Google Calendar in Settings to see your events here."}</span>
@@ -380,15 +344,37 @@ function MonthView({ cursor, eventsOn, colorOf, onTaskDropDay }: { cursor: Date;
                 setHoverISO(null);
               }}
               className={cn(
-                "min-h-24 rounded-lg border p-1.5 text-xs transition-colors",
-                inMonth ? "border-border/60 bg-card" : "border-transparent text-muted-foreground/50",
+                "flex min-h-28 flex-col rounded-xl border p-2 text-xs transition-colors sm:min-h-32",
+                inMonth ? "border-border/60 bg-card" : "border-transparent bg-muted/20 text-muted-foreground/50",
                 today && "ring-2 ring-primary",
                 hoverISO === k && "ring-2 ring-primary bg-primary/10",
               )}
             >
-              <div className="text-right text-[11px] font-medium">{format(d, "d")}</div>
-              <div className="mt-0.5 space-y-0.5">
-                {ev.map((e, i) => <div key={i} className={cn("truncate rounded px-1 py-0.5 text-[10px]", colorOf(e.kind))}>{e.label}</div>)}
+              <div className="mb-1 flex items-baseline justify-between">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                  {d.getDate() === 1 ? format(d, "MMM") : ""}
+                </span>
+                <span className={cn(
+                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold",
+                  today ? "bg-primary text-primary-foreground" : "text-foreground/80",
+                )}>
+                  {format(d, "d")}
+                </span>
+              </div>
+              <div className="flex flex-1 flex-col gap-1">
+                {ev.map((e, i) => (
+                  <div
+                    key={i}
+                    title={e.label}
+                    className={cn(
+                      "rounded-md px-1.5 py-1 text-[11px] leading-snug break-words whitespace-normal",
+                      colorOf(e.kind),
+                    )}
+                  >
+                    {e.time && <span className="mr-1 font-medium opacity-80">{e.time}</span>}
+                    {e.label}
+                  </div>
+                ))}
               </div>
             </div>
           );
