@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { AgendaView } from "@/components/calendar/AgendaView";
-import { DayPartsView } from "@/components/calendar/DayPartsView";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
@@ -124,15 +123,6 @@ export default function Today() {
           )}
           {view === "agenda" && (
             <AgendaView days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
-          )}
-          {view === "dayparts" && (
-            <DayPartsView
-              days={[today]}
-              appointmentsOn={eventsOn}
-              onTaskDropAt={handleTimeDrop}
-              onApptClick={setEditApptId}
-              onTaskClick={setEditTaskId}
-            />
           )}
         </SectionCard>
 
