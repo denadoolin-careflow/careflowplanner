@@ -7,6 +7,7 @@ import { FolderOpen, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Task } from "@/lib/types";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type SortKey = "manual" | "due" | "created" | "priority" | "title";
 const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -37,6 +38,7 @@ export default function AreaPage() {
   const areaName = decodeURIComponent(name);
   const { state } = useStore();
   const [sortKey, setSortKey] = useState<SortKey>("due");
+  const [scope, setScope] = useState<"open" | "all">("open");
 
   const areaRec = (state.areas ?? []).find(a => a.name === areaName);
   const AreaIcon = getAreaIcon(areaRec?.icon);
@@ -47,8 +49,8 @@ export default function AreaPage() {
   );
 
   const tasks = useMemo(
-    () => (state.tasks ?? []).filter(t => t.area === areaName && !t.parentTaskId && !t.done),
-    [state.tasks, areaName]
+    () => (state.tasks ?? []).filter(t => t.area === areaName && !t.parentTaskId && (scope === "all" || !t.done)),
+    [state.tasks, areaName, scope]
   );
 
   const grouped = projects.map(p => ({
@@ -74,23 +76,40 @@ export default function AreaPage() {
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-semibold tracking-tight">{areaName}</h1>
-            <p className="text-sm text-muted-foreground">{total} open {total === 1 ? "task" : "tasks"} · {projects.length} {projects.length === 1 ? "project" : "projects"}</p>
+            <p className="text-sm text-muted-foreground">
+              {total} {scope === "open" ? "open " : ""}{total === 1 ? "task" : "tasks"} · {projects.length} {projects.length === 1 ? "project" : "projects"}
+            </p>
           </div>
         </div>
       </header>
 
-      <div className="flex items-center justify-end gap-2 px-1">
-        <span className="text-xs text-muted-foreground">Sort tasks by</span>
-        <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-          <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="due">Due date</SelectItem>
-            <SelectItem value="priority">Priority</SelectItem>
-            <SelectItem value="created">Created (newest)</SelectItem>
-            <SelectItem value="title">Title (A–Z)</SelectItem>
-            <SelectItem value="manual">Manual order</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <ToggleGroup
+          type="single"
+          value={scope}
+          onValueChange={(v) => v && setScope(v as "open" | "all")}
+          className="rounded-lg border border-border/60 bg-card/40 p-0.5"
+        >
+          <ToggleGroupItem value="open" className="h-7 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            Open only
+          </ToggleGroupItem>
+          <ToggleGroupItem value="all" className="h-7 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            Include done
+          </ToggleGroupItem>
+        </ToggleGroup>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Sort by</span>
+          <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+            <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="due">Due date</SelectItem>
+              <SelectItem value="priority">Priority</SelectItem>
+              <SelectItem value="created">Created (newest)</SelectItem>
+              <SelectItem value="title">Title (A–Z)</SelectItem>
+              <SelectItem value="manual">Manual order</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {total === 0 && projects.length === 0 && (
@@ -109,7 +128,9 @@ export default function AreaPage() {
             </Link>
           </div>
           {items.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/40 bg-card/30 px-3 py-2 text-xs italic text-muted-foreground">No open tasks</div>
+            <div className="rounded-xl border border-dashed border-border/40 bg-card/30 px-3 py-2 text-xs italic text-muted-foreground">
+              {scope === "open" ? "No open tasks" : "No tasks"}
+            </div>
           ) : (
             <div className="space-y-1.5">
               {items.map(t => <TaskRow key={t.id} task={t} showArea={false} />)}
