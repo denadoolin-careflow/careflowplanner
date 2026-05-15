@@ -126,7 +126,7 @@ export function MonthPlanningDashboard({ cursor, onJumpToDate }: { cursor: Date;
   const monthBirthdays = state.birthdays.filter(b => recurrenceFalls(b.date, monthStart, monthEnd));
   const monthHolidays = state.holidays.filter(h => recurrenceFalls(h.date, monthStart, monthEnd));
 
-  const monthGoals = state.goals.filter(g => g.status === "active" && (g.timeline === "Month" || g.timeline === "Year"));
+  const monthGoals = state.goals.filter(g => g.status === "active");
   const monthHabits = state.habits ?? [];
   const activeProjects = (state.projects ?? []).filter(p => p.status === "active" && (!p.deadline || (p.deadline >= monthISO)));
 
