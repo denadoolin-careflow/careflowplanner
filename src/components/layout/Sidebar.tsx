@@ -9,6 +9,8 @@ import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon },
@@ -30,7 +32,7 @@ function loadOpen(): Record<string, boolean> {
   } catch { return {}; }
 }
 
-export function Sidebar() {
+function useSidebarData(forceExpanded: boolean) {
   const { pathname } = useLocation();
   const [openMap, setOpenMap] = useState<Record<string, boolean>>(() => loadOpen());
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -83,6 +85,12 @@ export function Sidebar() {
     const key = `area:${proj.areaName ?? "__none__"}`;
     setOpenMap(prev => prev[key] ? prev : { ...prev, [key]: true });
   }, [pathname, projects]);
+  const effectiveCollapsed = forceExpanded ? false : collapsed;
+  return { pathname, openMap, toggle, collapsed: effectiveCollapsed, setCollapsed, areas, projects, updateArea };
+}
+
+function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: boolean; onNavigate?: () => void }) {
+  const { pathname, openMap, toggle, collapsed, setCollapsed, areas, projects, updateArea } = useSidebarData(forceExpanded);
 
   const wrapItem = (label: string, node: React.ReactNode) => collapsed ? (
     <Tooltip delayDuration={150}>
@@ -93,9 +101,9 @@ export function Sidebar() {
 
   return (
     <TooltipProvider>
-    <aside className={cn(
-      "hidden lg:flex shrink-0 flex-col gap-2 border-r border-sidebar-border bg-sidebar p-3 transition-[width] duration-200 ease-out",
-      collapsed ? "w-[68px] items-center" : "w-64",
+    <div className={cn(
+      "flex h-full flex-col gap-2 bg-sidebar p-3 transition-[width] duration-200 ease-out",
+      collapsed ? "w-[68px] items-center" : "w-full lg:w-64",
     )}>
       <div className={cn("flex items-center gap-2 px-1 py-2 w-full", collapsed && "justify-center")}>
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-glow">
@@ -107,14 +115,14 @@ export function Sidebar() {
             <div className="text-xs text-muted-foreground truncate">a gentle planner</div>
           </div>
         )}
-        <button
+        {!forceExpanded && <button
           type="button"
           onClick={() => setCollapsed(c => !c)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-        </button>
+        </button>}
       </div>
       <nav className={cn("mt-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden w-full", !collapsed && "pr-1")}>
         {/* Things-style Lists rail */}
@@ -123,6 +131,7 @@ export function Sidebar() {
             <NavLink
               key={to}
               to={to}
+              onClick={onNavigate}
               className={({ isActive }) => cn(
                 "group flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
                 "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -141,7 +150,7 @@ export function Sidebar() {
           <div className="mb-2">
             <div className="flex items-center justify-between px-2 py-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60">Areas</span>
-              <NavLink to="/projects" className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground">All</NavLink>
+              <NavLink to="/projects" onClick={onNavigate} className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground">All</NavLink>
             </div>
             <div className="flex flex-col gap-0.5">
               {areas.map(area => {
@@ -178,6 +187,7 @@ export function Sidebar() {
                       />
                       <NavLink
                         to={`/areas/${encodeURIComponent(area.name)}`}
+                        onClick={onNavigate}
                         className={({ isActive }) => cn(
                           "flex-1 truncate text-left rounded px-1 -mx-1 transition-colors",
                           isActive && "bg-primary-soft text-foreground"
@@ -201,6 +211,7 @@ export function Sidebar() {
                             <NavLink
                               key={p.id}
                               to={`/projects/${p.id}`}
+                              onClick={onNavigate}
                               className={({ isActive }) => cn(
                                 "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
                                 "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -233,6 +244,7 @@ export function Sidebar() {
                     key={to}
                     to={to}
                     end={to === "/"}
+                    onClick={onNavigate}
                     className={({ isActive }) => cn(
                       "grid h-10 w-10 place-items-center rounded-xl transition-all",
                       "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -275,6 +287,7 @@ export function Sidebar() {
                         key={to}
                         to={to}
                         end={to === "/"}
+                        onClick={onNavigate}
                         className={({ isActive }) =>
                           cn(
                             "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
@@ -294,7 +307,35 @@ export function Sidebar() {
           );
         })}
       </nav>
-    </aside>
+    </div>
     </TooltipProvider>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <aside className="hidden lg:flex shrink-0 border-r border-sidebar-border">
+      <SidebarBody />
+    </aside>
+  );
+}
+
+export function MobileSidebarTrigger() {
+  const [open, setOpen] = useState(false);
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <button
+          type="button"
+          aria-label="Open menu"
+          className="grid h-9 w-9 place-items-center rounded-lg border border-border/60 bg-card text-foreground/80 hover:bg-muted lg:hidden"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-72 p-0 bg-sidebar">
+        <SidebarBody forceExpanded onNavigate={() => setOpen(false)} />
+      </SheetContent>
+    </Sheet>
   );
 }
