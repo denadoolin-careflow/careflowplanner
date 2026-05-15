@@ -80,7 +80,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks, add, update, remove } = useTimeBlocks(fromISO, toISO);
-  const { toggleTask } = useStore();
+  const { toggleTask, state } = useStore();
 
   const [editing, setEditing] = useState<TimeBlock | null>(null);
   const [draft, setDraft] = useState<{ date: string; start: string; end: string } | null>(null);
@@ -263,7 +263,16 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                         <div key={t.id} className={cn(
                           "flex items-center gap-1.5 rounded-md bg-card/80 px-1.5 py-1 text-[11px] shadow-sm ring-1 ring-inset ring-border/40",
                           t.done && "opacity-60"
-                        )}>
+                        )}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData(TASK_DRAG_MIME, t.id!);
+                            e.dataTransfer.setData("text/plain", t.label);
+                            e.dataTransfer.effectAllowed = "move";
+                            haptics.pickup();
+                          }}
+                          style={{ cursor: "grab" }}
+                        >
                           <button
                             onClick={(e) => { e.stopPropagation(); haptics.tap(); void toggleTask(t.id!); }}
                             aria-label={t.done ? "Mark task not done" : "Mark task done"}
