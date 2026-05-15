@@ -200,10 +200,10 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     } else if (block) {
       // Treat as a tap — open editor
       haptics.snap();
-      setEditing(block);
+      openBlockEditor(block);
     }
     setDrag(null);
-  }, [onPointerMove, blocks, update]);
+  }, [onPointerMove, blocks, update, openBlockEditor]);
 
   const beginDrag = (block: TimeBlock, mode: "move" | "resize" | "resize-top", e: React.PointerEvent) => {
     e.stopPropagation();
@@ -441,7 +441,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             if (Date.now() < suppressClickUntil.current) return;
                             e.stopPropagation();
                             haptics.snap();
-                            setEditing(b);
+                            openBlockEditor(b);
                           }}
                           onPointerEnter={() => {
                             if (lastHoverIdRef.current !== b.id) {
