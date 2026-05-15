@@ -1,15 +1,20 @@
 import { useMemo } from "react";
-import { addDays, format } from "date-fns";
+import { addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, startOfWeek } from "date-fns";
 import { useStore, todayISO } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
-import { LucideIcon } from "lucide-react";
+import { LayoutGrid, LayoutList, CalendarDays, type LucideIcon } from "lucide-react";
 import type { Task } from "@/lib/types";
 import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
 import { applyFilters, sortTasks, groupTasks } from "@/lib/task-grouping";
+import { KanbanBoard } from "@/components/tasks/KanbanBoard";
+import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 type Variant = "upcoming" | "anytime" | "someday" | "logbook";
+type ViewMode = "list" | "agenda" | "kanban";
+type Timeframe = "all" | "today" | "tomorrow" | "thisWeek" | "nextWeek" | "thisMonth";
 
 const META: Record<Variant, { title: string; subtitle: string }> = {
   upcoming: { title: "Upcoming", subtitle: "Scheduled for the days ahead." },
@@ -35,14 +40,55 @@ function filterTasks(all: Task[], variant: Variant): Task[] {
   }
 }
 
+function applyTimeframe(list: Task[], tf: Timeframe): Task[] {
+  if (tf === "all") return list;
+  const today = todayISO();
+  const tomorrow = format(addDays(new Date(), 1), "yyyy-MM-dd");
+  const wkStart = format(startOfWeek(new Date(), { weekStartsOn: 0 }), "yyyy-MM-dd");
+  const wkEnd = format(endOfWeek(new Date(), { weekStartsOn: 0 }), "yyyy-MM-dd");
+  const nwStart = format(addWeeks(startOfWeek(new Date(), { weekStartsOn: 0 }), 1), "yyyy-MM-dd");
+  const nwEnd = format(addWeeks(endOfWeek(new Date(), { weekStartsOn: 0 }), 1), "yyyy-MM-dd");
+  const monthEnd = format(endOfMonth(new Date()), "yyyy-MM-dd");
+  return list.filter(t => {
+    const d = t.dueDate; if (!d) return false;
+    if (tf === "today") return d === today;
+    if (tf === "tomorrow") return d === tomorrow;
+    if (tf === "thisWeek") return d >= wkStart && d <= wkEnd;
+    if (tf === "nextWeek") return d >= nwStart && d <= nwEnd;
+    if (tf === "thisMonth") return d >= today && d <= monthEnd;
+    return true;
+  });
+}
+
+const TIMEFRAMES: { key: Timeframe; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "today", label: "Today" },
+  { key: "tomorrow", label: "Tomorrow" },
+  { key: "thisWeek", label: "This week" },
+  { key: "nextWeek", label: "Next week" },
+  { key: "thisMonth", label: "This month" },
+];
+
 export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: LucideIcon }) {
   const { state } = useStore();
   const [prefs, setPrefs] = useTaskListPrefs(`tlp:${variant}`);
+  const [view, setView] = useState<ViewMode>(() => (localStorage.getItem(`careflow:view:${variant}`) as ViewMode) || "list");
+  const [timeframe, setTimeframe] = useState<Timeframe>(() => (localStorage.getItem(`careflow:tf:${variant}`) as Timeframe) || "all");
+  useEffect(() => { localStorage.setItem(`careflow:view:${variant}`, view); }, [view, variant]);
+  useEffect(() => { localStorage.setItem(`careflow:tf:${variant}`, timeframe); }, [timeframe, variant]);
+  const showTimeframe = variant === "upcoming";
+
+  const filteredFlat = useMemo(() => {
+    const base = filterTasks(state.tasks, variant);
+    const tf = showTimeframe ? applyTimeframe(base, timeframe) : base;
+    const filtered = applyFilters(tf, prefs.filter);
+    return sortTasks(filtered, prefs.sort);
+  }, [state.tasks, variant, prefs, timeframe, showTimeframe]);
+
   const groups = useMemo(() => {
-    const filtered = applyFilters(filterTasks(state.tasks, variant), prefs.filter);
-    const sorted = sortTasks(filtered, prefs.sort);
-    return groupTasks(sorted, prefs.group, state.projects ?? []);
-  }, [state.tasks, state.projects, variant, prefs]);
+    const groupMode = view === "agenda" ? "date" : prefs.group;
+    return groupTasks(filteredFlat, groupMode, state.projects ?? []);
+  }, [filteredFlat, prefs.group, state.projects, view]);
   const total = groups.reduce((s, g) => s + g.tasks.length, 0);
   const meta = META[variant];
 
@@ -62,13 +108,32 @@ export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: 
           <h1 className="text-2xl font-semibold tracking-tight">{meta.title}</h1>
           <p className="text-sm text-muted-foreground">{meta.subtitle} {total} {total === 1 ? "item" : "items"}.</p>
         </div>
+        <ViewToggle value={view} onChange={setView} />
         <TaskListControls prefs={prefs} onChange={setPrefs} />
       </header>
+
+      {showTimeframe && (
+        <div className="flex flex-wrap gap-1 rounded-full bg-muted/50 p-1 w-fit">
+          {TIMEFRAMES.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTimeframe(t.key)}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                timeframe === t.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >{t.label}</button>
+          ))}
+        </div>
+      )}
 
       {variant !== "logbook" && (
         <InlineTaskComposer defaults={composerDefaults} placeholder={`Add to ${meta.title.toLowerCase()}…`} />
       )}
 
+      {view === "kanban" ? (
+        <KanbanBoard tasks={filteredFlat} />
+      ) : (
       <div className="rounded-2xl border border-border/60 bg-card/60 p-2">
         {total === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Nothing here yet ✨</div>
@@ -76,7 +141,7 @@ export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: 
           <div className="space-y-3">
             {groups.map(g => (
               <div key={g.key} className="space-y-1">
-                {prefs.group !== "none" && (
+                {(view === "agenda" || prefs.group !== "none") && (
                   <div className="px-2 pt-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     {g.label} <span className="opacity-60">· {g.tasks.length}</span>
                   </div>
@@ -87,8 +152,37 @@ export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: 
           </div>
         )}
       </div>
+      )}
       </div>
       <UnscheduledTasksRail />
+    </div>
+  );
+}
+
+function ViewToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMode) => void }) {
+  const opts: { key: ViewMode; icon: LucideIcon; label: string }[] = [
+    { key: "list", icon: LayoutList, label: "List" },
+    { key: "agenda", icon: CalendarDays, label: "Agenda" },
+    { key: "kanban", icon: LayoutGrid, label: "Kanban" },
+  ];
+  return (
+    <div className="flex rounded-full bg-muted/50 p-0.5">
+      {opts.map(o => {
+        const Icon = o.icon;
+        return (
+          <button
+            key={o.key}
+            onClick={() => onChange(o.key)}
+            title={o.label}
+            className={cn(
+              "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-colors",
+              value === o.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" />
+          </button>
+        );
+      })}
     </div>
   );
 }
