@@ -30,6 +30,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
 
   const subtasks = state.tasks.filter(t => t.parentTaskId === task.id);
   const hasSubs = subtasks.length > 0;
+  const areaColor = (state.areas ?? []).find(a => a.name === task.area)?.color || undefined;
   const [quickEditOpen, setQuickEditOpen] = useState(false);
   const longPressTimer = useRef<number | null>(null);
   const longPressed = useRef(false);
@@ -91,6 +92,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       dense={dense}
       draggable={draggable}
       celebrate={celebrate}
+      areaColor={areaColor}
       onPointerDown={startLongPress}
       onPointerUp={cancelLongPress}
       onPointerLeave={cancelLongPress}
@@ -149,7 +151,21 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
         )}
         {!editing && (showArea || task.dayPart || task.priority === "high" || task.resetItemId) && (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            {showArea && <Badge variant="secondary" className="rounded-full bg-muted text-[10px] font-normal">{task.area}</Badge>}
+            {showArea && (
+              <Badge
+                variant="secondary"
+                className="rounded-full bg-muted text-[10px] font-normal"
+                style={areaColor ? { backgroundColor: `${areaColor}22`, color: areaColor } : undefined}
+              >
+                {areaColor && (
+                  <span
+                    className="mr-1 inline-block h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: areaColor }}
+                  />
+                )}
+                {task.area}
+              </Badge>
+            )}
             {task.dayPart && <Badge variant="outline" className="rounded-full text-[10px] font-normal">{task.dayPart}</Badge>}
             {task.priority === "high" && <Badge className="rounded-full bg-accent text-accent-foreground text-[10px] font-normal hover:bg-accent">priority</Badge>}
             {task.energy && <Badge variant="outline" className="rounded-full text-[10px] font-normal capitalize">{task.energy} energy</Badge>}
@@ -234,21 +250,22 @@ type ShellHandlers = {
   onContextMenu?: (e: React.MouseEvent) => void;
 };
 
-function RowShell({ task, dense, draggable, celebrate, children, ...handlers }: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; children: React.ReactNode } & ShellHandlers) {
+function RowShell({ task, dense, draggable, celebrate, areaColor, children, ...handlers }: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; areaColor?: string; children: React.ReactNode } & ShellHandlers) {
   const cls = cn(
-    "group relative flex items-start gap-2 rounded-xl border border-transparent px-2 transition-all",
+    "group relative flex items-start gap-2 rounded-xl border border-transparent pl-3 pr-2 transition-all",
     "hover:border-primary/30 hover:bg-muted/40 hover:shadow-[0_4px_18px_-12px_hsl(var(--primary)/0.45)]",
     dense ? "py-1.5" : "py-2.5",
     celebrate && "border-primary/40 bg-primary/5 scale-[1.01]"
   );
-  if (!draggable) return <div className={cls} {...handlers}>{children}</div>;
-  return <DraggableShell task={task} className={cls} handlers={handlers}>{children}</DraggableShell>;
+  const style = areaColor ? { boxShadow: `inset 3px 0 0 0 ${areaColor}` } : undefined;
+  if (!draggable) return <div className={cls} style={style} {...handlers}>{children}</div>;
+  return <DraggableShell task={task} className={cls} style={style} handlers={handlers}>{children}</DraggableShell>;
 }
 
-function DraggableShell({ task, className, children, handlers }: { task: Task; className: string; children: React.ReactNode; handlers?: ShellHandlers }) {
+function DraggableShell({ task, className, style, children, handlers }: { task: Task; className: string; style?: React.CSSProperties; children: React.ReactNode; handlers?: ShellHandlers }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   return (
-    <div ref={setNodeRef} className={cn(className, isDragging && "opacity-40")} {...handlers}>
+    <div ref={setNodeRef} className={cn(className, isDragging && "opacity-40")} style={style} {...handlers}>
       <button {...listeners} {...attributes} aria-label="Drag" className="mt-0.5 -ml-1 cursor-grab touch-none rounded p-0.5 text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing">
         <GripVertical className="h-3.5 w-3.5" />
       </button>

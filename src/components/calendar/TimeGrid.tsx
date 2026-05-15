@@ -14,6 +14,7 @@ import { useStore } from "@/lib/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { AREAS } from "@/lib/types";
+import { TaskEditor } from "@/components/tasks/TaskEditor";
 
 const CLEANING_ZONES = ["Kitchen","Bathroom","Bedrooms","Living","Laundry","Entryway","Outdoor","Whole home"] as const;
 
@@ -83,6 +84,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const { toggleTask, state } = useStore();
 
   const [editing, setEditing] = useState<TimeBlock | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const editingTask = editingTaskId ? state.tasks.find(t => t.id === editingTaskId) ?? null : null;
   const [draft, setDraft] = useState<{ date: string; start: string; end: string } | null>(null);
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 15000); return () => clearInterval(id); }, []);
@@ -95,6 +98,14 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const suppressClickUntil = useRef(0);
   const lastHoverIdRef = useRef<string | null>(null);
   dragRef.current = drag;
+
+  const openBlockEditor = useCallback((block: TimeBlock) => {
+    if (block.taskId) {
+      setEditingTaskId(block.taskId);
+    } else {
+      setEditing(block);
+    }
+  }, []);
 
   const startSlot = (date: Date, ev: React.MouseEvent<HTMLDivElement>) => {
     if (Date.now() < suppressClickUntil.current) return;
@@ -189,10 +200,10 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     } else if (block) {
       // Treat as a tap — open editor
       haptics.snap();
-      setEditing(block);
+      openBlockEditor(block);
     }
     setDrag(null);
-  }, [onPointerMove, blocks, update]);
+  }, [onPointerMove, blocks, update, openBlockEditor]);
 
   const beginDrag = (block: TimeBlock, mode: "move" | "resize" | "resize-top", e: React.PointerEvent) => {
     e.stopPropagation();
@@ -430,7 +441,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             if (Date.now() < suppressClickUntil.current) return;
                             e.stopPropagation();
                             haptics.snap();
-                            setEditing(b);
+                            openBlockEditor(b);
                           }}
                           onPointerEnter={() => {
                             if (lastHoverIdRef.current !== b.id) {
@@ -574,6 +585,13 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Linked task editor */}
+      <TaskEditor
+        task={editingTask}
+        open={!!editingTask}
+        onOpenChange={(o) => !o && setEditingTaskId(null)}
+      />
     </>
   );
 }
