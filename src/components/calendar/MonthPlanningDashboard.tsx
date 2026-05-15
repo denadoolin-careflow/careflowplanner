@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, isWithinInterval, parseISO, startOfMonth, endOfMonth, addMonths, isSameMonth } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -110,6 +110,18 @@ export function MonthPlanningDashboard({ cursor, onJumpToDate }: { cursor: Date;
   const monthLabel = format(cursor, "MMMM yyyy");
   const { intention, review, finance, saveIntention, saveReview, monthISO } = useMonthlyPlan(cursor);
 
+  // Local mirrors for free-text intention fields (save on blur to avoid keystroke writes)
+  const [word, setWord] = useState(intention.word ?? "");
+  const [intentionText, setIntentionText] = useState(intention.intention ?? "");
+  const [emotionalFocus, setEmotionalFocus] = useState(intention.emotional_focus ?? "");
+  const [quote, setQuote] = useState(intention.quote ?? "");
+  const [vision, setVision] = useState(intention.vision ?? "");
+  useEffect(() => { setWord(intention.word ?? ""); }, [intention.word]);
+  useEffect(() => { setIntentionText(intention.intention ?? ""); }, [intention.intention]);
+  useEffect(() => { setEmotionalFocus(intention.emotional_focus ?? ""); }, [intention.emotional_focus]);
+  useEffect(() => { setQuote(intention.quote ?? ""); }, [intention.quote]);
+  useEffect(() => { setVision(intention.vision ?? ""); }, [intention.vision]);
+
   // Derived month slices
   const monthTasks = useMemo(
     () => state.tasks.filter(t =>
@@ -177,18 +189,18 @@ export function MonthPlanningDashboard({ cursor, onJumpToDate }: { cursor: Date;
           <div className="space-y-3">
             <label className="block text-xs font-medium uppercase tracking-wider text-muted-foreground">Word of the month</label>
             <Input
-              value={intention.word ?? ""}
-              onChange={(e) => setLocalWord(e.target.value)}
-              onBlur={(e) => saveIntention({ word: e.target.value })}
+              value={word}
+              onChange={(e) => setWord(e.target.value)}
+              onBlur={() => { if (word !== (intention.word ?? "")) saveIntention({ word }); }}
               placeholder="e.g. Soft"
               className="h-14 border-0 bg-gradient-to-br from-accent/20 to-primary/10 text-center font-display text-3xl font-semibold tracking-tight"
             />
             <div>
               <label className="block text-xs font-medium uppercase tracking-wider text-muted-foreground">Emotional focus</label>
               <Input
-                value={intention.emotional_focus ?? ""}
-                onChange={(e) => setLocalFocus(e.target.value)}
-                onBlur={(e) => saveIntention({ emotional_focus: e.target.value })}
+                value={emotionalFocus}
+                onChange={(e) => setEmotionalFocus(e.target.value)}
+                onBlur={() => { if (emotionalFocus !== (intention.emotional_focus ?? "")) saveIntention({ emotional_focus: emotionalFocus }); }}
                 placeholder="e.g. Calm presence"
                 className="mt-1"
               />
@@ -198,9 +210,9 @@ export function MonthPlanningDashboard({ cursor, onJumpToDate }: { cursor: Date;
             <div>
               <label className="block text-xs font-medium uppercase tracking-wider text-muted-foreground">Intention</label>
               <Textarea
-                value={intention.intention ?? ""}
-                onChange={(e) => setLocalIntention(e.target.value)}
-                onBlur={(e) => saveIntention({ intention: e.target.value })}
+                value={intentionText}
+                onChange={(e) => setIntentionText(e.target.value)}
+                onBlur={() => { if (intentionText !== (intention.intention ?? "")) saveIntention({ intention: intentionText }); }}
                 placeholder="What do you want this month to feel like?"
                 rows={3}
                 className="mt-1"
@@ -210,9 +222,9 @@ export function MonthPlanningDashboard({ cursor, onJumpToDate }: { cursor: Date;
               <div>
                 <label className="block text-xs font-medium uppercase tracking-wider text-muted-foreground"><Quote className="mr-1 inline h-3 w-3" />Quote</label>
                 <Input
-                  value={intention.quote ?? ""}
-                  onChange={(e) => setLocalQuote(e.target.value)}
-                  onBlur={(e) => saveIntention({ quote: e.target.value })}
+                  value={quote}
+                  onChange={(e) => setQuote(e.target.value)}
+                  onBlur={() => { if (quote !== (intention.quote ?? "")) saveIntention({ quote }); }}
                   placeholder="A line that grounds you"
                   className="mt-1"
                 />
@@ -220,9 +232,9 @@ export function MonthPlanningDashboard({ cursor, onJumpToDate }: { cursor: Date;
               <div>
                 <label className="block text-xs font-medium uppercase tracking-wider text-muted-foreground"><Eye className="mr-1 inline h-3 w-3" />Vision</label>
                 <Input
-                  value={intention.vision ?? ""}
-                  onChange={(e) => setLocalVision(e.target.value)}
-                  onBlur={(e) => saveIntention({ vision: e.target.value })}
+                  value={vision}
+                  onChange={(e) => setVision(e.target.value)}
+                  onBlur={() => { if (vision !== (intention.vision ?? "")) saveIntention({ vision }); }}
                   placeholder="A picture of done"
                   className="mt-1"
                 />
@@ -466,12 +478,6 @@ export function MonthPlanningDashboard({ cursor, onJumpToDate }: { cursor: Date;
     </div>
   );
 
-  // local helpers — placed last for readability
-  function setLocalWord(v: string)        { (intention.word as any)            = v; saveIntention({ word: v }); }
-  function setLocalIntention(v: string)   { saveIntention({ intention: v }); }
-  function setLocalFocus(v: string)       { saveIntention({ emotional_focus: v }); }
-  function setLocalQuote(v: string)       { saveIntention({ quote: v }); }
-  function setLocalVision(v: string)      { saveIntention({ vision: v }); }
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
