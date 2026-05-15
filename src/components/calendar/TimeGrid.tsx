@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2 } from "lucide-react";
+import { Trash2, AlertTriangle } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -105,6 +105,33 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   };
 
   const blocksFor = (iso: string) => blocks.filter(b => b.date === iso && !b.allDay);
+
+  /** Return a Set of conflicting block IDs and appointment indices for a given day. */
+  const computeConflicts = (iso: string, dayBlocks: TimeBlock[], dayAppts: ApptLike[]) => {
+    type Iv = { key: string; s: number; e: number };
+    const ivs: Iv[] = [];
+    for (const b of dayBlocks) {
+      // Use current drag positions if applicable
+      const isDragging = drag?.blockId === b.id && drag.curDate === iso;
+      const s = isDragging ? drag!.curStart : hmToHours(b.startTime);
+      const e = isDragging ? drag!.curEnd : hmToHours(b.endTime);
+      ivs.push({ key: `b:${b.id}`, s, e });
+    }
+    dayAppts.forEach((a, idx) => {
+      const s = hmToHours(a.time!.slice(0, 5));
+      ivs.push({ key: `a:${idx}`, s, e: s + 1 });
+    });
+    const conflicts = new Set<string>();
+    for (let i = 0; i < ivs.length; i++) {
+      for (let j = i + 1; j < ivs.length; j++) {
+        if (ivs[i].s < ivs[j].e && ivs[j].s < ivs[i].e) {
+          conflicts.add(ivs[i].key);
+          conflicts.add(ivs[j].key);
+        }
+      }
+    }
+    return conflicts;
+  };
 
   const findDateAt = useCallback((clientX: number): string | null => {
     for (const [iso, el] of Object.entries(colRefs.current)) {
@@ -213,6 +240,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
               const iso = d.toISOString().slice(0,10);
               const dayBlocks = blocksFor(iso);
               const dayAppts = appointmentsOn(iso).filter(a => a.time && /^\d{2}:\d{2}/.test(a.time));
+              const conflicts = computeConflicts(iso, dayBlocks, dayAppts);
               const isToday = isSameDay(d, new Date());
               const nowH = now.getHours() + now.getMinutes() / 60;
               const showNowLine = isToday && nowH >= HOUR_START && nowH <= HOUR_END;
@@ -313,6 +341,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       if (h < HOUR_START || h > HOUR_END) return null;
                       const top = (h - HOUR_START) * PX_PER_HOUR;
                       const isAppt = a.kind === "appt" && !!a.id;
+                      const isConflict = conflicts.has(`a:${idx}`);
                       return (
                         <div key={`a-${idx}`}
                           draggable={isAppt}
@@ -328,10 +357,12 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             "absolute left-0.5 right-0.5 z-10 truncate rounded-md bg-secondary-soft px-2 py-0.5 text-[11px] text-secondary-foreground shadow-sm transition-all",
                             isAppt
                               ? "cursor-grab hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-primary/40 active:cursor-grabbing"
-                              : "pointer-events-none"
+                              : "pointer-events-none",
+                            isConflict && "ring-2 ring-destructive/70 bg-destructive/10 text-destructive-foreground animate-pulse"
                           )}
                           style={{ top, height: PX_PER_HOUR - 6 }}
-                          title={a.label}>
+                          title={isConflict ? `Conflict: ${a.label}` : a.label}>
+                          {isConflict && <AlertTriangle className="mr-1 inline h-3 w-3 text-destructive" />}
                           <span className="font-medium">{a.time?.slice(0,5)}</span> <span className="truncate">{a.label}</span>
                         </div>
                       );
@@ -347,6 +378,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       const top = (startH - HOUR_START) * PX_PER_HOUR;
                       const height = Math.max(24, (endH - startH) * PX_PER_HOUR - 2);
                       const c = colorClasses(b.color);
+                      const isConflict = conflicts.has(`b:${b.id}`);
                       return (
                         <div
                           key={b.id}
@@ -365,15 +397,20 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             c.bg, c.text, c.ring, "ring-opacity-30",
                             isDragging
                               ? "z-30 scale-[1.02] shadow-xl ring-opacity-100 transition-none"
-                              : "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md"
+                              : "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md",
+                            isConflict && !isDragging && "ring-2 ring-destructive/80 ring-opacity-100 shadow-[0_0_0_3px_hsl(var(--destructive)/0.18)]"
                           )}
                           style={{ top, height, touchAction: "none", cursor: isDragging ? "grabbing" : "grab" }}
                           role="button"
                           tabIndex={0}
                         >
-                          <div className="pointer-events-none truncate font-medium leading-tight">{b.title}</div>
+                          <div className="pointer-events-none flex items-center gap-1 truncate font-medium leading-tight">
+                            {isConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
+                            <span className="truncate">{b.title}</span>
+                          </div>
                           <div className="pointer-events-none text-[10px] opacity-70">
                             {fmtTime(hoursToHM(startH))} – {fmtTime(hoursToHM(endH))}
+                            {isConflict && <span className="ml-1 font-semibold text-destructive">· conflict</span>}
                           </div>
                           {/* Resize handle */}
                           <div
