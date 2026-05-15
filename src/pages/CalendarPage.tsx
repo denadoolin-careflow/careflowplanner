@@ -564,8 +564,9 @@ function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick, onItemResc
             <ul className="space-y-1">
               {s.items.map((e, i) => (
                 (() => {
-                  const clickable = !!onItemClick && (e.kind === "appt" || e.kind === "task") && !!e.id;
-                  const draggable = !!onItemReschedule && (e.kind === "appt" || e.kind === "task") && !!e.id;
+                  const editable = e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol";
+                  const clickable = !!onItemClick && editable && !!e.id;
+                  const draggable = !!onItemReschedule && editable && !!e.id;
                   return (
                     <li key={i}>
                       <button
