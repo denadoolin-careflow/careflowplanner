@@ -176,9 +176,15 @@ export function Sidebar() {
                           </button>
                         }
                       />
-                      <button type="button" onClick={() => toggle(key)} className="flex-1 truncate text-left">
+                      <NavLink
+                        to={`/areas/${encodeURIComponent(area.name)}`}
+                        className={({ isActive }) => cn(
+                          "flex-1 truncate text-left rounded px-1 -mx-1 transition-colors",
+                          isActive && "bg-primary-soft text-foreground"
+                        )}
+                      >
                         {area.name}
-                      </button>
+                      </NavLink>
                       {areaProjects.length > 0 && (
                         <span className="text-[10px] text-sidebar-foreground/50">{areaProjects.length}</span>
                       )}
