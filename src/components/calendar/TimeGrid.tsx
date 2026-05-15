@@ -95,6 +95,9 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const [drag, setDrag] = useState<DragState | null>(null);
   const [dropHover, setDropHover] = useState<{ iso: string; hour: number } | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ iso: string; hour: number } | null>(null);
+  const [externalDrag, setExternalDrag] = useState<null | { kind: "task" | "event" | "appt"; title: string; durationH: number }>(null);
+  const externalDragRef = useRef<null | { kind: "task" | "event" | "appt"; title: string; durationH: number }>(null);
+  externalDragRef.current = externalDrag;
   const dragRef = useRef<DragState | null>(null);
   const suppressClickUntil = useRef(0);
   const lastHoverIdRef = useRef<string | null>(null);
