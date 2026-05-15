@@ -334,6 +334,8 @@ export default function CalendarPage() {
       <UnscheduledTasksRail />
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
+      <BirthdayHolidayEditor kind="birthday" item={editingBday} open={!!editingBday} onOpenChange={(o) => !o && setEditBdayId(null)} />
+      <BirthdayHolidayEditor kind="holiday" item={editingHol} open={!!editingHol} onOpenChange={(o) => !o && setEditHolId(null)} />
     </div>
   );
 }
