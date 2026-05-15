@@ -11,7 +11,6 @@ import { CalendarViewToggle, type CalView } from "@/components/calendar/Calendar
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
-import { DayPartsView } from "@/components/calendar/DayPartsView";
 import { WeekNavigator } from "@/components/week/WeekNavigator";
 import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
@@ -85,9 +84,6 @@ export default function Week() {
           )}
           {view === "agenda" && (
             <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
-          )}
-          {view === "dayparts" && (
-            <DayPartsView days={days.slice(0, 1)} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} onTaskClick={setEditTaskId} />
           )}
         </SectionCard>
 
