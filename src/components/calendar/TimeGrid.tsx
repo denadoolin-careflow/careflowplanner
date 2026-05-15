@@ -592,7 +592,14 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       <TaskEditor
         task={editingTask}
         open={!!editingTask}
-        onOpenChange={(o) => !o && setEditingTaskId(null)}
+        onOpenChange={(o) => { if (!o) { setEditingTaskId(null); setEditingTaskBlockId(null); } }}
+        onUnschedule={editingTaskBlockId ? async () => {
+          const blockId = editingTaskBlockId;
+          if (!blockId) return;
+          await remove(blockId);
+          setEditingTaskBlockId(null);
+        } : undefined}
+        unscheduleLabel="Unschedule"
       />
     </>
   );
