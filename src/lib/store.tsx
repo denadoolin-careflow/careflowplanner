@@ -117,6 +117,7 @@ interface Ctx {
   deleteHabit: (id: string) => Promise<void>;
 
   addJournal: (j: Partial<JournalEntry> & { body: string }) => Promise<void>;
+  updateJournal: (id: string, patch: Partial<JournalEntry>) => Promise<void>;
   deleteJournal: (id: string) => Promise<void>;
 
   addMeal: (m: Partial<Meal> & { name: string; date: string; slot: Meal["slot"] }) => Promise<void>;
@@ -394,8 +395,41 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addJournal: async (j) => {
       if (!uid) return;
-      const { data } = await supabase.from("journal_entries").insert({ user_id: uid, date: todayISO(), type: "daily", ...j }).select().single();
+      const { gratitudeItems, linkedIds, prompts, tags, pinned, energy, template, mood, title, body, date, type, ...rest } = j as any;
+      const row: any = {
+        user_id: uid,
+        date: date ?? todayISO(),
+        type: type ?? "daily",
+        body,
+      };
+      if (title !== undefined) row.title = title;
+      if (mood !== undefined) row.mood = mood;
+      if (template !== undefined) row.template = template;
+      if (energy !== undefined) row.energy = energy;
+      if (prompts !== undefined) row.prompts = prompts;
+      if (gratitudeItems !== undefined) row.gratitude_items = gratitudeItems;
+      if (linkedIds !== undefined) row.linked_ids = linkedIds;
+      if (tags !== undefined) row.tags = tags;
+      if (pinned !== undefined) row.pinned = pinned;
+      const { data } = await supabase.from("journal_entries").insert(row).select().single();
       if (data) setState(s => ({ ...s, journal: [journalFrom(data), ...s.journal] }));
+    },
+    updateJournal: async (id, patch) => {
+      const dbPatch: any = {};
+      if (patch.title !== undefined) dbPatch.title = patch.title;
+      if (patch.body !== undefined) dbPatch.body = patch.body;
+      if (patch.type !== undefined) dbPatch.type = patch.type;
+      if (patch.mood !== undefined) dbPatch.mood = patch.mood;
+      if (patch.template !== undefined) dbPatch.template = patch.template;
+      if (patch.energy !== undefined) dbPatch.energy = patch.energy;
+      if (patch.prompts !== undefined) dbPatch.prompts = patch.prompts;
+      if (patch.gratitudeItems !== undefined) dbPatch.gratitude_items = patch.gratitudeItems;
+      if (patch.linkedIds !== undefined) dbPatch.linked_ids = patch.linkedIds;
+      if (patch.tags !== undefined) dbPatch.tags = patch.tags;
+      if (patch.pinned !== undefined) dbPatch.pinned = patch.pinned;
+      if (patch.date !== undefined) dbPatch.date = patch.date;
+      setState(s => ({ ...s, journal: s.journal.map(j => j.id === id ? { ...j, ...patch } : j) }));
+      if (Object.keys(dbPatch).length) await supabase.from("journal_entries").update(dbPatch).eq("id", id);
     },
     deleteJournal: async (id) => {
       setState(s => ({ ...s, journal: s.journal.filter(j => j.id !== id) }));
