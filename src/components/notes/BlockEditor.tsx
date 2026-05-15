@@ -366,6 +366,16 @@ export function BlockEditor({
       attributes: {
         class: "prose prose-sm max-w-none focus:outline-none min-h-[40vh] prose-headings:font-display prose-headings:font-semibold prose-a:text-primary dark:prose-invert",
       },
+      handleClickOn: (_view, _pos, _node, _nodePos, event) => {
+        const a = (event.target as HTMLElement | null)?.closest("a") as HTMLAnchorElement | null;
+        if (!a) return false;
+        const href = a.getAttribute("href") || "";
+        if (!href || href === "#") return false;
+        event.preventDefault();
+        if (href.startsWith("/")) navigate(href);
+        else window.open(href, "_blank", "noopener,noreferrer");
+        return true;
+      },
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
