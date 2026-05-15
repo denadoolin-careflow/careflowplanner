@@ -7,11 +7,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Link2, Plus, X, CheckSquare, FolderOpen, Target, Flame, CalendarHeart, Clock } from "lucide-react";
+import { Link2, Plus, X, CheckSquare, FolderOpen, Target, Flame, CalendarHeart, Clock, Users, Utensils, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 const ICONS: Record<EntityType, React.ComponentType<{ className?: string }>> = {
   task: CheckSquare, project: FolderOpen, goal: Target, habit: Flame, appointment: CalendarHeart, time_block: Clock,
+  person: Users, meal: Utensils, journal: BookOpen,
 };
 
 interface Props { noteId: string; }
