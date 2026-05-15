@@ -911,7 +911,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
       {mode === "task" && (
         <div className="space-y-2">
           <Input autoFocus placeholder="Search open tasks…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
-          <ScrollArea className="h-56 sm:h-64 rounded-md border">
+          <ScrollArea className="h-48 rounded-md border">
             {filteredTasks.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No matching tasks.</div>
             ) : (
@@ -1081,33 +1081,39 @@ function CreateForm({ draft, onCreate, onCancel }: {
 }
 
 function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: Partial<TimeBlock>) => void; onDelete: () => void }) {
+  const { state } = useStore();
   const [title, setTitle] = useState(block.title);
   const [start, setStart] = useState(block.startTime);
   const [end, setEnd] = useState(block.endTime);
   const [color, setColor] = useState(block.color);
   const [notes, setNotes] = useState(block.notes ?? "");
+  const areaColors = Array.from(
+    new Set(((state.areas ?? []) as { color?: string }[])
+      .map(a => a.color)
+      .filter((c): c is string => !!c && c.startsWith("#")))
+  );
   return (
     <div className="space-y-3">
       <div><Label className="text-xs">Title</Label><Input value={title} onChange={e => setTitle(e.target.value)} /></div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         <div className="min-w-0">
-          <Label className="text-xs">Start</Label>
-          <div className="relative mt-1">
-            <Clock className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="pl-8 pr-2 w-full" />
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Start</Label>
+          <div className="relative mt-0.5">
+            <Clock className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="h-8 pl-6 pr-1 text-xs w-full" />
           </div>
         </div>
         <div className="min-w-0">
-          <Label className="text-xs">End</Label>
-          <div className="relative mt-1">
-            <Clock className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="pl-8 pr-2 w-full" />
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">End</Label>
+          <div className="relative mt-0.5">
+            <Clock className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="h-8 pl-6 pr-1 text-xs w-full" />
           </div>
         </div>
       </div>
       <div>
         <Label className="text-xs">Color</Label>
-        <div className="mt-1 flex gap-1.5">
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
           {BLOCK_COLORS.map(c => {
             const cc = colorClasses(c);
             return (
@@ -1117,6 +1123,16 @@ function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: P
                 aria-label={c}/>
             );
           })}
+          {areaColors.length > 0 && (
+            <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+          )}
+          {areaColors.map(hex => (
+            <button key={hex} type="button" onClick={() => setColor(hex)}
+              className={cn("h-7 w-7 rounded-full ring-2 ring-offset-2 ring-offset-background transition-all",
+                color === hex ? "ring-foreground/60" : "ring-transparent")}
+              style={{ backgroundColor: hex }}
+              aria-label={`Area color ${hex}`}/>
+          ))}
         </div>
       </div>
       <div><Label className="text-xs">Notes</Label><Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></div>
