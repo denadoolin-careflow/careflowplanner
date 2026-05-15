@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as chrono from "chrono-node";
 import { format } from "date-fns";
 import { useStore } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,14 +17,16 @@ import {
   Sparkles,
   Bell,
   Loader2,
+  UtensilsCrossed,
 } from "lucide-react";
 
-type Kind = "auto" | "task" | "appointment" | "note" | "idea" | "goal" | "reminder";
+type Kind = "auto" | "task" | "appointment" | "meal" | "note" | "idea" | "goal" | "reminder";
 
 const KINDS: { k: Kind; label: string; Icon: any }[] = [
   { k: "auto",        label: "Auto",        Icon: Sparkles },
   { k: "task",        label: "Task",        Icon: CheckSquare },
   { k: "appointment", label: "Appointment", Icon: CalendarClock },
+  { k: "meal",        label: "Meal",        Icon: UtensilsCrossed },
   { k: "reminder",    label: "Reminder",    Icon: Bell },
   { k: "note",        label: "Note",        Icon: StickyNote },
   { k: "idea",        label: "Idea",        Icon: Lightbulb },
@@ -34,11 +37,25 @@ const KINDS: { k: Kind; label: string; Icon: any }[] = [
 function detectKind(text: string): Exclude<Kind, "auto"> {
   const t = text.toLowerCase();
   if (/\b(appt|appointment|meeting|call|doctor|dentist|visit|checkup|consult)\b/.test(t)) return "appointment";
+  if (/\b(breakfast|lunch|dinner|snack|meal|recipe|cook|bake)\b/.test(t)) return "meal";
   if (/\b(remind|reminder|don't forget|dont forget)\b/.test(t)) return "reminder";
   if (/\b(idea|maybe|someday|what if|consider)\b/.test(t)) return "idea";
   if (/\b(goal|aim|target|aspire|by end of)\b/.test(t)) return "goal";
   if (/^(note:|note\s)|\bjournal\b|\bthought\b/.test(t)) return "note";
   return "task";
+}
+
+/** Pull a meal slot out of free text. */
+function detectMealSlot(text: string): "Breakfast" | "Lunch" | "Dinner" | "Snack" {
+  const t = text.toLowerCase();
+  if (/\bbreakfast|brunch|morning meal\b/.test(t)) return "Breakfast";
+  if (/\blunch\b/.test(t)) return "Lunch";
+  if (/\bsnack\b/.test(t)) return "Snack";
+  return "Dinner";
+}
+
+function stripMealKeywords(s: string): string {
+  return s.replace(/\b(for\s+)?(breakfast|brunch|lunch|dinner|snack|meal|recipe)\b/gi, "").replace(/\s{2,}/g, " ").trim();
 }
 
 /** Strip the matched chrono date phrase from input to keep a clean title. */
@@ -49,7 +66,7 @@ function cleanTitle(text: string, parsed: chrono.ParsedResult[]): string {
 }
 
 export function InboxCapture({ defaultDate }: { defaultDate?: Date }) {
-  const { addTask, addAppointment, addIdea, addGoal } = useStore();
+  const { addTask, addAppointment, addIdea, addGoal, addMeal } = useStore();
   const [value, setValue] = useState("");
   const [kind, setKind] = useState<Kind>("auto");
   const [busy, setBusy] = useState(false);
@@ -96,6 +113,14 @@ export function InboxCapture({ defaultDate }: { defaultDate?: Date }) {
           await addAppointment({ title: preview.title, date: dateISO, time });
           toast(`Appointment scheduled — ${format(preview.date!, "MMM d")}${time ? " at " + time : ""}`);
           break;
+        case "meal": {
+          const slot = detectMealSlot(value);
+          const date = dateISO ?? format(defaultDate ?? new Date(), "yyyy-MM-dd");
+          const name = stripMealKeywords(preview.title) || preview.title;
+          await addMeal({ name, date, slot });
+          toast(`${slot} added — ${format(new Date(date + "T00:00"), "EEE MMM d")}`);
+          break;
+        }
         case "idea":
           await addIdea({ title: preview.title });
           toast(`Captured idea`);
@@ -104,12 +129,21 @@ export function InboxCapture({ defaultDate }: { defaultDate?: Date }) {
           await addGoal({ title: preview.title });
           toast(`New goal captured`);
           break;
-        case "note":
-          // Notes live in the notes table; treat as a quick task tagged "note" for now,
-          // until Phase 5 ships the rich notes editor capture path.
-          await addTask({ title: preview.title, dueDate: dateISO, inbox: !dateISO, tags: ["note"] as any });
-          toast(`Saved as note`);
+        case "note": {
+          const { data: u } = await supabase.auth.getUser();
+          const uid = u?.user?.id;
+          if (!uid) { toast.error("Sign in to save notes."); break; }
+          const { error } = await supabase.from("notes").insert({
+            user_id: uid,
+            title: preview.title.slice(0, 80),
+            body: preview.title,
+            kind: "note",
+            date: dateISO ?? null,
+          });
+          if (error) throw error;
+          toast("Note saved");
           break;
+        }
         case "reminder":
         case "task":
         default:
