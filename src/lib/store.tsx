@@ -471,7 +471,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await supabase.from("birthdays").delete().eq("id", id);
     },
     updateBirthday: async (id, patch) => {
-      const dbPatch: Record<string, any> = {};
+      const dbPatch: any = {};
       if (patch.name !== undefined) dbPatch.name = patch.name;
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.relation !== undefined) dbPatch.relation = patch.relation ?? null;
@@ -489,7 +489,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await supabase.from("holidays").delete().eq("id", id);
     },
     updateHoliday: async (id, patch) => {
-      const dbPatch: Record<string, any> = {};
+      const dbPatch: any = {};
       if (patch.name !== undefined) dbPatch.name = patch.name;
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
