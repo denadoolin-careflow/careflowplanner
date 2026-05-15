@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, AlertTriangle, GripHorizontal, Check } from "lucide-react";
+import { Trash2, AlertTriangle, GripHorizontal, Check, Clock, Plus, CheckSquare, Utensils, Sparkles, MapPin, FolderKanban } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -663,7 +663,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
       {/* Create dialog */}
       <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-[min(92vw,32rem)] max-h-[88vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader><DialogTitle>New time block</DialogTitle></DialogHeader>
           {draft && <CreateForm draft={draft} onCancel={() => setDraft(null)} onCreate={async (b) => { await add(b); setDraft(null); }} />}
         </DialogContent>
@@ -671,7 +671,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-[min(92vw,32rem)] max-h-[88vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader><DialogTitle>Edit time block</DialogTitle></DialogHeader>
           {editing && (
             <EditForm
@@ -711,7 +711,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
   const [end, setEnd] = useState(draft.end);
   const [color, setColor] = useState<string>("primary");
   const [notes, setNotes] = useState("");
-  const [mode, setMode] = useState<"new" | "task" | "meal" | "zone" | "area">("new");
+  const [mode, setMode] = useState<"new" | "task" | "project" | "meal" | "zone" | "area">("new");
   const [pickQ, setPickQ] = useState("");
 
   const openTasks = state.tasks.filter(t => !t.done && !t.parentTaskId);
@@ -724,6 +724,11 @@ function CreateForm({ draft, onCreate, onCancel }: {
     !pickQ.trim() || m.name.toLowerCase().includes(pickQ.toLowerCase())
   ).slice(0, 60);
 
+  const projects = (state.projects ?? []).filter(p => !p.archivedAt);
+  const filteredProjects = projects.filter(p =>
+    !pickQ.trim() || p.name.toLowerCase().includes(pickQ.toLowerCase())
+  ).slice(0, 60);
+
   const attach = async (label: string, taskId?: string) => {
     onCreate({ date: draft.date, startTime: start, endTime: end, title: label, notes, color, allDay: false });
     if (taskId) {
@@ -734,18 +739,31 @@ function CreateForm({ draft, onCreate, onCancel }: {
   return (
     <div className="space-y-3">
       <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="new">New</TabsTrigger>
-          <TabsTrigger value="task">Task</TabsTrigger>
-          <TabsTrigger value="meal">Meal</TabsTrigger>
-          <TabsTrigger value="zone">Zone</TabsTrigger>
-          <TabsTrigger value="area">Area</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6 gap-0.5 p-1">
+          <TabsTrigger value="new" className="px-1 text-[11px] gap-1"><Plus className="h-3.5 w-3.5" /><span className="hidden sm:inline">New</span></TabsTrigger>
+          <TabsTrigger value="task" className="px-1 text-[11px] gap-1"><CheckSquare className="h-3.5 w-3.5" /><span className="hidden sm:inline">Task</span></TabsTrigger>
+          <TabsTrigger value="project" className="px-1 text-[11px] gap-1"><FolderKanban className="h-3.5 w-3.5" /><span className="hidden sm:inline">Project</span></TabsTrigger>
+          <TabsTrigger value="meal" className="px-1 text-[11px] gap-1"><Utensils className="h-3.5 w-3.5" /><span className="hidden sm:inline">Meal</span></TabsTrigger>
+          <TabsTrigger value="zone" className="px-1 text-[11px] gap-1"><Sparkles className="h-3.5 w-3.5" /><span className="hidden sm:inline">Zone</span></TabsTrigger>
+          <TabsTrigger value="area" className="px-1 text-[11px] gap-1"><MapPin className="h-3.5 w-3.5" /><span className="hidden sm:inline">Area</span></TabsTrigger>
         </TabsList>
       </Tabs>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div><Label className="text-xs">Start</Label><Input type="time" value={start} onChange={e => setStart(e.target.value)} /></div>
-        <div><Label className="text-xs">End</Label><Input type="time" value={end} onChange={e => setEnd(e.target.value)} /></div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="min-w-0">
+          <Label className="text-xs">Start</Label>
+          <div className="relative mt-1">
+            <Clock className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="pl-8 pr-2 w-full" />
+          </div>
+        </div>
+        <div className="min-w-0">
+          <Label className="text-xs">End</Label>
+          <div className="relative mt-1">
+            <Clock className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="pl-8 pr-2 w-full" />
+          </div>
+        </div>
       </div>
 
       {mode === "new" && (
@@ -781,7 +799,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
       {mode === "task" && (
         <div className="space-y-2">
           <Input autoFocus placeholder="Search open tasks…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
-          <ScrollArea className="h-64 rounded-md border">
+          <ScrollArea className="h-56 sm:h-64 rounded-md border">
             {filteredTasks.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No matching tasks.</div>
             ) : (
@@ -794,7 +812,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
                         className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
                         onClick={() => attach(t.title, t.id)}
                       >
-                        <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border border-muted-foreground/40" />
+                        <CheckSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate font-medium">{t.title}</span>
                           {(project || t.area) && (
@@ -814,10 +832,39 @@ function CreateForm({ draft, onCreate, onCancel }: {
         </div>
       )}
 
+      {mode === "project" && (
+        <div className="space-y-2">
+          <Input autoFocus placeholder="Search projects…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
+          <ScrollArea className="h-56 sm:h-64 rounded-md border">
+            {filteredProjects.length === 0 ? (
+              <div className="p-6 text-center text-xs text-muted-foreground">No projects.</div>
+            ) : (
+              <ul className="divide-y">
+                {filteredProjects.map(p => (
+                  <li key={p.id}>
+                    <button
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
+                      onClick={() => attach(p.name)}
+                    >
+                      <FolderKanban className="h-3.5 w-3.5 shrink-0" style={p.color ? { color: p.color } : undefined} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{p.name}</span>
+                        {p.areaName && <span className="block truncate text-[10px] text-muted-foreground">{p.areaName}</span>}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </ScrollArea>
+          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+        </div>
+      )}
+
       {mode === "meal" && (
         <div className="space-y-2">
           <Input autoFocus placeholder="Search meals…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
-          <ScrollArea className="h-64 rounded-md border">
+          <ScrollArea className="h-56 sm:h-64 rounded-md border">
             {filteredMeals.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No meals planned.</div>
             ) : (
@@ -825,9 +872,10 @@ function CreateForm({ draft, onCreate, onCancel }: {
                 {filteredMeals.map(m => (
                   <li key={m.id}>
                     <button
-                      className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
                       onClick={() => attach(`🍽 ${m.name}`)}
                     >
+                      <Utensils className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium">{m.name}</span>
                         <span className="block truncate text-[10px] text-muted-foreground capitalize">
@@ -852,9 +900,10 @@ function CreateForm({ draft, onCreate, onCancel }: {
               <button
                 key={z}
                 onClick={() => attach(`🧽 ${z} reset`)}
-                className="rounded-md border border-border/60 bg-card/60 px-3 py-2 text-left text-xs font-medium hover:border-primary/40 hover:bg-primary/10"
+                className="flex items-center gap-2 rounded-md border border-border/60 bg-card/60 px-3 py-2 text-left text-xs font-medium hover:border-primary/40 hover:bg-primary/10"
               >
-                {z}
+                <Sparkles className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate">{z}</span>
               </button>
             ))}
           </div>
@@ -872,10 +921,11 @@ function CreateForm({ draft, onCreate, onCancel }: {
                 <button
                   key={a}
                   onClick={() => attach(`📁 ${a}`)}
-                  className="rounded-md border border-border/60 bg-card/60 px-3 py-2 text-left text-xs font-medium hover:border-primary/40 hover:bg-primary/10"
+                  className="flex items-center gap-2 rounded-md border border-border/60 bg-card/60 px-3 py-2 text-left text-xs font-medium hover:border-primary/40 hover:bg-primary/10"
                   style={rec?.color ? { borderColor: rec.color + "55" } : undefined}
                 >
-                  {a}
+                  <MapPin className="h-3.5 w-3.5 shrink-0" style={rec?.color ? { color: rec.color } : undefined} />
+                  <span className="truncate">{a}</span>
                 </button>
               );
             })}
@@ -896,9 +946,21 @@ function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: P
   return (
     <div className="space-y-3">
       <div><Label className="text-xs">Title</Label><Input value={title} onChange={e => setTitle(e.target.value)} /></div>
-      <div className="grid grid-cols-2 gap-2">
-        <div><Label className="text-xs">Start</Label><Input type="time" value={start} onChange={e => setStart(e.target.value)} /></div>
-        <div><Label className="text-xs">End</Label><Input type="time" value={end} onChange={e => setEnd(e.target.value)} /></div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="min-w-0">
+          <Label className="text-xs">Start</Label>
+          <div className="relative mt-1">
+            <Clock className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="pl-8 pr-2 w-full" />
+          </div>
+        </div>
+        <div className="min-w-0">
+          <Label className="text-xs">End</Label>
+          <div className="relative mt-1">
+            <Clock className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="pl-8 pr-2 w-full" />
+          </div>
+        </div>
       </div>
       <div>
         <Label className="text-xs">Color</Label>
