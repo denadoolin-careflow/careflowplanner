@@ -72,19 +72,29 @@ export default function Inbox() {
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
-      <header className="flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary">
+      <header className="flex flex-wrap items-center gap-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
           <InboxIcon className="h-5 w-5" />
         </div>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
-          <p className="text-sm text-muted-foreground">Capture now, organize later. {items.length} waiting.</p>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">Inbox</h1>
+          <p className="truncate text-xs text-muted-foreground sm:text-sm">
+            Capture now, organize later. {items.length} waiting.
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={triage} disabled={triaging || items.length === 0} className="gap-1.5">
-          {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-          Smart triage
-        </Button>
-        <TaskListControls prefs={prefs} onChange={setPrefs} />
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={triage}
+            disabled={triaging || items.length === 0}
+            className="gap-1.5"
+          >
+            {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Smart triage
+          </Button>
+          <TaskListControls prefs={prefs} onChange={setPrefs} />
+        </div>
       </header>
 
       <InlineTaskComposer
