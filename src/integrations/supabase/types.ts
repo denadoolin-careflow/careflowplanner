@@ -2248,6 +2248,96 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_intentions: {
+        Row: {
+          created_at: string
+          emotional_focus: string | null
+          id: string
+          intention: string | null
+          notes: string | null
+          priorities: Json
+          theme: string | null
+          top_three: Json
+          updated_at: string
+          user_id: string
+          week_start: string
+          word: string | null
+        }
+        Insert: {
+          created_at?: string
+          emotional_focus?: string | null
+          id?: string
+          intention?: string | null
+          notes?: string | null
+          priorities?: Json
+          theme?: string | null
+          top_three?: Json
+          updated_at?: string
+          user_id: string
+          week_start: string
+          word?: string | null
+        }
+        Update: {
+          created_at?: string
+          emotional_focus?: string | null
+          id?: string
+          intention?: string | null
+          notes?: string | null
+          priorities?: Json
+          theme?: string | null
+          top_three?: Json
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+          word?: string | null
+        }
+        Relationships: []
+      }
+      weekly_reviews: {
+        Row: {
+          challenges: string | null
+          created_at: string
+          energy_avg: string | null
+          gratitude: string | null
+          id: string
+          lessons: string | null
+          next_week_focus: string | null
+          rating: number | null
+          updated_at: string
+          user_id: string
+          week_start: string
+          wins: string | null
+        }
+        Insert: {
+          challenges?: string | null
+          created_at?: string
+          energy_avg?: string | null
+          gratitude?: string | null
+          id?: string
+          lessons?: string | null
+          next_week_focus?: string | null
+          rating?: number | null
+          updated_at?: string
+          user_id: string
+          week_start: string
+          wins?: string | null
+        }
+        Update: {
+          challenges?: string | null
+          created_at?: string
+          energy_avg?: string | null
+          gratitude?: string | null
+          id?: string
+          lessons?: string | null
+          next_week_focus?: string | null
+          rating?: number | null
+          updated_at?: string
+          user_id?: string
+          week_start?: string
+          wins?: string | null
+        }
+        Relationships: []
+      }
       weight_logs: {
         Row: {
           created_at: string
