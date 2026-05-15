@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { format, parseISO, isSameDay } from "date-fns";
 import { useStore } from "@/lib/store";
 import { useTimeBlocks, colorClasses } from "@/lib/time-blocks";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
 
@@ -19,6 +19,7 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick }: 
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks } = useTimeBlocks(fromISO, toISO);
+  const { toggleTask } = useStore();
 
   const items = useMemo(() => {
     const rows: { iso: string; time?: string; label: string; color?: string; kind: "block" | "appt"; apptId?: string; apptKind?: string }[] = [];
@@ -76,6 +77,7 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick }: 
             <ul className="space-y-1">
               {rows.map((r, i) => {
                 const cls = r.kind === "block" && r.color ? colorClasses(r.color) : null;
+                const isTask = r.apptKind === "task" && !!r.apptId;
                 const clickable = r.apptKind === "appt" && r.apptId && onApptClick;
                 return (
                 <li key={i}
@@ -85,6 +87,15 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick }: 
                     cls ? `${cls.bg} ${cls.text}` : "bg-muted/40",
                     clickable && "cursor-pointer hover:bg-primary/10"
                   )}>
+                  {isTask && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); void toggleTask(r.apptId!); }}
+                      aria-label="Mark task done"
+                      className="grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-primary/50 bg-background text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                    >
+                      <Check className="h-3 w-3 opacity-0 transition-opacity hover:opacity-100" />
+                    </button>
+                  )}
                   <span className="w-16 shrink-0 font-mono text-[11px] opacity-70">{r.time ? r.time : "All day"}</span>
                   <span className="min-w-0 flex-1 truncate">{r.label}</span>
                 </li>
