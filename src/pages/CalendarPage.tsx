@@ -385,3 +385,48 @@ function YearView({ cursor, eventsOn, setCursor, setView }: { cursor: Date; even
     </div>
   );
 }
+
+function ScheduleView({ view, cursor, eventsOn, colorOf }: { view: View; cursor: Date; eventsOn: EventsFn; colorOf: ColorFn }) {
+  let start: Date, end: Date;
+  if (view === "day") { start = cursor; end = cursor; }
+  else if (view === "week") { start = startOfWeek(cursor, { weekStartsOn: 0 }); end = endOfWeek(cursor, { weekStartsOn: 0 }); }
+  else if (view === "month") { start = startOfMonth(cursor); end = endOfMonth(cursor); }
+  else { start = startOfYear(cursor); end = endOfYear(cursor); }
+
+  const days = eachDayOfInterval({ start, end });
+  const sections = days
+    .map(d => ({ date: d, iso: d.toISOString().slice(0, 10), items: eventsOn(d.toISOString().slice(0, 10)).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")) }))
+    .filter(s => s.items.length > 0);
+
+  if (sections.length === 0) {
+    return <p className="rounded-lg bg-muted/40 px-3 py-8 text-center text-sm text-muted-foreground">Nothing scheduled in this {view}.</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {sections.map(s => {
+        const today = isSameDay(s.date, new Date());
+        return (
+          <div key={s.iso}>
+            <div className="sticky top-0 z-10 mb-1.5 flex items-baseline gap-2 bg-card/80 py-1 backdrop-blur-sm">
+              <span className={cn("font-display text-sm font-semibold", today && "text-primary")}>
+                {formatRelativeDate(s.iso)}
+              </span>
+              <span className="text-[11px] text-muted-foreground">{format(s.date, "EEE, MMM d")}</span>
+              <span className="ml-auto text-[10px] text-muted-foreground">{s.items.length} item{s.items.length === 1 ? "" : "s"}</span>
+            </div>
+            <ul className="space-y-1">
+              {s.items.map((e, i) => (
+                <li key={i} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm", colorOf(e.kind))}>
+                  <span className="w-16 shrink-0 text-xs font-medium opacity-80">{e.time ?? "any time"}</span>
+                  <span className="flex-1 truncate">{e.label}</span>
+                  <span className="text-[10px] uppercase tracking-wider opacity-60">{e.kind}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
