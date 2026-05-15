@@ -95,6 +95,9 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const [drag, setDrag] = useState<DragState | null>(null);
   const [dropHover, setDropHover] = useState<{ iso: string; hour: number } | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ iso: string; hour: number } | null>(null);
+  const [externalDrag, setExternalDrag] = useState<null | { kind: "task" | "event" | "appt"; title: string; durationH: number }>(null);
+  const externalDragRef = useRef<null | { kind: "task" | "event" | "appt"; title: string; durationH: number }>(null);
+  externalDragRef.current = externalDrag;
   const dragRef = useRef<DragState | null>(null);
   const suppressClickUntil = useRef(0);
   const lastHoverIdRef = useRef<string | null>(null);
@@ -283,7 +286,13 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             e.dataTransfer.setData("text/plain", t.label);
                             e.dataTransfer.effectAllowed = "move";
                             haptics.pickup();
+                            const taskRow = state.tasks.find(x => x.id === t.id);
+                            const mins = taskRow?.estMinutes ?? 60;
+                            const preview = { kind: "task" as const, title: t.label, durationH: Math.max(0.25, mins / 60) };
+                            externalDragRef.current = preview;
+                            setExternalDrag(preview);
                           }}
+                          onDragEnd={() => { externalDragRef.current = null; setExternalDrag(null); setDropHover(null); }}
                           style={{ cursor: "grab" }}
                         >
                           <button
@@ -305,7 +314,11 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                   )}
                   <div
                     ref={el => { colRefs.current[iso] = el; }}
-                    className="relative cursor-crosshair"
+                    className={cn(
+                      "relative cursor-crosshair transition-colors",
+                      externalDrag && dropHover?.iso !== iso && "bg-muted/20",
+                      externalDrag && dropHover?.iso === iso && "bg-primary/[0.04]"
+                    )}
                     style={{ height: GRID_HEIGHT }}
                     onClick={(e) => startSlot(d, e)}
                     onMouseMove={(e) => {
@@ -339,10 +352,13 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       const rect = e.currentTarget.getBoundingClientRect();
                       const y = e.clientY - rect.top;
                       const startH = HOUR_START + snap(y / PX_PER_HOUR, snapStepFromEvent(e));
-                      const endH = Math.min(HOUR_END, startH + 1);
+                      const previewDur = externalDragRef.current?.durationH ?? 1;
+                      const endH = Math.min(HOUR_END, startH + previewDur);
                       if (apptId && onApptDropAt) {
                         onApptDropAt(apptId, iso, startH);
                         setDropHover(null);
+                        setExternalDrag(null);
+                        externalDragRef.current = null;
                         haptics.tap();
                         return;
                       }
@@ -363,16 +379,48 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       });
                       if (taskId && onTaskDropAt) onTaskDropAt(taskId, iso, startH);
                       setDropHover(null);
+                      setExternalDrag(null);
+                      externalDragRef.current = null;
                       haptics.tap();
                     }}
                   >
                     {/* Drop indicator */}
-                    {dropHover?.iso === iso && (
-                      <div
-                        className="pointer-events-none absolute inset-x-1 z-30 animate-pulse rounded-md border-2 border-dashed border-primary/70 bg-primary/15 shadow-[0_0_0_4px_hsl(var(--primary)/0.08)] transition-[top] duration-150"
-                        style={{ top: (dropHover.hour - HOUR_START) * PX_PER_HOUR, height: PX_PER_HOUR }}
-                      />
-                    )}
+                    {dropHover?.iso === iso && (() => {
+                      const previewDur = externalDrag?.durationH ?? 1;
+                      const startH = dropHover.hour;
+                      const endH = Math.min(HOUR_END, startH + previewDur);
+                      const heightPx = (endH - startH) * PX_PER_HOUR;
+                      // Conflict check vs blocks + appts on this day
+                      const hasConflict =
+                        dayBlocks.some(b => {
+                          const s = hmToHours(b.startTime); const e = hmToHours(b.endTime);
+                          return s < endH && startH < e;
+                        }) ||
+                        dayAppts.some(a => {
+                          const s = hmToHours(a.time!.slice(0,5)); const e = s + 1;
+                          return s < endH && startH < e;
+                        });
+                      const previewTitle = externalDrag?.title || "Drop here";
+                      return (
+                        <div
+                          className={cn(
+                            "pointer-events-none absolute inset-x-1 z-30 rounded-md border-2 border-dashed shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.35)] transition-[top,height] duration-100 overflow-hidden",
+                            hasConflict
+                              ? "border-destructive/80 bg-destructive/15"
+                              : "border-primary bg-primary/20"
+                          )}
+                          style={{ top: (startH - HOUR_START) * PX_PER_HOUR, height: heightPx }}
+                        >
+                          <div className={cn("px-2 py-1 text-[11px] font-semibold leading-tight truncate", hasConflict ? "text-destructive" : "text-primary")}>
+                            {previewTitle}
+                          </div>
+                          <div className={cn("px-2 text-[10px] leading-tight", hasConflict ? "text-destructive/80" : "text-primary/80")}>
+                            {fmtTime(hoursToHM(startH))} – {fmtTime(hoursToHM(endH))}
+                            {hasConflict && <span className="ml-1 font-semibold">· conflicts</span>}
+                          </div>
+                        </div>
+                      );
+                    })()}
                     {/* Hover slot highlight */}
                     {!drag && !dropHover && hoverSlot?.iso === iso && (
                       <div
