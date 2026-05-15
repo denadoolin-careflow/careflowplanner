@@ -67,7 +67,7 @@ export function KanbanBoard({ tasks, scope = "all" }: { tasks: Task[]; scope?: "
             <span className="text-[11px] text-muted-foreground">{col.items.length}</span>
           </div>
           <div className="flex-1 space-y-1 min-h-32">
-            {col.items.map(t => <TaskRow key={t.id} task={t} draggable />)}
+            {col.items.map(t => <KanbanCard key={t.id} task={t} />)}
           </div>
           <QuickAdd col={col} onAdd={async (title) => {
             const patch = col.onDrop({ id: "", title, area: "Personal", done: false, priority: "medium", createdAt: "" } as Task);
@@ -75,6 +75,23 @@ export function KanbanBoard({ tasks, scope = "all" }: { tasks: Task[]; scope?: "
           }} />
         </div>
       ))}
+    </div>
+  );
+}
+
+function KanbanCard({ task }: { task: Task }) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("application/x-careflow-task", task.id);
+        e.dataTransfer.setData("text/plain", task.title);
+        e.dataTransfer.effectAllowed = "move";
+        haptics.pickup?.();
+      }}
+      className="rounded-xl bg-card/80 hover:shadow-[0_4px_18px_-12px_hsl(var(--primary)/0.45)] cursor-grab active:cursor-grabbing"
+    >
+      <TaskRow task={task} dense />
     </div>
   );
 }
