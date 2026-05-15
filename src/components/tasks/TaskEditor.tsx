@@ -140,6 +140,7 @@ export function TaskEditor({ open, onOpenChange, task }: Props) {
               <Label className="text-xs">Every (interval)</Label>
               <Input type="number" min={1} value={draft.recurrenceInterval ?? 1} onChange={e => set("recurrenceInterval", Number(e.target.value) || 1)} className="w-full" />
             </div>
+            <ProjectGoalLinks draft={draft} set={set} />
           </div>
           <div className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2">
             <div>
