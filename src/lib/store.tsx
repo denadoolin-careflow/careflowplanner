@@ -47,7 +47,16 @@ const taskTo = (t: Partial<Task>) => ({
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 const habitFrom = (r: any): Habit => ({ id: r.id, title: r.title, cadence: r.cadence, category: r.category, streak: r.streak, log: {} });
-const journalFrom = (r: any): JournalEntry => ({ id: r.id, date: r.date, type: r.type, title: r.title ?? undefined, body: r.body, mood: r.mood ?? undefined });
+const journalFrom = (r: any): JournalEntry => ({
+  id: r.id, date: r.date, type: r.type, title: r.title ?? undefined, body: r.body, mood: r.mood ?? undefined,
+  template: r.template ?? undefined,
+  energy: r.energy ?? undefined,
+  prompts: Array.isArray(r.prompts) ? r.prompts : [],
+  gratitudeItems: Array.isArray(r.gratitude_items) ? r.gratitude_items : [],
+  tags: Array.isArray(r.tags) ? r.tags : [],
+  pinned: !!r.pinned,
+  linkedIds: Array.isArray(r.linked_ids) ? r.linked_ids : [],
+});
 const mealFrom = (r: any): Meal => ({
   id: r.id, date: r.date, slot: r.slot, name: r.name,
   notes: r.notes ?? undefined, kidSafe: r.kid_safe,
