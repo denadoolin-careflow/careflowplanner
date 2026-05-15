@@ -268,6 +268,7 @@ export function BlockEditor({
   const navigate = useNavigate();
   const refsRef = useRef<RefItem[]>([]);
   refsRef.current = useMemo(() => buildReferences(state), [state]);
+  const lastSyncedRef = useRef<string>(body);
 
   const slashExtension = useMemo(() => Extension.create({
     name: "slashCommand",
