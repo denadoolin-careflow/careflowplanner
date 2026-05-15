@@ -3,12 +3,13 @@ import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { Inbox as InboxIcon, Sparkles, Check, X, RefreshCw } from "lucide-react";
 import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
-import { TaskSortMenu, sortTasks, type SortMode } from "@/components/tasks/TaskSortMenu";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Area, Priority, TaskStatus } from "@/lib/types";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
+import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
+import { applyFilters, sortTasks, groupTasks } from "@/lib/task-grouping";
 
 interface Suggestion {
   task_id: string;
@@ -21,13 +22,16 @@ interface Suggestion {
 
 export default function Inbox() {
   const { state, updateTask } = useStore();
-  const [sort, setSort] = useState<SortMode>("created");
+  const [prefs, setPrefs] = useTaskListPrefs("inbox");
   const [triaging, setTriaging] = useState(false);
   const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
-  const items = useMemo(
-    () => sortTasks(state.tasks.filter(t => t.inbox && !t.done && !t.parentTaskId), sort),
-    [state.tasks, sort],
-  );
+  const groups = useMemo(() => {
+    const base = state.tasks.filter(t => t.inbox && !t.done && !t.parentTaskId);
+    const filtered = applyFilters(base, prefs.filter);
+    const sorted = sortTasks(filtered, prefs.sort);
+    return groupTasks(sorted, prefs.group, state.projects ?? []);
+  }, [state.tasks, state.projects, prefs]);
+  const items = useMemo(() => groups.flatMap(g => g.tasks), [groups]);
 
   const triage = async () => {
     if (items.length === 0) return;
@@ -80,7 +84,7 @@ export default function Inbox() {
           {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
           Smart triage
         </Button>
-        <TaskSortMenu value={sort} onChange={setSort} />
+        <TaskListControls prefs={prefs} onChange={setPrefs} />
       </header>
 
       <InlineTaskComposer
@@ -93,8 +97,15 @@ export default function Inbox() {
         {items.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Your inbox is clear ✨</div>
         ) : (
-          <div className="space-y-1">
-            {items.map(t => {
+          <div className="space-y-3">
+            {groups.map(g => (
+              <div key={g.key} className="space-y-1">
+                {prefs.group !== "none" && (
+                  <div className="px-2 pt-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {g.label} <span className="opacity-60">· {g.tasks.length}</span>
+                  </div>
+                )}
+                {g.tasks.map(t => {
               const s = suggestions[t.id];
               const project = s?.project_id ? state.projects?.find(p => p.id === s.project_id) : undefined;
               return (
@@ -121,7 +132,9 @@ export default function Inbox() {
                   )}
                 </div>
               );
-            })}
+                })}
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -1,12 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { addDays, format } from "date-fns";
 import { useStore, todayISO } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { LucideIcon } from "lucide-react";
 import type { Task } from "@/lib/types";
 import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
-import { TaskSortMenu, sortTasks, type SortMode } from "@/components/tasks/TaskSortMenu";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
+import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
+import { applyFilters, sortTasks, groupTasks } from "@/lib/task-grouping";
 
 type Variant = "upcoming" | "anytime" | "someday" | "logbook";
 
@@ -34,17 +35,15 @@ function filterTasks(all: Task[], variant: Variant): Task[] {
   }
 }
 
-const DEFAULT_SORT: Record<Variant, SortMode> = {
-  upcoming: "date",
-  anytime: "created",
-  someday: "created",
-  logbook: "date",
-};
-
 export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: LucideIcon }) {
   const { state } = useStore();
-  const [sort, setSort] = useState<SortMode>(DEFAULT_SORT[variant]);
-  const items = useMemo(() => sortTasks(filterTasks(state.tasks, variant), sort), [state.tasks, variant, sort]);
+  const [prefs, setPrefs] = useTaskListPrefs(`tlp:${variant}`);
+  const groups = useMemo(() => {
+    const filtered = applyFilters(filterTasks(state.tasks, variant), prefs.filter);
+    const sorted = sortTasks(filtered, prefs.sort);
+    return groupTasks(sorted, prefs.group, state.projects ?? []);
+  }, [state.tasks, state.projects, variant, prefs]);
+  const total = groups.reduce((s, g) => s + g.tasks.length, 0);
   const meta = META[variant];
 
   const composerDefaults =
@@ -61,9 +60,9 @@ export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: 
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">{meta.title}</h1>
-          <p className="text-sm text-muted-foreground">{meta.subtitle} {items.length} {items.length === 1 ? "item" : "items"}.</p>
+          <p className="text-sm text-muted-foreground">{meta.subtitle} {total} {total === 1 ? "item" : "items"}.</p>
         </div>
-        <TaskSortMenu value={sort} onChange={setSort} />
+        <TaskListControls prefs={prefs} onChange={setPrefs} />
       </header>
 
       {variant !== "logbook" && (
@@ -71,11 +70,20 @@ export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: 
       )}
 
       <div className="rounded-2xl border border-border/60 bg-card/60 p-2">
-        {items.length === 0 ? (
+        {total === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Nothing here yet ✨</div>
         ) : (
-          <div className="space-y-1">
-            {items.map(t => <TaskRow key={t.id} task={t} />)}
+          <div className="space-y-3">
+            {groups.map(g => (
+              <div key={g.key} className="space-y-1">
+                {prefs.group !== "none" && (
+                  <div className="px-2 pt-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    {g.label} <span className="opacity-60">· {g.tasks.length}</span>
+                  </div>
+                )}
+                {g.tasks.map(t => <TaskRow key={t.id} task={t} />)}
+              </div>
+            ))}
           </div>
         )}
       </div>
