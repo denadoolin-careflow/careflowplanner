@@ -10,6 +10,7 @@ export interface TimeBlock {
   notes?: string | null;
   color: string;       // semantic token name: primary | secondary | accent | moon | warm
   allDay: boolean;
+  taskId?: string | null;
 }
 
 const COLORS = ["primary", "secondary", "accent", "moon", "warm"] as const;
@@ -26,6 +27,7 @@ function fromRow(r: any): TimeBlock {
     notes: r.notes,
     color: r.color,
     allDay: r.all_day,
+    taskId: r.task_id ?? null,
   };
 }
 
@@ -56,6 +58,7 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
       notes: b.notes ?? null,
       color: b.color,
       all_day: b.allDay,
+      task_id: b.taskId ?? null,
     }).select("*").single();
     if (!error && data) setBlocks(prev => [...prev, fromRow(data)]);
   };
@@ -69,6 +72,7 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
     if (patch.color !== undefined) dbPatch.color = patch.color;
     if (patch.date !== undefined) dbPatch.date = patch.date;
     if (patch.allDay !== undefined) dbPatch.all_day = patch.allDay;
+    if (patch.taskId !== undefined) dbPatch.task_id = patch.taskId;
     const { data, error } = await supabase.from("time_blocks").update(dbPatch).eq("id", id).select("*").single();
     if (!error && data) setBlocks(prev => prev.map(b => b.id === id ? fromRow(data) : b));
   };
