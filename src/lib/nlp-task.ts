@@ -1,4 +1,4 @@
-import { addDays, format, nextDay, parse, startOfDay } from "date-fns";
+import { addDays, endOfMonth, endOfWeek, format, nextDay, parse, startOfDay } from "date-fns";
 import type { Day } from "date-fns";
 import type { Area, Priority, RecurrenceType } from "./types";
 import { AREAS } from "./types";
@@ -182,6 +182,16 @@ export function parseTaskInput(raw: string): ParsedTask {
         out.chips.push({ kind: "date", label: `next ${v}` });
         dateMatched = true;
       }
+    });
+  }
+
+  if (!dateMatched) {
+    text = consume(text, /\bthis\s+(week|month)\b/gi, (m) => {
+      const v = m[1].toLowerCase();
+      const d = v === "week" ? endOfWeek(today, { weekStartsOn: 0 }) : endOfMonth(today);
+      out.dueDate = isoFromDate(d);
+      out.chips.push({ kind: "date", label: `this ${v}` });
+      dateMatched = true;
     });
   }
 
