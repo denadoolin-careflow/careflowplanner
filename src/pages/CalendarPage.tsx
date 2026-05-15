@@ -21,6 +21,7 @@ import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
+import { BirthdayHolidayEditor } from "@/components/calendar/BirthdayHolidayEditor";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -43,8 +44,12 @@ export default function CalendarPage() {
   const [gLoading, setGLoading] = useState(false);
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const [editBdayId, setEditBdayId] = useState<string | null>(null);
+  const [editHolId, setEditHolId] = useState<string | null>(null);
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
+  const editingBday = editBdayId ? state.birthdays.find(b => b.id === editBdayId) ?? null : null;
+  const editingHol = editHolId ? state.holidays.find(h => h.id === editHolId) ?? null : null;
 
   const loadGoogle = async () => {
     setGLoading(true);
@@ -78,8 +83,8 @@ export default function CalendarPage() {
 
   const eventsOn = (k: string) => [
     ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, id: a.id, label: a.title, time: a.time })),
-    ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, label: `🎂 ${b.name}`, time: undefined })),
-    ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, label: `✨ ${h.name}`, time: undefined })),
+    ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, id: b.id, label: `🎂 ${b.name}`, time: undefined })),
+    ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, id: h.id, label: `✨ ${h.name}`, time: undefined })),
     ...gEvents.filter(g => g.date === k).map(g => ({ kind: "gcal" as const, label: g.title, time: g.time ?? undefined, color: g.color })),
     ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
       kind: (t.area === "Caregiving" ? "care" : "task") as "care" | "task",
@@ -275,6 +280,8 @@ export default function CalendarPage() {
               if (item.kind === "appt" && item.id) setEditApptId(item.id);
               else if (item.kind === "task" && item.id) setEditTaskId(item.id);
               else if (item.kind === "care" && item.id) setEditTaskId(item.id);
+              else if (item.kind === "bday" && item.id) setEditBdayId(item.id);
+              else if (item.kind === "hol" && item.id) setEditHolId(item.id);
             }}
             onItemReschedule={async (item, dateISO) => {
               if (item.kind === "appt" && item.id) {
@@ -283,6 +290,8 @@ export default function CalendarPage() {
               } else if ((item.kind === "task" || item.kind === "care") && item.id) {
                 await updateTask(item.id, { dueDate: dateISO, inbox: false });
                 toast(`Rescheduled task to ${format(parseISO(dateISO), "MMM d")}`);
+              } else if (item.kind === "bday" && item.id) {
+                await useStore.getState ? null : null;
               }
             }}
           />
