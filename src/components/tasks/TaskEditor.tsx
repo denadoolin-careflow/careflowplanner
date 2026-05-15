@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Task, AREAS, DayPart, Priority, Energy, RecurrenceType } from "@/lib/types";
+import { Task, AREAS, Priority, Energy, RecurrenceType } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
@@ -44,35 +44,22 @@ export function TaskEditor({ open, onOpenChange, task }: Props) {
             <Label className="text-xs">Notes</Label>
             <Textarea rows={3} value={draft.notes ?? ""} onChange={e => set("notes", e.target.value)} placeholder="Anything to remember…" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
+            <div className="space-y-1 min-w-0">
               <Label className="text-xs">Due date</Label>
-              <Input type="date" value={draft.dueDate ?? ""} onChange={e => set("dueDate", e.target.value || undefined)} />
+              <Input type="date" value={draft.dueDate ?? ""} onChange={e => set("dueDate", e.target.value || undefined)} className="w-full" />
             </div>
-            <div>
-              <Label className="text-xs">Day part</Label>
-              <Select value={draft.dayPart ?? "none"} onValueChange={v => set("dayPart", v === "none" ? undefined : v as DayPart)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Whenever</SelectItem>
-                  <SelectItem value="Morning">Morning</SelectItem>
-                  <SelectItem value="Afternoon">Afternoon</SelectItem>
-                  <SelectItem value="Evening">Evening</SelectItem>
-                  <SelectItem value="Late Night">Late Night</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
+            <div className="space-y-1 min-w-0">
               <Label className="text-xs">Area</Label>
               <Select value={draft.area} onValueChange={v => set("area", v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>{AREAS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-1 min-w-0">
               <Label className="text-xs">Priority</Label>
               <Select value={draft.priority} onValueChange={v => set("priority", v as Priority)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
@@ -80,10 +67,10 @@ export function TaskEditor({ open, onOpenChange, task }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-1 min-w-0">
               <Label className="text-xs">Energy</Label>
               <Select value={draft.energy ?? "none"} onValueChange={v => set("energy", v === "none" ? undefined : v as Energy)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">—</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
@@ -92,14 +79,14 @@ export function TaskEditor({ open, onOpenChange, task }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-1 min-w-0">
               <Label className="text-xs">Estimated minutes</Label>
-              <Input type="number" min={0} value={draft.estMinutes ?? ""} onChange={e => set("estMinutes", e.target.value ? Number(e.target.value) : undefined)} />
+              <Input type="number" min={0} value={draft.estMinutes ?? ""} onChange={e => set("estMinutes", e.target.value ? Number(e.target.value) : undefined)} className="w-full" />
             </div>
-            <div>
+            <div className="space-y-1 min-w-0">
               <Label className="text-xs">Repeats</Label>
               <Select value={draft.recurrenceType ?? "none"} onValueChange={v => set("recurrenceType", v as RecurrenceType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Doesn't repeat</SelectItem>
                   <SelectItem value="daily">Daily</SelectItem>
@@ -108,9 +95,9 @@ export function TaskEditor({ open, onOpenChange, task }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="text-xs">Every</Label>
-              <Input type="number" min={1} value={draft.recurrenceInterval ?? 1} onChange={e => set("recurrenceInterval", Number(e.target.value) || 1)} />
+            <div className="space-y-1 min-w-0 sm:col-span-2">
+              <Label className="text-xs">Every (interval)</Label>
+              <Input type="number" min={1} value={draft.recurrenceInterval ?? 1} onChange={e => set("recurrenceInterval", Number(e.target.value) || 1)} className="w-full" />
             </div>
           </div>
           <div className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2">
