@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Pin, Trash2, Eye, Pencil, Link2 } from "lucide-react";
+import { ArrowLeft, Pin, Trash2, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { deleteNote, extractBacklinks, findBacklinksTo, getNote, updateNote, type Note } from "@/lib/notes";
-import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { NoteAIButton } from "@/components/notes/NoteAIButton";
+import { BlockEditor } from "@/components/notes/BlockEditor";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -18,7 +17,6 @@ export default function NoteDetail() {
   const [note, setNote] = useState<Note | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [view, setView] = useState<"edit" | "preview">("edit");
   const [backlinks, setBacklinks] = useState<Note[]>([]);
   const saveTimer = useRef<number | null>(null);
 
@@ -74,26 +72,10 @@ export default function NoteDetail() {
           <ArrowLeft className="h-4 w-4" /> Notes
         </Button>
         <div className="ml-auto flex items-center gap-1">
-          <Button
-            variant={view === "edit" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setView("edit")}
-            className="gap-1.5"
-          >
-            <Pencil className="h-3.5 w-3.5" /> Edit
-          </Button>
-          <Button
-            variant={view === "preview" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setView("preview")}
-            className="gap-1.5"
-          >
-            <Eye className="h-3.5 w-3.5" /> Preview
-          </Button>
           <NoteAIButton
             title={title}
             body={body}
-            onApply={(next) => { setBody(next); save({ body: next }); setView("edit"); }}
+            onApply={(next) => { setBody(next); save({ body: next }); }}
           />
           <Button variant="ghost" size="icon" onClick={togglePin} aria-label="Pin">
             <Pin className={cn("h-4 w-4", note.pinned && "fill-current text-accent-foreground")} />
@@ -120,16 +102,10 @@ export default function NoteDetail() {
         </p>
 
         <div className="mt-4">
-          {view === "edit" ? (
-            <Textarea
-              value={body}
-              onChange={(e) => { setBody(e.target.value); save({ body: e.target.value }); }}
-              placeholder={"Start writing…\n\nLink with [[Another Note]] · mention @ProjectName · supports **markdown**"}
-              className="min-h-[40vh] resize-y border-0 bg-transparent px-0 text-sm leading-relaxed shadow-none focus-visible:ring-0"
-            />
-          ) : (
-            <NoteMarkdown body={body} />
-          )}
+          <BlockEditor
+            body={body}
+            onChange={(markdown) => { setBody(markdown); save({ body: markdown }); }}
+          />
         </div>
       </div>
 
