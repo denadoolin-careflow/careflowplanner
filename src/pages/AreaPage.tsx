@@ -76,7 +76,9 @@ export default function AreaPage() {
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-semibold tracking-tight">{areaName}</h1>
-            <p className="text-sm text-muted-foreground">{total} open {total === 1 ? "task" : "tasks"} · {projects.length} {projects.length === 1 ? "project" : "projects"}</p>
+            <p className="text-sm text-muted-foreground">
+              {total} {scope === "open" ? "open " : ""}{total === 1 ? "task" : "tasks"} · {projects.length} {projects.length === 1 ? "project" : "projects"}
+            </p>
           </div>
         </div>
       </header>
@@ -126,7 +128,9 @@ export default function AreaPage() {
             </Link>
           </div>
           {items.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/40 bg-card/30 px-3 py-2 text-xs italic text-muted-foreground">No open tasks</div>
+            <div className="rounded-xl border border-dashed border-border/40 bg-card/30 px-3 py-2 text-xs italic text-muted-foreground">
+              {scope === "open" ? "No open tasks" : "No tasks"}
+            </div>
           ) : (
             <div className="space-y-1.5">
               {items.map(t => <TaskRow key={t.id} task={t} showArea={false} />)}
