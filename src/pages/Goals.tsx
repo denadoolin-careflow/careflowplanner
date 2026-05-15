@@ -38,7 +38,12 @@ export default function Goals() {
         </TabsList>
 
         <TabsContent value="list" className="mt-4 space-y-3">
-          {state.goals.map(g => (
+          {state.goals.map(g => {
+            const linked = state.tasks.filter(t => t.goalId === g.id && !t.parentTaskId);
+            const linkedTotal = linked.length;
+            const linkedDone = linked.filter(t => t.done).length;
+            const auto = linkedTotal ? Math.round((linkedDone / linkedTotal) * 100) : null;
+            return (
             <div key={g.id} className="cozy-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -49,14 +54,23 @@ export default function Goals() {
                 <Button variant="ghost" size="icon" onClick={() => deleteGoal(g.id)}><Trash2 className="h-4 w-4" /></Button>
               </div>
               <div className="mt-3">
-                <div className="mb-1 flex justify-between text-xs text-muted-foreground"><span>Progress</span><span>{g.progress}%</span></div>
+                <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Progress {auto !== null && <span className="ml-1 opacity-70">· auto {auto}% from {linkedDone}/{linkedTotal} tasks</span>}</span>
+                  <span>{g.progress}%</span>
+                </div>
                 <Slider value={[g.progress]} max={100} step={5} onValueChange={(v) => updateGoal(g.id, { progress: v[0] })} />
+                {auto !== null && auto !== g.progress && (
+                  <button onClick={() => updateGoal(g.id, { progress: auto })} className="mt-1 text-[11px] text-primary hover:underline">
+                    Sync to auto ({auto}%)
+                  </button>
+                )}
               </div>
               <div className="mt-3">
                 <LinkedNotesPanel entityType="goal" entityId={g.id} contextTitle={g.title} compact />
               </div>
             </div>
-          ))}
+            );
+          })}
         </TabsContent>
 
         <TabsContent value="board" className="mt-4">

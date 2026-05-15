@@ -18,6 +18,35 @@ import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void; task: Task | null };
 
+function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof Task>(k: K, v: Task[K]) => void }) {
+  const { state } = useStore();
+  const projects = state.projects ?? [];
+  return (
+    <>
+      <div className="space-y-1 min-w-0">
+        <Label className="text-xs">Project</Label>
+        <Select value={draft.projectId ?? "none"} onValueChange={v => set("projectId", v === "none" ? undefined : v)}>
+          <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No project</SelectItem>
+            {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1 min-w-0">
+        <Label className="text-xs">Goal</Label>
+        <Select value={draft.goalId ?? "none"} onValueChange={v => set("goalId", v === "none" ? undefined : v)}>
+          <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No goal</SelectItem>
+            {state.goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+    </>
+  );
+}
+
 export function TaskEditor({ open, onOpenChange, task }: Props) {
   const { updateTask, deleteTask } = useStore();
   const [draft, setDraft] = useState<Task | null>(task);
@@ -140,6 +169,7 @@ export function TaskEditor({ open, onOpenChange, task }: Props) {
               <Label className="text-xs">Every (interval)</Label>
               <Input type="number" min={1} value={draft.recurrenceInterval ?? 1} onChange={e => set("recurrenceInterval", Number(e.target.value) || 1)} className="w-full" />
             </div>
+            <ProjectGoalLinks draft={draft} set={set} />
           </div>
           <div className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2">
             <div>
