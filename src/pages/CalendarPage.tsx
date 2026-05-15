@@ -293,12 +293,12 @@ export default function CalendarPage() {
             {view === "week" && (
               <TimeGrid
                 days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(cursor, { weekStartsOn: 0 }), i))}
-                appointmentsOn={eventsOn}
+                appointmentsOn={eventsOnForGrid}
                 onTaskDropAt={handleTimeDrop}
               />
             )}
             {view === "day" && (
-              <TimeGrid days={[cursor]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
+              <TimeGrid days={[cursor]} appointmentsOn={eventsOnForGrid} onTaskDropAt={handleTimeDrop} />
             )}
             {view === "year" && <YearView cursor={cursor} eventsOn={eventsOn} setCursor={setCursor} setView={setView} />}
           </>
