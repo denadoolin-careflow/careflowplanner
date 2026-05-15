@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Note } from "@/lib/notes";
 
-export type EntityType = "task" | "project" | "goal" | "habit" | "appointment" | "time_block";
+export type EntityType = "task" | "project" | "goal" | "habit" | "appointment" | "time_block" | "person" | "meal" | "journal";
 
 export const ENTITY_LABEL: Record<EntityType, string> = {
   task: "Task",
@@ -11,6 +11,9 @@ export const ENTITY_LABEL: Record<EntityType, string> = {
   habit: "Habit",
   appointment: "Appointment",
   time_block: "Time block",
+  person: "Person",
+  meal: "Meal",
+  journal: "Journal",
 };
 
 export const ENTITY_ROUTE: Record<EntityType, (id: string) => string> = {
@@ -20,6 +23,9 @@ export const ENTITY_ROUTE: Record<EntityType, (id: string) => string> = {
   habit: () => "/habits",
   appointment: () => "/calendar",
   time_block: () => "/today",
+  person: () => "/caregiving",
+  meal: () => "/meals",
+  journal: () => "/journal",
 };
 
 export interface NoteLink {
