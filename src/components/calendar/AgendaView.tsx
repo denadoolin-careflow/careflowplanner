@@ -6,7 +6,7 @@ import { CalendarClock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
 
-type ApptLike = { label: string; time?: string | null; id?: string; kind?: "appt" | "gcal" | "task" | "bday" | "hol" };
+type ApptLike = { label: string; time?: string | null; id?: string; kind?: "appt" | "gcal" | "task" | "bday" | "hol"; done?: boolean };
 
 interface Props {
   days: Date[];
@@ -22,14 +22,14 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick }: 
   const { toggleTask } = useStore();
 
   const items = useMemo(() => {
-    const rows: { iso: string; time?: string; label: string; color?: string; kind: "block" | "appt"; apptId?: string; apptKind?: string }[] = [];
+    const rows: { iso: string; time?: string; label: string; color?: string; kind: "block" | "appt"; apptId?: string; apptKind?: string; done?: boolean }[] = [];
     for (const d of days) {
       const iso = d.toISOString().slice(0, 10);
       for (const b of blocks.filter(x => x.date === iso)) {
         rows.push({ iso, time: b.allDay ? undefined : b.startTime, label: b.title, color: b.color, kind: "block" });
       }
       for (const a of appointmentsOn(iso)) {
-        rows.push({ iso, time: a.time ?? undefined, label: a.label, kind: "appt", apptId: a.id, apptKind: a.kind });
+        rows.push({ iso, time: a.time ?? undefined, label: a.label, kind: "appt", apptId: a.id, apptKind: a.kind, done: a.done });
       }
     }
     rows.sort((a, b) => (a.iso + (a.time ?? "z")).localeCompare(b.iso + (b.time ?? "z")));
@@ -85,19 +85,25 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick }: 
                   className={cn(
                     "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
                     cls ? `${cls.bg} ${cls.text}` : "bg-muted/40",
-                    clickable && "cursor-pointer hover:bg-primary/10"
+                    clickable && "cursor-pointer hover:bg-primary/10",
+                    isTask && r.done && "opacity-60"
                   )}>
                   {isTask && (
                     <button
                       onClick={(e) => { e.stopPropagation(); void toggleTask(r.apptId!); }}
-                      aria-label="Mark task done"
-                      className="grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-primary/50 bg-background text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                      aria-label={r.done ? "Mark task not done" : "Mark task done"}
+                      className={cn(
+                        "group/cb grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+                        r.done
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-primary/50 bg-background text-primary hover:bg-primary hover:text-primary-foreground"
+                      )}
                     >
-                      <Check className="h-3 w-3 opacity-0 transition-opacity hover:opacity-100" />
+                      <Check className={cn("h-3 w-3 transition-opacity", r.done ? "opacity-100" : "opacity-0 group-hover/cb:opacity-100")} />
                     </button>
                   )}
                   <span className="w-16 shrink-0 font-mono text-[11px] opacity-70">{r.time ? r.time : "All day"}</span>
-                  <span className="min-w-0 flex-1 truncate">{r.label}</span>
+                  <span className={cn("min-w-0 flex-1 truncate", isTask && r.done && "line-through text-muted-foreground")}>{r.label}</span>
                 </li>
                 );
               })}
