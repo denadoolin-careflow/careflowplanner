@@ -32,6 +32,12 @@ export function NoteLinksSidebar({ noteId }: Props) {
         case "habit": label = state.habits.find(h => h.id === l.entityId)?.title ?? label; break;
         case "appointment": label = state.appointments.find(a => a.id === l.entityId)?.title ?? label; break;
         case "time_block": label = "Time block"; break;
+        case "person": label = state.recipients.find(p => p.id === l.entityId)?.name ?? label; break;
+        case "meal": label = state.meals.find(m => m.id === l.entityId)?.name ?? label; break;
+        case "journal": {
+          const j = state.journal.find(x => x.id === l.entityId);
+          label = j ? (j.title || j.body.slice(0, 40)) : label; break;
+        }
       }
       return { ...l, label };
     });
