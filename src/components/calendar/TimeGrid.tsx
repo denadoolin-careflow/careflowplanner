@@ -584,7 +584,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             isSelected && "z-30 scale-[1.03] ring-2 ring-primary/80 ring-opacity-100 shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_18px_40px_-12px_hsl(var(--primary)/0.5)] animate-scale-in",
                             taskDone && "opacity-60"
                           )}
-                          style={{ top, height, cursor: isDragging ? "grabbing" : "grab", touchAction: "none" }}
+                          style={{ top, height, cursor: isDragging ? "grabbing" : "grab", touchAction: "none", ...(c.style ?? {}) }}
                           role="button"
                           tabIndex={0}
                         >
@@ -750,7 +750,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
       {/* Create dialog */}
       <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
-        <DialogContent className="max-w-[min(92vw,32rem)] max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="max-w-[min(92vw,32rem)] p-4 sm:p-5">
           <DialogHeader><DialogTitle>New time block</DialogTitle></DialogHeader>
           {draft && <CreateForm draft={draft} onCancel={() => setDraft(null)} onCreate={async (b) => { await add(b); setDraft(null); }} />}
         </DialogContent>
@@ -758,7 +758,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-[min(92vw,32rem)] max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="max-w-[min(92vw,32rem)] p-4 sm:p-5">
           <DialogHeader><DialogTitle>Edit time block</DialogTitle></DialogHeader>
           {editing && (
             <EditForm
