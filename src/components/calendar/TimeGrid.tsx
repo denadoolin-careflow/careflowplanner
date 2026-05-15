@@ -495,10 +495,49 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                         <div
                           key={b.id}
                           onPointerDown={(e) => {
-                            // Start a move drag from anywhere on the block.
-                            // A short tap (no movement past threshold) is treated as a click and opens the editor in endDrag().
-                            haptics.tap();
-                            beginDrag(b, "move", e);
+                            // Touch/pen: require long-press (450ms) to start dragging — a tap opens the editor.
+                            // Mouse: start drag immediately; tap-vs-drag is decided by the movement threshold in endDrag().
+                            if (e.pointerType === "touch" || e.pointerType === "pen") {
+                              const ev = e.nativeEvent;
+                              const target = e.currentTarget;
+                              const pointerId = e.pointerId;
+                              cancelLongPress();
+                              longPressTimerRef.current = window.setTimeout(() => {
+                                longPressTimerRef.current = null;
+                                haptics.pickup();
+                                // Synthesize a React-like pointer event for beginDrag
+                                beginDrag(b, "move", {
+                                  pointerId,
+                                  clientX: ev.clientX,
+                                  clientY: ev.clientY,
+                                  currentTarget: target,
+                                  stopPropagation: () => {},
+                                  preventDefault: () => {},
+                                } as unknown as React.PointerEvent);
+                              }, 450);
+                            } else {
+                              haptics.tap();
+                              beginDrag(b, "move", e);
+                            }
+                          }}
+                          onPointerMove={(e) => {
+                            // Cancel pending long-press if the finger moves before the timer fires.
+                            if (longPressTimerRef.current != null) {
+                              cancelLongPress();
+                            }
+                          }}
+                          onPointerUp={(e) => {
+                            // Short tap on touch: open editor.
+                            if (longPressTimerRef.current != null) {
+                              cancelLongPress();
+                              if (Date.now() >= suppressClickUntil.current) {
+                                haptics.snap();
+                                openBlockEditor(b);
+                              }
+                            }
+                          }}
+                          onPointerCancel={() => {
+                            cancelLongPress();
                           }}
                           onPointerEnter={() => {
                             if (lastHoverIdRef.current !== b.id) {
