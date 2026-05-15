@@ -101,6 +101,13 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const dragRef = useRef<DragState | null>(null);
   const suppressClickUntil = useRef(0);
   const lastHoverIdRef = useRef<string | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimerRef.current != null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
   dragRef.current = drag;
 
   const openBlockEditor = useCallback((block: TimeBlock) => {
