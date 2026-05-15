@@ -85,6 +85,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
   const [editing, setEditing] = useState<TimeBlock | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingTaskBlockId, setEditingTaskBlockId] = useState<string | null>(null);
   const editingTask = editingTaskId ? state.tasks.find(t => t.id === editingTaskId) ?? null : null;
   const [draft, setDraft] = useState<{ date: string; start: string; end: string } | null>(null);
   const [now, setNow] = useState(new Date());
@@ -102,6 +103,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const openBlockEditor = useCallback((block: TimeBlock) => {
     if (block.taskId) {
       setEditingTaskId(block.taskId);
+      setEditingTaskBlockId(block.id);
     } else {
       setEditing(block);
     }
