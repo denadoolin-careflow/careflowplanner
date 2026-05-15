@@ -1,55 +1,90 @@
-## 1. Make time blocks fill the full hour width (Day & Week)
+# CareFlow → Interactive Productivity Upgrade
 
-`src/components/calendar/TimeGrid.tsx`
-- Time blocks currently render `left-1/2 right-0.5` and appointments render `left-0 right-1/2`, so each only uses half the column — labels get clipped.
-- Change both to occupy the **full width** of the column with a small inset (`left-0.5 right-0.5`). When an appointment and a block overlap on the same hour, stack the appointment chip above the block (z-order) instead of side-by-side, since collisions are rare and full-width text is the priority.
-- Bump `PX_PER_HOUR` from `56` → `64` so each hour row is taller and labels (title + time range) breathe. Block height calc already uses `PX_PER_HOUR`, so it follows automatically.
-- Tighten interior layout: title on line 1 (truncate w/ `truncate`), time range on line 2 in `text-[10px]`, ensures legibility down to 30‑min blocks.
+This is a very large, multi-area request. To keep quality high and avoid a half-finished mega-PR, I'll ship it in **5 focused phases**. Each phase is independently usable and testable. After each phase you can say "continue" to move to the next, or reorder them.
 
-## 2. Drag-anywhere + snap-to-grid + haptic feedback
+---
 
-`src/components/calendar/TimeGrid.tsx`
-- Hover affordance: on `onPointerEnter` of a block, fire `haptics.magnet()` once per enter (track via `lastHoverIdRef`) so users feel the block "wake up" when their finger/cursor lands on it.
-- Click affordance: on initial `onPointerDown` of a block (before drag threshold), fire `haptics.tap()` so taps are confirmed even when no drag follows.
-- Drag-anywhere: the existing `beginDrag` already attaches `pointermove`/`pointerup` to `window`, so cross-day drag works. Reinforce by:
-  - Removing the `HOUR_END - dur` ceiling clamp so a block can be dragged into the last hour without snapping back, and allow `nextStart` to snap below `HOUR_START` only as far as `HOUR_START` (current behavior is correct, just verify after PX change).
-  - Keep snap step at 15 min via `snap()`; add a stronger `haptics.snap()` only when the snapped slot **changes** (already implemented — keep).
-  - On successful drop (`endDrag` with `moved`), upgrade `haptics.tap()` → `haptics.pickup()` so the "landed" feel is distinct from in-flight snaps.
-- Drop indicator: keep the dashed primary outline; widen it to match new full-width inset.
+## Phase 1 — Foundations: Universal Task Row + Schedule Icon + Quick Edit
+The base layer that the rest of the work plugs into.
 
-## 3. Year page heatmap
+- **`<TaskRow>` upgrade (single source of truth)** used everywhere (Today, Inbox, Upcoming, Anytime, Someday, Logbook, Projects, Goals, Calendar tasks panel, Kanban, widgets):
+  - Click → opens TaskEditor (already exists)
+  - Inline title edit on double-click / Enter
+  - Long-press / right-click / hard-press → **QuickEditPopover** (priority, project, goal, area, tags, recurring, day-part, reschedule)
+  - Long-press drag (uses existing `useLongPressDrag`) extended to accept generic drop targets
+  - Hover row gets soft elevation + glow (sage/gold), grip handle reveals on hover
+  - Soft haptic on mobile (existing `haptics`)
+- **Smart Schedule icon** (`<QuickScheduleButton>`) shown on hover/focus of every task row:
+  - Animated calendar icon → radial/floating popover
+  - Today / Tomorrow / This Week / Next Week / This Month / Someday / Pick Date
+  - Writes through `updateTask` (cascades to calendar, agenda, project, goal automatically)
+- **`<QuickEditPopover>`**: compact card with priority chips, project select, goal select, area chips, tag input, recurrence toggle, day-part chips. Opens with scale-in animation.
 
-`src/pages/Year.tsx` (+ small helper)
-- Add a new "Activity heatmap" `SectionCard` above the months grid.
-- Compute a per-day count for the current year by combining:
-  - `state.tasks.filter(t => t.done && t.completedAt)` bucketed by date
-  - `state.appointments` bucketed by `date`
-  - Optionally `time_blocks` via a lightweight `supabase.from("time_blocks").select("date").gte/lte` for the year (single query).
-- Render a GitHub-style 53×7 grid of squares (weeks × weekdays). Each cell is a `div` with size `w-3 h-3 rounded-sm` and a background using `hsl(var(--primary) / X)` where X scales with count (0/0.08/0.2/0.4/0.7). Month labels along the top, weekday labels (M, W, F) along the left.
-- Hover tooltip via `title` attribute: `"{date}: N items"`. Click a cell → navigate to `/today?date=YYYY-MM-DD` (Today already accepts current date; deep-link is a nice-to-have, can be added later).
-- Pure presentational — no schema changes.
+**Files**: new `src/components/tasks/QuickScheduleButton.tsx`, `src/components/tasks/QuickEditPopover.tsx`, edits to `src/components/cards/TaskRow.tsx`, small CSS tokens in `src/index.css`.
 
-## 4. AI checklist button per zone
+---
 
-`src/pages/HomeAreas.tsx` → `ZonesPanel`
-- Next to each zone header (right of the count badge, before the rename area) add a small `Button` with `Sparkles` icon labeled "AI tasks".
-- On click: open a tiny popover with a textarea (optional focus, e.g. "deep clean", "guests coming") and a "Generate" action. Default behavior with no input still works.
-- Calls `supabase.functions.invoke("ai-cleaning-checklist-zone", { body: { zone, focus, energy: "medium", minutes: 30 } })`.
-- New edge function `supabase/functions/ai-cleaning-checklist-zone/index.ts` (modeled on the existing `ai-cleaning-checklist`):
-  - Validates JWT, takes `{ zone, focus?, energy?, minutes? }`.
-  - Prompts Gemini for **5–8 short tasks specific to that zone**, returned via tool call (`{ tasks: [{ title, cadence }] }` where `cadence ∈ {daily, weekly, monthly, quarterly}`).
-  - Inserts each into `cleaning_tasks` with `zone`, `cadence`, `done=false`, `user_id`.
-  - Returns `{ inserted: N }`.
-- After success, `ZonesPanel.load()` is re-run and a toast `Added N tasks to {zone}` appears.
+## Phase 2 — Calendar: Drag, Resize, Snap, Now-Line
+- Tasks dragged from sidebar → snap to hour grid (already partially in `TimeGrid`); extend to **30-min snap with shift-key for 15-min**
+- Existing time blocks: drag to move, drag bottom edge to resize, both snap to grid
+- Animated drop placeholder + drag shadow
+- Persistent **current-time line** across day & week
+- Hover highlight on hour cell
+- Soft haptic on snap (existing `haptics.snap`)
 
-## Technical notes
+**Files**: `src/components/calendar/TimeGrid.tsx` (significant), small additions to `src/lib/time-blocks.ts`.
 
-- No DB migrations needed — `cleaning_tasks` already has the columns we use.
-- Edge function follows the same pattern as `ai-cleaning-checklist` (tool-calling, 429/402 handling, `LOVABLE_API_KEY`, model `google/gemini-3-flash-preview`).
-- Year heatmap reads existing in-memory store; the optional `time_blocks` fetch is a one-shot effect on mount.
-- Haptics calls are already a no-op on unsupported devices via `src/lib/haptics.ts`.
+---
 
-## Out of scope
+## Phase 3 — Grouping, Filtering, Sorting (persisted)
+- New `<TaskListControls>` with **Group by / Filter / Sort** menus
+- Group by: project, area, priority, date, energy, status
+- Filter by: area, project, due-date range, tags, goal, habit
+- Sort by: due date, priority, manual, alphabetical, energy, est. minutes
+- Persisted per-page in `localStorage` (key includes page id)
+- Applied on Anytime, Upcoming, Inbox, Project detail, Goal detail
 
-- Conflict layout (overlapping blocks side-by-side) — left full-width as a deliberate trade-off for legibility per the user's request.
-- Persistent heatmap drilldown / range picker — current year only.
+**Files**: new `src/components/tasks/TaskListControls.tsx`, `src/lib/task-grouping.ts`, edits to `TaskListPage.tsx`, `Inbox.tsx`, `ProjectDetail.tsx`, `Goals.tsx`.
+
+---
+
+## Phase 4 — Anytime/Upcoming Tabs + View Modes + Kanban
+- Tabbed timeframe filter: **Today / Tomorrow / This Week / Next Week / This Month** (animated underline)
+- View toggle: **List / Agenda / Kanban** (persisted)
+- New **`<KanbanBoard>`**:
+  - Default columns: Inbox, Today, Upcoming, In Progress, Waiting, Done
+  - Drag cards between columns (updates status / due date accordingly)
+  - Drag columns to reorder, collapse/expand, horizontal scroll on mobile
+  - Inline quick-add per column
+  - Group-by + sort options reuse Phase 3 controls
+- Kanban also exposed on Projects page as a per-project board
+
+**Files**: new `src/components/tasks/KanbanBoard.tsx`, `src/components/tasks/KanbanColumn.tsx`, `src/components/tasks/KanbanCard.tsx`, edits to `Anytime.tsx`, `Upcoming.tsx`, `ProjectDetail.tsx`.
+
+---
+
+## Phase 5 — Linking & Progress + Inbox NLP polish
+- TaskEditor: link to project / goal / area / habit (already partial — finish UI)
+- **Auto progress rollups**:
+  - Project completion % = done child tasks / total
+  - Goal progress % = avg of linked projects + manual override
+  - Surfaced in sidebar Goals/Projects tabs and Project/Goal detail pages
+- Improve **Inbox NLP** (`src/lib/nlp-task.ts`) to recognize "today", "tomorrow", "this week", "this month", "next month" and assign `dueDate` accordingly so inbox capture pre-routes itself
+
+**Files**: edits to `TaskEditor.tsx`, `ProjectDetail.tsx`, `Goals.tsx`, `src/lib/nlp-task.ts`, `src/lib/store.tsx` (derived selectors).
+
+---
+
+## Visual language (applies to all phases)
+- Sage green primary, warm tan/gold accents, soft cream surfaces, dark plum text — already in tokens; no new colors
+- Rounded-2xl cards, subtle inner border, layered shadow on drag (`shadow-elegant`)
+- 200–300ms cubic-bezier transitions, `animate-fade-in` / `animate-scale-in` on popovers
+- Glassmorphism on popovers (`backdrop-blur` + `bg-card/80`)
+
+## Out of scope (call out)
+- No backend schema changes — everything maps onto existing `tasks`, `projects`, `goals`, `time_blocks` tables.
+- No new AI endpoints in this batch (existing AI features stay).
+
+---
+
+**I'll start with Phase 1** as soon as you approve. Reply "go" to ship Phase 1, or tell me to reorder / drop phases.
