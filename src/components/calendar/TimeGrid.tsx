@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, AlertTriangle, GripHorizontal } from "lucide-react";
+import { Trash2, AlertTriangle, GripHorizontal, Check } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -79,6 +79,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks, add, update, remove } = useTimeBlocks(fromISO, toISO);
+  const { toggleTask } = useStore();
 
   const [editing, setEditing] = useState<TimeBlock | null>(null);
   const [draft, setDraft] = useState<{ date: string; start: string; end: string } | null>(null);
@@ -242,7 +243,9 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
             {days.map(d => {
               const iso = d.toISOString().slice(0,10);
               const dayBlocks = blocksFor(iso);
-              const dayAppts = appointmentsOn(iso).filter(a => a.time && /^\d{2}:\d{2}/.test(a.time));
+              const allItems = appointmentsOn(iso);
+              const dayAppts = allItems.filter(a => a.time && /^\d{2}:\d{2}/.test(a.time));
+              const dayTasks = allItems.filter(a => a.kind === "task" && a.id);
               const conflicts = computeConflicts(iso, dayBlocks, dayAppts);
               const isToday = isSameDay(d, new Date());
               const nowH = now.getHours() + now.getMinutes() / 60;
@@ -253,6 +256,22 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(d, "EEE")}</span>
                     <span className="font-semibold">{format(d, "d")}</span>
                   </div>
+                  {dayTasks.length > 0 && (
+                    <div className="flex flex-col gap-1 border-b border-border/50 bg-muted/20 px-1 py-1">
+                      {dayTasks.map((t) => (
+                        <div key={t.id} className="flex items-center gap-1.5 rounded-md bg-card/80 px-1.5 py-1 text-[11px] shadow-sm ring-1 ring-inset ring-border/40">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); haptics.tap(); void toggleTask(t.id!); }}
+                            aria-label="Mark task done"
+                            className="group/cb grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 border-primary/50 bg-background text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                          >
+                            <Check className="h-2.5 w-2.5 opacity-0 transition-opacity group-hover/cb:opacity-100" />
+                          </button>
+                          <span className="truncate">{t.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div
                     ref={el => { colRefs.current[iso] = el; }}
                     className="relative cursor-crosshair"
