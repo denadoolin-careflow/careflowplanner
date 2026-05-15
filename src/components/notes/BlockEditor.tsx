@@ -9,6 +9,7 @@ import Typography from "@tiptap/extension-typography";
 import Highlight from "@tiptap/extension-highlight";
 import Suggestion from "@tiptap/suggestion";
 import { Extension } from "@tiptap/core";
+import { PluginKey } from "@tiptap/pm/state";
 import tippy, { Instance as TippyInstance } from "tippy.js";
 import { marked } from "marked";
 import TurndownService from "turndown";
@@ -141,12 +142,14 @@ function FloatingMenu<T>({ items, onSelect, render }: {
 /* ------------------------------------------------------------------ */
 function makeSuggestion<T>(editor: Editor, opts: {
   char: string;
+  pluginKey: PluginKey;
   getItems: (query: string) => T[];
   onSelect: (item: T, range: { from: number; to: number }, editor: Editor) => void;
   render: (item: T, active: boolean) => React.ReactNode;
 }) {
   return Suggestion({
     editor,
+    pluginKey: opts.pluginKey,
     char: opts.char,
     startOfLine: false,
     allowSpaces: opts.char === "@",
@@ -272,6 +275,7 @@ export function BlockEditor({
     addProseMirrorPlugins() {
       return [makeSuggestion<SlashItem>(this.editor as Editor, {
         char: "/",
+        pluginKey: new PluginKey("slashSuggestion"),
         getItems: (query) => {
           const q = query.toLowerCase();
           return slashItems().filter(i =>
@@ -299,6 +303,7 @@ export function BlockEditor({
     addProseMirrorPlugins() {
       return [makeSuggestion<RefItem>(this.editor as Editor, {
         char: "@",
+        pluginKey: new PluginKey("refSuggestion"),
         getItems: (query) => {
           const q = query.trim().toLowerCase();
           if (!q) return refsRef.current.slice(0, 10);
