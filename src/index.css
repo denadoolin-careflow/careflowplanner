@@ -575,3 +575,52 @@
 }
 .block-editor .ProseMirror a.ref-chip:hover { background: hsl(var(--primary) / 0.2); }
 .block-editor .ProseMirror a { cursor: pointer; }
+
+/* === Phase 7 polish === */
+
+/* Soft, layered card hover */
+.cozy-card { transition: box-shadow 240ms ease, transform 240ms ease, border-color 240ms ease; }
+.cozy-card:hover { box-shadow: 0 8px 24px -16px hsl(var(--primary) / 0.25), 0 2px 6px -2px hsl(var(--foreground) / 0.06); }
+
+/* Section card subtle entry */
+@keyframes section-rise {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+.cozy-card { animation: section-rise 260ms ease both; }
+
+/* Refined focus rings */
+*:focus-visible { outline: none; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring) / 0.55);
+  border-radius: inherit;
+}
+
+/* Block editor mobile polish */
+@media (max-width: 640px) {
+  .block-editor .ProseMirror { font-size: 15px; line-height: 1.65; }
+  .block-editor .ProseMirror h1 { font-size: 1.55rem; }
+  .block-editor .ProseMirror h2 { font-size: 1.3rem; }
+  .block-editor .ProseMirror h3 { font-size: 1.1rem; }
+  /* Toolbar scrolls horizontally instead of wrapping into 3 rows on phones */
+  .block-editor > div:first-child {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .block-editor > div:first-child::-webkit-scrollbar { display: none; }
+}
+
+/* Subtle pulse on primary action buttons */
+.btn-pulse { animation: soft-pulse 2.4s ease-in-out infinite; }
+
+/* Reference chip micro-interaction */
+.block-editor .ProseMirror a.ref-chip {
+  transition: background 160ms ease, transform 160ms ease;
+}
+.block-editor .ProseMirror a.ref-chip:hover { transform: translateY(-1px); }
+
+/* Smoother typography rhythm in prose */
+.prose :where(h1, h2, h3) { letter-spacing: -0.01em; }
+.prose :where(p) { line-height: 1.7; }
