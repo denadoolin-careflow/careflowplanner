@@ -538,3 +538,25 @@
   background: hsl(var(--primary) / 0.08) !important;
   transition: background 120ms ease;
 }
+
+/* TipTap block editor */
+@import "tippy.js/dist/tippy.css";
+@import "tippy.js/themes/light-border.css";
+.block-editor .tippy-box[data-theme~='light-border'] { background: hsl(var(--popover)); color: hsl(var(--popover-foreground)); border-color: hsl(var(--border)); }
+.block-editor .ProseMirror { outline: none; }
+.block-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: hsl(var(--muted-foreground));
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.block-editor .ProseMirror > * { position: relative; padding: 2px 0; border-radius: 6px; transition: background 120ms ease; }
+.block-editor .ProseMirror > *:hover { background: hsl(var(--muted) / 0.35); }
+.block-editor .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+.block-editor .ProseMirror ul[data-type="taskList"] li { display: flex; gap: 0.5rem; align-items: flex-start; }
+.block-editor .ProseMirror ul[data-type="taskList"] li > label { user-select: none; margin-top: 4px; }
+.block-editor .ProseMirror ul[data-type="taskList"] li > div { flex: 1; }
+.block-editor .ProseMirror mark { background: hsl(var(--primary) / 0.18); border-radius: 3px; padding: 0 2px; }
+.block-editor .ProseMirror code { background: hsl(var(--muted)); padding: 1px 4px; border-radius: 4px; font-size: 0.85em; }
+.block-editor .ProseMirror blockquote { border-left: 3px solid hsl(var(--primary) / 0.6); padding-left: 0.75rem; color: hsl(var(--muted-foreground)); }
