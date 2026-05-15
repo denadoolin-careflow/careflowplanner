@@ -23,11 +23,15 @@ const PX_PER_HOUR = 64;
 const TOTAL_HOURS = HOUR_END - HOUR_START;
 const GRID_HEIGHT = TOTAL_HOURS * PX_PER_HOUR;
 const SNAP_MIN = 15;
+const SNAP_DEFAULT_MIN = 30; // default coarse snap; hold Shift for SNAP_MIN
 const SNAP_PX = (PX_PER_HOUR / 60) * SNAP_MIN; // 14
 const DRAG_THRESHOLD = 5;
 
-function snap(h: number, step = SNAP_MIN / 60): number {
+function snap(h: number, step = SNAP_DEFAULT_MIN / 60): number {
   return Math.round(h / step) * step;
+}
+function snapStepFromEvent(e: { shiftKey?: boolean }): number {
+  return (e.shiftKey ? SNAP_MIN : SNAP_DEFAULT_MIN) / 60;
 }
 function fmtTime(hm: string) {
   const [h, m] = hm.split(":").map(Number);
@@ -79,11 +83,12 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const [editing, setEditing] = useState<TimeBlock | null>(null);
   const [draft, setDraft] = useState<{ date: string; start: string; end: string } | null>(null);
   const [now, setNow] = useState(new Date());
-  useEffect(() => { const id = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(id); }, []);
+  useEffect(() => { const id = setInterval(() => setNow(new Date()), 15000); return () => clearInterval(id); }, []);
 
   const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [drag, setDrag] = useState<DragState | null>(null);
   const [dropHover, setDropHover] = useState<{ iso: string; hour: number } | null>(null);
+  const [hoverSlot, setHoverSlot] = useState<{ iso: string; hour: number } | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const suppressClickUntil = useRef(0);
   const lastHoverIdRef = useRef<string | null>(null);
@@ -94,7 +99,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     const el = ev.currentTarget;
     const rect = el.getBoundingClientRect();
     const y = ev.clientY - rect.top;
-    const startH = HOUR_START + snap(y / PX_PER_HOUR);
+    const startH = HOUR_START + snap(y / PX_PER_HOUR, snapStepFromEvent(ev));
     const endH = Math.min(HOUR_END, startH + 1);
     setDraft({ date: date.toISOString().slice(0,10), start: hoursToHM(startH), end: hoursToHM(endH) });
   };
@@ -114,7 +119,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     const d = dragRef.current;
     if (!d || e.pointerId !== d.pointerId) return;
     const dy = e.clientY - d.startClientY;
-    const dh = snap(dy / PX_PER_HOUR);
+    const step = snapStepFromEvent(e);
+    const dh = snap(dy / PX_PER_HOUR, step);
     const dur = d.origEnd - d.origStart;
     let nextStart = d.origStart;
     let nextEnd = d.origEnd;
@@ -125,7 +131,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       const overDate = findDateAt(e.clientX);
       if (overDate) nextDate = overDate;
     } else {
-      nextEnd = Math.min(HOUR_END, Math.max(d.origStart + SNAP_MIN / 60, d.origEnd + dh));
+      nextEnd = Math.min(HOUR_END, Math.max(d.origStart + step, d.origEnd + dh));
     }
     const moved = d.moved || Math.abs(dy) >= DRAG_THRESHOLD || Math.abs(e.clientX - d.startClientX) >= DRAG_THRESHOLD;
     if (moved && !d.moved) haptics.pickup();
@@ -221,6 +227,14 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                     className="relative cursor-crosshair"
                     style={{ height: GRID_HEIGHT }}
                     onClick={(e) => startSlot(d, e)}
+                    onMouseMove={(e) => {
+                      if (drag) return;
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top;
+                      const h = HOUR_START + snap(y / PX_PER_HOUR, snapStepFromEvent(e));
+                      setHoverSlot({ iso, hour: h });
+                    }}
+                    onMouseLeave={() => setHoverSlot(p => p?.iso === iso ? null : p)}
                     onDragOver={(e) => {
                       const types = Array.from(e.dataTransfer.types);
                       const hasTask = types.includes(TASK_DRAG_MIME);
@@ -231,7 +245,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       e.dataTransfer.dropEffect = hasTask ? "move" : "copy";
                       const rect = e.currentTarget.getBoundingClientRect();
                       const y = e.clientY - rect.top;
-                      const startH = HOUR_START + snap(y / PX_PER_HOUR);
+                      const startH = HOUR_START + snap(y / PX_PER_HOUR, snapStepFromEvent(e));
                       setDropHover({ iso, hour: startH });
                     }}
                     onDragLeave={() => setDropHover(p => p?.iso === iso ? null : p)}
@@ -243,7 +257,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       e.preventDefault();
                       const rect = e.currentTarget.getBoundingClientRect();
                       const y = e.clientY - rect.top;
-                      const startH = HOUR_START + snap(y / PX_PER_HOUR);
+                      const startH = HOUR_START + snap(y / PX_PER_HOUR, snapStepFromEvent(e));
                       const endH = Math.min(HOUR_END, startH + 1);
                       if (apptId && onApptDropAt) {
                         onApptDropAt(apptId, iso, startH);
@@ -272,8 +286,15 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                     {/* Drop indicator */}
                     {dropHover?.iso === iso && (
                       <div
-                        className="pointer-events-none absolute inset-x-1 z-30 rounded-md border-2 border-dashed border-primary/70 bg-primary/15"
+                        className="pointer-events-none absolute inset-x-1 z-30 animate-pulse rounded-md border-2 border-dashed border-primary/70 bg-primary/15 shadow-[0_0_0_4px_hsl(var(--primary)/0.08)] transition-[top] duration-150"
                         style={{ top: (dropHover.hour - HOUR_START) * PX_PER_HOUR, height: PX_PER_HOUR }}
+                      />
+                    )}
+                    {/* Hover slot highlight */}
+                    {!drag && !dropHover && hoverSlot?.iso === iso && (
+                      <div
+                        className="pointer-events-none absolute inset-x-1 z-0 rounded-md bg-primary/5 ring-1 ring-inset ring-primary/15 transition-[top] duration-100"
+                        style={{ top: (hoverSlot.hour - HOUR_START) * PX_PER_HOUR, height: (SNAP_DEFAULT_MIN / 60) * PX_PER_HOUR }}
                       />
                     )}
                     {/* Hour grid lines */}
@@ -371,10 +392,15 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                     {/* Now line */}
                     {showNowLine && (
                       <div
-                        className="pointer-events-none absolute inset-x-0 border-t-2 border-primary transition-[top] duration-500"
+                        className="pointer-events-none absolute inset-x-0 z-40 border-t-2 border-primary transition-[top] duration-500"
                         style={{ top: (nowH - HOUR_START) * PX_PER_HOUR }}
                       >
-                        <span className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.15)]" />
+                        <span className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.15)]">
+                          <span className="absolute inset-0 animate-ping rounded-full bg-primary/60" />
+                        </span>
+                        <span className="absolute -top-2 left-2 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary-foreground shadow">
+                          {format(now, "h:mm a")}
+                        </span>
                       </div>
                     )}
                   </div>
