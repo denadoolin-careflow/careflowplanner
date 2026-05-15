@@ -90,6 +90,13 @@ export default function Projects() {
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {items.map(p => (
+              (() => {
+                const projTasks = state.tasks.filter(t => t.projectId === p.id && !t.parentTaskId);
+                const total = projTasks.length;
+                const done = projTasks.filter(t => t.done).length;
+                const pct = total ? Math.round((done / total) * 100) : 0;
+                const open = total - done;
+                return (
               <Link
                 key={p.id}
                 to={`/projects/${p.id}`}
@@ -101,11 +108,16 @@ export default function Projects() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{p.name}</div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {state.tasks.filter(t => t.projectId === p.id && !t.done).length} open ·{" "}
+                      {open} open · {pct}% ·{" "}
                     {p.deadline ? `due ${p.deadline}` : p.status}
                   </div>
+                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                    </div>
                 </div>
               </Link>
+                );
+              })()
             ))}
           </div>
         </section>
