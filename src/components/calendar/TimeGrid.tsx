@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, AlertTriangle, GripHorizontal, Check, Clock, Plus, CheckSquare, Utensils, Sparkles, MapPin, FolderKanban, Pencil, X, Move } from "lucide-react";
+import { Trash2, AlertTriangle, GripHorizontal, Check, Clock, Plus, CheckSquare, Utensils, Sparkles, MapPin, FolderKanban, Pencil, X, Move, Repeat } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -584,7 +584,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             isSelected && "z-30 scale-[1.03] ring-2 ring-primary/80 ring-opacity-100 shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_18px_40px_-12px_hsl(var(--primary)/0.5)] animate-scale-in",
                             taskDone && "opacity-60"
                           )}
-                          style={{ top, height, cursor: isDragging ? "grabbing" : "grab", touchAction: "none" }}
+                          style={{ top, height, cursor: isDragging ? "grabbing" : "grab", touchAction: "none", ...(c.style ?? {}) }}
                           role="button"
                           tabIndex={0}
                         >
@@ -750,7 +750,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
       {/* Create dialog */}
       <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
-        <DialogContent className="max-w-[min(92vw,32rem)] max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="max-w-[min(92vw,32rem)] p-4 sm:p-5">
           <DialogHeader><DialogTitle>New time block</DialogTitle></DialogHeader>
           {draft && <CreateForm draft={draft} onCancel={() => setDraft(null)} onCreate={async (b) => { await add(b); setDraft(null); }} />}
         </DialogContent>
@@ -758,7 +758,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-[min(92vw,32rem)] max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="max-w-[min(92vw,32rem)] p-4 sm:p-5">
           <DialogHeader><DialogTitle>Edit time block</DialogTitle></DialogHeader>
           {editing && (
             <EditForm
@@ -798,7 +798,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
   const [end, setEnd] = useState(draft.end);
   const [color, setColor] = useState<string>("primary");
   const [notes, setNotes] = useState("");
-  const [mode, setMode] = useState<"new" | "task" | "project" | "meal" | "zone" | "area">("new");
+  const [mode, setMode] = useState<"new" | "task" | "project" | "habit" | "meal" | "zone" | "area">("new");
   const [pickQ, setPickQ] = useState("");
 
   const openTasks = state.tasks.filter(t => !t.done && !t.parentTaskId);
@@ -816,6 +816,17 @@ function CreateForm({ draft, onCreate, onCancel }: {
     !pickQ.trim() || p.name.toLowerCase().includes(pickQ.toLowerCase())
   ).slice(0, 60);
 
+  const habits = state.habits ?? [];
+  const filteredHabits = habits.filter(h =>
+    !pickQ.trim() || h.title.toLowerCase().includes(pickQ.toLowerCase())
+  ).slice(0, 60);
+
+  const areaColors = Array.from(
+    new Set(((state.areas ?? []) as { color?: string }[])
+      .map(a => a.color)
+      .filter((c): c is string => !!c && c.startsWith("#")))
+  );
+
   const attach = async (label: string, taskId?: string) => {
     onCreate({ date: draft.date, startTime: start, endTime: end, title: label, notes, color, allDay: false });
     if (taskId) {
@@ -826,29 +837,30 @@ function CreateForm({ draft, onCreate, onCancel }: {
   return (
     <div className="space-y-3">
       <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
-        <TabsList className="grid w-full grid-cols-6 gap-0.5 p-1">
-          <TabsTrigger value="new" className="px-1 text-[11px] gap-1"><Plus className="h-3.5 w-3.5" /><span className="hidden sm:inline">New</span></TabsTrigger>
-          <TabsTrigger value="task" className="px-1 text-[11px] gap-1"><CheckSquare className="h-3.5 w-3.5" /><span className="hidden sm:inline">Task</span></TabsTrigger>
-          <TabsTrigger value="project" className="px-1 text-[11px] gap-1"><FolderKanban className="h-3.5 w-3.5" /><span className="hidden sm:inline">Project</span></TabsTrigger>
-          <TabsTrigger value="meal" className="px-1 text-[11px] gap-1"><Utensils className="h-3.5 w-3.5" /><span className="hidden sm:inline">Meal</span></TabsTrigger>
-          <TabsTrigger value="zone" className="px-1 text-[11px] gap-1"><Sparkles className="h-3.5 w-3.5" /><span className="hidden sm:inline">Zone</span></TabsTrigger>
-          <TabsTrigger value="area" className="px-1 text-[11px] gap-1"><MapPin className="h-3.5 w-3.5" /><span className="hidden sm:inline">Area</span></TabsTrigger>
+        <TabsList className="grid w-full grid-cols-7 gap-0.5 p-1 h-auto">
+          <TabsTrigger value="new" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><Plus className="h-3.5 w-3.5" /><span>New</span></TabsTrigger>
+          <TabsTrigger value="task" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><CheckSquare className="h-3.5 w-3.5" /><span>Task</span></TabsTrigger>
+          <TabsTrigger value="project" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><FolderKanban className="h-3.5 w-3.5" /><span>Project</span></TabsTrigger>
+          <TabsTrigger value="habit" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><Repeat className="h-3.5 w-3.5" /><span>Habit</span></TabsTrigger>
+          <TabsTrigger value="meal" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><Utensils className="h-3.5 w-3.5" /><span>Meal</span></TabsTrigger>
+          <TabsTrigger value="zone" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><Sparkles className="h-3.5 w-3.5" /><span>Zone</span></TabsTrigger>
+          <TabsTrigger value="area" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><MapPin className="h-3.5 w-3.5" /><span>Area</span></TabsTrigger>
         </TabsList>
       </Tabs>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         <div className="min-w-0">
-          <Label className="text-xs">Start</Label>
-          <div className="relative mt-1">
-            <Clock className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="pl-8 pr-2 w-full" />
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Start</Label>
+          <div className="relative mt-0.5">
+            <Clock className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="h-8 pl-6 pr-1 text-xs w-full" />
           </div>
         </div>
         <div className="min-w-0">
-          <Label className="text-xs">End</Label>
-          <div className="relative mt-1">
-            <Clock className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="pl-8 pr-2 w-full" />
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">End</Label>
+          <div className="relative mt-0.5">
+            <Clock className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="h-8 pl-6 pr-1 text-xs w-full" />
           </div>
         </div>
       </div>
@@ -861,7 +873,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
       </div>
       <div>
         <Label className="text-xs">Color</Label>
-        <div className="mt-1 flex gap-1.5">
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
           {BLOCK_COLORS.map(c => {
             const cc = colorClasses(c);
             return (
@@ -871,7 +883,20 @@ function CreateForm({ draft, onCreate, onCancel }: {
                 aria-label={c}/>
             );
           })}
+          {areaColors.length > 0 && (
+            <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+          )}
+          {areaColors.map(hex => (
+            <button key={hex} type="button" onClick={() => setColor(hex)}
+              className={cn("h-7 w-7 rounded-full ring-2 ring-offset-2 ring-offset-background transition-all",
+                color === hex ? "ring-foreground/60" : "ring-transparent")}
+              style={{ backgroundColor: hex }}
+              aria-label={`Area color ${hex}`}/>
+          ))}
         </div>
+        {areaColors.length > 0 && (
+          <p className="mt-1 text-[10px] text-muted-foreground">Includes saved colors from your areas.</p>
+        )}
       </div>
       <div><Label className="text-xs">Notes</Label><Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></div>
       <DialogFooter>
@@ -886,7 +911,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
       {mode === "task" && (
         <div className="space-y-2">
           <Input autoFocus placeholder="Search open tasks…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
-          <ScrollArea className="h-56 sm:h-64 rounded-md border">
+          <ScrollArea className="h-48 rounded-md border">
             {filteredTasks.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No matching tasks.</div>
             ) : (
@@ -922,7 +947,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
       {mode === "project" && (
         <div className="space-y-2">
           <Input autoFocus placeholder="Search projects…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
-          <ScrollArea className="h-56 sm:h-64 rounded-md border">
+          <ScrollArea className="h-48 rounded-md border">
             {filteredProjects.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No projects.</div>
             ) : (
@@ -948,10 +973,41 @@ function CreateForm({ draft, onCreate, onCancel }: {
         </div>
       )}
 
+      {mode === "habit" && (
+        <div className="space-y-2">
+          <Input autoFocus placeholder="Search habits…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
+          <ScrollArea className="h-48 rounded-md border">
+            {filteredHabits.length === 0 ? (
+              <div className="p-6 text-center text-xs text-muted-foreground">No habits yet.</div>
+            ) : (
+              <ul className="divide-y">
+                {filteredHabits.map(h => (
+                  <li key={h.id}>
+                    <button
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
+                      onClick={() => attach(`🔁 ${h.title}`)}
+                    >
+                      <Repeat className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{h.title}</span>
+                        <span className="block truncate text-[10px] text-muted-foreground capitalize">
+                          {h.cadence} · {h.category} · {h.streak}🔥
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </ScrollArea>
+          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+        </div>
+      )}
+
       {mode === "meal" && (
         <div className="space-y-2">
           <Input autoFocus placeholder="Search meals…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
-          <ScrollArea className="h-56 sm:h-64 rounded-md border">
+          <ScrollArea className="h-48 rounded-md border">
             {filteredMeals.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No meals planned.</div>
             ) : (
@@ -1025,33 +1081,39 @@ function CreateForm({ draft, onCreate, onCancel }: {
 }
 
 function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: Partial<TimeBlock>) => void; onDelete: () => void }) {
+  const { state } = useStore();
   const [title, setTitle] = useState(block.title);
   const [start, setStart] = useState(block.startTime);
   const [end, setEnd] = useState(block.endTime);
   const [color, setColor] = useState(block.color);
   const [notes, setNotes] = useState(block.notes ?? "");
+  const areaColors = Array.from(
+    new Set(((state.areas ?? []) as { color?: string }[])
+      .map(a => a.color)
+      .filter((c): c is string => !!c && c.startsWith("#")))
+  );
   return (
     <div className="space-y-3">
       <div><Label className="text-xs">Title</Label><Input value={title} onChange={e => setTitle(e.target.value)} /></div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         <div className="min-w-0">
-          <Label className="text-xs">Start</Label>
-          <div className="relative mt-1">
-            <Clock className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="pl-8 pr-2 w-full" />
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Start</Label>
+          <div className="relative mt-0.5">
+            <Clock className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="h-8 pl-6 pr-1 text-xs w-full" />
           </div>
         </div>
         <div className="min-w-0">
-          <Label className="text-xs">End</Label>
-          <div className="relative mt-1">
-            <Clock className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="pl-8 pr-2 w-full" />
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">End</Label>
+          <div className="relative mt-0.5">
+            <Clock className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="h-8 pl-6 pr-1 text-xs w-full" />
           </div>
         </div>
       </div>
       <div>
         <Label className="text-xs">Color</Label>
-        <div className="mt-1 flex gap-1.5">
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
           {BLOCK_COLORS.map(c => {
             const cc = colorClasses(c);
             return (
@@ -1061,6 +1123,16 @@ function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: P
                 aria-label={c}/>
             );
           })}
+          {areaColors.length > 0 && (
+            <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+          )}
+          {areaColors.map(hex => (
+            <button key={hex} type="button" onClick={() => setColor(hex)}
+              className={cn("h-7 w-7 rounded-full ring-2 ring-offset-2 ring-offset-background transition-all",
+                color === hex ? "ring-foreground/60" : "ring-transparent")}
+              style={{ backgroundColor: hex }}
+              aria-label={`Area color ${hex}`}/>
+          ))}
         </div>
       </div>
       <div><Label className="text-xs">Notes</Label><Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></div>
