@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Plus, Sparkle } from "lucide-react";
+import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Plus, Sparkle, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -15,6 +15,9 @@ import { Input } from "@/components/ui/input";
 import { QuickScheduleButton } from "@/components/tasks/QuickScheduleButton";
 import { QuickEditPopover } from "@/components/tasks/QuickEditPopover";
 import { haptics } from "@/lib/haptics";
+import { formatRelativeDate } from "@/lib/date-format";
+import { cn as _cn } from "@/lib/utils";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
@@ -149,7 +152,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
             {task.title}
           </button>
         )}
-        {!editing && (showArea || task.dayPart || task.priority === "high" || task.resetItemId) && (
+        {!editing && (showArea || task.dueDate || task.dayPart || task.priority === "high" || task.resetItemId) && (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {showArea && (
               <Badge
@@ -166,6 +169,24 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
                 {task.area}
               </Badge>
             )}
+            {task.dueDate && (() => {
+              const diff = differenceInCalendarDays(parseISO(task.dueDate), new Date());
+              const overdue = diff < 0 && !task.done;
+              const isToday = diff === 0;
+              return (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "rounded-full text-[10px] font-normal gap-1",
+                    overdue && "border-destructive/60 bg-destructive/10 text-destructive",
+                    isToday && !overdue && "border-primary/50 bg-primary/10 text-primary",
+                  )}
+                >
+                  <CalendarDays className="h-2.5 w-2.5" />
+                  {formatRelativeDate(task.dueDate)}
+                </Badge>
+              );
+            })()}
             {task.dayPart && <Badge variant="outline" className="rounded-full text-[10px] font-normal">{task.dayPart}</Badge>}
             {task.priority === "high" && <Badge className="rounded-full bg-accent text-accent-foreground text-[10px] font-normal hover:bg-accent">priority</Badge>}
             {task.energy && <Badge variant="outline" className="rounded-full text-[10px] font-normal capitalize">{task.energy} energy</Badge>}
