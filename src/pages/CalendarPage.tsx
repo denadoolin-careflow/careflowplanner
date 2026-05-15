@@ -10,7 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, RefreshCw, Inbox as InboxIcon, CalendarPlus, List, LayoutGrid } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
@@ -20,9 +23,11 @@ import { hoursToHM } from "@/lib/time-blocks";
 type View = "day" | "week" | "month" | "year";
 
 export default function CalendarPage() {
-  const { state, addAppointment, deleteAppointment, updateTask } = useStore();
-  const [title, setTitle] = useState(""); const [date, setDate] = useState(""); const [time, setTime] = useState(""); const [type, setType] = useState<any>("other");
+  const { state, addTask, deleteAppointment, updateTask } = useStore();
+  const [taskTitle, setTaskTitle] = useState("");
+  const [toInbox, setToInbox] = useState(true);
   const [view, setView] = useState<View>("month");
+  const [layout, setLayout] = useState<"grid" | "schedule">("grid");
   const [cursor, setCursor] = useState<Date>(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   const [gLoading, setGLoading] = useState(false);
@@ -100,17 +105,37 @@ export default function CalendarPage() {
         <p className="mt-1 text-sm text-muted-foreground">Appointments, birthdays, holidays — color-coded and gentle.</p>
       </div>
 
-      <SectionCard title="Quick add event" accent="calm">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} />
-          <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-          <Input type="time" value={time} onChange={e => setTime(e.target.value)} />
-          <Select value={type} onValueChange={setType}>
-            <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>{["doctor","therapy","school","family","personal","other"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-          </Select>
-          <Button onClick={() => { if (!title || !date) return; addAppointment({ title, date, time, type }); setTitle(""); setDate(""); setTime(""); }}>Add</Button>
-        </div>
+      <SectionCard title="Quick add task" accent="calm">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const title = taskTitle.trim();
+            if (!title) return;
+            await addTask({
+              title,
+              inbox: toInbox,
+              dueDate: toInbox ? undefined : cursor.toISOString().slice(0, 10),
+            });
+            setTaskTitle("");
+            toast(toInbox ? `Added “${title}” to Inbox` : `Scheduled “${title}” for ${format(cursor, "MMM d")}`);
+          }}
+          className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        >
+          <Input
+            placeholder="What needs to get done?"
+            value={taskTitle}
+            onChange={(e) => setTaskTitle(e.target.value)}
+            className="flex-1"
+          />
+          <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5">
+            {toInbox ? <InboxIcon className="h-3.5 w-3.5 text-muted-foreground" /> : <CalendarPlus className="h-3.5 w-3.5 text-muted-foreground" />}
+            <Label htmlFor="cal-inbox-toggle" className="text-xs text-muted-foreground">
+              {toInbox ? "To Inbox" : `Schedule ${format(cursor, "MMM d")}`}
+            </Label>
+            <Switch id="cal-inbox-toggle" checked={toInbox} onCheckedChange={setToInbox} />
+          </div>
+          <Button type="submit" disabled={!taskTitle.trim()}>Add</Button>
+        </form>
       </SectionCard>
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
@@ -130,35 +155,65 @@ export default function CalendarPage() {
           </div>
         }
         action={
-          <div className="flex gap-1 rounded-full bg-muted/60 p-0.5">
-            {(["day","week","month","year"] as View[]).map(v => (
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex gap-1 rounded-full bg-muted/60 p-0.5">
+              {(["day","week","month","year"] as View[]).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors",
+                    view === v ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1 rounded-full bg-muted/60 p-0.5">
               <button
-                key={v}
-                onClick={() => setView(v)}
+                onClick={() => setLayout("grid")}
                 className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors",
-                  view === v ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                  layout === "grid" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
                 )}
+                aria-label="Grid view"
               >
-                {v}
+                <LayoutGrid className="h-3 w-3" /> Grid
               </button>
-            ))}
+              <button
+                onClick={() => setLayout("schedule")}
+                className={cn(
+                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                  layout === "schedule" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+                aria-label="Schedule list view"
+              >
+                <List className="h-3 w-3" /> Schedule
+              </button>
+            </div>
           </div>
         }
         accent="warm"
       >
-        {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} onTaskDropDay={handleDayDrop} />}
-        {view === "week" && (
-          <TimeGrid
-            days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(cursor, { weekStartsOn: 0 }), i))}
-            appointmentsOn={eventsOn}
-            onTaskDropAt={handleTimeDrop}
-          />
+        {layout === "schedule" ? (
+          <ScheduleView view={view} cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} />
+        ) : (
+          <>
+            {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} onTaskDropDay={handleDayDrop} />}
+            {view === "week" && (
+              <TimeGrid
+                days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(cursor, { weekStartsOn: 0 }), i))}
+                appointmentsOn={eventsOn}
+                onTaskDropAt={handleTimeDrop}
+              />
+            )}
+            {view === "day" && (
+              <TimeGrid days={[cursor]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
+            )}
+            {view === "year" && <YearView cursor={cursor} eventsOn={eventsOn} setCursor={setCursor} setView={setView} />}
+          </>
         )}
-        {view === "day" && (
-          <TimeGrid days={[cursor]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} />
-        )}
-        {view === "year" && <YearView cursor={cursor} eventsOn={eventsOn} setCursor={setCursor} setView={setView} />}
       </SectionCard>
 
       <SectionCard title="All appointments" accent="sage">
@@ -325,6 +380,51 @@ function YearView({ cursor, eventsOn, setCursor, setView }: { cursor: Date; even
               })}
             </div>
           </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ScheduleView({ view, cursor, eventsOn, colorOf }: { view: View; cursor: Date; eventsOn: EventsFn; colorOf: ColorFn }) {
+  let start: Date, end: Date;
+  if (view === "day") { start = cursor; end = cursor; }
+  else if (view === "week") { start = startOfWeek(cursor, { weekStartsOn: 0 }); end = endOfWeek(cursor, { weekStartsOn: 0 }); }
+  else if (view === "month") { start = startOfMonth(cursor); end = endOfMonth(cursor); }
+  else { start = startOfYear(cursor); end = endOfYear(cursor); }
+
+  const days = eachDayOfInterval({ start, end });
+  const sections = days
+    .map(d => ({ date: d, iso: d.toISOString().slice(0, 10), items: eventsOn(d.toISOString().slice(0, 10)).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")) }))
+    .filter(s => s.items.length > 0);
+
+  if (sections.length === 0) {
+    return <p className="rounded-lg bg-muted/40 px-3 py-8 text-center text-sm text-muted-foreground">Nothing scheduled in this {view}.</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {sections.map(s => {
+        const today = isSameDay(s.date, new Date());
+        return (
+          <div key={s.iso}>
+            <div className="sticky top-0 z-10 mb-1.5 flex items-baseline gap-2 bg-card/80 py-1 backdrop-blur-sm">
+              <span className={cn("font-display text-sm font-semibold", today && "text-primary")}>
+                {formatRelativeDate(s.iso)}
+              </span>
+              <span className="text-[11px] text-muted-foreground">{format(s.date, "EEE, MMM d")}</span>
+              <span className="ml-auto text-[10px] text-muted-foreground">{s.items.length} item{s.items.length === 1 ? "" : "s"}</span>
+            </div>
+            <ul className="space-y-1">
+              {s.items.map((e, i) => (
+                <li key={i} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm", colorOf(e.kind))}>
+                  <span className="w-16 shrink-0 text-xs font-medium opacity-80">{e.time ?? "any time"}</span>
+                  <span className="flex-1 truncate">{e.label}</span>
+                  <span className="text-[10px] uppercase tracking-wider opacity-60">{e.kind}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         );
       })}
     </div>
