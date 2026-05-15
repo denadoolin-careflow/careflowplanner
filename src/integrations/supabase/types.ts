@@ -2049,6 +2049,7 @@ export type Database = {
           id: string
           notes: string | null
           start_time: string
+          task_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -2062,6 +2063,7 @@ export type Database = {
           id?: string
           notes?: string | null
           start_time: string
+          task_id?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -2075,11 +2077,20 @@ export type Database = {
           id?: string
           notes?: string | null
           start_time?: string
+          task_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "time_blocks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
