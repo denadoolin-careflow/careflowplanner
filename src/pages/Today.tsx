@@ -34,7 +34,7 @@ export default function Today() {
   const eventsOn = (k: string) => [
     ...state.appointments.filter(a => a.date === k).map(a => ({ label: a.title, time: a.time, id: a.id, kind: "appt" as const })),
     ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
-      label: `○ ${t.title}`, time: undefined as string | undefined,
+      label: t.title, time: undefined as string | undefined, id: t.id, kind: "task" as const,
     })),
   ];
 
