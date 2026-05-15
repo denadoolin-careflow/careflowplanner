@@ -85,7 +85,19 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
   return { blocks, loading, add, update, remove, refresh };
 }
 
-export function colorClasses(c: string): { bg: string; ring: string; text: string } {
+export function colorClasses(c: string): { bg: string; ring: string; text: string; style?: React.CSSProperties } {
+  if (typeof c === "string" && c.startsWith("#")) {
+    return {
+      bg: "",
+      ring: "ring-transparent",
+      text: "text-foreground",
+      style: {
+        backgroundColor: `${c}22`,
+        borderColor: c,
+        boxShadow: `inset 0 0 0 1px ${c}55`,
+      },
+    };
+  }
   switch (c) {
     case "secondary": return { bg: "bg-secondary-soft", ring: "ring-secondary", text: "text-secondary-foreground" };
     case "accent":    return { bg: "bg-accent-soft",    ring: "ring-accent",    text: "text-accent-foreground" };
