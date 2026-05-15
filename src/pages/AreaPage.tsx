@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { getAreaIcon } from "@/components/areas/AreaIconColorPicker";
-import { FolderOpen, ArrowLeft } from "lucide-react";
+import { FolderOpen, ArrowLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Task } from "@/lib/types";
@@ -39,6 +39,13 @@ export default function AreaPage() {
   const { state } = useStore();
   const [sortKey, setSortKey] = useState<SortKey>("due");
   const [scope, setScope] = useState<"open" | "all">("open");
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const toggleCollapsed = (id: string) =>
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   const areaRec = (state.areas ?? []).find(a => a.name === areaName);
   const AreaIcon = getAreaIcon(areaRec?.icon);
@@ -98,6 +105,20 @@ export default function AreaPage() {
           </ToggleGroupItem>
         </ToggleGroup>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => {
+              const allIds = [...projects.map(p => p.id), "__no_project__"];
+              const anyOpen = allIds.some(id => !collapsed.has(id));
+              setCollapsed(anyOpen ? new Set(allIds) : new Set());
+            }}
+          >
+            {projects.every(p => collapsed.has(p.id)) && collapsed.has("__no_project__")
+              ? <><ChevronsUpDown className="mr-1 h-3.5 w-3.5" /> Expand all</>
+              : <><ChevronsDownUp className="mr-1 h-3.5 w-3.5" /> Collapse all</>}
+          </Button>
           <span className="text-xs text-muted-foreground">Sort by</span>
           <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
             <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
@@ -118,35 +139,63 @@ export default function AreaPage() {
         </div>
       )}
 
-      {grouped.map(({ project, items }) => (
-        <section key={project.id} className="space-y-2">
-          <div className="flex items-center justify-between gap-2 px-1">
-            <Link to={`/projects/${project.id}`} className="flex items-center gap-2 group">
-              <FolderOpen className="h-3.5 w-3.5 text-primary" style={project.color ? { color: project.color } : undefined} />
-              <span className="text-sm font-medium group-hover:text-primary transition-colors">{project.name}</span>
-              <span className="text-[10px] text-muted-foreground/70">{items.length}</span>
-            </Link>
-          </div>
-          {items.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/40 bg-card/30 px-3 py-2 text-xs italic text-muted-foreground">
-              {scope === "open" ? "No open tasks" : "No tasks"}
+      {grouped.map(({ project, items }) => {
+        const isCollapsed = collapsed.has(project.id);
+        return (
+          <section key={project.id} className="space-y-2">
+            <div className="flex items-center justify-between gap-2 px-1">
+              <button
+                type="button"
+                onClick={() => toggleCollapsed(project.id)}
+                className="flex items-center gap-1.5 text-left group"
+                aria-expanded={!isCollapsed}
+              >
+                <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isCollapsed ? "" : "rotate-90"}`} />
+                <FolderOpen className="h-3.5 w-3.5 text-primary" style={project.color ? { color: project.color } : undefined} />
+                <span className="text-sm font-medium group-hover:text-primary transition-colors">{project.name}</span>
+                <span className="text-[10px] text-muted-foreground/70">{items.length}</span>
+              </button>
+              <Link to={`/projects/${project.id}`} className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-primary">
+                Open
+              </Link>
             </div>
-          ) : (
-            <div className="space-y-1.5">
-              {items.map(t => <TaskRow key={t.id} task={t} showArea={false} />)}
-            </div>
-          )}
-        </section>
-      ))}
+            {!isCollapsed && (
+              items.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border/40 bg-card/30 px-3 py-2 text-xs italic text-muted-foreground">
+                  {scope === "open" ? "No open tasks" : "No tasks"}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {items.map(t => <TaskRow key={t.id} task={t} showArea={false} />)}
+                </div>
+              )
+            )}
+          </section>
+        );
+      })}
 
-      {noProject.length > 0 && (
-        <section className="space-y-2">
-          <div className="px-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">No project</div>
-          <div className="space-y-1.5">
-            {noProject.map(t => <TaskRow key={t.id} task={t} showArea={false} />)}
-          </div>
-        </section>
-      )}
+      {noProject.length > 0 && (() => {
+        const isCollapsed = collapsed.has("__no_project__");
+        return (
+          <section className="space-y-2">
+            <button
+              type="button"
+              onClick={() => toggleCollapsed("__no_project__")}
+              className="flex items-center gap-1.5 px-1 text-left"
+              aria-expanded={!isCollapsed}
+            >
+              <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isCollapsed ? "" : "rotate-90"}`} />
+              <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">No project</span>
+              <span className="text-[10px] text-muted-foreground/70">{noProject.length}</span>
+            </button>
+            {!isCollapsed && (
+              <div className="space-y-1.5">
+                {noProject.map(t => <TaskRow key={t.id} task={t} showArea={false} />)}
+              </div>
+            )}
+          </section>
+        );
+      })()}
     </div>
   );
 }
