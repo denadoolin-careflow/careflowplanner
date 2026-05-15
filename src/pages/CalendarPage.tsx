@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { hoursToHM } from "@/lib/time-blocks";
+import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
+import { TaskEditor } from "@/components/tasks/TaskEditor";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -31,6 +33,10 @@ export default function CalendarPage() {
   const [cursor, setCursor] = useState<Date>(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   const [gLoading, setGLoading] = useState(false);
+  const [editApptId, setEditApptId] = useState<string | null>(null);
+  const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
+  const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
 
   const loadGoogle = async () => {
     setGLoading(true);
@@ -53,12 +59,13 @@ export default function CalendarPage() {
     : "bg-muted text-foreground";
 
   const eventsOn = (k: string) => [
-    ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, label: a.title, time: a.time })),
+    ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, id: a.id, label: a.title, time: a.time })),
     ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, label: `🎂 ${b.name}`, time: undefined })),
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, label: `✨ ${h.name}`, time: undefined })),
     ...gEvents.filter(g => g.date === k).map(g => ({ kind: "gcal" as const, label: g.title, time: g.time ?? undefined, color: g.color })),
     ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
       kind: "task" as const,
+      id: t.id,
       label: `${t.done ? "✓" : "○"} ${t.title}`,
       time: undefined,
     })),
@@ -197,7 +204,16 @@ export default function CalendarPage() {
         accent="warm"
       >
         {layout === "schedule" ? (
-          <ScheduleView view={view} cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} />
+          <ScheduleView
+            view={view}
+            cursor={cursor}
+            eventsOn={eventsOn}
+            colorOf={colorOf}
+            onItemClick={(item) => {
+              if (item.kind === "appt" && item.id) setEditApptId(item.id);
+              else if (item.kind === "task" && item.id) setEditTaskId(item.id);
+            }}
+          />
         ) : (
           <>
             {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} onTaskDropDay={handleDayDrop} />}
@@ -230,11 +246,13 @@ export default function CalendarPage() {
       </SectionCard>
       </div>
       <UnscheduledTasksRail />
+      <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
+      <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
     </div>
   );
 }
 
-type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task"; label: string; time?: string; color?: string };
+type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task"; id?: string; label: string; time?: string; color?: string };
 type EventsFn = (k: string) => EventItem[];
 type ColorFn = (k: "appt"|"bday"|"hol"|"gcal"|"task") => string;
 
@@ -386,7 +404,7 @@ function YearView({ cursor, eventsOn, setCursor, setView }: { cursor: Date; even
   );
 }
 
-function ScheduleView({ view, cursor, eventsOn, colorOf }: { view: View; cursor: Date; eventsOn: EventsFn; colorOf: ColorFn }) {
+function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick }: { view: View; cursor: Date; eventsOn: EventsFn; colorOf: ColorFn; onItemClick?: (item: EventItem) => void }) {
   let start: Date, end: Date;
   if (view === "day") { start = cursor; end = cursor; }
   else if (view === "week") { start = startOfWeek(cursor, { weekStartsOn: 0 }); end = endOfWeek(cursor, { weekStartsOn: 0 }); }
@@ -417,11 +435,28 @@ function ScheduleView({ view, cursor, eventsOn, colorOf }: { view: View; cursor:
             </div>
             <ul className="space-y-1">
               {s.items.map((e, i) => (
-                <li key={i} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm", colorOf(e.kind))}>
-                  <span className="w-16 shrink-0 text-xs font-medium opacity-80">{e.time ?? "any time"}</span>
-                  <span className="flex-1 truncate">{e.label}</span>
-                  <span className="text-[10px] uppercase tracking-wider opacity-60">{e.kind}</span>
-                </li>
+                (() => {
+                  const clickable = !!onItemClick && (e.kind === "appt" || e.kind === "task") && !!e.id;
+                  return (
+                    <li key={i}>
+                      <button
+                        type="button"
+                        disabled={!clickable}
+                        onClick={() => clickable && onItemClick!(e)}
+                        className={cn(
+                          "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-all",
+                          colorOf(e.kind),
+                          clickable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                          !clickable && "cursor-default",
+                        )}
+                      >
+                        <span className="w-16 shrink-0 text-xs font-medium opacity-80">{e.time ?? "any time"}</span>
+                        <span className="flex-1 truncate">{e.label}</span>
+                        <span className="text-[10px] uppercase tracking-wider opacity-60">{e.kind}</span>
+                      </button>
+                    </li>
+                  );
+                })()
               ))}
             </ul>
           </div>
