@@ -139,7 +139,6 @@ export default function AreaPage() {
         </div>
       )}
 
-      {grouped.map(({ project, items }) => (
       {grouped.map(({ project, items }) => {
         const isCollapsed = collapsed.has(project.id);
         return (
