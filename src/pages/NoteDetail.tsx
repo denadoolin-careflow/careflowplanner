@@ -104,6 +104,7 @@ export default function NoteDetail() {
         <div className="mt-4">
           <BlockEditor
             body={body}
+            noteId={note.id}
             onChange={(markdown) => { setBody(markdown); save({ body: markdown }); }}
           />
         </div>

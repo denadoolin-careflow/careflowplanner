@@ -33,6 +33,7 @@ import {
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { linkNote, type EntityType } from "@/lib/note-links";
 
 /* ------------------------------------------------------------------ */
 /*  Markdown <-> HTML helpers (storage compat with existing notes)    */
@@ -86,6 +87,11 @@ const slashItems = (): SlashItem[] => [
 /*  Reference items (live data from store)                            */
 /* ------------------------------------------------------------------ */
 type RefItem = { id: string; label: string; type: string; href?: string; icon: React.ComponentType<{ className?: string }>; insertText: string };
+
+const TYPE_TO_ENTITY: Record<string, EntityType> = {
+  Task: "task", Project: "project", Goal: "goal", Habit: "habit",
+  Person: "person", Appointment: "appointment", Meal: "meal", Journal: "journal",
+};
 
 function buildReferences(state: ReturnType<typeof useStore>["state"]): RefItem[] {
   const items: RefItem[] = [];
@@ -271,10 +277,12 @@ function Toolbar({ editor }: { editor: Editor }) {
 export function BlockEditor({
   body,
   onChange,
+  noteId,
   placeholder = "Press / for blocks · @ to mention · [[ to link",
 }: {
   body: string;
   onChange: (markdown: string, html: string) => void;
+  noteId?: string;
   placeholder?: string;
 }) {
   const { state } = useStore();
@@ -282,6 +290,8 @@ export function BlockEditor({
   const refsRef = useRef<RefItem[]>([]);
   refsRef.current = useMemo(() => buildReferences(state), [state]);
   const lastSyncedRef = useRef<string>(body);
+  const noteIdRef = useRef<string | undefined>(noteId);
+  noteIdRef.current = noteId;
 
   const slashExtension = useMemo(() => Extension.create({
     name: "slashCommand",
@@ -333,6 +343,10 @@ export function BlockEditor({
             })
             .insertContent(" ")
             .run();
+          const entityType = TYPE_TO_ENTITY[item.type];
+          if (entityType && noteIdRef.current) {
+            void linkNote(noteIdRef.current, entityType, item.id).catch(() => {});
+          }
         },
         render: (item, active) => (
           <span className="flex items-center gap-2">

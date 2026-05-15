@@ -7,11 +7,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Link2, Plus, X, CheckSquare, FolderOpen, Target, Flame, CalendarHeart, Clock } from "lucide-react";
+import { Link2, Plus, X, CheckSquare, FolderOpen, Target, Flame, CalendarHeart, Clock, Users, Utensils, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 const ICONS: Record<EntityType, React.ComponentType<{ className?: string }>> = {
   task: CheckSquare, project: FolderOpen, goal: Target, habit: Flame, appointment: CalendarHeart, time_block: Clock,
+  person: Users, meal: Utensils, journal: BookOpen,
 };
 
 interface Props { noteId: string; }
@@ -31,6 +32,12 @@ export function NoteLinksSidebar({ noteId }: Props) {
         case "habit": label = state.habits.find(h => h.id === l.entityId)?.title ?? label; break;
         case "appointment": label = state.appointments.find(a => a.id === l.entityId)?.title ?? label; break;
         case "time_block": label = "Time block"; break;
+        case "person": label = state.recipients.find(p => p.id === l.entityId)?.name ?? label; break;
+        case "meal": label = state.meals.find(m => m.id === l.entityId)?.name ?? label; break;
+        case "journal": {
+          const j = state.journal.find(x => x.id === l.entityId);
+          label = j ? (j.title || j.body.slice(0, 40)) : label; break;
+        }
       }
       return { ...l, label };
     });
@@ -105,6 +112,9 @@ function AttachPopover({ noteId, existing, onLinked }: { noteId: string; existin
       case "goal": return state.goals.filter(g => m(g.title)).slice(0, 30).map(g => ({ id: g.id, label: g.title }));
       case "habit": return state.habits.filter(h => m(h.title)).slice(0, 30).map(h => ({ id: h.id, label: h.title }));
       case "appointment": return state.appointments.filter(a => m(a.title)).slice(0, 30).map(a => ({ id: a.id, label: `${a.title}${a.date ? ` · ${a.date}` : ""}` }));
+      case "person": return state.recipients.filter(p => m(p.name)).slice(0, 30).map(p => ({ id: p.id, label: p.name }));
+      case "meal": return state.meals.filter(x => m(x.name)).slice(0, 30).map(x => ({ id: x.id, label: `${x.name}${x.date ? ` · ${x.date}` : ""}` }));
+      case "journal": return state.journal.filter(j => m(j.title) || m(j.body)).slice(0, 30).map(j => ({ id: j.id, label: j.title || j.body.slice(0, 50) }));
       default: return [];
     }
   }, [tab, q, state]);
@@ -125,12 +135,15 @@ function AttachPopover({ noteId, existing, onLinked }: { noteId: string; existin
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-2">
         <Tabs value={tab} onValueChange={(v) => setTab(v as EntityType)}>
-          <TabsList className="grid w-full grid-cols-5 h-8">
+          <TabsList className="grid w-full grid-cols-8 h-8">
             <TabsTrigger value="task" className="text-[10px] px-1">Task</TabsTrigger>
             <TabsTrigger value="project" className="text-[10px] px-1">Project</TabsTrigger>
             <TabsTrigger value="goal" className="text-[10px] px-1">Goal</TabsTrigger>
             <TabsTrigger value="habit" className="text-[10px] px-1">Habit</TabsTrigger>
             <TabsTrigger value="appointment" className="text-[10px] px-1">Event</TabsTrigger>
+            <TabsTrigger value="person" className="text-[10px] px-1">Person</TabsTrigger>
+            <TabsTrigger value="meal" className="text-[10px] px-1">Meal</TabsTrigger>
+            <TabsTrigger value="journal" className="text-[10px] px-1">Journal</TabsTrigger>
           </TabsList>
           <TabsContent value={tab} className="mt-2 space-y-2">
             <Input autoFocus placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} className="h-8 text-xs" />
