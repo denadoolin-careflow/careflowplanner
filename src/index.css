@@ -574,3 +574,4 @@
   line-height: 1.4;
 }
 .block-editor .ProseMirror a.ref-chip:hover { background: hsl(var(--primary) / 0.2); }
+.block-editor .ProseMirror a { cursor: pointer; }
