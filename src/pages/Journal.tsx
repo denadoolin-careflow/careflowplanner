@@ -14,11 +14,11 @@ import { cn } from "@/lib/utils";
 
 type TemplateKey = "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin" | "daily-reset" | "productivity" | "habit-reflection";
 
-const TEMPLATES: { key: TemplateKey; label: string; emoji: string; type: JournalEntry["type"]; prompts: string[]; accent: "sage" | "warm" | "calm" | "plum" }[] = [
+const TEMPLATES: { key: TemplateKey; label: string; emoji: string; type: JournalEntry["type"]; prompts: string[]; accent: "sage" | "warm" | "calm" }[] = [
   { key: "daily", label: "Daily", emoji: "🌿", type: "daily", accent: "sage", prompts: ["How am I, really?", "One thing I noticed today…", "What needs my attention tomorrow?"] },
   { key: "gratitude", label: "Gratitude", emoji: "🌼", type: "gratitude", accent: "warm", prompts: ["Three small things I appreciated…", "Someone who made today softer…", "A moment I want to remember…"] },
   { key: "brain-dump", label: "Brain dump", emoji: "🌀", type: "brain-dump", accent: "calm", prompts: ["Everything that's loud right now — unfiltered.", "What's been circling in my head?"] },
-  { key: "caregiver-reflection", label: "Caregiver", emoji: "🤲", type: "daily", accent: "plum", prompts: ["What is full today, what is empty?", "Where did I show up well?", "What support do I need?"] },
+  { key: "caregiver-reflection", label: "Caregiver", emoji: "🤲", type: "daily", accent: "warm", prompts: ["What is full today, what is empty?", "Where did I show up well?", "What support do I need?"] },
   { key: "emotional-checkin", label: "Emotional check-in", emoji: "💗", type: "daily", accent: "warm", prompts: ["What am I feeling, named gently?", "Where do I feel it in my body?", "What's underneath the feeling?"] },
   { key: "daily-reset", label: "Daily reset", emoji: "🌙", type: "daily", accent: "calm", prompts: ["What can I release from today?", "What did I learn?", "What do I want to carry into tomorrow?"] },
   { key: "productivity", label: "Productivity", emoji: "⚡️", type: "daily", accent: "sage", prompts: ["Where did my focus go?", "What created friction?", "What's the smallest next step?"] },
