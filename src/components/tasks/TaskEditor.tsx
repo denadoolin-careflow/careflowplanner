@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon, X } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
 import { Task, AREAS, Priority, Energy, RecurrenceType } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -47,7 +52,43 @@ export function TaskEditor({ open, onOpenChange, task }: Props) {
           <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
             <div className="space-y-1 min-w-0">
               <Label className="text-xs">Due date</Label>
-              <Input type="date" value={draft.dueDate ?? ""} onChange={e => set("dueDate", e.target.value || undefined)} className="w-full" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start gap-2 px-3 font-normal",
+                      !draft.dueDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="h-4 w-4 shrink-0 opacity-60" />
+                    <span className="flex-1 truncate text-left">
+                      {draft.dueDate ? format(parseISO(draft.dueDate), "MMM d, yyyy") : "Pick a date"}
+                    </span>
+                    {draft.dueDate && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Clear date"
+                        onClick={(e) => { e.stopPropagation(); set("dueDate", undefined); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); set("dueDate", undefined); } }}
+                        className="rounded p-0.5 opacity-60 hover:opacity-100"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={draft.dueDate ? parseISO(draft.dueDate) : undefined}
+                    onSelect={(d) => set("dueDate", d ? format(d, "yyyy-MM-dd") : undefined)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-1 min-w-0">
               <Label className="text-xs">Area</Label>
