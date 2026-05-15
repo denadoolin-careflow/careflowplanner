@@ -30,6 +30,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
 
   const subtasks = state.tasks.filter(t => t.parentTaskId === task.id);
   const hasSubs = subtasks.length > 0;
+  const areaColor = (state.areas ?? []).find(a => a.name === task.area)?.color || undefined;
   const [quickEditOpen, setQuickEditOpen] = useState(false);
   const longPressTimer = useRef<number | null>(null);
   const longPressed = useRef(false);
@@ -149,7 +150,21 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
         )}
         {!editing && (showArea || task.dayPart || task.priority === "high" || task.resetItemId) && (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            {showArea && <Badge variant="secondary" className="rounded-full bg-muted text-[10px] font-normal">{task.area}</Badge>}
+            {showArea && (
+              <Badge
+                variant="secondary"
+                className="rounded-full bg-muted text-[10px] font-normal"
+                style={areaColor ? { backgroundColor: `${areaColor}22`, color: areaColor } : undefined}
+              >
+                {areaColor && (
+                  <span
+                    className="mr-1 inline-block h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: areaColor }}
+                  />
+                )}
+                {task.area}
+              </Badge>
+            )}
             {task.dayPart && <Badge variant="outline" className="rounded-full text-[10px] font-normal">{task.dayPart}</Badge>}
             {task.priority === "high" && <Badge className="rounded-full bg-accent text-accent-foreground text-[10px] font-normal hover:bg-accent">priority</Badge>}
             {task.energy && <Badge variant="outline" className="rounded-full text-[10px] font-normal capitalize">{task.energy} energy</Badge>}
