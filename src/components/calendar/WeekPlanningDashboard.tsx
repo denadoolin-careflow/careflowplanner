@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { useWeeklyPlan } from "@/hooks/useWeeklyPlan";
+import { InboxCapture } from "@/components/calendar/InboxCapture";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -195,6 +196,9 @@ export function WeekPlanningDashboard({
 
   return (
     <div className="space-y-5">
+      {/* QUICK CAPTURE */}
+      <InboxCapture defaultDate={monday} />
+
       {/* HERO */}
       <PlanCard title={`Intention for ${weekLabel}`} icon={Sparkles} accent="warm" className="overflow-visible">
         <div className="grid gap-4 md:grid-cols-[1fr_2fr]">
