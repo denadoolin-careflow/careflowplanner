@@ -91,6 +91,13 @@ export interface JournalEntry {
   title?: string;
   body: string;
   mood?: Energy;
+  template?: string;
+  energy?: string;
+  prompts?: string[];
+  gratitudeItems?: string[];
+  tags?: string[];
+  pinned?: boolean;
+  linkedIds?: { type: string; id: string; label?: string }[];
 }
 
 export interface Meal {
