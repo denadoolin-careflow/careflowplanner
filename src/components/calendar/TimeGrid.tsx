@@ -585,6 +585,13 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Linked task editor */}
+      <TaskEditor
+        task={editingTask}
+        open={!!editingTask}
+        onOpenChange={(o) => !o && setEditingTaskId(null)}
+      />
     </>
   );
 }
