@@ -338,6 +338,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       if (eventRaw) {
                         try { const p = JSON.parse(eventRaw); title = p.title ?? title; color = p.color ?? color; } catch {}
                       }
+                      if (taskId) color = "warm";
                       void add({
                         date: iso,
                         startTime: hoursToHM(startH),
@@ -345,6 +346,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                         title,
                         color,
                         allDay: false,
+                        taskId: taskId || null,
                       });
                       if (taskId && onTaskDropAt) onTaskDropAt(taskId, iso, startH);
                       setDropHover(null);
