@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake, Sparkles } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
@@ -19,13 +19,14 @@ import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { BirthdayHolidayEditor } from "@/components/calendar/BirthdayHolidayEditor";
 import { InboxCapture } from "@/components/calendar/InboxCapture";
+import { MonthPlanningDashboard } from "@/components/calendar/MonthPlanningDashboard";
 
 type View = "day" | "week" | "month" | "year";
 
 export default function CalendarPage() {
   const { state, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday } = useStore();
   const [view, setView] = useState<View>("month");
-  const [layout, setLayout] = useState<"grid" | "schedule">("grid");
+  const [layout, setLayout] = useState<"grid" | "schedule" | "plan">("grid");
   const [cursor, setCursor] = useState<Date>(new Date());
   const ALL_KINDS = ["task","appt","care","meal","bday","hol","gcal"] as const;
   type Kind = typeof ALL_KINDS[number];
@@ -191,12 +192,26 @@ export default function CalendarPage() {
               >
                 <List className="h-3 w-3" /> Schedule
               </button>
+              {view === "month" && (
+                <button
+                  onClick={() => setLayout("plan")}
+                  className={cn(
+                    "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                    layout === "plan" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  )}
+                  aria-label="Monthly planning dashboard"
+                >
+                  <Sparkles className="h-3 w-3" /> Plan
+                </button>
+              )}
             </div>
           </div>
         }
         accent="warm"
       >
-        {layout === "schedule" ? (
+        {layout === "plan" && view === "month" ? (
+          <MonthPlanningDashboard cursor={cursor} onJumpToDate={(d) => { setCursor(d); setLayout("grid"); setView("day"); }} />
+        ) : layout === "schedule" ? (
           <>
           <div className="mb-3 flex flex-wrap gap-1.5">
             {([

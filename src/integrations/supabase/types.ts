@@ -1337,6 +1337,96 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_intentions: {
+        Row: {
+          created_at: string
+          emotional_focus: string | null
+          focus_areas: Json
+          id: string
+          intention: string | null
+          month: string
+          mood_board: Json
+          priorities: Json
+          quote: string | null
+          updated_at: string
+          user_id: string
+          vision: string | null
+          word: string | null
+        }
+        Insert: {
+          created_at?: string
+          emotional_focus?: string | null
+          focus_areas?: Json
+          id?: string
+          intention?: string | null
+          month: string
+          mood_board?: Json
+          priorities?: Json
+          quote?: string | null
+          updated_at?: string
+          user_id: string
+          vision?: string | null
+          word?: string | null
+        }
+        Update: {
+          created_at?: string
+          emotional_focus?: string | null
+          focus_areas?: Json
+          id?: string
+          intention?: string | null
+          month?: string
+          mood_board?: Json
+          priorities?: Json
+          quote?: string | null
+          updated_at?: string
+          user_id?: string
+          vision?: string | null
+          word?: string | null
+        }
+        Relationships: []
+      }
+      monthly_reviews: {
+        Row: {
+          challenges: string | null
+          created_at: string
+          gratitude: string | null
+          id: string
+          lessons: string | null
+          month: string
+          next_month_focus: string | null
+          rating: number | null
+          updated_at: string
+          user_id: string
+          wins: string | null
+        }
+        Insert: {
+          challenges?: string | null
+          created_at?: string
+          gratitude?: string | null
+          id?: string
+          lessons?: string | null
+          month: string
+          next_month_focus?: string | null
+          rating?: number | null
+          updated_at?: string
+          user_id: string
+          wins?: string | null
+        }
+        Update: {
+          challenges?: string | null
+          created_at?: string
+          gratitude?: string | null
+          id?: string
+          lessons?: string | null
+          month?: string
+          next_month_focus?: string | null
+          rating?: number | null
+          updated_at?: string
+          user_id?: string
+          wins?: string | null
+        }
+        Relationships: []
+      }
       movement_logs: {
         Row: {
           activity: string
