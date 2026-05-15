@@ -68,6 +68,14 @@ export default function CalendarPage() {
     : k === "meal" ? "bg-amber-100 text-amber-900 border border-amber-300/50 dark:bg-amber-900/30 dark:text-amber-100"
     : "bg-muted text-foreground";
 
+  // Adapter for TimeGrid which only knows about a narrower set of kinds.
+  const eventsOnForGrid = (k: string) => eventsOn(k)
+    .filter(e => e.kind !== "meal")
+    .map(e => ({
+      ...e,
+      kind: (e.kind === "care" ? "task" : e.kind) as "appt" | "bday" | "gcal" | "hol" | "task",
+    }));
+
   const eventsOn = (k: string) => [
     ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, id: a.id, label: a.title, time: a.time })),
     ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, label: `🎂 ${b.name}`, time: undefined })),
