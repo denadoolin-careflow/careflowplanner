@@ -12,6 +12,9 @@ import { useDraggable } from "@dnd-kit/core";
 import { toast } from "sonner";
 import { pickAffirmation } from "@/lib/affirmations";
 import { Input } from "@/components/ui/input";
+import { QuickScheduleButton } from "@/components/tasks/QuickScheduleButton";
+import { QuickEditPopover } from "@/components/tasks/QuickEditPopover";
+import { haptics } from "@/lib/haptics";
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
@@ -27,6 +30,27 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
 
   const subtasks = state.tasks.filter(t => t.parentTaskId === task.id);
   const hasSubs = subtasks.length > 0;
+  const [quickEditOpen, setQuickEditOpen] = useState(false);
+  const longPressTimer = useRef<number | null>(null);
+  const longPressed = useRef(false);
+
+  const startLongPress = (e: React.PointerEvent) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    longPressed.current = false;
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      longPressed.current = true;
+      haptics.pickup?.();
+      setQuickEditOpen(true);
+    }, 480);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) { window.clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  };
+  const onContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setQuickEditOpen(true);
+  };
 
   // Keep draft synced when task changes externally (and we're not editing).
   useEffect(() => { if (!editing) setDraft(task.title); }, [task.title, editing]);
@@ -62,7 +86,17 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
 
   return (
     <>
-    <RowShell task={task} dense={dense} draggable={draggable} celebrate={celebrate}>
+    <RowShell
+      task={task}
+      dense={dense}
+      draggable={draggable}
+      celebrate={celebrate}
+      onPointerDown={startLongPress}
+      onPointerUp={cancelLongPress}
+      onPointerLeave={cancelLongPress}
+      onPointerCancel={cancelLongPress}
+      onContextMenu={onContextMenu}
+    >
       <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-0.5" />
       {(hasSubs || addingSub) && (
         <button
@@ -130,6 +164,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
           </div>
         )}
       </div>
+      <QuickScheduleButton task={task} />
       <Button
         variant="ghost" size="icon"
         className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
@@ -153,6 +188,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
         </span>
       )}
     </RowShell>
+    <QuickEditPopover task={task} open={quickEditOpen} onOpenChange={setQuickEditOpen} />
     {expanded && (
       <div className="ml-8 space-y-1 border-l border-border/40 pl-2">
         {subtasks.map(s => <TaskRow key={s.id} task={s} dense showArea={false} />)}
@@ -190,20 +226,29 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
   );
 }
 
-function RowShell({ task, dense, draggable, celebrate, children }: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; children: React.ReactNode }) {
+type ShellHandlers = {
+  onPointerDown?: (e: React.PointerEvent) => void;
+  onPointerUp?: (e: React.PointerEvent) => void;
+  onPointerLeave?: (e: React.PointerEvent) => void;
+  onPointerCancel?: (e: React.PointerEvent) => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
+};
+
+function RowShell({ task, dense, draggable, celebrate, children, ...handlers }: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; children: React.ReactNode } & ShellHandlers) {
   const cls = cn(
-    "group relative flex items-start gap-2 rounded-xl border border-transparent px-2 transition-all hover:border-border/60 hover:bg-muted/40",
+    "group relative flex items-start gap-2 rounded-xl border border-transparent px-2 transition-all",
+    "hover:border-primary/30 hover:bg-muted/40 hover:shadow-[0_4px_18px_-12px_hsl(var(--primary)/0.45)]",
     dense ? "py-1.5" : "py-2.5",
     celebrate && "border-primary/40 bg-primary/5 scale-[1.01]"
   );
-  if (!draggable) return <div className={cls}>{children}</div>;
-  return <DraggableShell task={task} className={cls}>{children}</DraggableShell>;
+  if (!draggable) return <div className={cls} {...handlers}>{children}</div>;
+  return <DraggableShell task={task} className={cls} handlers={handlers}>{children}</DraggableShell>;
 }
 
-function DraggableShell({ task, className, children }: { task: Task; className: string; children: React.ReactNode }) {
+function DraggableShell({ task, className, children, handlers }: { task: Task; className: string; children: React.ReactNode; handlers?: ShellHandlers }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   return (
-    <div ref={setNodeRef} className={cn(className, isDragging && "opacity-40")}>
+    <div ref={setNodeRef} className={cn(className, isDragging && "opacity-40")} {...handlers}>
       <button {...listeners} {...attributes} aria-label="Drag" className="mt-0.5 -ml-1 cursor-grab touch-none rounded p-0.5 text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing">
         <GripVertical className="h-3.5 w-3.5" />
       </button>
