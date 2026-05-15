@@ -487,11 +487,11 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       return (
                         <div
                           key={b.id}
-                          onClick={(e) => {
-                            if (Date.now() < suppressClickUntil.current) return;
-                            e.stopPropagation();
-                            haptics.snap();
-                            openBlockEditor(b);
+                          onPointerDown={(e) => {
+                            // Start a move drag from anywhere on the block.
+                            // A short tap (no movement past threshold) is treated as a click and opens the editor in endDrag().
+                            haptics.tap();
+                            beginDrag(b, "move", e);
                           }}
                           onPointerEnter={() => {
                             if (lastHoverIdRef.current !== b.id) {
@@ -511,7 +511,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             isConflict && !isDragging && "ring-2 ring-destructive/80 ring-opacity-100 shadow-[0_0_0_3px_hsl(var(--destructive)/0.18)]",
                             taskDone && "opacity-60"
                           )}
-                          style={{ top, height, cursor: isDragging ? "grabbing" : "pointer" }}
+                          style={{ top, height, cursor: isDragging ? "grabbing" : "grab", touchAction: "none" }}
                           role="button"
                           tabIndex={0}
                         >
@@ -547,6 +547,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             {isConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
                             {linkedTask && (
                               <button
+                                onPointerDown={(e) => e.stopPropagation()}
                                 onClick={(e) => { e.stopPropagation(); haptics.tap(); void toggleTask(linkedTask.id); }}
                                 aria-label={taskDone ? "Mark task not done" : "Mark task done"}
                                 className={cn(
