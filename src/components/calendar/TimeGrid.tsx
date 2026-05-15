@@ -260,15 +260,23 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                   {dayTasks.length > 0 && (
                     <div className="flex flex-col gap-1 border-b border-border/50 bg-muted/20 px-1 py-1">
                       {dayTasks.map((t) => (
-                        <div key={t.id} className="flex items-center gap-1.5 rounded-md bg-card/80 px-1.5 py-1 text-[11px] shadow-sm ring-1 ring-inset ring-border/40">
+                        <div key={t.id} className={cn(
+                          "flex items-center gap-1.5 rounded-md bg-card/80 px-1.5 py-1 text-[11px] shadow-sm ring-1 ring-inset ring-border/40",
+                          t.done && "opacity-60"
+                        )}>
                           <button
                             onClick={(e) => { e.stopPropagation(); haptics.tap(); void toggleTask(t.id!); }}
-                            aria-label="Mark task done"
-                            className="group/cb grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 border-primary/50 bg-background text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                            aria-label={t.done ? "Mark task not done" : "Mark task done"}
+                            className={cn(
+                              "group/cb grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 transition-colors",
+                              t.done
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-primary/50 bg-background text-primary hover:bg-primary hover:text-primary-foreground"
+                            )}
                           >
-                            <Check className="h-2.5 w-2.5 opacity-0 transition-opacity group-hover/cb:opacity-100" />
+                            <Check className={cn("h-2.5 w-2.5 transition-opacity", t.done ? "opacity-100" : "opacity-0 group-hover/cb:opacity-100")} />
                           </button>
-                          <span className="truncate">{t.label}</span>
+                          <span className={cn("truncate", t.done && "line-through text-muted-foreground")}>{t.label}</span>
                         </div>
                       ))}
                     </div>
