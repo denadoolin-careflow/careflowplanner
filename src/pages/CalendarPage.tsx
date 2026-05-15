@@ -350,15 +350,37 @@ function MonthView({ cursor, eventsOn, colorOf, onTaskDropDay }: { cursor: Date;
                 setHoverISO(null);
               }}
               className={cn(
-                "min-h-24 rounded-lg border p-1.5 text-xs transition-colors",
-                inMonth ? "border-border/60 bg-card" : "border-transparent text-muted-foreground/50",
+                "flex min-h-28 flex-col rounded-xl border p-2 text-xs transition-colors sm:min-h-32",
+                inMonth ? "border-border/60 bg-card" : "border-transparent bg-muted/20 text-muted-foreground/50",
                 today && "ring-2 ring-primary",
                 hoverISO === k && "ring-2 ring-primary bg-primary/10",
               )}
             >
-              <div className="text-right text-[11px] font-medium">{format(d, "d")}</div>
-              <div className="mt-0.5 space-y-0.5">
-                {ev.map((e, i) => <div key={i} className={cn("truncate rounded px-1 py-0.5 text-[10px]", colorOf(e.kind))}>{e.label}</div>)}
+              <div className="mb-1 flex items-baseline justify-between">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                  {d.getDate() === 1 ? format(d, "MMM") : ""}
+                </span>
+                <span className={cn(
+                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold",
+                  today ? "bg-primary text-primary-foreground" : "text-foreground/80",
+                )}>
+                  {format(d, "d")}
+                </span>
+              </div>
+              <div className="flex flex-1 flex-col gap-1">
+                {ev.map((e, i) => (
+                  <div
+                    key={i}
+                    title={e.label}
+                    className={cn(
+                      "rounded-md px-1.5 py-1 text-[11px] leading-snug break-words whitespace-normal",
+                      colorOf(e.kind),
+                    )}
+                  >
+                    {e.time && <span className="mr-1 font-medium opacity-80">{e.time}</span>}
+                    {e.label}
+                  </div>
+                ))}
               </div>
             </div>
           );
