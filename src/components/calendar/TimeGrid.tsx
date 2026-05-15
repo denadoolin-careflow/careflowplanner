@@ -286,7 +286,13 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             e.dataTransfer.setData("text/plain", t.label);
                             e.dataTransfer.effectAllowed = "move";
                             haptics.pickup();
+                            const taskRow = state.tasks.find(x => x.id === t.id);
+                            const mins = taskRow?.estMinutes ?? taskRow?.est_minutes ?? 60;
+                            const preview = { kind: "task" as const, title: t.label, durationH: Math.max(0.25, mins / 60) };
+                            externalDragRef.current = preview;
+                            setExternalDrag(preview);
                           }}
+                          onDragEnd={() => { externalDragRef.current = null; setExternalDrag(null); setDropHover(null); }}
                           style={{ cursor: "grab" }}
                         >
                           <button
