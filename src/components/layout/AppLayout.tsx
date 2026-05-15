@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
+import { Sidebar, MobileSidebarTrigger } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { ThemeToggle } from "./ThemeToggle";
 import { ThemePicker } from "./ThemePicker";
@@ -23,9 +23,12 @@ export function AppLayout() {
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border/50 bg-background/70 px-4 py-3 backdrop-blur-md lg:px-8">
-            <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
+              <MobileSidebarTrigger />
+              <div className="min-w-0">
               <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">CareFlow</p>
               <h1 className="font-display text-xl font-semibold leading-tight sm:text-2xl">{current.label}</h1>
+              </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <UniversalSearchBar />
