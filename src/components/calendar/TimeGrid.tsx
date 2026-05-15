@@ -500,7 +500,6 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             )}
                             <span className={cn("truncate", taskDone && "line-through")}>{b.title}</span>
                           </div>
-                          </div>
                           <div className="pointer-events-none pr-8 text-[10px] opacity-70">
                             {fmtTime(hoursToHM(startH))} – {fmtTime(hoursToHM(endH))}
                             {isConflict && <span className="ml-1 font-semibold text-destructive">· conflict</span>}
