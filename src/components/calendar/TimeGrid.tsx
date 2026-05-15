@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Trash2, AlertTriangle, GripHorizontal } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -40,7 +40,7 @@ function fmtTime(hm: string) {
 
 type DragState = {
   blockId: string;
-  mode: "move" | "resize";
+  mode: "move" | "resize" | "resize-top";
   pointerId: number;
   startClientY: number;
   startClientX: number;
@@ -157,8 +157,10 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       nextEnd = nextStart + dur;
       const overDate = findDateAt(e.clientX);
       if (overDate) nextDate = overDate;
-    } else {
+    } else if (d.mode === "resize") {
       nextEnd = Math.min(HOUR_END, Math.max(d.origStart + step, d.origEnd + dh));
+    } else {
+      nextStart = Math.max(HOUR_START, Math.min(d.origEnd - step, d.origStart + dh));
     }
     const moved = d.moved || Math.abs(dy) >= DRAG_THRESHOLD || Math.abs(e.clientX - d.startClientX) >= DRAG_THRESHOLD;
     if (moved && !d.moved) haptics.pickup();
@@ -190,9 +192,10 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     setDrag(null);
   }, [onPointerMove, blocks, update]);
 
-  const beginDrag = (block: TimeBlock, mode: "move" | "resize", e: React.PointerEvent) => {
+  const beginDrag = (block: TimeBlock, mode: "move" | "resize" | "resize-top", e: React.PointerEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch {}
     const d: DragState = {
       blockId: block.id,
       mode,
@@ -205,7 +208,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       curStart: hmToHours(block.startTime),
       curEnd: hmToHours(block.endTime),
       curDate: block.date,
-      moved: mode === "resize", // resize handle = drag intent confirmed
+      moved: mode !== "move", // resize handle = drag intent confirmed
     };
     setDrag(d);
     dragRef.current = d;
