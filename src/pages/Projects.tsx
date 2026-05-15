@@ -95,13 +95,13 @@ export default function Projects() {
                 }
               />
             ) : null}
-            <button
-              onClick={() => setOpenArea(area)}
+            <Link
+              to={`/areas/${encodeURIComponent(area)}`}
               className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-primary"
-              title="Open area · goals & subtasks"
+              title="Open area · all tasks by project"
             >
               {area}
-            </button>
+            </Link>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {items.map(p => (
