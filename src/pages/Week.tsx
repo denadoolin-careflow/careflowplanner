@@ -3,6 +3,9 @@ import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { startOfWeek, addDays, format } from "date-fns";
 import { toast } from "sonner";
+import { LayoutGrid, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { AgendaView } from "@/components/calendar/AgendaView";
@@ -15,11 +18,13 @@ import { WeekNavigator } from "@/components/week/WeekNavigator";
 import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
+import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
   const [start, setStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [view, setView] = useState<CalView>("schedule");
+  const [layout, setLayout] = useState<"grid" | "plan">("grid");
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -68,28 +73,54 @@ export default function Week() {
             <h2 className="font-display text-3xl font-semibold sm:text-4xl">
               {format(start, "MMMM d")} – {format(addDays(start, 6), "MMMM d")}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">Drag tasks from the right onto any day or hour.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {layout === "plan" ? "Set your intention, top three, and review the week." : "Drag tasks from the right onto any day or hour."}
+            </p>
             <div className="mt-3"><WeekNavigator weekStart={start} onChange={setStart} /></div>
+          </div>
+          <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className={cn("h-8 rounded-full px-3 text-xs", layout === "grid" && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
+              onClick={() => setLayout("grid")}
+            >
+              <LayoutGrid className="mr-1 h-3.5 w-3.5" /> Schedule
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className={cn("h-8 rounded-full px-3 text-xs", layout === "plan" && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
+              onClick={() => setLayout("plan")}
+            >
+              <Sparkles className="mr-1 h-3.5 w-3.5" /> Plan
+            </Button>
           </div>
         </div>
 
-        <SectionCard title="This week" accent="warm" action={
-          <div className="flex items-center gap-2">
-            <QuickAddCalendarPopover days={days} />
-            <CalendarViewToggle value={view} onChange={setView} />
-          </div>
-        }>
-          {view === "schedule" && (
-            <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
-          )}
-          {view === "agenda" && (
-            <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
-          )}
-        </SectionCard>
+        {layout === "plan" ? (
+          <WeekPlanningDashboard weekStart={start} onJumpToDay={(d) => { setStart(startOfWeek(d, { weekStartsOn: 1 })); setLayout("grid"); }} />
+        ) : (
+          <>
+            <SectionCard title="This week" accent="warm" action={
+              <div className="flex items-center gap-2">
+                <QuickAddCalendarPopover days={days} />
+                <CalendarViewToggle value={view} onChange={setView} />
+              </div>
+            }>
+              {view === "schedule" && (
+                <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
+              )}
+              {view === "agenda" && (
+                <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
+              )}
+            </SectionCard>
 
-        <CalendarTasksPanel days={days} />
+            <CalendarTasksPanel days={days} />
+          </>
+        )}
       </div>
-      <UnscheduledTasksRail onTaskClick={setEditTaskId} />
+      {layout === "grid" && <UnscheduledTasksRail onTaskClick={setEditTaskId} />}
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
     </div>
