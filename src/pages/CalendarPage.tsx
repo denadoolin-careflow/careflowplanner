@@ -25,7 +25,7 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 type View = "day" | "week" | "month" | "year";
 
 export default function CalendarPage() {
-  const { state, addTask, deleteAppointment, updateTask } = useStore();
+  const { state, addTask, deleteAppointment, updateTask, updateAppointment } = useStore();
   const [taskTitle, setTaskTitle] = useState("");
   const [toInbox, setToInbox] = useState(true);
   const [view, setView] = useState<View>("month");
@@ -212,6 +212,15 @@ export default function CalendarPage() {
             onItemClick={(item) => {
               if (item.kind === "appt" && item.id) setEditApptId(item.id);
               else if (item.kind === "task" && item.id) setEditTaskId(item.id);
+            }}
+            onItemReschedule={async (item, dateISO) => {
+              if (item.kind === "appt" && item.id) {
+                await updateAppointment(item.id, { date: dateISO });
+                toast(`Moved “${item.label}” to ${format(parseISO(dateISO), "MMM d")}`);
+              } else if (item.kind === "task" && item.id) {
+                await updateTask(item.id, { dueDate: dateISO, inbox: false });
+                toast(`Rescheduled task to ${format(parseISO(dateISO), "MMM d")}`);
+              }
             }}
           />
         ) : (
