@@ -139,13 +139,14 @@ function FloatingMenu<T>({ items, onSelect, render }: {
 /* ------------------------------------------------------------------ */
 /*  Suggestion factory (slash + @reference)                           */
 /* ------------------------------------------------------------------ */
-function makeSuggestion<T>(opts: {
+function makeSuggestion<T>(editor: Editor, opts: {
   char: string;
   getItems: (query: string) => T[];
   onSelect: (item: T, range: { from: number; to: number }, editor: Editor) => void;
   render: (item: T, active: boolean) => React.ReactNode;
 }) {
   return Suggestion({
+    editor,
     char: opts.char,
     startOfLine: false,
     allowSpaces: opts.char === "@",
@@ -269,7 +270,7 @@ export function BlockEditor({
     name: "slashCommand",
     addOptions() { return { suggestion: {} as any }; },
     addProseMirrorPlugins() {
-      return [makeSuggestion<SlashItem>({
+      return [makeSuggestion<SlashItem>(this.editor as Editor, {
         char: "/",
         getItems: (query) => {
           const q = query.toLowerCase();
@@ -296,7 +297,7 @@ export function BlockEditor({
   const refExtension = useMemo(() => Extension.create({
     name: "refMention",
     addProseMirrorPlugins() {
-      return [makeSuggestion<RefItem>({
+      return [makeSuggestion<RefItem>(this.editor as Editor, {
         char: "@",
         getItems: (query) => {
           const q = query.trim().toLowerCase();
