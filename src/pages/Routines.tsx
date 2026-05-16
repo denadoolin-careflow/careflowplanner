@@ -1,0 +1,419 @@
+import { useEffect, useMemo, useState } from "react";
+import { ChevronRight, Plus, Repeat, Sparkles, Tag, Trash2, UserPlus, Users, X } from "lucide-react";
+import {
+  routines as routinesApi,
+  useRoutines,
+  ROUTINE_SLOTS,
+  ROUTINE_CADENCES,
+  SLOT_LABEL,
+  CADENCE_LABEL,
+  type Routine,
+  type RoutineSlot,
+  type RoutineCadence,
+} from "@/lib/routines";
+import { useStore } from "@/lib/store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+type GroupBy = "person" | "timeframe" | "cadence" | "tag";
+
+export default function Routines() {
+  const { state } = useStore();
+  const { routines: list, loaded } = useRoutines();
+  const [groupBy, setGroupBy] = useState<GroupBy>("person");
+  const [filterPerson, setFilterPerson] = useState<string>("all");
+  const [filterTag, setFilterTag] = useState<string>("all");
+  const [newPerson, setNewPerson] = useState("");
+
+  const people = useMemo(() => {
+    const fromRoutines = routinesApi.people();
+    const fromRecipients = state.recipients.map(r => r.name);
+    return Array.from(new Set([...fromRoutines, ...fromRecipients])).sort();
+  }, [list, state.recipients]);
+
+  const allTags = useMemo(() => routinesApi.allTags(), [list]);
+
+  const filtered = useMemo(() => {
+    return list.filter(r => {
+      if (filterPerson !== "all" && r.person_name !== filterPerson) return false;
+      if (filterTag !== "all" && !r.tags.includes(filterTag)) return false;
+      return true;
+    });
+  }, [list, filterPerson, filterTag]);
+
+  const groups = useMemo(() => groupRoutines(filtered, groupBy), [filtered, groupBy]);
+
+  const addPersonInline = async () => {
+    const n = newPerson.trim();
+    if (!n) return;
+    await routinesApi.addPerson(n);
+    setNewPerson("");
+    toast.success(`${n} added.`);
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-5 p-4 md:p-6">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Routines</h1>
+          <p className="text-sm text-muted-foreground">
+            Organize daily, weekly, and monthly rituals by person, timeframe, or cadence.
+          </p>
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="rounded-full">
+              <UserPlus className="mr-1.5 h-4 w-4" /> Add person
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-60 p-2" align="end">
+            <form onSubmit={(e) => { e.preventDefault(); void addPersonInline(); }} className="flex gap-1">
+              <Input
+                autoFocus
+                value={newPerson}
+                onChange={(e) => setNewPerson(e.target.value)}
+                placeholder="Name"
+                className="h-8 text-xs"
+              />
+              <Button type="submit" size="sm" className="h-8 px-2 text-xs">Add</Button>
+            </form>
+          </PopoverContent>
+        </Popover>
+      </header>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/40 p-2">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Users className="h-3.5 w-3.5" /> Group
+        </div>
+        <Select value={groupBy} onValueChange={(v) => setGroupBy(v as GroupBy)}>
+          <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="person">By person</SelectItem>
+            <SelectItem value="timeframe">By timeframe</SelectItem>
+            <SelectItem value="cadence">By cadence</SelectItem>
+            <SelectItem value="tag">By tag</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <span className="mx-1 h-4 w-px bg-border" />
+
+        <Select value={filterPerson} onValueChange={setFilterPerson}>
+          <SelectTrigger className="h-8 w-40 text-xs"><SelectValue placeholder="All people" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All people</SelectItem>
+            {people.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <Select value={filterTag} onValueChange={setFilterTag}>
+          <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="All tags" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All tags</SelectItem>
+            {allTags.map(t => <SelectItem key={t} value={t}>#{t}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        <div className="ml-auto text-xs text-muted-foreground">
+          {filtered.length} routine{filtered.length === 1 ? "" : "s"}
+        </div>
+      </div>
+
+      {!loaded && <p className="text-sm text-muted-foreground">Loading…</p>}
+
+      {loaded && people.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-10 text-center text-sm text-muted-foreground">
+          No routines yet. Add a person above to begin.
+        </div>
+      )}
+
+      {loaded && people.length > 0 && filterPerson === "all" && groupBy === "person" && (
+        <PersonQuickAdd people={people} />
+      )}
+
+      <div className="space-y-5">
+        {groups.map(g => (
+          <RoutineGroup
+            key={g.id}
+            title={g.label}
+            subtitle={g.subtitle}
+            routines={g.items}
+            recipients={state.recipients}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PersonQuickAdd({ people }: { people: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-1.5 px-1">
+      {people.map(p => (
+        <Badge key={p} variant="secondary" className="rounded-full text-[11px]">{p}</Badge>
+      ))}
+    </div>
+  );
+}
+
+function groupRoutines(items: Routine[], by: GroupBy) {
+  type G = { id: string; label: string; subtitle?: string; items: Routine[] };
+  const map = new Map<string, G>();
+  const push = (key: string, label: string, r: Routine, subtitle?: string) => {
+    const g = map.get(key) ?? { id: key, label, subtitle, items: [] };
+    g.items.push(r);
+    map.set(key, g);
+  };
+  for (const r of items) {
+    if (by === "person") push(r.person_name, r.person_name, r);
+    else if (by === "timeframe") push(r.slot, SLOT_LABEL[r.slot], r);
+    else if (by === "cadence") push(r.cadence, CADENCE_LABEL[r.cadence], r);
+    else {
+      if (r.tags.length === 0) push("__untagged__", "Untagged", r);
+      else r.tags.forEach(t => push(t, `#${t}`, r));
+    }
+  }
+  const order: Record<GroupBy, (a: G, b: G) => number> = {
+    person: (a, b) => a.label.localeCompare(b.label),
+    timeframe: (a, b) => ROUTINE_SLOTS.indexOf(a.id as RoutineSlot) - ROUTINE_SLOTS.indexOf(b.id as RoutineSlot),
+    cadence: (a, b) => ROUTINE_CADENCES.indexOf(a.id as RoutineCadence) - ROUTINE_CADENCES.indexOf(b.id as RoutineCadence),
+    tag: (a, b) => a.label.localeCompare(b.label),
+  };
+  return Array.from(map.values()).sort(order[by]);
+}
+
+function RoutineGroup({
+  title, subtitle, routines: items, recipients,
+}: {
+  title: string; subtitle?: string; routines: Routine[]; recipients: { id: string; name: string }[];
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <section className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setCollapsed(c => !c)}
+        className="flex w-full items-center gap-2 rounded-lg px-1 text-left hover:bg-muted/30"
+      >
+        <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", !collapsed && "rotate-90")} />
+        <h2 className="text-base font-semibold">{title}</h2>
+        {subtitle && <span className="text-xs text-muted-foreground">{subtitle}</span>}
+        <span className="ml-auto text-[11px] text-muted-foreground">{items.length}</span>
+      </button>
+      {!collapsed && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {items.map(r => <RoutineCard key={r.id} routine={r} recipients={recipients} />)}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function RoutineCard({
+  routine: r, recipients,
+}: {
+  routine: Routine;
+  recipients: { id: string; name: string }[];
+}) {
+  const [draft, setDraft] = useState("");
+  const [newTag, setNewTag] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const doneCount = r.items.filter(i => i.done).length;
+
+  const generate = async () => {
+    setGenerating(true);
+    try {
+      const ideas = await routinesApi.generateIdeas(r.person_name, r.slot);
+      if (!ideas.length) { toast("No ideas came back."); return; }
+      const existing = r.items.map(i => i.text.toLowerCase());
+      const fresh = ideas.filter(i => !existing.includes(i.toLowerCase()));
+      const next = [
+        ...r.items,
+        ...fresh.map(t => ({ id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,5)}`, text: t, done: false })),
+      ];
+      await routinesApi.upsert(r.person_name, r.slot, { items: next });
+      toast.success(`Added ${fresh.length} ideas.`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't generate ideas");
+    } finally { setGenerating(false); }
+  };
+
+  const addTag = async () => {
+    const t = newTag.trim().toLowerCase();
+    if (!t || r.tags.includes(t)) { setNewTag(""); return; }
+    await routinesApi.upsert(r.person_name, r.slot, { tags: [...r.tags, t] });
+    setNewTag("");
+  };
+
+  return (
+    <div className="rounded-2xl border border-border/60 bg-card/60 p-3 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="font-medium text-sm">{r.person_name}</span>
+            <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[10px]">{SLOT_LABEL[r.slot]}</Badge>
+            <Badge variant="secondary" className="rounded-full px-1.5 py-0 text-[10px]">
+              <Repeat className="mr-0.5 inline h-2.5 w-2.5" />{CADENCE_LABEL[r.cadence]}
+            </Badge>
+          </div>
+          <div className="mt-0.5 text-[11px] text-muted-foreground">
+            {doneCount}/{r.items.length} done
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <Select
+            value={r.cadence}
+            onValueChange={(v) => routinesApi.upsert(r.person_name, r.slot, { cadence: v as RoutineCadence })}
+          >
+            <SelectTrigger className="h-7 w-24 text-[11px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {ROUTINE_CADENCES.map(c => <SelectItem key={c} value={c}>{CADENCE_LABEL[c]}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="ghost" onClick={generate} disabled={generating} className="h-7 px-2 text-[11px]">
+            <Sparkles className={cn("mr-1 h-3 w-3", generating && "animate-pulse")} />
+            AI
+          </Button>
+        </div>
+      </div>
+
+      {/* Linked recipient */}
+      {recipients.length > 0 && (
+        <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+          <span>Linked to</span>
+          <Select
+            value={r.recipient_id ?? "__none__"}
+            onValueChange={(v) => routinesApi.upsert(r.person_name, r.slot, { recipient_id: v === "__none__" ? null : v })}
+          >
+            <SelectTrigger className="h-6 w-40 text-[11px]"><SelectValue placeholder="No one" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">No one</SelectItem>
+              {recipients.map(rec => <SelectItem key={rec.id} value={rec.id}>{rec.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Items */}
+      <div className="mt-2 space-y-1">
+        {r.items.map(it => (
+          <div key={it.id} className="group flex items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-xs">
+            <Checkbox checked={it.done} onCheckedChange={() => routinesApi.toggleItem(r.person_name, r.slot, it.id)} />
+            <span className={cn("flex-1 truncate", it.done && "line-through text-muted-foreground")}>{it.text}</span>
+            <button
+              onClick={() => routinesApi.removeItem(r.person_name, r.slot, it.id)}
+              className="opacity-0 group-hover:opacity-60 hover:opacity-100"
+              aria-label="Remove"
+            ><X className="h-3 w-3" /></button>
+          </div>
+        ))}
+        <form
+          onSubmit={(e) => { e.preventDefault(); if (!draft.trim()) return; void routinesApi.addItem(r.person_name, r.slot, draft.trim()); setDraft(""); }}
+          className="flex items-center gap-1 rounded-md border border-dashed border-border bg-card/30 px-2 py-1"
+        >
+          <Plus className="h-3 w-3 text-muted-foreground" />
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Add a step…"
+            className="h-6 flex-1 border-0 bg-transparent p-0 text-xs shadow-none focus-visible:ring-0"
+          />
+        </form>
+      </div>
+
+      {/* Tags */}
+      <div className="mt-2 flex flex-wrap items-center gap-1">
+        {r.tags.map(t => (
+          <Badge key={t} variant="outline" className="rounded-full px-1.5 py-0 text-[10px]">
+            #{t}
+            <button
+              onClick={() => routinesApi.upsert(r.person_name, r.slot, { tags: r.tags.filter(x => x !== t) })}
+              className="ml-1 opacity-60 hover:opacity-100"
+            ><X className="h-2.5 w-2.5" /></button>
+          </Badge>
+        ))}
+        <form onSubmit={(e) => { e.preventDefault(); void addTag(); }} className="flex items-center gap-1">
+          <Tag className="h-3 w-3 text-muted-foreground" />
+          <Input
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            placeholder="tag"
+            className="h-5 w-16 border-0 bg-transparent p-0 text-[10px] shadow-none focus-visible:ring-0"
+          />
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/** Public helper for embedding routines for a single person/recipient (used by Caregiving page). */
+export function PersonRoutinesPanel({
+  personName,
+  recipientId,
+  recipients,
+}: {
+  personName: string;
+  recipientId?: string;
+  recipients: { id: string; name: string }[];
+}) {
+  const { routines: list, loaded } = useRoutines();
+  const [newSlot, setNewSlot] = useState<RoutineSlot>("morning");
+  const [newCadence, setNewCadence] = useState<RoutineCadence>("daily");
+
+  // Auto-link routines to recipient on mount when missing
+  useEffect(() => {
+    if (!recipientId) return;
+    list
+      .filter(r => r.person_name === personName && r.recipient_id !== recipientId)
+      .forEach(r => { void routinesApi.upsert(r.person_name, r.slot, { recipient_id: recipientId }); });
+  }, [loaded, personName, recipientId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const items = list.filter(r => r.person_name === personName);
+  const existingSlots = new Set(items.map(r => r.slot));
+
+  const addSlot = async () => {
+    if (existingSlots.has(newSlot)) { toast(`${SLOT_LABEL[newSlot]} already exists.`); return; }
+    await routinesApi.upsert(personName, newSlot, { cadence: newCadence, recipient_id: recipientId ?? null });
+  };
+
+  if (!loaded) return <p className="text-sm text-muted-foreground">Loading routines…</p>;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/40 p-2 text-xs">
+        <span className="text-muted-foreground">New routine for {personName}</span>
+        <Select value={newSlot} onValueChange={(v) => setNewSlot(v as RoutineSlot)}>
+          <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {ROUTINE_SLOTS.map(s => <SelectItem key={s} value={s}>{SLOT_LABEL[s]}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={newCadence} onValueChange={(v) => setNewCadence(v as RoutineCadence)}>
+          <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {ROUTINE_CADENCES.map(c => <SelectItem key={c} value={c}>{CADENCE_LABEL[c]}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Button size="sm" className="h-7 px-2 text-xs" onClick={addSlot}>
+          <Plus className="mr-1 h-3 w-3" /> Add
+        </Button>
+      </div>
+      {items.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-border/40 bg-card/30 p-4 text-center text-xs italic text-muted-foreground">
+          No routines yet — add one above.
+        </p>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {items.map(r => <RoutineCard key={r.id} routine={r} recipients={recipients} />)}
+        </div>
+      )}
+    </div>
+  );
+}
