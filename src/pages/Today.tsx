@@ -26,6 +26,7 @@ import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
 import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { MoonJournalReminderBanner } from "@/components/cycle/MoonJournalReminderBanner";
+import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -112,7 +113,7 @@ function TodayInner() {
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
   const [widgetsOpen, setWidgetsOpen] = useState(false);
 
-  return (
+  const body = (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-6">
         <div className="cozy-card overflow-hidden">
