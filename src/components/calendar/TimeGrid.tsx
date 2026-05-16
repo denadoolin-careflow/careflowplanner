@@ -905,7 +905,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
         )}
       </div>
       <div><Label className="text-xs">Notes</Label><Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></div>
-      <DialogFooter>
+      <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
         <Button variant="ghost" onClick={onCancel}>Cancel</Button>
         <Button onClick={() => { if (title.trim()) onCreate({ date: draft.date, startTime: start, endTime: end, title: title.trim(), notes, color, allDay: false }); }}>
           Add block
@@ -946,7 +946,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
               </ul>
             )}
           </ScrollArea>
-          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+          <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur"><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
         </div>
       )}
 
@@ -975,7 +975,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
               </ul>
             )}
           </ScrollArea>
-          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+          <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur"><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
         </div>
       )}
 
@@ -1006,7 +1006,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
               </ul>
             )}
           </ScrollArea>
-          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+          <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur"><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
         </div>
       )}
 
@@ -1037,7 +1037,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
               </ul>
             )}
           </ScrollArea>
-          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+          <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur"><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
         </div>
       )}
 
@@ -1056,7 +1056,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
               </button>
             ))}
           </div>
-          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+          <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur"><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
         </div>
       )}
 
@@ -1079,7 +1079,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
               );
             })}
           </div>
-          <DialogFooter><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+          <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur"><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
         </div>
       )}
     </div>
@@ -1143,7 +1143,7 @@ function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: P
       </div>
       <div><Label className="text-xs">Notes</Label><Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></div>
       <LinkedNotesPanel entityType="time_block" entityId={block.id} contextTitle={block.title} compact />
-      <DialogFooter className="justify-between">
+      <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur justify-between">
         <Button variant="ghost" className="text-destructive" onClick={onDelete}><Trash2 className="mr-1 h-4 w-4" /> Delete</Button>
         <Button onClick={() => onSave({ title, startTime: start, endTime: end, color, notes })}>Save</Button>
       </DialogFooter>
