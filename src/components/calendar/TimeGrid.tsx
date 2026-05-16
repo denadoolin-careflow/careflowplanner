@@ -922,6 +922,36 @@ function CreateForm({ draft, onCreate, onCancel }: {
 
       {mode === "task" && (
         <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Create new task…"
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && newTitle.trim()) {
+                  e.preventDefault();
+                  const t = newTitle.trim();
+                  setNewTitle("");
+                  await addTask({ title: t, dueDate: draft.date, inbox: false });
+                  attach(t);
+                }
+              }}
+              className="h-8 text-xs"
+            />
+            <Button
+              size="sm"
+              className="h-8 shrink-0"
+              disabled={!newTitle.trim()}
+              onClick={async () => {
+                const t = newTitle.trim();
+                setNewTitle("");
+                await addTask({ title: t, dueDate: draft.date, inbox: false });
+                attach(t);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           <Input autoFocus placeholder="Search open tasks…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
           <ScrollArea className="h-[min(50vh,18rem)] rounded-md border">
             {filteredTasks.length === 0 ? (
@@ -958,6 +988,36 @@ function CreateForm({ draft, onCreate, onCancel }: {
 
       {mode === "project" && (
         <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Create new project…"
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && newTitle.trim()) {
+                  e.preventDefault();
+                  const n = newTitle.trim();
+                  setNewTitle("");
+                  await addProject({ name: n });
+                  attach(n);
+                }
+              }}
+              className="h-8 text-xs"
+            />
+            <Button
+              size="sm"
+              className="h-8 shrink-0"
+              disabled={!newTitle.trim()}
+              onClick={async () => {
+                const n = newTitle.trim();
+                setNewTitle("");
+                await addProject({ name: n });
+                attach(n);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           <Input autoFocus placeholder="Search projects…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
           <ScrollArea className="h-[min(50vh,18rem)] rounded-md border">
             {filteredProjects.length === 0 ? (
@@ -1018,6 +1078,45 @@ function CreateForm({ draft, onCreate, onCancel }: {
 
       {mode === "meal" && (
         <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Create new meal…"
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && newTitle.trim()) {
+                  e.preventDefault();
+                  const n = newTitle.trim();
+                  setNewTitle("");
+                  await addMeal({ name: n, date: draft.date, slot: mealSlot });
+                  attach(`🍽 ${n}`);
+                }
+              }}
+              className="h-8 text-xs"
+            />
+            <Select value={mealSlot} onValueChange={(v) => setMealSlot(v as any)}>
+              <SelectTrigger className="h-8 w-28 shrink-0 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent className="z-[60]" position="popper" sideOffset={6} collisionPadding={12}>
+                <SelectItem value="breakfast">Breakfast</SelectItem>
+                <SelectItem value="lunch">Lunch</SelectItem>
+                <SelectItem value="dinner">Dinner</SelectItem>
+                <SelectItem value="snack">Snack</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              className="h-8 shrink-0"
+              disabled={!newTitle.trim()}
+              onClick={async () => {
+                const n = newTitle.trim();
+                setNewTitle("");
+                await addMeal({ name: n, date: draft.date, slot: mealSlot });
+                attach(`🍽 ${n}`);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           <Input autoFocus placeholder="Search meals…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
           <ScrollArea className="h-[min(50vh,18rem)] rounded-md border">
             {filteredMeals.length === 0 ? (
