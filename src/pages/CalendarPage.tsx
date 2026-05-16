@@ -20,6 +20,7 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { BirthdayHolidayEditor } from "@/components/calendar/BirthdayHolidayEditor";
 import { InboxCapture } from "@/components/calendar/InboxCapture";
 import { MonthPlanningDashboard } from "@/components/calendar/MonthPlanningDashboard";
+import { moonPhaseFor } from "@/lib/moon-phase";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -458,12 +459,26 @@ function MonthView({
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
                   {d.getDate() === 1 ? format(d, "MMM") : ""}
                 </span>
-                <span className={cn(
-                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold",
-                  today ? "bg-primary text-primary-foreground" : "text-foreground/80",
-                )}>
-                  {format(d, "d")}
-                </span>
+                <div className="flex items-center gap-1">
+                  {(() => {
+                    const moon = moonPhaseFor(d);
+                    return moon ? (
+                      <span
+                        className="text-[11px] leading-none"
+                        title={moon.label}
+                        aria-label={moon.label}
+                      >
+                        {moon.emoji}
+                      </span>
+                    ) : null;
+                  })()}
+                  <span className={cn(
+                    "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold",
+                    today ? "bg-primary text-primary-foreground" : "text-foreground/80",
+                  )}>
+                    {format(d, "d")}
+                  </span>
+                </div>
               </div>
               <div className="flex flex-1 flex-col gap-1">
                 {ev.map((e, i) => {
