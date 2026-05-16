@@ -196,6 +196,16 @@ export default function CalendarPage() {
               >
                 <List className="h-3 w-3" /> Schedule
               </button>
+              <button
+                onClick={() => setLayout("kanban")}
+                className={cn(
+                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                  layout === "kanban" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+                aria-label="Kanban view"
+              >
+                <Columns3 className="h-3 w-3" /> Kanban
+              </button>
               {view === "month" && (
                 <button
                   onClick={() => setLayout("plan")}
