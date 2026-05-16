@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Trash2, AlertTriangle, GripHorizontal, Check, Clock, Plus, CheckSquare, Utensils, Sparkles, MapPin, FolderKanban, Pencil, X, Move, Repeat, Heart } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
+import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
