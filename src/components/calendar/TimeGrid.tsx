@@ -67,7 +67,7 @@ function fmtTime(hm: string) {
 function isBlockPointerControl(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return !!target.closest(
-    "button,input,textarea,select,a,[data-block-action],[data-block-resize-handle],[data-block-move-handle]"
+    "input,textarea,select,a,[data-block-action],[data-block-resize-handle],[data-block-move-handle]"
   );
 }
 
@@ -685,9 +685,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                         >
                           <button
                             type="button"
-                            data-block-action
                             aria-label={`Edit ${b.title}`}
-                            onPointerDown={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => armBlockMove(b, e)}
                             onClick={(e) => {
                               e.stopPropagation();
                               haptics.tap();
@@ -737,7 +736,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                                 onClick={(e) => { e.stopPropagation(); haptics.tap(); void toggleTask(linkedTask.id); }}
                                 aria-label={taskDone ? "Mark task not done" : "Mark task done"}
                                 className={cn(
-                                  "group/cb grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 transition-colors",
+                                  "group/cb pointer-events-auto grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 transition-colors",
                                   taskDone
                                     ? "border-current bg-current text-background"
                                     : "border-current/60 bg-background/40 hover:bg-current hover:text-background"
