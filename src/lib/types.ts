@@ -143,6 +143,22 @@ export interface CareRecipient {
   sensory?: string;
   contacts?: { name: string; phone?: string; role?: string }[];
   meds?: { name: string; dose?: string; schedule?: string }[];
+  birthDate?: string;
+  location?: string;
+  zodiac?: string;
+  loveLanguages?: string[];
+  foodPreferences?: {
+    breakfast?: { likes?: string[]; dislikes?: string[]; mealIds?: string[]; notes?: string };
+    lunch?: { likes?: string[]; dislikes?: string[]; mealIds?: string[]; notes?: string };
+    dinner?: { likes?: string[]; dislikes?: string[]; mealIds?: string[]; notes?: string };
+    snacks?: { likes?: string[]; dislikes?: string[]; mealIds?: string[]; notes?: string };
+    allergies?: string[];
+  };
+  school?: string;
+  educationLevel?: string;
+  schedule?: Record<string, string>; // weekday name -> description
+  ssnLast4?: string;
+  ssnFull?: string;
 }
 
 export interface CareNote { id: string; recipientId: string; date: string; body: string; tag?: string; }

@@ -76,7 +76,25 @@ const groceryFrom = (r: any): GroceryItem => ({
 const apptFrom = (r: any): Appointment => ({ id: r.id, date: r.date, time: r.time ?? undefined, title: r.title, with: r.with_name ?? undefined, location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined });
 const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined });
 const holidayFrom = (r: any): Holiday => ({ id: r.id, name: r.name, date: r.date, notes: r.notes ?? undefined });
-const recipFrom = (r: any): CareRecipient => ({ id: r.id, name: r.name, kind: r.kind, notes: r.notes ?? undefined, sensory: r.sensory ?? undefined, contacts: r.contacts ?? [], meds: r.meds ?? [] });
+const recipFrom = (r: any): CareRecipient => ({
+  id: r.id,
+  name: r.name,
+  kind: r.kind,
+  notes: r.notes ?? undefined,
+  sensory: r.sensory ?? undefined,
+  contacts: r.contacts ?? [],
+  meds: r.meds ?? [],
+  birthDate: r.birth_date ?? undefined,
+  location: r.location ?? undefined,
+  zodiac: r.zodiac ?? undefined,
+  loveLanguages: r.love_languages ?? [],
+  foodPreferences: r.food_preferences ?? {},
+  school: r.school ?? undefined,
+  educationLevel: r.education_level ?? undefined,
+  schedule: r.schedule ?? {},
+  ssnLast4: r.ssn_last4 ?? undefined,
+  ssnFull: r.ssn_full ?? undefined,
+});
 const careNoteFrom = (r: any): CareNote => ({ id: r.id, recipientId: r.recipient_id, date: r.date, body: r.body, tag: r.tag ?? undefined });
 const cleanFrom = (r: any): CleaningTask => ({ id: r.id, title: r.title, zone: r.zone, cadence: r.cadence, done: r.done, lastDone: r.last_done ?? undefined, weekday: r.weekday ?? undefined, recurrenceType: r.recurrence_type, recurrenceDays: r.recurrence_days ?? [], nextDueDate: r.next_due_date ?? undefined, autoReset: r.auto_reset, sortOrder: r.sort_order });
 const ideaFrom = (r: any): Idea => ({ id: r.id, title: r.title, notes: r.notes ?? undefined, category: r.category, createdAt: r.created_at });
@@ -547,7 +565,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addRecipient: async (r) => {
       if (!uid) return;
-      const { data } = await supabase.from("care_recipients").insert({ user_id: uid, ...r }).select().single();
+      const insertRow: any = {
+        user_id: uid,
+        name: r.name,
+        kind: r.kind,
+        notes: r.notes ?? null,
+        sensory: r.sensory ?? null,
+        contacts: r.contacts ?? [],
+        meds: r.meds ?? [],
+        birth_date: r.birthDate ?? null,
+        location: r.location ?? null,
+        zodiac: r.zodiac ?? null,
+        love_languages: r.loveLanguages ?? [],
+        food_preferences: r.foodPreferences ?? {},
+        school: r.school ?? null,
+        education_level: r.educationLevel ?? null,
+        schedule: r.schedule ?? {},
+        ssn_last4: r.ssnLast4 ?? null,
+        ssn_full: r.ssnFull ?? null,
+      };
+      const { data } = await supabase.from("care_recipients").insert(insertRow).select().single();
       if (data) setState(s => ({ ...s, recipients: [recipFrom(data), ...s.recipients] }));
     },
     updateRecipient: async (id, patch) => {
@@ -558,6 +595,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.sensory !== undefined) dbPatch.sensory = patch.sensory ?? null;
       if (patch.contacts !== undefined) dbPatch.contacts = patch.contacts ?? [];
       if (patch.meds !== undefined) dbPatch.meds = patch.meds ?? [];
+      if (patch.birthDate !== undefined) dbPatch.birth_date = patch.birthDate ?? null;
+      if (patch.location !== undefined) dbPatch.location = patch.location ?? null;
+      if (patch.zodiac !== undefined) dbPatch.zodiac = patch.zodiac ?? null;
+      if (patch.loveLanguages !== undefined) dbPatch.love_languages = patch.loveLanguages ?? [];
+      if (patch.foodPreferences !== undefined) dbPatch.food_preferences = patch.foodPreferences ?? {};
+      if (patch.school !== undefined) dbPatch.school = patch.school ?? null;
+      if (patch.educationLevel !== undefined) dbPatch.education_level = patch.educationLevel ?? null;
+      if (patch.schedule !== undefined) dbPatch.schedule = patch.schedule ?? {};
+      if (patch.ssnLast4 !== undefined) dbPatch.ssn_last4 = patch.ssnLast4 ?? null;
+      if (patch.ssnFull !== undefined) dbPatch.ssn_full = patch.ssnFull ?? null;
       setState(s => ({ ...s, recipients: s.recipients.map(r => r.id === id ? { ...r, ...patch } : r) }));
       await supabase.from("care_recipients").update(dbPatch as any).eq("id", id);
     },
