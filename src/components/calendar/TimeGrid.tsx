@@ -750,23 +750,31 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
       {/* Create dialog */}
       <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
-        <DialogContent className="w-[min(94vw,36rem)] max-w-none p-4 sm:p-5">
-          <DialogHeader><DialogTitle>New time block</DialogTitle></DialogHeader>
-          {draft && <CreateForm draft={draft} onCancel={() => setDraft(null)} onCreate={async (b) => { await add(b); setDraft(null); }} />}
+        <DialogContent className="flex max-h-[90vh] w-[min(94vw,36rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-h-[85vh]">
+          <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
+            <DialogTitle>New time block</DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+            {draft && <CreateForm draft={draft} onCancel={() => setDraft(null)} onCreate={async (b) => { await add(b); setDraft(null); }} />}
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="w-[min(94vw,36rem)] max-w-none p-4 sm:p-5">
-          <DialogHeader><DialogTitle>Edit time block</DialogTitle></DialogHeader>
-          {editing && (
-            <EditForm
-              block={editing}
-              onSave={async (patch) => { await update(editing.id, patch); setEditing(null); }}
-              onDelete={async () => { await remove(editing.id); setEditing(null); }}
-            />
-          )}
+        <DialogContent className="flex max-h-[90vh] w-[min(94vw,36rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-h-[85vh]">
+          <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
+            <DialogTitle>Edit time block</DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+            {editing && (
+              <EditForm
+                block={editing}
+                onSave={async (patch) => { await update(editing.id, patch); setEditing(null); }}
+                onDelete={async () => { await remove(editing.id); setEditing(null); }}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
