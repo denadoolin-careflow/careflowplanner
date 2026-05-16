@@ -27,6 +27,19 @@ import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { getMoonPhase } from "@/lib/moon";
+
+const MOON_TEMPLATE_MAP: Record<string, string> = {
+  "new": "new-moon",
+  "waxing-crescent": "new-moon",
+  "first-quarter": "first-quarter-moon",
+  "waxing-gibbous": "first-quarter-moon",
+  "full": "full-moon",
+  "waning-gibbous": "full-moon",
+  "last-quarter": "last-quarter-moon",
+  "waning-crescent": "last-quarter-moon",
+};
 
 export default function Today() {
   return (
@@ -45,6 +58,7 @@ function TodayInner() {
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [cycleSheetOpen, setCycleSheetOpen] = useState(false);
+  const navigate = useNavigate();
   const today = day;
   const isReallyToday = isSameDay(day, new Date());
   const lowMode = state.settings.lowEnergyMode;
@@ -130,7 +144,14 @@ function TodayInner() {
                   {!isReallyToday && (
                     <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => setDay(new Date())}>Today</Button>
                   )}
-                  <PhaseBadge date={today} className="ml-1" onClick={() => setCycleSheetOpen(true)} />
+                  <PhaseBadge
+                    date={today}
+                    className="ml-1"
+                    onClick={() => {
+                      const tpl = MOON_TEMPLATE_MAP[getMoonPhase(today)] ?? "daily";
+                      navigate(`/journal?template=${tpl}`);
+                    }}
+                  />
                   <Button
                     variant="ghost"
                     size="icon"

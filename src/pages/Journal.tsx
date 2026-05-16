@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
@@ -44,9 +45,13 @@ const TEMPLATES: { key: TemplateKey; label: string; emoji: string; type: Journal
 
 const MOON_TO_TEMPLATE: Record<string, TemplateKey> = {
   "new": "new-moon",
+  "waxing-crescent": "new-moon",
   "first-quarter": "first-quarter-moon",
+  "waxing-gibbous": "first-quarter-moon",
   "full": "full-moon",
+  "waning-gibbous": "full-moon",
   "last-quarter": "last-quarter-moon",
+  "waning-crescent": "last-quarter-moon",
 };
 
 function templateForToday(): TemplateKey | null {
@@ -78,6 +83,7 @@ export default function Journal() {
   const todaysMoonTpl = useMemo(() => templateForToday(), []);
   const moonPhase = getMoonPhase(new Date());
   const moon = MOON_INFO[moonPhase];
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const switchTemplate = (k: TemplateKey) => {
     setTemplate(k);
@@ -85,6 +91,17 @@ export default function Journal() {
     setActivePrompts(t.prompts);
     if (k === "gratitude" && gratitudeItems.every(g => !g.trim())) setGratitudeItems(["", "", ""]);
   };
+
+  useEffect(() => {
+    const requested = searchParams.get("template") as TemplateKey | null;
+    if (requested && TEMPLATES.some(t => t.key === requested)) {
+      switchTemplate(requested);
+      const next = new URLSearchParams(searchParams);
+      next.delete("template");
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const generatePrompts = async () => {
     setAiLoading(true);
