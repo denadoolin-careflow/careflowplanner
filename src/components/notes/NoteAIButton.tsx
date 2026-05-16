@@ -1,3 +1,19 @@
+/** Normalize AI output so paragraphs, headings, and lists always have a
+ *  blank line between them — markdown renderers (and our tiptap editor)
+ *  need the empty line to separate block elements. */
+function normalizeMarkdown(raw: string): string {
+  let t = raw.replace(/\r\n/g, "\n").trim();
+  // Strip stray triple-backtick wrappers the model sometimes adds.
+  t = t.replace(/^```(?:markdown|md)?\n([\s\S]*?)\n```$/i, "$1");
+  // Collapse 3+ blank lines to exactly one blank line.
+  t = t.replace(/\n{3,}/g, "\n\n");
+  // Ensure a blank line before headings, list items, and blockquotes when
+  // they follow a non-empty line.
+  t = t.replace(/([^\n])\n(#{1,6} )/g, "$1\n\n$2");
+  t = t.replace(/([^\n])\n([-*+] |\d+\. |> )/g, "$1\n\n$2");
+  return t.trim();
+}
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,9 +51,12 @@ export function NoteAIButton({ title, body, onApply }: Props) {
         body: { action, title, body, instruction },
       });
       if (error) throw error;
-      const text = (data as any)?.text?.trim();
-      if (!text) throw new Error("Empty response");
-      const next = mode === "replace" ? text : (body ? `${body.replace(/\s+$/, "")}\n\n${text}\n` : text);
+      const raw = (data as any)?.text?.trim();
+      if (!raw) throw new Error("Empty response");
+      const text = normalizeMarkdown(raw);
+      const next = mode === "replace"
+        ? text
+        : (body ? `${body.replace(/\s+$/, "")}\n\n${text}\n` : text);
       onApply(next);
       toast.success("AI updated your note");
       setOpen(false);
