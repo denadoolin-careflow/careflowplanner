@@ -565,7 +565,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addRecipient: async (r) => {
       if (!uid) return;
-      const { data } = await supabase.from("care_recipients").insert({ user_id: uid, ...r }).select().single();
+      const insertRow: any = {
+        user_id: uid,
+        name: r.name,
+        kind: r.kind,
+        notes: r.notes ?? null,
+        sensory: r.sensory ?? null,
+        contacts: r.contacts ?? [],
+        meds: r.meds ?? [],
+        birth_date: r.birthDate ?? null,
+        location: r.location ?? null,
+        zodiac: r.zodiac ?? null,
+        love_languages: r.loveLanguages ?? [],
+        food_preferences: r.foodPreferences ?? {},
+        school: r.school ?? null,
+        education_level: r.educationLevel ?? null,
+        schedule: r.schedule ?? {},
+        ssn_last4: r.ssnLast4 ?? null,
+        ssn_full: r.ssnFull ?? null,
+      };
+      const { data } = await supabase.from("care_recipients").insert(insertRow).select().single();
       if (data) setState(s => ({ ...s, recipients: [recipFrom(data), ...s.recipients] }));
     },
     updateRecipient: async (id, patch) => {
