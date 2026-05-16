@@ -20,9 +20,24 @@ import { ChevronLeft, ChevronRight, LayoutGrid, ChevronDown } from "lucide-react
 import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
 import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { TaskSelectionProvider, useTaskSelection } from "@/lib/task-selection";
+import { BulkActionBar } from "@/components/tasks/BulkActionBar";
+import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
+import { PanelRightOpen, PanelRightClose } from "lucide-react";
+import { useEffect } from "react";
 
 export default function Today() {
+  return (
+    <TaskSelectionProvider storageKey="today">
+      <TodayInner />
+      <BulkActionBar />
+    </TaskSelectionProvider>
+  );
+}
+
+function TodayInner() {
   const { state, updateTask, updateAppointment } = useStore();
+  const { paneOpen, togglePane, setOrderedIds, clear } = useTaskSelection();
   const [day, setDay] = useState<Date>(new Date());
   const [view, setView] = useState<CalView>("schedule");
   const [editApptId, setEditApptId] = useState<string | null>(null);
@@ -33,6 +48,18 @@ export default function Today() {
 
   // Stable reference list so child memoization doesn't break on each parent render.
   const days = useMemo(() => [today], [today]);
+
+  const todayISO = format(today, "yyyy-MM-dd");
+  const visibleTaskIds = useMemo(
+    () => state.tasks.filter(t => t.dueDate === todayISO && !t.parentTaskId).map(t => t.id),
+    [state.tasks, todayISO],
+  );
+  useEffect(() => { setOrderedIds(visibleTaskIds); }, [visibleTaskIds, setOrderedIds]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") clear(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [clear]);
 
   const eventsOn = useCallback((k: string) => [
     ...state.appointments.filter(a => a.date === k).map(a => ({ label: a.title, time: a.time, id: a.id, kind: "appt" as const })),
@@ -100,6 +127,16 @@ export default function Today() {
                   {!isReallyToday && (
                     <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => setDay(new Date())}>Today</Button>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="hidden h-8 w-8 lg:inline-flex"
+                    onClick={togglePane}
+                    title={paneOpen ? "Hide details pane" : "Show details pane"}
+                    aria-label="Toggle details pane"
+                  >
+                    {paneOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+                  </Button>
                 </div>
               </div>
               <AuroraClock className="sm:self-center" />
@@ -147,6 +184,7 @@ export default function Today() {
           </div>
         </Collapsible>
       </div>
+      {paneOpen && <TaskDetailPane />}
       <UnscheduledTasksRail onTaskClick={setEditTaskId} />
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
