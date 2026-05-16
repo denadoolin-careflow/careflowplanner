@@ -16,6 +16,7 @@ import { playPomodoroChime } from "@/lib/pomodoro-chime";
 import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEditor";
 import { GoogleCalendarSection } from "@/components/calendar/GoogleCalendarSection";
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
+import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
