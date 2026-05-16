@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { DateBarStrip } from "@/components/cards/DateBarStrip";
@@ -31,28 +31,31 @@ export default function Today() {
   const isReallyToday = isSameDay(day, new Date());
   const lowMode = state.settings.lowEnergyMode;
 
-  const eventsOn = (k: string) => [
+  // Stable reference list so child memoization doesn't break on each parent render.
+  const days = useMemo(() => [today], [today]);
+
+  const eventsOn = useCallback((k: string) => [
     ...state.appointments.filter(a => a.date === k).map(a => ({ label: a.title, time: a.time, id: a.id, kind: "appt" as const })),
     ...state.tasks.filter(t => t.dueDate === k && !t.parentTaskId).map(t => ({
       label: t.title, time: undefined as string | undefined, id: t.id, kind: "task" as const, done: t.done,
     })),
-  ];
+  ], [state.appointments, state.tasks]);
 
-  const handleTimeDrop = async (taskId: string, dateISO: string, startHour: number) => {
+  const handleTimeDrop = useCallback(async (taskId: string, dateISO: string, startHour: number) => {
     const t = state.tasks.find(x => x.id === taskId);
     if (!t) return;
     const dp = hourToDayPart(startHour);
     const dayPart = dp ? (dp[0].toUpperCase() + dp.slice(1)) as any : undefined;
     await updateTask(taskId, { dueDate: dateISO, inbox: false, ...(dayPart ? { dayPart } : {}) });
     toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
-  };
+  }, [state.tasks, updateTask]);
 
-  const handleApptDrop = async (apptId: string, dateISO: string, startHour: number) => {
+  const handleApptDrop = useCallback(async (apptId: string, dateISO: string, startHour: number) => {
     const a = state.appointments.find(x => x.id === apptId);
     if (!a) return;
     await updateAppointment(apptId, { date: dateISO, time: hoursToHM(startHour) });
     toast(`Moved “${a.title}” to ${hoursToHM(startHour)}`);
-  };
+  }, [state.appointments, updateAppointment]);
 
   useLongDropListener((d) => {
     if (d.payload.type !== "task" || !d.part) return;
@@ -119,14 +122,14 @@ export default function Today() {
           }
         >
           {view === "schedule" && (
-            <TimeGrid days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
+            <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
           )}
           {view === "agenda" && (
-            <AgendaView days={[today]} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
+            <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
           )}
         </SectionCard>
 
-        <CalendarTasksPanel days={[today]} />
+        <CalendarTasksPanel days={days} />
 
         <Collapsible open={widgetsOpen} onOpenChange={setWidgetsOpen}>
           <div className="cozy-card p-4">
