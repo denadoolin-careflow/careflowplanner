@@ -4,13 +4,14 @@ import { PANEL_BY_ROUTE } from "@/components/workspace/PanelRegistry";
 import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
-  Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen,
+  Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, type MouseEvent } from "react";
 import { useStore } from "@/lib/store";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
+import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 
@@ -88,11 +89,12 @@ function useSidebarData(forceExpanded: boolean) {
     setOpenMap(prev => prev[key] ? prev : { ...prev, [key]: true });
   }, [pathname, projects]);
   const effectiveCollapsed = forceExpanded ? false : collapsed;
-  return { pathname, openMap, toggle, collapsed: effectiveCollapsed, setCollapsed, areas, projects, updateArea };
+  return { pathname, openMap, toggle, setOpenMap, collapsed: effectiveCollapsed, setCollapsed, areas, projects, updateArea };
 }
 
 function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: boolean; onNavigate?: () => void }) {
-  const { pathname, openMap, toggle, collapsed, setCollapsed, areas, projects, updateArea } = useSidebarData(forceExpanded);
+  const { pathname, openMap, toggle, setOpenMap, collapsed, setCollapsed, areas, projects, updateArea } = useSidebarData(forceExpanded);
+  const { updateProject, addProject } = useStore();
   const { openPanel } = useWorkspaceLayout();
 
   const handleNavClick = (to: string) => (e: MouseEvent<HTMLAnchorElement>) => {
@@ -112,6 +114,92 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
       <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
   ) : node;
+
+  const renderProjectNode = (p: typeof projects[number], depth: number, allProjects: typeof projects, areaName: string | undefined) => {
+    const children = allProjects.filter(c => c.parentProjectId === p.id);
+    const key = `proj:${p.id}`;
+    const open = openMap[key] !== false; // default open
+    const hasActive = pathname === `/projects/${p.id}` || children.some(c => pathname === `/projects/${c.id}`);
+    const ProjIcon = getAreaIcon(p.icon);
+    return (
+      <div key={p.id}>
+        <div
+          className={cn(
+            "group flex items-center gap-1 rounded-lg px-1 py-1 text-sm transition-colors",
+            "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            hasActive && "text-foreground",
+          )}
+        >
+          {children.length > 0 ? (
+            <button type="button" onClick={() => toggle(key)} className="grid h-5 w-5 place-items-center">
+              <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
+            </button>
+          ) : (
+            <span className="h-5 w-5" />
+          )}
+          <AreaIconColorPicker
+            icon={p.icon ?? "folder"}
+            color={p.color}
+            onChange={(patch) => updateProject(p.id, patch)}
+            trigger={
+              <button
+                type="button"
+                className="grid h-6 w-6 place-items-center rounded hover:bg-sidebar-accent/60"
+                aria-label="Edit project icon and color"
+              >
+                <ProjIcon className="h-3.5 w-3.5 opacity-80" style={p.color ? { color: p.color } : undefined} />
+              </button>
+            }
+          />
+          <NavLink
+            to={`/projects/${p.id}`}
+            onClick={onNavigate}
+            className={({ isActive }) => cn(
+              "flex-1 truncate text-left rounded-md px-1 py-0.5 transition-colors",
+              isActive && "bg-primary-soft text-foreground shadow-soft",
+            )}
+          >
+            {p.name}
+          </NavLink>
+          <button
+            type="button"
+            aria-label="Add subfolder"
+            className="opacity-0 group-hover:opacity-80 grid h-5 w-5 place-items-center rounded hover:bg-sidebar-accent/60"
+            onClick={async () => {
+              const name = window.prompt("Subfolder name", "New subfolder")?.trim();
+              if (!name) return;
+              const created = await addProject({
+                name,
+                areaId: p.areaId,
+                areaName: areaName,
+                parentProjectId: p.id,
+                status: "active",
+                sortOrder: 0,
+              } as any);
+              if (created) {
+                setOpenMap(prev => ({ ...prev, [key]: true }));
+                toast(`Added subfolder “${name}”`);
+              }
+            }}
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
+        {children.length > 0 && (
+          <div className={cn(
+            "grid overflow-hidden transition-[grid-template-rows] duration-200 ease-out",
+            open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          )}>
+            <div className="min-h-0 overflow-hidden">
+              <div className="ml-5 mt-0.5 flex flex-col gap-0.5 border-l border-sidebar-border/60 pl-2">
+                {children.map(c => renderProjectNode(c, depth + 1, allProjects, areaName))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <TooltipProvider>
@@ -212,6 +300,28 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                       {areaProjects.length > 0 && (
                         <span className="text-[10px] text-sidebar-foreground/50">{areaProjects.length}</span>
                       )}
+                      <button
+                        type="button"
+                        aria-label="Add project"
+                        className="opacity-0 group-hover:opacity-80 grid h-5 w-5 place-items-center rounded hover:bg-sidebar-accent/60"
+                        onClick={async () => {
+                          const name = window.prompt("Project name", "New project")?.trim();
+                          if (!name) return;
+                          const created = await addProject({
+                            name,
+                            areaId: area.id,
+                            areaName: area.name,
+                            status: "active",
+                            sortOrder: 0,
+                          } as any);
+                          if (created) {
+                            setOpenMap(prev => ({ ...prev, [key]: true }));
+                            toast(`Added project “${name}”`);
+                          }
+                        }}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
                     </div>
                     <div className={cn(
                       "grid overflow-hidden transition-[grid-template-rows] duration-200 ease-out",
@@ -221,21 +331,9 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                         <div className="ml-5 mt-0.5 flex flex-col gap-0.5 border-l border-sidebar-border/60 pl-2">
                           {areaProjects.length === 0 ? (
                             <div className="px-2 py-1 text-[11px] italic text-sidebar-foreground/40">No projects</div>
-                          ) : areaProjects.map(p => (
-                            <NavLink
-                              key={p.id}
-                              to={`/projects/${p.id}`}
-                              onClick={onNavigate}
-                              className={({ isActive }) => cn(
-                                "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
-                                "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                                isActive && "bg-primary-soft text-foreground shadow-soft",
-                              )}
-                            >
-                              <FolderOpen className="h-3.5 w-3.5 shrink-0" style={p.color ? { color: p.color } : undefined} />
-                              <span className="truncate">{p.name}</span>
-                            </NavLink>
-                          ))}
+                          ) : areaProjects
+                              .filter(p => !p.parentProjectId || !areaProjects.some(q => q.id === p.parentProjectId))
+                              .map(p => renderProjectNode(p, 0, areaProjects, area.name))}
                         </div>
                       </div>
                     </div>
