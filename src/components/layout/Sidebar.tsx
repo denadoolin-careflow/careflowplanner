@@ -7,7 +7,7 @@ import {
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { useStore } from "@/lib/store";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
@@ -95,7 +95,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const { pathname, openMap, toggle, collapsed, setCollapsed, areas, projects, updateArea } = useSidebarData(forceExpanded);
   const { openPanel } = useWorkspaceLayout();
 
-  const handleNavClick = (to: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleNavClick = (to: string) => (e: MouseEvent<HTMLAnchorElement>) => {
     const panelId = PANEL_BY_ROUTE[to];
     if (!panelId) { onNavigate?.(); return; }
     if (e.shiftKey || e.metaKey || e.ctrlKey) {
