@@ -48,7 +48,7 @@ export function DateBarStrip({ date, className }: { date: Date; className?: stri
   return (
     <div className={cn("flex flex-wrap items-center gap-2 text-xs", className)}>
       {/* Live time */}
-      <div className="flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1 font-mono tabular-nums">
+      <div className="flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1 tabular-nums font-sans">
         <span className="text-foreground/85">{time}</span>
       </div>
 
