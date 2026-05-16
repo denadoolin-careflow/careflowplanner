@@ -643,7 +643,9 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             if (lastHoverIdRef.current === b.id) lastHoverIdRef.current = null;
                           }}
                           className={cn(
-                            "group absolute left-0.5 right-0.5 z-20 select-none overflow-hidden rounded-md px-2 py-1 text-left text-[11px] shadow-sm ring-1 ring-inset",
+                            // Wider hit area + edge padding on mobile so long-press/drag
+                            // doesn't fight column borders or adjacent blocks; tighter on desktop.
+                            "group absolute left-1.5 right-1.5 md:left-0.5 md:right-0.5 z-20 select-none overflow-hidden rounded-md px-2.5 py-1.5 md:px-2 md:py-1 text-left text-[11px] shadow-sm ring-1 ring-inset",
                             c.bg, c.text, c.ring, "ring-opacity-30",
                             isDragging
                               ? "z-30 scale-[1.02] shadow-xl ring-opacity-100 transition-none"
@@ -653,7 +655,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             pressingId === b.id && !isDragging && "z-30 scale-[1.04] ring-2 ring-primary ring-opacity-100 shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_14px_30px_-10px_hsl(var(--primary)/0.55)] animate-pulse",
                             taskDone && "opacity-60"
                           )}
-                          style={{ top, height, cursor: isDragging ? "grabbing" : "grab", touchAction: "none", ...(c.style ?? {}) }}
+                          style={{ top, height: Math.max(44, height), cursor: isDragging ? "grabbing" : "grab", touchAction: "none", ...(c.style ?? {}) }}
                           role="button"
                           tabIndex={0}
                         >
@@ -663,7 +665,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             onClick={(e) => e.stopPropagation()}
                             aria-label="Resize start"
                             className={cn(
-                              "absolute inset-x-0 top-0 z-10 flex h-3 items-center justify-center rounded-t-md cursor-ns-resize",
+                              // Larger touch target on mobile (h-5 ≈ 20px) collapsing to h-2 on desktop.
+                              "absolute inset-x-0 top-0 z-10 flex h-5 items-center justify-center rounded-t-md cursor-ns-resize",
                               "before:block before:h-0.5 before:w-8 before:rounded-full before:bg-current before:opacity-40",
                               "opacity-70 group-hover:opacity-100 md:h-2"
                             )}
@@ -675,7 +678,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             onClick={(e) => e.stopPropagation()}
                             aria-label="Drag to move"
                             className={cn(
-                              "absolute right-0.5 top-1/2 z-10 -translate-y-1/2 flex h-9 w-7 items-center justify-center rounded-md",
+                              // Bigger thumb-friendly grip on mobile (44x32) with shrink on desktop.
+                              "absolute right-0.5 top-1/2 z-10 -translate-y-1/2 flex h-11 w-8 items-center justify-center rounded-md",
                               "bg-background/40 text-current backdrop-blur-sm ring-1 ring-inset ring-current/20",
                               "opacity-80 group-hover:opacity-100 active:bg-background/70",
                               isDragging && "bg-background/70 opacity-100",
