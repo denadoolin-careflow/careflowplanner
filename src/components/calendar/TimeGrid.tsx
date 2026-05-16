@@ -801,7 +801,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
   onCreate: (b: Omit<TimeBlock, "id">) => void;
   onCancel: () => void;
 }) {
-  const { state, updateTask, addTask, addProject, addMeal } = useStore();
+  const { state, updateTask, addTask, addProject, addMeal, deleteTask, updateProject, deleteProject, updateMeal, deleteMeal } = useStore();
   const [title, setTitle] = useState("");
   const [start, setStart] = useState(draft.start);
   const [end, setEnd] = useState(draft.end);
@@ -813,6 +813,10 @@ function CreateForm({ draft, onCreate, onCancel }: {
   const [careRecipientId, setCareRecipientId] = useState<string>("");
   const [mealSlot, setMealSlot] = useState<"Breakfast" | "Lunch" | "Dinner" | "Snack">("Dinner");
   const recipients = state.recipients ?? [];
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const startEdit = (id: string, value: string) => { setEditingId(id); setEditingValue(value); };
+  const cancelEdit = () => { setEditingId(null); setEditingValue(""); };
 
   const openTasks = state.tasks.filter(t => !t.done && !t.parentTaskId);
   const filteredTasks = openTasks.filter(t =>
