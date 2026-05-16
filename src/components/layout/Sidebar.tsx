@@ -1,5 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { NAV_GROUPS } from "@/lib/nav";
+import { PANEL_BY_ROUTE } from "@/components/workspace/PanelRegistry";
+import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen,
@@ -91,6 +93,18 @@ function useSidebarData(forceExpanded: boolean) {
 
 function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: boolean; onNavigate?: () => void }) {
   const { pathname, openMap, toggle, collapsed, setCollapsed, areas, projects, updateArea } = useSidebarData(forceExpanded);
+  const { openPanel } = useWorkspaceLayout();
+
+  const handleNavClick = (to: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const panelId = PANEL_BY_ROUTE[to];
+    if (!panelId) { onNavigate?.(); return; }
+    if (e.shiftKey || e.metaKey || e.ctrlKey) {
+      e.preventDefault();
+      openPanel(panelId, e.metaKey || e.ctrlKey ? "right" : "left");
+      return;
+    }
+    onNavigate?.();
+  };
 
   const wrapItem = (label: string, node: React.ReactNode) => collapsed ? (
     <Tooltip delayDuration={150}>
