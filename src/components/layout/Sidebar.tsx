@@ -258,7 +258,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                     key={to}
                     to={to}
                     end={to === "/"}
-                    onClick={onNavigate}
+                    onClick={handleNavClick(to)}
                     className={({ isActive }) => cn(
                       "grid h-10 w-10 place-items-center rounded-xl transition-all",
                       "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -301,7 +301,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                         key={to}
                         to={to}
                         end={to === "/"}
-                        onClick={onNavigate}
+                        onClick={handleNavClick(to)}
                         className={({ isActive }) =>
                           cn(
                             "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
