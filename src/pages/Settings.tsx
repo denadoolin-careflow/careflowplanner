@@ -208,6 +208,8 @@ export default function Settings() {
         <p className="text-sm text-muted-foreground">Your CareFlow data is saved to your account. Sign in on any device to see the same planner.</p>
         <Button variant="outline" className="mt-3" onClick={async () => { await signOut(); toast.success("Signed out."); }}>Sign out</Button>
       </SectionCard>
+
+      <CycleSettingsSection />
     </div>
   );
 }
