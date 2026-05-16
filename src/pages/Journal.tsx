@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parseISO, subDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
@@ -11,10 +10,16 @@ import { JournalEntry } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { BlockEditor } from "@/components/notes/BlockEditor";
+import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
+import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 
-type TemplateKey = "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin" | "daily-reset" | "productivity" | "habit-reflection";
+type TemplateKey =
+  | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
+  | "daily-reset" | "productivity" | "habit-reflection"
+  | "new-moon" | "first-quarter-moon" | "full-moon" | "last-quarter-moon";
 
-const TEMPLATES: { key: TemplateKey; label: string; emoji: string; type: JournalEntry["type"]; prompts: string[]; accent: "sage" | "warm" | "calm" }[] = [
+const TEMPLATES: { key: TemplateKey; label: string; emoji: string; type: JournalEntry["type"]; prompts: string[]; accent: "sage" | "warm" | "calm"; ritual?: string }[] = [
   { key: "daily", label: "Daily", emoji: "🌿", type: "daily", accent: "sage", prompts: ["How am I, really?", "One thing I noticed today…", "What needs my attention tomorrow?"] },
   { key: "gratitude", label: "Gratitude", emoji: "🌼", type: "gratitude", accent: "warm", prompts: ["Three small things I appreciated…", "Someone who made today softer…", "A moment I want to remember…"] },
   { key: "brain-dump", label: "Brain dump", emoji: "🌀", type: "brain-dump", accent: "calm", prompts: ["Everything that's loud right now — unfiltered.", "What's been circling in my head?"] },
@@ -23,7 +28,31 @@ const TEMPLATES: { key: TemplateKey; label: string; emoji: string; type: Journal
   { key: "daily-reset", label: "Daily reset", emoji: "🌙", type: "daily", accent: "calm", prompts: ["What can I release from today?", "What did I learn?", "What do I want to carry into tomorrow?"] },
   { key: "productivity", label: "Productivity", emoji: "⚡️", type: "daily", accent: "sage", prompts: ["Where did my focus go?", "What created friction?", "What's the smallest next step?"] },
   { key: "habit-reflection", label: "Habit reflection", emoji: "🌱", type: "daily", accent: "sage", prompts: ["Which habits stuck this week?", "Which ones slipped, and why?", "What gentle adjustment could help?"] },
+  { key: "new-moon", label: "New Moon", emoji: "🌑", type: "monthly", accent: "calm",
+    prompts: ["What quiet wish is taking root?", "What am I ready to begin — softly?", "What seed do I want to plant this cycle?", "What does 'a fresh start' look like for me right now?"],
+    ritual: "Light a candle. Sit in dim light for 3 minutes. Write one intention you can whisper, not shout." },
+  { key: "first-quarter-moon", label: "First Quarter Moon", emoji: "🌓", type: "weekly", accent: "sage",
+    prompts: ["Where am I meeting resistance?", "What's worth pushing through, and what's worth letting go?", "What small commitment will I keep this week?", "What support do I need to keep moving?"],
+    ritual: "Pour a glass of water. Name one obstacle out loud, then one next step. Drink to seal it." },
+  { key: "full-moon", label: "Full Moon", emoji: "🌕", type: "monthly", accent: "warm",
+    prompts: ["What is fully lit in my life right now?", "What am I celebrating, even quietly?", "What feeling am I allowed to feel without fixing?", "What's ready to be witnessed?"],
+    ritual: "Step outside for 1 minute. Let the moon (or sky) see you. Come back and write what surfaced." },
+  { key: "last-quarter-moon", label: "Last Quarter Moon", emoji: "🌗", type: "weekly", accent: "calm",
+    prompts: ["What am I ready to release without guilt?", "What story am I outgrowing?", "What's no longer mine to carry?", "What space am I clearing for next cycle?"],
+    ritual: "Open a window. Exhale longer than you inhale, three times. Write what you're letting go of." },
 ];
+
+const MOON_TO_TEMPLATE: Record<string, TemplateKey> = {
+  "new": "new-moon",
+  "first-quarter": "first-quarter-moon",
+  "full": "full-moon",
+  "last-quarter": "last-quarter-moon",
+};
+
+function templateForToday(): TemplateKey | null {
+  const phase = getMoonPhase(new Date());
+  return MOON_TO_TEMPLATE[phase] ?? null;
+}
 
 const MOODS = ["💗","😊","😌","😐","😔","😣","🥲","😴"];
 const ENERGIES: { value: string; label: string }[] = [
@@ -46,6 +75,9 @@ export default function Journal() {
   const [tagInput, setTagInput] = useState("");
 
   const tpl = TEMPLATES.find(t => t.key === template) ?? TEMPLATES[0];
+  const todaysMoonTpl = useMemo(() => templateForToday(), []);
+  const moonPhase = getMoonPhase(new Date());
+  const moon = MOON_INFO[moonPhase];
 
   const switchTemplate = (k: TemplateKey) => {
     setTemplate(k);
@@ -73,7 +105,7 @@ export default function Journal() {
   };
 
   const insertPrompt = (p: string) => {
-    setBody(b => (b ? `${b}\n\n${p}\n` : `${p}\n`));
+    setBody(b => (b ? `${b}\n\n**${p}**\n\n` : `**${p}**\n\n`));
   };
 
   const save = async () => {
@@ -143,6 +175,17 @@ export default function Journal() {
           <div>
             <h2 className="font-display text-3xl font-semibold">Journal</h2>
             <p className="mt-1 text-sm text-muted-foreground">Soft pages. Templates, prompts, and a quiet place to land.</p>
+            {todaysMoonTpl && (
+              <button
+                onClick={() => switchTemplate(todaysMoonTpl)}
+                className="mt-3 inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1.5 text-xs hover:bg-background"
+                title="Open today's moon template"
+              >
+                <span aria-hidden>{moon.glyph}</span>
+                <span className="font-medium">{moon.label} ritual</span>
+                <span className="text-muted-foreground">· tap to journal</span>
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5 text-sm shadow-sm">
@@ -211,6 +254,13 @@ export default function Journal() {
           </div>
         </div>
 
+        {tpl.ritual && (
+          <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">Ritual</div>
+            <p className="mt-1 text-sm leading-snug">{tpl.ritual}</p>
+          </div>
+        )}
+
         <div className="mt-3 rounded-xl border border-dashed border-border/60 bg-muted/20 p-3">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-xs font-medium text-muted-foreground">Prompts</div>
@@ -238,10 +288,14 @@ export default function Journal() {
             <button onClick={() => setGratitudeItems(gs => [...gs, ""])} className="text-xs text-muted-foreground hover:text-foreground">
               <Plus className="inline h-3 w-3" /> add another
             </button>
-            <Textarea rows={3} placeholder="Anything else you want to add…" value={body} onChange={e => setBody(e.target.value)} />
+            <div className="rounded-xl border border-border/60 bg-card/60 p-2">
+              <BlockEditor body={body} onChange={(md) => setBody(md)} placeholder="Anything else you want to add…" />
+            </div>
           </div>
         ) : (
-          <Textarea rows={6} placeholder="Write a sentence. That's enough." className="mt-3" value={body} onChange={e => setBody(e.target.value)} />
+          <div className="mt-3 rounded-xl border border-border/60 bg-card/60 p-2 min-h-[180px]">
+            <BlockEditor body={body} onChange={(md) => setBody(md)} placeholder="Write a sentence. That's enough. Press / for blocks." />
+          </div>
         )}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -315,7 +369,9 @@ function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string
         </div>
       </div>
       {e.title && <div className="mt-1 font-display text-base">{e.title}</div>}
-      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{e.body}</p>
+      <div className="mt-1 text-sm leading-relaxed">
+        <NoteMarkdown body={e.body} />
+      </div>
       {e.tags && e.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {e.tags.map(t => <span key={t} className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px]">#{t}</span>)}

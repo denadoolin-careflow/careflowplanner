@@ -10,6 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
+import { CycleWidget } from "@/components/cycle/CycleWidget";
+import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
+import { useCycle } from "@/lib/cycle-store";
+import { format as fmt, parseISO } from "date-fns";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -184,12 +189,56 @@ export default function Health() {
           <TabsTrigger value="movement">Movement</TabsTrigger>
           <TabsTrigger value="weight">Weight</TabsTrigger>
           <TabsTrigger value="goals">Goals</TabsTrigger>
+          <TabsTrigger value="cycle">🌸 Cyclical living</TabsTrigger>
         </TabsList>
         <TabsContent value="checkin"><CheckInPanel uid={uid} /></TabsContent>
         <TabsContent value="movement"><MovementPanel uid={uid} /></TabsContent>
         <TabsContent value="weight"><WeightPanel uid={uid} /></TabsContent>
         <TabsContent value="goals"><GoalsPanel uid={uid} /></TabsContent>
+        <TabsContent value="cycle"><CyclicalLivingPanel /></TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function CyclicalLivingPanel() {
+  const { settings, periods, deletePeriod } = useCycle();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        <CycleWidget />
+        <SectionCard title="Quick log" accent="warm" subtitle="Record period start, flow, symptoms and mood.">
+          <p className="text-sm text-muted-foreground">Open the cycle log to add today's data or backfill a date.</p>
+          <Button className="mt-3" onClick={() => setSheetOpen(true)}>Open log</Button>
+          <CycleLogSheet open={sheetOpen} onOpenChange={setSheetOpen} />
+        </SectionCard>
+      </div>
+
+      <CycleSettingsSection />
+
+      {settings.enabled && (
+        <SectionCard title="Period history" accent="calm">
+          {periods.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No periods logged yet.</p>
+          ) : (
+            <ul className="space-y-1.5 text-sm">
+              {periods.map(p => (
+                <li key={p.id} className="flex items-center gap-3 rounded-lg bg-muted/40 px-3 py-2">
+                  <span className="font-medium">{fmt(parseISO(p.periodStart), "MMM d, yyyy")}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {p.periodEnd ? `→ ${fmt(parseISO(p.periodEnd), "MMM d")}` : "ongoing"}
+                  </span>
+                  {p.notes && <span className="ml-1 text-xs text-muted-foreground truncate">· {p.notes}</span>}
+                  <Button size="icon" variant="ghost" className="ml-auto h-7 w-7" onClick={() => deletePeriod(p.id)} aria-label="Delete period">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+      )}
     </div>
   );
 }
