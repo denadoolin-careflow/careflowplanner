@@ -858,6 +858,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
           <TabsTrigger value="meal" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><Utensils className="h-3.5 w-3.5" /><span>Meal</span></TabsTrigger>
           <TabsTrigger value="zone" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><Sparkles className="h-3.5 w-3.5" /><span>Zone</span></TabsTrigger>
           <TabsTrigger value="area" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><MapPin className="h-3.5 w-3.5" /><span>Area</span></TabsTrigger>
+          <TabsTrigger value="care" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><Heart className="h-3.5 w-3.5" /><span>Care</span></TabsTrigger>
         </TabsList>
       </Tabs>
 
