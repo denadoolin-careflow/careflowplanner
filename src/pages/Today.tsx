@@ -220,4 +220,6 @@ function TodayInner() {
       <CycleLogSheet open={cycleSheetOpen} onOpenChange={setCycleSheetOpen} date={today} />
     </div>
   );
+
+  return <WorkspaceShell>{body}</WorkspaceShell>;
 }
