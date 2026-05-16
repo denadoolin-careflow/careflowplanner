@@ -23,6 +23,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { TaskSelectionProvider, useTaskSelection } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
 import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
+import { PhaseBadge } from "@/components/cycle/PhaseBadge";
+import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
 
@@ -42,6 +44,7 @@ function TodayInner() {
   const [view, setView] = useState<CalView>("schedule");
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const [cycleSheetOpen, setCycleSheetOpen] = useState(false);
   const today = day;
   const isReallyToday = isSameDay(day, new Date());
   const lowMode = state.settings.lowEnergyMode;
@@ -127,6 +130,7 @@ function TodayInner() {
                   {!isReallyToday && (
                     <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => setDay(new Date())}>Today</Button>
                   )}
+                  <PhaseBadge date={today} className="ml-1" onClick={() => setCycleSheetOpen(true)} />
                   <Button
                     variant="ghost"
                     size="icon"
@@ -188,6 +192,7 @@ function TodayInner() {
       <UnscheduledTasksRail onTaskClick={setEditTaskId} />
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
+      <CycleLogSheet open={cycleSheetOpen} onOpenChange={setCycleSheetOpen} date={today} />
     </div>
   );
 }
