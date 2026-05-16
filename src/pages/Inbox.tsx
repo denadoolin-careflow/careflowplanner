@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
-import { Inbox as InboxIcon, Sparkles, Check, X, RefreshCw } from "lucide-react";
+import { Inbox as InboxIcon, Sparkles, Check, X, RefreshCw, PanelRightOpen, PanelRightClose } from "lucide-react";
 import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,9 @@ import type { Area, Priority, TaskStatus } from "@/lib/types";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
 import { applyFilters, sortTasks, groupTasks } from "@/lib/task-grouping";
+import { TaskSelectionProvider, useTaskSelection } from "@/lib/task-selection";
+import { BulkActionBar } from "@/components/tasks/BulkActionBar";
+import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
 
 interface Suggestion {
   task_id: string;
@@ -21,7 +24,17 @@ interface Suggestion {
 }
 
 export default function Inbox() {
+  return (
+    <TaskSelectionProvider storageKey="inbox">
+      <InboxInner />
+      <BulkActionBar />
+    </TaskSelectionProvider>
+  );
+}
+
+function InboxInner() {
   const { state, updateTask } = useStore();
+  const { paneOpen, togglePane, setOrderedIds, clear } = useTaskSelection();
   const [prefs, setPrefs] = useTaskListPrefs("inbox");
   const [triaging, setTriaging] = useState(false);
   const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
@@ -32,6 +45,13 @@ export default function Inbox() {
     return groupTasks(sorted, prefs.group, state.projects ?? []);
   }, [state.tasks, state.projects, prefs]);
   const items = useMemo(() => groups.flatMap(g => g.tasks), [groups]);
+
+  useEffect(() => { setOrderedIds(items.map(t => t.id)); }, [items, setOrderedIds]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") clear(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [clear]);
 
   const triage = async () => {
     if (items.length === 0) return;
@@ -94,6 +114,16 @@ export default function Inbox() {
             Smart triage
           </Button>
           <TaskListControls prefs={prefs} onChange={setPrefs} />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden h-8 w-8 lg:inline-flex"
+            onClick={togglePane}
+            title={paneOpen ? "Hide details pane" : "Show details pane"}
+            aria-label="Toggle details pane"
+          >
+            {paneOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+          </Button>
         </div>
       </header>
 
@@ -149,6 +179,7 @@ export default function Inbox() {
         )}
       </div>
       </div>
+      {paneOpen && <TaskDetailPane />}
       <UnscheduledTasksRail />
     </div>
   );
