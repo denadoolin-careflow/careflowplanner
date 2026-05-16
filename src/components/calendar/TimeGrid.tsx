@@ -105,7 +105,18 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks, add, update, remove } = useTimeBlocks(fromISO, toISO);
-  const { toggleTask, state } = useStore();
+  const { toggleTask, updateTask, state } = useStore();
+  const [inlineEditTaskId, setInlineEditTaskId] = useState<string | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState("");
+
+  const commitInlineEdit = useCallback(async (taskId: string) => {
+    const v = inlineEditValue.trim();
+    setInlineEditTaskId(null);
+    if (!v) return;
+    const orig = state.tasks.find(x => x.id === taskId);
+    if (!orig || orig.title === v) return;
+    await updateTask(taskId, { title: v });
+  }, [inlineEditValue, state.tasks, updateTask]);
 
   const [editing, setEditing] = useState<TimeBlock | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
