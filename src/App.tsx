@@ -41,6 +41,7 @@ import Logbook from "./pages/Logbook";
 import Notes from "./pages/Notes";
 import NoteDetail from "./pages/NoteDetail";
 import Review from "./pages/Review";
+import Routines from "./pages/Routines";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -92,6 +93,7 @@ const App = () => (
                 <Route path="/wealth" element={<Wealth />} />
                 <Route path="/home-areas" element={<HomeAreas />} />
                 <Route path="/journal" element={<Journal />} />
+                <Route path="/routines" element={<Routines />} />
                 <Route path="/ideas" element={<Ideas />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/focus" element={<PomodoroPicker />} />

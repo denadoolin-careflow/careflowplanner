@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
-type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area">>;
+type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId">>;
 
 interface Props {
   /** Defaults applied to created tasks (e.g. { inbox: true } for the inbox page). */
@@ -27,7 +27,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
   const { state, addTask } = useStore();
   const [text, setText] = useState("");
   const [date, setDate] = useState<string | undefined>(initialDate ?? defaults.dueDate);
-  const [projectId, setProjectId] = useState<string | undefined>(undefined);
+  const [projectId, setProjectId] = useState<string | undefined>(defaults.projectId);
   const [area, setArea] = useState<Area | undefined>(defaults.area);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -61,7 +61,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     });
     setText("");
     setDate(initialDate ?? defaults.dueDate);
-    setProjectId(undefined);
+    setProjectId(defaults.projectId);
     setArea(defaults.area);
     inputRef.current?.focus();
   };

@@ -2085,32 +2085,41 @@ export type Database = {
       }
       routines: {
         Row: {
+          cadence: string
           created_at: string
           id: string
           items: Json
           notes: string | null
           person_name: string
+          recipient_id: string | null
           slot: string
+          tags: string[]
           updated_at: string
           user_id: string
         }
         Insert: {
+          cadence?: string
           created_at?: string
           id?: string
           items?: Json
           notes?: string | null
           person_name: string
+          recipient_id?: string | null
           slot: string
+          tags?: string[]
           updated_at?: string
           user_id: string
         }
         Update: {
+          cadence?: string
           created_at?: string
           id?: string
           items?: Json
           notes?: string | null
           person_name?: string
+          recipient_id?: string | null
           slot?: string
+          tags?: string[]
           updated_at?: string
           user_id?: string
         }
