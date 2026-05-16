@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { StoreProvider } from "@/lib/store";
 import { CycleProvider } from "@/lib/cycle-store";
+import { WorkspaceLayoutProvider } from "@/components/workspace/useWorkspaceLayout";
 import "@/lib/theme-preset";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
@@ -53,6 +54,7 @@ const App = () => (
     <ThemeProvider>
       <StoreProvider>
         <CycleProvider>
+        <WorkspaceLayoutProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -99,6 +101,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </WorkspaceLayoutProvider>
         </CycleProvider>
       </StoreProvider>
     </ThemeProvider>
