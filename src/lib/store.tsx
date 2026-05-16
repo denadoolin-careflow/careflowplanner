@@ -279,7 +279,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    // Only show the global loading screen on the first boot. Subsequent
+    // identity-stable refreshes happen silently in the background so the
+    // UI doesn't blink between routes / on tab focus.
     reload(user.id).finally(() => setLoading(false));
   }, [user, reload]);
 
