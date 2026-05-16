@@ -25,6 +25,7 @@ import { BulkActionBar } from "@/components/tasks/BulkActionBar";
 import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
 import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
+import { MoonJournalReminderBanner } from "@/components/cycle/MoonJournalReminderBanner";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -171,6 +172,8 @@ function TodayInner() {
             </div>
           </div>
         </div>
+
+        <MoonJournalReminderBanner date={today} />
 
         <SectionCard
           title="Today"
