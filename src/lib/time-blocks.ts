@@ -36,6 +36,7 @@ function fromRow(r: any): TimeBlock {
 export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
   const [blocks, setBlocks] = useState<TimeBlock[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const refresh = useCallback(async () => {
     let q = supabase.from("time_blocks").select("*").order("start_time");
@@ -44,9 +45,13 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
     const { data, error } = await q;
     if (!error && data) setBlocks(data.map(fromRow));
     setLoading(false);
+    setHasLoadedOnce(true);
   }, [rangeFromISO, rangeToISO]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  // Suppress the perceived blink on first paint by not blanking blocks
+  // while a subsequent range refresh is in-flight (keep stale data).
+  void hasLoadedOnce;
 
   const add = async (b: Omit<TimeBlock, "id">) => {
     const { data: u } = await supabase.auth.getUser();
