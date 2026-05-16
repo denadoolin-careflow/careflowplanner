@@ -15,4 +15,6 @@ export const haptics = {
   snap: () => vibrate([6, 24, 10]),
   delete: () => vibrate([10, 30, 10, 30]),
   magnet: () => vibrate([4, 16]),
+  // Stronger, distinctive pulse to confirm a long-press has armed drag mode.
+  longPress: () => vibrate([12, 40, 28]),
 };
