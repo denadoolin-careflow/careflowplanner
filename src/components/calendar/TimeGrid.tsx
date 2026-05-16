@@ -139,11 +139,13 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const suppressClickUntil = useRef(0);
   const lastHoverIdRef = useRef<string | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
+  const [pressingId, setPressingId] = useState<string | null>(null);
   const cancelLongPress = useCallback(() => {
     if (longPressTimerRef.current != null) {
       window.clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+    setPressingId(null);
   }, []);
   dragRef.current = drag;
 
@@ -592,9 +594,12 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                               const target = e.currentTarget;
                               const pointerId = e.pointerId;
                               cancelLongPress();
+                              haptics.tap();
+                              setPressingId(b.id);
                               longPressTimerRef.current = window.setTimeout(() => {
                                 longPressTimerRef.current = null;
-                                haptics.pickup();
+                                setPressingId(null);
+                                haptics.longPress();
                                 // Synthesize a React-like pointer event for beginDrag
                                 beginDrag(b, "move", {
                                   pointerId,
@@ -645,6 +650,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                               : "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md",
                             isConflict && !isDragging && "ring-2 ring-destructive/80 ring-opacity-100 shadow-[0_0_0_3px_hsl(var(--destructive)/0.18)]",
                             isSelected && "z-30 scale-[1.03] ring-2 ring-primary/80 ring-opacity-100 shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_18px_40px_-12px_hsl(var(--primary)/0.5)] animate-scale-in",
+                            pressingId === b.id && !isDragging && "z-30 scale-[1.04] ring-2 ring-primary ring-opacity-100 shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_14px_30px_-10px_hsl(var(--primary)/0.55)] animate-pulse",
                             taskDone && "opacity-60"
                           )}
                           style={{ top, height, cursor: isDragging ? "grabbing" : "grab", touchAction: "none", ...(c.style ?? {}) }}
