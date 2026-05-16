@@ -1972,6 +1972,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          parent_project_id: string | null
           sort_order: number
           status: string
           updated_at: string
@@ -1988,6 +1989,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          parent_project_id?: string | null
           sort_order?: number
           status?: string
           updated_at?: string
@@ -2004,6 +2006,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          parent_project_id?: string | null
           sort_order?: number
           status?: string
           updated_at?: string
@@ -2015,6 +2018,13 @@ export type Database = {
             columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_parent_project_id_fkey"
+            columns: ["parent_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
