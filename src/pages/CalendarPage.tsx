@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake, Sparkles, Columns3 } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
@@ -26,7 +26,7 @@ type View = "day" | "week" | "month" | "year";
 export default function CalendarPage() {
   const { state, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday } = useStore();
   const [view, setView] = useState<View>("month");
-  const [layout, setLayout] = useState<"grid" | "schedule" | "plan">("grid");
+  const [layout, setLayout] = useState<"grid" | "schedule" | "kanban" | "plan">("grid");
   const [cursor, setCursor] = useState<Date>(new Date());
   const ALL_KINDS = ["task","appt","care","meal","bday","hol","gcal"] as const;
   type Kind = typeof ALL_KINDS[number];
@@ -78,14 +78,14 @@ export default function CalendarPage() {
     }));
 
   const eventsOn = (k: string) => [
-    ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, id: a.id, label: a.title, time: a.time })),
+    ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, id: a.id, label: `${a.icon ? a.icon + " " : ""}${a.title}`, time: a.time })),
     ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, id: b.id, label: `🎂 ${b.name}`, time: undefined })),
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, id: h.id, label: `✨ ${h.name}`, time: undefined })),
     ...gEvents.filter(g => g.date === k).map(g => ({ kind: "gcal" as const, label: g.title, time: g.time ?? undefined, color: g.color })),
     ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
       kind: (t.area === "Caregiving" ? "care" : "task") as "care" | "task",
       id: t.id,
-      label: `${t.done ? "✓" : "○"} ${t.title}`,
+      label: `${t.icon ?? (t.done ? "✓" : "○")} ${t.title}`,
       time: undefined,
     })),
     ...(state.meals ?? []).filter(m => m.date === k).map(m => ({
@@ -95,6 +95,10 @@ export default function CalendarPage() {
       time: undefined,
     })),
   ];
+
+  // Filter-aware wrapper used by all layouts.
+  const eventsOnFiltered = (k: string) =>
+    eventsOn(k).filter(e => kindFilter.has(e.kind as Kind));
 
   /** Drop a task onto a day — sets due date only. */
   const handleDayDrop = async (taskId: string, dateISO: string) => {
