@@ -274,7 +274,7 @@ export function CustomizableGrid({ pageKey }: Props) {
       ) : (
       <ResponsiveGridLayout
         className="layout"
-        layouts={responsiveLayouts as unknown as { [k: string]: Layout[] }}
+        layouts={responsiveLayouts as unknown as { [k: string]: Layout }}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
         cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 1 }}
         rowHeight={64}
