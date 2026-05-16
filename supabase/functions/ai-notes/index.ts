@@ -5,33 +5,35 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const MD_RULES = "Format the response as clean GitHub-flavored Markdown. Always separate paragraphs, headings, lists, and blockquotes with a single blank line. Use ## or ### for section headers, `-` for bullets, `1.` for numbered lists, `**bold**`, `*italic*`, `> quotes`, and fenced ``` code blocks where helpful. Do not wrap the whole response in code fences. No preamble or sign-off.";
+
 const ACTIONS: Record<string, { system: string; user: (body: string, title: string, extra?: string) => string }> = {
   ideas: {
-    system: "You are a thoughtful brainstorming partner. Return 5-8 concise, varied ideas as a markdown bullet list. No preamble.",
+    system: `You are a thoughtful brainstorming partner. Return 5-8 concise, varied ideas as a markdown bullet list. ${MD_RULES}`,
     user: (b, t) => `Generate ideas related to this note.\n\nTitle: ${t || "(untitled)"}\n\nNote:\n${b || "(empty)"}`,
   },
   prompts: {
-    system: "You generate writing prompts. Return 5 open-ended prompts as a markdown bullet list. Each prompt one sentence. No preamble.",
+    system: `You generate writing prompts. Return 5 open-ended prompts as a markdown bullet list, one sentence each. ${MD_RULES}`,
     user: (b, t) => `Suggest writing prompts to expand this note.\n\nTitle: ${t}\n\nNote:\n${b || "(empty)"}`,
   },
   summarize: {
-    system: "You summarize notes. Return a tight 3-5 bullet summary in markdown. No preamble.",
+    system: `You summarize notes. Return a tight 3-5 bullet summary in markdown. ${MD_RULES}`,
     user: (b) => `Summarize:\n\n${b}`,
   },
   expand: {
-    system: "You expand notes by fleshing out ideas while keeping the author's voice. Return only the rewritten/expanded note in markdown. No preamble.",
+    system: `You expand notes by fleshing out ideas while keeping the author's voice. Return only the rewritten/expanded note. ${MD_RULES}`,
     user: (b, t) => `Expand and develop this note. Keep tone and structure.\n\nTitle: ${t}\n\nNote:\n${b}`,
   },
   polish: {
-    system: "You edit notes for clarity, flow, and grammar without changing meaning or voice. Return only the edited note in markdown. No preamble, no explanation.",
+    system: `You edit notes for clarity, flow, and grammar without changing meaning or voice. Return only the edited note. ${MD_RULES}`,
     user: (b) => `Polish this note:\n\n${b}`,
   },
   continue: {
-    system: "You continue notes naturally where the author left off. Return only the new continuation (1-3 short paragraphs) — do not repeat the existing text. No preamble.",
+    system: `You continue notes naturally where the author left off. Return only the new continuation (1-3 short paragraphs separated by blank lines) — do not repeat the existing text. ${MD_RULES}`,
     user: (b, t) => `Continue writing this note.\n\nTitle: ${t}\n\nExisting:\n${b}`,
   },
   custom: {
-    system: "You are a helpful writing assistant. Apply the user's instruction to their note. Return only the resulting note text in markdown unless the instruction asks for something else. No preamble.",
+    system: `You are a helpful writing assistant. Apply the user's instruction to their note. Return only the resulting note text. ${MD_RULES}`,
     user: (b, t, extra) => `Instruction: ${extra}\n\nTitle: ${t}\n\nNote:\n${b}`,
   },
 };
