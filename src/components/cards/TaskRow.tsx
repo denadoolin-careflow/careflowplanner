@@ -287,12 +287,13 @@ type ShellHandlers = {
   onContextMenu?: (e: React.MouseEvent) => void;
 };
 
-function RowShell({ task, dense, draggable, celebrate, areaColor, children, ...handlers }: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; areaColor?: string; children: React.ReactNode } & ShellHandlers) {
+function RowShell({ task, dense, draggable, celebrate, areaColor, selected, children, ...handlers }: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; areaColor?: string; selected?: boolean; children: React.ReactNode } & ShellHandlers) {
   const cls = cn(
     "group relative flex items-start gap-2 rounded-xl border border-transparent pl-3 pr-2 transition-all",
     "hover:border-primary/30 hover:bg-muted/40 hover:shadow-[0_4px_18px_-12px_hsl(var(--primary)/0.45)]",
     dense ? "py-1.5" : "py-2.5",
-    celebrate && "border-primary/40 bg-primary/5 scale-[1.01]"
+    celebrate && "border-primary/40 bg-primary/5 scale-[1.01]",
+    selected && "border-primary/60 bg-primary/10 ring-1 ring-primary/40"
   );
   const style = areaColor ? { boxShadow: `inset 3px 0 0 0 ${areaColor}` } : undefined;
   if (!draggable) return <div className={cls} style={style} {...handlers}>{children}</div>;
