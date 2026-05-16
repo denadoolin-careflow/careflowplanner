@@ -811,7 +811,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
   const [pickQ, setPickQ] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [careRecipientId, setCareRecipientId] = useState<string>("");
-  const [mealSlot, setMealSlot] = useState<"breakfast" | "lunch" | "dinner" | "snack">("dinner");
+  const [mealSlot, setMealSlot] = useState<"Breakfast" | "Lunch" | "Dinner" | "Snack">("Dinner");
   const recipients = state.recipients ?? [];
 
   const openTasks = state.tasks.filter(t => !t.done && !t.parentTaskId);
@@ -1097,10 +1097,10 @@ function CreateForm({ draft, onCreate, onCancel }: {
             <Select value={mealSlot} onValueChange={(v) => setMealSlot(v as any)}>
               <SelectTrigger className="h-8 w-28 shrink-0 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent className="z-[60]" position="popper" sideOffset={6} collisionPadding={12}>
-                <SelectItem value="breakfast">Breakfast</SelectItem>
-                <SelectItem value="lunch">Lunch</SelectItem>
-                <SelectItem value="dinner">Dinner</SelectItem>
-                <SelectItem value="snack">Snack</SelectItem>
+                <SelectItem value="Breakfast">Breakfast</SelectItem>
+                <SelectItem value="Lunch">Lunch</SelectItem>
+                <SelectItem value="Dinner">Dinner</SelectItem>
+                <SelectItem value="Snack">Snack</SelectItem>
               </SelectContent>
             </Select>
             <Button
