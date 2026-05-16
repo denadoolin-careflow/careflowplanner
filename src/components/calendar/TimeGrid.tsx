@@ -902,15 +902,23 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
           </div>
 
           {/* Floating drag time chip */}
-          {drag && drag.moved && (
-            <div
-              className="pointer-events-none fixed z-50 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background shadow-lg"
-              style={{ left: 12, bottom: 12 }}
-            >
-              {fmtTime(hoursToHM(drag.curStart))} – {fmtTime(hoursToHM(drag.curEnd))}
-              <span className="ml-2 opacity-60">{drag.curDate}</span>
-            </div>
-          )}
+          {drag && drag.moved && dragPointer && (() => {
+            const block = blocks.find(b => b.id === drag.blockId);
+            return (
+              <div
+                className="pointer-events-none fixed z-[60] -translate-x-1/2 -translate-y-full rounded-lg bg-foreground/95 px-3 py-1.5 text-xs font-medium text-background shadow-2xl ring-1 ring-primary/40 backdrop-blur animate-fade-in"
+                style={{ left: dragPointer.x, top: dragPointer.y - 12 }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Move className="h-3 w-3 opacity-70" />
+                  <span className="truncate max-w-[180px]">{block?.title ?? "Time block"}</span>
+                </div>
+                <div className="mt-0.5 text-[10px] tabular-nums opacity-80">
+                  {fmtTime(hoursToHM(drag.curStart))} – {fmtTime(hoursToHM(drag.curEnd))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
