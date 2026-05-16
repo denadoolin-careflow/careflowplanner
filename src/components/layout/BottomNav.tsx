@@ -17,8 +17,8 @@ export function BottomNav() {
   const isDark = (resolvedTheme ?? theme) === "dark";
   const { state, setLowEnergyMode } = useStore();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden">
-      <div className="mx-auto max-w-screen-md border-t border-border/60 bg-card/85 px-1 pb-[env(safe-area-inset-bottom,0)] pt-1 backdrop-blur-xl">
+    <nav className="fixed inset-x-0 bottom-0 z-30 px-2 pb-[env(safe-area-inset-bottom,0)] lg:hidden">
+      <div className="mx-auto max-w-screen-md rounded-3xl border border-border/50 bg-card/60 px-1 pb-1 pt-1 shadow-lg backdrop-blur-xl">
         <ul className="grid grid-cols-7">
           {primary.map(({ to, label, icon: Icon }) => (
             <li key={to}>
