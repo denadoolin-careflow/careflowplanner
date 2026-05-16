@@ -19,6 +19,29 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 
 const CLEANING_ZONES = ["Kitchen","Bathroom","Bedrooms","Living","Laundry","Entryway","Outdoor","Whole home"] as const;
 
+function RowActions({ isEditing, onEdit, onSave, onCancel, onDelete }: {
+  isEditing: boolean;
+  onEdit: () => void;
+  onSave: () => void | Promise<void>;
+  onCancel: () => void;
+  onDelete: () => void | Promise<void>;
+}) {
+  if (isEditing) {
+    return (
+      <div className="flex shrink-0 items-center gap-0.5">
+        <button onClick={() => void onSave()} className="rounded p-1 text-primary hover:bg-primary/10" aria-label="Save"><Check className="h-3.5 w-3.5" /></button>
+        <button onClick={onCancel} className="rounded p-1 text-muted-foreground hover:bg-muted" aria-label="Cancel"><X className="h-3.5 w-3.5" /></button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+      <button onClick={onEdit} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+      <button onClick={() => void onDelete()} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+    </div>
+  );
+}
+
 const HOUR_START = 6;   // 6 AM
 const HOUR_END = 23;    // 11 PM
 const PX_PER_HOUR = 64;
