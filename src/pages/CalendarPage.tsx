@@ -305,6 +305,20 @@ export default function CalendarPage() {
                 else if (item.kind === "bday" && item.id) setEditBdayId(item.id);
                 else if (item.kind === "hol" && item.id) setEditHolId(item.id);
               }}
+              onItemReschedule={async (item, patch) => {
+                const { date, time } = patch;
+                if (item.kind === "appt" && item.id) {
+                  await updateAppointment(item.id, { ...(date ? { date } : {}), ...(time !== undefined ? { time } : {}) });
+                } else if ((item.kind === "task" || item.kind === "care") && item.id) {
+                  if (date) await updateTask(item.id, { dueDate: date, inbox: false });
+                } else if (item.kind === "bday" && item.id && date) {
+                  await updateBirthday(item.id, { date });
+                } else if (item.kind === "hol" && item.id && date) {
+                  await updateHoliday(item.id, { date });
+                }
+                if (date) toast(`Moved “${item.label}” to ${format(parseISO(date), "MMM d")}`);
+                else if (time) toast(`Moved “${item.label}” to ${time}`);
+              }}
             />
           ) : (
             <>
@@ -461,16 +475,25 @@ function WeekView({ cursor, eventsOn, colorOf }: { cursor: Date; eventsOn: Event
 /* ============================== Kanban view ============================== */
 
 function KanbanByTimeframe({
-  view, cursor, eventsOn, colorOf, onItemClick,
+  view, cursor, eventsOn, colorOf, onItemClick, onItemReschedule,
 }: {
   view: View;
   cursor: Date;
   eventsOn: EventsFn;
   colorOf: ColorFn;
   onItemClick?: (item: EventItem) => void;
+  onItemReschedule?: (item: EventItem, patch: { date?: string; time?: string | null }) => void | Promise<void>;
 }) {
-  type Col = { key: string; title: string; subtitle?: string; items: EventItem[] };
+  type DropTarget = { date?: string; time?: string | null; preserveDow?: boolean; preserveDom?: boolean };
+  type KItem = EventItem & { sourceDate?: string };
+  type Col = { key: string; title: string; subtitle?: string; items: KItem[]; drop?: DropTarget };
   const cols: Col[] = [];
+  const [dragging, setDragging] = useState<KItem | null>(null);
+  const [overKey, setOverKey] = useState<string | null>(null);
+
+  const bucketTime: Record<string, string | null> = {
+    Morning: "09:00", Afternoon: "14:00", Evening: "19:00", Night: "22:00", Anytime: null,
+  };
 
   const bucketByHour = (time?: string) => {
     if (!time) return "Anytime";
@@ -487,7 +510,12 @@ function KanbanByTimeframe({
     const items = eventsOn(iso);
     const buckets = ["Morning", "Afternoon", "Evening", "Night", "Anytime"];
     for (const b of buckets) {
-      cols.push({ key: b, title: b, items: items.filter(i => bucketByHour(i.time) === b) });
+      cols.push({
+        key: b,
+        title: b,
+        items: items.filter(i => bucketByHour(i.time) === b).map(i => ({ ...i, sourceDate: iso })),
+        drop: { date: iso, time: bucketTime[b] },
+      });
     }
   } else if (view === "week") {
     const start = startOfWeek(cursor, { weekStartsOn: 0 });
@@ -498,7 +526,8 @@ function KanbanByTimeframe({
         key: iso,
         title: format(d, "EEE"),
         subtitle: format(d, "MMM d"),
-        items: eventsOn(iso).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")),
+        items: eventsOn(iso).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")).map(i => ({ ...i, sourceDate: iso })),
+        drop: { date: iso },
       });
     }
   } else if (view === "month") {
@@ -508,11 +537,11 @@ function KanbanByTimeframe({
     // group into weeks of 7
     for (let w = 0; w < days.length / 7; w++) {
       const wkDays = days.slice(w * 7, w * 7 + 7);
-      const items: EventItem[] = [];
+      const items: KItem[] = [];
       for (const d of wkDays) {
         const iso = d.toISOString().slice(0, 10);
         for (const ev of eventsOn(iso)) {
-          items.push({ ...ev, label: `${format(d, "EEE d")} · ${ev.label}` });
+          items.push({ ...ev, sourceDate: iso, label: `${format(d, "EEE d")} · ${ev.label}` });
         }
       }
       cols.push({
@@ -520,6 +549,7 @@ function KanbanByTimeframe({
         title: `Week ${w + 1}`,
         subtitle: `${format(wkDays[0], "MMM d")} – ${format(wkDays[6], "MMM d")}`,
         items,
+        drop: { date: wkDays[0].toISOString().slice(0, 10), preserveDow: true },
       });
     }
   } else {
@@ -529,21 +559,59 @@ function KanbanByTimeframe({
       const ms = startOfMonth(m);
       const me = endOfMonth(m);
       const days = eachDayOfInterval({ start: ms, end: me });
-      const items: EventItem[] = [];
+      const items: KItem[] = [];
       for (const d of days) {
         const iso = d.toISOString().slice(0, 10);
         for (const ev of eventsOn(iso)) {
-          items.push({ ...ev, label: `${format(d, "MMM d")} · ${ev.label}` });
+          items.push({ ...ev, sourceDate: iso, label: `${format(d, "MMM d")} · ${ev.label}` });
         }
       }
-      cols.push({ key: m.toISOString(), title: format(m, "MMMM"), subtitle: format(m, "yyyy"), items });
+      cols.push({ key: m.toISOString(), title: format(m, "MMMM"), subtitle: format(m, "yyyy"), items, drop: { date: ms.toISOString().slice(0, 10), preserveDom: true } });
     }
   }
+
+  const resolveDropDate = (drop: DropTarget, sourceDate?: string): string | undefined => {
+    if (!drop.date) return undefined;
+    if (drop.preserveDow && sourceDate) {
+      // keep day-of-week within target week
+      const src = parseISO(sourceDate);
+      const target = addDays(parseISO(drop.date), src.getDay());
+      return target.toISOString().slice(0, 10);
+    }
+    if (drop.preserveDom && sourceDate) {
+      const src = parseISO(sourceDate);
+      const base = parseISO(drop.date);
+      const lastDay = endOfMonth(base).getDate();
+      const dom = Math.min(src.getDate(), lastDay);
+      const target = new Date(base.getFullYear(), base.getMonth(), dom);
+      return target.toISOString().slice(0, 10);
+    }
+    return drop.date;
+  };
 
   return (
     <div className="flex gap-3 overflow-x-auto pb-2">
       {cols.map(c => (
-        <div key={c.key} className="flex w-60 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/30">
+        <div
+          key={c.key}
+          onDragOver={(e) => { if (c.drop && dragging) { e.preventDefault(); setOverKey(c.key); } }}
+          onDragLeave={() => setOverKey(k => k === c.key ? null : k)}
+          onDrop={async (e) => {
+            e.preventDefault();
+            setOverKey(null);
+            if (!c.drop || !dragging || !onItemReschedule) return;
+            const date = resolveDropDate(c.drop, dragging.sourceDate);
+            const patch: { date?: string; time?: string | null } = {};
+            if (date && date !== dragging.sourceDate) patch.date = date;
+            if (view === "day" && c.drop.time !== undefined) patch.time = c.drop.time;
+            if (patch.date || patch.time !== undefined) await onItemReschedule(dragging, patch);
+            setDragging(null);
+          }}
+          className={cn(
+            "flex w-60 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/30 transition-colors",
+            overKey === c.key && "border-primary/60 bg-primary/5",
+          )}
+        >
           <div className="sticky top-0 z-10 flex items-baseline justify-between gap-2 rounded-t-xl border-b border-border/60 bg-card/80 px-3 py-2 backdrop-blur">
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold">{c.title}</div>
@@ -557,17 +625,23 @@ function KanbanByTimeframe({
             ) : c.items.map((e, i) => {
               const editable = e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol";
               const clickable = !!onItemClick && editable && !!e.id;
+              const draggable = editable && !!e.id && !!onItemReschedule;
               return (
                 <button
                   key={i}
                   type="button"
                   disabled={!clickable}
                   onClick={() => clickable && onItemClick!(e)}
+                  draggable={draggable}
+                  onDragStart={() => draggable && setDragging(e)}
+                  onDragEnd={() => { setDragging(null); setOverKey(null); }}
                   className={cn(
                     "w-full rounded-lg px-2 py-1.5 text-left text-[11px] leading-snug transition-transform",
                     colorOf(e.kind),
                     clickable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm",
                     !clickable && "cursor-default",
+                    draggable && "cursor-grab active:cursor-grabbing",
+                    dragging?.id === e.id && "opacity-50",
                   )}
                 >
                   {e.time && <span className="mr-1 font-semibold opacity-80">{e.time}</span>}
