@@ -1,9 +1,9 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
-import { Inbox, FolderOpen, Target, Compass, CalendarDays, NotebookPen, CalendarRange, UtensilsCrossed } from "lucide-react";
+import { Inbox, FolderOpen, Target, Compass, CalendarDays, NotebookPen, CalendarRange, UtensilsCrossed, BookHeart } from "lucide-react";
 
 export type PanelId =
   | "inbox" | "projects" | "goals" | "areas"
-  | "calendar" | "notes" | "agenda" | "meals";
+  | "calendar" | "notes" | "agenda" | "meals" | "journal";
 
 export interface PanelDef {
   id: PanelId;
@@ -22,6 +22,7 @@ export const PANELS: Record<PanelId, PanelDef> = {
   notes:    { id: "notes",    title: "Notes",    icon: NotebookPen,     component: lazy(() => import("@/pages/Notes")) },
   agenda:   { id: "agenda",   title: "Agenda",   icon: CalendarRange,   component: lazy(() => import("@/pages/Upcoming")) },
   meals:    { id: "meals",    title: "Meals",    icon: UtensilsCrossed, component: lazy(() => import("@/pages/Meals")) },
+  journal:  { id: "journal",  title: "Journal",  icon: BookHeart,       component: lazy(() => import("@/pages/Journal")) },
 };
 
 export const PANEL_BY_ROUTE: Record<string, PanelId> = {
@@ -33,4 +34,5 @@ export const PANEL_BY_ROUTE: Record<string, PanelId> = {
   "/notes": "notes",
   "/upcoming": "agenda",
   "/meals": "meals",
+  "/journal": "journal",
 };
