@@ -7,6 +7,7 @@ import { Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { Appointment } from "@/lib/types";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
+import { IconPicker } from "@/components/common/IconPicker";
 
 interface Props {
   appointment: Appointment | null;
@@ -17,6 +18,7 @@ interface Props {
 export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
   const { updateAppointment, deleteAppointment } = useStore();
   const [title, setTitle] = useState("");
+  const [icon, setIcon] = useState<string | undefined>(undefined);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
@@ -24,6 +26,7 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
   useEffect(() => {
     if (!appointment) return;
     setTitle(appointment.title ?? "");
+    setIcon(appointment.icon ?? undefined);
     setDate(appointment.date ?? "");
     setTime((appointment.time ?? "").slice(0, 5));
     setLocation(appointment.location ?? "");
@@ -34,6 +37,7 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
   const save = async () => {
     await updateAppointment(appointment.id, {
       title: title.trim() || appointment.title,
+      icon: icon,
       date,
       time: time || undefined,
       location: location || undefined,
@@ -53,7 +57,10 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
         <div className="space-y-3">
           <div>
             <Label className="text-xs">Title</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+            <div className="flex items-center gap-2">
+              <IconPicker value={icon} onChange={setIcon} />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} autoFocus className="flex-1" />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
