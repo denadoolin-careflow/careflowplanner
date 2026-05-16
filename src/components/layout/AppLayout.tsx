@@ -41,7 +41,7 @@ export function AppLayout() {
             </div>
           </header>
           <RoutinesStrip />
-          <main className="flex-1 px-4 pb-28 pt-6 lg:px-8 lg:pb-12 animate-fade-in">
+          <main className="flex-1 px-4 pb-28 pt-6 lg:px-8 lg:pb-12">
             <div className="mx-auto w-full max-w-6xl">
               <Outlet />
             </div>
