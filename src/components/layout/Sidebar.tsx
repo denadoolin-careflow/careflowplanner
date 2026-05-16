@@ -145,7 +145,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             <NavLink
               key={to}
               to={to}
-              onClick={onNavigate}
+              onClick={handleNavClick(to)}
               className={({ isActive }) => cn(
                 "group flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
                 "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
