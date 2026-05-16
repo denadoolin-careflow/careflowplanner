@@ -92,6 +92,17 @@ export default function Journal() {
     if (k === "gratitude" && gratitudeItems.every(g => !g.trim())) setGratitudeItems(["", "", ""]);
   };
 
+  useEffect(() => {
+    const requested = searchParams.get("template") as TemplateKey | null;
+    if (requested && TEMPLATES.some(t => t.key === requested)) {
+      switchTemplate(requested);
+      const next = new URLSearchParams(searchParams);
+      next.delete("template");
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const generatePrompts = async () => {
     setAiLoading(true);
     try {
