@@ -77,6 +77,24 @@ export function CustomizableGrid({ pageKey }: Props) {
     return data.layout.filter((l) => ids.has(l.i));
   }, [data, visibleWidgets]);
 
+  /** Clamp x/w to fit a breakpoint's column count so widgets never overflow
+   *  or leave gaps at narrow widths. react-grid-layout will vertically
+   *  compact the result, so items always snap into place. */
+  const fitToCols = (items: GridItem[], cols: number): GridItem[] =>
+    items.map((it) => {
+      const w = Math.min(Math.max(1, it.w), cols);
+      const x = Math.min(Math.max(0, it.x), cols - w);
+      return { ...it, x, w };
+    });
+
+  const responsiveLayouts = useMemo(() => ({
+    lg:  fitToCols(visibleLayout, 12),
+    md:  fitToCols(visibleLayout, 12),
+    sm:  fitToCols(visibleLayout, 6),
+    xs:  fitToCols(visibleLayout, 4),
+    xxs: fitToCols(visibleLayout, 1),
+  }), [visibleLayout]);
+
   // Group widgets by mobile section for the swipeable layout.
   const mobileGrouped = useMemo(() => {
     const order = new Map(MOBILE_SECTIONS.map((s, i) => [s.id, i] as const));
@@ -256,18 +274,14 @@ export function CustomizableGrid({ pageKey }: Props) {
       ) : (
       <ResponsiveGridLayout
         className="layout"
-        layouts={{
-          lg: visibleLayout as unknown as Layout,
-          md: visibleLayout as unknown as Layout,
-          sm: visibleLayout as unknown as Layout,
-          xs: visibleLayout as unknown as Layout,
-          xxs: visibleLayout as unknown as Layout,
-        }}
+        layouts={responsiveLayouts as unknown as { [k: string]: Layout }}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
         cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 1 }}
         rowHeight={64}
         margin={[16, 16]}
         containerPadding={[0, 0]}
+        compactType="vertical"
+        preventCollision={false}
         isDraggable={editing}
         isResizable={editing}
         draggableHandle=".drag-handle"
