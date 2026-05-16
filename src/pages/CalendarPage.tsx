@@ -225,7 +225,7 @@ export default function CalendarPage() {
       >
         {layout === "plan" && view === "month" ? (
           <MonthPlanningDashboard cursor={cursor} onJumpToDate={(d) => { setCursor(d); setLayout("grid"); setView("day"); }} />
-        ) : layout === "schedule" ? (
+        ) : (
           <>
           <div className="mb-3 flex flex-wrap gap-1.5">
             {([
@@ -263,10 +263,11 @@ export default function CalendarPage() {
               All
             </button>
           </div>
+          {layout === "schedule" ? (
           <ScheduleView
             view={view}
             cursor={cursor}
-            eventsOn={eventsOn}
+            eventsOn={eventsOnFiltered}
             colorOf={colorOf}
             kindFilter={kindFilter}
             onItemClick={(item) => {
@@ -292,10 +293,22 @@ export default function CalendarPage() {
               }
             }}
           />
-          </>
-        ) : (
-          <>
-            {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} onTaskDropDay={handleDayDrop} />}
+          ) : layout === "kanban" ? (
+            <KanbanByTimeframe
+              view={view}
+              cursor={cursor}
+              eventsOn={eventsOnFiltered}
+              colorOf={colorOf}
+              onItemClick={(item) => {
+                if (item.kind === "appt" && item.id) setEditApptId(item.id);
+                else if ((item.kind === "task" || item.kind === "care") && item.id) setEditTaskId(item.id);
+                else if (item.kind === "bday" && item.id) setEditBdayId(item.id);
+                else if (item.kind === "hol" && item.id) setEditHolId(item.id);
+              }}
+            />
+          ) : (
+            <>
+            {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOnFiltered} colorOf={colorOf} onTaskDropDay={handleDayDrop} />}
             {view === "week" && (
               <TimeGrid
                 days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(cursor, { weekStartsOn: 0 }), i))}
@@ -306,7 +319,9 @@ export default function CalendarPage() {
             {view === "day" && (
               <TimeGrid days={[cursor]} appointmentsOn={eventsOnForGrid} onTaskDropAt={handleTimeDrop} />
             )}
-            {view === "year" && <YearView cursor={cursor} eventsOn={eventsOn} setCursor={setCursor} setView={setView} />}
+            {view === "year" && <YearView cursor={cursor} eventsOn={eventsOnFiltered} setCursor={setCursor} setView={setView} />}
+            </>
+          )}
           </>
         )}
       </SectionCard>
