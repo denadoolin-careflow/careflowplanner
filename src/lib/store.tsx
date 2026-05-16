@@ -508,7 +508,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addAppointment: async (a) => {
       if (!uid) return;
-      const { data } = await supabase.from("appointments").insert({ user_id: uid, title: a.title, date: a.date, time: a.time ?? null, type: a.type ?? "other", location: a.location ?? null, recipient_id: a.recipientId ?? null, with_name: (a as any).with ?? null }).select().single();
+      const { data } = await supabase.from("appointments").insert({ user_id: uid, title: a.title, date: a.date, time: a.time ?? null, type: a.type ?? "other", location: a.location ?? null, recipient_id: a.recipientId ?? null, with_name: (a as any).with ?? null, icon: a.icon ?? null }).select().single();
       if (data) setState(s => ({ ...s, appointments: [apptFrom(data), ...s.appointments] }));
     },
     deleteAppointment: async (id) => {
@@ -522,6 +522,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.time !== undefined) dbPatch.time = patch.time;
       if (patch.location !== undefined) dbPatch.location = patch.location;
       if (patch.type !== undefined) dbPatch.type = patch.type;
+      if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
       if ((patch as any).with !== undefined) dbPatch.with_name = (patch as any).with;
       setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch } : a) }));
       await supabase.from("appointments").update(dbPatch).eq("id", id);
