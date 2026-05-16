@@ -1301,8 +1301,17 @@ function CreateForm({ draft, onCreate, onCancel }: {
               onClick={() => {
                 const r = recipients.find(x => x.id === careRecipientId);
                 if (!r) return;
-                const extra = newTitle.trim() ? ` · ${newTitle.trim()}` : "";
-                attach(`💗 ${r.name}${extra}`);
+                const label = newTitle.trim();
+                setNewTitle("");
+                onCreate({
+                  date: draft.date,
+                  startTime: start,
+                  endTime: end,
+                  title: label ? `💗 ${r.name} · ${label}` : `💗 ${r.name}`,
+                  notes: label || `Care for ${r.name}`,
+                  color: "warm",
+                  allDay: false,
+                });
               }}
             >
               Add block
