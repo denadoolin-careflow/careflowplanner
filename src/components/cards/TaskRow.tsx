@@ -17,9 +17,12 @@ import { QuickEditPopover } from "@/components/tasks/QuickEditPopover";
 import { haptics } from "@/lib/haptics";
 import { formatRelativeDate } from "@/lib/date-format";
 import { differenceInCalendarDays, parseISO } from "date-fns";
+import { useTaskSelection } from "@/lib/task-selection";
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
+  const selection = useTaskSelection();
+  const isSelected = selection.isSelected(task.id);
   const [open, setOpen] = useState(false);
   const [pomOpen, setPomOpen] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
@@ -87,6 +90,19 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
     }
   };
 
+  const handleTitleClick = (e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      e.preventDefault();
+      selection.toggle(task.id, { shift: e.shiftKey, meta: e.metaKey || e.ctrlKey });
+      return;
+    }
+    if (selection.paneOpen) {
+      selection.selectOnly(task.id);
+      return;
+    }
+    setEditing(true);
+  };
+
   return (
     <>
     <RowShell
@@ -95,6 +111,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       draggable={draggable}
       celebrate={celebrate}
       areaColor={areaColor}
+      selected={isSelected}
       onPointerDown={startLongPress}
       onPointerUp={cancelLongPress}
       onPointerLeave={cancelLongPress}
@@ -140,7 +157,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
         ) : (
           <button
             type="button"
-            onClick={() => setEditing(true)}
+            onClick={handleTitleClick}
             className={cn(
               "block w-full cursor-text rounded-md text-left text-sm transition-all",
               task.done && "text-muted-foreground line-through",
