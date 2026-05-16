@@ -819,10 +819,6 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   );
 }
 
-function CreateForm({ draft, onCreate, onCancel }: {
-
-}
-
 function formatDuration(start: string, end: string): string {
   const s = hmToHours(start);
   const e = hmToHours(end);
@@ -835,7 +831,7 @@ function formatDuration(start: string, end: string): string {
   return `${m}m`;
 }
 
-function CreateFormStub({ draft, onCreate, onCancel }: {
+function CreateForm({ draft, onCreate, onCancel }: {
   draft: { date: string; start: string; end: string };
   onCreate: (b: Omit<TimeBlock, "id">) => void;
   onCancel: () => void;
