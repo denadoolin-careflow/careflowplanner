@@ -64,6 +64,13 @@ function fmtTime(hm: string) {
   return format(new Date(2000, 0, 1, h, m), "h:mm a");
 }
 
+function isBlockPointerControl(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return !!target.closest(
+    "button,input,textarea,select,a,[data-block-action],[data-block-resize-handle],[data-block-move-handle]"
+  );
+}
+
 type DragState = {
   blockId: string;
   mode: "move" | "resize" | "resize-top";
@@ -303,6 +310,45 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointercancel", endDrag);
+  };
+
+  const armBlockMove = (block: TimeBlock, e: React.PointerEvent<HTMLElement>) => {
+    if (isBlockPointerControl(e.target)) return;
+    if (typeof e.button === "number" && e.button !== 0) return;
+
+    e.stopPropagation();
+
+    // Touch/pen: require long-press (450ms) to start dragging — a tap opens the editor.
+    // Mouse: start drag immediately; tap-vs-drag is decided by the movement threshold in endDrag().
+    if (e.pointerType === "touch" || e.pointerType === "pen") {
+      const target = e.currentTarget;
+      const pointerId = e.pointerId;
+      const startX = e.clientX;
+      const startY = e.clientY;
+      e.preventDefault();
+      cancelLongPress();
+      haptics.tap();
+      setPressingId(block.id);
+      longPressStartRef.current = { x: startX, y: startY };
+      try { target.setPointerCapture?.(pointerId); } catch {}
+      longPressTimerRef.current = window.setTimeout(() => {
+        longPressTimerRef.current = null;
+        longPressStartRef.current = null;
+        setPressingId(null);
+        haptics.longPress();
+        beginDrag(block, "move", {
+          pointerId,
+          clientX: startX,
+          clientY: startY,
+          currentTarget: target,
+          stopPropagation: () => {},
+          preventDefault: () => {},
+        } as unknown as React.PointerEvent);
+      }, 450);
+    } else {
+      haptics.tap();
+      beginDrag(block, "move", e);
+    }
   };
 
   useEffect(() => () => {
