@@ -801,14 +801,18 @@ function CreateForm({ draft, onCreate, onCancel }: {
   onCreate: (b: Omit<TimeBlock, "id">) => void;
   onCancel: () => void;
 }) {
-  const { state, updateTask } = useStore();
+  const { state, updateTask, addTask, addProject, addMeal } = useStore();
   const [title, setTitle] = useState("");
   const [start, setStart] = useState(draft.start);
   const [end, setEnd] = useState(draft.end);
   const [color, setColor] = useState<string>("primary");
   const [notes, setNotes] = useState("");
-  const [mode, setMode] = useState<"new" | "task" | "project" | "habit" | "meal" | "zone" | "area">("new");
+  const [mode, setMode] = useState<"new" | "task" | "project" | "habit" | "meal" | "zone" | "area" | "care">("new");
   const [pickQ, setPickQ] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [careRecipientId, setCareRecipientId] = useState<string>("");
+  const [mealSlot, setMealSlot] = useState<"breakfast" | "lunch" | "dinner" | "snack">("dinner");
+  const recipients = state.recipients ?? [];
 
   const openTasks = state.tasks.filter(t => !t.done && !t.parentTaskId);
   const filteredTasks = openTasks.filter(t =>
