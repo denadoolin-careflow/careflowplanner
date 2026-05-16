@@ -4,9 +4,18 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEffect, useState } from "react";
+import { getMoonRemindersEnabled, setMoonRemindersEnabled } from "@/lib/moon-reminders";
 
 export function CycleSettingsSection() {
   const { settings, saveSettings } = useCycle();
+  const [moonReminders, setMoonReminders] = useState(false);
+  useEffect(() => {
+    setMoonReminders(getMoonRemindersEnabled());
+    const onChange = () => setMoonReminders(getMoonRemindersEnabled());
+    window.addEventListener("moon-reminders-changed", onChange);
+    return () => window.removeEventListener("moon-reminders-changed", onChange);
+  }, []);
   return (
     <SectionCard title="Cyclical living" subtitle="Track your menstrual cycle and plan with your phases. Private to you." accent="warm">
       <div className="space-y-4">
@@ -16,6 +25,14 @@ export function CycleSettingsSection() {
             <p className="text-[11px] text-muted-foreground">Adds the cycle widget, phase badges, and log sheet.</p>
           </div>
           <Switch checked={settings.enabled} onCheckedChange={(v) => saveSettings({ enabled: v })} />
+        </div>
+
+        <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card/60 px-3 py-2">
+          <div>
+            <Label className="text-sm">Moon journal reminders</Label>
+            <p className="text-[11px] text-muted-foreground">On new, first quarter, full, and last quarter moon days, show a gentle prompt on Today to open the matching journal template.</p>
+          </div>
+          <Switch checked={moonReminders} onCheckedChange={(v) => setMoonRemindersEnabled(v)} />
         </div>
 
         {settings.enabled && (
