@@ -18,6 +18,7 @@ import { Task, AREAS, Priority, Energy, RecurrenceType } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
+import { IconPicker } from "@/components/common/IconPicker";
 
 type Props = {
   open: boolean;
@@ -119,12 +120,15 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
           <div className="space-y-5">
             {/* Title — big and prominent */}
-            <Input
-              value={draft.title}
-              onChange={e => set("title", e.target.value)}
-              placeholder="Task title"
-              className="h-11 border-0 bg-transparent px-0 text-lg font-medium shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-            />
+            <div className="flex items-center gap-2">
+              <IconPicker value={draft.icon} onChange={v => set("icon", v)} />
+              <Input
+                value={draft.title}
+                onChange={e => set("title", e.target.value)}
+                placeholder="Task title"
+                className="h-11 flex-1 border-0 bg-transparent px-0 text-lg font-medium shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </div>
 
             {/* Notes */}
             <Field icon={AlignLeft} label="Notes">
