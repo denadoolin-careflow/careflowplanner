@@ -108,6 +108,12 @@
     --moon-foreground: 215 30% 96%;
     --moon-soft: 215 30% 22%;
 
+    /* Cycle phases — dark theme */
+    --phase-menstrual: 350 70% 68%;
+    --phase-follicular: 145 55% 65%;
+    --phase-ovulatory: 42 88% 65%;
+    --phase-luteal: 28 70% 65%;
+
     --warm: 32 25% 40%;
     --warm-foreground: 32 35% 95%;
     --warm-soft: 32 18% 20%;
