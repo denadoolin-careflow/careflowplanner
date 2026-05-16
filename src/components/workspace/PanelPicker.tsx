@@ -8,7 +8,7 @@ import {
 import { PanelLeft, PanelRight, PanelLeftOpen, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ORDER: PanelId[] = ["inbox", "agenda", "calendar", "projects", "goals", "areas", "notes", "journal", "meals"];
+const ORDER: PanelId[] = ["inbox", "agenda", "calendar", "projects", "goals", "areas", "notes", "journal", "routines", "meals"];
 
 export function PanelPicker() {
   const { layout, openPanel, closePanel } = useWorkspaceLayout();
