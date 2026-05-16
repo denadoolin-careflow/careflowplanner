@@ -305,6 +305,20 @@ export default function CalendarPage() {
                 else if (item.kind === "bday" && item.id) setEditBdayId(item.id);
                 else if (item.kind === "hol" && item.id) setEditHolId(item.id);
               }}
+              onItemReschedule={async (item, patch) => {
+                const { date, time } = patch;
+                if (item.kind === "appt" && item.id) {
+                  await updateAppointment(item.id, { ...(date ? { date } : {}), ...(time !== undefined ? { time } : {}) });
+                } else if ((item.kind === "task" || item.kind === "care") && item.id) {
+                  if (date) await updateTask(item.id, { dueDate: date, inbox: false });
+                } else if (item.kind === "bday" && item.id && date) {
+                  await updateBirthday(item.id, { date });
+                } else if (item.kind === "hol" && item.id && date) {
+                  await updateHoliday(item.id, { date });
+                }
+                if (date) toast(`Moved “${item.label}” to ${format(parseISO(date), "MMM d")}`);
+                else if (time) toast(`Moved “${item.label}” to ${time}`);
+              }}
             />
           ) : (
             <>
