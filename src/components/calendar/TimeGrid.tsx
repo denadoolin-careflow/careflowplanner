@@ -138,6 +138,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
   const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [dragPointer, setDragPointer] = useState<{ x: number; y: number } | null>(null);
   const [dropHover, setDropHover] = useState<{ iso: string; hour: number } | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ iso: string; hour: number } | null>(null);
   const [externalDrag, setExternalDrag] = useState<null | { kind: "task" | "event" | "appt"; title: string; durationH: number }>(null);
@@ -242,6 +243,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const onPointerMove = useCallback((e: PointerEvent) => {
     const d = dragRef.current;
     if (!d || e.pointerId !== d.pointerId) return;
+    setDragPointer({ x: e.clientX, y: e.clientY });
     const dy = e.clientY - d.startClientY;
     const step = snapStepFromEvent(e);
     const dh = snap(dy / PX_PER_HOUR, step);
@@ -271,6 +273,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     window.removeEventListener("pointermove", onPointerMove);
     window.removeEventListener("pointerup", endDrag);
     window.removeEventListener("pointercancel", endDrag);
+    setDragPointer(null);
     const block = blocks.find(b => b.id === d.blockId);
     if (d.moved && block) {
       const patch: Partial<TimeBlock> = {
@@ -281,6 +284,22 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       suppressClickUntil.current = Date.now() + 250;
       await update(d.blockId, patch);
       haptics.pickup();
+      // Undo toast — reverts to the original time/date.
+      const prevStart = hoursToHM(d.origStart);
+      const prevEnd = hoursToHM(d.origEnd);
+      const prevDate = d.origDate;
+      const verb = d.mode === "move" ? "Moved" : "Resized";
+      toast(`${verb} "${block.title}"`, {
+        description: `${fmtTime(hoursToHM(d.curStart))} – ${fmtTime(hoursToHM(d.curEnd))}`,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            void update(d.blockId, { startTime: prevStart, endTime: prevEnd, date: prevDate });
+            haptics.tap();
+          },
+        },
+        duration: 6000,
+      });
     } else if (block) {
       // Treat as a tap — open the editor directly.
       openBlockEditor(block);
