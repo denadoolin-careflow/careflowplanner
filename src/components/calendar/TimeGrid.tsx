@@ -689,6 +689,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             onPointerDown={(e) => armBlockMove(b, e)}
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (Date.now() < suppressClickUntil.current) return;
                               haptics.tap();
                               openBlockEditor(b);
                             }}
