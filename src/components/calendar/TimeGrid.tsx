@@ -634,38 +634,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                         <Fragment key={b.id}>
                         <div
                           data-block-id={b.id}
-                          onPointerDown={(e) => {
-                            // Touch/pen: require long-press (450ms) to start dragging — a tap opens the editor.
-                            // Mouse: start drag immediately; tap-vs-drag is decided by the movement threshold in endDrag().
-                            if (e.pointerType === "touch" || e.pointerType === "pen") {
-                              const ev = e.nativeEvent;
-                              const target = e.currentTarget;
-                              const pointerId = e.pointerId;
-                              cancelLongPress();
-                              haptics.tap();
-                              setPressingId(b.id);
-                              longPressStartRef.current = { x: e.clientX, y: e.clientY };
-                              try { target.setPointerCapture?.(pointerId); } catch {}
-                              longPressTimerRef.current = window.setTimeout(() => {
-                                longPressTimerRef.current = null;
-                                longPressStartRef.current = null;
-                                setPressingId(null);
-                                haptics.longPress();
-                                // Synthesize a React-like pointer event for beginDrag
-                                beginDrag(b, "move", {
-                                  pointerId,
-                                  clientX: ev.clientX,
-                                  clientY: ev.clientY,
-                                  currentTarget: target,
-                                  stopPropagation: () => {},
-                                  preventDefault: () => {},
-                                } as unknown as React.PointerEvent);
-                              }, 450);
-                            } else {
-                              haptics.tap();
-                              beginDrag(b, "move", e);
-                            }
-                          }}
+                          onPointerDown={(e) => armBlockMove(b, e)}
                           onPointerMove={(e) => {
                             // Only cancel the pending long-press if the finger actually
                             // travels beyond a small slop radius — micro-jitter from
@@ -714,8 +683,22 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                           role="button"
                           tabIndex={0}
                         >
+                          <button
+                            type="button"
+                            data-block-action
+                            aria-label={`Edit ${b.title}`}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              haptics.tap();
+                              openBlockEditor(b);
+                            }}
+                            className="absolute inset-0 z-0 cursor-grab bg-transparent text-left active:cursor-grabbing"
+                            style={{ touchAction: "none" }}
+                          />
                           {/* Top resize handle */}
                           <div
+                            data-block-resize-handle
                             onPointerDown={(e) => { haptics.tap(); beginDrag(b, "resize-top", e); }}
                             onClick={(e) => e.stopPropagation()}
                             aria-label="Resize start"
@@ -729,6 +712,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                           />
                           {/* Move/grip handle */}
                           <div
+                            data-block-move-handle
                             onPointerDown={(e) => { haptics.tap(); beginDrag(b, "move", e); }}
                             onClick={(e) => e.stopPropagation()}
                             aria-label="Drag to move"
@@ -744,10 +728,11 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                           >
                             <GripHorizontal className="h-4 w-4" />
                           </div>
-                          <div className={cn("flex items-center gap-1 truncate pr-8 font-medium leading-tight", !linkedTask && "pointer-events-none")}>
+                          <div className="pointer-events-none relative z-[1] flex items-center gap-1 truncate pr-8 font-medium leading-tight">
                             {isConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
                             {linkedTask && (
                               <button
+                                data-block-action
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onClick={(e) => { e.stopPropagation(); haptics.tap(); void toggleTask(linkedTask.id); }}
                                 aria-label={taskDone ? "Mark task not done" : "Mark task done"}
@@ -766,7 +751,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                               {b.title}
                             </span>
                           </div>
-                          <div className="pointer-events-none pr-8 text-[10px] opacity-70">
+                          <div className="pointer-events-none relative z-[1] pr-8 text-[10px] opacity-70">
                             {fmtTime(hoursToHM(startH))} – {fmtTime(hoursToHM(endH))}
                             {isConflict && <span className="ml-1 font-semibold text-destructive">· conflict</span>}
                           </div>
