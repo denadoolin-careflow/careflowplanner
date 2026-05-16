@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BlockEditor } from "@/components/notes/BlockEditor";
+import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 
 type TemplateKey =
@@ -369,7 +370,9 @@ function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string
         </div>
       </div>
       {e.title && <div className="mt-1 font-display text-base">{e.title}</div>}
-      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{e.body}</p>
+      <div className="mt-1 text-sm leading-relaxed">
+        <NoteMarkdown body={e.body} />
+      </div>
       {e.tags && e.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {e.tags.map(t => <span key={t} className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px]">#{t}</span>)}
