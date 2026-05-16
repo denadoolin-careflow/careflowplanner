@@ -390,11 +390,23 @@ type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task" | "care" | "m
 type EventsFn = (k: string) => EventItem[];
 type ColorFn = (k: EventItem["kind"]) => string;
 
-function MonthView({ cursor, eventsOn, colorOf, onTaskDropDay }: { cursor: Date; eventsOn: EventsFn; colorOf: ColorFn; onTaskDropDay?: (taskId: string, dateISO: string) => void }) {
+const ITEM_DRAG_MIME = "application/x-careflow-item";
+
+function MonthView({
+  cursor, eventsOn, colorOf, onTaskDropDay, onItemClick, onItemReschedule,
+}: {
+  cursor: Date;
+  eventsOn: EventsFn;
+  colorOf: ColorFn;
+  onTaskDropDay?: (taskId: string, dateISO: string) => void;
+  onItemClick?: (item: EventItem) => void;
+  onItemReschedule?: (item: EventItem, patch: { date?: string; time?: string | null }) => void | Promise<void>;
+}) {
   const ms = startOfMonth(cursor);
   const gs = startOfWeek(ms, { weekStartsOn: 0 });
   const days = eachDayOfInterval({ start: gs, end: addDays(gs, 41) });
   const [hoverISO, setHoverISO] = useState<string | null>(null);
+  const [draggingItem, setDraggingItem] = useState<{ item: EventItem; sourceISO: string } | null>(null);
   return (
     <>
       <div className="grid grid-cols-7 gap-1 text-xs uppercase tracking-wider text-muted-foreground">
@@ -410,20 +422,30 @@ function MonthView({ cursor, eventsOn, colorOf, onTaskDropDay }: { cursor: Date;
             <div
               key={k}
               onDragOver={(e) => {
-                if (!onTaskDropDay) return;
-                if (!Array.from(e.dataTransfer.types).includes("application/x-careflow-task")) return;
+                const types = Array.from(e.dataTransfer.types);
+                const acceptsTask = !!onTaskDropDay && types.includes("application/x-careflow-task");
+                const acceptsItem = !!onItemReschedule && types.includes(ITEM_DRAG_MIME);
+                if (!acceptsTask && !acceptsItem) return;
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
                 setHoverISO(k);
               }}
               onDragLeave={() => setHoverISO(p => p === k ? null : p)}
-              onDrop={(e) => {
-                if (!onTaskDropDay) return;
-                const id = e.dataTransfer.getData("application/x-careflow-task");
-                if (!id) return;
+              onDrop={async (e) => {
+                const taskId = onTaskDropDay ? e.dataTransfer.getData("application/x-careflow-task") : "";
+                const itemPayload = onItemReschedule ? e.dataTransfer.getData(ITEM_DRAG_MIME) : "";
+                if (!taskId && !itemPayload) return;
                 e.preventDefault();
-                onTaskDropDay(id, k);
                 setHoverISO(null);
+                if (itemPayload && onItemReschedule) {
+                  const { sourceISO } = JSON.parse(itemPayload) as { sourceISO: string };
+                  if (draggingItem && sourceISO !== k) {
+                    await onItemReschedule(draggingItem.item, { date: k });
+                  }
+                  setDraggingItem(null);
+                } else if (taskId && onTaskDropDay) {
+                  onTaskDropDay(taskId, k);
+                }
               }}
               className={cn(
                 "flex min-h-28 flex-col rounded-xl border p-2 text-xs transition-colors sm:min-h-32",
@@ -444,19 +466,38 @@ function MonthView({ cursor, eventsOn, colorOf, onTaskDropDay }: { cursor: Date;
                 </span>
               </div>
               <div className="flex flex-1 flex-col gap-1">
-                {ev.map((e, i) => (
-                  <div
-                    key={i}
-                    title={e.label}
-                    className={cn(
-                      "rounded-md px-1.5 py-1 text-[11px] leading-snug break-words whitespace-normal",
-                      colorOf(e.kind),
-                    )}
-                  >
-                    {e.time && <span className="mr-1 font-medium opacity-80">{e.time}</span>}
-                    {e.label}
-                  </div>
-                ))}
+                {ev.map((e, i) => {
+                  const editable = (e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol") && !!e.id;
+                  const clickable = editable && !!onItemClick;
+                  const draggable = editable && !!onItemReschedule;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      title={e.label}
+                      disabled={!clickable && !draggable}
+                      onClick={(ev2) => { ev2.stopPropagation(); if (clickable) onItemClick!(e); }}
+                      draggable={draggable}
+                      onDragStart={(ev2) => {
+                        if (!draggable) return;
+                        ev2.dataTransfer.effectAllowed = "move";
+                        ev2.dataTransfer.setData(ITEM_DRAG_MIME, JSON.stringify({ sourceISO: k }));
+                        setDraggingItem({ item: e, sourceISO: k });
+                      }}
+                      onDragEnd={() => setDraggingItem(null)}
+                      className={cn(
+                        "w-full rounded-md px-1.5 py-1 text-left text-[11px] leading-snug break-words whitespace-normal transition-transform",
+                        colorOf(e.kind),
+                        clickable && "hover:-translate-y-0.5 hover:shadow-sm cursor-pointer",
+                        draggable && "active:cursor-grabbing",
+                        draggingItem?.item.id === e.id && "opacity-50",
+                      )}
+                    >
+                      {e.time && <span className="mr-1 font-medium opacity-80">{e.time}</span>}
+                      {e.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
