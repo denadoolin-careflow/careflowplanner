@@ -820,6 +820,22 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 }
 
 function CreateForm({ draft, onCreate, onCancel }: {
+
+}
+
+function formatDuration(start: string, end: string): string {
+  const s = hmToHours(start);
+  const e = hmToHours(end);
+  let mins = Math.round((e - s) * 60);
+  if (!isFinite(mins) || mins <= 0) return "0m";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h && m) return `${h}h ${m}m`;
+  if (h) return `${h}h`;
+  return `${m}m`;
+}
+
+function CreateFormStub({ draft, onCreate, onCancel }: {
   draft: { date: string; start: string; end: string };
   onCreate: (b: Omit<TimeBlock, "id">) => void;
   onCancel: () => void;
