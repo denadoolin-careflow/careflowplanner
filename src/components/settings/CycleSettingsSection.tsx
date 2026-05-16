@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export function CycleSettingsSection() {
   const { settings, saveSettings } = useCycle();
   return (
-    <SectionCard title="Cyclical living" subtitle="Track your menstrual cycle and plan with your phases. Private to you." accent="rose">
+    <SectionCard title="Cyclical living" subtitle="Track your menstrual cycle and plan with your phases. Private to you." accent="warm">
       <div className="space-y-4">
         <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card/60 px-3 py-2">
           <div>
