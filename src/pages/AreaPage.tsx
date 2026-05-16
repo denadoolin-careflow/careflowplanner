@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Task } from "@/lib/types";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
+import type { Area } from "@/lib/types";
 
 type SortKey = "manual" | "due" | "created" | "priority" | "title";
 const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -161,12 +163,24 @@ export default function AreaPage() {
             </div>
             {!isCollapsed && (
               items.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border/40 bg-card/30 px-3 py-2 text-xs italic text-muted-foreground">
-                  {scope === "open" ? "No open tasks" : "No tasks"}
-                </div>
+                <>
+                  <div className="rounded-xl border border-dashed border-border/40 bg-card/30 px-3 py-2 text-xs italic text-muted-foreground">
+                    {scope === "open" ? "No open tasks" : "No tasks"}
+                  </div>
+                  <InlineTaskComposer
+                    defaults={{ area: areaName as Area, projectId: project.id }}
+                    nlp={false}
+                    placeholder={`Add a task to ${project.name}…`}
+                  />
+                </>
               ) : (
                 <div className="space-y-1.5">
                   {items.map(t => <TaskRow key={t.id} task={t} showArea={false} />)}
+                  <InlineTaskComposer
+                    defaults={{ area: areaName as Area, projectId: project.id }}
+                    nlp={false}
+                    placeholder={`Add a task to ${project.name}…`}
+                  />
                 </div>
               )
             )}
@@ -174,7 +188,7 @@ export default function AreaPage() {
         );
       })}
 
-      {noProject.length > 0 && (() => {
+      {(() => {
         const isCollapsed = collapsed.has("__no_project__");
         return (
           <section className="space-y-2">
@@ -191,6 +205,11 @@ export default function AreaPage() {
             {!isCollapsed && (
               <div className="space-y-1.5">
                 {noProject.map(t => <TaskRow key={t.id} task={t} showArea={false} />)}
+                <InlineTaskComposer
+                  defaults={{ area: areaName as Area }}
+                  nlp={false}
+                  placeholder={`Add a task in ${areaName}…`}
+                />
               </div>
             )}
           </section>
