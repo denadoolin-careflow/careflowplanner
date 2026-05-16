@@ -101,6 +101,7 @@ const ideaFrom = (r: any): Idea => ({ id: r.id, title: r.title, notes: r.notes ?
 const areaFrom = (r: any): AreaRecord => ({ id: r.id, name: r.name, icon: r.icon ?? undefined, color: r.color ?? undefined, sortOrder: r.sort_order ?? 0, isArchived: !!r.is_archived });
 const projectFrom = (r: any): Project => ({
   id: r.id, areaId: r.area_id ?? undefined, areaName: r.area_name ?? undefined,
+  parentProjectId: r.parent_project_id ?? undefined,
   name: r.name, notes: r.notes ?? undefined, icon: r.icon ?? undefined, color: r.color ?? undefined,
   status: r.status ?? "active", deadline: r.deadline ?? undefined,
   sortOrder: r.sort_order ?? 0, archivedAt: r.archived_at ?? undefined,
@@ -333,6 +334,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         name: p.name,
         area_id: p.areaId ?? null,
         area_name: p.areaName ?? null,
+        parent_project_id: p.parentProjectId ?? null,
         notes: p.notes ?? null,
         icon: p.icon ?? null,
         color: p.color ?? null,
@@ -353,6 +355,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.notes !== undefined) dbPatch.notes = patch.notes;
       if (patch.areaId !== undefined) dbPatch.area_id = patch.areaId ?? null;
       if (patch.areaName !== undefined) dbPatch.area_name = patch.areaName ?? null;
+      if (patch.parentProjectId !== undefined) dbPatch.parent_project_id = patch.parentProjectId ?? null;
       if (patch.status !== undefined) dbPatch.status = patch.status;
       if (patch.deadline !== undefined) dbPatch.deadline = patch.deadline ?? null;
       if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
