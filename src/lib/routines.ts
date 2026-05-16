@@ -1,8 +1,25 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type RoutineSlot = "morning" | "nap" | "evening";
-export const ROUTINE_SLOTS: RoutineSlot[] = ["morning", "nap", "evening"];
+export type RoutineSlot = "morning" | "afternoon" | "evening" | "night" | "nap" | "anytime";
+export const ROUTINE_SLOTS: RoutineSlot[] = ["morning", "afternoon", "evening", "night", "nap", "anytime"];
+export const SLOT_LABEL: Record<RoutineSlot, string> = {
+  morning: "Morning",
+  afternoon: "Afternoon",
+  evening: "Evening",
+  night: "Night",
+  nap: "Nap time",
+  anytime: "Anytime",
+};
+
+export type RoutineCadence = "daily" | "weekly" | "monthly" | "custom";
+export const ROUTINE_CADENCES: RoutineCadence[] = ["daily", "weekly", "monthly", "custom"];
+export const CADENCE_LABEL: Record<RoutineCadence, string> = {
+  daily: "Daily",
+  weekly: "Weekly",
+  monthly: "Monthly",
+  custom: "Custom",
+};
 
 export interface RoutineItem { id: string; text: string; done: boolean; }
 export interface Routine {
@@ -11,6 +28,9 @@ export interface Routine {
   slot: RoutineSlot;
   items: RoutineItem[];
   notes: string | null;
+  cadence: RoutineCadence;
+  tags: string[];
+  recipient_id: string | null;
 }
 
 let cache: Routine[] = [];
@@ -27,15 +47,22 @@ async function loadAll() {
     .from("routines" as any)
     .select("*")
     .order("person_name", { ascending: true });
-  cache = ((data ?? []) as any[]).map(r => ({
+  cache = ((data ?? []) as any[]).map(mapRow);
+  loaded = true;
+  emit();
+}
+
+function mapRow(r: any): Routine {
+  return {
     id: r.id,
     person_name: r.person_name,
     slot: r.slot,
     items: Array.isArray(r.items) ? r.items : [],
     notes: r.notes ?? null,
-  }));
-  loaded = true;
-  emit();
+    cadence: (r.cadence ?? "daily") as RoutineCadence,
+    tags: Array.isArray(r.tags) ? r.tags : [],
+    recipient_id: r.recipient_id ?? null,
+  };
 }
 
 function ensureLoaded() {
@@ -54,26 +81,38 @@ export const routines = {
   find(person: string, slot: RoutineSlot): Routine | undefined {
     return cache.find(r => r.person_name === person && r.slot === slot);
   },
-  async upsert(person: string, slot: RoutineSlot, patch: Partial<Pick<Routine, "items" | "notes">>) {
+  byPerson(person: string): Routine[] {
+    return cache.filter(r => r.person_name === person);
+  },
+  byRecipient(recipientId: string): Routine[] {
+    return cache.filter(r => r.recipient_id === recipientId);
+  },
+  allTags(): string[] {
+    const s = new Set<string>();
+    cache.forEach(r => r.tags.forEach(t => s.add(t)));
+    return Array.from(s).sort();
+  },
+  async upsert(
+    person: string,
+    slot: RoutineSlot,
+    patch: Partial<Pick<Routine, "items" | "notes" | "cadence" | "tags" | "recipient_id">>,
+  ) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const existing = routines.find(person, slot);
     const items = patch.items ?? existing?.items ?? [];
     const notes = patch.notes ?? existing?.notes ?? null;
-    const row = { user_id: user.id, person_name: person, slot, items, notes };
+    const cadence = patch.cadence ?? existing?.cadence ?? "daily";
+    const tags = patch.tags ?? existing?.tags ?? [];
+    const recipient_id = patch.recipient_id !== undefined ? patch.recipient_id : (existing?.recipient_id ?? null);
+    const row = { user_id: user.id, person_name: person, slot, items, notes, cadence, tags, recipient_id };
     const { data } = await supabase
       .from("routines" as any)
       .upsert(row as any, { onConflict: "user_id,person_name,slot" })
       .select()
       .single();
     if (data) {
-      const r: Routine = {
-        id: (data as any).id,
-        person_name: (data as any).person_name,
-        slot: (data as any).slot,
-        items: Array.isArray((data as any).items) ? (data as any).items : [],
-        notes: (data as any).notes ?? null,
-      };
+      const r = mapRow(data);
       const idx = cache.findIndex(x => x.person_name === person && x.slot === slot);
       if (idx >= 0) cache = cache.map((x, i) => i === idx ? r : x);
       else cache = [...cache, r];
