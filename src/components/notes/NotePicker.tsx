@@ -44,7 +44,7 @@ export function NotePicker({ trigger, excludeIds = [], onPick, onCreateNew }: Pr
       <PopoverTrigger asChild>
         {trigger ?? <Button size="sm" variant="outline" className="h-7 gap-1.5 rounded-full text-xs"><Plus className="h-3 w-3" /> Link a note</Button>}
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-2">
+      <PopoverContent align="end" sideOffset={6} collisionPadding={12} className="z-[60] w-[min(92vw,20rem)] p-2">
         <Input autoFocus placeholder="Search notes…" value={q} onChange={(e) => setQ(e.target.value)} className="h-8 text-xs" />
         <ScrollArea className="mt-2 h-64">
           {results.length === 0 ? (
