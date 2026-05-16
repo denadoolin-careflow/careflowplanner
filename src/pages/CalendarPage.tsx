@@ -357,17 +357,7 @@ export default function CalendarPage() {
             {view === "day" && (
               <TimeGrid days={[cursor]} appointmentsOn={eventsOnForGrid} onTaskDropAt={handleTimeDrop} />
             )}
-            {view === "year" && (
-              <YearView
-                cursor={cursor}
-                eventsOn={eventsOnFiltered}
-                colorOf={colorOf}
-                setCursor={setCursor}
-                setView={setView}
-                onItemClick={openItemEditor}
-                onItemReschedule={rescheduleItem}
-              />
-            )}
+            {view === "year" && <YearView cursor={cursor} eventsOn={eventsOnFiltered} setCursor={setCursor} setView={setView} />}
             </>
           )}
           </>
