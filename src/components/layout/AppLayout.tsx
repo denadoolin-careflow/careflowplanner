@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { NAV } from "@/lib/nav";
 import { RoutinesStrip } from "@/components/routines/RoutinesStrip";
 import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
+import { CommandPalette } from "@/components/command/CommandPalette";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
@@ -51,6 +52,7 @@ export function AppLayout() {
       <QuickAddFab />
       <AIAssistantFab />
       <BottomNav />
+      <CommandPalette />
     </div>
   );
 }

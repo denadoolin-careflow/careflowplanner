@@ -67,7 +67,7 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
       <Field icon={FolderKanban} label="Project">
         <Select value={draft.projectId ?? "none"} onValueChange={v => set("projectId", v === "none" ? undefined : v)}>
           <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
-          <SelectContent className="max-h-64">
+          <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
             <SelectItem value="none">No project</SelectItem>
             {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
           </SelectContent>
@@ -76,7 +76,7 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
       <Field icon={Target} label="Goal">
         <Select value={draft.goalId ?? "none"} onValueChange={v => set("goalId", v === "none" ? undefined : v)}>
           <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
-          <SelectContent className="max-h-64">
+          <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
             <SelectItem value="none">No goal</SelectItem>
             {state.goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
           </SelectContent>
@@ -186,7 +186,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                 <Field icon={Repeat} label="Repeats">
                   <Select value={draft.recurrenceType ?? "none"} onValueChange={v => set("recurrenceType", v as RecurrenceType)}>
                     <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60]" position="popper" sideOffset={6} collisionPadding={12}>
                       <SelectItem value="none">Doesn't repeat</SelectItem>
                       <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="weekly">Weekly</SelectItem>
@@ -214,7 +214,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                 <Field icon={Tag} label="Area">
                   <Select value={draft.area} onValueChange={v => set("area", v as any)}>
                     <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent className="max-h-64">
+                    <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
                       {AREAS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
                     </SelectContent>
                   </Select>
@@ -222,7 +222,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                 <Field icon={Flag} label="Priority">
                   <Select value={draft.priority} onValueChange={v => set("priority", v as Priority)}>
                     <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60]" position="popper" sideOffset={6} collisionPadding={12}>
                       <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="high">High</SelectItem>
@@ -232,7 +232,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                 <Field icon={Zap} label="Energy">
                   <Select value={draft.energy ?? "none"} onValueChange={v => set("energy", v === "none" ? undefined : v as Energy)}>
                     <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60]" position="popper" sideOffset={6} collisionPadding={12}>
                       <SelectItem value="none">—</SelectItem>
                       <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
