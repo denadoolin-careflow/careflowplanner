@@ -161,6 +161,36 @@ export type Database = {
         }
         Relationships: []
       }
+      care_ai_notes: {
+        Row: {
+          body: string
+          created_at: string
+          focus: string
+          id: string
+          prompt: string | null
+          recipient_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          focus?: string
+          id?: string
+          prompt?: string | null
+          recipient_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          focus?: string
+          id?: string
+          prompt?: string | null
+          recipient_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       care_notes: {
         Row: {
           body: string
@@ -202,42 +232,120 @@ export type Database = {
           },
         ]
       }
-      care_recipients: {
+      care_providers: {
         Row: {
-          contacts: Json
+          address: string | null
           created_at: string
+          email: string | null
           id: string
-          kind: string
-          meds: Json
           name: string
+          next_appt: string | null
           notes: string | null
-          sensory: string | null
+          phone: string | null
+          recipient_id: string
+          role: string
+          specialty: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          contacts?: Json
+          address?: string | null
           created_at?: string
+          email?: string | null
           id?: string
-          kind?: string
-          meds?: Json
           name: string
+          next_appt?: string | null
           notes?: string | null
-          sensory?: string | null
+          phone?: string | null
+          recipient_id: string
+          role?: string
+          specialty?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          next_appt?: string | null
+          notes?: string | null
+          phone?: string | null
+          recipient_id?: string
+          role?: string
+          specialty?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      care_recipients: {
+        Row: {
+          birth_date: string | null
+          contacts: Json
+          created_at: string
+          education_level: string | null
+          food_preferences: Json
+          id: string
+          kind: string
+          location: string | null
+          love_languages: string[]
+          meds: Json
+          name: string
+          notes: string | null
+          schedule: Json
+          school: string | null
+          sensory: string | null
+          ssn_full: string | null
+          ssn_last4: string | null
+          updated_at: string
+          user_id: string
+          zodiac: string | null
+        }
+        Insert: {
+          birth_date?: string | null
           contacts?: Json
           created_at?: string
+          education_level?: string | null
+          food_preferences?: Json
           id?: string
           kind?: string
+          location?: string | null
+          love_languages?: string[]
+          meds?: Json
+          name: string
+          notes?: string | null
+          schedule?: Json
+          school?: string | null
+          sensory?: string | null
+          ssn_full?: string | null
+          ssn_last4?: string | null
+          updated_at?: string
+          user_id: string
+          zodiac?: string | null
+        }
+        Update: {
+          birth_date?: string | null
+          contacts?: Json
+          created_at?: string
+          education_level?: string | null
+          food_preferences?: Json
+          id?: string
+          kind?: string
+          location?: string | null
+          love_languages?: string[]
           meds?: Json
           name?: string
           notes?: string | null
+          schedule?: Json
+          school?: string | null
           sensory?: string | null
+          ssn_full?: string | null
+          ssn_last4?: string | null
           updated_at?: string
           user_id?: string
+          zodiac?: string | null
         }
         Relationships: []
       }
@@ -1475,6 +1583,48 @@ export type Database = {
           sort_order?: number
           steps?: Json
           tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      medical_history: {
+        Row: {
+          attachments: Json
+          category: string | null
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          provider: string | null
+          recipient_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachments?: Json
+          category?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          provider?: string | null
+          recipient_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachments?: Json
+          category?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          provider?: string | null
+          recipient_id?: string
           title?: string
           updated_at?: string
           user_id?: string
