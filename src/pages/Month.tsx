@@ -20,12 +20,15 @@ import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
+import { useCycle } from "@/lib/cycle-store";
+import { phaseForDate, PHASE_META } from "@/lib/cycle";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
 
 export default function Month() {
   const { state, updateTask, updateAppointment } = useStore();
+  const { settings: cycleSettings, periods: cyclePeriods } = useCycle();
   const [cursor, setCursor] = useState(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   const [hoverISO, setHoverISO] = useState<string | null>(null);
@@ -118,6 +121,8 @@ export default function Month() {
               const inMonth = isSameMonth(d, cursor);
               const today = isSameDay(d, new Date());
               const ev = eventsOn(k);
+              const phase = cycleSettings.enabled ? phaseForDate(d, cyclePeriods, cycleSettings) : null;
+              const phaseVar = phase ? PHASE_META[phase].tokenVar : null;
               return (
                 <div
                   key={k}
@@ -146,7 +151,17 @@ export default function Month() {
                     hoverISO === k && "scale-[1.03] bg-primary/10 ring-2 ring-primary shadow-md",
                   )}
                 >
-                  <div className={cn("text-right text-[11px] font-medium", today && "text-primary")}>{format(d, "d")}</div>
+                  <div className="flex items-center justify-between">
+                    {phaseVar ? (
+                      <span
+                        title={`${PHASE_META[phase!].label} phase`}
+                        aria-label={`${PHASE_META[phase!].label} phase`}
+                        className="h-2 w-2 rounded-full"
+                        style={{ background: `hsl(var(${phaseVar}))`, boxShadow: `0 0 0 2px hsl(var(${phaseVar}) / 0.18)` }}
+                      />
+                    ) : <span />}
+                    <div className={cn("text-right text-[11px] font-medium", today && "text-primary")}>{format(d, "d")}</div>
+                  </div>
                   <div className="mt-0.5 space-y-0.5">
                     {ev.slice(0,3).map((it, i) => {
                       const isTask = it.kind === "task" && !!it.taskId;
