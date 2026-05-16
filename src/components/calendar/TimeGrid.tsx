@@ -258,11 +258,11 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       await update(d.blockId, patch);
       haptics.pickup();
     } else if (block) {
-      // Treat as a tap — show selection + action popover instead of opening editor immediately.
-      selectBlock(block);
+      // Treat as a tap — open the editor directly.
+      openBlockEditor(block);
     }
     setDrag(null);
-  }, [onPointerMove, blocks, update, selectBlock]);
+  }, [onPointerMove, blocks, update, openBlockEditor]);
 
   const beginDrag = (block: TimeBlock, mode: "move" | "resize" | "resize-top", e: React.PointerEvent) => {
     e.stopPropagation();
@@ -582,7 +582,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             if (longPressTimerRef.current != null) {
                               cancelLongPress();
                               if (Date.now() >= suppressClickUntil.current) {
-                                selectBlock(b);
+                                openBlockEditor(b);
                               }
                             }
                           }}
