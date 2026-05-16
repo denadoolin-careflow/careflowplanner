@@ -175,11 +175,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   /* auth subscription (listener BEFORE getSession) */
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      // Ignore noisy events that don't change identity — they cause re-renders
+      // and full data reloads which manifest as visible blinking on startup.
+      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") return;
+      const nextId = session?.user?.id ?? null;
+      setUser(prev => (prev?.id === nextId ? prev : session?.user ?? null));
     });
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
+      const nextId = data.session?.user?.id ?? null;
+      setUser(prev => (prev?.id === nextId ? prev : data.session?.user ?? null));
       if (!data.session) setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
