@@ -311,6 +311,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     e.stopPropagation();
     e.preventDefault();
     try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch (error) { void error; }
+    setDragPointer({ x: e.clientX, y: e.clientY });
     const d: DragState = {
       blockId: block.id,
       mode,
