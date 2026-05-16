@@ -696,7 +696,10 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                                 <Check className={cn("h-2.5 w-2.5 transition-opacity", taskDone ? "opacity-100" : "opacity-0 group-hover/cb:opacity-100")} />
                               </button>
                             )}
-                            <span className={cn("truncate", taskDone && "line-through")}>{b.title}</span>
+                            <span className={cn("truncate", taskDone && "line-through")}>
+                              {b.icon && <span className="mr-1" aria-hidden>{b.icon}</span>}
+                              {b.title}
+                            </span>
                           </div>
                           <div className="pointer-events-none pr-8 text-[10px] opacity-70">
                             {fmtTime(hoursToHM(startH))} – {fmtTime(hoursToHM(endH))}
