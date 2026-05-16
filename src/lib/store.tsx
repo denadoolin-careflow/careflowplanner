@@ -14,7 +14,7 @@ export { todayISO };
 
 /* ---------- mappers (db row <-> app shape) ---------- */
 const taskFrom = (r: any): Task => ({
-  id: r.id, title: r.title, notes: r.notes ?? undefined, done: r.done,
+  id: r.id, title: r.title, notes: r.notes ?? undefined, icon: r.icon ?? undefined, done: r.done,
   dueDate: r.due_date ?? undefined, priority: r.priority, area: r.area,
   tags: r.tags ?? [], energy: r.energy ?? undefined, estMinutes: r.est_minutes ?? undefined,
   goalId: r.goal_id ?? undefined, recipientId: r.recipient_id ?? undefined,
@@ -29,7 +29,7 @@ const taskFrom = (r: any): Task => ({
   resetItemId: r.reset_item_id ?? undefined,
 });
 const taskTo = (t: Partial<Task>) => ({
-  title: t.title, notes: t.notes ?? null, done: t.done,
+  title: t.title, notes: t.notes ?? null, icon: t.icon ?? null, done: t.done,
   due_date: t.dueDate ?? null, priority: t.priority, area: t.area,
   tags: t.tags ?? [], energy: t.energy ?? null, est_minutes: t.estMinutes ?? null,
   goal_id: t.goalId ?? null, recipient_id: t.recipientId ?? null,
@@ -73,7 +73,7 @@ const groceryFrom = (r: any): GroceryItem => ({
   sourceSlot: r.source_slot ?? null,
   sourceDate: r.source_date ?? null,
 });
-const apptFrom = (r: any): Appointment => ({ id: r.id, date: r.date, time: r.time ?? undefined, title: r.title, with: r.with_name ?? undefined, location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined });
+const apptFrom = (r: any): Appointment => ({ id: r.id, date: r.date, time: r.time ?? undefined, title: r.title, icon: r.icon ?? undefined, with: r.with_name ?? undefined, location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined });
 const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined });
 const holidayFrom = (r: any): Holiday => ({ id: r.id, name: r.name, date: r.date, notes: r.notes ?? undefined });
 const recipFrom = (r: any): CareRecipient => ({
@@ -508,7 +508,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addAppointment: async (a) => {
       if (!uid) return;
-      const { data } = await supabase.from("appointments").insert({ user_id: uid, title: a.title, date: a.date, time: a.time ?? null, type: a.type ?? "other", location: a.location ?? null, recipient_id: a.recipientId ?? null, with_name: (a as any).with ?? null }).select().single();
+      const { data } = await supabase.from("appointments").insert({ user_id: uid, title: a.title, date: a.date, time: a.time ?? null, type: a.type ?? "other", location: a.location ?? null, recipient_id: a.recipientId ?? null, with_name: (a as any).with ?? null, icon: a.icon ?? null }).select().single();
       if (data) setState(s => ({ ...s, appointments: [apptFrom(data), ...s.appointments] }));
     },
     deleteAppointment: async (id) => {
@@ -522,6 +522,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.time !== undefined) dbPatch.time = patch.time;
       if (patch.location !== undefined) dbPatch.location = patch.location;
       if (patch.type !== undefined) dbPatch.type = patch.type;
+      if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
       if ((patch as any).with !== undefined) dbPatch.with_name = (patch as any).with;
       setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch } : a) }));
       await supabase.from("appointments").update(dbPatch).eq("id", id);

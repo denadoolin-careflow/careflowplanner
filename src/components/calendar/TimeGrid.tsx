@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { AREAS } from "@/lib/types";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
+import { IconPicker } from "@/components/common/IconPicker";
 
 const CLEANING_ZONES = ["Kitchen","Bathroom","Bedrooms","Living","Laundry","Entryway","Outdoor","Whole home"] as const;
 
@@ -695,7 +696,10 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                                 <Check className={cn("h-2.5 w-2.5 transition-opacity", taskDone ? "opacity-100" : "opacity-0 group-hover/cb:opacity-100")} />
                               </button>
                             )}
-                            <span className={cn("truncate", taskDone && "line-through")}>{b.title}</span>
+                            <span className={cn("truncate", taskDone && "line-through")}>
+                              {b.icon && <span className="mr-1" aria-hidden>{b.icon}</span>}
+                              {b.title}
+                            </span>
                           </div>
                           <div className="pointer-events-none pr-8 text-[10px] opacity-70">
                             {fmtTime(hoursToHM(startH))} – {fmtTime(hoursToHM(endH))}
@@ -1381,6 +1385,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
 function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: Partial<TimeBlock>) => void; onDelete: () => void }) {
   const { state } = useStore();
   const [title, setTitle] = useState(block.title);
+  const [icon, setIcon] = useState<string | undefined>(block.icon ?? undefined);
   const [start, setStart] = useState(block.startTime);
   const [end, setEnd] = useState(block.endTime);
   const [color, setColor] = useState(block.color);
@@ -1392,7 +1397,13 @@ function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: P
   );
   return (
     <div className="space-y-3">
-      <div><Label className="text-xs">Title</Label><Input value={title} onChange={e => setTitle(e.target.value)} /></div>
+      <div>
+        <Label className="text-xs">Title</Label>
+        <div className="flex items-center gap-2">
+          <IconPicker value={icon} onChange={setIcon} />
+          <Input value={title} onChange={e => setTitle(e.target.value)} className="flex-1" />
+        </div>
+      </div>
       <div className="mx-auto w-full max-w-xs space-y-1">
         <div className="grid grid-cols-2 gap-6">
           <div className="min-w-0 space-y-1">
@@ -1442,7 +1453,7 @@ function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: P
       <LinkedNotesPanel entityType="time_block" entityId={block.id} contextTitle={block.title} compact />
       <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur justify-between">
         <Button variant="ghost" className="text-destructive" onClick={onDelete}><Trash2 className="mr-1 h-4 w-4" /> Delete</Button>
-        <Button onClick={() => onSave({ title, startTime: start, endTime: end, color, notes })}>Save</Button>
+        <Button onClick={() => onSave({ title, icon, startTime: start, endTime: end, color, notes })}>Save</Button>
       </DialogFooter>
     </div>
   );

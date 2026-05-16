@@ -7,6 +7,7 @@ export interface TimeBlock {
   startTime: string;   // HH:MM
   endTime: string;     // HH:MM
   title: string;
+  icon?: string | null;
   notes?: string | null;
   color: string;       // semantic token name: primary | secondary | accent | moon | warm
   allDay: boolean;
@@ -24,6 +25,7 @@ function fromRow(r: any): TimeBlock {
     startTime: r.start_time,
     endTime: r.end_time,
     title: r.title,
+    icon: r.icon ?? null,
     notes: r.notes,
     color: r.color,
     allDay: r.all_day,
@@ -55,6 +57,7 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
       start_time: b.startTime,
       end_time: b.endTime,
       title: b.title,
+      icon: b.icon ?? null,
       notes: b.notes ?? null,
       color: b.color,
       all_day: b.allDay,
@@ -66,6 +69,7 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
   const update = async (id: string, patch: Partial<TimeBlock>) => {
     const dbPatch: any = {};
     if (patch.title !== undefined) dbPatch.title = patch.title;
+    if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
     if (patch.notes !== undefined) dbPatch.notes = patch.notes;
     if (patch.startTime !== undefined) dbPatch.start_time = patch.startTime;
     if (patch.endTime !== undefined) dbPatch.end_time = patch.endTime;

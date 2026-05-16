@@ -13,6 +13,7 @@ export interface Task {
   id: string;
   title: string;
   notes?: string;
+  icon?: string;
   done: boolean;
   dueDate?: string; // ISO date
   priority: Priority;
@@ -126,6 +127,7 @@ export interface Appointment {
   date: string; // ISO date
   time?: string;
   title: string;
+  icon?: string;
   with?: string;
   location?: string;
   recipientId?: string;

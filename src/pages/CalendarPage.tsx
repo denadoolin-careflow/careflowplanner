@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake, Sparkles, Columns3 } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
@@ -26,7 +26,7 @@ type View = "day" | "week" | "month" | "year";
 export default function CalendarPage() {
   const { state, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday } = useStore();
   const [view, setView] = useState<View>("month");
-  const [layout, setLayout] = useState<"grid" | "schedule" | "plan">("grid");
+  const [layout, setLayout] = useState<"grid" | "schedule" | "kanban" | "plan">("grid");
   const [cursor, setCursor] = useState<Date>(new Date());
   const ALL_KINDS = ["task","appt","care","meal","bday","hol","gcal"] as const;
   type Kind = typeof ALL_KINDS[number];
@@ -78,14 +78,14 @@ export default function CalendarPage() {
     }));
 
   const eventsOn = (k: string) => [
-    ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, id: a.id, label: a.title, time: a.time })),
+    ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, id: a.id, label: `${a.icon ? a.icon + " " : ""}${a.title}`, time: a.time })),
     ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, id: b.id, label: `🎂 ${b.name}`, time: undefined })),
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, id: h.id, label: `✨ ${h.name}`, time: undefined })),
     ...gEvents.filter(g => g.date === k).map(g => ({ kind: "gcal" as const, label: g.title, time: g.time ?? undefined, color: g.color })),
     ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
       kind: (t.area === "Caregiving" ? "care" : "task") as "care" | "task",
       id: t.id,
-      label: `${t.done ? "✓" : "○"} ${t.title}`,
+      label: `${t.icon ?? (t.done ? "✓" : "○")} ${t.title}`,
       time: undefined,
     })),
     ...(state.meals ?? []).filter(m => m.date === k).map(m => ({
@@ -95,6 +95,10 @@ export default function CalendarPage() {
       time: undefined,
     })),
   ];
+
+  // Filter-aware wrapper used by all layouts.
+  const eventsOnFiltered = (k: string) =>
+    eventsOn(k).filter(e => kindFilter.has(e.kind as Kind));
 
   /** Drop a task onto a day — sets due date only. */
   const handleDayDrop = async (taskId: string, dateISO: string) => {
@@ -192,6 +196,16 @@ export default function CalendarPage() {
               >
                 <List className="h-3 w-3" /> Schedule
               </button>
+              <button
+                onClick={() => setLayout("kanban")}
+                className={cn(
+                  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                  layout === "kanban" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+                aria-label="Kanban view"
+              >
+                <Columns3 className="h-3 w-3" /> Kanban
+              </button>
               {view === "month" && (
                 <button
                   onClick={() => setLayout("plan")}
@@ -211,7 +225,7 @@ export default function CalendarPage() {
       >
         {layout === "plan" && view === "month" ? (
           <MonthPlanningDashboard cursor={cursor} onJumpToDate={(d) => { setCursor(d); setLayout("grid"); setView("day"); }} />
-        ) : layout === "schedule" ? (
+        ) : (
           <>
           <div className="mb-3 flex flex-wrap gap-1.5">
             {([
@@ -249,10 +263,11 @@ export default function CalendarPage() {
               All
             </button>
           </div>
+          {layout === "schedule" ? (
           <ScheduleView
             view={view}
             cursor={cursor}
-            eventsOn={eventsOn}
+            eventsOn={eventsOnFiltered}
             colorOf={colorOf}
             kindFilter={kindFilter}
             onItemClick={(item) => {
@@ -278,10 +293,22 @@ export default function CalendarPage() {
               }
             }}
           />
-          </>
-        ) : (
-          <>
-            {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOn} colorOf={colorOf} onTaskDropDay={handleDayDrop} />}
+          ) : layout === "kanban" ? (
+            <KanbanByTimeframe
+              view={view}
+              cursor={cursor}
+              eventsOn={eventsOnFiltered}
+              colorOf={colorOf}
+              onItemClick={(item) => {
+                if (item.kind === "appt" && item.id) setEditApptId(item.id);
+                else if ((item.kind === "task" || item.kind === "care") && item.id) setEditTaskId(item.id);
+                else if (item.kind === "bday" && item.id) setEditBdayId(item.id);
+                else if (item.kind === "hol" && item.id) setEditHolId(item.id);
+              }}
+            />
+          ) : (
+            <>
+            {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOnFiltered} colorOf={colorOf} onTaskDropDay={handleDayDrop} />}
             {view === "week" && (
               <TimeGrid
                 days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(cursor, { weekStartsOn: 0 }), i))}
@@ -292,7 +319,9 @@ export default function CalendarPage() {
             {view === "day" && (
               <TimeGrid days={[cursor]} appointmentsOn={eventsOnForGrid} onTaskDropAt={handleTimeDrop} />
             )}
-            {view === "year" && <YearView cursor={cursor} eventsOn={eventsOn} setCursor={setCursor} setView={setView} />}
+            {view === "year" && <YearView cursor={cursor} eventsOn={eventsOnFiltered} setCursor={setCursor} setView={setView} />}
+            </>
+          )}
           </>
         )}
       </SectionCard>
@@ -425,6 +454,130 @@ function WeekView({ cursor, eventsOn, colorOf }: { cursor: Date; eventsOn: Event
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ============================== Kanban view ============================== */
+
+function KanbanByTimeframe({
+  view, cursor, eventsOn, colorOf, onItemClick,
+}: {
+  view: View;
+  cursor: Date;
+  eventsOn: EventsFn;
+  colorOf: ColorFn;
+  onItemClick?: (item: EventItem) => void;
+}) {
+  type Col = { key: string; title: string; subtitle?: string; items: EventItem[] };
+  const cols: Col[] = [];
+
+  const bucketByHour = (time?: string) => {
+    if (!time) return "Anytime";
+    const h = parseInt(time.slice(0, 2), 10);
+    if (isNaN(h)) return "Anytime";
+    if (h < 12) return "Morning";
+    if (h < 17) return "Afternoon";
+    if (h < 21) return "Evening";
+    return "Night";
+  };
+
+  if (view === "day") {
+    const iso = cursor.toISOString().slice(0, 10);
+    const items = eventsOn(iso);
+    const buckets = ["Morning", "Afternoon", "Evening", "Night", "Anytime"];
+    for (const b of buckets) {
+      cols.push({ key: b, title: b, items: items.filter(i => bucketByHour(i.time) === b) });
+    }
+  } else if (view === "week") {
+    const start = startOfWeek(cursor, { weekStartsOn: 0 });
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(start, i);
+      const iso = d.toISOString().slice(0, 10);
+      cols.push({
+        key: iso,
+        title: format(d, "EEE"),
+        subtitle: format(d, "MMM d"),
+        items: eventsOn(iso).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")),
+      });
+    }
+  } else if (view === "month") {
+    const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
+    const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 0 });
+    const days = eachDayOfInterval({ start, end });
+    // group into weeks of 7
+    for (let w = 0; w < days.length / 7; w++) {
+      const wkDays = days.slice(w * 7, w * 7 + 7);
+      const items: EventItem[] = [];
+      for (const d of wkDays) {
+        const iso = d.toISOString().slice(0, 10);
+        for (const ev of eventsOn(iso)) {
+          items.push({ ...ev, label: `${format(d, "EEE d")} · ${ev.label}` });
+        }
+      }
+      cols.push({
+        key: `wk-${w}`,
+        title: `Week ${w + 1}`,
+        subtitle: `${format(wkDays[0], "MMM d")} – ${format(wkDays[6], "MMM d")}`,
+        items,
+      });
+    }
+  } else {
+    // year — by month
+    const months = eachMonthOfInterval({ start: startOfYear(cursor), end: endOfYear(cursor) });
+    for (const m of months) {
+      const ms = startOfMonth(m);
+      const me = endOfMonth(m);
+      const days = eachDayOfInterval({ start: ms, end: me });
+      const items: EventItem[] = [];
+      for (const d of days) {
+        const iso = d.toISOString().slice(0, 10);
+        for (const ev of eventsOn(iso)) {
+          items.push({ ...ev, label: `${format(d, "MMM d")} · ${ev.label}` });
+        }
+      }
+      cols.push({ key: m.toISOString(), title: format(m, "MMMM"), subtitle: format(m, "yyyy"), items });
+    }
+  }
+
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-2">
+      {cols.map(c => (
+        <div key={c.key} className="flex w-60 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/30">
+          <div className="sticky top-0 z-10 flex items-baseline justify-between gap-2 rounded-t-xl border-b border-border/60 bg-card/80 px-3 py-2 backdrop-blur">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold">{c.title}</div>
+              {c.subtitle && <div className="truncate text-[10px] uppercase tracking-wider text-muted-foreground">{c.subtitle}</div>}
+            </div>
+            <span className="rounded-full bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">{c.items.length}</span>
+          </div>
+          <div className="flex flex-col gap-1.5 p-2">
+            {c.items.length === 0 ? (
+              <p className="rounded-md px-2 py-3 text-center text-[11px] text-muted-foreground/60">—</p>
+            ) : c.items.map((e, i) => {
+              const editable = e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol";
+              const clickable = !!onItemClick && editable && !!e.id;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  disabled={!clickable}
+                  onClick={() => clickable && onItemClick!(e)}
+                  className={cn(
+                    "w-full rounded-lg px-2 py-1.5 text-left text-[11px] leading-snug transition-transform",
+                    colorOf(e.kind),
+                    clickable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm",
+                    !clickable && "cursor-default",
+                  )}
+                >
+                  {e.time && <span className="mr-1 font-semibold opacity-80">{e.time}</span>}
+                  {e.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
