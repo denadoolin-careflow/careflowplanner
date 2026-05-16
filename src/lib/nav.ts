@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Sun, CalendarRange, CalendarDays, Calendar, Target, Sparkles,
   UtensilsCrossed, HeartHandshake, Sparkle, BookHeart, Lightbulb, CalendarCheck,
   Timer, Settings as SettingsIcon, BookOpen, HeartPulse, Wallet, Home,
-  ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck,
+  ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
 } from "lucide-react";
 
 export const NAV = [
@@ -18,6 +18,7 @@ export const NAV = [
   { to: "/meals", label: "Meals", icon: UtensilsCrossed },
   { to: "/meals/library", label: "Meals Library", icon: BookOpen },
   { to: "/caregiving", label: "Caregiving", icon: HeartHandshake },
+  { to: "/routines", label: "Routines", icon: Repeat },
   { to: "/health", label: "Health", icon: HeartPulse },
   { to: "/wealth", label: "Wealth", icon: Wallet },
   { to: "/home-areas", label: "Home", icon: Home },
@@ -77,6 +78,7 @@ export const NAV_GROUPS = [
     icon: HeartHandshake,
     items: [
       { to: "/caregiving", label: "Caregiving", icon: HeartHandshake },
+      { to: "/routines", label: "Routines", icon: Repeat },
       { to: "/health", label: "Health", icon: HeartPulse },
       { to: "/habits", label: "Habits", icon: Sparkles },
       { to: "/goals", label: "Goals", icon: Target },
