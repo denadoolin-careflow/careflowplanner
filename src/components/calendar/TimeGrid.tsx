@@ -139,12 +139,14 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const suppressClickUntil = useRef(0);
   const lastHoverIdRef = useRef<string | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
+  const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
   const [pressingId, setPressingId] = useState<string | null>(null);
   const cancelLongPress = useCallback(() => {
     if (longPressTimerRef.current != null) {
       window.clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+    longPressStartRef.current = null;
     setPressingId(null);
   }, []);
   dragRef.current = drag;
@@ -596,8 +598,11 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                               cancelLongPress();
                               haptics.tap();
                               setPressingId(b.id);
+                              longPressStartRef.current = { x: e.clientX, y: e.clientY };
+                              try { target.setPointerCapture?.(pointerId); } catch {}
                               longPressTimerRef.current = window.setTimeout(() => {
                                 longPressTimerRef.current = null;
+                                longPressStartRef.current = null;
                                 setPressingId(null);
                                 haptics.longPress();
                                 // Synthesize a React-like pointer event for beginDrag
@@ -616,9 +621,13 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             }
                           }}
                           onPointerMove={(e) => {
-                            // Cancel pending long-press if the finger moves before the timer fires.
-                            if (longPressTimerRef.current != null) {
-                              cancelLongPress();
+                            // Only cancel the pending long-press if the finger actually
+                            // travels beyond a small slop radius — micro-jitter from
+                            // touch pressure changes shouldn't kill the gesture.
+                            if (longPressTimerRef.current != null && longPressStartRef.current) {
+                              const dx = e.clientX - longPressStartRef.current.x;
+                              const dy = e.clientY - longPressStartRef.current.y;
+                              if (Math.hypot(dx, dy) > 12) cancelLongPress();
                             }
                           }}
                           onPointerUp={(e) => {
