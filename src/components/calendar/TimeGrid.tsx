@@ -917,7 +917,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
       {mode === "task" && (
         <div className="space-y-2">
           <Input autoFocus placeholder="Search open tasks…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
-          <ScrollArea className="h-48 rounded-md border">
+          <ScrollArea className="h-[min(50vh,18rem)] rounded-md border">
             {filteredTasks.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No matching tasks.</div>
             ) : (
@@ -953,7 +953,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
       {mode === "project" && (
         <div className="space-y-2">
           <Input autoFocus placeholder="Search projects…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
-          <ScrollArea className="h-48 rounded-md border">
+          <ScrollArea className="h-[min(50vh,18rem)] rounded-md border">
             {filteredProjects.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No projects.</div>
             ) : (
@@ -982,7 +982,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
       {mode === "habit" && (
         <div className="space-y-2">
           <Input autoFocus placeholder="Search habits…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
-          <ScrollArea className="h-48 rounded-md border">
+          <ScrollArea className="h-[min(50vh,18rem)] rounded-md border">
             {filteredHabits.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No habits yet.</div>
             ) : (
@@ -1013,7 +1013,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
       {mode === "meal" && (
         <div className="space-y-2">
           <Input autoFocus placeholder="Search meals…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
-          <ScrollArea className="h-48 rounded-md border">
+          <ScrollArea className="h-[min(50vh,18rem)] rounded-md border">
             {filteredMeals.length === 0 ? (
               <div className="p-6 text-center text-xs text-muted-foreground">No meals planned.</div>
             ) : (
