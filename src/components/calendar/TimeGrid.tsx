@@ -750,7 +750,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
       {/* Create dialog */}
       <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
-        <DialogContent className="max-w-[min(92vw,32rem)] p-4 sm:p-5">
+        <DialogContent className="w-[min(94vw,36rem)] max-w-none p-4 sm:p-5">
           <DialogHeader><DialogTitle>New time block</DialogTitle></DialogHeader>
           {draft && <CreateForm draft={draft} onCancel={() => setDraft(null)} onCreate={async (b) => { await add(b); setDraft(null); }} />}
         </DialogContent>
@@ -758,7 +758,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-[min(92vw,32rem)] p-4 sm:p-5">
+        <DialogContent className="w-[min(94vw,36rem)] max-w-none p-4 sm:p-5">
           <DialogHeader><DialogTitle>Edit time block</DialogTitle></DialogHeader>
           {editing && (
             <EditForm
