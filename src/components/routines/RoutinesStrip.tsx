@@ -8,15 +8,11 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { routines as routinesApi, useRoutines, ROUTINE_SLOTS, type RoutineSlot } from "@/lib/routines";
+import { routines as routinesApi, useRoutines, ROUTINE_SLOTS, SLOT_LABEL, type RoutineSlot } from "@/lib/routines";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 
-const SLOT_LABELS: Record<RoutineSlot, string> = {
-  morning: "Morning",
-  nap: "Nap time",
-  evening: "Evening",
-};
+const SLOT_LABELS = SLOT_LABEL;
 
 const STORAGE_KEY = "careflow:routines-strip:v1";
 function readPrefs() {
