@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, AlertTriangle, GripHorizontal, Check, Clock, Plus, CheckSquare, Utensils, Sparkles, MapPin, FolderKanban, Pencil, X, Move, Repeat } from "lucide-react";
+import { Trash2, AlertTriangle, GripHorizontal, Check, Clock, Plus, CheckSquare, Utensils, Sparkles, MapPin, FolderKanban, Pencil, X, Move, Repeat, Heart } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
@@ -800,14 +801,18 @@ function CreateForm({ draft, onCreate, onCancel }: {
   onCreate: (b: Omit<TimeBlock, "id">) => void;
   onCancel: () => void;
 }) {
-  const { state, updateTask } = useStore();
+  const { state, updateTask, addTask, addProject, addMeal } = useStore();
   const [title, setTitle] = useState("");
   const [start, setStart] = useState(draft.start);
   const [end, setEnd] = useState(draft.end);
   const [color, setColor] = useState<string>("primary");
   const [notes, setNotes] = useState("");
-  const [mode, setMode] = useState<"new" | "task" | "project" | "habit" | "meal" | "zone" | "area">("new");
+  const [mode, setMode] = useState<"new" | "task" | "project" | "habit" | "meal" | "zone" | "area" | "care">("new");
   const [pickQ, setPickQ] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [careRecipientId, setCareRecipientId] = useState<string>("");
+  const [mealSlot, setMealSlot] = useState<"Breakfast" | "Lunch" | "Dinner" | "Snack">("Dinner");
+  const recipients = state.recipients ?? [];
 
   const openTasks = state.tasks.filter(t => !t.done && !t.parentTaskId);
   const filteredTasks = openTasks.filter(t =>
@@ -853,6 +858,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
           <TabsTrigger value="meal" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><Utensils className="h-3.5 w-3.5" /><span>Meal</span></TabsTrigger>
           <TabsTrigger value="zone" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><Sparkles className="h-3.5 w-3.5" /><span>Zone</span></TabsTrigger>
           <TabsTrigger value="area" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><MapPin className="h-3.5 w-3.5" /><span>Area</span></TabsTrigger>
+          <TabsTrigger value="care" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><Heart className="h-3.5 w-3.5" /><span>Care</span></TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -916,6 +922,36 @@ function CreateForm({ draft, onCreate, onCancel }: {
 
       {mode === "task" && (
         <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Create new task…"
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && newTitle.trim()) {
+                  e.preventDefault();
+                  const t = newTitle.trim();
+                  setNewTitle("");
+                  await addTask({ title: t, dueDate: draft.date, inbox: false });
+                  attach(t);
+                }
+              }}
+              className="h-8 text-xs"
+            />
+            <Button
+              size="sm"
+              className="h-8 shrink-0"
+              disabled={!newTitle.trim()}
+              onClick={async () => {
+                const t = newTitle.trim();
+                setNewTitle("");
+                await addTask({ title: t, dueDate: draft.date, inbox: false });
+                attach(t);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           <Input autoFocus placeholder="Search open tasks…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
           <ScrollArea className="h-[min(50vh,18rem)] rounded-md border">
             {filteredTasks.length === 0 ? (
@@ -952,6 +988,36 @@ function CreateForm({ draft, onCreate, onCancel }: {
 
       {mode === "project" && (
         <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Create new project…"
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && newTitle.trim()) {
+                  e.preventDefault();
+                  const n = newTitle.trim();
+                  setNewTitle("");
+                  await addProject({ name: n });
+                  attach(n);
+                }
+              }}
+              className="h-8 text-xs"
+            />
+            <Button
+              size="sm"
+              className="h-8 shrink-0"
+              disabled={!newTitle.trim()}
+              onClick={async () => {
+                const n = newTitle.trim();
+                setNewTitle("");
+                await addProject({ name: n });
+                attach(n);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           <Input autoFocus placeholder="Search projects…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
           <ScrollArea className="h-[min(50vh,18rem)] rounded-md border">
             {filteredProjects.length === 0 ? (
@@ -1012,6 +1078,45 @@ function CreateForm({ draft, onCreate, onCancel }: {
 
       {mode === "meal" && (
         <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Create new meal…"
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && newTitle.trim()) {
+                  e.preventDefault();
+                  const n = newTitle.trim();
+                  setNewTitle("");
+                  await addMeal({ name: n, date: draft.date, slot: mealSlot });
+                  attach(`🍽 ${n}`);
+                }
+              }}
+              className="h-8 text-xs"
+            />
+            <Select value={mealSlot} onValueChange={(v) => setMealSlot(v as any)}>
+              <SelectTrigger className="h-8 w-28 shrink-0 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent className="z-[60]" position="popper" sideOffset={6} collisionPadding={12}>
+                <SelectItem value="Breakfast">Breakfast</SelectItem>
+                <SelectItem value="Lunch">Lunch</SelectItem>
+                <SelectItem value="Dinner">Dinner</SelectItem>
+                <SelectItem value="Snack">Snack</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              className="h-8 shrink-0"
+              disabled={!newTitle.trim()}
+              onClick={async () => {
+                const n = newTitle.trim();
+                setNewTitle("");
+                await addMeal({ name: n, date: draft.date, slot: mealSlot });
+                attach(`🍽 ${n}`);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           <Input autoFocus placeholder="Search meals…" value={pickQ} onChange={e => setPickQ(e.target.value)} />
           <ScrollArea className="h-[min(50vh,18rem)] rounded-md border">
             {filteredMeals.length === 0 ? (
@@ -1080,6 +1185,50 @@ function CreateForm({ draft, onCreate, onCancel }: {
             })}
           </div>
           <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur"><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
+        </div>
+      )}
+
+      {mode === "care" && (
+        <div className="space-y-3">
+          <Label className="text-xs">Care for</Label>
+          {recipients.length === 0 ? (
+            <div className="rounded-md border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground">
+              No care recipients yet. Add them from the Caregiving page.
+            </div>
+          ) : (
+            <Select value={careRecipientId} onValueChange={setCareRecipientId}>
+              <SelectTrigger className="h-9 w-full text-xs">
+                <SelectValue placeholder="Pick a person…" />
+              </SelectTrigger>
+              <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
+                {recipients.map(r => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}{r.kind && r.kind !== "self" ? ` · ${r.kind}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Input
+            placeholder="Optional label (e.g. doctor visit)"
+            value={newTitle}
+            onChange={e => setNewTitle(e.target.value)}
+            className="h-8 text-xs"
+          />
+          <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
+            <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+            <Button
+              disabled={!careRecipientId}
+              onClick={() => {
+                const r = recipients.find(x => x.id === careRecipientId);
+                if (!r) return;
+                const extra = newTitle.trim() ? ` · ${newTitle.trim()}` : "";
+                attach(`💗 ${r.name}${extra}`);
+              }}
+            >
+              Add block
+            </Button>
+          </DialogFooter>
         </div>
       )}
     </div>
