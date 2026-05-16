@@ -111,6 +111,7 @@ export function defaultLayout(page: PageKey): DashboardLayoutData {
     return packLayout([
       { type: "task-progress", w: 6, h: 4 },
       { type: "pomodoro", w: 6, h: 4 },
+      { type: "moon", w: 6, h: 5 },
       { type: "top3", w: 6, h: 5 },
       { type: "appointments-today", w: 6, h: 5 },
       { type: "meals-today", w: 6, h: 5 },
