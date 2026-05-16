@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Trash2, AlertTriangle, GripHorizontal, Check, Clock, Plus, CheckSquare, Utensils, Sparkles, MapPin, FolderKanban, Pencil, X, Move, Repeat, Heart } from "lucide-react";
 import { useTimeBlocks, colorClasses, hmToHours, hoursToHM, BLOCK_COLORS, type TimeBlock } from "@/lib/time-blocks";
 import { haptics } from "@/lib/haptics";
+import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
@@ -137,6 +138,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
 
   const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [dragPointer, setDragPointer] = useState<{ x: number; y: number } | null>(null);
   const [dropHover, setDropHover] = useState<{ iso: string; hour: number } | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ iso: string; hour: number } | null>(null);
   const [externalDrag, setExternalDrag] = useState<null | { kind: "task" | "event" | "appt"; title: string; durationH: number }>(null);
@@ -241,6 +243,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const onPointerMove = useCallback((e: PointerEvent) => {
     const d = dragRef.current;
     if (!d || e.pointerId !== d.pointerId) return;
+    setDragPointer({ x: e.clientX, y: e.clientY });
     const dy = e.clientY - d.startClientY;
     const step = snapStepFromEvent(e);
     const dh = snap(dy / PX_PER_HOUR, step);
@@ -270,6 +273,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     window.removeEventListener("pointermove", onPointerMove);
     window.removeEventListener("pointerup", endDrag);
     window.removeEventListener("pointercancel", endDrag);
+    setDragPointer(null);
     const block = blocks.find(b => b.id === d.blockId);
     if (d.moved && block) {
       const patch: Partial<TimeBlock> = {
@@ -280,6 +284,22 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       suppressClickUntil.current = Date.now() + 250;
       await update(d.blockId, patch);
       haptics.pickup();
+      // Undo toast — reverts to the original time/date.
+      const prevStart = hoursToHM(d.origStart);
+      const prevEnd = hoursToHM(d.origEnd);
+      const prevDate = d.origDate;
+      const verb = d.mode === "move" ? "Moved" : "Resized";
+      toast(`${verb} "${block.title}"`, {
+        description: `${fmtTime(hoursToHM(d.curStart))} – ${fmtTime(hoursToHM(d.curEnd))}`,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            void update(d.blockId, { startTime: prevStart, endTime: prevEnd, date: prevDate });
+            haptics.tap();
+          },
+        },
+        duration: 6000,
+      });
     } else if (block) {
       // Treat as a tap — open the editor directly.
       openBlockEditor(block);
@@ -291,6 +311,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     e.stopPropagation();
     e.preventDefault();
     try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch (error) { void error; }
+    setDragPointer({ x: e.clientX, y: e.clientY });
     const d: DragState = {
       blockId: block.id,
       mode,
@@ -571,6 +592,35 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                         style={{ top: (hoverSlot.hour - HOUR_START) * PX_PER_HOUR, height: (SNAP_DEFAULT_MIN / 60) * PX_PER_HOUR }}
                       />
                     )}
+                    {/* Snap-to-grid indicator while dragging an existing block */}
+                    {drag && drag.moved && drag.curDate === iso && (() => {
+                      const topPx = (drag.curStart - HOUR_START) * PX_PER_HOUR;
+                      const heightPx = Math.max(24, (drag.curEnd - drag.curStart) * PX_PER_HOUR);
+                      return (
+                        <>
+                          <div
+                            className="pointer-events-none absolute inset-x-1 z-[25] rounded-md border-2 border-dashed border-primary/70 bg-primary/10 transition-[top,height] duration-75"
+                            style={{ top: topPx, height: heightPx }}
+                          />
+                          <div
+                            className="pointer-events-none absolute inset-x-0 z-[26] border-t-2 border-primary/80"
+                            style={{ top: topPx }}
+                          >
+                            <span className="absolute -top-2 left-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground shadow">
+                              {fmtTime(hoursToHM(drag.curStart))}
+                            </span>
+                          </div>
+                          <div
+                            className="pointer-events-none absolute inset-x-0 z-[26] border-t-2 border-primary/60"
+                            style={{ top: topPx + heightPx }}
+                          >
+                            <span className="absolute -top-2 right-1 rounded-full bg-primary/80 px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground shadow">
+                              {fmtTime(hoursToHM(drag.curEnd))}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                     {/* Hour grid lines */}
                     {Array.from({ length: TOTAL_HOURS }, (_, i) => (
                       <div key={i}
@@ -852,15 +902,23 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
           </div>
 
           {/* Floating drag time chip */}
-          {drag && drag.moved && (
-            <div
-              className="pointer-events-none fixed z-50 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background shadow-lg"
-              style={{ left: 12, bottom: 12 }}
-            >
-              {fmtTime(hoursToHM(drag.curStart))} – {fmtTime(hoursToHM(drag.curEnd))}
-              <span className="ml-2 opacity-60">{drag.curDate}</span>
-            </div>
-          )}
+          {drag && drag.moved && dragPointer && (() => {
+            const block = blocks.find(b => b.id === drag.blockId);
+            return (
+              <div
+                className="pointer-events-none fixed z-[60] -translate-x-1/2 -translate-y-full rounded-lg bg-foreground/95 px-3 py-1.5 text-xs font-medium text-background shadow-2xl ring-1 ring-primary/40 backdrop-blur animate-fade-in"
+                style={{ left: dragPointer.x, top: dragPointer.y - 12 }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Move className="h-3 w-3 opacity-70" />
+                  <span className="truncate max-w-[180px]">{block?.title ?? "Time block"}</span>
+                </div>
+                <div className="mt-0.5 text-[10px] tabular-nums opacity-80">
+                  {fmtTime(hoursToHM(drag.curStart))} – {fmtTime(hoursToHM(drag.curEnd))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
