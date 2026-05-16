@@ -458,6 +458,130 @@ function WeekView({ cursor, eventsOn, colorOf }: { cursor: Date; eventsOn: Event
   );
 }
 
+/* ============================== Kanban view ============================== */
+
+function KanbanByTimeframe({
+  view, cursor, eventsOn, colorOf, onItemClick,
+}: {
+  view: View;
+  cursor: Date;
+  eventsOn: EventsFn;
+  colorOf: ColorFn;
+  onItemClick?: (item: EventItem) => void;
+}) {
+  type Col = { key: string; title: string; subtitle?: string; items: EventItem[] };
+  const cols: Col[] = [];
+
+  const bucketByHour = (time?: string) => {
+    if (!time) return "Anytime";
+    const h = parseInt(time.slice(0, 2), 10);
+    if (isNaN(h)) return "Anytime";
+    if (h < 12) return "Morning";
+    if (h < 17) return "Afternoon";
+    if (h < 21) return "Evening";
+    return "Night";
+  };
+
+  if (view === "day") {
+    const iso = cursor.toISOString().slice(0, 10);
+    const items = eventsOn(iso);
+    const buckets = ["Morning", "Afternoon", "Evening", "Night", "Anytime"];
+    for (const b of buckets) {
+      cols.push({ key: b, title: b, items: items.filter(i => bucketByHour(i.time) === b) });
+    }
+  } else if (view === "week") {
+    const start = startOfWeek(cursor, { weekStartsOn: 0 });
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(start, i);
+      const iso = d.toISOString().slice(0, 10);
+      cols.push({
+        key: iso,
+        title: format(d, "EEE"),
+        subtitle: format(d, "MMM d"),
+        items: eventsOn(iso).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")),
+      });
+    }
+  } else if (view === "month") {
+    const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 0 });
+    const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 0 });
+    const days = eachDayOfInterval({ start, end });
+    // group into weeks of 7
+    for (let w = 0; w < days.length / 7; w++) {
+      const wkDays = days.slice(w * 7, w * 7 + 7);
+      const items: EventItem[] = [];
+      for (const d of wkDays) {
+        const iso = d.toISOString().slice(0, 10);
+        for (const ev of eventsOn(iso)) {
+          items.push({ ...ev, label: `${format(d, "EEE d")} · ${ev.label}` });
+        }
+      }
+      cols.push({
+        key: `wk-${w}`,
+        title: `Week ${w + 1}`,
+        subtitle: `${format(wkDays[0], "MMM d")} – ${format(wkDays[6], "MMM d")}`,
+        items,
+      });
+    }
+  } else {
+    // year — by month
+    const months = eachMonthOfInterval({ start: startOfYear(cursor), end: endOfYear(cursor) });
+    for (const m of months) {
+      const ms = startOfMonth(m);
+      const me = endOfMonth(m);
+      const days = eachDayOfInterval({ start: ms, end: me });
+      const items: EventItem[] = [];
+      for (const d of days) {
+        const iso = d.toISOString().slice(0, 10);
+        for (const ev of eventsOn(iso)) {
+          items.push({ ...ev, label: `${format(d, "MMM d")} · ${ev.label}` });
+        }
+      }
+      cols.push({ key: m.toISOString(), title: format(m, "MMMM"), subtitle: format(m, "yyyy"), items });
+    }
+  }
+
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-2">
+      {cols.map(c => (
+        <div key={c.key} className="flex w-60 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/30">
+          <div className="sticky top-0 z-10 flex items-baseline justify-between gap-2 rounded-t-xl border-b border-border/60 bg-card/80 px-3 py-2 backdrop-blur">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold">{c.title}</div>
+              {c.subtitle && <div className="truncate text-[10px] uppercase tracking-wider text-muted-foreground">{c.subtitle}</div>}
+            </div>
+            <span className="rounded-full bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">{c.items.length}</span>
+          </div>
+          <div className="flex flex-col gap-1.5 p-2">
+            {c.items.length === 0 ? (
+              <p className="rounded-md px-2 py-3 text-center text-[11px] text-muted-foreground/60">—</p>
+            ) : c.items.map((e, i) => {
+              const editable = e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol";
+              const clickable = !!onItemClick && editable && !!e.id;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  disabled={!clickable}
+                  onClick={() => clickable && onItemClick!(e)}
+                  className={cn(
+                    "w-full rounded-lg px-2 py-1.5 text-left text-[11px] leading-snug transition-transform",
+                    colorOf(e.kind),
+                    clickable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm",
+                    !clickable && "cursor-default",
+                  )}
+                >
+                  {e.time && <span className="mr-1 font-semibold opacity-80">{e.time}</span>}
+                  {e.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DayView({ cursor, eventsOn, colorOf }: { cursor: Date; eventsOn: EventsFn; colorOf: ColorFn }) {
   const k = cursor.toISOString().slice(0,10);
   const ev = eventsOn(k).sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
