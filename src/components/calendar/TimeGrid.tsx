@@ -290,7 +290,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const beginDrag = (block: TimeBlock, mode: "move" | "resize" | "resize-top", e: React.PointerEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch {}
+    try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch (error) { void error; }
     const d: DragState = {
       blockId: block.id,
       mode,
@@ -330,7 +330,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       haptics.tap();
       setPressingId(block.id);
       longPressStartRef.current = { x: startX, y: startY };
-      try { target.setPointerCapture?.(pointerId); } catch {}
+      try { target.setPointerCapture?.(pointerId); } catch (error) { void error; }
       longPressTimerRef.current = window.setTimeout(() => {
         longPressTimerRef.current = null;
         longPressStartRef.current = null;
