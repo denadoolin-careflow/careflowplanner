@@ -964,22 +964,38 @@ function CreateForm({ draft, onCreate, onCancel }: {
               <ul className="divide-y">
                 {filteredTasks.map(t => {
                   const project = t.projectId ? state.projects?.find(p => p.id === t.projectId) : undefined;
+                  const isEditing = editingId === t.id;
                   return (
-                    <li key={t.id}>
-                      <button
-                        className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
-                        onClick={() => attach(t.title, t.id)}
-                      >
-                        <CheckSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                        <span className="min-w-0 flex-1">
+                    <li key={t.id} className="group flex items-center gap-1 px-2 py-1.5 text-xs hover:bg-muted/50">
+                      <CheckSquare className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      {isEditing ? (
+                        <Input
+                          autoFocus
+                          value={editingValue}
+                          onChange={e => setEditingValue(e.target.value)}
+                          onKeyDown={async e => {
+                            if (e.key === "Enter") { await updateTask(t.id, { title: editingValue.trim() || t.title }); cancelEdit(); }
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          className="h-7 flex-1 text-xs"
+                        />
+                      ) : (
+                        <button className="min-w-0 flex-1 text-left" onClick={() => attach(t.title, t.id)}>
                           <span className="block truncate font-medium">{t.title}</span>
                           {(project || t.area) && (
                             <span className="block truncate text-[10px] text-muted-foreground">
                               {project?.name}{project && t.area ? " · " : ""}{t.area}
                             </span>
                           )}
-                        </span>
-                      </button>
+                        </button>
+                      )}
+                      <RowActions
+                        isEditing={isEditing}
+                        onEdit={() => startEdit(t.id, t.title)}
+                        onSave={async () => { await updateTask(t.id, { title: editingValue.trim() || t.title }); cancelEdit(); }}
+                        onCancel={cancelEdit}
+                        onDelete={async () => { await deleteTask(t.id); }}
+                      />
                     </li>
                   );
                 })}
@@ -1028,20 +1044,38 @@ function CreateForm({ draft, onCreate, onCancel }: {
               <div className="p-6 text-center text-xs text-muted-foreground">No projects.</div>
             ) : (
               <ul className="divide-y">
-                {filteredProjects.map(p => (
-                  <li key={p.id}>
-                    <button
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
-                      onClick={() => attach(p.name)}
-                    >
+                {filteredProjects.map(p => {
+                  const isEditing = editingId === p.id;
+                  return (
+                    <li key={p.id} className="group flex items-center gap-1 px-2 py-1.5 text-xs hover:bg-muted/50">
                       <FolderKanban className="h-3.5 w-3.5 shrink-0" style={p.color ? { color: p.color } : undefined} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">{p.name}</span>
-                        {p.areaName && <span className="block truncate text-[10px] text-muted-foreground">{p.areaName}</span>}
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                      {isEditing ? (
+                        <Input
+                          autoFocus
+                          value={editingValue}
+                          onChange={e => setEditingValue(e.target.value)}
+                          onKeyDown={async e => {
+                            if (e.key === "Enter") { await updateProject(p.id, { name: editingValue.trim() || p.name }); cancelEdit(); }
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          className="h-7 flex-1 text-xs"
+                        />
+                      ) : (
+                        <button className="min-w-0 flex-1 text-left" onClick={() => attach(p.name)}>
+                          <span className="block truncate font-medium">{p.name}</span>
+                          {p.areaName && <span className="block truncate text-[10px] text-muted-foreground">{p.areaName}</span>}
+                        </button>
+                      )}
+                      <RowActions
+                        isEditing={isEditing}
+                        onEdit={() => startEdit(p.id, p.name)}
+                        onSave={async () => { await updateProject(p.id, { name: editingValue.trim() || p.name }); cancelEdit(); }}
+                        onCancel={cancelEdit}
+                        onDelete={async () => { await deleteProject(p.id); }}
+                      />
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </ScrollArea>
@@ -1127,22 +1161,40 @@ function CreateForm({ draft, onCreate, onCancel }: {
               <div className="p-6 text-center text-xs text-muted-foreground">No meals planned.</div>
             ) : (
               <ul className="divide-y">
-                {filteredMeals.map(m => (
-                  <li key={m.id}>
-                    <button
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
-                      onClick={() => attach(`🍽 ${m.name}`)}
-                    >
+                {filteredMeals.map(m => {
+                  const isEditing = editingId === m.id;
+                  return (
+                    <li key={m.id} className="group flex items-center gap-1 px-2 py-1.5 text-xs hover:bg-muted/50">
                       <Utensils className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">{m.name}</span>
-                        <span className="block truncate text-[10px] text-muted-foreground capitalize">
-                          {m.slot} · {m.date}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                      {isEditing ? (
+                        <Input
+                          autoFocus
+                          value={editingValue}
+                          onChange={e => setEditingValue(e.target.value)}
+                          onKeyDown={async e => {
+                            if (e.key === "Enter") { await updateMeal(m.id, { name: editingValue.trim() || m.name }); cancelEdit(); }
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          className="h-7 flex-1 text-xs"
+                        />
+                      ) : (
+                        <button className="min-w-0 flex-1 text-left" onClick={() => attach(`🍽 ${m.name}`)}>
+                          <span className="block truncate font-medium">{m.name}</span>
+                          <span className="block truncate text-[10px] text-muted-foreground capitalize">
+                            {m.slot} · {m.date}
+                          </span>
+                        </button>
+                      )}
+                      <RowActions
+                        isEditing={isEditing}
+                        onEdit={() => startEdit(m.id, m.name)}
+                        onSave={async () => { await updateMeal(m.id, { name: editingValue.trim() || m.name }); cancelEdit(); }}
+                        onCancel={cancelEdit}
+                        onDelete={async () => { await deleteMeal(m.id); }}
+                      />
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </ScrollArea>
