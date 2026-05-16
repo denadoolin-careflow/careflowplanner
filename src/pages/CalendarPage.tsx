@@ -116,6 +116,39 @@ export default function CalendarPage() {
     toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
   };
 
+  /** Unified item editor opener — used by every calendar layout. */
+  const openItemEditor = (item: EventItem) => {
+    if (item.kind === "appt" && item.id) setEditApptId(item.id);
+    else if ((item.kind === "task" || item.kind === "care") && item.id) setEditTaskId(item.id);
+    else if (item.kind === "bday" && item.id) setEditBdayId(item.id);
+    else if (item.kind === "hol" && item.id) setEditHolId(item.id);
+  };
+
+  /** Unified reschedule handler — works for any item that owns a date/time. */
+  const rescheduleItem = async (
+    item: EventItem,
+    patch: { date?: string; time?: string | null },
+  ) => {
+    const { date, time } = patch;
+    if (item.kind === "appt" && item.id) {
+      await updateAppointment(item.id, {
+        ...(date ? { date } : {}),
+        ...(time !== undefined ? { time } : {}),
+      });
+    } else if ((item.kind === "task" || item.kind === "care") && item.id && date) {
+      await updateTask(item.id, { dueDate: date, inbox: false });
+    } else if (item.kind === "bday" && item.id && date) {
+      await updateBirthday(item.id, { date });
+    } else if (item.kind === "hol" && item.id && date) {
+      await updateHoliday(item.id, { date });
+    } else {
+      return;
+    }
+    if (date) toast(`Moved “${item.label}” to ${format(parseISO(date), "MMM d")}`);
+    else if (time) toast(`Moved “${item.label}” to ${time}`);
+    else if (time === null) toast(`Cleared time for “${item.label}”`);
+  };
+
   const shift = (dir: 1 | -1) => {
     setCursor(c => {
       if (view === "day") return addDays(c, dir);
@@ -299,30 +332,21 @@ export default function CalendarPage() {
               cursor={cursor}
               eventsOn={eventsOnFiltered}
               colorOf={colorOf}
-              onItemClick={(item) => {
-                if (item.kind === "appt" && item.id) setEditApptId(item.id);
-                else if ((item.kind === "task" || item.kind === "care") && item.id) setEditTaskId(item.id);
-                else if (item.kind === "bday" && item.id) setEditBdayId(item.id);
-                else if (item.kind === "hol" && item.id) setEditHolId(item.id);
-              }}
-              onItemReschedule={async (item, patch) => {
-                const { date, time } = patch;
-                if (item.kind === "appt" && item.id) {
-                  await updateAppointment(item.id, { ...(date ? { date } : {}), ...(time !== undefined ? { time } : {}) });
-                } else if ((item.kind === "task" || item.kind === "care") && item.id) {
-                  if (date) await updateTask(item.id, { dueDate: date, inbox: false });
-                } else if (item.kind === "bday" && item.id && date) {
-                  await updateBirthday(item.id, { date });
-                } else if (item.kind === "hol" && item.id && date) {
-                  await updateHoliday(item.id, { date });
-                }
-                if (date) toast(`Moved “${item.label}” to ${format(parseISO(date), "MMM d")}`);
-                else if (time) toast(`Moved “${item.label}” to ${time}`);
-              }}
+              onItemClick={openItemEditor}
+              onItemReschedule={rescheduleItem}
             />
           ) : (
             <>
-            {view === "month" && <MonthView cursor={cursor} eventsOn={eventsOnFiltered} colorOf={colorOf} onTaskDropDay={handleDayDrop} />}
+            {view === "month" && (
+              <MonthView
+                cursor={cursor}
+                eventsOn={eventsOnFiltered}
+                colorOf={colorOf}
+                onTaskDropDay={handleDayDrop}
+                onItemClick={openItemEditor}
+                onItemReschedule={rescheduleItem}
+              />
+            )}
             {view === "week" && (
               <TimeGrid
                 days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(cursor, { weekStartsOn: 0 }), i))}
@@ -333,7 +357,17 @@ export default function CalendarPage() {
             {view === "day" && (
               <TimeGrid days={[cursor]} appointmentsOn={eventsOnForGrid} onTaskDropAt={handleTimeDrop} />
             )}
-            {view === "year" && <YearView cursor={cursor} eventsOn={eventsOnFiltered} setCursor={setCursor} setView={setView} />}
+            {view === "year" && (
+              <YearView
+                cursor={cursor}
+                eventsOn={eventsOnFiltered}
+                colorOf={colorOf}
+                setCursor={setCursor}
+                setView={setView}
+                onItemClick={openItemEditor}
+                onItemReschedule={rescheduleItem}
+              />
+            )}
             </>
           )}
           </>
