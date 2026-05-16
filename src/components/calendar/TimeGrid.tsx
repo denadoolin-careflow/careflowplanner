@@ -592,6 +592,35 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                         style={{ top: (hoverSlot.hour - HOUR_START) * PX_PER_HOUR, height: (SNAP_DEFAULT_MIN / 60) * PX_PER_HOUR }}
                       />
                     )}
+                    {/* Snap-to-grid indicator while dragging an existing block */}
+                    {drag && drag.moved && drag.curDate === iso && (() => {
+                      const topPx = (drag.curStart - HOUR_START) * PX_PER_HOUR;
+                      const heightPx = Math.max(24, (drag.curEnd - drag.curStart) * PX_PER_HOUR);
+                      return (
+                        <>
+                          <div
+                            className="pointer-events-none absolute inset-x-1 z-[25] rounded-md border-2 border-dashed border-primary/70 bg-primary/10 transition-[top,height] duration-75"
+                            style={{ top: topPx, height: heightPx }}
+                          />
+                          <div
+                            className="pointer-events-none absolute inset-x-0 z-[26] border-t-2 border-primary/80"
+                            style={{ top: topPx }}
+                          >
+                            <span className="absolute -top-2 left-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground shadow">
+                              {fmtTime(hoursToHM(drag.curStart))}
+                            </span>
+                          </div>
+                          <div
+                            className="pointer-events-none absolute inset-x-0 z-[26] border-t-2 border-primary/60"
+                            style={{ top: topPx + heightPx }}
+                          >
+                            <span className="absolute -top-2 right-1 rounded-full bg-primary/80 px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground shadow">
+                              {fmtTime(hoursToHM(drag.curEnd))}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                     {/* Hour grid lines */}
                     {Array.from({ length: TOTAL_HOURS }, (_, i) => (
                       <div key={i}
