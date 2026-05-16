@@ -889,18 +889,18 @@ function CreateForm({ draft, onCreate, onCancel }: {
         </TabsList>
       </Tabs>
 
-      <div className="grid grid-cols-2 gap-4 sm:max-w-sm">
+      <div className="mx-auto grid w-full max-w-xs grid-cols-2 gap-6">
         <div className="min-w-0 space-y-1">
           <Label className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
             <Clock className="h-3 w-3" /> Start
           </Label>
-          <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="h-8 w-full px-2 text-xs tabular-nums" />
+          <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="h-8 w-full px-2 text-center text-xs tabular-nums" />
         </div>
         <div className="min-w-0 space-y-1">
           <Label className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
             <Clock className="h-3 w-3" /> End
           </Label>
-          <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="h-8 w-full px-2 text-xs tabular-nums" />
+          <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="h-8 w-full px-2 text-center text-xs tabular-nums" />
         </div>
       </div>
 
@@ -1338,19 +1338,19 @@ function EditForm({ block, onSave, onDelete }: { block: TimeBlock; onSave: (p: P
   return (
     <div className="space-y-3">
       <div><Label className="text-xs">Title</Label><Input value={title} onChange={e => setTitle(e.target.value)} /></div>
-      <div className="grid grid-cols-2 gap-4 sm:max-w-sm">
-        <div className="min-w-0">
+      <div className="mx-auto grid w-full max-w-xs grid-cols-2 gap-6">
+        <div className="min-w-0 space-y-1">
           <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Start</Label>
-          <div className="relative mt-0.5">
+          <div className="relative">
             <Clock className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="h-8 w-full pl-6 pr-1 text-xs tabular-nums" />
+            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="h-8 w-full pl-6 pr-2 text-center text-xs tabular-nums" />
           </div>
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-1">
           <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">End</Label>
-          <div className="relative mt-0.5">
+          <div className="relative">
             <Clock className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="h-8 w-full pl-6 pr-1 text-xs tabular-nums" />
+            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="h-8 w-full pl-6 pr-2 text-center text-xs tabular-nums" />
           </div>
         </div>
       </div>
