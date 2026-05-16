@@ -5,7 +5,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PanelLeft, PanelRight, Columns2, Check } from "lucide-react";
+import { PanelLeft, PanelRight, PanelLeftOpen, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ORDER: PanelId[] = ["inbox", "agenda", "calendar", "projects", "goals", "areas", "notes", "journal", "meals"];
@@ -22,9 +22,10 @@ export function PanelPicker() {
         <button
           type="button"
           aria-label="Open side panel"
-          className="grid h-9 w-9 place-items-center rounded-lg border border-border/60 bg-card text-foreground/80 hover:bg-muted"
+          className="flex h-9 items-center gap-1.5 rounded-lg border border-border/60 bg-card px-2.5 text-foreground/80 hover:bg-muted"
         >
-          <Columns2 className="h-4 w-4" />
+          <PanelLeftOpen className="h-4 w-4" />
+          <span className="hidden text-xs font-medium sm:inline">Panels</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
