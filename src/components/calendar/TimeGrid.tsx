@@ -837,31 +837,29 @@ function CreateForm({ draft, onCreate, onCancel }: {
   return (
     <div className="space-y-3">
       <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
-        <TabsList className="grid w-full grid-cols-7 gap-0.5 p-1 h-auto">
-          <TabsTrigger value="new" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><Plus className="h-3.5 w-3.5" /><span>New</span></TabsTrigger>
-          <TabsTrigger value="task" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><CheckSquare className="h-3.5 w-3.5" /><span>Task</span></TabsTrigger>
-          <TabsTrigger value="project" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><FolderKanban className="h-3.5 w-3.5" /><span>Project</span></TabsTrigger>
-          <TabsTrigger value="habit" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><Repeat className="h-3.5 w-3.5" /><span>Habit</span></TabsTrigger>
-          <TabsTrigger value="meal" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><Utensils className="h-3.5 w-3.5" /><span>Meal</span></TabsTrigger>
-          <TabsTrigger value="zone" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><Sparkles className="h-3.5 w-3.5" /><span>Zone</span></TabsTrigger>
-          <TabsTrigger value="area" className="px-1 py-1.5 text-[10px] gap-0.5 flex-col"><MapPin className="h-3.5 w-3.5" /><span>Area</span></TabsTrigger>
+        <TabsList className="flex w-full gap-1 overflow-x-auto p-1 h-auto justify-start [&::-webkit-scrollbar]:hidden">
+          <TabsTrigger value="new" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col data-[state=active]:shadow-sm"><Plus className="h-3.5 w-3.5" /><span>New</span></TabsTrigger>
+          <TabsTrigger value="task" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><CheckSquare className="h-3.5 w-3.5" /><span>Task</span></TabsTrigger>
+          <TabsTrigger value="project" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><FolderKanban className="h-3.5 w-3.5" /><span>Project</span></TabsTrigger>
+          <TabsTrigger value="habit" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><Repeat className="h-3.5 w-3.5" /><span>Habit</span></TabsTrigger>
+          <TabsTrigger value="meal" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><Utensils className="h-3.5 w-3.5" /><span>Meal</span></TabsTrigger>
+          <TabsTrigger value="zone" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><Sparkles className="h-3.5 w-3.5" /><span>Zone</span></TabsTrigger>
+          <TabsTrigger value="area" className="shrink-0 px-2 py-1.5 text-[11px] gap-1 flex-col"><MapPin className="h-3.5 w-3.5" /><span>Area</span></TabsTrigger>
         </TabsList>
       </Tabs>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div className="min-w-0">
-          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Start</Label>
-          <div className="relative mt-0.5">
-            <Clock className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="h-8 pl-6 pr-1 text-xs w-full" />
-          </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="min-w-0 space-y-1">
+          <Label className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <Clock className="h-3 w-3" /> Start
+          </Label>
+          <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="h-9 px-2 text-xs w-full tabular-nums" />
         </div>
-        <div className="min-w-0">
-          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">End</Label>
-          <div className="relative mt-0.5">
-            <Clock className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="h-8 pl-6 pr-1 text-xs w-full" />
-          </div>
+        <div className="min-w-0 space-y-1">
+          <Label className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <Clock className="h-3 w-3" /> End
+          </Label>
+          <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="h-9 px-2 text-xs w-full tabular-nums" />
         </div>
       </div>
 
