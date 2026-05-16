@@ -55,6 +55,7 @@ export interface Project {
   id: string;
   areaId?: string;
   areaName?: string;
+  parentProjectId?: string;
   name: string;
   notes?: string;
   icon?: string;
