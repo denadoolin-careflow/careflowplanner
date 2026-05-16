@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           date: string
+          icon: string | null
           id: string
           location: string | null
           recipient_id: string | null
@@ -31,6 +32,7 @@ export type Database = {
         Insert: {
           created_at?: string
           date: string
+          icon?: string | null
           id?: string
           location?: string | null
           recipient_id?: string | null
@@ -44,6 +46,7 @@ export type Database = {
         Update: {
           created_at?: string
           date?: string
+          icon?: string | null
           id?: string
           location?: string | null
           recipient_id?: string | null
@@ -2325,6 +2328,7 @@ export type Database = {
           energy: string | null
           est_minutes: number | null
           goal_id: string | null
+          icon: string | null
           id: string
           inbox: boolean
           is_top_three: boolean
@@ -2356,6 +2360,7 @@ export type Database = {
           energy?: string | null
           est_minutes?: number | null
           goal_id?: string | null
+          icon?: string | null
           id?: string
           inbox?: boolean
           is_top_three?: boolean
@@ -2387,6 +2392,7 @@ export type Database = {
           energy?: string | null
           est_minutes?: number | null
           goal_id?: string | null
+          icon?: string | null
           id?: string
           inbox?: boolean
           is_top_three?: boolean
@@ -2439,6 +2445,7 @@ export type Database = {
           created_at: string
           date: string
           end_time: string
+          icon: string | null
           id: string
           notes: string | null
           start_time: string
@@ -2453,6 +2460,7 @@ export type Database = {
           created_at?: string
           date: string
           end_time: string
+          icon?: string | null
           id?: string
           notes?: string | null
           start_time: string
@@ -2467,6 +2475,7 @@ export type Database = {
           created_at?: string
           date?: string
           end_time?: string
+          icon?: string | null
           id?: string
           notes?: string | null
           start_time?: string
