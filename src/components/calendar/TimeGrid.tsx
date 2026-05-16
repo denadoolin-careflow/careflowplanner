@@ -19,6 +19,29 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 
 const CLEANING_ZONES = ["Kitchen","Bathroom","Bedrooms","Living","Laundry","Entryway","Outdoor","Whole home"] as const;
 
+function RowActions({ isEditing, onEdit, onSave, onCancel, onDelete }: {
+  isEditing: boolean;
+  onEdit: () => void;
+  onSave: () => void | Promise<void>;
+  onCancel: () => void;
+  onDelete: () => void | Promise<void>;
+}) {
+  if (isEditing) {
+    return (
+      <div className="flex shrink-0 items-center gap-0.5">
+        <button onClick={() => void onSave()} className="rounded p-1 text-primary hover:bg-primary/10" aria-label="Save"><Check className="h-3.5 w-3.5" /></button>
+        <button onClick={onCancel} className="rounded p-1 text-muted-foreground hover:bg-muted" aria-label="Cancel"><X className="h-3.5 w-3.5" /></button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+      <button onClick={onEdit} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+      <button onClick={() => void onDelete()} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+    </div>
+  );
+}
+
 const HOUR_START = 6;   // 6 AM
 const HOUR_END = 23;    // 11 PM
 const PX_PER_HOUR = 64;
@@ -801,7 +824,7 @@ function CreateForm({ draft, onCreate, onCancel }: {
   onCreate: (b: Omit<TimeBlock, "id">) => void;
   onCancel: () => void;
 }) {
-  const { state, updateTask, addTask, addProject, addMeal } = useStore();
+  const { state, updateTask, addTask, addProject, addMeal, deleteTask, updateProject, deleteProject, updateMeal, deleteMeal } = useStore();
   const [title, setTitle] = useState("");
   const [start, setStart] = useState(draft.start);
   const [end, setEnd] = useState(draft.end);
@@ -813,6 +836,10 @@ function CreateForm({ draft, onCreate, onCancel }: {
   const [careRecipientId, setCareRecipientId] = useState<string>("");
   const [mealSlot, setMealSlot] = useState<"Breakfast" | "Lunch" | "Dinner" | "Snack">("Dinner");
   const recipients = state.recipients ?? [];
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const startEdit = (id: string, value: string) => { setEditingId(id); setEditingValue(value); };
+  const cancelEdit = () => { setEditingId(null); setEditingValue(""); };
 
   const openTasks = state.tasks.filter(t => !t.done && !t.parentTaskId);
   const filteredTasks = openTasks.filter(t =>
@@ -960,22 +987,38 @@ function CreateForm({ draft, onCreate, onCancel }: {
               <ul className="divide-y">
                 {filteredTasks.map(t => {
                   const project = t.projectId ? state.projects?.find(p => p.id === t.projectId) : undefined;
+                  const isEditing = editingId === t.id;
                   return (
-                    <li key={t.id}>
-                      <button
-                        className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
-                        onClick={() => attach(t.title, t.id)}
-                      >
-                        <CheckSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                        <span className="min-w-0 flex-1">
+                    <li key={t.id} className="group flex items-center gap-1 px-2 py-1.5 text-xs hover:bg-muted/50">
+                      <CheckSquare className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      {isEditing ? (
+                        <Input
+                          autoFocus
+                          value={editingValue}
+                          onChange={e => setEditingValue(e.target.value)}
+                          onKeyDown={async e => {
+                            if (e.key === "Enter") { await updateTask(t.id, { title: editingValue.trim() || t.title }); cancelEdit(); }
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          className="h-7 flex-1 text-xs"
+                        />
+                      ) : (
+                        <button className="min-w-0 flex-1 text-left" onClick={() => attach(t.title, t.id)}>
                           <span className="block truncate font-medium">{t.title}</span>
                           {(project || t.area) && (
                             <span className="block truncate text-[10px] text-muted-foreground">
                               {project?.name}{project && t.area ? " · " : ""}{t.area}
                             </span>
                           )}
-                        </span>
-                      </button>
+                        </button>
+                      )}
+                      <RowActions
+                        isEditing={isEditing}
+                        onEdit={() => startEdit(t.id, t.title)}
+                        onSave={async () => { await updateTask(t.id, { title: editingValue.trim() || t.title }); cancelEdit(); }}
+                        onCancel={cancelEdit}
+                        onDelete={async () => { await deleteTask(t.id); }}
+                      />
                     </li>
                   );
                 })}
@@ -1024,20 +1067,38 @@ function CreateForm({ draft, onCreate, onCancel }: {
               <div className="p-6 text-center text-xs text-muted-foreground">No projects.</div>
             ) : (
               <ul className="divide-y">
-                {filteredProjects.map(p => (
-                  <li key={p.id}>
-                    <button
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
-                      onClick={() => attach(p.name)}
-                    >
+                {filteredProjects.map(p => {
+                  const isEditing = editingId === p.id;
+                  return (
+                    <li key={p.id} className="group flex items-center gap-1 px-2 py-1.5 text-xs hover:bg-muted/50">
                       <FolderKanban className="h-3.5 w-3.5 shrink-0" style={p.color ? { color: p.color } : undefined} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">{p.name}</span>
-                        {p.areaName && <span className="block truncate text-[10px] text-muted-foreground">{p.areaName}</span>}
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                      {isEditing ? (
+                        <Input
+                          autoFocus
+                          value={editingValue}
+                          onChange={e => setEditingValue(e.target.value)}
+                          onKeyDown={async e => {
+                            if (e.key === "Enter") { await updateProject(p.id, { name: editingValue.trim() || p.name }); cancelEdit(); }
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          className="h-7 flex-1 text-xs"
+                        />
+                      ) : (
+                        <button className="min-w-0 flex-1 text-left" onClick={() => attach(p.name)}>
+                          <span className="block truncate font-medium">{p.name}</span>
+                          {p.areaName && <span className="block truncate text-[10px] text-muted-foreground">{p.areaName}</span>}
+                        </button>
+                      )}
+                      <RowActions
+                        isEditing={isEditing}
+                        onEdit={() => startEdit(p.id, p.name)}
+                        onSave={async () => { await updateProject(p.id, { name: editingValue.trim() || p.name }); cancelEdit(); }}
+                        onCancel={cancelEdit}
+                        onDelete={async () => { await deleteProject(p.id); }}
+                      />
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </ScrollArea>
@@ -1123,22 +1184,40 @@ function CreateForm({ draft, onCreate, onCancel }: {
               <div className="p-6 text-center text-xs text-muted-foreground">No meals planned.</div>
             ) : (
               <ul className="divide-y">
-                {filteredMeals.map(m => (
-                  <li key={m.id}>
-                    <button
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/50"
-                      onClick={() => attach(`🍽 ${m.name}`)}
-                    >
+                {filteredMeals.map(m => {
+                  const isEditing = editingId === m.id;
+                  return (
+                    <li key={m.id} className="group flex items-center gap-1 px-2 py-1.5 text-xs hover:bg-muted/50">
                       <Utensils className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">{m.name}</span>
-                        <span className="block truncate text-[10px] text-muted-foreground capitalize">
-                          {m.slot} · {m.date}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                      {isEditing ? (
+                        <Input
+                          autoFocus
+                          value={editingValue}
+                          onChange={e => setEditingValue(e.target.value)}
+                          onKeyDown={async e => {
+                            if (e.key === "Enter") { await updateMeal(m.id, { name: editingValue.trim() || m.name }); cancelEdit(); }
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          className="h-7 flex-1 text-xs"
+                        />
+                      ) : (
+                        <button className="min-w-0 flex-1 text-left" onClick={() => attach(`🍽 ${m.name}`)}>
+                          <span className="block truncate font-medium">{m.name}</span>
+                          <span className="block truncate text-[10px] text-muted-foreground capitalize">
+                            {m.slot} · {m.date}
+                          </span>
+                        </button>
+                      )}
+                      <RowActions
+                        isEditing={isEditing}
+                        onEdit={() => startEdit(m.id, m.name)}
+                        onSave={async () => { await updateMeal(m.id, { name: editingValue.trim() || m.name }); cancelEdit(); }}
+                        onCancel={cancelEdit}
+                        onDelete={async () => { await deleteMeal(m.id); }}
+                      />
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </ScrollArea>
