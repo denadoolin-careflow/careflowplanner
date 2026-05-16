@@ -39,16 +39,15 @@ const DigitalReadout = memo(function DigitalReadout() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     // Align to top of the next minute, then tick every 60s.
+    let intervalId: ReturnType<typeof setInterval> | null = null;
     const msToNextMin = 60_000 - (Date.now() % 60_000);
-    const t = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setNow(new Date());
-      const id = setInterval(() => setNow(new Date()), 60_000);
-      (t as any)._id = id;
+      intervalId = setInterval(() => setNow(new Date()), 60_000);
     }, msToNextMin);
     return () => {
-      clearTimeout(t);
-      const id = (t as any)._id;
-      if (id) clearInterval(id);
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
     };
   }, []);
   const time = useMemo(() => format(now, "h:mm"), [now]);
