@@ -16,6 +16,7 @@ import { playPomodoroChime } from "@/lib/pomodoro-chime";
 import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEditor";
 import { GoogleCalendarSection } from "@/components/calendar/GoogleCalendarSection";
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
+import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -207,6 +208,8 @@ export default function Settings() {
         <p className="text-sm text-muted-foreground">Your CareFlow data is saved to your account. Sign in on any device to see the same planner.</p>
         <Button variant="outline" className="mt-3" onClick={async () => { await signOut(); toast.success("Signed out."); }}>Sign out</Button>
       </SectionCard>
+
+      <CycleSettingsSection />
     </div>
   );
 }

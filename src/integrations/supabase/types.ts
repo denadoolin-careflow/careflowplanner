@@ -390,6 +390,129 @@ export type Database = {
           },
         ]
       }
+      cycle_day_logs: {
+        Row: {
+          bbt: number | null
+          cervical_mucus: string | null
+          created_at: string
+          date: string
+          energy_level: string | null
+          flow: string | null
+          id: string
+          is_intimate: boolean
+          mood: string | null
+          notes: string | null
+          symptoms: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bbt?: number | null
+          cervical_mucus?: string | null
+          created_at?: string
+          date: string
+          energy_level?: string | null
+          flow?: string | null
+          id?: string
+          is_intimate?: boolean
+          mood?: string | null
+          notes?: string | null
+          symptoms?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bbt?: number | null
+          cervical_mucus?: string | null
+          created_at?: string
+          date?: string
+          energy_level?: string | null
+          flow?: string | null
+          id?: string
+          is_intimate?: boolean
+          mood?: string | null
+          notes?: string | null
+          symptoms?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cycle_logs: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          period_end: string | null
+          period_start: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cycle_settings: {
+        Row: {
+          auto_low_energy: boolean
+          avg_cycle_length: number
+          avg_period_length: number
+          created_at: string
+          enabled: boolean
+          id: string
+          luteal_length: number
+          moon_archetype: string
+          pair_with_moon: boolean
+          show_fertility: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_low_energy?: boolean
+          avg_cycle_length?: number
+          avg_period_length?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          luteal_length?: number
+          moon_archetype?: string
+          pair_with_moon?: boolean
+          show_fertility?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_low_energy?: boolean
+          avg_cycle_length?: number
+          avg_period_length?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          luteal_length?: number
+          moon_archetype?: string
+          pair_with_moon?: boolean
+          show_fertility?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       dashboard_layouts: {
         Row: {
           created_at: string

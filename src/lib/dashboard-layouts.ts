@@ -32,7 +32,8 @@ export type WidgetType =
   | "upcoming-bills"
   | "debt-progress"
   | "chore-today"
-  | "home-overdue";
+  | "home-overdue"
+  | "cycle";
 
 export interface WidgetInstance {
   id: string;
