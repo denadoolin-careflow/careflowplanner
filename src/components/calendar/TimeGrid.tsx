@@ -1187,6 +1187,50 @@ function CreateForm({ draft, onCreate, onCancel }: {
           <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur"><Button variant="ghost" onClick={onCancel}>Cancel</Button></DialogFooter>
         </div>
       )}
+
+      {mode === "care" && (
+        <div className="space-y-3">
+          <Label className="text-xs">Care for</Label>
+          {recipients.length === 0 ? (
+            <div className="rounded-md border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground">
+              No care recipients yet. Add them from the Caregiving page.
+            </div>
+          ) : (
+            <Select value={careRecipientId} onValueChange={setCareRecipientId}>
+              <SelectTrigger className="h-9 w-full text-xs">
+                <SelectValue placeholder="Pick a person…" />
+              </SelectTrigger>
+              <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
+                {recipients.map(r => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}{r.kind && r.kind !== "self" ? ` · ${r.kind}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Input
+            placeholder="Optional label (e.g. doctor visit)"
+            value={newTitle}
+            onChange={e => setNewTitle(e.target.value)}
+            className="h-8 text-xs"
+          />
+          <DialogFooter className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-3 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
+            <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+            <Button
+              disabled={!careRecipientId}
+              onClick={() => {
+                const r = recipients.find(x => x.id === careRecipientId);
+                if (!r) return;
+                const extra = newTitle.trim() ? ` · ${newTitle.trim()}` : "";
+                attach(`💗 ${r.name}${extra}`);
+              }}
+            >
+              Add block
+            </Button>
+          </DialogFooter>
+        </div>
+      )}
     </div>
   );
 }
