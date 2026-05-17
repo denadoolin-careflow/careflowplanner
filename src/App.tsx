@@ -42,6 +42,8 @@ import Notes from "./pages/Notes";
 import NoteDetail from "./pages/NoteDetail";
 import Review from "./pages/Review";
 import Routines from "./pages/Routines";
+import PlanTimeline from "./pages/PlanTimeline";
+import PlanDay from "./pages/PlanDay";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -80,6 +82,8 @@ const App = () => (
                 <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/areas/:name" element={<AreaPage />} />
                 <Route path="/today" element={<Today />} />
+                <Route path="/plan" element={<PlanTimeline />} />
+                <Route path="/plan/:date" element={<PlanDay />} />
                 <Route path="/week" element={<Week />} />
                 <Route path="/month" element={<Month />} />
                 <Route path="/year" element={<Year />} />
