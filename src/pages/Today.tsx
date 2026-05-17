@@ -16,7 +16,7 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { hoursToHM } from "@/lib/time-blocks";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, LayoutGrid, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, ChevronDown, Sparkles } from "lucide-react";
 import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
 import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -31,6 +31,8 @@ import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMoonPhase } from "@/lib/moon";
+import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
+import { cn } from "@/lib/utils";
 
 const MOON_TEMPLATE_MAP: Record<string, string> = {
   "new": "new-moon",
@@ -60,6 +62,7 @@ function TodayInner() {
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [cycleSheetOpen, setCycleSheetOpen] = useState(false);
+  const [layout, setLayout] = useState<"schedule" | "plan">("schedule");
   const navigate = useNavigate();
   const today = day;
   const isReallyToday = isSameDay(day, new Date());
@@ -154,6 +157,22 @@ function TodayInner() {
                       navigate(`/journal?template=${tpl}`);
                     }}
                   />
+                  <div className="ml-2 inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1">
+                    <Button
+                      size="sm" variant="ghost"
+                      className={cn("h-7 rounded-full px-3 text-xs", layout === "schedule" && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
+                      onClick={() => setLayout("schedule")}
+                    >
+                      <LayoutGrid className="mr-1 h-3.5 w-3.5" /> Schedule
+                    </Button>
+                    <Button
+                      size="sm" variant="ghost"
+                      className={cn("h-7 rounded-full px-3 text-xs", layout === "plan" && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
+                      onClick={() => setLayout("plan")}
+                    >
+                      <Sparkles className="mr-1 h-3.5 w-3.5" /> Plan
+                    </Button>
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -176,6 +195,9 @@ function TodayInner() {
 
         <MoonJournalReminderBanner date={today} />
 
+        {layout === "plan" ? (
+          <DailyPlanningDashboard day={today} />
+        ) : (
         <SectionCard
           title="Today"
           subtitle={view === "schedule" ? "Click a slot to add a time block, or drag a task in." : "Chronological view of everything on your day."}
@@ -194,8 +216,9 @@ function TodayInner() {
             <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
           )}
         </SectionCard>
+        )}
 
-        <CalendarTasksPanel days={days} />
+        {layout === "schedule" && <CalendarTasksPanel days={days} />}
 
         <Collapsible open={widgetsOpen} onOpenChange={setWidgetsOpen}>
           <div className="cozy-card p-4">
