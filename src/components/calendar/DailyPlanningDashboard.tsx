@@ -364,10 +364,10 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
           {weather ? (
             <div className="flex items-baseline gap-3">
               <span className="font-display text-2xl font-semibold">
-                {Math.round(weather.current?.tempC ?? 0)}°
+                {Math.round(weather.tempC)}°
               </span>
-              <span className="text-sm text-muted-foreground">{weather.current?.label ?? ""}</span>
-              <span className="text-xs text-muted-foreground">{weather.locationLabel ?? ""}</span>
+              <span className="text-sm text-muted-foreground">{weather.conditionLabel}</span>
+              <span className="text-xs text-muted-foreground">{weather.locationLabel}</span>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">No weather snapshot yet.</p>
