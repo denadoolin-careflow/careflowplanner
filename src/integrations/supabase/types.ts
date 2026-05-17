@@ -624,6 +624,129 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_intentions: {
+        Row: {
+          created_at: string
+          date: string
+          emotional_focus: string | null
+          energy: string | null
+          gratitude: Json
+          id: string
+          intention: string | null
+          mood: string | null
+          notes: string | null
+          priorities: Json
+          theme: string | null
+          top_three: Json
+          updated_at: string
+          user_id: string
+          weather_note: string | null
+          word: string | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          emotional_focus?: string | null
+          energy?: string | null
+          gratitude?: Json
+          id?: string
+          intention?: string | null
+          mood?: string | null
+          notes?: string | null
+          priorities?: Json
+          theme?: string | null
+          top_three?: Json
+          updated_at?: string
+          user_id: string
+          weather_note?: string | null
+          word?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          emotional_focus?: string | null
+          energy?: string | null
+          gratitude?: Json
+          id?: string
+          intention?: string | null
+          mood?: string | null
+          notes?: string | null
+          priorities?: Json
+          theme?: string | null
+          top_three?: Json
+          updated_at?: string
+          user_id?: string
+          weather_note?: string | null
+          word?: string | null
+        }
+        Relationships: []
+      }
+      daily_plan_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          widgets: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          widgets?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          widgets?: Json
+        }
+        Relationships: []
+      }
+      daily_reviews: {
+        Row: {
+          challenges: string | null
+          created_at: string
+          date: string
+          gratitude: string | null
+          id: string
+          lessons: string | null
+          rating: number | null
+          tomorrow_focus: string | null
+          updated_at: string
+          user_id: string
+          wins: string | null
+        }
+        Insert: {
+          challenges?: string | null
+          created_at?: string
+          date: string
+          gratitude?: string | null
+          id?: string
+          lessons?: string | null
+          rating?: number | null
+          tomorrow_focus?: string | null
+          updated_at?: string
+          user_id: string
+          wins?: string | null
+        }
+        Update: {
+          challenges?: string | null
+          created_at?: string
+          date?: string
+          gratitude?: string | null
+          id?: string
+          lessons?: string | null
+          rating?: number | null
+          tomorrow_focus?: string | null
+          updated_at?: string
+          user_id?: string
+          wins?: string | null
+        }
+        Relationships: []
+      }
       dashboard_layouts: {
         Row: {
           created_at: string
