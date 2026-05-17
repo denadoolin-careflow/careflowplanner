@@ -17,6 +17,8 @@ import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEdi
 import { GoogleCalendarSection } from "@/components/calendar/GoogleCalendarSection";
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
+import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/TimeZoneSelect";
+import { useEffect } from "react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -28,6 +30,18 @@ export default function Settings() {
   const defaults = usePomodoroDefaults();
   const prefs = usePomodoroPrefs();
   const templates = usePomodoroTemplatesList();
+
+  // Auto-sync time zone with the device on first load so the calendar schedule view
+  // always reflects the user's current location.
+  useEffect(() => {
+    if (!state.settings.timeZone || state.settings.timeZone === "UTC") {
+      const tz = detectDeviceTimeZone();
+      if (tz && tz !== state.settings.timeZone) {
+        updateProfile({ time_zone: tz });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const seedUSHolidays = async () => {
     const year = new Date().getFullYear();
@@ -57,7 +71,13 @@ export default function Settings() {
           </div>
           <div className="sm:col-span-2">
             <Label className="text-xs text-muted-foreground">Time zone</Label>
-            <Input placeholder="America/Los_Angeles" value={state.settings.timeZone ?? ""} onChange={e => updateProfile({ time_zone: e.target.value })} />
+            <TimeZoneSelect
+              value={state.settings.timeZone ?? ""}
+              onChange={(tz) => { updateProfile({ time_zone: tz }); toast.success(`Time zone set to ${tz}. Calendar schedule will use this.`); }}
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Synced with your calendar schedule view.
+            </p>
           </div>
         </div>
       </SectionCard>

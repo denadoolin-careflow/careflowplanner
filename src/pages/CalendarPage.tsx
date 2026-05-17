@@ -21,11 +21,19 @@ import { BirthdayHolidayEditor } from "@/components/calendar/BirthdayHolidayEdit
 import { InboxCapture } from "@/components/calendar/InboxCapture";
 import { MonthPlanningDashboard } from "@/components/calendar/MonthPlanningDashboard";
 import { moonPhaseFor } from "@/lib/moon-phase";
+import { Globe2 } from "lucide-react";
 
 type View = "day" | "week" | "month" | "year";
 
 export default function CalendarPage() {
   const { state, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday } = useStore();
+  const tz = state.settings.timeZone || (typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC");
+  const tzOffset = (() => {
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" }).formatToParts(new Date());
+      return parts.find(p => p.type === "timeZoneName")?.value ?? "";
+    } catch { return ""; }
+  })();
   const [view, setView] = useState<View>("month");
   const [layout, setLayout] = useState<"grid" | "schedule" | "kanban" | "plan">("grid");
   const [cursor, setCursor] = useState<Date>(new Date());
@@ -178,7 +186,14 @@ export default function CalendarPage() {
       <InboxCapture defaultDate={cursor} />
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
-        <span>{gEvents.length > 0 ? `Showing ${gEvents.length} Google event${gEvents.length === 1 ? "" : "s"}.` : "Connect Google Calendar in Settings to see your events here."}</span>
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2 py-0.5">
+            <Globe2 className="h-3 w-3" />
+            <span className="font-medium text-foreground">{tz}</span>
+            {tzOffset && <span className="opacity-70">{tzOffset}</span>}
+          </span>
+          <span>{gEvents.length > 0 ? `Showing ${gEvents.length} Google event${gEvents.length === 1 ? "" : "s"}.` : "Connect Google Calendar in Settings to see your events here."}</span>
+        </span>
         <Button size="sm" variant="ghost" className="h-7 rounded-full" onClick={() => { loadGoogle(); toast("Refreshing Google events…"); }} disabled={gLoading}>
           <RefreshCw className={`mr-1 h-3.5 w-3.5 ${gLoading ? "animate-spin" : ""}`} /> Refresh Google
         </Button>
