@@ -55,6 +55,7 @@ export const NAV_GROUPS = [
     label: "Planning",
     icon: CalendarDays,
     items: [
+      { to: "/plan", label: "Daily Plan", icon: Sparkles },
       { to: "/week", label: "Week", icon: CalendarRange },
       { to: "/month", label: "Month", icon: CalendarDays },
       { to: "/year", label: "Year", icon: Calendar },
