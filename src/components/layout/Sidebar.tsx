@@ -291,7 +291,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                         to={`/areas/${encodeURIComponent(area.name)}`}
                         onClick={onNavigate}
                         className={({ isActive }) => cn(
-                          "flex-1 truncate text-left -mx-1 transition-colors bg-primary-soft text-foreground border-none rounded-md opacity-100 shadow-lg bg-transparent border-4 border-transparent px-[4px]",
+                          "flex-1 truncate text-left -mx-1 transition-colors text-foreground border-none rounded-md opacity-100 bg-transparent border-4 border-transparent px-[4px] shadow-none",
                           isActive && "bg-primary-soft text-foreground"
                         )}
                       >
