@@ -392,6 +392,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
           {/* Time axis */}
           <div className="w-14 shrink-0 border-r border-border/50">
             <div className="h-8" />
+            {anyDayHasTasks && <div className="h-7 border-b border-border/50" />}
             {Array.from({ length: TOTAL_HOURS }, (_, i) => HOUR_START + i).map(h => (
               <div key={h} className="relative text-[10px] text-muted-foreground" style={{ height: PX_PER_HOUR }}>
                 <span className="absolute -top-1.5 right-1.5">{format(new Date(2000,0,1,h), "h a")}</span>
