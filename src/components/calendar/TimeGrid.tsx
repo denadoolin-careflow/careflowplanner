@@ -419,70 +419,91 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                     <span className="font-semibold">{format(d, "d")}</span>
                   </div>
                   {dayTasks.length > 0 && (
-                    <div className="flex flex-col gap-1 border-b border-border/50 bg-muted/20 px-1 py-1">
-                      {dayTasks.map((t) => (
-                        <div key={t.id} className={cn(
-                          "flex items-center gap-1.5 rounded-md bg-card/80 px-1.5 py-1 text-[11px] shadow-sm ring-1 ring-inset ring-border/40",
-                          t.done && "opacity-60"
-                        )}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData(TASK_DRAG_MIME, t.id!);
-                            e.dataTransfer.setData("text/plain", t.label);
-                            e.dataTransfer.effectAllowed = "move";
-                            haptics.pickup();
-                            const taskRow = state.tasks.find(x => x.id === t.id);
-                            const mins = taskRow?.estMinutes ?? 60;
-                            const preview = { kind: "task" as const, title: t.label, durationH: Math.max(0.25, mins / 60) };
-                            externalDragRef.current = preview;
-                            setExternalDrag(preview);
-                          }}
-                          onDragEnd={() => { externalDragRef.current = null; setExternalDrag(null); setDropHover(null); }}
-                          style={{ cursor: "grab" }}
-                        >
+                    <div className="flex h-7 items-center justify-center border-b border-border/50 bg-muted/20 px-1">
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <button
-                            onClick={(e) => { e.stopPropagation(); haptics.tap(); void toggleTask(t.id!); }}
-                            aria-label={t.done ? "Mark task not done" : "Mark task done"}
-                            className={cn(
-                              "group/cb grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 transition-colors",
-                              t.done
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-primary/50 bg-background text-primary hover:bg-primary hover:text-primary-foreground"
-                            )}
+                            className="flex h-6 w-full items-center justify-center gap-1 rounded-md bg-card/80 px-2 text-[10px] font-medium text-muted-foreground ring-1 ring-inset ring-border/40 hover:bg-card hover:text-foreground"
+                            aria-label={`${dayTasks.length} unscheduled task${dayTasks.length === 1 ? "" : "s"} for the day`}
                           >
-                            <Check className={cn("h-2.5 w-2.5 transition-opacity", t.done ? "opacity-100" : "opacity-0 group-hover/cb:opacity-100")} />
+                            <CheckSquare className="h-3 w-3" />
+                            <span>{dayTasks.length} task{dayTasks.length === 1 ? "" : "s"}</span>
                           </button>
-                          {inlineEditTaskId === t.id ? (
-                            <input
-                              autoFocus
-                              value={inlineEditValue}
-                              onChange={(e) => setInlineEditValue(e.target.value)}
-                              onBlur={() => void commitInlineEdit(t.id!)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") { e.preventDefault(); (e.currentTarget as HTMLInputElement).blur(); }
-                                else if (e.key === "Escape") { e.preventDefault(); setInlineEditTaskId(null); }
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onDragStart={(e) => e.preventDefault()}
-                              className="flex-1 min-w-0 bg-transparent text-[11px] outline-none ring-1 ring-primary/40 rounded px-1 -mx-0.5"
-                            />
-                          ) : (
-                            <span
-                              className={cn("flex-1 truncate cursor-text", t.done && "line-through text-muted-foreground")}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setInlineEditValue(t.label);
-                                setInlineEditTaskId(t.id!);
-                              }}
-                              title="Click to rename"
-                            >
-                              {t.label}
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                        </PopoverTrigger>
+                        <PopoverContent align="center" className="w-64 p-1.5">
+                          <div className="px-1.5 pb-1.5 pt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Scheduled today · no time
+                          </div>
+                          <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
+                            {dayTasks.map((t) => (
+                              <div key={t.id} className={cn(
+                                "flex items-center gap-1.5 rounded-md bg-card/80 px-1.5 py-1 text-[11px] shadow-sm ring-1 ring-inset ring-border/40",
+                                t.done && "opacity-60"
+                              )}
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData(TASK_DRAG_MIME, t.id!);
+                                  e.dataTransfer.setData("text/plain", t.label);
+                                  e.dataTransfer.effectAllowed = "move";
+                                  haptics.pickup();
+                                  const taskRow = state.tasks.find(x => x.id === t.id);
+                                  const mins = taskRow?.estMinutes ?? 60;
+                                  const preview = { kind: "task" as const, title: t.label, durationH: Math.max(0.25, mins / 60) };
+                                  externalDragRef.current = preview;
+                                  setExternalDrag(preview);
+                                }}
+                                onDragEnd={() => { externalDragRef.current = null; setExternalDrag(null); setDropHover(null); }}
+                                style={{ cursor: "grab" }}
+                              >
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); haptics.tap(); void toggleTask(t.id!); }}
+                                  aria-label={t.done ? "Mark task not done" : "Mark task done"}
+                                  className={cn(
+                                    "group/cb grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 transition-colors",
+                                    t.done
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "border-primary/50 bg-background text-primary hover:bg-primary hover:text-primary-foreground"
+                                  )}
+                                >
+                                  <Check className={cn("h-2.5 w-2.5 transition-opacity", t.done ? "opacity-100" : "opacity-0 group-hover/cb:opacity-100")} />
+                                </button>
+                                {inlineEditTaskId === t.id ? (
+                                  <input
+                                    autoFocus
+                                    value={inlineEditValue}
+                                    onChange={(e) => setInlineEditValue(e.target.value)}
+                                    onBlur={() => void commitInlineEdit(t.id!)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") { e.preventDefault(); (e.currentTarget as HTMLInputElement).blur(); }
+                                      else if (e.key === "Escape") { e.preventDefault(); setInlineEditTaskId(null); }
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onDragStart={(e) => e.preventDefault()}
+                                    className="flex-1 min-w-0 bg-transparent text-[11px] outline-none ring-1 ring-primary/40 rounded px-1 -mx-0.5"
+                                  />
+                                ) : (
+                                  <span
+                                    className={cn("flex-1 truncate cursor-text", t.done && "line-through text-muted-foreground")}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setInlineEditValue(t.label);
+                                      setInlineEditTaskId(t.id!);
+                                    }}
+                                    title="Click to rename"
+                                  >
+                                    {t.label}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
+                  )}
+                  {anyDayHasTasks && dayTasks.length === 0 && (
+                    <div className="h-7 border-b border-border/50" aria-hidden />
                   )}
                   <div
                     ref={el => { colRefs.current[iso] = el; }}
