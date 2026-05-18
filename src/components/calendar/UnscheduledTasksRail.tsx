@@ -695,6 +695,81 @@ function EmptyMsg({ children, cta, to }: { children: React.ReactNode; cta: strin
   );
 }
 
+function RailSettings({
+  tabOrder,
+  hiddenTabs,
+  onMove,
+  onToggleHidden,
+  onHideRail,
+}: {
+  tabOrder: RailTab[];
+  hiddenTabs: RailTab[];
+  onMove: (id: RailTab, dir: -1 | 1) => void;
+  onToggleHidden: (id: RailTab) => void;
+  onHideRail: () => void;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title="Panel settings"
+          aria-label="Panel settings"
+          className="ml-0.5 grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+        >
+          <Settings2 className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-2">
+        <div className="flex items-center justify-between px-1 pb-2">
+          <div className="text-xs font-semibold">Side panel</div>
+          <button
+            onClick={onHideRail}
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="Hide side panel"
+          >
+            <PanelRightClose className="h-3 w-3" /> Hide
+          </button>
+        </div>
+        <ul className="space-y-0.5">
+          {tabOrder.map((id, i) => {
+            const t = TAB_BY_ID[id];
+            const Icon = t.icon;
+            const visible = !hiddenTabs.includes(id);
+            return (
+              <li key={id} className="flex items-center gap-1 rounded-md px-1 py-1 hover:bg-muted/40">
+                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className={cn("flex-1 text-xs", !visible && "text-muted-foreground line-through")}>
+                  {t.label}
+                </span>
+                <button
+                  onClick={() => onMove(id, -1)}
+                  disabled={i === 0}
+                  className="grid h-5 w-5 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
+                  title="Move up"
+                ><ChevronUp className="h-3 w-3" /></button>
+                <button
+                  onClick={() => onMove(id, 1)}
+                  disabled={i === tabOrder.length - 1}
+                  className="grid h-5 w-5 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
+                  title="Move down"
+                ><ChevronDown className="h-3 w-3" /></button>
+                <button
+                  onClick={() => onToggleHidden(id)}
+                  className="grid h-5 w-5 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title={visible ? "Hide panel" : "Show panel"}
+                >
+                  {visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /* ---------- Inline edit primitives ---------- */
 function InlineEditableTitle({
   value,
