@@ -12,6 +12,7 @@ import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStore } from "@/lib/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
@@ -115,6 +116,12 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks, add, update, remove } = useTimeBlocks(fromISO, toISO);
   const { toggleTask, updateTask, state } = useStore();
+  // Pre-compute whether any visible day has untimed tasks, so the time axis
+  // can reserve a matching spacer row and stay aligned with the hour grid.
+  const anyDayHasTasks = days.some(d => {
+    const iso = d.toISOString().slice(0, 10);
+    return appointmentsOn(iso).some(a => a.kind === "task" && a.id);
+  });
   const [inlineEditTaskId, setInlineEditTaskId] = useState<string | null>(null);
   const [inlineEditValue, setInlineEditValue] = useState("");
 
