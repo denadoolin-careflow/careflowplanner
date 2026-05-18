@@ -4,8 +4,11 @@ import {
   Inbox, GripVertical, Search, X, CalendarDays, ListTodo,
   UtensilsCrossed, Repeat, Target, FolderKanban, Sparkles, Check,
   Trash2, Pencil, Minus, Plus, Pause, Play, CheckCircle2,
+  Settings2, ChevronUp, ChevronDown, Eye, EyeOff, PanelRightClose, PanelRightOpen,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Task, Meal, Habit, Goal, Project, CleaningTask } from "@/lib/types";
 import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
@@ -26,6 +29,26 @@ const TABS: { id: RailTab; label: string; icon: React.ComponentType<{ className?
   { id: "projects", label: "Projects", icon: FolderKanban },
   { id: "zones", label: "Zones", icon: Sparkles },
 ];
+const ALL_TAB_IDS: RailTab[] = TABS.map(t => t.id);
+const TAB_BY_ID = Object.fromEntries(TABS.map(t => [t.id, t])) as Record<RailTab, typeof TABS[number]>;
+
+const ORDER_KEY = "careflow:rail:tab-order";
+const HIDDEN_KEY = "careflow:rail:hidden-tabs";
+const RAIL_HIDDEN_KEY = "careflow:rail:collapsed";
+
+function readOrder(): RailTab[] {
+  try {
+    const raw = localStorage.getItem(ORDER_KEY);
+    if (!raw) return ALL_TAB_IDS;
+    const parsed = JSON.parse(raw) as RailTab[];
+    const filtered = parsed.filter(t => ALL_TAB_IDS.includes(t));
+    const missing = ALL_TAB_IDS.filter(t => !filtered.includes(t));
+    return [...filtered, ...missing];
+  } catch { return ALL_TAB_IDS; }
+}
+function readHidden(): RailTab[] {
+  try { return JSON.parse(localStorage.getItem(HIDDEN_KEY) || "[]") as RailTab[]; } catch { return []; }
+}
 
 interface RailProps {
   /** Click on a task → open editor for that task. */
@@ -36,6 +59,35 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
   const store = useStore();
   const { state, toggleHabit, toggleCleaning } = store;
   const [tab, setTab] = useState<RailTab>("tasks");
+  const [tabOrder, setTabOrder] = useState<RailTab[]>(() => readOrder());
+  const [hiddenTabs, setHiddenTabs] = useState<RailTab[]>(() => readHidden());
+  const [railHidden, setRailHidden] = useState<boolean>(() => localStorage.getItem(RAIL_HIDDEN_KEY) === "1");
+  useEffect(() => { localStorage.setItem(ORDER_KEY, JSON.stringify(tabOrder)); }, [tabOrder]);
+  useEffect(() => { localStorage.setItem(HIDDEN_KEY, JSON.stringify(hiddenTabs)); }, [hiddenTabs]);
+  useEffect(() => { localStorage.setItem(RAIL_HIDDEN_KEY, railHidden ? "1" : "0"); }, [railHidden]);
+
+  const visibleTabs = useMemo(
+    () => tabOrder.filter(id => !hiddenTabs.includes(id)),
+    [tabOrder, hiddenTabs],
+  );
+  useEffect(() => {
+    if (visibleTabs.length && !visibleTabs.includes(tab)) setTab(visibleTabs[0]);
+  }, [visibleTabs, tab]);
+
+  const moveTab = (id: RailTab, dir: -1 | 1) => {
+    setTabOrder(prev => {
+      const i = prev.indexOf(id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  };
+  const toggleTabHidden = (id: RailTab) => {
+    setHiddenTabs(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
+  };
+
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"unscheduled" | "all">("unscheduled");
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
@@ -103,10 +155,25 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
     e.dataTransfer.effectAllowed = "copy";
   };
 
+  if (railHidden) {
+    return (
+      <button
+        type="button"
+        onClick={() => setRailHidden(false)}
+        className="hidden xl:flex sticky top-20 h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card/80 text-muted-foreground shadow-soft backdrop-blur-sm hover:text-foreground"
+        title="Show side panel"
+        aria-label="Show side panel"
+      >
+        <PanelRightOpen className="h-4 w-4" />
+      </button>
+    );
+  }
+
   return (
     <aside className="hidden xl:flex sticky top-20 max-h-[calc(100vh-6rem)] w-72 shrink-0 flex-col rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm shadow-soft">
       <div className="flex items-center gap-0.5 border-b border-border/60 p-1">
-        {TABS.map(t => {
+        {visibleTabs.map(id => {
+          const t = TAB_BY_ID[id];
           const Icon = t.icon;
           const active = tab === t.id;
           return (
@@ -124,10 +191,30 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
             </button>
           );
         })}
+        <RailSettings
+          tabOrder={tabOrder}
+          hiddenTabs={hiddenTabs}
+          onMove={moveTab}
+          onToggleHidden={toggleTabHidden}
+          onHideRail={() => setRailHidden(true)}
+        />
       </div>
-      <div className="border-b border-border/60 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {TABS.find(t => t.id === tab)?.label}
+      <div className="flex items-center gap-2 border-b border-border/60 px-3 py-1.5">
+        <select
+          value={tab}
+          onChange={e => setTab(e.target.value as RailTab)}
+          className="flex-1 cursor-pointer rounded bg-transparent text-[11px] font-semibold uppercase tracking-wider text-muted-foreground outline-none hover:text-foreground"
+        >
+          {visibleTabs.map(id => (
+            <option key={id} value={id}>{TAB_BY_ID[id].label}</option>
+          ))}
+        </select>
       </div>
+      {visibleTabs.length === 0 && (
+        <div className="m-2 rounded-xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+          All panels hidden. Open settings to show one.
+        </div>
+      )}
 
       {tab === "tasks" && (
       <>
