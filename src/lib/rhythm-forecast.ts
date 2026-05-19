@@ -112,7 +112,56 @@ const SIGN_TABLE: { sign: ZodiacSign; from: [number, number]; to: [number, numbe
  * depend on the (Cloudflare-blocked) Astro-Seek scrape for accuracy.
  * Cross-checked against Lunar Life / Time and Date.
  */
-function moonEclipticLongitude(date: Date): number {
+
+/**
+ * Per-day cache of computed ecliptic longitude. Keyed by local Y-M-D so
+ * repeated renders (Today, Week, Month) reuse a single calculation per day.
+ * Also persisted to localStorage so first paint after a refresh is instant.
+ */
+const MOON_CACHE_KEY = "careflow:moon-sign-cache:v1";
+const moonLonCache = new Map<string, number>();
+const moonSignCache = new Map<string, ZodiacSign>();
+let moonCacheHydrated = false;
+
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function hydrateMoonCache() {
+  if (moonCacheHydrated || typeof window === "undefined") return;
+  moonCacheHydrated = true;
+  try {
+    const raw = window.localStorage.getItem(MOON_CACHE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as Record<string, number>;
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === "number") {
+        moonLonCache.set(k, v);
+        moonSignCache.set(k, ZODIAC_ORDER[Math.floor(v / 30)]);
+      }
+    }
+  } catch { /* ignore */ }
+}
+
+let persistScheduled = false;
+function schedulePersist() {
+  if (persistScheduled || typeof window === "undefined") return;
+  persistScheduled = true;
+  const flush = () => {
+    persistScheduled = false;
+    try {
+      const obj: Record<string, number> = {};
+      moonLonCache.forEach((v, k) => { obj[k] = Math.round(v * 10000) / 10000; });
+      window.localStorage.setItem(MOON_CACHE_KEY, JSON.stringify(obj));
+    } catch { /* ignore quota */ }
+  };
+  // Defer to idle so we don't fight first paint.
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+  if (typeof ric === "function") ric(flush);
+  else window.setTimeout(flush, 400);
+}
+
+function computeMoonLongitude(date: Date): number {
   const JD = date.getTime() / 86400000 + 2440587.5;
   const T = (JD - 2451545.0) / 36525;
   const d2r = Math.PI / 180;
@@ -139,6 +188,20 @@ function moonEclipticLongitude(date: Date): number {
   return norm(Lp + sum / 1_000_000);
 }
 
+function moonEclipticLongitude(date: Date): number {
+  hydrateMoonCache();
+  const k = dayKey(date);
+  const cached = moonLonCache.get(k);
+  if (cached !== undefined) return cached;
+  // Sample at local noon so a day's sign is stable regardless of render time.
+  const noon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
+  const lon = computeMoonLongitude(noon);
+  moonLonCache.set(k, lon);
+  moonSignCache.set(k, ZODIAC_ORDER[Math.floor(lon / 30)]);
+  schedulePersist();
+  return lon;
+}
+
 const ZODIAC_ORDER: ZodiacSign[] = [
   "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
@@ -146,6 +209,10 @@ const ZODIAC_ORDER: ZodiacSign[] = [
 
 /** Locally-computed moon zodiac sign. Accurate to within minutes of the actual ingress. */
 export function getMoonSign(date: Date = new Date()): ZodiacSign {
+  hydrateMoonCache();
+  const k = dayKey(date);
+  const hit = moonSignCache.get(k);
+  if (hit) return hit;
   return ZODIAC_ORDER[Math.floor(moonEclipticLongitude(date) / 30)];
 }
 
@@ -153,6 +220,30 @@ export function getMoonSignInfo(date: Date = new Date()): ZodiacInfo {
   const sign = getMoonSign(date);
   const row = SIGN_TABLE.find(r => r.sign === sign)!;
   return { sign: row.sign, element: row.element, glyph: row.glyph, insight: row.insight };
+}
+
+/**
+ * Warm the moon-sign cache for every day in the given month (and optional
+ * neighbouring months). Cheap math + persisted to localStorage, so Today /
+ * Week / Month forecasts render instantly even right after a hard refresh.
+ */
+export function prefetchMoonSigns(
+  date: Date = new Date(),
+  opts: { neighbors?: boolean } = { neighbors: true },
+): void {
+  hydrateMoonCache();
+  const months: Date[] = [new Date(date.getFullYear(), date.getMonth(), 1)];
+  if (opts.neighbors) {
+    months.unshift(new Date(date.getFullYear(), date.getMonth() - 1, 1));
+    months.push(new Date(date.getFullYear(), date.getMonth() + 1, 1));
+  }
+  for (const start of months) {
+    const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const day = new Date(start.getFullYear(), start.getMonth(), d);
+      if (!moonLonCache.has(dayKey(day))) moonEclipticLongitude(day);
+    }
+  }
 }
 
 export function getSunSign(date: Date = new Date()): ZodiacInfo {
