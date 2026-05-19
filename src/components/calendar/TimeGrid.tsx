@@ -290,7 +290,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
       };
       suppressClickUntil.current = Date.now() + 250;
       await update(d.blockId, patch);
-      haptics.pickup();
+      haptics.drop();
       // Undo toast — reverts to the original time/date.
       const prevStart = hoursToHM(d.origStart);
       const prevEnd = hoursToHM(d.origEnd);
@@ -372,7 +372,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
           stopPropagation: () => {},
           preventDefault: () => {},
         } as unknown as React.PointerEvent);
-      }, 450);
+      }, 220);
     } else {
       haptics.tap();
       beginDrag(block, "move", e);
