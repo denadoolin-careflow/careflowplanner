@@ -628,10 +628,6 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       return (
                         <>
                           <div
-                            className="pointer-events-none absolute inset-x-1 z-[25] rounded-md border-2 border-dashed border-primary/70 bg-primary/10 transition-[top,height] duration-75"
-                            style={{ top: topPx, height: heightPx }}
-                          />
-                          <div
                             className="pointer-events-none absolute inset-x-0 z-[26] border-t-2 border-primary/80"
                             style={{ top: topPx }}
                           >
@@ -753,7 +749,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             c.bg, c.text, c.ring, "ring-opacity-30",
                             isDragging
                               ? "z-30 scale-[1.02] shadow-xl ring-opacity-100 transition-none"
-                              : "transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md",
+                              : "transition-all duration-150 hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-lg hover:ring-2 hover:ring-primary/40 hover:ring-opacity-100 hover:brightness-105",
                             isConflict && !isDragging && "ring-2 ring-destructive/80 ring-opacity-100 shadow-[0_0_0_3px_hsl(var(--destructive)/0.18)]",
                             isSelected && "z-30 scale-[1.03] ring-2 ring-primary/80 ring-opacity-100 shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_18px_40px_-12px_hsl(var(--primary)/0.5)] animate-scale-in",
                             pressingId === b.id && !isDragging && "z-30 scale-[1.04] ring-2 ring-primary ring-opacity-100 shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_14px_30px_-10px_hsl(var(--primary)/0.55)] animate-pulse",
@@ -774,20 +770,6 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                               openBlockEditor(b);
                             }}
                             className="absolute inset-0 z-0 cursor-grab bg-transparent text-left active:cursor-grabbing"
-                            style={{ touchAction: "none" }}
-                          />
-                          {/* Top resize handle */}
-                          <div
-                            data-block-resize-handle
-                            onPointerDown={(e) => { haptics.tap(); beginDrag(b, "resize-top", e); }}
-                            onClick={(e) => e.stopPropagation()}
-                            aria-label="Resize start"
-                            className={cn(
-                              // Larger touch target on mobile (h-5 ≈ 20px) collapsing to h-2 on desktop.
-                              "absolute inset-x-0 top-0 z-10 flex h-5 items-center justify-center rounded-t-md cursor-ns-resize",
-                              "before:block before:h-0.5 before:w-8 before:rounded-full before:bg-current before:opacity-40",
-                              "opacity-70 group-hover:opacity-100 md:h-2"
-                            )}
                             style={{ touchAction: "none" }}
                           />
                           {/* Move/grip handle */}
