@@ -504,6 +504,7 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
       </div>
 
       <CycleLogSheet open={cycleOpen} onOpenChange={setCycleOpen} date={day} />
+      <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
     </div>
   );
 }
