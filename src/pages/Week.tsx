@@ -19,6 +19,7 @@ import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
+import { WeekRhythmStrip } from "@/components/rhythm/WeekRhythmStrip";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
@@ -97,6 +98,8 @@ export default function Week() {
             </Button>
           </div>
         </div>
+
+        <WeekRhythmStrip weekStart={start} />
 
         {layout === "plan" ? (
           <WeekPlanningDashboard weekStart={start} onJumpToDay={(d) => { setStart(startOfWeek(d, { weekStartsOn: 1 })); setLayout("grid"); }} />
