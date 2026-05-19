@@ -17,7 +17,8 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import type { Task } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
 import { AgendaView } from "@/components/calendar/AgendaView";
-import { MoonCalendar } from "@/components/calendar/MoonCalendar";
+import { getRhythmForecast, type Element } from "@/lib/rhythm-forecast";
+import { Moon } from "lucide-react";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
@@ -42,6 +43,7 @@ export default function Month() {
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [view, setView] = useState<CalView>("schedule");
+  const [showMoon, setShowMoon] = useState(false);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
   useEffect(() => { void prefetchMoonMonth(cursor, { neighbors: true }); }, [cursor]);
 
@@ -106,6 +108,15 @@ export default function Month() {
 
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
 
+  // Element → soft tint + dot color for the monthly grid overlay.
+  // earth=green, water=blue, air=yellow, fire=orange.
+  const ELEMENT_STYLE: Record<Element, { tint: string; ring: string; dot: string; label: string }> = {
+    earth: { tint: "bg-emerald-500/10", ring: "ring-emerald-500/30", dot: "bg-emerald-500", label: "Earth" },
+    water: { tint: "bg-sky-500/10",     ring: "ring-sky-500/30",     dot: "bg-sky-500",     label: "Water" },
+    air:   { tint: "bg-yellow-400/15",  ring: "ring-yellow-500/30",  dot: "bg-yellow-500",  label: "Air"   },
+    fire:  { tint: "bg-orange-500/10",  ring: "ring-orange-500/30",  dot: "bg-orange-500",  label: "Fire"  },
+  };
+
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-6">
@@ -126,12 +137,23 @@ export default function Month() {
         <SectionCard title="Calendar" accent="calm" action={
           <div className="flex items-center gap-2">
             <QuickAddCalendarPopover days={[cursor]} />
+            <button
+              onClick={() => setShowMoon(v => !v)}
+              aria-pressed={showMoon}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors",
+                showMoon
+                  ? "border-primary/40 bg-primary/15 text-primary"
+                  : "border-border/60 bg-card/70 text-muted-foreground hover:text-foreground"
+              )}
+              title="Toggle moon phase, sign & element overlay"
+            >
+              <Moon className="h-3.5 w-3.5" /> Moon
+            </button>
             <CalendarViewToggle value={view} onChange={setView} />
           </div>
         }>
-          {view === "moon" ? (
-            <MoonCalendar cursor={cursor} />
-          ) : view === "agenda" ? (
+          {view === "agenda" ? (
             <AgendaView
               days={monthDays}
               appointmentsOn={(k) => eventsOn(k).map(e => ({ label: e.label, time: e.time, id: e.apptId, kind: e.kind === "task" ? undefined : (e.kind as any) }))}
@@ -140,6 +162,17 @@ export default function Month() {
             />
           ) : (
           <>
+          {showMoon && (
+            <div className="mb-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+              <span className="font-medium uppercase tracking-wider">Moon overlay · element:</span>
+              {(Object.keys(ELEMENT_STYLE) as Element[]).map(el => (
+                <span key={el} className="inline-flex items-center gap-1.5">
+                  <span className={cn("h-2.5 w-2.5 rounded-full", ELEMENT_STYLE[el].dot)} />
+                  {ELEMENT_STYLE[el].label}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-7 gap-1 text-xs uppercase tracking-wider text-muted-foreground">
             {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => <div key={d} className="px-2 py-1 text-center">{d}</div>)}
           </div>
@@ -151,6 +184,11 @@ export default function Month() {
               const ev = eventsOn(k);
               const phase = cycleSettings.enabled ? phaseForDate(d, cyclePeriods, cycleSettings) : null;
               const phaseVar = phase ? PHASE_META[phase].tokenVar : null;
+              const moon = showMoon ? getRhythmForecast(d) : null;
+              const moonStyle = moon ? ELEMENT_STYLE[moon.element] : null;
+              // Mark element transitions — when today's element differs from yesterday's.
+              const prevMoon = showMoon ? getRhythmForecast(addDays(d, -1)) : null;
+              const elementChanged = !!(moon && prevMoon && moon.element !== prevMoon.element);
               return (
                 <div
                   key={k}
@@ -176,13 +214,25 @@ export default function Month() {
                   }}
                   className={cn(
                     "group/day relative min-h-24 rounded-lg border p-1.5 text-xs transition-all duration-200 ease-out",
-                    inMonth ? "border-border/60 bg-card" : "border-transparent bg-transparent text-muted-foreground/50",
+                    inMonth
+                      ? cn("border-border/60", moonStyle ? cn(moonStyle.tint, "ring-1 ring-inset", moonStyle.ring) : "bg-card")
+                      : "border-transparent bg-transparent text-muted-foreground/50",
                     today && "ring-2 ring-primary",
+                    inMonth && elementChanged && "ring-2 ring-offset-1 ring-offset-background ring-foreground/40",
                     hoverISO === k && "scale-[1.03] bg-primary/10 ring-2 ring-primary shadow-md",
                   )}
                 >
                   <div className="flex items-center justify-between">
-                    {phaseVar ? (
+                    {moon ? (
+                      <span
+                        title={`${moon.phaseLabel} · Moon in ${moon.sign.sign} (${moonStyle!.label})`}
+                        aria-label={`${moon.phaseLabel}, moon in ${moon.sign.sign}`}
+                        className="inline-flex items-center gap-1 text-[11px] leading-none"
+                      >
+                        <span aria-hidden>{moon.glyph}</span>
+                        <span className="text-[10px] text-muted-foreground" aria-hidden>{moon.sign.glyph}</span>
+                      </span>
+                    ) : phaseVar ? (
                       <span
                         title={`${PHASE_META[phase!].label} phase`}
                         aria-label={`${PHASE_META[phase!].label} phase`}
