@@ -27,8 +27,7 @@ import { resolveTheme, themeStyle, type WidgetTheme } from "@/lib/widget-themes"
 import { WidgetThemePicker } from "@/components/dashboard/WidgetThemePicker";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
-import { hourToDayPart } from "@/lib/types";
-import { toast } from "sonner";
+import { hourToDayPart } from "@/lib/long-press-drag";
 import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { getMoonPhase } from "@/lib/moon";
