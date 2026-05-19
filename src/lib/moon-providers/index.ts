@@ -120,6 +120,38 @@ async function fetchMonth(d: Date) {
   }
 }
 
+/**
+ * Public prefetch helper — warms the Astro-Seek cache for the given
+ * month (and optionally neighbouring months) so week/month views render
+ * instantly. Safe to call repeatedly; in-flight + cached months are skipped.
+ * No-op when the active provider is `local`.
+ */
+export async function prefetchMoonMonth(
+  date: Date = new Date(),
+  opts: { neighbors?: boolean } = { neighbors: true },
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (getActiveMoonProviderId() !== "astro-seek") return;
+  ensureCacheLoaded();
+  const targets: Date[] = [new Date(date.getFullYear(), date.getMonth(), 1)];
+  if (opts.neighbors) {
+    targets.unshift(new Date(date.getFullYear(), date.getMonth() - 1, 1));
+    targets.push(new Date(date.getFullYear(), date.getMonth() + 1, 1));
+  }
+  const jobs: Promise<void>[] = [];
+  for (const d of targets) {
+    const mk = monthKey(d);
+    if (pendingMonths.has(mk)) continue;
+    // Skip if we already have at least one day cached for this month
+    // (months always come back fully populated).
+    let hasAny = false;
+    for (const k of dayCache.keys()) { if (k.startsWith(mk)) { hasAny = true; break; } }
+    if (hasAny) continue;
+    jobs.push(fetchMonth(d));
+  }
+  await Promise.all(jobs);
+}
+
 const astroSeekProvider: MoonProvider = {
   id: "astro-seek",
   label: "Astro-Seek",
