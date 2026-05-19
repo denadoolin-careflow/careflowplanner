@@ -1,10 +1,15 @@
+import { useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Leaf, Home, Heart } from "lucide-react";
-import { getSuggestedTasks, type RhythmForecast } from "@/lib/rhythm-forecast";
+import { Leaf, Home, Heart, Hourglass } from "lucide-react";
+import {
+  pickEnergyTaskSuggestions,
+  type RhythmForecast,
+  type EnergyPick,
+} from "@/lib/rhythm-forecast";
 
 interface Props {
   open: boolean;
@@ -13,58 +18,86 @@ interface Props {
   forecast: RhythmForecast;
 }
 
-const KIND_ICON = {
+const KIND_ICON: Record<EnergyPick["kind"], typeof Leaf> = {
   "low-energy": Leaf,
-  "home-reset": Home,
-  "personal-care": Heart,
-} as const;
-
-const KIND_LABEL = {
-  "low-energy": "Low-energy",
-  "home-reset": "Home reset",
-  "personal-care": "Personal / care",
-} as const;
+  "home-care": Home,
+  "personal": Heart,
+  "can-wait": Hourglass,
+};
 
 export function PlanWithEnergyDialog({ open, onOpenChange, date, forecast }: Props) {
-  const { addTask } = useStore();
+  const { state, addTask, updateTask } = useStore();
   const iso = format(date, "yyyy-MM-dd");
-  const suggestions = getSuggestedTasks(forecast);
+  const picks = useMemo(
+    () => pickEnergyTaskSuggestions(state.tasks, forecast),
+    [state.tasks, forecast],
+  );
 
-  const add = async (title: string, area: any, energy: any) => {
-    await addTask({ title, area, energy, dueDate: iso, priority: "low" });
-    toast.success(`Added “${title}” to today`);
+  const scheduleExisting = async (pick: EnergyPick) => {
+    if (!pick.task) return;
+    await updateTask(pick.task.id, { dueDate: iso, inbox: false });
+    toast.success(`Scheduled “${pick.task.title}” for ${format(date, "EEE MMM d")}`);
     onOpenChange(false);
+  };
+
+  const createFromSuggestion = async (pick: EnergyPick) => {
+    const title = pick.fallbackTitle ?? "One small thing";
+    const area = pick.kind === "home-care" ? "Home" : "Personal";
+    await addTask({ title, area, energy: "low", dueDate: iso, priority: "low" });
+    toast.success(`Added “${title}” to ${format(date, "EEE MMM d")}`);
+    onOpenChange(false);
+  };
+
+  const handlePick = (pick: EnergyPick) => {
+    if (pick.kind === "can-wait" && pick.task) {
+      // Move it to "someday" instead of scheduling — protects energy.
+      void updateTask(pick.task.id, { status: "someday", dueDate: undefined }).then(() => {
+        toast(`Letting “${pick.task!.title}” wait — guilt-free.`);
+        onOpenChange(false);
+      });
+      return;
+    }
+    if (pick.task) void scheduleExisting(pick);
+    else void createFromSuggestion(pick);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display">
-            Plan with this energy
-          </DialogTitle>
+          <DialogTitle className="font-display">Plan with this energy</DialogTitle>
           <DialogDescription>
-            {forecast.phaseLabel} in {forecast.sign.sign}. Pick one — small counts.
+            {forecast.phaseLabel} in {forecast.sign.sign}. Four small choices — pick what feels true.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          {suggestions.map((s, i) => {
-            const Icon = KIND_ICON[s.kind];
+          {picks.map((pick) => {
+            const Icon = KIND_ICON[pick.kind];
+            const title = pick.task?.title ?? pick.fallbackTitle ?? "—";
+            const isReal = !!pick.task;
             return (
               <button
-                key={i}
-                onClick={() => add(s.title, s.area, s.energy)}
+                key={pick.kind}
+                onClick={() => handlePick(pick)}
                 className="flex w-full items-start gap-3 rounded-xl border border-border/60 bg-card p-3 text-left transition-colors hover:bg-primary-soft/40"
               >
                 <span className="mt-0.5 rounded-full bg-primary-soft p-2">
                   <Icon className="h-4 w-4 text-primary" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                    {KIND_LABEL[s.kind]}
+                  <span className="flex items-center gap-2">
+                    <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                      {pick.label}
+                    </span>
+                    {isReal && (
+                      <span className="rounded-full bg-secondary-soft px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
+                        From your list
+                      </span>
+                    )}
                   </span>
-                  <span className="block text-sm">{s.title}</span>
+                  <span className="block truncate text-sm">{title}</span>
+                  <span className="block text-[11px] text-muted-foreground">{pick.reason}</span>
                 </span>
               </button>
             );
@@ -72,7 +105,7 @@ export function PlanWithEnergyDialog({ open, onOpenChange, date, forecast }: Pro
         </div>
 
         <p className="text-[11px] text-muted-foreground">
-          Choose what matters most. You don't have to do them all.
+          You don't have to do them all. Choose what matters most.
         </p>
       </DialogContent>
     </Dialog>
