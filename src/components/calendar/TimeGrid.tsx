@@ -50,8 +50,8 @@ const HOUR_END = 23;    // 11 PM
 const PX_PER_HOUR = 64;
 const TOTAL_HOURS = HOUR_END - HOUR_START;
 const GRID_HEIGHT = TOTAL_HOURS * PX_PER_HOUR;
-const SNAP_MIN = 15;
-const SNAP_DEFAULT_MIN = 30; // default coarse snap; hold Shift for SNAP_MIN
+const SNAP_MIN = 5;  // fine snap (hold Shift)
+const SNAP_DEFAULT_MIN = 15; // default — snaps to quarter-hour grid for precision
 const SNAP_PX = (PX_PER_HOUR / 60) * SNAP_MIN; // 14
 const DRAG_THRESHOLD = 5;
 
@@ -627,12 +627,20 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       const heightPx = Math.max(24, (drag.curEnd - drag.curStart) * PX_PER_HOUR);
                       return (
                         <>
+                          {/* Live snap-position preview band — shows the exact destination */}
+                          <div
+                            className="pointer-events-none absolute inset-x-0 z-[24] bg-primary/15 ring-1 ring-inset ring-primary/40"
+                            style={{ top: topPx, height: heightPx }}
+                          />
                           <div
                             className="pointer-events-none absolute inset-x-0 z-[26] border-t-2 border-primary/80"
                             style={{ top: topPx }}
                           >
                             <span className="absolute -top-2 left-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground shadow">
                               {fmtTime(hoursToHM(drag.curStart))}
+                            </span>
+                            <span className="absolute -top-2 right-1 rounded-full bg-foreground/80 px-1.5 py-0.5 text-[9px] font-semibold text-background shadow tabular-nums">
+                              {Math.round((drag.curEnd - drag.curStart) * 60)}m
                             </span>
                           </div>
                           <div
@@ -646,6 +654,18 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                         </>
                       );
                     })()}
+                    {/* Ghost outline at the original position while dragging */}
+                    {drag && drag.moved && drag.origDate === iso &&
+                      (drag.origDate !== drag.curDate || drag.origStart !== drag.curStart || drag.origEnd !== drag.curEnd) && (() => {
+                        const oTop = (drag.origStart - HOUR_START) * PX_PER_HOUR;
+                        const oH = Math.max(24, (drag.origEnd - drag.origStart) * PX_PER_HOUR);
+                        return (
+                          <div
+                            className="pointer-events-none absolute inset-x-1 z-[5] rounded-md border-2 border-dashed border-muted-foreground/40 bg-muted/20"
+                            style={{ top: oTop, height: oH }}
+                          />
+                        );
+                      })()}
                     {/* Hour grid lines */}
                     {Array.from({ length: TOTAL_HOURS }, (_, i) => (
                       <div key={i}
