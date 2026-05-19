@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type {
   AppState, Task, Goal, Habit, JournalEntry, Meal, GroceryItem,
   Appointment, Birthday, Holiday, CareNote, CleaningTask, Idea,
-  CareRecipient, Energy, AreaRecord, Project,
+  CareRecipient, Energy, AreaRecord, Project, ProjectSection,
 } from "./types";
 import { seedState, newUserSeed } from "./seed";
 import { AREAS } from "./types";
@@ -27,6 +27,7 @@ const taskFrom = (r: any): Task => ({
   parentTaskId: r.parent_task_id ?? undefined,
   inbox: !!r.inbox,
   resetItemId: r.reset_item_id ?? undefined,
+  sectionId: r.section_id ?? undefined,
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null, done: t.done,
@@ -44,6 +45,7 @@ const taskTo = (t: Partial<Task>) => ({
   project_id: t.projectId ?? null,
   parent_task_id: t.parentTaskId ?? null,
   inbox: t.inbox ?? false,
+  section_id: t.sectionId ?? null,
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 const habitFrom = (r: any): Habit => ({ id: r.id, title: r.title, cadence: r.cadence, category: r.category, streak: r.streak, log: {} });
@@ -106,6 +108,10 @@ const projectFrom = (r: any): Project => ({
   status: r.status ?? "active", deadline: r.deadline ?? undefined,
   sortOrder: r.sort_order ?? 0, archivedAt: r.archived_at ?? undefined,
   createdAt: r.created_at,
+});
+const sectionFrom = (r: any): ProjectSection => ({
+  id: r.id, projectId: r.project_id, name: r.name,
+  color: r.color ?? undefined, sortOrder: r.sort_order ?? 0, createdAt: r.created_at,
 });
 
 /* ---------- context ---------- */
