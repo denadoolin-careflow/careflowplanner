@@ -26,6 +26,9 @@ import {
 import { resolveTheme, themeStyle, type WidgetTheme } from "@/lib/widget-themes";
 import { WidgetThemePicker } from "@/components/dashboard/WidgetThemePicker";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
+import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
+import { hourToDayPart } from "@/lib/types";
+import { toast } from "sonner";
 import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { getMoonPhase } from "@/lib/moon";
@@ -126,13 +129,15 @@ function PlanWidget({
 }
 
 export function DailyPlanningDashboard({ day }: { day: Date }) {
-  const { state, toggleCleaning, toggleTask } = useStore();
+  const { state, toggleCleaning, toggleTask, updateTask, updateAppointment } = useStore();
   const navigate = useNavigate();
   const { intention, review, saveIntention, saveReview, dateISO } = useDailyPlan(day);
   const { widgets, update, move, reset } = useDailyPlanLayout();
   const [cycleOpen, setCycleOpen] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const weather = useWeatherSnapshot();
+  const [editApptId, setEditApptId] = useState<string | null>(null);
+  const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
 
   // Mirrored local state for save-on-blur
   const [word, setWord] = useState(intention.word ?? "");
@@ -185,6 +190,23 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
       label: t.title, time: undefined as string | undefined, id: t.id, kind: "task" as const, done: t.done,
     })),
   ];
+
+  const handleTimeDrop = async (taskId: string, dateISO: string, startHour: number) => {
+    const t = state.tasks.find(x => x.id === taskId);
+    if (!t) return;
+    const dp = hourToDayPart(startHour);
+    const dayPart = dp ? ((dp[0].toUpperCase() + dp.slice(1)) as "Morning" | "Afternoon" | "Evening") : undefined;
+    await updateTask(taskId, { dueDate: dateISO, inbox: false, ...(dayPart ? { dayPart } : {}) });
+  };
+
+  const handleApptDrop = async (apptId: string, dateISO: string, startHour: number) => {
+    const a = state.appointments.find(x => x.id === apptId);
+    if (!a) return;
+    const hh = String(Math.floor(startHour)).padStart(2, "0");
+    const mm = String(Math.round((startHour % 1) * 60)).padStart(2, "0");
+    await updateAppointment(apptId, { date: dateISO, time: `${hh}:${mm}` });
+    toast(`Moved "${a.title}" to ${hh}:${mm}`);
+  };
 
   const saveJournalCheckIn = async () => {
     const { data: u } = await supabase.auth.getUser();
