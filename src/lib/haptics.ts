@@ -12,9 +12,11 @@ function vibrate(pattern: number | number[]) {
 export const haptics = {
   tap: () => vibrate(8),
   pickup: () => vibrate(14),
-  snap: () => vibrate([6, 24, 10]),
+  snap: () => vibrate(6),
   delete: () => vibrate([10, 30, 10, 30]),
   magnet: () => vibrate([4, 16]),
   // Stronger, distinctive pulse to confirm a long-press has armed drag mode.
   longPress: () => vibrate([12, 40, 28]),
+  // Confirms a successful drop after dragging — chunky and satisfying.
+  drop: () => vibrate([18, 40, 24]),
 };
