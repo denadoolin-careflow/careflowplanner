@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Plus, Sparkle, CalendarDays } from "lucide-react";
+import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Plus, Sparkle, CalendarDays, Wand2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -18,6 +18,8 @@ import { haptics } from "@/lib/haptics";
 import { formatRelativeDate } from "@/lib/date-format";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { useTaskSelection } from "@/lib/task-selection";
+import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
@@ -35,6 +37,32 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
 
   const subtasks = state.tasks.filter(t => t.parentTaskId === task.id);
   const hasSubs = subtasks.length > 0;
+  const doneSubs = subtasks.filter(s => s.done).length;
+  const pct = hasSubs ? Math.round((doneSubs / subtasks.length) * 100) : 0;
+  const [aiLoading, setAiLoading] = useState(false);
+  const isSubtask = !!task.parentTaskId;
+
+  const generateSubtasks = async () => {
+    if (aiLoading) return;
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-subtasks", {
+        body: { title: task.title, notes: task.notes, area: task.area, count: 5 },
+      });
+      if (error) throw error;
+      const list: string[] = Array.isArray(data?.subtasks) ? data.subtasks : [];
+      if (list.length === 0) { toast.error("No subtasks generated"); return; }
+      for (const title of list) {
+        await addTask({ title, area: task.area, parentTaskId: task.id, projectId: task.projectId });
+      }
+      setExpanded(true);
+      toast.success(`Added ${list.length} steps`, { description: "AI broke this down into gentle steps." });
+    } catch (e: any) {
+      toast.error("AI breakdown failed", { description: e?.message ?? String(e) });
+    } finally {
+      setAiLoading(false);
+    }
+  };
   const areaColor = (state.areas ?? []).find(a => a.name === task.area)?.color || undefined;
   const [quickEditOpen, setQuickEditOpen] = useState(false);
   const longPressTimer = useRef<number | null>(null);
@@ -218,6 +246,17 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
         )}
       </div>
       <QuickScheduleButton task={task} />
+      {!isSubtask && (
+        <Button
+          variant="ghost" size="icon"
+          className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+          onClick={generateSubtasks}
+          disabled={aiLoading}
+          aria-label="AI breakdown" title="Break into steps with AI"
+        >
+          {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+        </Button>
+      )}
       <Button
         variant="ghost" size="icon"
         className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
@@ -242,6 +281,12 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       )}
     </RowShell>
     <QuickEditPopover task={task} open={quickEditOpen} onOpenChange={setQuickEditOpen} />
+    {hasSubs && (
+      <div className="ml-8 mr-2 mt-0.5 mb-1 flex items-center gap-2">
+        <Progress value={pct} className="h-1.5 flex-1" />
+        <span className="text-[10px] tabular-nums text-muted-foreground">{doneSubs}/{subtasks.length}</span>
+      </div>
+    )}
     {expanded && (
       <div className="ml-8 space-y-1 border-l border-border/40 pl-2">
         {subtasks.map(s => <TaskRow key={s.id} task={s} dense showArea={false} />)}
