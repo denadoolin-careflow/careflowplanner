@@ -22,6 +22,25 @@
   <meta name="twitter:title" content="CareFlow Planner — A cozy planner for moms &amp; caregivers">
   <meta property="og:description" content="A calm daily, weekly, monthly, and yearly planner for moms, caregivers, and household managers. Plan, journal, reset.">
   <meta name="twitter:description" content="A calm daily, weekly, monthly, and yearly planner for moms, caregivers, and household managers. Plan, journal, reset.">
+    <style>
+      /* Prevent white/dark flash before React mounts.
+         Matches the light + dark --background tokens in src/index.css. */
+      html { background-color: hsl(36 38% 96%); color-scheme: light; }
+      html.dark { background-color: hsl(260 22% 10%); color-scheme: dark; }
+    </style>
+    <script>
+      // Apply persisted theme + color preset BEFORE first paint to avoid FOUC.
+      (function () {
+        try {
+          var t = localStorage.getItem("theme"); // next-themes key
+          var sysDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var dark = t === "dark" || ((!t || t === "system") && sysDark);
+          if (dark) document.documentElement.classList.add("dark");
+          var p = localStorage.getItem("careflow:theme-preset");
+          if (p && p !== "default") document.documentElement.setAttribute("data-theme", p);
+        } catch (_) { /* ignore */ }
+      })();
+    </script>
 </head>
 
   <body>
