@@ -196,7 +196,7 @@ export default function Month() {
                             }
                           } : undefined}
                           className={cn(
-                            "truncate rounded px-1 py-0.5 text-[10px] transition-all duration-150",
+                            "rounded px-1 py-0.5 text-[10px] leading-tight whitespace-normal break-words transition-all duration-150",
                             colorOf(it.kind),
                             (isTask || isAppt) && "cursor-grab hover:scale-[1.04] hover:shadow-sm hover:ring-1 hover:ring-primary/40 active:cursor-grabbing",
                             isBeingDragged && "opacity-40 scale-95",
