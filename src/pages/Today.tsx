@@ -29,7 +29,9 @@ import { MoonJournalReminderBanner } from "@/components/cycle/MoonJournalReminde
 import { RhythmForecastCard } from "@/components/rhythm/RhythmForecastCard";
 import { ElementBadge } from "@/components/rhythm/ElementBadge";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
-import { useRhythmForecastEnabled } from "@/lib/rhythm-forecast";
+import { useRhythmForecastEnabled, getRhythmForecast } from "@/lib/rhythm-forecast";
+import { PlanWithEnergyDialog } from "@/components/rhythm/PlanWithEnergyDialog";
+import { Wand2 } from "lucide-react";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
@@ -120,6 +122,8 @@ function TodayInner() {
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
   const [widgetsOpen, setWidgetsOpen] = useState(false);
   const [rhythmOn] = useRhythmForecastEnabled();
+  const [planEnergyOpen, setPlanEnergyOpen] = useState(false);
+  const forecast = useMemo(() => getRhythmForecast(today), [today]);
 
   const body = (
     <div className="flex gap-6">
@@ -154,6 +158,15 @@ function TodayInner() {
                   {!isReallyToday && (
                     <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => setDay(new Date())}>Today</Button>
                   )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 rounded-full px-3 text-xs"
+                    onClick={() => setPlanEnergyOpen(true)}
+                    title="Plan with this energy — low-energy, home/care, personal, can-wait"
+                  >
+                    <Wand2 className="mr-1 h-3.5 w-3.5" /> Plan with this energy
+                  </Button>
                   <PhaseBadge
                     date={today}
                     className="ml-1"
@@ -256,6 +269,12 @@ function TodayInner() {
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <CycleLogSheet open={cycleSheetOpen} onOpenChange={setCycleSheetOpen} date={today} />
+      <PlanWithEnergyDialog
+        open={planEnergyOpen}
+        onOpenChange={setPlanEnergyOpen}
+        date={today}
+        forecast={forecast}
+      />
     </div>
   );
 
