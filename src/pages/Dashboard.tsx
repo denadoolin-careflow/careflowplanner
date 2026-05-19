@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { EnergyCheckIn } from "@/components/cards/EnergyCheckIn";
 import { format } from "date-fns";
 import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
+import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
+import { ElementBadge } from "@/components/rhythm/ElementBadge";
 
 function greeting() {
   const h = new Date().getHours();
@@ -30,6 +32,10 @@ export default function Dashboard() {
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{format(new Date(), "EEEE, MMMM d")}</p>
             <h2 className="font-display text-3xl font-semibold leading-tight sm:text-4xl">{greeting()}, {state.settings.name}.</h2>
             <p className="mt-1 max-w-xl text-sm text-muted-foreground">A soft start. One thing at a time. You don't have to do it all today.</p>
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <MoonPhaseBadge />
+              <ElementBadge />
+            </div>
           </div>
           <div className="flex flex-col items-start gap-2 sm:items-end">
             <div className="flex flex-col items-start sm:items-end">

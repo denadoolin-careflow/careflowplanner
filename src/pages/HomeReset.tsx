@@ -6,6 +6,8 @@ import { ChecklistTree } from "@/components/reset/ChecklistTree";
 import { AIGenerateMenu } from "@/components/reset/AIGenerateMenu";
 import { toast } from "sonner";
 import { MoonResetTip } from "@/components/rhythm/MoonResetTip";
+import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
+import { ElementBadge } from "@/components/rhythm/ElementBadge";
 
 export default function HomeReset() {
   const reset = useResetChecklists({});
@@ -21,6 +23,10 @@ export default function HomeReset() {
         <div>
           <h2 className="font-display text-3xl font-semibold">Home reset</h2>
           <p className="mt-1 text-sm text-muted-foreground">Tiny actions, repeated kindly. Drag to reorder, double-click to edit.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <MoonPhaseBadge />
+            <ElementBadge />
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <AIGenerateMenu onGenerated={reset.refresh} />
