@@ -5,6 +5,7 @@ import { useResetChecklists } from "@/lib/reset-checklists";
 import { ChecklistTree } from "@/components/reset/ChecklistTree";
 import { AIGenerateMenu } from "@/components/reset/AIGenerateMenu";
 import { toast } from "sonner";
+import { MoonResetTip } from "@/components/rhythm/MoonResetTip";
 
 export default function HomeReset() {
   const reset = useResetChecklists({});
@@ -28,6 +29,8 @@ export default function HomeReset() {
           </Button>
         </div>
       </div>
+
+      <MoonResetTip />
 
       {reset.lists.filter(l => !l.is_template).length === 0 ? (
         <SectionCard title="Start fresh" accent="warm">
