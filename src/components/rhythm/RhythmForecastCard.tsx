@@ -4,6 +4,7 @@ import { MoonGlyph } from "@/components/widgets/MoonGlyph";
 import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 import { getRhythmForecast } from "@/lib/rhythm-forecast";
+import { useMoonDataVersion } from "@/lib/moon-providers";
 import { PlanWithEnergyDialog } from "./PlanWithEnergyDialog";
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
  * Caregiver-friendly language, no horoscope tone.
  */
 export function RhythmForecastCard({ date = new Date(), variant = "widget", className }: Props) {
+  useMoonDataVersion();
   const f = getRhythmForecast(date);
   const [planOpen, setPlanOpen] = useState(false);
 
