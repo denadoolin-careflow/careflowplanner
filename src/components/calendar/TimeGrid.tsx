@@ -758,7 +758,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                             pressingId === b.id && !isDragging && "z-30 scale-[1.04] ring-2 ring-primary ring-opacity-100 shadow-[0_0_0_4px_hsl(var(--primary)/0.25),0_14px_30px_-10px_hsl(var(--primary)/0.55)] animate-pulse",
                             taskDone && "opacity-60"
                           )}
-                          style={{ top, height: Math.max(44, height), cursor: isDragging ? "grabbing" : "grab", touchAction: "none", ...(c.style ?? {}) }}
+                          style={{ top, minHeight: Math.max(44, height), cursor: isDragging ? "grabbing" : "grab", touchAction: "none", ...(c.style ?? {}) }}
                           role="button"
                           tabIndex={0}
                         >
