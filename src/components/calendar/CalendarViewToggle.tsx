@@ -1,7 +1,7 @@
-import { CalendarDays, ListChecks, Moon } from "lucide-react";
+import { CalendarDays, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type CalView = "schedule" | "agenda" | "moon";
+export type CalView = "schedule" | "agenda";
 
 export function CalendarViewToggle({ value, onChange }: { value: CalView; onChange: (v: CalView) => void }) {
   return (
@@ -19,13 +19,6 @@ export function CalendarViewToggle({ value, onChange }: { value: CalView; onChan
           value === "agenda" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground")}
       >
         <ListChecks className="h-3.5 w-3.5" /> Agenda
-      </button>
-      <button
-        onClick={() => onChange("moon")}
-        className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
-          value === "moon" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground")}
-      >
-        <Moon className="h-3.5 w-3.5" /> Moon
       </button>
     </div>
   );
