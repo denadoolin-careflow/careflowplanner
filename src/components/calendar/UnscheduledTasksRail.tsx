@@ -15,7 +15,6 @@ import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
 import { Link } from "react-router-dom";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongPressDrag } from "@/lib/long-press-drag";
-import { Check } from "lucide-react";
 
 export const TASK_DRAG_MIME = "application/x-careflow-task";
 export const EVENT_DRAG_MIME = "application/x-careflow-event";
