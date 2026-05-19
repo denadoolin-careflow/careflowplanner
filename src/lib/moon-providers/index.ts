@@ -14,6 +14,7 @@ import {
   MOON_INFO,
   type MoonPhase,
 } from "@/lib/moon";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface MoonData {
   date: Date;
@@ -22,6 +23,7 @@ export interface MoonData {
   glyph: string;
   illumination: number;   // 0..100
   source: MoonProviderId; // who computed it
+  sign?: string;          // zodiac sign, when provided by the source
 }
 
 export interface MoonProvider {
@@ -51,17 +53,94 @@ const localProvider: MoonProvider = {
   },
 };
 
+/* ---------- Astro-Seek provider ---------- */
 /**
- * Stub. Today this just delegates to the local provider so the UI
- * stays consistent. When you're ready, replace `get` with a fetch
- * to your Astro-Seek edge function / cached table — same shape.
+ * Fetches moon phase + sign per day from astro-seek.com via the
+ * `astro-seek-moon` edge function. Results are cached per-day in
+ * localStorage; `get()` stays synchronous and falls back to the
+ * local calculation until the month's data has loaded, then dispatches
+ * `moon-data:updated` so subscribers can re-render.
  */
+interface AstroDay { phase: MoonPhase; sign: string }
+const CACHE_KEY = "careflow:astro-seek:cache";
+const dayCache = new Map<string, AstroDay>();
+const pendingMonths = new Set<string>();
+let cacheLoaded = false;
+
+function dayKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function monthKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+function ensureCacheLoaded() {
+  if (cacheLoaded || typeof window === "undefined") return;
+  cacheLoaded = true;
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as Record<string, AstroDay>;
+    for (const [k, v] of Object.entries(parsed)) {
+      if (v && typeof v.phase === "string") dayCache.set(k, v);
+    }
+  } catch { /* ignore */ }
+}
+function persistCache() {
+  if (typeof window === "undefined") return;
+  try {
+    const obj: Record<string, AstroDay> = {};
+    dayCache.forEach((v, k) => { obj[k] = v; });
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(obj));
+  } catch { /* ignore quota */ }
+}
+async function fetchMonth(d: Date) {
+  const mk = monthKey(d);
+  if (pendingMonths.has(mk)) return;
+  pendingMonths.add(mk);
+  try {
+    const { data, error } = await supabase.functions.invoke("astro-seek-moon", {
+      body: { month: d.getMonth() + 1, year: d.getFullYear() },
+    });
+    if (error) throw error;
+    const days = (data as { data?: Record<string, AstroDay> } | null)?.data ?? {};
+    let added = 0;
+    for (const [k, v] of Object.entries(days)) {
+      if (v && typeof v.phase === "string") { dayCache.set(k, v); added++; }
+    }
+    if (added > 0) {
+      persistCache();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("moon-data:updated"));
+      }
+    }
+  } catch (e) {
+    console.warn("[astro-seek] fetch failed", e);
+  } finally {
+    pendingMonths.delete(mk);
+  }
+}
+
 const astroSeekProvider: MoonProvider = {
   id: "astro-seek",
-  label: "Astro-Seek (coming soon)",
-  description: "Will pull moon phase + sign from Astro-Seek. Falls back to local for now.",
+  label: "Astro-Seek",
+  description: "Live moon phase + zodiac sign from astro-seek.com (cached per day).",
   get(date) {
-    // TODO: replace with real Astro-Seek lookup; keep MoonData shape unchanged.
+    ensureCacheLoaded();
+    const hit = dayCache.get(dayKey(date));
+    if (hit) {
+      const info = MOON_INFO[hit.phase];
+      return {
+        date,
+        phase: hit.phase,
+        label: info.label,
+        glyph: info.glyph,
+        illumination: localIllum(date), // Astro-Seek doesn't expose a numeric %
+        source: "astro-seek",
+        sign: hit.sign || undefined,
+      };
+    }
+    if (typeof window !== "undefined") void fetchMonth(date);
+    // Fall back to local math while the month loads.
     return { ...localProvider.get(date), source: "astro-seek" };
   },
 };
@@ -109,4 +188,23 @@ export function useMoonProvider(): [MoonProviderId, (id: MoonProviderId) => void
   }, []);
   const set = (next: MoonProviderId) => { setActiveMoonProviderId(next); setId(next); };
   return [id, set];
+}
+
+/**
+ * Bumps when remote moon data is loaded/updated (e.g. after Astro-Seek
+ * resolves). Call inside a component that reads `getMoonData` /
+ * `getRhythmForecast` to make it re-render once real data arrives.
+ */
+export function useMoonDataVersion(): number {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    const h = () => setV((x) => x + 1);
+    window.addEventListener("moon-data:updated", h);
+    window.addEventListener("moon-provider:change", h);
+    return () => {
+      window.removeEventListener("moon-data:updated", h);
+      window.removeEventListener("moon-provider:change", h);
+    };
+  }, []);
+  return v;
 }

@@ -1,8 +1,8 @@
 import { addDays, format, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { MoonGlyph } from "@/components/widgets/MoonGlyph";
-import { getRhythmForecast } from "@/lib/rhythm-forecast";
-import { useRhythmForecastEnabled } from "@/lib/rhythm-forecast";
+import { getRhythmForecast, useRhythmForecastEnabled } from "@/lib/rhythm-forecast";
+import { useMoonDataVersion } from "@/lib/moon-providers";
 
 interface Props {
   weekStart: Date;
@@ -17,6 +17,7 @@ interface Props {
  */
 export function WeekRhythmStrip({ weekStart, onDayClick, className }: Props) {
   const [on] = useRhythmForecastEnabled();
+  useMoonDataVersion();
   if (!on) return null;
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
