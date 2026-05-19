@@ -2083,6 +2083,39 @@ export type Database = {
         }
         Relationships: []
       }
+      project_sections: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          project_id: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          project_id: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          project_id?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           archived_at: string | null
@@ -2476,6 +2509,7 @@ export type Database = {
           recurrence_interval: number
           recurrence_type: string
           reset_item_id: string | null
+          section_id: string | null
           sort_order: number
           status: string
           tags: string[]
@@ -2508,6 +2542,7 @@ export type Database = {
           recurrence_interval?: number
           recurrence_type?: string
           reset_item_id?: string | null
+          section_id?: string | null
           sort_order?: number
           status?: string
           tags?: string[]
@@ -2540,6 +2575,7 @@ export type Database = {
           recurrence_interval?: number
           recurrence_type?: string
           reset_item_id?: string | null
+          section_id?: string | null
           sort_order?: number
           status?: string
           tags?: string[]
