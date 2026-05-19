@@ -16,6 +16,7 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import type { Task } from "@/lib/types";
 import { haptics } from "@/lib/haptics";
 import { AgendaView } from "@/components/calendar/AgendaView";
+import { MoonCalendar } from "@/components/calendar/MoonCalendar";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
@@ -105,7 +106,9 @@ export default function Month() {
             <CalendarViewToggle value={view} onChange={setView} />
           </div>
         }>
-          {view === "agenda" ? (
+          {view === "moon" ? (
+            <MoonCalendar cursor={cursor} />
+          ) : view === "agenda" ? (
             <AgendaView
               days={monthDays}
               appointmentsOn={(k) => eventsOn(k).map(e => ({ label: e.label, time: e.time, id: e.apptId, kind: e.kind === "task" ? undefined : (e.kind as any) }))}
