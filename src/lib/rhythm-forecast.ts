@@ -118,7 +118,7 @@ const SIGN_TABLE: { sign: ZodiacSign; from: [number, number]; to: [number, numbe
  * repeated renders (Today, Week, Month) reuse a single calculation per day.
  * Also persisted to localStorage so first paint after a refresh is instant.
  */
-const MOON_CACHE_KEY = "careflow:moon-sign-cache:v1";
+const MOON_CACHE_KEY = "careflow:moon-sign-cache:v2";
 const moonLonCache = new Map<string, number>();
 const moonSignCache = new Map<string, ZodiacSign>();
 let moonCacheHydrated = false;
