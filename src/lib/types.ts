@@ -38,6 +38,7 @@ export interface Task {
   parentTaskId?: string;
   inbox?: boolean;
   resetItemId?: string;
+  sectionId?: string;
 }
 
 export interface AreaRecord {
