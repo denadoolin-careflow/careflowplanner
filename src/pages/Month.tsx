@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import {
@@ -24,12 +25,15 @@ import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useCycle } from "@/lib/cycle-store";
 import { phaseForDate, PHASE_META } from "@/lib/cycle";
 import { prefetchMoonMonth } from "@/lib/moon-providers";
+import { useTimeBlocks, colorClasses } from "@/lib/time-blocks";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
+const BLOCK_DRAG_MIME = "application/x-careflow-block";
 
 export default function Month() {
   const { state, updateTask, updateAppointment, toggleTask } = useStore();
+  const navigate = useNavigate();
   const { settings: cycleSettings, periods: cyclePeriods } = useCycle();
   const [cursor, setCursor] = useState(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
@@ -45,6 +49,9 @@ export default function Month() {
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
   const days = eachDayOfInterval({ start: gridStart, end: addDays(gridStart, 41) });
   const monthDays = days.filter(d => isSameMonth(d, cursor));
+  const fromISO = days[0].toISOString().slice(0, 10);
+  const toISO = days[days.length - 1].toISOString().slice(0, 10);
+  const { blocks, update: updateBlock } = useTimeBlocks(fromISO, toISO);
 
   const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task") =>
     k === "appt" ? "bg-primary-soft text-foreground"
@@ -53,8 +60,12 @@ export default function Month() {
     : k === "task" ? "bg-warm-soft text-warm-foreground border border-primary/30"
     : "bg-muted text-foreground";
 
-  type EvItem = { kind: "appt"|"bday"|"hol"|"gcal"|"task"; label: string; taskId?: string; apptId?: string; time?: string | null };
+  type EvItem = { kind: "appt"|"bday"|"hol"|"gcal"|"task"|"block"; label: string; taskId?: string; apptId?: string; blockId?: string; blockColor?: string; time?: string | null };
   const eventsOn = (k: string): EvItem[] => [
+    ...blocks.filter(b => b.date === k).map(b => ({
+      kind: "block" as const, label: `${b.icon ? b.icon + " " : ""}${b.title}`, blockId: b.id, blockColor: b.color,
+      time: b.allDay ? null : b.startTime,
+    })),
     ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, label: a.title, apptId: a.id, time: a.time })),
     ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, label: `🎂 ${b.name}` })),
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, label: `✨ ${h.name}` })),
@@ -79,6 +90,18 @@ export default function Month() {
     await updateAppointment(apptId, { date: iso });
     haptics.tap();
     toast(`Moved “${a.title}” to ${format(new Date(iso), "MMM d")}`);
+  };
+
+  const handleBlockDayDrop = async (blockId: string, iso: string) => {
+    const b = blocks.find(x => x.id === blockId);
+    if (!b || b.date === iso) return;
+    await updateBlock(blockId, { date: iso });
+    haptics.tap();
+    toast(`Moved “${b.title}” to ${format(new Date(iso), "MMM d")}`);
+  };
+
+  const openBlockInWeek = (iso: string) => {
+    navigate(`/week?date=${iso}`);
   };
 
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
@@ -133,7 +156,7 @@ export default function Month() {
                   key={k}
                   onDragOver={(e) => {
                     const types = Array.from(e.dataTransfer.types);
-                    if (!types.includes(TASK_DRAG_MIME) && !types.includes(APPT_DRAG_MIME)) return;
+                    if (!types.includes(TASK_DRAG_MIME) && !types.includes(APPT_DRAG_MIME) && !types.includes(BLOCK_DRAG_MIME)) return;
                     e.preventDefault();
                     e.dataTransfer.dropEffect = "move";
                     setHoverISO(k);
@@ -142,10 +165,12 @@ export default function Month() {
                   onDrop={(e) => {
                     const taskId = e.dataTransfer.getData(TASK_DRAG_MIME);
                     const apptId = e.dataTransfer.getData(APPT_DRAG_MIME);
-                    if (!taskId && !apptId) return;
+                    const blockId = e.dataTransfer.getData(BLOCK_DRAG_MIME);
+                    if (!taskId && !apptId && !blockId) return;
                     e.preventDefault();
                     if (taskId) handleDayDrop(taskId, k);
                     if (apptId) handleApptDayDrop(apptId, k);
+                    if (blockId) handleBlockDayDrop(blockId, k);
                     setHoverISO(null);
                     setDraggingTaskId(null);
                   }}
@@ -171,40 +196,49 @@ export default function Month() {
                     {ev.slice(0,3).map((it, i) => {
                       const isTask = it.kind === "task" && !!it.taskId;
                       const isAppt = it.kind === "appt" && !!it.apptId;
+                      const isBlock = it.kind === "block" && !!it.blockId;
                       const isBeingDragged = isTask && draggingTaskId === it.taskId;
+                      const blockCls = isBlock && it.blockColor ? colorClasses(it.blockColor) : null;
                       return (
                         <div
                           key={i}
-                          draggable={isTask || isAppt}
-                          onDragStart={(isTask || isAppt) ? (e) => {
+                          draggable={isTask || isAppt || isBlock}
+                          onDragStart={(isTask || isAppt || isBlock) ? (e) => {
                             e.stopPropagation();
                             if (isTask) {
                               e.dataTransfer.setData(TASK_DRAG_MIME, it.taskId!);
                               setDraggingTaskId(it.taskId!);
                             } else if (isAppt) {
                               e.dataTransfer.setData(APPT_DRAG_MIME, it.apptId!);
+                            } else if (isBlock) {
+                              e.dataTransfer.setData(BLOCK_DRAG_MIME, it.blockId!);
                             }
                             e.dataTransfer.setData("text/plain", it.label);
                             e.dataTransfer.effectAllowed = "move";
                             haptics.pickup();
                           } : undefined}
                           onDragEnd={isTask ? () => setDraggingTaskId(null) : undefined}
-                          onClick={(isTask || isAppt) ? (e) => {
+                          onClick={(isTask || isAppt || isBlock) ? (e) => {
                             e.stopPropagation();
                             if (isTask) {
                               const t = state.tasks.find(x => x.id === it.taskId);
                               if (t) setEditingTask(t);
                             } else if (isAppt) {
                               setEditApptId(it.apptId!);
+                            } else if (isBlock) {
+                              openBlockInWeek(k);
                             }
                           } : undefined}
                           className={cn(
                             "flex items-start gap-1 rounded px-1 py-0.5 text-[10px] leading-tight whitespace-normal break-words transition-all duration-150",
-                            colorOf(it.kind),
-                            (isTask || isAppt) && "cursor-grab hover:scale-[1.04] hover:shadow-sm hover:ring-1 hover:ring-primary/40 active:cursor-grabbing",
+                            isBlock && blockCls
+                              ? cn(blockCls.bg, blockCls.text, "ring-1 ring-inset", blockCls.ring, "ring-opacity-30")
+                              : colorOf(it.kind as "appt"|"bday"|"hol"|"gcal"|"task"),
+                            (isTask || isAppt || isBlock) && "cursor-grab hover:scale-[1.04] hover:shadow-sm hover:ring-1 hover:ring-primary/40 active:cursor-grabbing",
                             isBeingDragged && "opacity-40 scale-95",
                           )}
-                          title={it.label}
+                          title={isBlock && it.time ? `${it.time} · ${it.label}` : it.label}
+                          style={isBlock && blockCls?.style ? blockCls.style : undefined}
                         >
                           {isTask && (
                             <button
