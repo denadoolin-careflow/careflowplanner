@@ -27,6 +27,8 @@ import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { MoonJournalReminderBanner } from "@/components/cycle/MoonJournalReminderBanner";
 import { RhythmForecastCard } from "@/components/rhythm/RhythmForecastCard";
+import { ElementBadge } from "@/components/rhythm/ElementBadge";
+import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 import { useRhythmForecastEnabled } from "@/lib/rhythm-forecast";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
@@ -198,7 +200,15 @@ function TodayInner() {
 
         <MoonJournalReminderBanner date={today} />
 
-        {rhythmOn && <RhythmForecastCard date={today} variant="today" />}
+        {rhythmOn && (
+          <div className="space-y-3">
+            <RhythmForecastCard date={today} variant="today" />
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              <RhythmJournalPrompt date={today} scope="daily" />
+              <ElementBadge date={today} variant="tile" className="sm:w-64" />
+            </div>
+          </div>
+        )}
 
         {layout === "plan" ? (
           <DailyPlanningDashboard day={today} />
