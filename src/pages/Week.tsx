@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { startOfWeek, addDays, format } from "date-fns";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { LayoutGrid, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,18 @@ import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
-  const [start, setStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [searchParams] = useSearchParams();
+  const [start, setStart] = useState(() => {
+    const d = searchParams.get("date");
+    const base = d ? new Date(d + "T00:00:00") : new Date();
+    return startOfWeek(isNaN(base.getTime()) ? new Date() : base, { weekStartsOn: 1 });
+  });
+  useEffect(() => {
+    const d = searchParams.get("date");
+    if (!d) return;
+    const base = new Date(d + "T00:00:00");
+    if (!isNaN(base.getTime())) setStart(startOfWeek(base, { weekStartsOn: 1 }));
+  }, [searchParams]);
   const [view, setView] = useState<CalView>("schedule");
   const [layout, setLayout] = useState<"grid" | "plan">("grid");
   const [editApptId, setEditApptId] = useState<string | null>(null);
