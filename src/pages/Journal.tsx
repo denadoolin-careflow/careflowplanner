@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
+import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 
 type TemplateKey =
   | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
