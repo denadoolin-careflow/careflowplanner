@@ -382,6 +382,50 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await supabase.from("projects").delete().eq("id", id);
     },
 
+    addSection: async (s) => {
+      if (!uid) return null;
+      const row: any = {
+        user_id: uid,
+        project_id: s.projectId,
+        name: s.name,
+        color: s.color ?? null,
+        sort_order: s.sortOrder ?? ((state.projectSections ?? []).filter(x => x.projectId === s.projectId).length),
+      };
+      const { data } = await supabase.from("project_sections").insert(row).select().single();
+      if (!data) return null;
+      const sec = sectionFrom(data);
+      setState(st => ({ ...st, projectSections: [...(st.projectSections ?? []), sec] }));
+      return sec;
+    },
+    updateSection: async (id, patch) => {
+      setState(st => ({ ...st, projectSections: (st.projectSections ?? []).map(x => x.id === id ? { ...x, ...patch } : x) }));
+      const dbPatch: any = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
+      if (patch.sortOrder !== undefined) dbPatch.sort_order = patch.sortOrder;
+      await supabase.from("project_sections").update(dbPatch).eq("id", id);
+    },
+    deleteSection: async (id) => {
+      setState(st => ({
+        ...st,
+        projectSections: (st.projectSections ?? []).filter(x => x.id !== id),
+        tasks: st.tasks.map(t => t.sectionId === id ? { ...t, sectionId: undefined } : t),
+      }));
+      await supabase.from("tasks").update({ section_id: null }).eq("section_id", id);
+      await supabase.from("project_sections").delete().eq("id", id);
+    },
+    reorderSections: async (projectId, orderedIds) => {
+      setState(st => ({
+        ...st,
+        projectSections: (st.projectSections ?? []).map(x =>
+          x.projectId === projectId ? { ...x, sortOrder: orderedIds.indexOf(x.id) } : x
+        ),
+      }));
+      await Promise.all(orderedIds.map((id, i) =>
+        supabase.from("project_sections").update({ sort_order: i }).eq("id", id)
+      ));
+    },
+
     updateArea: async (id, patch) => {
       setState(s => ({ ...s, areas: (s.areas ?? []).map(a => a.id === id ? { ...a, ...patch } : a) }));
       const dbPatch: any = {};
