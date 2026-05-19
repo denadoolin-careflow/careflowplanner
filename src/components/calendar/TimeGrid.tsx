@@ -510,7 +510,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                     className={cn(
                       "relative cursor-crosshair transition-colors",
                       externalDrag && dropHover?.iso !== iso && "bg-muted/20",
-                      externalDrag && dropHover?.iso === iso && "bg-primary/[0.04]"
+                      externalDrag && dropHover?.iso === iso && "bg-primary/10 ring-2 ring-inset ring-primary/40"
                     )}
                     style={{ height: GRID_HEIGHT }}
                     onClick={(e) => startSlot(d, e)}
