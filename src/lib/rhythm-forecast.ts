@@ -507,6 +507,56 @@ export function useRhythmForecastEnabled(): [boolean, (v: boolean) => void] {
   return [on, set];
 }
 
+/* --- Recommendation tone (gentle vs. more actionable) --- */
+export type RecommendationTone = "gentle" | "actionable";
+const TONE_KEY = "careflow:rhythm-tone";
+const TONE_EVENT = "rhythm-tone:change";
+
+const TONE_RECOMMENDATIONS: Record<RecommendationTone, Record<Element, string>> = {
+  gentle: {
+    fire:  "Pick one small spark — momentum beats a long list.",
+    earth: "Tend home, body, routine. Steady wins today.",
+    air:   "Send the message, ask the question, write the list.",
+    water: "Reflect, release, soften. Rest counts as progress.",
+  },
+  actionable: {
+    fire:  "Ship one thing in 25 min. Start the call, send the pitch, move first.",
+    earth: "Block 2 routine tasks back-to-back: meal prep, laundry, or one home reset.",
+    air:   "Send 3 messages you've been delaying and write tomorrow's top 3.",
+    water: "Close 1 loop: tidy inbox, journal 5 lines, or release one open task.",
+  },
+};
+
+export function getRecommendationTone(): RecommendationTone {
+  if (typeof window === "undefined") return "gentle";
+  const v = window.localStorage.getItem(TONE_KEY);
+  return v === "actionable" ? "actionable" : "gentle";
+}
+
+export function getElementRecommendation(date: Date = new Date(), tone?: RecommendationTone): string {
+  const el = getElementMeta(date).id;
+  return TONE_RECOMMENDATIONS[tone ?? getRecommendationTone()][el];
+}
+
+export function useRecommendationTone(): [RecommendationTone, (v: RecommendationTone) => void] {
+  const [tone, setTone] = useState<RecommendationTone>(getRecommendationTone);
+  useEffect(() => {
+    const handler = () => setTone(getRecommendationTone());
+    window.addEventListener("storage", handler);
+    window.addEventListener(TONE_EVENT, handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener(TONE_EVENT, handler);
+    };
+  }, []);
+  const set = (v: RecommendationTone) => {
+    window.localStorage.setItem(TONE_KEY, v);
+    setTone(v);
+    window.dispatchEvent(new Event(TONE_EVENT));
+  };
+  return [tone, set];
+}
+
 /* --- Suggested tasks by phase --- */
 export interface SuggestedTask {
   title: string;

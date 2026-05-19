@@ -18,7 +18,7 @@ import { GoogleCalendarSection } from "@/components/calendar/GoogleCalendarSecti
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
 import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/TimeZoneSelect";
-import { useRhythmForecastEnabled } from "@/lib/rhythm-forecast";
+import { useRhythmForecastEnabled, useRecommendationTone } from "@/lib/rhythm-forecast";
 import { MOON_PROVIDERS, useMoonProvider } from "@/lib/moon-providers";
 import { useEffect } from "react";
 import {
@@ -33,6 +33,7 @@ export default function Settings() {
   const prefs = usePomodoroPrefs();
   const templates = usePomodoroTemplatesList();
   const [rhythmOn, setRhythmOn] = useRhythmForecastEnabled();
+  const [tone, setTone] = useRecommendationTone();
   const [moonProviderId, setMoonProviderId] = useMoonProvider();
   const activeProvider = MOON_PROVIDERS.find(p => p.id === moonProviderId);
 
@@ -122,6 +123,31 @@ export default function Settings() {
             {activeProvider && (
               <p className="mt-1 text-[11px] text-muted-foreground">{activeProvider.description}</p>
             )}
+          </div>
+
+          <div>
+            <Label className="text-xs text-muted-foreground">Recommendation style</Label>
+            <div className="mt-1 flex flex-wrap gap-2">
+              <Button
+                variant={tone === "gentle" ? "default" : "outline"}
+                className="rounded-full"
+                onClick={() => setTone("gentle")}
+              >
+                Gentle
+              </Button>
+              <Button
+                variant={tone === "actionable" ? "default" : "outline"}
+                className="rounded-full"
+                onClick={() => setTone("actionable")}
+              >
+                More actionable
+              </Button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {tone === "gentle"
+                ? "Soft, caregiver-paced suggestions."
+                : "Concrete, time-boxed nudges when you want to push."}
+            </p>
           </div>
         </div>
       </SectionCard>
