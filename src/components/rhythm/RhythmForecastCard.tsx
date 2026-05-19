@@ -7,6 +7,20 @@ import { getRhythmForecast } from "@/lib/rhythm-forecast";
 import { useMoonDataVersion } from "@/lib/moon-providers";
 import { PlanWithEnergyDialog } from "./PlanWithEnergyDialog";
 
+/**
+ * Element tint palette used to color the Rhythm Forecast card after the
+ * day's moon sign element. Soft, calming, caregiver-friendly hues.
+ *   earth = green · water = blue · air = yellow · fire = orange
+ */
+const ELEMENT_TINT: Record<"fire" | "earth" | "air" | "water", {
+  ring: string; glow1: string; glow2: string; chip: string; chipText: string;
+}> = {
+  fire:  { ring: "hsl(20 80% 55% / 0.35)",  glow1: "hsl(20 90% 60% / 0.22)",  glow2: "hsl(35 95% 60% / 0.16)",  chip: "hsl(20 80% 55% / 0.18)",  chipText: "hsl(15 70% 30%)" },
+  earth: { ring: "hsl(140 45% 40% / 0.32)", glow1: "hsl(140 55% 45% / 0.20)", glow2: "hsl(95 50% 55% / 0.16)",  chip: "hsl(140 45% 45% / 0.18)", chipText: "hsl(140 50% 22%)" },
+  air:   { ring: "hsl(48 90% 55% / 0.38)",  glow1: "hsl(48 95% 60% / 0.22)",  glow2: "hsl(40 90% 65% / 0.16)",  chip: "hsl(48 90% 55% / 0.22)",  chipText: "hsl(38 70% 28%)" },
+  water: { ring: "hsl(210 75% 55% / 0.32)", glow1: "hsl(210 80% 60% / 0.22)", glow2: "hsl(195 70% 65% / 0.16)", chip: "hsl(210 75% 55% / 0.20)", chipText: "hsl(215 60% 28%)" },
+};
+
 interface Props {
   date?: Date;
   /** "widget" = compact dashboard card; "today" = wider "Today's Energy" card */
@@ -22,22 +36,23 @@ export function RhythmForecastCard({ date = new Date(), variant = "widget", clas
   useMoonDataVersion();
   const f = getRhythmForecast(date);
   const [planOpen, setPlanOpen] = useState(false);
+  const tint = ELEMENT_TINT[f.element];
 
   return (
     <section
       aria-label="Rhythm forecast"
       className={cn(
-        "relative overflow-hidden rounded-2xl ring-1 ring-border/60 shadow-soft backdrop-blur-md",
+        "relative overflow-hidden rounded-2xl ring-1 shadow-soft backdrop-blur-md transition-colors",
         "bg-gradient-to-br from-card/90 via-card/70 to-card/90 p-4",
         className,
       )}
+      style={{ boxShadow: `0 0 0 1px ${tint.ring}, 0 8px 24px -12px ${tint.glow1}` }}
     >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 opacity-70"
         style={{
-          background:
-            "radial-gradient(ellipse at top right, hsl(var(--primary)/0.12), transparent 65%), radial-gradient(ellipse at bottom left, hsl(var(--accent)/0.10), transparent 70%)",
+          background: `radial-gradient(ellipse at top right, ${tint.glow1}, transparent 65%), radial-gradient(ellipse at bottom left, ${tint.glow2}, transparent 70%)`,
         }}
       />
 
@@ -46,14 +61,23 @@ export function RhythmForecastCard({ date = new Date(), variant = "widget", clas
           <span
             aria-hidden
             className="absolute inset-[-6px] rounded-full blur-md"
-            style={{ background: "radial-gradient(circle, hsl(48 80% 70% / 0.30), transparent 70%)" }}
+            style={{ background: `radial-gradient(circle, ${tint.glow1}, transparent 70%)` }}
           />
           <MoonGlyph date={date} size={variant === "today" ? 52 : 44} className="relative" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Rhythm Forecast</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Rhythm Forecast</p>
+            <span
+              className="rounded-full px-1.5 py-px text-[9px] font-medium uppercase tracking-wider"
+              style={{ background: tint.chip, color: tint.chipText }}
+              title={`Moon in ${f.sign.sign} — ${f.element} element`}
+            >
+              {f.element}
+            </span>
+          </div>
           <p className="font-display text-base leading-tight">
-            {f.phaseLabel} <span className="text-muted-foreground">·</span> {f.sign.glyph} {f.sign.sign}
+            {f.phaseLabel} <span className="text-muted-foreground">·</span> Moon in {f.sign.glyph} {f.sign.sign}
           </p>
           <p className="text-[11px] text-muted-foreground tabular-nums">
             {f.illumination}% lit · {f.elementLine.split(" — ")[0]}
