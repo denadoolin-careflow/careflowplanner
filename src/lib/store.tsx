@@ -130,6 +130,11 @@ interface Ctx {
   updateProject: (id: string, patch: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
 
+  addSection: (s: { projectId: string; name: string; color?: string; sortOrder?: number }) => Promise<ProjectSection | null>;
+  updateSection: (id: string, patch: Partial<ProjectSection>) => Promise<void>;
+  deleteSection: (id: string) => Promise<void>;
+  reorderSections: (projectId: string, orderedIds: string[]) => Promise<void>;
+
   updateArea: (id: string, patch: Partial<AreaRecord>) => Promise<void>;
 
   addGoal: (g: Partial<Goal> & { title: string }) => Promise<void>;
