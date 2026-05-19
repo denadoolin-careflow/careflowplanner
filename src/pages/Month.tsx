@@ -7,7 +7,7 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
@@ -29,7 +29,7 @@ const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
 
 export default function Month() {
-  const { state, updateTask, updateAppointment } = useStore();
+  const { state, updateTask, updateAppointment, toggleTask } = useStore();
   const { settings: cycleSettings, periods: cyclePeriods } = useCycle();
   const [cursor, setCursor] = useState(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
@@ -60,7 +60,7 @@ export default function Month() {
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, label: `✨ ${h.name}` })),
     ...gEvents.filter(g => g.date === k).map(g => ({ kind: "gcal" as const, label: g.title })),
     ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
-      kind: "task" as const, label: `○ ${t.title}`, taskId: t.id,
+      kind: "task" as const, label: t.title, taskId: t.id,
     })),
   ];
 
@@ -199,14 +199,30 @@ export default function Month() {
                             }
                           } : undefined}
                           className={cn(
-                            "rounded px-1 py-0.5 text-[10px] leading-tight whitespace-normal break-words transition-all duration-150",
+                            "flex items-start gap-1 rounded px-1 py-0.5 text-[10px] leading-tight whitespace-normal break-words transition-all duration-150",
                             colorOf(it.kind),
                             (isTask || isAppt) && "cursor-grab hover:scale-[1.04] hover:shadow-sm hover:ring-1 hover:ring-primary/40 active:cursor-grabbing",
                             isBeingDragged && "opacity-40 scale-95",
                           )}
                           title={it.label}
                         >
-                          {it.label}
+                          {isTask && (
+                            <button
+                              draggable={false}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                haptics.tap();
+                                void toggleTask(it.taskId!);
+                              }}
+                              aria-label="Mark task done"
+                              className="group/cb mt-[1px] grid h-3 w-3 shrink-0 place-items-center rounded-full border border-primary/60 bg-background text-primary hover:bg-primary hover:text-primary-foreground"
+                            >
+                              <Check className="h-2 w-2 opacity-0 group-hover/cb:opacity-100" />
+                            </button>
+                          )}
+                          <span className="min-w-0 flex-1">{it.label}</span>
                         </div>
                       );
                     })}
