@@ -26,6 +26,8 @@ import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
 import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { MoonJournalReminderBanner } from "@/components/cycle/MoonJournalReminderBanner";
+import { RhythmForecastCard } from "@/components/rhythm/RhythmForecastCard";
+import { useRhythmForecastEnabled } from "@/lib/rhythm-forecast";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
@@ -115,6 +117,7 @@ function TodayInner() {
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
   const [widgetsOpen, setWidgetsOpen] = useState(false);
+  const [rhythmOn] = useRhythmForecastEnabled();
 
   const body = (
     <div className="flex gap-6">
@@ -194,6 +197,8 @@ function TodayInner() {
         </div>
 
         <MoonJournalReminderBanner date={today} />
+
+        {rhythmOn && <RhythmForecastCard date={today} variant="today" />}
 
         {layout === "plan" ? (
           <DailyPlanningDashboard day={today} />

@@ -18,6 +18,7 @@ import {
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { MoonPhaseWidget } from "@/components/widgets/MoonPhaseWidget";
 import { CycleWidget } from "@/components/cycle/CycleWidget";
+import { RhythmForecastWidget } from "@/components/widgets/RhythmForecastWidget";
 import { TaskProgressBar } from "@/components/cards/TaskProgressBar";
 import { PomodoroPanel } from "@/components/tasks/PomodoroPanel";
 import {
@@ -91,6 +92,7 @@ export const WIDGET_REGISTRY: Record<WidgetType, WidgetSpec> = {
   "chore-today": { type: "chore-today", title: "Chores today", icon: Users, defaultSize: { w: 4, h: 5 }, Component: ChoreTodayWidget, pageHref: "/home-areas", quickAddEvent: "cleaning" },
   "home-overdue": { type: "home-overdue", title: "Overdue maintenance", icon: Wrench, defaultSize: { w: 4, h: 5 }, Component: HomeOverdueWidget, pageHref: "/home-areas" },
   cycle: { type: "cycle", title: "Cyclical living", icon: Heart, defaultSize: { w: 4, h: 5 }, Component: CycleWidget, bare: true, pageHref: "/settings" },
+  "rhythm-forecast": { type: "rhythm-forecast", title: "Rhythm forecast", icon: Moon, defaultSize: { w: 4, h: 5 }, Component: RhythmForecastWidget, bare: true, pageHref: "/today" },
 };
 
 export const ALL_WIDGET_TYPES = Object.keys(WIDGET_REGISTRY) as WidgetType[];
