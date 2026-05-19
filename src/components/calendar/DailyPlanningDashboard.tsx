@@ -196,6 +196,9 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
     const dp = hourToDayPart(startHour);
     const dayPart = dp ? ((dp[0].toUpperCase() + dp.slice(1)) as "Morning" | "Afternoon" | "Evening") : undefined;
     await updateTask(taskId, { dueDate: dateISO, inbox: false, ...(dayPart ? { dayPart } : {}) });
+    const hh = String(Math.floor(startHour)).padStart(2, "0");
+    const mm = String(Math.round((startHour % 1) * 60)).padStart(2, "0");
+    toast.success(`Scheduled "${t.title}"`, { description: `${hh}:${mm}` });
   };
 
   const handleApptDrop = async (apptId: string, dateISO: string, startHour: number) => {
@@ -204,7 +207,7 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
     const hh = String(Math.floor(startHour)).padStart(2, "0");
     const mm = String(Math.round((startHour % 1) * 60)).padStart(2, "0");
     await updateAppointment(apptId, { date: dateISO, time: `${hh}:${mm}` });
-    toast(`Moved "${a.title}" to ${hh}:${mm}`);
+    toast.success(`Moved "${a.title}"`, { description: `to ${hh}:${mm}` });
   };
 
   const saveJournalCheckIn = async () => {
