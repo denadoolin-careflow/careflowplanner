@@ -713,6 +713,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                         <Fragment key={b.id}>
                         <div
                           data-block-id={b.id}
+                          title={b.title}
                           onPointerDown={(e) => armBlockMove(b, e)}
                           onPointerMove={(e) => {
                             // Only cancel the pending long-press if the finger actually
