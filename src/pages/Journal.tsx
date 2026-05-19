@@ -230,6 +230,8 @@ export default function Journal() {
         </div>
       </div>
 
+      <RhythmJournalPrompt scope="daily" />
+
       <SectionCard title="Choose a template" accent="sage">
         <div className="flex flex-wrap gap-2">
           {TEMPLATES.map(t => (
