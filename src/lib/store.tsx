@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type {
   AppState, Task, Goal, Habit, JournalEntry, Meal, GroceryItem,
   Appointment, Birthday, Holiday, CareNote, CleaningTask, Idea,
-  CareRecipient, Energy, AreaRecord, Project,
+  CareRecipient, Energy, AreaRecord, Project, ProjectSection,
 } from "./types";
 import { seedState, newUserSeed } from "./seed";
 import { AREAS } from "./types";
@@ -27,6 +27,7 @@ const taskFrom = (r: any): Task => ({
   parentTaskId: r.parent_task_id ?? undefined,
   inbox: !!r.inbox,
   resetItemId: r.reset_item_id ?? undefined,
+  sectionId: r.section_id ?? undefined,
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null, done: t.done,
@@ -44,6 +45,7 @@ const taskTo = (t: Partial<Task>) => ({
   project_id: t.projectId ?? null,
   parent_task_id: t.parentTaskId ?? null,
   inbox: t.inbox ?? false,
+  section_id: t.sectionId ?? null,
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 const habitFrom = (r: any): Habit => ({ id: r.id, title: r.title, cadence: r.cadence, category: r.category, streak: r.streak, log: {} });
@@ -107,6 +109,10 @@ const projectFrom = (r: any): Project => ({
   sortOrder: r.sort_order ?? 0, archivedAt: r.archived_at ?? undefined,
   createdAt: r.created_at,
 });
+const sectionFrom = (r: any): ProjectSection => ({
+  id: r.id, projectId: r.project_id, name: r.name,
+  color: r.color ?? undefined, sortOrder: r.sort_order ?? 0, createdAt: r.created_at,
+});
 
 /* ---------- context ---------- */
 interface Ctx {
@@ -123,6 +129,11 @@ interface Ctx {
   addProject: (p: Partial<Project> & { name: string }) => Promise<Project | null>;
   updateProject: (id: string, patch: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
+
+  addSection: (s: { projectId: string; name: string; color?: string; sortOrder?: number }) => Promise<ProjectSection | null>;
+  updateSection: (id: string, patch: Partial<ProjectSection>) => Promise<void>;
+  deleteSection: (id: string) => Promise<void>;
+  reorderSections: (projectId: string, orderedIds: string[]) => Promise<void>;
 
   updateArea: (id: string, patch: Partial<AreaRecord>) => Promise<void>;
 
@@ -214,12 +225,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const tables = [
       "tasks", "goals", "habits", "habit_logs", "journal_entries", "meals",
       "grocery_items", "appointments", "birthdays", "holidays", "care_recipients",
-      "care_notes", "cleaning_tasks", "ideas", "profiles", "areas", "projects",
+      "care_notes", "cleaning_tasks", "ideas", "profiles", "areas", "projects", "project_sections",
     ] as const;
     const results = await Promise.all(tables.map(t =>
       supabase.from(t).select("*").order("created_at", { ascending: false } as any)
     ));
-    const [tasks, goals, habits, habitLogs, journal, meals, grocery, appts, bdays, holidays, recipients, careNotes, cleaning, ideas, profiles, areas, projects] = results.map(r => r.data ?? []);
+    const [tasks, goals, habits, habitLogs, journal, meals, grocery, appts, bdays, holidays, recipients, careNotes, cleaning, ideas, profiles, areas, projects, sections] = results.map(r => r.data ?? []);
     const profile: any = profiles[0] ?? {};
     // attach habit logs
     const logsByHabit: Record<string, Record<string, boolean>> = {};
@@ -253,6 +264,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ideas: (ideas as any[]).map(ideaFrom),
       areas: (areas as any[]).map(areaFrom).sort((a,b) => a.sortOrder - b.sortOrder),
       projects: (projects as any[]).map(projectFrom).sort((a,b) => a.sortOrder - b.sortOrder),
+      projectSections: (sections as any[]).map(sectionFrom).sort((a,b) => a.sortOrder - b.sortOrder),
       resetTemplates: seedState().resetTemplates,
     });
     // Seed default areas from enum on first load (idempotent thanks to UNIQUE(user_id,name))
@@ -368,6 +380,50 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     deleteProject: async (id) => {
       setState(s => ({ ...s, projects: (s.projects ?? []).filter(p => p.id !== id) }));
       await supabase.from("projects").delete().eq("id", id);
+    },
+
+    addSection: async (s) => {
+      if (!uid) return null;
+      const row: any = {
+        user_id: uid,
+        project_id: s.projectId,
+        name: s.name,
+        color: s.color ?? null,
+        sort_order: s.sortOrder ?? ((state.projectSections ?? []).filter(x => x.projectId === s.projectId).length),
+      };
+      const { data } = await supabase.from("project_sections").insert(row).select().single();
+      if (!data) return null;
+      const sec = sectionFrom(data);
+      setState(st => ({ ...st, projectSections: [...(st.projectSections ?? []), sec] }));
+      return sec;
+    },
+    updateSection: async (id, patch) => {
+      setState(st => ({ ...st, projectSections: (st.projectSections ?? []).map(x => x.id === id ? { ...x, ...patch } : x) }));
+      const dbPatch: any = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
+      if (patch.sortOrder !== undefined) dbPatch.sort_order = patch.sortOrder;
+      await supabase.from("project_sections").update(dbPatch).eq("id", id);
+    },
+    deleteSection: async (id) => {
+      setState(st => ({
+        ...st,
+        projectSections: (st.projectSections ?? []).filter(x => x.id !== id),
+        tasks: st.tasks.map(t => t.sectionId === id ? { ...t, sectionId: undefined } : t),
+      }));
+      await supabase.from("tasks").update({ section_id: null }).eq("section_id", id);
+      await supabase.from("project_sections").delete().eq("id", id);
+    },
+    reorderSections: async (projectId, orderedIds) => {
+      setState(st => ({
+        ...st,
+        projectSections: (st.projectSections ?? []).map(x =>
+          x.projectId === projectId ? { ...x, sortOrder: orderedIds.indexOf(x.id) } : x
+        ),
+      }));
+      await Promise.all(orderedIds.map((id, i) =>
+        supabase.from("project_sections").update({ sort_order: i }).eq("id", id)
+      ));
     },
 
     updateArea: async (id, patch) => {

@@ -10,7 +10,7 @@ export const seedState = (): AppState => ({
   settings: { name: "", lowEnergyMode: false, theme: "system" },
   tasks: [], goals: [], habits: [], journal: [], meals: [], grocery: [],
   appointments: [], birthdays: [], holidays: [], recipients: [], careNotes: [],
-  cleaning: [], ideas: [],
+  cleaning: [], ideas: [], projectSections: [],
   resetTemplates: [
     { id: "rt1", name: "Sunday Reset", items: ["Plan the week's meals","Make grocery list","Wash & fold laundry","Review appointments","Pack school bags","Wipe kitchen","Take out trash","Check meds & supplies"] },
     { id: "rt2", name: "Reset After a Hard Day", items: ["Drink a full glass of water","Clear one surface","Write one note","Choose tomorrow's top task","Lights out by 10:30"] },
