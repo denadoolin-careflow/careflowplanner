@@ -19,6 +19,7 @@ import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
 import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/TimeZoneSelect";
 import { useRhythmForecastEnabled } from "@/lib/rhythm-forecast";
+import { MOON_PROVIDERS, useMoonProvider } from "@/lib/moon-providers";
 import { useEffect } from "react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -32,6 +33,8 @@ export default function Settings() {
   const prefs = usePomodoroPrefs();
   const templates = usePomodoroTemplatesList();
   const [rhythmOn, setRhythmOn] = useRhythmForecastEnabled();
+  const [moonProviderId, setMoonProviderId] = useMoonProvider();
+  const activeProvider = MOON_PROVIDERS.find(p => p.id === moonProviderId);
 
   // Auto-sync time zone with the device on first load so the calendar schedule view
   // always reflects the user's current location.
@@ -96,11 +99,30 @@ export default function Settings() {
         subtitle="Gentle moon + zodiac planning hints. Caregiver-friendly language, never mystical."
         accent="sage"
       >
-        <div className="flex items-center gap-3">
-          <Switch checked={rhythmOn} onCheckedChange={setRhythmOn} />
-          <Label className="text-sm">
-            {rhythmOn ? "On — shown on Today and the dashboard" : "Off — hidden everywhere"}
-          </Label>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Switch checked={rhythmOn} onCheckedChange={setRhythmOn} />
+            <Label className="text-sm">
+              {rhythmOn ? "On — shown on Today, Week, and the dashboard" : "Off — hidden everywhere"}
+            </Label>
+          </div>
+
+          <div>
+            <Label className="text-xs text-muted-foreground">Moon data source</Label>
+            <Select value={moonProviderId} onValueChange={(v) => setMoonProviderId(v as any)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MOON_PROVIDERS.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {activeProvider && (
+              <p className="mt-1 text-[11px] text-muted-foreground">{activeProvider.description}</p>
+            )}
+          </div>
         </div>
       </SectionCard>
 

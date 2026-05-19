@@ -1,4 +1,5 @@
-import { getMoonPhase, MOON_INFO, getIllumination, type MoonPhase } from "@/lib/moon";
+import { MOON_INFO, type MoonPhase } from "@/lib/moon";
+import { getMoonData } from "@/lib/moon-providers";
 
 export type Element = "fire" | "earth" | "air" | "water";
 
@@ -144,16 +145,16 @@ export interface RhythmForecast {
 }
 
 export function getRhythmForecast(date: Date = new Date()): RhythmForecast {
-  const phase = getMoonPhase(date);
-  const info = MOON_INFO[phase];
+  const m = getMoonData(date);
+  const info = MOON_INFO[m.phase];
   const sign = getSunSign(date);
   return {
     date,
-    phase,
+    phase: m.phase,
     phaseLabel: info.label,
-    glyph: info.glyph,
-    illumination: getIllumination(date),
-    guidance: MOON_GUIDANCE[phase],
+    glyph: m.glyph,
+    illumination: m.illumination,
+    guidance: MOON_GUIDANCE[m.phase],
     sign,
     element: sign.element,
     elementLine: ELEMENT_LABEL[sign.element].line,
