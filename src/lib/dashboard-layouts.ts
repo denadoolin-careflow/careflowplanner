@@ -33,7 +33,8 @@ export type WidgetType =
   | "debt-progress"
   | "chore-today"
   | "home-overdue"
-  | "cycle";
+  | "cycle"
+  | "rhythm-forecast";
 
 export interface WidgetInstance {
   id: string;
@@ -90,6 +91,7 @@ export function defaultLayout(page: PageKey): DashboardLayoutData {
       { type: "moon", w: 4, h: 5 },
       { type: "top3", w: 4, h: 5 },
       { type: "rhythm", w: 4, h: 5 },
+      { type: "rhythm-forecast", w: 4, h: 5 },
       { type: "appointments-today", w: 4, h: 5 },
       { type: "meals-today", w: 4, h: 5 },
       { type: "habits-today", w: 4, h: 5 },
