@@ -292,7 +292,13 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
       title: "Schedule", icon: Clock,
       render: () => (
         <div className="-mx-2">
-          <TimeGrid days={[day]} appointmentsOn={eventsOn} />
+          <TimeGrid
+            days={[day]}
+            appointmentsOn={eventsOn}
+            onTaskDropAt={handleTimeDrop}
+            onApptDropAt={handleApptDrop}
+            onApptClick={setEditApptId}
+          />
         </div>
       ),
     },
