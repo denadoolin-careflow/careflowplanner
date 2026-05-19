@@ -214,6 +214,16 @@ export interface AppState {
   energyDate?: string;
   areas?: AreaRecord[];
   projects?: Project[];
+  projectSections?: ProjectSection[];
+}
+
+export interface ProjectSection {
+  id: string;
+  projectId: string;
+  name: string;
+  color?: string;
+  sortOrder: number;
+  createdAt: string;
 }
 
 export const AREAS: Area[] = ["Family","Kids","Caregiving","Home","Meals","Appointments","Holidays & Birthdays","Personal","Creative Projects","Money"];
