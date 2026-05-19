@@ -22,6 +22,8 @@ import { InboxCapture } from "@/components/calendar/InboxCapture";
 import { MonthPlanningDashboard } from "@/components/calendar/MonthPlanningDashboard";
 import { moonPhaseFor } from "@/lib/moon-phase";
 import { Globe2 } from "lucide-react";
+import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
+import { ElementBadge } from "@/components/rhythm/ElementBadge";
 
 type View = "day" | "week" | "month" | "year";
 
