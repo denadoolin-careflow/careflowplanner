@@ -233,7 +233,7 @@ export default function Month() {
                             "flex items-start gap-1 rounded px-1 py-0.5 text-[10px] leading-tight whitespace-normal break-words transition-all duration-150",
                             isBlock && blockCls
                               ? cn(blockCls.bg, blockCls.text, "ring-1 ring-inset", blockCls.ring, "ring-opacity-30")
-                              : colorOf(it.kind),
+                              : colorOf(it.kind as "appt"|"bday"|"hol"|"gcal"|"task"),
                             (isTask || isAppt || isBlock) && "cursor-grab hover:scale-[1.04] hover:shadow-sm hover:ring-1 hover:ring-primary/40 active:cursor-grabbing",
                             isBeingDragged && "opacity-40 scale-95",
                           )}
