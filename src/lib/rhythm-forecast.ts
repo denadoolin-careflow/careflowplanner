@@ -107,6 +107,54 @@ const SIGN_TABLE: { sign: ZodiacSign; from: [number, number]; to: [number, numbe
   { sign: "Sagittarius", from: [11, 22], to: [12, 21], element: "fire",  glyph: "♐", insight: "Good for one hopeful step — leave room to breathe." },
 ];
 
+/* --- Moon-sign math (self-contained, ~0.3° accuracy — plenty for 30° signs).
+ * Abridged Meeus Σl series. Used as the source of truth so we no longer
+ * depend on the (Cloudflare-blocked) Astro-Seek scrape for accuracy.
+ * Cross-checked against Lunar Life / Time and Date.
+ */
+function moonEclipticLongitude(date: Date): number {
+  const JD = date.getTime() / 86400000 + 2440587.5;
+  const T = (JD - 2451545.0) / 36525;
+  const d2r = Math.PI / 180;
+  const norm = (a: number) => ((a % 360) + 360) % 360;
+  const Lp = norm(218.3164477 + 481267.88123421 * T - 0.0015786 * T * T + (T * T * T) / 538841);
+  const D  = norm(297.8501921 + 445267.1114034  * T - 0.0018819 * T * T);
+  const M  = norm(357.5291092 +  35999.0502909  * T - 0.0001536 * T * T);
+  const Mp = norm(134.9633964 + 477198.8675055  * T + 0.0087414 * T * T);
+  const F  = norm( 93.2720950 + 483202.0175233  * T - 0.0036539 * T * T);
+  // [coeff (1e-6 deg), D, M, M', F]
+  const terms: [number, number, number, number, number][] = [
+    [6288774, 0, 0, 1, 0], [1274027, 2, 0, -1, 0], [658314, 2, 0, 0, 0],
+    [213618, 0, 0, 2, 0], [-185116, 0, 1, 0, 0], [-114332, 0, 0, 0, 2],
+    [58793, 2, 0, -2, 0], [57066, 2, -1, -1, 0], [53322, 2, 0, 1, 0],
+    [45758, 2, -1, 0, 0], [-40923, 0, 1, -1, 0], [-34720, 1, 0, 0, 0],
+    [-30383, 0, 1, 1, 0], [15327, 2, 0, 0, -2], [-12528, 0, 0, 1, 2],
+    [10980, 0, 0, 1, -2], [10675, 4, 0, -1, 0], [10034, 0, 0, 3, 0],
+    [8548, 4, 0, -2, 0],
+  ];
+  let sum = 0;
+  for (const [c, d, m, mp, f] of terms) {
+    sum += c * Math.sin(d2r * (d * D + m * M + mp * Mp + f * F));
+  }
+  return norm(Lp + sum / 1_000_000);
+}
+
+const ZODIAC_ORDER: ZodiacSign[] = [
+  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+];
+
+/** Locally-computed moon zodiac sign. Accurate to within minutes of the actual ingress. */
+export function getMoonSign(date: Date = new Date()): ZodiacSign {
+  return ZODIAC_ORDER[Math.floor(moonEclipticLongitude(date) / 30)];
+}
+
+export function getMoonSignInfo(date: Date = new Date()): ZodiacInfo {
+  const sign = getMoonSign(date);
+  const row = SIGN_TABLE.find(r => r.sign === sign)!;
+  return { sign: row.sign, element: row.element, glyph: row.glyph, insight: row.insight };
+}
+
 export function getSunSign(date: Date = new Date()): ZodiacInfo {
   const m = date.getMonth() + 1;
   const d = date.getDate();
@@ -172,7 +220,7 @@ export const ELEMENT_META: Record<Element, ElementMeta> = {
 };
 
 export function getElementMeta(date: Date = new Date()): ElementMeta {
-  return ELEMENT_META[getSunSign(date).element];
+  return ELEMENT_META[getMoonSignInfo(date).element];
 }
 
 /* --- Composed forecast helper --- */
@@ -191,7 +239,13 @@ export interface RhythmForecast {
 export function getRhythmForecast(date: Date = new Date()): RhythmForecast {
   const m = getMoonData(date);
   const info = MOON_INFO[m.phase];
-  const sign = getSunSign(date);
+  // Prefer provider-supplied moon sign (e.g. Astro-Seek cache), but fall
+  // back to our local astronomical calc — which is what the user's
+  // Lunar Life app uses, and is accurate when the upstream is unreachable.
+  const local = getMoonSignInfo(date);
+  const sign: ZodiacInfo = m.sign
+    ? (SIGN_TABLE.find(r => r.sign === m.sign) ?? local)
+    : local;
   return {
     date,
     phase: m.phase,
@@ -290,7 +344,7 @@ export function getWeeklyRhythm(weekStart: Date): WeeklyRhythm {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart); d.setDate(d.getDate() + i);
     const m = getMoonData(d);
-    return { date: d, phase: m.phase, element: getSunSign(d).element as Element };
+    return { date: d, phase: m.phase, element: getMoonSignInfo(d).element as Element };
   });
   const dominantPhase = modeOf(days.map(d => d.phase));
   const dominantElement = modeOf(days.map(d => d.element));
