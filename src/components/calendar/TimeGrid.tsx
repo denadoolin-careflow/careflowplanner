@@ -807,7 +807,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                           >
                             <GripHorizontal className="h-4 w-4" />
                           </div>
-                          <div className="pointer-events-none relative z-[1] flex items-center gap-1 truncate pr-8 font-medium leading-tight">
+                          <div className="pointer-events-none relative z-[1] flex items-start gap-1 pr-8 font-medium leading-tight">
                             {isConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
                             {linkedTask && (
                               <button
@@ -825,7 +825,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                                 <Check className={cn("h-2.5 w-2.5 transition-opacity", taskDone ? "opacity-100" : "opacity-0 group-hover/cb:opacity-100")} />
                               </button>
                             )}
-                            <span className={cn("truncate", taskDone && "line-through")}>
+                            <span className={cn("min-w-0 whitespace-normal break-words", taskDone && "line-through")}>
                               {b.icon && <span className="mr-1" aria-hidden>{b.icon}</span>}
                               {b.title}
                             </span>
