@@ -1,5 +1,6 @@
 import { MOON_INFO, type MoonPhase } from "@/lib/moon";
 import { getMoonData } from "@/lib/moon-providers";
+import type { Task } from "@/lib/types";
 
 export type Element = "fire" | "earth" | "air" | "water";
 
@@ -131,6 +132,49 @@ export const ELEMENT_LABEL: Record<Element, { verb: string; line: string }> = {
   water: { verb: "cleanse", line: "Water — cleanse. Reflect, release, soften." },
 };
 
+/* --- Element visual + planning meta (icons resolved in components) --- */
+export interface ElementMeta {
+  id: Element;
+  label: string;          // "Fire"
+  verb: string;           // "create"
+  iconName: "Flame" | "Wind" | "Droplet" | "Mountain";
+  /** Tailwind text/bg accent classes — pulled from semantic tokens. */
+  accent: { text: string; bg: string; ring: string; glow: string };
+  recommendation: string; // 1-line caregiver-friendly planning tip
+  focusAreas: string[];   // 2-3 keywords
+}
+
+export const ELEMENT_META: Record<Element, ElementMeta> = {
+  fire: {
+    id: "fire", label: "Fire", verb: "create", iconName: "Flame",
+    accent: { text: "text-warm-foreground", bg: "bg-warm-soft", ring: "ring-warm/40", glow: "hsl(20 80% 60% / 0.18)" },
+    recommendation: "Pick one small spark — momentum beats a long list.",
+    focusAreas: ["create", "start", "act"],
+  },
+  earth: {
+    id: "earth", label: "Earth", verb: "conserve", iconName: "Mountain",
+    accent: { text: "text-secondary-foreground", bg: "bg-secondary-soft", ring: "ring-secondary/40", glow: "hsl(35 50% 55% / 0.18)" },
+    recommendation: "Tend home, body, routine. Steady wins today.",
+    focusAreas: ["home", "body", "routine"],
+  },
+  air: {
+    id: "air", label: "Air", verb: "connect", iconName: "Wind",
+    accent: { text: "text-primary-foreground", bg: "bg-primary-soft", ring: "ring-primary/40", glow: "hsl(205 65% 60% / 0.18)" },
+    recommendation: "Send the message, ask the question, write the list.",
+    focusAreas: ["connect", "plan", "share"],
+  },
+  water: {
+    id: "water", label: "Water", verb: "cleanse", iconName: "Droplet",
+    accent: { text: "text-accent-foreground", bg: "bg-accent-soft", ring: "ring-accent/40", glow: "hsl(250 60% 65% / 0.18)" },
+    recommendation: "Reflect, release, soften. Rest counts as progress.",
+    focusAreas: ["reflect", "release", "soften"],
+  },
+};
+
+export function getElementMeta(date: Date = new Date()): ElementMeta {
+  return ELEMENT_META[getSunSign(date).element];
+}
+
 /* --- Composed forecast helper --- */
 export interface RhythmForecast {
   date: Date;
@@ -159,6 +203,279 @@ export function getRhythmForecast(date: Date = new Date()): RhythmForecast {
     element: sign.element,
     elementLine: ELEMENT_LABEL[sign.element].line,
   };
+}
+
+/* ====================================================================== */
+/* Weekly Rhythm overview                                                 */
+/* ====================================================================== */
+
+export type PhaseDirection = "waxing" | "waning" | "balanced";
+export type PlanningStyle = "reset & intend" | "build gently" | "tend & finish" | "reflect & celebrate" | "release & rest";
+
+export interface WeeklyRhythm {
+  weekStart: Date;
+  days: { date: Date; phase: MoonPhase; element: Element }[];
+  startPhase: MoonPhase;
+  endPhase: MoonPhase;
+  /** Phase that appears most often this week. */
+  dominantPhase: MoonPhase;
+  /** Most common element across the 7 days. */
+  dominantElement: Element;
+  direction: PhaseDirection;
+  shifts: { date: Date; from: MoonPhase; to: MoonPhase; label: string }[];
+  energyTheme: string;
+  focusAreas: string[];
+  reminder: string;
+  planningStyle: PlanningStyle;
+  overview: string;
+}
+
+const WAXING_SET = new Set<MoonPhase>(["new", "waxing-crescent", "first-quarter", "waxing-gibbous"]);
+
+const STYLE_BY_PHASE: Record<MoonPhase, PlanningStyle> = {
+  "new": "reset & intend",
+  "waxing-crescent": "build gently",
+  "first-quarter": "build gently",
+  "waxing-gibbous": "tend & finish",
+  "full": "reflect & celebrate",
+  "waning-gibbous": "tend & finish",
+  "last-quarter": "release & rest",
+  "waning-crescent": "release & rest",
+};
+
+const THEME_BY_STYLE: Record<PlanningStyle, { theme: string; focus: string[]; reminder: string; overview: string }> = {
+  "reset & intend": {
+    theme: "Soft resets and small intentions",
+    focus: ["declutter", "intention setting", "low-energy resets"],
+    reminder: "You don't need a full plan — pick one quiet beginning.",
+    overview: "This week favors resetting routines, protecting energy, and naming what matters most.",
+  },
+  "build gently": {
+    theme: "Light progress, one small step at a time",
+    focus: ["first drafts", "small commitments", "follow-ups"],
+    reminder: "Build the pace you could keep on a tired day.",
+    overview: "This week favors quiet momentum — small steps, not big launches.",
+  },
+  "tend & finish": {
+    theme: "Tend what's already growing",
+    focus: ["finishing", "tidying", "checking in"],
+    reminder: "Tending is progress. Don't add anything new.",
+    overview: "This week favors finishing, tidying, and tending what you've already begun.",
+  },
+  "reflect & celebrate": {
+    theme: "Clarity, feelings, and quiet harvest",
+    focus: ["reflection", "small wins", "gentle company"],
+    reminder: "You can feel both full and tired. Both are real.",
+    overview: "This week favors reflection and noticing what's already true — over chasing more.",
+  },
+  "release & rest": {
+    theme: "Clear space, rest deeply",
+    focus: ["decluttering", "saying a kind no", "rest rituals"],
+    reminder: "Letting go is a form of caring for yourself.",
+    overview: "This week favors releasing, simplifying, and protecting rest before the next cycle.",
+  },
+};
+
+function modeOf<T extends string>(arr: T[]): T {
+  const counts = new Map<T, number>();
+  for (const v of arr) counts.set(v, (counts.get(v) ?? 0) + 1);
+  let best = arr[0], bestN = 0;
+  for (const [k, n] of counts) if (n > bestN) { best = k; bestN = n; }
+  return best;
+}
+
+function phaseLabel(p: MoonPhase) { return MOON_INFO[p].label; }
+
+export function getWeeklyRhythm(weekStart: Date): WeeklyRhythm {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart); d.setDate(d.getDate() + i);
+    const m = getMoonData(d);
+    return { date: d, phase: m.phase, element: getSunSign(d).element as Element };
+  });
+  const dominantPhase = modeOf(days.map(d => d.phase));
+  const dominantElement = modeOf(days.map(d => d.element));
+  const startPhase = days[0].phase;
+  const endPhase = days[6].phase;
+
+  const shifts: WeeklyRhythm["shifts"] = [];
+  for (let i = 1; i < days.length; i++) {
+    if (days[i].phase !== days[i - 1].phase) {
+      shifts.push({
+        date: days[i].date,
+        from: days[i - 1].phase,
+        to: days[i].phase,
+        label: `${phaseLabel(days[i - 1].phase)} → ${phaseLabel(days[i].phase)}`,
+      });
+    }
+  }
+
+  const waxCount = days.filter(d => WAXING_SET.has(d.phase)).length;
+  const direction: PhaseDirection =
+    waxCount >= 5 ? "waxing" : waxCount <= 2 ? "waning" : "balanced";
+
+  const planningStyle = STYLE_BY_PHASE[dominantPhase];
+  const meta = THEME_BY_STYLE[planningStyle];
+
+  return {
+    weekStart,
+    days,
+    startPhase,
+    endPhase,
+    dominantPhase,
+    dominantElement,
+    direction,
+    shifts,
+    energyTheme: meta.theme,
+    focusAreas: meta.focus,
+    reminder: meta.reminder,
+    planningStyle,
+    overview: meta.overview,
+  };
+}
+
+/* ====================================================================== */
+/* Weekly Reset · Moon connection                                         */
+/* ====================================================================== */
+
+export interface MoonResetTip {
+  phase: MoonPhase;
+  phaseLabel: string;
+  title: string;
+  bullets: string[];
+  note: string;
+}
+
+const RESET_TIPS: Record<MoonPhase, Omit<MoonResetTip, "phase" | "phaseLabel">> = {
+  "new":              { title: "Reset & intend",   bullets: ["Declutter one small zone", "Name one intention for the cycle", "Wipe one surface mindfully"], note: "Start the cycle by clearing space, not filling it." },
+  "waxing-crescent":  { title: "Plan & prep",      bullets: ["Tidy your most-used drop zone", "Restock one essential", "Write tomorrow's 3 small wins"], note: "Tiny resets compound — keep them gentle." },
+  "first-quarter":    { title: "Build momentum",   bullets: ["Tackle one delayed reset", "Run the dishwasher / a load of laundry", "Clear the entryway"], note: "Progress over polish today." },
+  "waxing-gibbous":   { title: "Tend & organize",  bullets: ["Finish one in-progress reset", "Refold or refresh a shelf", "Wipe down high-touch surfaces"], note: "Tend what's already started before adding more." },
+  "full":             { title: "Reflect & review", bullets: ["Notice what feels light and what feels heavy", "Celebrate one small reset that stuck", "Skim the week — what helped?"], note: "Witness your week before fixing anything." },
+  "waning-gibbous":   { title: "Simplify",         bullets: ["Donate or recycle one item", "Empty one bag, basket, or inbox", "Cancel one optional thing"], note: "Sharing and releasing both count as care." },
+  "last-quarter":     { title: "Clear & release",  bullets: ["Declutter one drawer", "Close open loops (returns, replies)", "Say a kind no to one thing"], note: "Clearing space is also progress." },
+  "waning-crescent":  { title: "Rest & soften",    bullets: ["Make the bed slowly", "Dim the lights early", "Choose a low-effort reset"], note: "Rest is preparation. Be gentle." },
+};
+
+export function getMoonResetTip(date: Date = new Date()): MoonResetTip {
+  const m = getMoonData(date);
+  const tip = RESET_TIPS[m.phase];
+  return { phase: m.phase, phaseLabel: MOON_INFO[m.phase].label, ...tip };
+}
+
+/* ====================================================================== */
+/* Rhythm journal prompts                                                 */
+/* ====================================================================== */
+
+const DAILY_PROMPTS_BY_ELEMENT: Record<Element, string[]> = {
+  fire:  ["Where do I want to put one small spark today?", "What would feel brave but doable?", "What's the one thing only I can begin?"],
+  earth: ["What in my body or home wants tending?", "What simple routine would steady me?", "What can I simplify by one step?"],
+  air:   ["Who do I need to reach out to — even briefly?", "What's circling in my head that needs to be written down?", "What question would unlock today?"],
+  water: ["What feels emotionally heavy right now?", "What feeling am I allowed to feel without fixing?", "What would soften this day?"],
+};
+
+const WEEKLY_PROMPTS_BY_STYLE: Record<PlanningStyle, string[]> = {
+  "reset & intend":      ["What am I quietly hoping for this cycle?", "What does 'a fresh start' look like right now?"],
+  "build gently":        ["What's the smallest commitment I can keep this week?", "Where do I need to choose pace over pressure?"],
+  "tend & finish":       ["What would feel good to finally finish?", "Who or what wants tending — including me?"],
+  "reflect & celebrate": ["What's already true that I'm not letting myself celebrate?", "Where can I rest in 'enough'?"],
+  "release & rest":      ["What can be simplified?", "What story am I outgrowing?", "Where do I need support?"],
+};
+
+export interface RhythmPrompt {
+  scope: "daily" | "weekly";
+  text: string;
+  element?: Element;
+  phase?: MoonPhase;
+}
+
+function pick<T>(arr: T[], seed: number): T {
+  return arr[seed % arr.length];
+}
+
+/** Deterministic per-day so the same date always returns the same prompt. */
+export function getRhythmPrompt(date: Date = new Date(), scope: "daily" | "weekly" = "daily"): RhythmPrompt {
+  const f = getRhythmForecast(date);
+  if (scope === "daily") {
+    const seed = date.getFullYear() * 372 + (date.getMonth() + 1) * 31 + date.getDate();
+    return { scope, text: pick(DAILY_PROMPTS_BY_ELEMENT[f.element], seed), element: f.element };
+  }
+  const w = getWeeklyRhythm(date);
+  const seed = date.getFullYear() * 53 + Math.floor(date.getDate() / 7);
+  return { scope, text: pick(WEEKLY_PROMPTS_BY_STYLE[w.planningStyle], seed), phase: w.dominantPhase };
+}
+
+/* ====================================================================== */
+/* Energy-based task picker — uses existing tasks, no AI                  */
+/* ====================================================================== */
+
+export interface EnergyPick {
+  kind: "low-energy" | "home-care" | "personal" | "can-wait";
+  label: string;
+  task?: Task;
+  fallbackTitle?: string; // used when no matching real task exists
+  reason: string;
+}
+
+const HOME_AREAS = new Set(["Home", "Meals", "Caregiving", "Appointments"]);
+
+/**
+ * Pick 4 tasks from the user's existing list that align with today's energy:
+ * one low-energy, one home/care, one personal, one that can wait.
+ * Falls back to a phase-aligned suggestion when no real task fits.
+ */
+export function pickEnergyTaskSuggestions(tasks: Task[], forecast: RhythmForecast): EnergyPick[] {
+  const open = tasks.filter(t => !t.done && !t.parentTaskId);
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  const overdue = open.filter(t => t.dueDate && t.dueDate < todayISO);
+  const dueToday = open.filter(t => t.dueDate === todayISO);
+  const someday  = open.filter(t => t.status === "someday" || (!t.dueDate && t.status !== "this_week"));
+  const recurring = open.filter(t => t.recurrenceType && t.recurrenceType !== "none");
+
+  const lowEnergy = [...dueToday, ...overdue, ...open]
+    .find(t => t.energy === "low" || (t.estMinutes ?? 0) > 0 && (t.estMinutes ?? 999) <= 15);
+
+  const homeCare = [...dueToday, ...overdue, ...recurring, ...open]
+    .find(t => HOME_AREAS.has(t.area));
+
+  const personal = [...dueToday, ...open]
+    .find(t => (t.area === "Personal" || t.area === "Creative Projects") && t.id !== lowEnergy?.id);
+
+  const canWait = [...someday, ...open.filter(t => t.priority === "low")]
+    .find(t => t.id !== lowEnergy?.id && t.id !== homeCare?.id && t.id !== personal?.id);
+
+  const fallback = getSuggestedTasks(forecast);
+
+  return [
+    {
+      kind: "low-energy",
+      label: "Low energy",
+      task: lowEnergy,
+      fallbackTitle: fallback[0]?.title,
+      reason: "Soft enough for a tired body.",
+    },
+    {
+      kind: "home-care",
+      label: "Home / care",
+      task: homeCare,
+      fallbackTitle: fallback[1]?.title,
+      reason: "Tends what's already growing.",
+    },
+    {
+      kind: "personal",
+      label: "Personal",
+      task: personal,
+      fallbackTitle: fallback[2]?.title,
+      reason: "One small thing for you.",
+    },
+    {
+      kind: "can-wait",
+      label: "Can wait",
+      fallbackTitle: "Let one open loop wait this week",
+      task: canWait,
+      reason: "Protect your energy — it'll keep.",
+    },
+  ];
 }
 
 /* --- Settings toggle (localStorage) --- */
