@@ -181,6 +181,10 @@ export default function CalendarPage() {
       <div className="cozy-card gradient-calm p-6">
         <h2 className="font-display text-3xl font-semibold">Calendar</h2>
         <p className="mt-1 text-sm text-muted-foreground">Appointments, birthdays, holidays — color-coded and gentle.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <MoonPhaseBadge date={cursor} />
+          <ElementBadge date={cursor} />
+        </div>
       </div>
 
       <InboxCapture defaultDate={cursor} />
