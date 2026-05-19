@@ -22,6 +22,7 @@ import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarP
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useCycle } from "@/lib/cycle-store";
 import { phaseForDate, PHASE_META } from "@/lib/cycle";
+import { prefetchMoonMonth } from "@/lib/moon-providers";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
@@ -37,6 +38,7 @@ export default function Month() {
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [view, setView] = useState<CalView>("schedule");
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
+  useEffect(() => { void prefetchMoonMonth(cursor, { neighbors: true }); }, [cursor]);
 
   const monthStart = startOfMonth(cursor);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
