@@ -225,12 +225,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const tables = [
       "tasks", "goals", "habits", "habit_logs", "journal_entries", "meals",
       "grocery_items", "appointments", "birthdays", "holidays", "care_recipients",
-      "care_notes", "cleaning_tasks", "ideas", "profiles", "areas", "projects",
+      "care_notes", "cleaning_tasks", "ideas", "profiles", "areas", "projects", "project_sections",
     ] as const;
     const results = await Promise.all(tables.map(t =>
       supabase.from(t).select("*").order("created_at", { ascending: false } as any)
     ));
-    const [tasks, goals, habits, habitLogs, journal, meals, grocery, appts, bdays, holidays, recipients, careNotes, cleaning, ideas, profiles, areas, projects] = results.map(r => r.data ?? []);
+    const [tasks, goals, habits, habitLogs, journal, meals, grocery, appts, bdays, holidays, recipients, careNotes, cleaning, ideas, profiles, areas, projects, sections] = results.map(r => r.data ?? []);
     const profile: any = profiles[0] ?? {};
     // attach habit logs
     const logsByHabit: Record<string, Record<string, boolean>> = {};
@@ -264,6 +264,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ideas: (ideas as any[]).map(ideaFrom),
       areas: (areas as any[]).map(areaFrom).sort((a,b) => a.sortOrder - b.sortOrder),
       projects: (projects as any[]).map(projectFrom).sort((a,b) => a.sortOrder - b.sortOrder),
+      projectSections: (sections as any[]).map(sectionFrom).sort((a,b) => a.sortOrder - b.sortOrder),
       resetTemplates: seedState().resetTemplates,
     });
     // Seed default areas from enum on first load (idempotent thanks to UNIQUE(user_id,name))
