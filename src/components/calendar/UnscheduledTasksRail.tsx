@@ -15,6 +15,7 @@ import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
 import { Link } from "react-router-dom";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongPressDrag } from "@/lib/long-press-drag";
+import { Check } from "lucide-react";
 
 export const TASK_DRAG_MIME = "application/x-careflow-task";
 export const EVENT_DRAG_MIME = "application/x-careflow-event";
@@ -344,6 +345,7 @@ function TaskRailItem({
   onClick?: (id: string) => void;
   onDragStart: (e: React.DragEvent, t: Task) => void;
 }) {
+  const { toggleTask } = useStore();
   const drag = useLongPressDrag(
     () => ({ type: "task", id: task.id, label: task.title }),
     { onClick: () => onClick?.(task.id) },
@@ -360,9 +362,22 @@ function TaskRailItem({
       )}
       title={onClick ? "Click to edit · long-press to drag" : task.title}
     >
-      <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60 opacity-0 transition-opacity group-hover:opacity-100" />
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); void toggleTask(task.id); }}
+        aria-label={task.done ? "Mark task not done" : "Mark task done"}
+        className={cn(
+          "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors",
+          task.done
+            ? "border-primary bg-primary text-primary-foreground"
+            : "border-muted-foreground/40 hover:border-primary/60",
+        )}
+      >
+        <Check className={cn("h-3 w-3", task.done ? "opacity-100" : "opacity-0")} />
+      </button>
       <div className="min-w-0 flex-1">
-        <div className="truncate font-medium leading-snug">{task.title}</div>
+        <div className={cn("truncate font-medium leading-snug", task.done && "text-muted-foreground line-through")}>{task.title}</div>
         <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
           {projectName && (
             <span className="truncate" style={projectColor ? { color: projectColor } : undefined}>
