@@ -146,7 +146,7 @@ interface Ctx {
   updateHabit: (id: string, patch: Partial<Habit>) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
 
-  addJournal: (j: Partial<JournalEntry> & { body: string }) => Promise<void>;
+  addJournal: (j: Partial<JournalEntry> & { body: string }) => Promise<JournalEntry | null>;
   updateJournal: (id: string, patch: Partial<JournalEntry>) => Promise<void>;
   deleteJournal: (id: string) => Promise<void>;
 
@@ -513,7 +513,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (tags !== undefined) row.tags = tags;
       if (pinned !== undefined) row.pinned = pinned;
       const { data } = await supabase.from("journal_entries").insert(row).select().single();
-      if (data) setState(s => ({ ...s, journal: [journalFrom(data), ...s.journal] }));
+      if (data) {
+        const entry = journalFrom(data);
+        setState(s => ({ ...s, journal: [entry, ...s.journal] }));
+        return entry;
+      }
+      return null;
     },
     updateJournal: async (id, patch) => {
       const dbPatch: any = {};
