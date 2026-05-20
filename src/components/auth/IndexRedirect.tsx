@@ -13,11 +13,9 @@ export function IndexRedirect() {
   const { state, loading } = useStore();
   const target = state.settings.defaultRoute ?? "/";
 
-  // While the profile is still loading, render a neutral full-bleed wash
-  // (matches AppLayout background) so we never paint Dashboard for a frame
-  // and then jump to the user's preferred route — that swap was the
-  // visible "flash" some Android users were seeing on cold load.
-  if (loading) return <div aria-hidden className="min-h-screen w-full" />;
+  // The <html> element paints the gradient before React mounts, so we
+  // can return null while loading without showing a blank flash.
+  if (loading) return null;
   if (target && target !== "/") return <Navigate to={target} replace />;
   return <Dashboard />;
 }
