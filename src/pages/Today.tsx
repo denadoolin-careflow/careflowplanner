@@ -41,6 +41,7 @@ import { getMoonPhase } from "@/lib/moon";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
 import { TodayEnergy } from "@/components/today/TodayEnergy";
+import { EndOfDaySummary } from "@/components/today/EndOfDaySummary";
 
 const MOON_TEMPLATE_MAP: Record<string, string> = {
   "new": "new-moon",
@@ -274,6 +275,8 @@ function TodayInner() {
         )}
 
         {layout === "schedule" && <CalendarTasksPanel days={days} />}
+
+        <EndOfDaySummary date={today} />
 
         <Collapsible open={widgetsOpen} onOpenChange={setWidgetsOpen}>
           <div className="cozy-card p-4">
