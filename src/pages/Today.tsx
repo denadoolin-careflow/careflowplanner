@@ -39,6 +39,7 @@ import { useNavigate } from "react-router-dom";
 import { getMoonPhase } from "@/lib/moon";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
+import { TodayEnergy } from "@/components/today/TodayEnergy";
 
 const MOON_TEMPLATE_MAP: Record<string, string> = {
   "new": "new-moon",
@@ -214,13 +215,7 @@ function TodayInner() {
         <MoonJournalReminderBanner date={today} />
 
         {rhythmOn && (
-          <div className="space-y-3">
-            <RhythmForecastCard date={today} variant="today" />
-            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-              <RhythmJournalPrompt date={today} scope="daily" />
-              <ElementBadge date={today} variant="tile" className="sm:w-64" />
-            </div>
-          </div>
+          <TodayEnergy date={today} />
         )}
 
         {layout === "plan" ? (
