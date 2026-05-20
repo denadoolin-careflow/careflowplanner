@@ -1,10 +1,11 @@
-import { useMemo } from "react";
-import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical } from "lucide-react";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { hmToHours } from "@/lib/time-blocks";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
 import { useLongPressDrag } from "@/lib/long-press-drag";
+import { toast } from "sonner";
 
 type ApptLike = {
   label: string;
@@ -35,9 +36,22 @@ function partOf(hm: string | null | undefined): "morning" | "afternoon" | "eveni
 }
 
 export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, onTaskClick }: Props) {
-  const { state, toggleTask } = useStore();
+  const { state, toggleTask, addTask } = useStore();
   const day = days[0];
   const iso = day.toISOString().slice(0, 10);
+  const [composerPart, setComposerPart] = useState<null | "morning" | "afternoon" | "evening">(null);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => { if (composerPart) inputRef.current?.focus(); }, [composerPart]);
+
+  const submit = async (part: "morning" | "afternoon" | "evening") => {
+    const title = draft.trim();
+    if (!title) { setComposerPart(null); return; }
+    const dayPart = (part[0].toUpperCase() + part.slice(1)) as any;
+    await addTask({ title, dueDate: iso, dayPart, inbox: false });
+    setDraft("");
+    toast(`Added to ${part}`);
+  };
 
   const grouped = useMemo(() => {
     const out: Record<string, { items: { time?: string; label: string; kind: string; id?: string; done?: boolean; taskId?: string }[]; anytime: typeof out extends never ? never : any }> = {
@@ -99,8 +113,42 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                   <div className="text-[10px] text-muted-foreground">{p.hint}</div>
                 </div>
               </div>
-              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{items.length}</span>
+              <div className="flex items-center gap-1">
+                <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{items.length}</span>
+                <button
+                  type="button"
+                  onClick={() => { setComposerPart(p.key as any); setDraft(""); }}
+                  className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+                  aria-label={`Add task to ${p.label}`}
+                  title={`Add task to ${p.label}`}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
+            {composerPart === p.key && (
+              <form
+                onSubmit={(e) => { e.preventDefault(); void submit(p.key as any); }}
+                className="mb-2 flex items-center gap-1 rounded-lg border border-border/60 bg-background/80 px-2 py-1"
+              >
+                <input
+                  ref={inputRef}
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onBlur={() => { if (!draft.trim()) setComposerPart(null); }}
+                  onKeyDown={(e) => { if (e.key === "Escape") { setComposerPart(null); setDraft(""); } }}
+                  placeholder={`New ${p.label.toLowerCase()} task…`}
+                  className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
+                />
+                <button
+                  type="submit"
+                  disabled={!draft.trim()}
+                  className="rounded-md bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary disabled:opacity-40"
+                >
+                  Add
+                </button>
+              </form>
+            )}
             <ul className="flex-1 space-y-1">
               {items.length === 0 && (
                 <li className="rounded-lg border border-dashed border-border/50 p-3 text-center text-[11px] text-muted-foreground">
