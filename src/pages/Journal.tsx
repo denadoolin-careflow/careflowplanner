@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parseISO, subDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X } from "lucide-react";
+import { ChevronDown, Wind } from "lucide-react";
+import { Link } from "react-router-dom";
 import { JournalEntry } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -193,6 +195,13 @@ export default function Journal() {
           <div>
             <h2 className="font-display text-3xl font-semibold">Journal</h2>
             <p className="mt-1 text-sm text-muted-foreground">Soft pages. Templates, prompts, and a quiet place to land.</p>
+            <Link
+              to="/journal-flow"
+              className="mt-3 ml-0 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/15"
+              title="Focused writing with a Pomodoro by your side"
+            >
+              <Wind className="h-3.5 w-3.5" /> Open Journal & Flow
+            </Link>
             {todaysMoonTpl && (
               <button
                 onClick={() => switchTemplate(todaysMoonTpl)}
