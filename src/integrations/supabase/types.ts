@@ -2041,6 +2041,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          default_route: string
           email: string | null
           energy_date: string | null
           energy_today: string | null
@@ -2055,6 +2056,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_route?: string
           email?: string | null
           energy_date?: string | null
           energy_today?: string | null
@@ -2069,6 +2071,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_route?: string
           email?: string | null
           energy_date?: string | null
           energy_today?: string | null
