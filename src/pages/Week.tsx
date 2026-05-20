@@ -20,8 +20,7 @@ import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
-import { WeekRhythmStrip } from "@/components/rhythm/WeekRhythmStrip";
-import { WeeklyRhythmCard } from "@/components/rhythm/WeeklyRhythmCard";
+import { WeekRhythmRow } from "@/components/rhythm/WeekRhythmRow";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 
 export default function Week() {
@@ -40,6 +39,7 @@ export default function Week() {
   }, [searchParams]);
   const [view, setView] = useState<CalView>("schedule");
   const [layout, setLayout] = useState<"grid" | "plan">("grid");
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -113,8 +113,6 @@ export default function Week() {
           </div>
         </div>
 
-        <WeeklyRhythmCard weekStart={start} />
-        <WeekRhythmStrip weekStart={start} />
         <RhythmJournalPrompt date={start} scope="weekly" />
 
         {layout === "plan" ? (
@@ -127,6 +125,12 @@ export default function Week() {
                 <CalendarViewToggle value={view} onChange={setView} />
               </div>
             }>
+              <WeekRhythmRow
+                weekStart={start}
+                selectedDate={selectedDate}
+                onSelectDay={setSelectedDate}
+                className="mb-2"
+              />
               {view === "schedule" && (
                 <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
               )}
