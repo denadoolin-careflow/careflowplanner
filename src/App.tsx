@@ -22,6 +22,7 @@ import MealsLibrary from "./pages/MealsLibrary";
 import Caregiving from "./pages/Caregiving";
 import HomeReset from "./pages/HomeReset";
 import Journal from "./pages/Journal";
+import JournalFlow from "./pages/JournalFlow";
 import Ideas from "./pages/Ideas";
 import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
@@ -101,6 +102,7 @@ const App = () => (
                 <Route path="/wealth" element={<Wealth />} />
                 <Route path="/home-areas" element={<HomeAreas />} />
                 <Route path="/journal" element={<Journal />} />
+                <Route path="/journal-flow" element={<JournalFlow />} />
                 <Route path="/routines" element={<Routines />} />
                 <Route path="/ideas" element={<Ideas />} />
                 <Route path="/calendar" element={<CalendarPage />} />
