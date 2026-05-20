@@ -39,6 +39,7 @@ import { useNavigate } from "react-router-dom";
 import { getMoonPhase } from "@/lib/moon";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
+import { TodayEnergy } from "@/components/today/TodayEnergy";
 
 const MOON_TEMPLATE_MAP: Record<string, string> = {
   "new": "new-moon",
