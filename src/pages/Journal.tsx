@@ -4,9 +4,14 @@ import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { format, parseISO, subDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
-import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X } from "lucide-react";
+import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter } from "lucide-react";
 import { ChevronDown, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { JournalEntry } from "@/lib/types";
@@ -355,12 +360,31 @@ export default function Journal() {
           </div>
         }
       >
-        <Tabs value={filter} onValueChange={(v: any) => setFilter(v)} className="mb-3">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="all">All</TabsTrigger>
-            {TEMPLATES.map(t => <TabsTrigger key={t.key} value={t.key}>{t.emoji} {t.label}</TabsTrigger>)}
-          </TabsList>
-        </Tabs>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="mb-3 gap-1.5 text-xs">
+              <Filter className="h-3.5 w-3.5" />
+              {filter === "all" ? "All entries" : TEMPLATES.find(t => t.key === filter)?.label}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52">
+            <DropdownMenuCheckboxItem
+              checked={filter === "all"}
+              onCheckedChange={() => setFilter("all")}
+            >
+              All
+            </DropdownMenuCheckboxItem>
+            {TEMPLATES.map(t => (
+              <DropdownMenuCheckboxItem
+                key={t.key}
+                checked={filter === t.key}
+                onCheckedChange={() => setFilter(t.key)}
+              >
+                <span className="mr-1.5">{t.emoji}</span>{t.label}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {pinned.length > 0 && (
           <div className="mb-4">
