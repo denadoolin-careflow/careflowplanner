@@ -436,7 +436,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
           </ul>
         </div>
       )}
-    </div>
+    </div></div>
   );
 }
 
