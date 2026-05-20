@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import Dashboard from "@/pages/Dashboard";
@@ -11,13 +11,13 @@ import Dashboard from "@/pages/Dashboard";
  */
 export function IndexRedirect() {
   const { state, loading } = useStore();
-  const redirectedRef = useRef(false);
   const target = state.settings.defaultRoute ?? "/";
 
-  if (loading) return null;
-  if (!redirectedRef.current && target && target !== "/") {
-    redirectedRef.current = true;
-    return <Navigate to={target} replace />;
-  }
+  // While the profile is still loading, render a neutral full-bleed wash
+  // (matches AppLayout background) so we never paint Dashboard for a frame
+  // and then jump to the user's preferred route — that swap was the
+  // visible "flash" some Android users were seeing on cold load.
+  if (loading) return <div aria-hidden className="min-h-screen w-full" />;
+  if (target && target !== "/") return <Navigate to={target} replace />;
   return <Dashboard />;
 }
