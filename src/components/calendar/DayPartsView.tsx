@@ -45,6 +45,8 @@ const PARTS = [
   { key: "evening",   label: "Evening",   icon: Moon,    range: [17, 24], dropHour: 19, hint: "5 PM – late" },
 ] as const;
 
+const SEVERE_CONDITIONS: WeatherCondition[] = ["thunderstorm", "snow", "rain", "fog"];
+
 function partOf(hm: string | null | undefined): "morning" | "afternoon" | "evening" | null {
   if (!hm || !/^\d{2}:\d{2}/.test(hm)) return null;
   const h = hmToHours(hm.slice(0, 5));
