@@ -362,9 +362,10 @@ export default function Journal() {
           </div>
         }
       >
+        <div className="mb-3 flex flex-wrap items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="mb-3 gap-1.5 text-xs">
+            <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
               <Filter className="h-3.5 w-3.5" />
               {filter === "all" ? "All entries" : TEMPLATES.find(t => t.key === filter)?.label}
             </Button>
@@ -388,6 +389,37 @@ export default function Journal() {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
+              <Layers className="h-3.5 w-3.5" /> Group: {GROUP_LABEL[groupBy]}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            {(Object.keys(GROUP_LABEL) as (keyof typeof GROUP_LABEL)[]).map(k => (
+              <DropdownMenuCheckboxItem key={k} checked={groupBy === k} onCheckedChange={() => setGroupBy(k)}>
+                {GROUP_LABEL[k]}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
+              <ArrowUpDown className="h-3.5 w-3.5" /> Sort: {SORT_LABEL[sortBy]}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            {(Object.keys(SORT_LABEL) as (keyof typeof SORT_LABEL)[]).map(k => (
+              <DropdownMenuCheckboxItem key={k} checked={sortBy === k} onCheckedChange={() => setSortBy(k)}>
+                {SORT_LABEL[k]}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        </div>
+
         {pinned.length > 0 && (
           <div className="mb-4">
             <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Pinned</div>
@@ -395,10 +427,24 @@ export default function Journal() {
           </div>
         )}
 
-        <ul className="space-y-3">
-          {rest.map(e => <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} />)}
-          {filtered.length === 0 && <p className="text-sm text-muted-foreground">No entries yet.</p>}
-        </ul>
+        {filtered.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No entries yet.</p>
+        ) : groupBy === "none" ? (
+          <ul className="space-y-3">
+            {sortEntries(rest, sortBy).map(e => <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} />)}
+          </ul>
+        ) : (
+          <div className="space-y-5">
+            {groupEntries(rest, groupBy, sortBy).map(g => (
+              <div key={g.key}>
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{g.label} <span className="ml-1 text-muted-foreground/70">({g.items.length})</span></div>
+                <ul className="space-y-3">
+                  {g.items.map(e => <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} />)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
       </SectionCard>
     </div>
   );
