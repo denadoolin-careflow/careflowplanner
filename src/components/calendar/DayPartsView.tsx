@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical, Plus } from "lucide-react";
+import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical, Plus, ArrowDownToLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { hmToHours } from "@/lib/time-blocks";
@@ -43,6 +43,34 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => { if (composerPart) inputRef.current?.focus(); }, [composerPart]);
+  // Tracks which column the pointer/HTML5 drag is currently over so we can
+  // light up that drop target with a strong visual cue.
+  const [dragOverPart, setDragOverPart] = useState<null | "morning" | "afternoon" | "evening" | "anytime">(null);
+  // Tracks whether any draggable item is currently being dragged anywhere
+  // on the page so we can show subtle "drop here" affordances on every
+  // valid target — not just the one under the cursor.
+  const [anyDragging, setAnyDragging] = useState(false);
+  useEffect(() => {
+    const onStart = () => setAnyDragging(true);
+    const onEnd = () => { setAnyDragging(false); setDragOverPart(null); };
+    // HTML5 drag events bubble to document.
+    document.addEventListener("dragstart", onStart);
+    document.addEventListener("dragend", onEnd);
+    document.addEventListener("drop", onEnd);
+    // Touch long-press drag uses a custom event lifecycle — approximate by
+    // listening for the ghost element added to <body>.
+    const obs = new MutationObserver(() => {
+      const hasGhost = !!document.querySelector("[data-droppart-active]");
+      if (hasGhost) setAnyDragging(true);
+    });
+    obs.observe(document.body, { childList: true, subtree: false, attributes: true, attributeFilter: ["data-droppart-active"] });
+    return () => {
+      document.removeEventListener("dragstart", onStart);
+      document.removeEventListener("dragend", onEnd);
+      document.removeEventListener("drop", onEnd);
+      obs.disconnect();
+    };
+  }, []);
 
   const submit = async (part: "morning" | "afternoon" | "evening") => {
     const title = draft.trim();
@@ -89,20 +117,54 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
       {PARTS.map(p => {
         const Icon = p.icon;
         const items = (grouped as any)[p.key].items as any[];
+        const isOver = dragOverPart === p.key;
         return (
           <div
             key={p.key}
             data-droppart={p.key}
             data-dropdate={iso}
-            onDragOver={e => { if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) e.preventDefault(); }}
+            onDragEnter={e => {
+              if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) {
+                setDragOverPart(p.key as any);
+              }
+            }}
+            onDragOver={e => {
+              if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setDragOverPart(p.key as any);
+              }
+            }}
+            onDragLeave={e => {
+              // Only clear if we actually left the column (not just entered a child)
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                setDragOverPart(prev => (prev === p.key ? null : prev));
+              }
+            }}
             onDrop={e => {
               const id = e.dataTransfer.getData(TASK_DRAG_MIME);
+              setDragOverPart(null);
               if (!id || !onTaskDropAt) return;
               e.preventDefault();
               onTaskDropAt(id, iso, p.dropHour);
             }}
-            className="flex min-h-[180px] flex-col rounded-2xl border border-border/60 bg-card/60 p-3 transition-colors hover:bg-card/80"
+            className={cn(
+              "group/part relative flex min-h-[180px] flex-col rounded-2xl border bg-card/60 p-3 transition-all duration-150",
+              "border-border/60 hover:bg-card/80",
+              anyDragging && "border-dashed border-primary/40 bg-primary/[0.03]",
+              isOver && "scale-[1.01] border-solid border-primary bg-primary/10 shadow-glow ring-2 ring-primary/40",
+              // Long-press drag highlights via data attribute set by the helper
+              "data-[droppart-active=true]:scale-[1.01] data-[droppart-active=true]:border-solid data-[droppart-active=true]:border-primary data-[droppart-active=true]:bg-primary/10 data-[droppart-active=true]:shadow-glow data-[droppart-active=true]:ring-2 data-[droppart-active=true]:ring-primary/40",
+            )}
           >
+            {isOver && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-primary/5 backdrop-blur-[1px]">
+                <div className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground shadow-cozy">
+                  <ArrowDownToLine className="h-3 w-3" />
+                  Drop into {p.label}
+                </div>
+              </div>
+            )}
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary">
@@ -151,8 +213,13 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
             )}
             <ul className="flex-1 space-y-1">
               {items.length === 0 && (
-                <li className="rounded-lg border border-dashed border-border/50 p-3 text-center text-[11px] text-muted-foreground">
-                  Nothing planned. Drop a task here.
+                <li className={cn(
+                  "rounded-lg border border-dashed p-3 text-center text-[11px] transition-colors",
+                  anyDragging
+                    ? "border-primary/60 bg-primary/5 text-primary"
+                    : "border-border/50 text-muted-foreground",
+                )}>
+                  {anyDragging ? "Release to drop here" : "Nothing planned. Drop a task here."}
                 </li>
               )}
               {items.map((it, i) => {
@@ -172,9 +239,37 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
       })}
       {(grouped as any).anytime.length > 0 && (
         <div
-          className="md:col-span-3 rounded-2xl border border-border/60 bg-card/40 p-3"
+          className={cn(
+            "md:col-span-3 rounded-2xl border bg-card/40 p-3 transition-all duration-150",
+            "border-border/60",
+            anyDragging && "border-dashed border-primary/40 bg-primary/[0.03]",
+            dragOverPart === "anytime" && "border-solid border-primary bg-primary/10 ring-2 ring-primary/40",
+            "data-[droppart-active=true]:border-solid data-[droppart-active=true]:border-primary data-[droppart-active=true]:bg-primary/10 data-[droppart-active=true]:ring-2 data-[droppart-active=true]:ring-primary/40",
+          )}
           data-droppart="morning"
           data-dropdate={iso}
+          onDragEnter={e => {
+            if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) setDragOverPart("anytime");
+          }}
+          onDragOver={e => {
+            if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              setDragOverPart("anytime");
+            }
+          }}
+          onDragLeave={e => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+              setDragOverPart(prev => (prev === "anytime" ? null : prev));
+            }
+          }}
+          onDrop={e => {
+            const id = e.dataTransfer.getData(TASK_DRAG_MIME);
+            setDragOverPart(null);
+            if (!id || !onTaskDropAt) return;
+            e.preventDefault();
+            onTaskDropAt(id, iso, 8);
+          }}
         >
           <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Any time today</div>
           <ul className="grid gap-1 sm:grid-cols-2 md:grid-cols-3">
