@@ -35,7 +35,7 @@ import { Wand2 } from "lucide-react";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getMoonPhase } from "@/lib/moon";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
@@ -64,7 +64,29 @@ export default function Today() {
 function TodayInner() {
   const { state, updateTask, updateAppointment } = useStore();
   const { paneOpen, togglePane, setOrderedIds, clear } = useTaskSelection();
-  const [day, setDay] = useState<Date>(new Date());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [day, setDay] = useState<Date>(() => {
+    const d = searchParams.get("date");
+    if (d) {
+      const parsed = new Date(d + "T00:00:00");
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    return new Date();
+  });
+  useEffect(() => {
+    const d = searchParams.get("date");
+    if (!d) return;
+    const parsed = new Date(d + "T00:00:00");
+    if (!isNaN(parsed.getTime()) && !isSameDay(parsed, day)) setDay(parsed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+  const setDayAndUrl = useCallback((d: Date) => {
+    setDay(d);
+    const next = new URLSearchParams(searchParams);
+    if (isSameDay(d, new Date())) next.delete("date");
+    else next.set("date", format(d, "yyyy-MM-dd"));
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
   const [view, setView] = useState<CalView>("schedule");
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
@@ -149,15 +171,15 @@ function TodayInner() {
                   {lowMode ? "Low-energy mode: only the essentials." : "Drag tasks from the right onto your day."}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                  <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDay(addDays(day, -1))} aria-label="Previous day">
+                  <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDayAndUrl(addDays(day, -1))} aria-label="Previous day">
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <DayPickerButton date={day} onChange={setDay} />
-                  <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDay(addDays(day, 1))} aria-label="Next day">
+                  <DayPickerButton date={day} onChange={setDayAndUrl} />
+                  <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDayAndUrl(addDays(day, 1))} aria-label="Next day">
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                   {!isReallyToday && (
-                    <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => setDay(new Date())}>Today</Button>
+                    <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => setDayAndUrl(new Date())}>Today</Button>
                   )}
                   <Button
                     size="sm"
