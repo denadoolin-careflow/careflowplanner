@@ -213,6 +213,10 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
       {PARTS.map(p => {
         const Icon = p.icon;
         const items = (grouped as any)[p.key].items as any[];
+        const taskItems = items.filter((it: any) => it.kind === "task");
+        const doneCount = taskItems.filter((it: any) => it.done).length;
+        const totalCount = taskItems.length;
+        const pct = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
         const isOver = dragOverPart === p.key;
         const partKey = p.key as "morning" | "afternoon" | "evening";
         const customLabel = labels[partKey];
@@ -338,6 +342,20 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                 </button>
               </div>
             </div>
+            {totalCount > 0 && (
+              <div className="mb-2">
+                <div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span className="tabular-nums">{doneCount}/{totalCount} done</span>
+                  <span className="tabular-nums">{pct}%</span>
+                </div>
+                <div className="h-1 w-full overflow-hidden rounded-full bg-muted/60">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary via-accent to-secondary transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            )}
             {composerPart === p.key && (
               <form
                 onSubmit={(e) => { e.preventDefault(); void submit(p.key as any); }}
