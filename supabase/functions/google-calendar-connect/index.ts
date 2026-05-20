@@ -1,7 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders, signState } from "../_shared/cors.ts";
 
-const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+// Read + write event scopes — needed for two-way sync (CareFlow ↔ Google).
+// `calendar.readonly` is intentionally included so previously-connected users
+// don't lose read access while we wait for them to re-consent.
+const SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.readonly",
+].join(" ");
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
