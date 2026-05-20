@@ -1,29 +1,14 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useStore();
   const location = useLocation();
-  // Delay showing the loading screen briefly so fast session checks
-  // don't cause a visible flash/blink on initial render.
-  const [showLoader, setShowLoader] = useState(false);
-  useEffect(() => {
-    if (!loading) { setShowLoader(false); return; }
-    const t = window.setTimeout(() => setShowLoader(true), 250);
-    return () => window.clearTimeout(t);
-  }, [loading]);
   if (loading) {
-    // Always render a calm full-screen background while we wait so the
-    // browser never paints a white flash between routes. Reveal the
-    // "Loading…" card only after a short grace period for fast checks.
-    return (
-      <div className="grid min-h-screen place-items-center gradient-dawn">
-        {showLoader ? (
-          <div className="cozy-card p-6 text-sm text-muted-foreground">Loading your planner…</div>
-        ) : null}
-      </div>
-    );
+    // Silent full-screen wash that matches the app shell background so the
+    // hand-off into the real layout never flashes — especially on Android,
+    // where slower paints made the previous loader card visibly pop in.
+    return <div aria-hidden className="min-h-screen w-full gradient-dawn" />;
   }
   if (!user) return <Navigate to="/auth" replace state={{ from: location }} />;
   return <>{children}</>;
