@@ -84,7 +84,16 @@ const groceryFrom = (r: any): GroceryItem => ({
   sourceSlot: r.source_slot ?? null,
   sourceDate: r.source_date ?? null,
 });
-const apptFrom = (r: any): Appointment => ({ id: r.id, date: r.date, time: r.time ?? undefined, title: r.title, icon: r.icon ?? undefined, with: r.with_name ?? undefined, location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined });
+const apptFrom = (r: any): Appointment => ({
+  id: r.id, date: r.date, time: r.time ?? undefined,
+  endTime: r.end_time ?? undefined, allDay: !!r.all_day, notes: r.notes ?? undefined,
+  title: r.title, icon: r.icon ?? undefined, with: r.with_name ?? undefined,
+  location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined,
+  syncToGoogle: !!r.sync_to_google,
+  googleEventId: r.google_event_id ?? undefined,
+  googleCalendarId: r.google_calendar_id ?? undefined,
+  googleLastSyncedAt: r.google_last_synced_at ?? undefined,
+});
 const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined });
 const holidayFrom = (r: any): Holiday => ({ id: r.id, name: r.name, date: r.date, notes: r.notes ?? undefined });
 const recipFrom = (r: any): CareRecipient => ({
