@@ -192,6 +192,7 @@ export interface Settings {
   email?: string;
   planningStyle?: string;
   timeZone?: string;
+  defaultRoute?: string;
 }
 
 export interface AppState {
