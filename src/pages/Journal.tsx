@@ -380,30 +380,56 @@ export default function Journal() {
 
 function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string, p: Partial<JournalEntry>) => void; onDelete: (id: string) => void }) {
   const tpl = TEMPLATES.find(t => t.key === (e.template as TemplateKey)) ?? TEMPLATES[0];
+  const [open, setOpen] = useState(false);
+  const preview = (e.body || "").replace(/[*_`#>\-]/g, "").replace(/\s+/g, " ").trim().slice(0, 120);
   return (
-    <li className="group rounded-xl border border-border/60 bg-card p-4 transition hover:shadow-sm">
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-2">
-          <span>{format(parseISO(e.date), "MMM d, yyyy")}</span>
-          <span>·</span>
-          <span>{tpl.emoji} {tpl.label}</span>
-          {e.mood && <span className="text-base leading-none">{e.mood}</span>}
-          {e.energy && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">{e.energy}</span>}
-        </span>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-80">
+    <li className="group rounded-xl border border-border/60 bg-card transition hover:shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 p-4 text-left"
+      >
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            open && "rotate-180",
+          )}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span>{format(parseISO(e.date), "MMM d, yyyy")}</span>
+            <span>·</span>
+            <span>{tpl.emoji} {tpl.label}</span>
+            {e.mood && <span className="text-base leading-none">{e.mood}</span>}
+            {e.energy && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">{e.energy}</span>}
+          </div>
+          {e.title && <div className="mt-1 truncate font-display text-base">{e.title}</div>}
+          {!open && preview && (
+            <p className="mt-0.5 truncate text-sm text-muted-foreground">{preview}</p>
+          )}
+        </div>
+        <div
+          className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-80"
+          onClick={(ev) => ev.stopPropagation()}
+          role="presentation"
+        >
           <button onClick={() => onPin(e.id, { pinned: !e.pinned })} title={e.pinned ? "Unpin" : "Pin"}>
             {e.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
           </button>
           <button onClick={() => onDelete(e.id)}><Trash2 className="h-3.5 w-3.5" /></button>
         </div>
-      </div>
-      {e.title && <div className="mt-1 font-display text-base">{e.title}</div>}
-      <div className="mt-1 text-sm leading-relaxed">
-        <NoteMarkdown body={e.body} />
-      </div>
-      {e.tags && e.tags.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {e.tags.map(t => <span key={t} className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px]">#{t}</span>)}
+      </button>
+      {open && (
+        <div className="space-y-2 border-t border-border/50 px-4 pb-4 pt-3">
+          <div className="text-sm leading-relaxed">
+            <NoteMarkdown body={e.body} />
+          </div>
+          {e.tags && e.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {e.tags.map(t => <span key={t} className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px]">#{t}</span>)}
+            </div>
+          )}
         </div>
       )}
     </li>
