@@ -445,7 +445,7 @@ export default function Journal() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-44">
-            {(Object.keys(GROUP_LABEL) as (keyof typeof GROUP_LABEL)[]).map(k => (
+            {(Object.keys(GROUP_LABEL) as GroupKey[]).map(k => (
               <DropdownMenuCheckboxItem key={k} checked={groupBy === k} onCheckedChange={() => setGroupBy(k)}>
                 {GROUP_LABEL[k]}
               </DropdownMenuCheckboxItem>
@@ -460,7 +460,7 @@ export default function Journal() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-44">
-            {(Object.keys(SORT_LABEL) as (keyof typeof SORT_LABEL)[]).map(k => (
+            {(Object.keys(SORT_LABEL) as SortKey[]).map(k => (
               <DropdownMenuCheckboxItem key={k} checked={sortBy === k} onCheckedChange={() => setSortBy(k)}>
                 {SORT_LABEL[k]}
               </DropdownMenuCheckboxItem>
