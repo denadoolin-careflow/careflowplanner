@@ -109,22 +109,45 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
       evening: { items: [], anytime: [] as any },
     } as any;
     const anytime: { kind: string; label: string; id?: string; done?: boolean; taskId?: string }[] = [];
+    // Build a quick lookup of today's tasks so we can route untimed task
+    // entries (which flow in through appointmentsOn) into the correct
+    // dayPart column instead of always falling into "Any time today".
+    const tasksToday = state.tasks.filter(
+      t => !t.done && !t.parentTaskId && t.dueDate === iso,
+    );
+    const taskByTitle = new Map(tasksToday.map(t => [t.title, t]));
+    const taskById = new Map(tasksToday.map(t => [t.id, t]));
+    const placedTaskIds = new Set<string>();
+
+    const partFromDayPart = (dp?: string | null): "morning" | "afternoon" | "evening" | null => {
+      const v = (dp ?? "").toLowerCase();
+      return v === "morning" || v === "afternoon" || v === "evening" ? (v as any) : null;
+    };
+
     for (const a of appointmentsOn(iso)) {
+      // Task entries fed through appointmentsOn carry kind="task" and id=task.id
+      if (a.kind === "task") {
+        const t = (a.id && taskById.get(a.id)) || taskByTitle.get(a.label);
+        if (t) {
+          const part = partFromDayPart(t.dayPart) ?? partOf(a.time);
+          const entry = { label: t.title, kind: "task", taskId: t.id, done: t.done };
+          if (part) (out as any)[part].items.push(entry);
+          else anytime.push(entry);
+          placedTaskIds.add(t.id);
+          continue;
+        }
+      }
       const p = partOf(a.time);
       const entry = { time: a.time ?? undefined, label: a.label, kind: a.kind ?? "appt", id: a.id };
       if (p) (out as any)[p].items.push(entry);
       else anytime.push(entry);
     }
-    // tasks scheduled today (no time) → bucket by dayPart hint or all-day
-    for (const t of state.tasks) {
-      if (t.done || t.parentTaskId || t.dueDate !== iso) continue;
-      // skip if already represented through appointmentsOn (Today.tsx adds them with ○ prefix)
-      const already = (out.morning.items as any[]).concat(out.afternoon.items, out.evening.items, anytime).some((x: any) => x.label?.includes(t.title));
-      if (already) continue;
+    // Catch any tasks that weren't streamed in via appointmentsOn.
+    for (const t of tasksToday) {
+      if (placedTaskIds.has(t.id)) continue;
       const item = { label: t.title, kind: "task", taskId: t.id, done: t.done };
-      const dp = (t.dayPart ?? "").toLowerCase();
-      const p = dp === "morning" || dp === "afternoon" || dp === "evening" ? dp : null;
-      if (p) (out as any)[p].items.push(item);
+      const part = partFromDayPart(t.dayPart);
+      if (part) (out as any)[part].items.push(item);
       else anytime.push(item);
     }
     for (const k of Object.keys(out)) {
