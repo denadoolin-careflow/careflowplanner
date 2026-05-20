@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical, Plus, ArrowDownToLine, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap } from "lucide-react";
+import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical, Plus, ArrowDownToLine, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { hmToHours } from "@/lib/time-blocks";
