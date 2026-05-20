@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format, parseISO, subDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
-import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter } from "lucide-react";
+import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter, Layers, ArrowUpDown } from "lucide-react";
 import { ChevronDown, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { JournalEntry } from "@/lib/types";
@@ -72,6 +72,55 @@ const ENERGIES: { value: string; label: string }[] = [
   { value: "low", label: "Low" }, { value: "medium", label: "Medium" }, { value: "high", label: "High" },
 ];
 
+const GROUP_LABEL = {
+  none: "None",
+  template: "Template",
+  month: "Month",
+  mood: "Mood",
+  energy: "Energy",
+} as const;
+type GroupKey = keyof typeof GROUP_LABEL;
+
+const SORT_LABEL = {
+  newest: "Newest",
+  oldest: "Oldest",
+  template: "Template",
+  mood: "Mood",
+} as const;
+type SortKey = keyof typeof SORT_LABEL;
+
+function sortEntries(items: JournalEntry[], sort: SortKey): JournalEntry[] {
+  const arr = [...items];
+  switch (sort) {
+    case "newest": return arr.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+    case "oldest": return arr.sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+    case "template": return arr.sort((a, b) => (a.template ?? a.type ?? "").localeCompare(b.template ?? b.type ?? ""));
+    case "mood": return arr.sort((a, b) => (a.mood ?? "").localeCompare(b.mood ?? ""));
+  }
+}
+
+function groupEntries(items: JournalEntry[], group: GroupKey, sort: SortKey): { key: string; label: string; items: JournalEntry[] }[] {
+  const sorted = sortEntries(items, sort);
+  const buckets = new Map<string, { label: string; items: JournalEntry[] }>();
+  for (const e of sorted) {
+    let key = "—", label = "—";
+    if (group === "template") {
+      const t = TEMPLATES.find(x => x.key === (e.template as TemplateKey));
+      key = t?.key ?? "other"; label = t ? `${t.emoji} ${t.label}` : "Other";
+    } else if (group === "month") {
+      try { key = format(parseISO(e.date), "yyyy-MM"); label = format(parseISO(e.date), "MMMM yyyy"); }
+      catch { key = "unknown"; label = "Unknown date"; }
+    } else if (group === "mood") {
+      key = e.mood || "none"; label = e.mood || "No mood";
+    } else if (group === "energy") {
+      key = e.energy || "none"; label = e.energy ? e.energy[0].toUpperCase() + e.energy.slice(1) : "No energy";
+    }
+    if (!buckets.has(key)) buckets.set(key, { label, items: [] });
+    buckets.get(key)!.items.push(e);
+  }
+  return Array.from(buckets.entries()).map(([key, v]) => ({ key, ...v }));
+}
+
 export default function Journal() {
   const { state, addJournal, updateJournal, deleteJournal } = useStore();
   const [template, setTemplate] = useState<TemplateKey>("daily");
@@ -84,6 +133,8 @@ export default function Journal() {
   const [aiLoading, setAiLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | TemplateKey>("all");
   const [q, setQ] = useState("");
+  const [groupBy, setGroupBy] = useState<"none" | "template" | "month" | "mood" | "energy">("none");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "template" | "mood">("newest");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
@@ -360,9 +411,10 @@ export default function Journal() {
           </div>
         }
       >
+        <div className="mb-3 flex flex-wrap items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="mb-3 gap-1.5 text-xs">
+            <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
               <Filter className="h-3.5 w-3.5" />
               {filter === "all" ? "All entries" : TEMPLATES.find(t => t.key === filter)?.label}
             </Button>
@@ -386,6 +438,37 @@ export default function Journal() {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
+              <Layers className="h-3.5 w-3.5" /> Group: {GROUP_LABEL[groupBy]}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            {(Object.keys(GROUP_LABEL) as GroupKey[]).map(k => (
+              <DropdownMenuCheckboxItem key={k} checked={groupBy === k} onCheckedChange={() => setGroupBy(k)}>
+                {GROUP_LABEL[k]}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
+              <ArrowUpDown className="h-3.5 w-3.5" /> Sort: {SORT_LABEL[sortBy]}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            {(Object.keys(SORT_LABEL) as SortKey[]).map(k => (
+              <DropdownMenuCheckboxItem key={k} checked={sortBy === k} onCheckedChange={() => setSortBy(k)}>
+                {SORT_LABEL[k]}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        </div>
+
         {pinned.length > 0 && (
           <div className="mb-4">
             <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Pinned</div>
@@ -393,10 +476,24 @@ export default function Journal() {
           </div>
         )}
 
-        <ul className="space-y-3">
-          {rest.map(e => <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} />)}
-          {filtered.length === 0 && <p className="text-sm text-muted-foreground">No entries yet.</p>}
-        </ul>
+        {filtered.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No entries yet.</p>
+        ) : groupBy === "none" ? (
+          <ul className="space-y-3">
+            {sortEntries(rest, sortBy).map(e => <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} />)}
+          </ul>
+        ) : (
+          <div className="space-y-5">
+            {groupEntries(rest, groupBy, sortBy).map(g => (
+              <div key={g.key}>
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{g.label} <span className="ml-1 text-muted-foreground/70">({g.items.length})</span></div>
+                <ul className="space-y-3">
+                  {g.items.map(e => <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} />)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
       </SectionCard>
     </div>
   );
