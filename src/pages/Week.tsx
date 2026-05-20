@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { AgendaView } from "@/components/calendar/AgendaView";
+import { DayPartsView } from "@/components/calendar/DayPartsView";
+import { format as fmtDate, isSameDay } from "date-fns";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
@@ -133,6 +135,29 @@ export default function Week() {
               />
               {view === "schedule" && (
                 <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
+              )}
+              {view === "parts" && (
+                <div className="space-y-4">
+                  {days.map(d => (
+                    <div key={d.toISOString()} className="space-y-2">
+                      <div className="flex items-baseline justify-between">
+                        <h3 className={cn(
+                          "font-display text-sm font-semibold",
+                          isSameDay(d, new Date()) && "text-primary"
+                        )}>
+                          {fmtDate(d, "EEEE")} <span className="text-muted-foreground font-normal">{fmtDate(d, "MMM d")}</span>
+                        </h3>
+                      </div>
+                      <DayPartsView
+                        days={[d]}
+                        appointmentsOn={eventsOn}
+                        onTaskDropAt={handleTimeDrop}
+                        onApptClick={setEditApptId}
+                        onTaskClick={setEditTaskId}
+                      />
+                    </div>
+                  ))}
+                </div>
               )}
               {view === "agenda" && (
                 <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
