@@ -495,7 +495,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
 
     addJournal: async (j) => {
-      if (!uid) return;
+      if (!uid) return null;
       const { gratitudeItems, linkedIds, prompts, tags, pinned, energy, template, mood, title, body, date, type, ...rest } = j as any;
       const row: any = {
         user_id: uid,
