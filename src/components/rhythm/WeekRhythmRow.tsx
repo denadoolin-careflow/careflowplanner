@@ -43,7 +43,11 @@ export function WeekRhythmRow({ weekStart, selectedDate, onSelectDay, className 
             const meta = ELEMENT_META[f.element];
             const isToday = isSameDay(d, today);
             const isSelected = selectedDate ? isSameDay(d, selectedDate) : false;
-            const goToday = (e: React.MouseEvent) => { e.stopPropagation(); navigate("/today"); };
+            const iso = format(d, "yyyy-MM-dd");
+            const goToday = (e: React.MouseEvent | React.KeyboardEvent) => {
+              e.stopPropagation();
+              navigate(`/today?date=${iso}`);
+            };
             return (
               <button
                 key={d.toISOString()}
@@ -62,9 +66,9 @@ export function WeekRhythmRow({ weekStart, selectedDate, onSelectDay, className 
                   role="link"
                   tabIndex={0}
                   onClick={goToday}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); navigate("/today"); } }}
+                  onKeyDown={(e) => { if (e.key === "Enter") goToday(e); }}
                   className="cursor-pointer rounded px-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-primary hover:underline"
-                  title="Open Today"
+                  title={`Open Today — ${format(d, "EEE MMM d")}`}
                 >
                   {format(d, "EEE d")}
                 </span>
@@ -72,9 +76,9 @@ export function WeekRhythmRow({ weekStart, selectedDate, onSelectDay, className 
                   role="link"
                   tabIndex={0}
                   onClick={goToday}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); navigate("/today"); } }}
+                  onKeyDown={(e) => { if (e.key === "Enter") goToday(e); }}
                   className="cursor-pointer rounded transition-transform hover:scale-110"
-                  title={`${f.phaseLabel} — open Today`}
+                  title={`${f.phaseLabel} in ${f.sign.sign} — open Today`}
                 >
                   <MoonGlyph date={d} size={22} />
                 </span>
