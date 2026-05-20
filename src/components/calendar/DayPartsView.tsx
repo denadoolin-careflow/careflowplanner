@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical, Plus, ArrowDownToLine, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap } from "lucide-react";
+import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical, Plus, ArrowDownToLine, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { hmToHours } from "@/lib/time-blocks";
@@ -45,6 +45,8 @@ const PARTS = [
   { key: "evening",   label: "Evening",   icon: Moon,    range: [17, 24], dropHour: 19, hint: "5 PM – late" },
 ] as const;
 
+const SEVERE_CONDITIONS: WeatherCondition[] = ["thunderstorm", "snow", "rain", "fog"];
+
 function partOf(hm: string | null | undefined): "morning" | "afternoon" | "evening" | null {
   if (!hm || !/^\d{2}:\d{2}/.test(hm)) return null;
   const h = hmToHours(hm.slice(0, 5));
@@ -72,6 +74,9 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
       }
     }
   }
+  const severeAlerts = (["morning", "afternoon", "evening"] as const)
+    .map(k => ({ part: k, wx: wxByPart[k] }))
+    .filter(({ wx }) => wx && SEVERE_CONDITIONS.includes(wx.condition));
   const [editingLabel, setEditingLabel] = useState<null | "morning" | "afternoon" | "evening">(null);
   const [labelDraft, setLabelDraft] = useState("");
   const labelInputRef = useRef<HTMLInputElement | null>(null);
@@ -187,7 +192,24 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
   }, [iso, appointmentsOn, state.tasks]);
 
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    <div className="space-y-3">
+      {severeAlerts.length > 0 && (
+        <div className="flex items-start gap-2 rounded-xl border border-accent/30 bg-accent-soft/70 px-3 py-2.5 text-xs text-accent-foreground">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+          <span>
+            {severeAlerts.map(({ part, wx }) => `${labels[part]}: ${wx!.label}`).join(" · ")}
+            {" — "}
+            {severeAlerts.some(a => a.wx?.condition === "thunderstorm")
+              ? "Stay inside and keep things gentle."
+              : severeAlerts.some(a => a.wx?.condition === "snow")
+              ? "Wrap warm and take your time."
+              : severeAlerts.some(a => a.wx?.condition === "rain")
+              ? "A warm drink and a slower pace."
+              : "Move gently and stay aware."}
+          </span>
+        </div>
+      )}
+      <div className="grid gap-3 md:grid-cols-3">
       {PARTS.map(p => {
         const Icon = p.icon;
         const items = (grouped as any)[p.key].items as any[];
@@ -414,7 +436,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
           </ul>
         </div>
       )}
-    </div>
+    </div></div>
   );
 }
 
