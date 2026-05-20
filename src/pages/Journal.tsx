@@ -4,9 +4,14 @@ import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { format, parseISO, subDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
-import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X } from "lucide-react";
+import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter } from "lucide-react";
 import { ChevronDown, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { JournalEntry } from "@/lib/types";
