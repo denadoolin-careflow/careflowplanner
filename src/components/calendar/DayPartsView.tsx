@@ -6,6 +6,8 @@ import { hmToHours } from "@/lib/time-blocks";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
 import { useLongPressDrag } from "@/lib/long-press-drag";
 import { toast } from "sonner";
+import { useDayPartLabels, DEFAULT_DAY_PART_LABELS } from "@/lib/day-part-labels";
+import { Pencil, Check, X } from "lucide-react";
 
 type ApptLike = {
   label: string;
@@ -39,6 +41,25 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
   const { state, toggleTask, addTask } = useStore();
   const day = days[0];
   const iso = day.toISOString().slice(0, 10);
+  const [labels, setLabels] = useDayPartLabels();
+  const [editingLabel, setEditingLabel] = useState<null | "morning" | "afternoon" | "evening">(null);
+  const [labelDraft, setLabelDraft] = useState("");
+  const labelInputRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => { if (editingLabel) labelInputRef.current?.select(); }, [editingLabel]);
+  const beginEditLabel = (key: "morning" | "afternoon" | "evening") => {
+    setLabelDraft(labels[key]);
+    setEditingLabel(key);
+  };
+  const commitEditLabel = () => {
+    if (!editingLabel) return;
+    setLabels({ [editingLabel]: labelDraft } as any);
+    setEditingLabel(null);
+  };
+  const resetEditLabel = () => {
+    if (!editingLabel) return;
+    setLabels({ [editingLabel]: DEFAULT_DAY_PART_LABELS[editingLabel] } as any);
+    setEditingLabel(null);
+  };
   const [composerPart, setComposerPart] = useState<null | "morning" | "afternoon" | "evening">(null);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -78,7 +99,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
     const dayPart = (part[0].toUpperCase() + part.slice(1)) as any;
     await addTask({ title, dueDate: iso, dayPart, inbox: false });
     setDraft("");
-    toast(`Added to ${part}`);
+    toast(`Added to ${labels[part]}`);
   };
 
   const grouped = useMemo(() => {
@@ -118,6 +139,9 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
         const Icon = p.icon;
         const items = (grouped as any)[p.key].items as any[];
         const isOver = dragOverPart === p.key;
+        const partKey = p.key as "morning" | "afternoon" | "evening";
+        const customLabel = labels[partKey];
+        const isEditing = editingLabel === partKey;
         return (
           <div
             key={p.key}
@@ -161,17 +185,58 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-primary/5 backdrop-blur-[1px]">
                 <div className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-[11px] font-medium text-primary-foreground shadow-cozy">
                   <ArrowDownToLine className="h-3 w-3" />
-                  Drop into {p.label}
+                  Drop into {customLabel}
                 </div>
               </div>
             )}
             <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary">
                   <Icon className="h-3.5 w-3.5" />
                 </span>
-                <div>
-                  <div className="text-sm font-semibold leading-tight">{p.label}</div>
+                <div className="group/label min-w-0 flex-1">
+                  {isEditing ? (
+                    <form
+                      onSubmit={(e) => { e.preventDefault(); commitEditLabel(); }}
+                      className="flex items-center gap-1"
+                    >
+                      <input
+                        ref={labelInputRef}
+                        value={labelDraft}
+                        onChange={(e) => setLabelDraft(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Escape") setEditingLabel(null); }}
+                        maxLength={24}
+                        className="min-w-0 flex-1 rounded-md border border-border/60 bg-background/80 px-1.5 py-0.5 text-sm font-semibold outline-none ring-primary/40 focus:ring-2"
+                        aria-label={`Rename ${p.label} block`}
+                      />
+                      <button type="submit" className="grid h-5 w-5 place-items-center rounded text-primary hover:bg-primary/15" aria-label="Save label">
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button type="button" onClick={resetEditLabel} className="grid h-5 w-5 place-items-center rounded text-muted-foreground hover:bg-muted" title={`Reset to ${p.label}`} aria-label="Reset to default">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => beginEditLabel(partKey)}
+                        className="truncate rounded text-left text-sm font-semibold leading-tight hover:text-primary"
+                        title="Click to rename"
+                      >
+                        {customLabel}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => beginEditLabel(partKey)}
+                        className="hidden h-5 w-5 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground group-hover/label:grid"
+                        aria-label={`Rename ${customLabel}`}
+                        title="Rename"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                   <div className="text-[10px] text-muted-foreground">{p.hint}</div>
                 </div>
               </div>
@@ -181,8 +246,8 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                   type="button"
                   onClick={() => { setComposerPart(p.key as any); setDraft(""); }}
                   className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
-                  aria-label={`Add task to ${p.label}`}
-                  title={`Add task to ${p.label}`}
+                  aria-label={`Add task to ${customLabel}`}
+                  title={`Add task to ${customLabel}`}
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </button>
@@ -199,7 +264,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                   onChange={(e) => setDraft(e.target.value)}
                   onBlur={() => { if (!draft.trim()) setComposerPart(null); }}
                   onKeyDown={(e) => { if (e.key === "Escape") { setComposerPart(null); setDraft(""); } }}
-                  placeholder={`New ${p.label.toLowerCase()} task…`}
+                  placeholder={`New ${customLabel.toLowerCase()} task…`}
                   className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
                 />
                 <button
