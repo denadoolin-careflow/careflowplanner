@@ -1,75 +1,33 @@
-## Today Energy — Unified Weather + Rhythm Guidance
+## Goal
+Eliminate the visible "blink" on initial app load / hard refresh.
 
-Transform the Today view into a cohesive "Today Energy" experience combining weather, clothing guidance, moon/rhythm forecast, tarot, affirmations, and AI-powered planning. Preserve the existing CareFlow aesthetic (sage, tan/gold, cream, plum) and keep the current Schedule/Plan flows intact — this lives **above** them as the calm morning header.
+## Root cause
+On first paint, `index.html` paints `<html>` with a single solid color (`hsl(36 38% 96%)` light / `hsl(260 22% 10%)` dark). Once React mounts, `AppLayout` paints the `.gradient-dawn` multi-stop gradient on top. The transition from solid → gradient is the visible flash, and it's worse when a non-default theme preset (sage, ocean, blossom, etc.) is active because the pre-paint solid color doesn't match the preset's gradient start color at all.
 
-### New "Today Energy" stack (in order, on `/today`)
+A secondary contributor: `RequireAuth` shows its own `gradient-dawn` wrapper while loading, then unmounts and `AppLayout` mounts a fresh `gradient-dawn` wrapper — same class, but the DOM swap can cause a one-frame flicker on slower devices.
 
-1. **Weather Hero Card** (replaces/augments current weather usage on Today)
-   - Big current condition + temp + location
-   - Three day-part tiles: Morning / Afternoon / Evening — each with icon, temp range, precip %, wind, one-line summary
-   - Sunrise-gradient morning, warm tan afternoon, dark plum evening backgrounds
-   - Click any day-part → expands an inline detail strip (hourly-style summary, feels-like, UV, wind dir)
-   - Smooth height transition, soft glow on hover
+## Plan
 
-2. **Clothing Guidance Strip**
-   - Pure derived UI from the day's weather + user thresholds
-   - 2–4 short caregiver-friendly suggestions ("Light jacket recommended", "Bring an umbrella", "Rain boots may help")
-   - Small lucide icons (Umbrella, Shirt, CloudSnow, Wind, Sun) with subtle fade-in
-   - Uses new `getClothingAdvice(snapshot, prefs)` helper
+1. **Paint the gradient before React mounts** (`index.html`)
+   - Replace the inline `<style>` block so `html` and `body` carry the full `--gradient-dawn` background for the active theme preset and light/dark mode.
+   - Inline a small table of the dawn-gradient values for every preset (default, sage, ocean, blossom, noir, lavender, sunrise, forest, lilac, orchid — whatever exists in `index.css`) keyed by `data-theme` and `.dark`, so the boot script can apply the matching gradient immediately.
+   - Update the existing boot script to read `localStorage` (theme + preset) and add a class to `<body>` early so the gradient is painted on the first frame.
 
-3. **Today Rhythm Forecast** (expanded card)
-   - Moon phase + zodiac + element badge in one row
-   - "Focus" line (organizing / creating / reflecting / connecting based on element)
-   - Affirmation block (italic, cream background, tap → "Save to journal" toast that creates a journal entry)
-   - Tarot card block (name + one-line meaning, click → expands fuller meaning panel)
-   - "Plan with this energy" button → opens existing `PlanWithEnergyDialog`
+2. **Stop the auth → app DOM swap** (`src/components/auth/RequireAuth.tsx`)
+   - While `loading` is true, render `<Outlet/>`-less placeholder *inside* the same shell, or simply return `null` so the `AppLayout` mounts once and the gradient div is never torn down and re-created. Since the gradient is now on `<body>` from step 1, returning `null` while loading is safe — the page stays the right color.
 
-4. **AI Daily Guidance Card**
-   - One short paragraph generated server-side from weather + moon + today's task load + energy
-   - "Regenerate" + "Plan my day" buttons
-   - Calls new edge function `ai-today-guidance` (Lovable AI Gateway, `google/gemini-3-flash-preview`)
-   - Cached in localStorage per `yyyy-MM-dd` so it doesn't re-spend on every visit
+3. **Match the IndexRedirect loading placeholder** (`src/components/auth/IndexRedirect.tsx`)
+   - Remove the bare `min-h-screen` div (it currently has no background) and return `null` while loading — the body gradient from step 1 carries the visual.
 
-### Weather settings (Settings → Profile)
+4. **Verify**
+   - Hard-refresh on `/`, `/today`, `/journal`, and `/dashboard` in the preview.
+   - Toggle to a non-default preset (e.g. sage) and dark mode, then hard-refresh and confirm no color shift between the pre-React paint and the mounted app.
 
-New "Weather & Rhythm" section:
-- Temperature unit (°C / °F) — already exists, surfaced here too
-- Default location (search + "Use my location")
-- Cold threshold slider (default 60°F / 15°C)
-- Hot threshold slider (default 80°F / 27°C)
-- Toggles: Rain alerts, Snow alerts, Wind alerts
-- All persisted to `localStorage` under `careflow:weather-prefs` (no DB migration needed — UI prefs only)
+## Out of scope
+- Per-page data loading skeletons (the user specified "initial app load / refresh", not per-route navigation).
+- Animations or transitions inside pages.
 
-### Files
-
-**New**
-- `src/lib/weather-prefs.ts` — typed prefs + `useWeatherPrefs()` hook (localStorage)
-- `src/lib/clothing-advice.ts` — `getClothingAdvice(snap, prefs)` returning `{ icon, label, tone }[]`
-- `src/lib/tarot.ts` — small 22-card deck (name + short meaning + extended meaning) + `tarotForDate(date)` deterministic pick
-- `src/components/today/TodayEnergy.tsx` — orchestrates the four cards
-- `src/components/today/WeatherHeroCard.tsx` — expanded day-part weather with gradients
-- `src/components/today/ClothingStrip.tsx`
-- `src/components/today/RhythmGuidanceCard.tsx` — moon + element + affirmation + tarot
-- `src/components/today/TarotCard.tsx` — click-to-expand
-- `src/components/today/AIDailyGuidance.tsx`
-- `src/components/settings/WeatherPrefsSection.tsx`
-- `supabase/functions/ai-today-guidance/index.ts` — uses `LOVABLE_API_KEY` via AI gateway
-
-**Edited**
-- `src/pages/Today.tsx` — insert `<TodayEnergy />` above the existing Schedule/Plan card; remove the now-redundant inline RhythmForecastCard + ElementBadge + RhythmJournalPrompt block (replaced by the richer card)
-- `src/pages/Settings.tsx` — add new section
-- `src/lib/weather.ts` — extend `WeatherSnapshot` consumers if needed (already has dayParts, precip, wind — minimal changes)
-
-### Design notes
-
-- All colors via existing semantic tokens (`--primary` sage, `--secondary` tan, `--accent`, `gradient-dawn`, `gradient-calm`). No raw hex.
-- Day-part gradients use existing CSS vars; add three small utility classes in `index.css` if needed (`bg-gradient-morning`, `bg-gradient-afternoon`, `bg-gradient-evening`) built from existing HSL tokens.
-- Rounded `cozy-card` style stays consistent.
-- Subtle motion via Tailwind transitions (no framer-motion dependency added).
-- Mobile-first: stacks vertically under 640px, 3-col day-parts above.
-
-### Out of scope (intentionally)
-
-- Push notifications for rain/snow (toggle stored but not wired to a notification service yet — can be added later when we add a service worker / push)
-- New zodiac/moon calculations beyond what `src/lib/moon.ts` and `src/lib/rhythm-forecast.ts` already provide
-- DB schema changes (everything is derived or stored in localStorage)
+## Files touched
+- `index.html`
+- `src/components/auth/RequireAuth.tsx`
+- `src/components/auth/IndexRedirect.tsx`
