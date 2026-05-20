@@ -190,7 +190,7 @@ interface Ctx {
   setEnergyToday: (e: Energy) => Promise<void>;
   setLowEnergyMode: (v: boolean) => Promise<void>;
   setName: (n: string) => Promise<void>;
-  updateProfile: (patch: { name?: string; planning_style?: string; time_zone?: string; theme?: string }) => Promise<void>;
+  updateProfile: (patch: { name?: string; planning_style?: string; time_zone?: string; theme?: string; default_route?: string }) => Promise<void>;
 
   reloadAll: () => Promise<void>;
 }
