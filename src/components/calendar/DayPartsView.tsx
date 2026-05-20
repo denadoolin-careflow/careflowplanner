@@ -148,7 +148,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
     // entries (which flow in through appointmentsOn) into the correct
     // dayPart column instead of always falling into "Any time today".
     const tasksToday = state.tasks.filter(
-      t => !t.done && !t.parentTaskId && t.dueDate === iso,
+      t => !t.parentTaskId && t.dueDate === iso,
     );
     const taskByTitle = new Map(tasksToday.map(t => [t.title, t]));
     const taskById = new Map(tasksToday.map(t => [t.id, t]));
