@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { AgendaView } from "@/components/calendar/AgendaView";
+import { DayPartsView } from "@/components/calendar/DayPartsView";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
@@ -256,6 +257,15 @@ function TodayInner() {
         >
           {view === "schedule" && (
             <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
+          )}
+          {view === "parts" && (
+            <DayPartsView
+              days={days}
+              appointmentsOn={eventsOn}
+              onTaskDropAt={handleTimeDrop}
+              onApptClick={setEditApptId}
+              onTaskClick={setEditTaskId}
+            />
           )}
           {view === "agenda" && (
             <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
