@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useRef } from "react";
+import { Navigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import Dashboard from "@/pages/Dashboard";
 
