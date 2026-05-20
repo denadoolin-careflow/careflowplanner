@@ -215,3 +215,10 @@ function FullscreenTimer({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+
+function SaveStatus({ status, savedAt }: { status: "idle" | "saving" | "saved" | "error"; savedAt: Date | null }) {
+  if (status === "saving") return <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Saving…</span>;
+  if (status === "error") return <span className="inline-flex items-center gap-1 text-xs text-destructive"><CloudOff className="h-3 w-3" /> Save failed</span>;
+  if (status === "saved" && savedAt) return <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Check className="h-3 w-3 text-primary" /> Saved {format(savedAt, "h:mm a")}</span>;
+  return <span className="text-xs text-muted-foreground/70">Autosave on</span>;
+}
