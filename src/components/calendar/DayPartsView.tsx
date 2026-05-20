@@ -148,7 +148,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
     // entries (which flow in through appointmentsOn) into the correct
     // dayPart column instead of always falling into "Any time today".
     const tasksToday = state.tasks.filter(
-      t => !t.done && !t.parentTaskId && t.dueDate === iso,
+      t => !t.parentTaskId && t.dueDate === iso,
     );
     const taskByTitle = new Map(tasksToday.map(t => [t.title, t]));
     const taskById = new Map(tasksToday.map(t => [t.id, t]));
@@ -213,6 +213,10 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
       {PARTS.map(p => {
         const Icon = p.icon;
         const items = (grouped as any)[p.key].items as any[];
+        const taskItems = items.filter((it: any) => it.kind === "task");
+        const doneCount = taskItems.filter((it: any) => it.done).length;
+        const totalCount = taskItems.length;
+        const pct = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
         const isOver = dragOverPart === p.key;
         const partKey = p.key as "morning" | "afternoon" | "evening";
         const customLabel = labels[partKey];
@@ -338,6 +342,20 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                 </button>
               </div>
             </div>
+            {totalCount > 0 && (
+              <div className="mb-2">
+                <div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span className="tabular-nums">{doneCount}/{totalCount} done</span>
+                  <span className="tabular-nums">{pct}%</span>
+                </div>
+                <div className="h-1 w-full overflow-hidden rounded-full bg-muted/60">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary via-accent to-secondary transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            )}
             {composerPart === p.key && (
               <form
                 onSubmit={(e) => { e.preventDefault(); void submit(p.key as any); }}
@@ -453,6 +471,21 @@ function DayPartItem({
   onToggle: (id: string) => void | Promise<void>;
   hideTime?: boolean;
 }) {
+  const [completing, setCompleting] = useState(false);
+  const prevDone = useRef<boolean | undefined>(it.done);
+  useEffect(() => {
+    if (it.kind === "task" && !prevDone.current && it.done) {
+      setCompleting(true);
+      const t = setTimeout(() => setCompleting(false), 950);
+      return () => clearTimeout(t);
+    }
+    prevDone.current = it.done;
+  }, [it.done, it.kind]);
+  const triggerToggle = () => {
+    if (!it.taskId) return;
+    if (it.kind === "task" && !it.done) setCompleting(true);
+    void onToggle(it.taskId);
+  };
   const clickable =
     (it.kind === "appt" && it.id && onApptClick) ||
     (it.kind === "task" && it.taskId && onTaskClick);
@@ -480,12 +513,14 @@ function DayPartItem({
         "flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 text-sm",
         clickable && "cursor-pointer hover:bg-primary/10",
         it.kind === "task" && "touch-none",
+        it.kind === "task" && it.done && !completing && "opacity-60",
+        completing && "task-completing",
       )}
     >
       {it.kind === "task" ? (
         <button
           onPointerDown={e => e.stopPropagation()}
-          onClick={e => { e.stopPropagation(); if (it.taskId) void onToggle(it.taskId); }}
+          onClick={e => { e.stopPropagation(); triggerToggle(); }}
           className="text-muted-foreground hover:text-primary"
           aria-label="Toggle task"
         >
@@ -494,7 +529,7 @@ function DayPartItem({
       ) : !hideTime ? (
         <span className="w-12 shrink-0 font-mono text-[10px] text-muted-foreground">{it.time?.slice(0, 5) ?? ""}</span>
       ) : null}
-      <span className="min-w-0 flex-1 truncate">{it.label}</span>
+      <span className={cn("min-w-0 flex-1 truncate", it.kind === "task" && it.done && "line-through")}>{it.label}</span>
       {it.kind === "task" && (
         <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
       )}
