@@ -72,6 +72,55 @@ const ENERGIES: { value: string; label: string }[] = [
   { value: "low", label: "Low" }, { value: "medium", label: "Medium" }, { value: "high", label: "High" },
 ];
 
+const GROUP_LABEL = {
+  none: "None",
+  template: "Template",
+  month: "Month",
+  mood: "Mood",
+  energy: "Energy",
+} as const;
+type GroupKey = keyof typeof GROUP_LABEL;
+
+const SORT_LABEL = {
+  newest: "Newest",
+  oldest: "Oldest",
+  template: "Template",
+  mood: "Mood",
+} as const;
+type SortKey = keyof typeof SORT_LABEL;
+
+function sortEntries(items: JournalEntry[], sort: SortKey): JournalEntry[] {
+  const arr = [...items];
+  switch (sort) {
+    case "newest": return arr.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+    case "oldest": return arr.sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+    case "template": return arr.sort((a, b) => (a.template ?? a.type ?? "").localeCompare(b.template ?? b.type ?? ""));
+    case "mood": return arr.sort((a, b) => (a.mood ?? "").localeCompare(b.mood ?? ""));
+  }
+}
+
+function groupEntries(items: JournalEntry[], group: GroupKey, sort: SortKey): { key: string; label: string; items: JournalEntry[] }[] {
+  const sorted = sortEntries(items, sort);
+  const buckets = new Map<string, { label: string; items: JournalEntry[] }>();
+  for (const e of sorted) {
+    let key = "—", label = "—";
+    if (group === "template") {
+      const t = TEMPLATES.find(x => x.key === (e.template as TemplateKey));
+      key = t?.key ?? "other"; label = t ? `${t.emoji} ${t.label}` : "Other";
+    } else if (group === "month") {
+      try { key = format(parseISO(e.date), "yyyy-MM"); label = format(parseISO(e.date), "MMMM yyyy"); }
+      catch { key = "unknown"; label = "Unknown date"; }
+    } else if (group === "mood") {
+      key = e.mood || "none"; label = e.mood || "No mood";
+    } else if (group === "energy") {
+      key = e.energy || "none"; label = e.energy ? e.energy[0].toUpperCase() + e.energy.slice(1) : "No energy";
+    }
+    if (!buckets.has(key)) buckets.set(key, { label, items: [] });
+    buckets.get(key)!.items.push(e);
+  }
+  return Array.from(buckets.entries()).map(([key, v]) => ({ key, ...v }));
+}
+
 export default function Journal() {
   const { state, addJournal, updateJournal, deleteJournal } = useStore();
   const [template, setTemplate] = useState<TemplateKey>("daily");
