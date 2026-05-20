@@ -471,6 +471,21 @@ function DayPartItem({
   onToggle: (id: string) => void | Promise<void>;
   hideTime?: boolean;
 }) {
+  const [completing, setCompleting] = useState(false);
+  const prevDone = useRef<boolean | undefined>(it.done);
+  useEffect(() => {
+    if (it.kind === "task" && !prevDone.current && it.done) {
+      setCompleting(true);
+      const t = setTimeout(() => setCompleting(false), 950);
+      return () => clearTimeout(t);
+    }
+    prevDone.current = it.done;
+  }, [it.done, it.kind]);
+  const triggerToggle = () => {
+    if (!it.taskId) return;
+    if (it.kind === "task" && !it.done) setCompleting(true);
+    void onToggle(it.taskId);
+  };
   const clickable =
     (it.kind === "appt" && it.id && onApptClick) ||
     (it.kind === "task" && it.taskId && onTaskClick);
@@ -498,12 +513,14 @@ function DayPartItem({
         "flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 text-sm",
         clickable && "cursor-pointer hover:bg-primary/10",
         it.kind === "task" && "touch-none",
+        it.kind === "task" && it.done && !completing && "opacity-60",
+        completing && "task-completing",
       )}
     >
       {it.kind === "task" ? (
         <button
           onPointerDown={e => e.stopPropagation()}
-          onClick={e => { e.stopPropagation(); if (it.taskId) void onToggle(it.taskId); }}
+          onClick={e => { e.stopPropagation(); triggerToggle(); }}
           className="text-muted-foreground hover:text-primary"
           aria-label="Toggle task"
         >
@@ -512,7 +529,7 @@ function DayPartItem({
       ) : !hideTime ? (
         <span className="w-12 shrink-0 font-mono text-[10px] text-muted-foreground">{it.time?.slice(0, 5) ?? ""}</span>
       ) : null}
-      <span className="min-w-0 flex-1 truncate">{it.label}</span>
+      <span className={cn("min-w-0 flex-1 truncate", it.kind === "task" && it.done && "line-through")}>{it.label}</span>
       {it.kind === "task" && (
         <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
       )}
