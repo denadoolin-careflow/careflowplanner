@@ -9,6 +9,19 @@ import type {
 import { seedState, newUserSeed } from "./seed";
 import { AREAS } from "./types";
 
+/* Fire-and-forget push of one CareFlow appointment to Google Calendar.
+   Failures are silent — the local DB is the source of truth and the cron
+   pull will reconcile any drift. */
+async function pushAppointmentToGoogle(appointmentId: string, action: "upsert" | "delete" = "upsert") {
+  try {
+    await supabase.functions.invoke("google-calendar-push", {
+      body: { appointment_id: appointmentId, action },
+    });
+  } catch {
+    /* noop — surfaced via cron pull on the next tick */
+  }
+}
+
 // Use the user's LOCAL calendar date, not UTC. Using toISOString() here would
 // shift the date by a day for users west of UTC at night (or east of UTC early
 // morning), causing tasks entered "today" to be saved as yesterday/tomorrow.
