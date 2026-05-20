@@ -190,7 +190,7 @@ interface Ctx {
   setEnergyToday: (e: Energy) => Promise<void>;
   setLowEnergyMode: (v: boolean) => Promise<void>;
   setName: (n: string) => Promise<void>;
-  updateProfile: (patch: { name?: string; planning_style?: string; time_zone?: string; theme?: string }) => Promise<void>;
+  updateProfile: (patch: { name?: string; planning_style?: string; time_zone?: string; theme?: string; default_route?: string }) => Promise<void>;
 
   reloadAll: () => Promise<void>;
 }
@@ -262,6 +262,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         email: profile.email,
         planningStyle: profile.planning_style,
         timeZone: profile.time_zone,
+        defaultRoute: profile.default_route ?? "/",
       },
       energyToday: profile.energy_today ?? undefined,
       energyDate: profile.energy_date ?? undefined,
@@ -779,7 +780,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     updateProfile: async (patch) => {
       if (!uid) return;
-      setState(s => ({ ...s, settings: { ...s.settings, name: patch.name ?? s.settings.name, planningStyle: patch.planning_style ?? s.settings.planningStyle, timeZone: patch.time_zone ?? s.settings.timeZone, theme: (patch.theme as any) ?? s.settings.theme } }));
+      setState(s => ({ ...s, settings: { ...s.settings, name: patch.name ?? s.settings.name, planningStyle: patch.planning_style ?? s.settings.planningStyle, timeZone: patch.time_zone ?? s.settings.timeZone, theme: (patch.theme as any) ?? s.settings.theme, defaultRoute: patch.default_route ?? s.settings.defaultRoute } }));
       await supabase.from("profiles").update(patch).eq("id", uid);
     },
 
