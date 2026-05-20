@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format, parseISO, subDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
-import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter } from "lucide-react";
+import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter, Layers, ArrowUpDown } from "lucide-react";
 import { ChevronDown, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { JournalEntry } from "@/lib/types";
@@ -84,6 +84,8 @@ export default function Journal() {
   const [aiLoading, setAiLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | TemplateKey>("all");
   const [q, setQ] = useState("");
+  const [groupBy, setGroupBy] = useState<"none" | "template" | "month" | "mood" | "energy">("none");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "template" | "mood">("newest");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
