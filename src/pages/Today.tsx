@@ -10,7 +10,7 @@ import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { DayPartsView } from "@/components/calendar/DayPartsView";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
-import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
+import { CalendarViewToggle, useCalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -88,7 +88,7 @@ function TodayInner() {
     else next.set("date", format(d, "yyyy-MM-dd"));
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
-  const [view, setView] = useState<CalView>("schedule");
+  const [view, setView] = useCalView();
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [cycleSheetOpen, setCycleSheetOpen] = useState(false);

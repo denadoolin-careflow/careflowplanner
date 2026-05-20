@@ -13,7 +13,7 @@ import { AgendaView } from "@/components/calendar/AgendaView";
 import { DayPartsView } from "@/components/calendar/DayPartsView";
 import { format as fmtDate, isSameDay } from "date-fns";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
-import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
+import { CalendarViewToggle, useCalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -39,7 +39,7 @@ export default function Week() {
     const base = new Date(d + "T00:00:00");
     if (!isNaN(base.getTime())) setStart(startOfWeek(base, { weekStartsOn: 1 }));
   }, [searchParams]);
-  const [view, setView] = useState<CalView>("schedule");
+  const [view, setView] = useCalView();
   const [layout, setLayout] = useState<"grid" | "plan">("grid");
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [editApptId, setEditApptId] = useState<string | null>(null);
