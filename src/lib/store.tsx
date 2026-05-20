@@ -9,7 +9,16 @@ import type {
 import { seedState, newUserSeed } from "./seed";
 import { AREAS } from "./types";
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
+// Use the user's LOCAL calendar date, not UTC. Using toISOString() here would
+// shift the date by a day for users west of UTC at night (or east of UTC early
+// morning), causing tasks entered "today" to be saved as yesterday/tomorrow.
+const todayISO = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 export { todayISO };
 
 /* ---------- mappers (db row <-> app shape) ---------- */
