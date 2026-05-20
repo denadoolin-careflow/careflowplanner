@@ -227,10 +227,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       "grocery_items", "appointments", "birthdays", "holidays", "care_recipients",
       "care_notes", "cleaning_tasks", "ideas", "profiles", "areas", "projects", "project_sections",
     ] as const;
-    const results = await Promise.all(tables.map(t =>
-      supabase.from(t).select("*").order("created_at", { ascending: false } as any)
-    ));
-    const [tasks, goals, habits, habitLogs, journal, meals, grocery, appts, bdays, holidays, recipients, careNotes, cleaning, ideas, profiles, areas, projects, sections] = results.map(r => r.data ?? []);
+    // Safari/WebKit drops requests with `TypeError: Load failed` when ~18
+    // selects fire at once right after auth. Batch in small chunks and
+    // retry transient failures so we never render with partial data.
+    const fetchOne = async (t: string): Promise<any[]> => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const res = await supabase.from(t as any).select("*").order("created_at", { ascending: false } as any);
+        if (!res.error) return res.data ?? [];
+        // brief backoff before retry
+        await new Promise(r => setTimeout(r, 200 * (attempt + 1)));
+      }
+      return [];
+    };
+    const CHUNK = 4;
+    const out: any[][] = [];
+    for (let i = 0; i < tables.length; i += CHUNK) {
+      const slice = tables.slice(i, i + CHUNK);
+      const part = await Promise.all(slice.map(t => fetchOne(t)));
+      out.push(...part);
+    }
+    const [tasks, goals, habits, habitLogs, journal, meals, grocery, appts, bdays, holidays, recipients, careNotes, cleaning, ideas, profiles, areas, projects, sections] = out;
     const profile: any = profiles[0] ?? {};
     // attach habit logs
     const logsByHabit: Record<string, Record<string, boolean>> = {};
