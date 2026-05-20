@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Maximize2, Minimize2, Save, Wind } from "lucide-react";
+import { ArrowLeft, Check, CloudOff, Loader2, Maximize2, Minimize2, Wind } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,35 +8,80 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { PomodoroPanel } from "@/components/tasks/PomodoroPanel";
 import { useStore } from "@/lib/store";
 import { usePomodoro, formatPomoTime, pomoTotal } from "@/lib/pomodoro-store";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function JournalFlow() {
-  const { addJournal } = useStore();
+  const { addJournal, updateJournal } = useStore();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const entryIdRef = useRef<string | null>(null);
+  const creatingRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dirtyRef = useRef(false);
 
-  const save = async () => {
-    const finalBody = body.trim();
-    if (!finalBody) { toast.error("Write a sentence first"); return; }
-    setSaving(true);
+  const doSave = async (t: string, b: string) => {
+    const finalBody = b.trim();
+    if (!finalBody && !t.trim()) return;
+    setStatus("saving");
     try {
-      await addJournal({
-        body: finalBody,
-        type: "daily",
-        title: title || undefined,
-        template: "daily",
-        tags: ["flow"],
-      } as any);
-      setBody(""); setTitle("");
-      toast.success("Saved to your journal");
+      if (!entryIdRef.current) {
+        if (creatingRef.current) return;
+        creatingRef.current = true;
+        const created = await addJournal({
+          body: finalBody,
+          type: "daily",
+          title: t || undefined,
+          template: "daily",
+          tags: ["flow"],
+        } as any);
+        creatingRef.current = false;
+        if (created) entryIdRef.current = created.id;
+      } else {
+        await updateJournal(entryIdRef.current, {
+          body: finalBody,
+          title: t || undefined,
+        });
+      }
+      dirtyRef.current = false;
+      setStatus("saved");
+      setSavedAt(new Date());
     } catch {
-      toast.error("Could not save");
-    } finally {
-      setSaving(false);
+      setStatus("error");
     }
+  };
+
+  // Debounced autosave on changes
+  useEffect(() => {
+    if (!dirtyRef.current) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => { void doSave(title, body); }, 900);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, body]);
+
+  // Flush on unmount / page hide
+  useEffect(() => {
+    const flush = () => { if (dirtyRef.current) void doSave(title, body); };
+    window.addEventListener("beforeunload", flush);
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(); });
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      flush();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, body]);
+
+  const onTitle = (v: string) => { dirtyRef.current = true; setTitle(v); };
+  const onBody = (v: string) => { dirtyRef.current = true; setBody(v); };
+
+  const newEntry = () => {
+    if (dirtyRef.current) void doSave(title, body);
+    entryIdRef.current = null;
+    setTitle(""); setBody("");
+    setStatus("idle"); setSavedAt(null);
   };
 
   return (
@@ -92,14 +137,17 @@ export default function JournalFlow() {
               </p>
               <h1 className="font-display text-3xl font-semibold leading-tight">Today's pages</h1>
             </div>
-            <Button onClick={save} disabled={saving} className="rounded-full">
-              <Save className="mr-1.5 h-4 w-4" /> {saving ? "Saving…" : "Save entry"}
-            </Button>
+            <div className="flex items-center gap-3">
+              <SaveStatus status={status} savedAt={savedAt} />
+              <Button variant="outline" size="sm" onClick={newEntry} className="rounded-full">
+                New entry
+              </Button>
+            </div>
           </header>
 
           <Input
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => onTitle(e.target.value)}
             placeholder="A title, if one finds you…"
             className="h-auto border-0 bg-transparent px-0 font-display text-2xl font-semibold shadow-none focus-visible:ring-0"
           />
@@ -107,7 +155,7 @@ export default function JournalFlow() {
           <div className="mt-3 flex-1 rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm backdrop-blur">
             <BlockEditor
               body={body}
-              onChange={(md) => setBody(md)}
+              onChange={(md) => onBody(md)}
               placeholder="Begin anywhere. Press / for headings, lists, quotes…"
             />
           </div>
