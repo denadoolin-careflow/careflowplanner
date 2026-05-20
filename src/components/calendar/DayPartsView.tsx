@@ -71,7 +71,10 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
       const key = dp.part.toLowerCase();
       if (key === "morning" || key === "afternoon" || key === "evening") {
         wxByPart[key] = { temp: dp.avgTempC, condition: dp.condition, label: dp.conditionLabel };
-      }
+  }
+  const severeAlerts = (["morning", "afternoon", "evening"] as const)
+    .map(k => ({ part: k, wx: wxByPart[k] }))
+    .filter(({ wx }) => wx && SEVERE_CONDITIONS.includes(wx.condition));
     }
   }
   const [editingLabel, setEditingLabel] = useState<null | "morning" | "afternoon" | "evening">(null);
