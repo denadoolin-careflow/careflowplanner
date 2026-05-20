@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical, Plus, ArrowDownToLine } from "lucide-react";
+import { Sunrise, Sun, Moon, CheckCircle2, Circle, GripVertical, Plus, ArrowDownToLine, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { hmToHours } from "@/lib/time-blocks";
@@ -8,6 +8,21 @@ import { useLongPressDrag } from "@/lib/long-press-drag";
 import { toast } from "sonner";
 import { useDayPartLabels, DEFAULT_DAY_PART_LABELS } from "@/lib/day-part-labels";
 import { Pencil, Check, X } from "lucide-react";
+import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store";
+import type { WeatherCondition } from "@/lib/weather";
+
+function WxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
+  const cls = cn("h-3.5 w-3.5", className);
+  if (c === "clear") return <Sun className={cls} />;
+  if (c === "partly-cloudy") return <CloudSun className={cls} />;
+  if (c === "cloudy") return <Cloud className={cls} />;
+  if (c === "fog") return <CloudFog className={cls} />;
+  if (c === "drizzle") return <CloudDrizzle className={cls} />;
+  if (c === "rain") return <CloudRain className={cls} />;
+  if (c === "snow") return <CloudSnow className={cls} />;
+  if (c === "thunderstorm") return <Zap className={cls} />;
+  return <Cloud className={cls} />;
+}
 
 type ApptLike = {
   label: string;
@@ -42,6 +57,21 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
   const day = days[0];
   const iso = day.toISOString().slice(0, 10);
   const [labels, setLabels] = useDayPartLabels();
+  const weather = useWeatherSnapshot();
+  const [unit] = useTempUnit();
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const isToday = iso === todayIso;
+  const wxByPart: Record<"morning" | "afternoon" | "evening", { temp: number; condition: WeatherCondition; label: string } | null> = {
+    morning: null, afternoon: null, evening: null,
+  };
+  if (isToday && weather?.dayParts) {
+    for (const dp of weather.dayParts) {
+      const key = dp.part.toLowerCase();
+      if (key === "morning" || key === "afternoon" || key === "evening") {
+        wxByPart[key] = { temp: dp.avgTempC, condition: dp.condition, label: dp.conditionLabel };
+      }
+    }
+  }
   const [editingLabel, setEditingLabel] = useState<null | "morning" | "afternoon" | "evening">(null);
   const [labelDraft, setLabelDraft] = useState("");
   const labelInputRef = useRef<HTMLInputElement | null>(null);
@@ -165,6 +195,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
         const partKey = p.key as "morning" | "afternoon" | "evening";
         const customLabel = labels[partKey];
         const isEditing = editingLabel === partKey;
+        const wx = wxByPart[partKey];
         return (
           <div
             key={p.key}
@@ -264,6 +295,15 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {wx && (
+                  <span
+                    className="flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                    title={`${wx.label} · ${formatTemp(wx.temp, unit)}`}
+                  >
+                    <WxIcon c={wx.condition} className="text-primary" />
+                    <span className="font-medium tabular-nums">{formatTemp(wx.temp, unit)}</span>
+                  </span>
+                )}
                 <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{items.length}</span>
                 <button
                   type="button"
