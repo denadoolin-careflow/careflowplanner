@@ -13,14 +13,18 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     const t = window.setTimeout(() => setShowLoader(true), 250);
     return () => window.clearTimeout(t);
   }, [loading]);
-  if (loading && showLoader) {
+  if (loading) {
+    // Always render a calm full-screen background while we wait so the
+    // browser never paints a white flash between routes. Reveal the
+    // "Loading…" card only after a short grace period for fast checks.
     return (
       <div className="grid min-h-screen place-items-center gradient-dawn">
-        <div className="cozy-card p-6 text-sm text-muted-foreground">Loading your planner…</div>
+        {showLoader ? (
+          <div className="cozy-card p-6 text-sm text-muted-foreground">Loading your planner…</div>
+        ) : null}
       </div>
     );
   }
-  if (loading) return null;
   if (!user) return <Navigate to="/auth" replace state={{ from: location }} />;
   return <>{children}</>;
 }
