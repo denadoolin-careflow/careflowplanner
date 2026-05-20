@@ -85,6 +85,32 @@ export default function Settings() {
               Synced with your calendar schedule view.
             </p>
           </div>
+          <div className="sm:col-span-2">
+            <Label className="text-xs text-muted-foreground">Default view on login</Label>
+            <Select
+              value={state.settings.defaultRoute ?? "/"}
+              onValueChange={(v) => { updateProfile({ default_route: v }); toast.success("Default view updated."); }}
+            >
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="/">Dashboard</SelectItem>
+                <SelectItem value="/today">Today</SelectItem>
+                <SelectItem value="/inbox">Inbox</SelectItem>
+                <SelectItem value="/upcoming">Upcoming</SelectItem>
+                <SelectItem value="/anytime">Anytime</SelectItem>
+                <SelectItem value="/calendar">Calendar</SelectItem>
+                <SelectItem value="/plan">Plan</SelectItem>
+                <SelectItem value="/week">Week</SelectItem>
+                <SelectItem value="/projects">Projects</SelectItem>
+                <SelectItem value="/notes">Notes</SelectItem>
+                <SelectItem value="/meals">Meals</SelectItem>
+                <SelectItem value="/habits">Habits</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Where the app opens after you sign in.
+            </p>
+          </div>
         </div>
       </SectionCard>
 
