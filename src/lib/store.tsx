@@ -609,11 +609,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addAppointment: async (a) => {
       if (!uid) return;
-      const { data } = await supabase.from("appointments").insert({ user_id: uid, title: a.title, date: a.date, time: a.time ?? null, type: a.type ?? "other", location: a.location ?? null, recipient_id: a.recipientId ?? null, with_name: (a as any).with ?? null, icon: a.icon ?? null }).select().single();
-      if (data) setState(s => ({ ...s, appointments: [apptFrom(data), ...s.appointments] }));
+      const { data } = await supabase.from("appointments").insert({
+        user_id: uid,
+        title: a.title, date: a.date,
+        time: a.time ?? null, end_time: a.endTime ?? null, all_day: !!a.allDay,
+        notes: a.notes ?? null,
+        type: a.type ?? "other", location: a.location ?? null,
+        recipient_id: a.recipientId ?? null, with_name: (a as any).with ?? null, icon: a.icon ?? null,
+        sync_to_google: !!a.syncToGoogle,
+      }).select().single();
+      if (data) {
+        const appt = apptFrom(data);
+        setState(s => ({ ...s, appointments: [appt, ...s.appointments] }));
+        if (appt.syncToGoogle) void pushAppointmentToGoogle(appt.id);
+      }
     },
     deleteAppointment: async (id) => {
+      const appt = state.appointments.find(a => a.id === id);
       setState(s => ({ ...s, appointments: s.appointments.filter(a => a.id !== id) }));
+      if (appt?.syncToGoogle && appt.googleEventId) {
+        // Fire push BEFORE deleting the row so the edge function can read it.
+        await pushAppointmentToGoogle(id, "delete").catch(() => {});
+      }
       await supabase.from("appointments").delete().eq("id", id);
     },
     updateAppointment: async (id, patch) => {
@@ -621,12 +638,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.title !== undefined) dbPatch.title = patch.title;
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.time !== undefined) dbPatch.time = patch.time;
+      if (patch.endTime !== undefined) dbPatch.end_time = patch.endTime;
+      if (patch.allDay !== undefined) dbPatch.all_day = !!patch.allDay;
+      if (patch.notes !== undefined) dbPatch.notes = patch.notes;
       if (patch.location !== undefined) dbPatch.location = patch.location;
       if (patch.type !== undefined) dbPatch.type = patch.type;
       if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
+      if (patch.syncToGoogle !== undefined) dbPatch.sync_to_google = !!patch.syncToGoogle;
       if ((patch as any).with !== undefined) dbPatch.with_name = (patch as any).with;
       setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch } : a) }));
       await supabase.from("appointments").update(dbPatch).eq("id", id);
+      const next = { ...(state.appointments.find(a => a.id === id) ?? {}), ...patch } as Appointment;
+      if (next.syncToGoogle) void pushAppointmentToGoogle(id);
     },
 
     addBirthday: async (b) => {
