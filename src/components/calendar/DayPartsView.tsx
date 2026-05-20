@@ -6,6 +6,8 @@ import { hmToHours } from "@/lib/time-blocks";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
 import { useLongPressDrag } from "@/lib/long-press-drag";
 import { toast } from "sonner";
+import { useDayPartLabels, DEFAULT_DAY_PART_LABELS } from "@/lib/day-part-labels";
+import { Pencil, Check, X } from "lucide-react";
 
 type ApptLike = {
   label: string;
@@ -39,6 +41,25 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
   const { state, toggleTask, addTask } = useStore();
   const day = days[0];
   const iso = day.toISOString().slice(0, 10);
+  const [labels, setLabels] = useDayPartLabels();
+  const [editingLabel, setEditingLabel] = useState<null | "morning" | "afternoon" | "evening">(null);
+  const [labelDraft, setLabelDraft] = useState("");
+  const labelInputRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => { if (editingLabel) labelInputRef.current?.select(); }, [editingLabel]);
+  const beginEditLabel = (key: "morning" | "afternoon" | "evening") => {
+    setLabelDraft(labels[key]);
+    setEditingLabel(key);
+  };
+  const commitEditLabel = () => {
+    if (!editingLabel) return;
+    setLabels({ [editingLabel]: labelDraft } as any);
+    setEditingLabel(null);
+  };
+  const resetEditLabel = () => {
+    if (!editingLabel) return;
+    setLabels({ [editingLabel]: DEFAULT_DAY_PART_LABELS[editingLabel] } as any);
+    setEditingLabel(null);
+  };
   const [composerPart, setComposerPart] = useState<null | "morning" | "afternoon" | "evening">(null);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -78,7 +99,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
     const dayPart = (part[0].toUpperCase() + part.slice(1)) as any;
     await addTask({ title, dueDate: iso, dayPart, inbox: false });
     setDraft("");
-    toast(`Added to ${part}`);
+    toast(`Added to ${labels[part]}`);
   };
 
   const grouped = useMemo(() => {
@@ -118,6 +139,9 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
         const Icon = p.icon;
         const items = (grouped as any)[p.key].items as any[];
         const isOver = dragOverPart === p.key;
+        const partKey = p.key as "morning" | "afternoon" | "evening";
+        const customLabel = labels[partKey];
+        const isEditing = editingLabel === partKey;
         return (
           <div
             key={p.key}
