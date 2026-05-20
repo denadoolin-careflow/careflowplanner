@@ -262,6 +262,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         email: profile.email,
         planningStyle: profile.planning_style,
         timeZone: profile.time_zone,
+        defaultRoute: profile.default_route ?? "/",
       },
       energyToday: profile.energy_today ?? undefined,
       energyDate: profile.energy_date ?? undefined,
