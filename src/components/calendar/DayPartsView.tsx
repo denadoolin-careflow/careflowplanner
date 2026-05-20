@@ -192,7 +192,24 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
   }, [iso, appointmentsOn, state.tasks]);
 
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    <div className="space-y-3">
+      {severeAlerts.length > 0 && (
+        <div className="flex items-start gap-2 rounded-xl border border-accent/30 bg-accent-soft/70 px-3 py-2.5 text-xs text-accent-foreground">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+          <span>
+            {severeAlerts.map(({ part, wx }) => `${labels[part]}: ${wx!.label}`).join(" · ")}
+            {" — "}
+            {severeAlerts.some(a => a.wx?.condition === "thunderstorm")
+              ? "Stay inside and keep things gentle."
+              : severeAlerts.some(a => a.wx?.condition === "snow")
+              ? "Wrap warm and take your time."
+              : severeAlerts.some(a => a.wx?.condition === "rain")
+              ? "A warm drink and a slower pace."
+              : "Move gently and stay aware."}
+          </span>
+        </div>
+      )}
+      <div className="grid gap-3 md:grid-cols-3">
       {PARTS.map(p => {
         const Icon = p.icon;
         const items = (grouped as any)[p.key].items as any[];
