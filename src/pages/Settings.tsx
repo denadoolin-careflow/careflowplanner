@@ -17,6 +17,7 @@ import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEdi
 import { GoogleCalendarSection } from "@/components/calendar/GoogleCalendarSection";
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
+import { WeatherPrefsSection } from "@/components/settings/WeatherPrefsSection";
 import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/TimeZoneSelect";
 import { useRhythmForecastEnabled, useRecommendationTone } from "@/lib/rhythm-forecast";
 import { MOON_PROVIDERS, useMoonProvider } from "@/lib/moon-providers";
@@ -319,6 +320,7 @@ export default function Settings() {
       </SectionCard>
 
       <CycleSettingsSection />
+      <WeatherPrefsSection />
     </div>
   );
 }

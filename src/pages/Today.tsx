@@ -215,13 +215,7 @@ function TodayInner() {
         <MoonJournalReminderBanner date={today} />
 
         {rhythmOn && (
-          <div className="space-y-3">
-            <RhythmForecastCard date={today} variant="today" />
-            <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-              <RhythmJournalPrompt date={today} scope="daily" />
-              <ElementBadge date={today} variant="tile" className="sm:w-64" />
-            </div>
-          </div>
+          <TodayEnergy date={today} />
         )}
 
         {layout === "plan" ? (
