@@ -16,12 +16,19 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
+          all_day: boolean
           created_at: string
           date: string
+          end_time: string | null
+          google_calendar_id: string | null
+          google_event_id: string | null
+          google_last_synced_at: string | null
           icon: string | null
           id: string
           location: string | null
+          notes: string | null
           recipient_id: string | null
+          sync_to_google: boolean
           time: string | null
           title: string
           type: string | null
@@ -30,12 +37,19 @@ export type Database = {
           with_name: string | null
         }
         Insert: {
+          all_day?: boolean
           created_at?: string
           date: string
+          end_time?: string | null
+          google_calendar_id?: string | null
+          google_event_id?: string | null
+          google_last_synced_at?: string | null
           icon?: string | null
           id?: string
           location?: string | null
+          notes?: string | null
           recipient_id?: string | null
+          sync_to_google?: boolean
           time?: string | null
           title: string
           type?: string | null
@@ -44,12 +58,19 @@ export type Database = {
           with_name?: string | null
         }
         Update: {
+          all_day?: boolean
           created_at?: string
           date?: string
+          end_time?: string | null
+          google_calendar_id?: string | null
+          google_event_id?: string | null
+          google_last_synced_at?: string | null
           icon?: string | null
           id?: string
           location?: string | null
+          notes?: string | null
           recipient_id?: string | null
+          sync_to_google?: boolean
           time?: string | null
           title?: string
           type?: string | null
@@ -939,6 +960,36 @@ export type Database = {
         }
         Relationships: []
       }
+      google_calendar_sync_state: {
+        Row: {
+          calendar_id: string
+          created_at: string
+          id: string
+          last_pulled_at: string | null
+          sync_token: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calendar_id: string
+          created_at?: string
+          id?: string
+          last_pulled_at?: string | null
+          sync_token?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calendar_id?: string
+          created_at?: string
+          id?: string
+          last_pulled_at?: string | null
+          sync_token?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       google_calendar_tokens: {
         Row: {
           access_token: string
@@ -949,6 +1000,7 @@ export type Database = {
           scope: string | null
           updated_at: string
           user_id: string
+          write_calendar_id: string
         }
         Insert: {
           access_token: string
@@ -959,6 +1011,7 @@ export type Database = {
           scope?: string | null
           updated_at?: string
           user_id: string
+          write_calendar_id?: string
         }
         Update: {
           access_token?: string
@@ -969,6 +1022,7 @@ export type Database = {
           scope?: string | null
           updated_at?: string
           user_id?: string
+          write_calendar_id?: string
         }
         Relationships: []
       }

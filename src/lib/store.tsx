@@ -9,6 +9,19 @@ import type {
 import { seedState, newUserSeed } from "./seed";
 import { AREAS } from "./types";
 
+/* Fire-and-forget push of one CareFlow appointment to Google Calendar.
+   Failures are silent — the local DB is the source of truth and the cron
+   pull will reconcile any drift. */
+async function pushAppointmentToGoogle(appointmentId: string, action: "upsert" | "delete" = "upsert") {
+  try {
+    await supabase.functions.invoke("google-calendar-push", {
+      body: { appointment_id: appointmentId, action },
+    });
+  } catch {
+    /* noop — surfaced via cron pull on the next tick */
+  }
+}
+
 // Use the user's LOCAL calendar date, not UTC. Using toISOString() here would
 // shift the date by a day for users west of UTC at night (or east of UTC early
 // morning), causing tasks entered "today" to be saved as yesterday/tomorrow.
@@ -84,7 +97,16 @@ const groceryFrom = (r: any): GroceryItem => ({
   sourceSlot: r.source_slot ?? null,
   sourceDate: r.source_date ?? null,
 });
-const apptFrom = (r: any): Appointment => ({ id: r.id, date: r.date, time: r.time ?? undefined, title: r.title, icon: r.icon ?? undefined, with: r.with_name ?? undefined, location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined });
+const apptFrom = (r: any): Appointment => ({
+  id: r.id, date: r.date, time: r.time ?? undefined,
+  endTime: r.end_time ?? undefined, allDay: !!r.all_day, notes: r.notes ?? undefined,
+  title: r.title, icon: r.icon ?? undefined, with: r.with_name ?? undefined,
+  location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined,
+  syncToGoogle: !!r.sync_to_google,
+  googleEventId: r.google_event_id ?? undefined,
+  googleCalendarId: r.google_calendar_id ?? undefined,
+  googleLastSyncedAt: r.google_last_synced_at ?? undefined,
+});
 const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined });
 const holidayFrom = (r: any): Holiday => ({ id: r.id, name: r.name, date: r.date, notes: r.notes ?? undefined });
 const recipFrom = (r: any): CareRecipient => ({
@@ -600,11 +622,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addAppointment: async (a) => {
       if (!uid) return;
-      const { data } = await supabase.from("appointments").insert({ user_id: uid, title: a.title, date: a.date, time: a.time ?? null, type: a.type ?? "other", location: a.location ?? null, recipient_id: a.recipientId ?? null, with_name: (a as any).with ?? null, icon: a.icon ?? null }).select().single();
-      if (data) setState(s => ({ ...s, appointments: [apptFrom(data), ...s.appointments] }));
+      const { data } = await supabase.from("appointments").insert({
+        user_id: uid,
+        title: a.title, date: a.date,
+        time: a.time ?? null, end_time: a.endTime ?? null, all_day: !!a.allDay,
+        notes: a.notes ?? null,
+        type: a.type ?? "other", location: a.location ?? null,
+        recipient_id: a.recipientId ?? null, with_name: (a as any).with ?? null, icon: a.icon ?? null,
+        sync_to_google: !!a.syncToGoogle,
+      }).select().single();
+      if (data) {
+        const appt = apptFrom(data);
+        setState(s => ({ ...s, appointments: [appt, ...s.appointments] }));
+        if (appt.syncToGoogle) void pushAppointmentToGoogle(appt.id);
+      }
     },
     deleteAppointment: async (id) => {
+      const appt = state.appointments.find(a => a.id === id);
       setState(s => ({ ...s, appointments: s.appointments.filter(a => a.id !== id) }));
+      if (appt?.syncToGoogle && appt.googleEventId) {
+        // Fire push BEFORE deleting the row so the edge function can read it.
+        await pushAppointmentToGoogle(id, "delete").catch(() => {});
+      }
       await supabase.from("appointments").delete().eq("id", id);
     },
     updateAppointment: async (id, patch) => {
@@ -612,12 +651,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.title !== undefined) dbPatch.title = patch.title;
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.time !== undefined) dbPatch.time = patch.time;
+      if (patch.endTime !== undefined) dbPatch.end_time = patch.endTime;
+      if (patch.allDay !== undefined) dbPatch.all_day = !!patch.allDay;
+      if (patch.notes !== undefined) dbPatch.notes = patch.notes;
       if (patch.location !== undefined) dbPatch.location = patch.location;
       if (patch.type !== undefined) dbPatch.type = patch.type;
       if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
+      if (patch.syncToGoogle !== undefined) dbPatch.sync_to_google = !!patch.syncToGoogle;
       if ((patch as any).with !== undefined) dbPatch.with_name = (patch as any).with;
       setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch } : a) }));
       await supabase.from("appointments").update(dbPatch).eq("id", id);
+      const next = { ...(state.appointments.find(a => a.id === id) ?? {}), ...patch } as Appointment;
+      if (next.syncToGoogle) void pushAppointmentToGoogle(id);
     },
 
     addBirthday: async (b) => {

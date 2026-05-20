@@ -1,15 +1,21 @@
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Unplug } from "lucide-react";
-import { gcalConnect, gcalDisconnect, gcalListCalendars, gcalSaveSelections, type GCalCalendar } from "@/lib/google-calendar";
+import { AlertTriangle, Loader2, RefreshCw, Unplug } from "lucide-react";
+import {
+  gcalConnect, gcalDisconnect, gcalListCalendars, gcalSaveSelections, gcalPullNow, gcalNotifyChange,
+  type GCalCalendar,
+} from "@/lib/google-calendar";
 
 export function GoogleCalendarSection() {
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [calendars, setCalendars] = useState<GCalCalendar[]>([]);
   const [saving, setSaving] = useState(false);
+  const [readOnly, setReadOnly] = useState(false);
+  const [writeCal, setWriteCal] = useState<string>("primary");
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -17,6 +23,8 @@ export function GoogleCalendarSection() {
       const r = await gcalListCalendars();
       setConnected(r.connected);
       setCalendars(r.calendars ?? []);
+      setReadOnly(!!r.readOnly);
+      setWriteCal(r.writeCalendarId ?? "primary");
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't load Google calendars");
     } finally { setLoading(false); }
@@ -61,8 +69,10 @@ export function GoogleCalendarSection() {
   const save = async () => {
     setSaving(true);
     try {
-      await gcalSaveSelections(calendars);
+      await gcalSaveSelections(calendars, writeCal);
       toast.success("Calendar selection saved.");
+      // Kick a pull right away so newly-enabled calendars show up immediately.
+      gcalPullNow().then(() => gcalNotifyChange()).catch(() => {});
     } catch (e: any) { toast.error(e?.message ?? "Save failed."); }
     finally { setSaving(false); }
   };
@@ -80,6 +90,16 @@ export function GoogleCalendarSection() {
 
   return (
     <div className="space-y-3">
+      {readOnly && (
+        <div className="flex items-start gap-2 rounded-xl border border-warm/40 bg-warm/10 px-3 py-2 text-sm">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warm-foreground" />
+          <div className="flex-1">
+            <p className="font-medium">Read-only connection</p>
+            <p className="text-muted-foreground">Reconnect to enable two-way sync — CareFlow appointments will save back into Google Calendar.</p>
+          </div>
+          <Button size="sm" onClick={onConnect} className="rounded-full">Reconnect</Button>
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm">Choose which calendars appear:</p>
         <div className="flex gap-2">
@@ -100,6 +120,21 @@ export function GoogleCalendarSection() {
           </li>
         ))}
       </ul>
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-card px-3 py-2">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Save new CareFlow appointments to</p>
+          <p className="text-xs text-muted-foreground">Used when you toggle "Sync to Google" on an appointment.</p>
+        </div>
+        <Select value={writeCal} onValueChange={setWriteCal}>
+          <SelectTrigger className="h-9 w-[200px] rounded-full"><SelectValue placeholder="primary" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="primary">Primary calendar</SelectItem>
+            {calendars.filter(c => c.id !== "primary").map(c => (
+              <SelectItem key={c.id} value={c.id}>{c.summary}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="flex justify-end">
         <Button onClick={save} disabled={saving} className="rounded-full">{saving ? "Saving…" : "Save selection"}</Button>
       </div>

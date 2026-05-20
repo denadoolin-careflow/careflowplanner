@@ -10,7 +10,8 @@ Deno.serve(async (req) => {
   const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   if (req.method === "POST") {
-    // bulk update selections: { selections: [{calendar_id, summary, color, enabled}] }
+    // bulk update selections + optional write_calendar_id:
+    //   { selections: [{calendar_id, summary, color, enabled}], write_calendar_id?: string }
     const body = await req.json().catch(() => ({}));
     const selections = Array.isArray(body.selections) ? body.selections : [];
     if (selections.length) {
@@ -24,11 +25,20 @@ Deno.serve(async (req) => {
       const { error } = await supa.from("google_calendar_selected").upsert(rows, { onConflict: "user_id,calendar_id" });
       if (error) return json({ error: error.message }, 500);
     }
+    if (typeof body.write_calendar_id === "string" && body.write_calendar_id) {
+      const { error } = await supa.from("google_calendar_tokens")
+        .update({ write_calendar_id: body.write_calendar_id })
+        .eq("user_id", uid);
+      if (error) return json({ error: error.message }, 500);
+    }
     return json({ ok: true });
   }
 
   const token = await getValidAccessToken(uid);
   if (!token) return json({ connected: false, calendars: [], selected: [] });
+
+  const { data: tokRow } = await supa.from("google_calendar_tokens")
+    .select("scope, write_calendar_id").eq("user_id", uid).maybeSingle();
 
   const res = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=reader", {
     headers: { Authorization: `Bearer ${token}` },
@@ -45,7 +55,12 @@ Deno.serve(async (req) => {
     primary: !!c.primary,
     enabled: selMap.has(c.id) ? selMap.get(c.id) : !!c.primary,
   }));
-  return json({ connected: true, calendars });
+  return json({
+    connected: true,
+    calendars,
+    scope: tokRow?.scope ?? null,
+    write_calendar_id: tokRow?.write_calendar_id ?? "primary",
+  });
 });
 
 function json(b: unknown, status = 200) {

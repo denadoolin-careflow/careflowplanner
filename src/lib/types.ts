@@ -128,12 +128,20 @@ export interface Appointment {
   id: string;
   date: string; // ISO date
   time?: string;
+  endTime?: string;
+  allDay?: boolean;
+  notes?: string;
   title: string;
   icon?: string;
   with?: string;
   location?: string;
   recipientId?: string;
   type?: "doctor" | "therapy" | "school" | "family" | "personal" | "other";
+  // Google Calendar sync metadata — opt-in per appointment.
+  syncToGoogle?: boolean;
+  googleEventId?: string;
+  googleCalendarId?: string;
+  googleLastSyncedAt?: string;
 }
 
 export interface Birthday { id: string; name: string; date: string; relation?: string; notes?: string; }
