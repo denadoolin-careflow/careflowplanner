@@ -8,9 +8,9 @@ const STORAGE_KEY = "careflow:cal-view:v1";
 const listeners = new Set<(v: CalView) => void>();
 
 function read(): CalView {
-  if (typeof localStorage === "undefined") return "schedule";
+  if (typeof localStorage === "undefined") return "parts";
   const v = localStorage.getItem(STORAGE_KEY);
-  return v === "schedule" || v === "parts" || v === "agenda" ? v : "schedule";
+  return v === "schedule" || v === "parts" || v === "agenda" ? v : "parts";
 }
 
 let current: CalView = read();
