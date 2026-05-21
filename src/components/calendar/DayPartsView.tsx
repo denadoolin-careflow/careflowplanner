@@ -10,6 +10,7 @@ import { useDayPartLabels, DEFAULT_DAY_PART_LABELS } from "@/lib/day-part-labels
 import { Pencil, Check, X } from "lucide-react";
 import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store";
 import type { WeatherCondition } from "@/lib/weather";
+import { DayExtras } from "@/components/today/DayExtras";
 
 function WxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-3.5 w-3.5", className);
@@ -37,6 +38,8 @@ interface Props {
   onTaskDropAt?: (taskId: string, date: string, startHour: number) => void;
   onApptClick?: (apptId: string) => void;
   onTaskClick?: (taskId: string) => void;
+  /** Show meals + routines aligned to parts. Default true. */
+  showExtras?: boolean;
 }
 
 const PARTS = [
@@ -54,7 +57,7 @@ function partOf(hm: string | null | undefined): "morning" | "afternoon" | "eveni
   return null;
 }
 
-export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, onTaskClick }: Props) {
+export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, onTaskClick, showExtras = true }: Props) {
   const { state, toggleTask, addTask } = useStore();
   const day = days[0];
   const iso = day.toISOString().slice(0, 10);
@@ -454,7 +457,9 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
           </ul>
         </div>
       )}
-    </div></div>
+    </div>
+    {showExtras && <DayExtras date={day} />}
+    </div>
   );
 }
 
