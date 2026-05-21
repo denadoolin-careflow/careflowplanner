@@ -11,6 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
@@ -59,9 +62,94 @@ function AddInline({ onAdd, placeholder }: { onAdd: (v: string) => void; placeho
       onSubmit={(e) => { e.preventDefault(); const t = v.trim(); if (!t) return; onAdd(t); setV(""); }}
       className="mt-2 flex gap-1.5"
     >
-      <Input value={v} onChange={(e) => setV(e.target.value)} placeholder={placeholder} className="h-8 text-xs" />
-      <Button type="submit" size="sm" variant="ghost" className="h-8 px-2"><Plus className="h-3.5 w-3.5" /></Button>
+      <Input value={v} onChange={(e) => setV(e.target.value)} placeholder={placeholder} className="h-8 rounded-lg text-xs" />
+      <Button type="submit" size="sm" variant="ghost" className="h-8 rounded-lg px-2"><Plus className="h-3.5 w-3.5" /></Button>
     </form>
+  );
+}
+
+/**
+ * Inline picker: lets the user select from today's existing tasks or
+ * type a brand-new one. New entries are added as a real task on `dateISO`
+ * (so the chip flows through Today's time-of-day view) and to the chip list.
+ */
+function TaskPickerInline({
+  dateISO, existingChips, placeholder, onPick, onCreate,
+}: {
+  dateISO: string;
+  existingChips: string[];
+  placeholder: string;
+  onPick: (title: string) => void;
+  onCreate: (title: string) => Promise<void> | void;
+}) {
+  const { state } = useStore();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const todayTasks = useMemo(
+    () => state.tasks.filter(t => t.dueDate === dateISO && !t.parentTaskId),
+    [state.tasks, dateISO],
+  );
+  const taken = new Set(existingChips.map(c => c.toLowerCase()));
+  const q = query.trim().toLowerCase();
+  const filtered = todayTasks.filter(t => {
+    if (taken.has(t.title.toLowerCase())) return false;
+    return !q || t.title.toLowerCase().includes(q);
+  });
+
+  const commitNew = async () => {
+    const t = query.trim();
+    if (!t) return;
+    await onCreate(t);
+    setQuery(""); setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="ghost" className="mt-2 h-8 rounded-full px-3 text-xs">
+          <Plus className="mr-1 h-3.5 w-3.5" /> {placeholder}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 rounded-2xl p-3">
+        <Input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Pick today's task or type new…"
+          className="h-8 rounded-lg text-xs"
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void commitNew(); } }}
+        />
+        <div className="mt-2 max-h-52 space-y-1 overflow-y-auto pr-1">
+          {filtered.length === 0 && (
+            <p className="rounded-lg bg-muted/40 px-2 py-1.5 text-[11px] text-muted-foreground">
+              {todayTasks.length === 0
+                ? "Nothing planned for today yet — type to add a new task."
+                : "All today's tasks already added. Type to create a new one."}
+            </p>
+          )}
+          {filtered.slice(0, 8).map(t => (
+            <button
+              key={t.id}
+              type="button"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs hover:bg-primary/10"
+              onClick={() => { onPick(t.title); setQuery(""); setOpen(false); }}
+            >
+              <Star className="h-3 w-3 shrink-0 text-amber-500" />
+              <span className="min-w-0 flex-1 truncate">{t.title}</span>
+            </button>
+          ))}
+        </div>
+        {query.trim() && (
+          <Button
+            size="sm"
+            className="mt-2 h-7 w-full rounded-full text-xs"
+            onClick={() => void commitNew()}
+          >
+            <Plus className="mr-1 h-3 w-3" /> Create “{query.trim()}”
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 
