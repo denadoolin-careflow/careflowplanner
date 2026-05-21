@@ -216,7 +216,7 @@ function PlanWidget({
 }
 
 export function DailyPlanningDashboard({ day }: { day: Date }) {
-  const { state, toggleCleaning, toggleTask, updateTask, updateAppointment } = useStore();
+  const { state, toggleCleaning, toggleTask, updateTask, updateAppointment, addTask } = useStore();
   const navigate = useNavigate();
   const { intention, review, saveIntention, saveReview, dateISO } = useDailyPlan(day);
   const { widgets, update, move, reset } = useDailyPlanLayout();
@@ -270,6 +270,12 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
   const removeTop3 = (i: number) => saveIntention({ top_three: intention.top_three.filter((_, idx) => idx !== i) });
   const addGratitude = (g: string) => saveIntention({ gratitude: [...intention.gratitude, g].slice(0, 5) });
   const removeGratitude = (i: number) => saveIntention({ gratitude: intention.gratitude.filter((_, idx) => idx !== i) });
+
+  const createTaskFor = async (title: string, then: (t: string) => void) => {
+    await addTask({ title, dueDate: dateISO, inbox: false });
+    then(title);
+    toast.success(`Added “${title}” to today`);
+  };
 
   const eventsOn = (k: string) => [
     ...state.appointments.filter(a => a.date === k).map(a => ({ label: a.title, time: a.time, id: a.id, kind: "appt" as const })),
@@ -366,7 +372,13 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
       render: () => (
         <>
           <ChipList items={intention.top_three} onRemove={removeTop3} />
-          <AddInline onAdd={addTop3} placeholder="Pick a high-leverage focus…" />
+          <TaskPickerInline
+            dateISO={dateISO}
+            existingChips={intention.top_three}
+            placeholder="Pick or create a top focus"
+            onPick={(t) => addTop3(t)}
+            onCreate={(t) => createTaskFor(t, addTop3)}
+          />
         </>
       ),
     },
@@ -375,7 +387,13 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
       render: () => (
         <>
           <ChipList items={intention.priorities} onRemove={removePriority} />
-          <AddInline onAdd={addPriority} placeholder="Add a priority…" />
+          <TaskPickerInline
+            dateISO={dateISO}
+            existingChips={intention.priorities}
+            placeholder="Pick or create a priority"
+            onPick={(t) => addPriority(t)}
+            onCreate={(t) => createTaskFor(t, addPriority)}
+          />
         </>
       ),
     },
