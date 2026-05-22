@@ -66,6 +66,11 @@ export interface Project {
   sortOrder: number;
   archivedAt?: string;
   createdAt: string;
+  aiOverview?: string;
+  aiOverviewUpdatedAt?: string;
+  linkedGoalIds?: string[];
+  linkedHabitIds?: string[];
+  isFavorite?: boolean;
 }
 
 export interface Goal {
