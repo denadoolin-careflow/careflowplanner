@@ -4,7 +4,7 @@ import { PANEL_BY_ROUTE } from "@/components/workspace/PanelRegistry";
 import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
-  Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus,
+  Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, type MouseEvent } from "react";
@@ -161,6 +161,22 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           >
             {p.name}
           </NavLink>
+          <button
+            type="button"
+            aria-label={p.isFavorite ? "Unfavorite project" : "Favorite project"}
+            title={p.isFavorite ? "Unfavorite" : "Favorite"}
+            className={cn(
+              "grid h-5 w-5 place-items-center rounded transition-opacity",
+              p.isFavorite ? "opacity-100 text-amber-400" : "opacity-0 group-hover:opacity-80 text-muted-foreground hover:text-amber-400",
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              updateProject(p.id, { isFavorite: !p.isFavorite });
+            }}
+          >
+            <Star className={cn("h-3 w-3", p.isFavorite && "fill-current")} />
+          </button>
           <button
             type="button"
             aria-label="Add subfolder"
