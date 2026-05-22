@@ -69,8 +69,8 @@ export default function Auth() {
     }
     try {
       setBusy(true);
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-      if (result.error) {
+      const result: any = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      if (result?.error) {
         const msg =
           (result.error as any)?.message ||
           (typeof result.error === "string" ? result.error : "Google sign-in failed. Try again or use email.");
