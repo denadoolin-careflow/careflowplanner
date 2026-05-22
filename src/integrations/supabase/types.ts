@@ -2175,6 +2175,8 @@ export type Database = {
       }
       projects: {
         Row: {
+          ai_overview: string | null
+          ai_overview_updated_at: string | null
           archived_at: string | null
           area_id: string | null
           area_name: string | null
@@ -2183,6 +2185,9 @@ export type Database = {
           deadline: string | null
           icon: string | null
           id: string
+          is_favorite: boolean
+          linked_goal_ids: string[]
+          linked_habit_ids: string[]
           name: string
           notes: string | null
           parent_project_id: string | null
@@ -2192,6 +2197,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_overview?: string | null
+          ai_overview_updated_at?: string | null
           archived_at?: string | null
           area_id?: string | null
           area_name?: string | null
@@ -2200,6 +2207,9 @@ export type Database = {
           deadline?: string | null
           icon?: string | null
           id?: string
+          is_favorite?: boolean
+          linked_goal_ids?: string[]
+          linked_habit_ids?: string[]
           name: string
           notes?: string | null
           parent_project_id?: string | null
@@ -2209,6 +2219,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_overview?: string | null
+          ai_overview_updated_at?: string | null
           archived_at?: string | null
           area_id?: string | null
           area_name?: string | null
@@ -2217,6 +2229,9 @@ export type Database = {
           deadline?: string | null
           icon?: string | null
           id?: string
+          is_favorite?: boolean
+          linked_goal_ids?: string[]
+          linked_habit_ids?: string[]
           name?: string
           notes?: string | null
           parent_project_id?: string | null

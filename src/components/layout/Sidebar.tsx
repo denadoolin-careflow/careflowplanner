@@ -4,7 +4,7 @@ import { PANEL_BY_ROUTE } from "@/components/workspace/PanelRegistry";
 import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
-  Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus,
+  Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, type MouseEvent } from "react";
@@ -163,6 +163,22 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           </NavLink>
           <button
             type="button"
+            aria-label={p.isFavorite ? "Unfavorite project" : "Favorite project"}
+            title={p.isFavorite ? "Unfavorite" : "Favorite"}
+            className={cn(
+              "grid h-5 w-5 place-items-center rounded transition-opacity",
+              p.isFavorite ? "opacity-100 text-amber-400" : "opacity-0 group-hover:opacity-80 text-muted-foreground hover:text-amber-400",
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              updateProject(p.id, { isFavorite: !p.isFavorite });
+            }}
+          >
+            <Star className={cn("h-3 w-3", p.isFavorite && "fill-current")} />
+          </button>
+          <button
+            type="button"
             aria-label="Add subfolder"
             className="opacity-0 group-hover:opacity-80 grid h-5 w-5 place-items-center rounded hover:bg-sidebar-accent/60"
             onClick={async () => {
@@ -248,6 +264,45 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         </div>
 
         {/* Areas → Projects tree */}
+        {!collapsed && projects.some(p => p.isFavorite) && (
+          <div className="mb-2">
+            <div className="flex items-center justify-between px-2 py-1.5">
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60">
+                <Star className="h-3 w-3 text-amber-400" /> Favorites
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              {projects.filter(p => p.isFavorite).map(fav => {
+                const FavIcon = getAreaIcon(fav.icon);
+                return (
+                  <div key={fav.id} className="group flex items-center gap-1 rounded-lg px-1 py-1 text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent">
+                    <span className="h-5 w-5" />
+                    <FavIcon className="h-3.5 w-3.5 opacity-80" style={fav.color ? { color: fav.color } : undefined} />
+                    <NavLink
+                      to={`/projects/${fav.id}`}
+                      onClick={onNavigate}
+                      className={({ isActive }) => cn(
+                        "flex-1 truncate text-left rounded-md px-1 py-0.5 transition-colors",
+                        isActive && "bg-primary-soft text-foreground shadow-soft",
+                      )}
+                    >
+                      {fav.name}
+                    </NavLink>
+                    <button
+                      type="button"
+                      aria-label="Unfavorite"
+                      className="grid h-5 w-5 place-items-center rounded text-amber-400"
+                      onClick={(e) => { e.stopPropagation(); updateProject(fav.id, { isFavorite: false }); }}
+                    >
+                      <Star className="h-3 w-3 fill-current" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {areas.length > 0 && !collapsed && (
           <div className="mb-2">
             <div className="flex items-center justify-between px-2 py-1.5">

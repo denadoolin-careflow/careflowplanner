@@ -19,4 +19,10 @@ export const haptics = {
   longPress: () => vibrate([12, 40, 28]),
   // Confirms a successful drop after dragging — chunky and satisfying.
   drop: () => vibrate([18, 40, 24]),
+  // Soft three-tap success bloom (e.g. completed task, AI generated).
+  success: () => vibrate([10, 30, 10, 30, 18]),
+  // Two short bursts to signal a soft warning / undo.
+  warning: () => vibrate([24, 50, 24]),
+  // A featherlight tick for swipe gestures and tab switches.
+  swipe: () => vibrate(4),
 };

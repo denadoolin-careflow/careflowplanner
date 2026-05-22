@@ -139,6 +139,11 @@ const projectFrom = (r: any): Project => ({
   status: r.status ?? "active", deadline: r.deadline ?? undefined,
   sortOrder: r.sort_order ?? 0, archivedAt: r.archived_at ?? undefined,
   createdAt: r.created_at,
+  aiOverview: r.ai_overview ?? undefined,
+  aiOverviewUpdatedAt: r.ai_overview_updated_at ?? undefined,
+  linkedGoalIds: Array.isArray(r.linked_goal_ids) ? r.linked_goal_ids : [],
+  linkedHabitIds: Array.isArray(r.linked_habit_ids) ? r.linked_habit_ids : [],
+  isFavorite: !!r.is_favorite,
 });
 const sectionFrom = (r: any): ProjectSection => ({
   id: r.id, projectId: r.project_id, name: r.name,
@@ -423,6 +428,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
       if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
       if (patch.sortOrder !== undefined) dbPatch.sort_order = patch.sortOrder;
+      if (patch.aiOverview !== undefined) dbPatch.ai_overview = patch.aiOverview ?? null;
+      if (patch.aiOverviewUpdatedAt !== undefined) dbPatch.ai_overview_updated_at = patch.aiOverviewUpdatedAt ?? null;
+      if (patch.linkedGoalIds !== undefined) dbPatch.linked_goal_ids = patch.linkedGoalIds ?? [];
+      if (patch.linkedHabitIds !== undefined) dbPatch.linked_habit_ids = patch.linkedHabitIds ?? [];
+      if (patch.isFavorite !== undefined) dbPatch.is_favorite = !!patch.isFavorite;
       await supabase.from("projects").update(dbPatch).eq("id", id);
     },
     deleteProject: async (id) => {
