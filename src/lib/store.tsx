@@ -99,9 +99,13 @@ const groceryFrom = (r: any): GroceryItem => ({
 });
 const apptFrom = (r: any): Appointment => ({
   id: r.id, date: r.date, time: r.time ?? undefined,
+  endDate: r.end_date ?? undefined,
   endTime: r.end_time ?? undefined, allDay: !!r.all_day, notes: r.notes ?? undefined,
   title: r.title, icon: r.icon ?? undefined, with: r.with_name ?? undefined,
   location: r.location ?? undefined, recipientId: r.recipient_id ?? undefined, type: r.type ?? undefined,
+  projectId: r.project_id ?? undefined,
+  areaName: r.area_name ?? undefined,
+  color: r.color ?? undefined,
   syncToGoogle: !!r.sync_to_google,
   googleEventId: r.google_event_id ?? undefined,
   googleCalendarId: r.google_calendar_id ?? undefined,
@@ -638,10 +642,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const { data } = await supabase.from("appointments").insert({
         user_id: uid,
         title: a.title, date: a.date,
-        time: a.time ?? null, end_time: a.endTime ?? null, all_day: !!a.allDay,
+        time: a.time ?? null, end_time: a.endTime ?? null,
+        end_date: a.endDate ?? null,
+        all_day: !!a.allDay,
         notes: a.notes ?? null,
         type: a.type ?? "other", location: a.location ?? null,
         recipient_id: a.recipientId ?? null, with_name: (a as any).with ?? null, icon: a.icon ?? null,
+        project_id: a.projectId ?? null,
+        area_name: a.areaName ?? null,
+        color: a.color ?? null,
         sync_to_google: !!a.syncToGoogle,
       }).select().single();
       if (data) {
@@ -665,6 +674,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.time !== undefined) dbPatch.time = patch.time;
       if (patch.endTime !== undefined) dbPatch.end_time = patch.endTime;
+      if (patch.endDate !== undefined) dbPatch.end_date = patch.endDate ?? null;
       if (patch.allDay !== undefined) dbPatch.all_day = !!patch.allDay;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes;
       if (patch.location !== undefined) dbPatch.location = patch.location;
@@ -672,6 +682,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.icon !== undefined) dbPatch.icon = patch.icon ?? null;
       if (patch.syncToGoogle !== undefined) dbPatch.sync_to_google = !!patch.syncToGoogle;
       if ((patch as any).with !== undefined) dbPatch.with_name = (patch as any).with;
+      if (patch.projectId !== undefined) dbPatch.project_id = patch.projectId ?? null;
+      if (patch.areaName !== undefined) dbPatch.area_name = patch.areaName ?? null;
+      if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
+      if (patch.recipientId !== undefined) dbPatch.recipient_id = patch.recipientId ?? null;
       setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch } : a) }));
       await supabase.from("appointments").update(dbPatch).eq("id", id);
       const next = { ...(state.appointments.find(a => a.id === id) ?? {}), ...patch } as Appointment;
