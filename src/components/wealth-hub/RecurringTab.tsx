@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Repeat, Trash2, Check, Pencil, X, Zap } from "lucide-react";
+import { Trash2, Check, Pencil, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { todayISO, fmtMoney, CADENCES, advanceDate, daysUntil } from "@/lib/wealth-utils";
 import { cn } from "@/lib/utils";
@@ -137,7 +137,7 @@ export function RecurringTab({ uid }: { uid: string }) {
         </div>
       </SectionCard>
 
-      <SectionCard accent="warm" title="Subscriptions" subtitle={`${fmtMoney(monthly)} / month equivalent`} icon={Repeat as any}>
+      <SectionCard accent="warm" title="Subscriptions" subtitle={`${fmtMoney(monthly)} / month equivalent`}>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-6">
           <Input className="sm:col-span-2" placeholder="Name (Netflix, Spotify…)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Input type="number" step="0.01" placeholder="$" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
