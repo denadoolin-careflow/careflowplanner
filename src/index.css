@@ -565,10 +565,30 @@
 }
 .block-editor .ProseMirror > * { position: relative; padding: 2px 0; border-radius: 6px; transition: background 120ms ease; }
 .block-editor .ProseMirror > *:hover { background: hsl(var(--muted) / 0.35); }
-.block-editor .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0; }
-.block-editor .ProseMirror ul[data-type="taskList"] li { display: flex; gap: 0.5rem; align-items: flex-start; }
-.block-editor .ProseMirror ul[data-type="taskList"] li > label { user-select: none; margin-top: 4px; }
-.block-editor .ProseMirror ul[data-type="taskList"] li > div { flex: 1; }
+.block-editor .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.25rem 0; }
+.block-editor .ProseMirror ul[data-type="taskList"] li { display: flex; gap: 0.5rem; align-items: baseline; margin: 0.1rem 0; }
+.block-editor .ProseMirror ul[data-type="taskList"] li > label {
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  height: 1.5em; /* match body line-height */
+  margin: 0;
+}
+.block-editor .ProseMirror ul[data-type="taskList"] li > label > input[type="checkbox"] {
+  width: 0.95em; height: 0.95em;
+  margin: 0;
+  vertical-align: middle;
+  accent-color: hsl(var(--primary));
+}
+.block-editor .ProseMirror ul[data-type="taskList"] li > div { flex: 1; min-width: 0; }
+.block-editor .ProseMirror ul[data-type="taskList"] li > div > p { margin: 0; line-height: 1.5; }
+/* Promoted task chip — checkbox text becomes a link to /anytime */
+.block-editor .ProseMirror a.task-chip {
+  color: hsl(var(--primary));
+  text-decoration: none;
+  border-bottom: 1px dashed hsl(var(--primary) / 0.5);
+}
+.block-editor .ProseMirror a.task-chip:hover { border-bottom-style: solid; }
 .block-editor .ProseMirror mark { background: hsl(var(--primary) / 0.18); border-radius: 3px; padding: 0 2px; }
 .block-editor .ProseMirror code { background: hsl(var(--muted)); padding: 1px 4px; border-radius: 4px; font-size: 0.85em; }
 .block-editor .ProseMirror blockquote { border-left: 3px solid hsl(var(--primary) / 0.6); padding-left: 0.75rem; color: hsl(var(--muted-foreground)); }
