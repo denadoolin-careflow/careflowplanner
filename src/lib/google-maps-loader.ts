@@ -1,10 +1,10 @@
-let loaderPromise: Promise<typeof google> | null = null;
+let loaderPromise: Promise<any> | null = null;
 
 /**
  * Lazily load the Google Maps JS API using the Lovable-managed browser key.
  * Returns null if no browser key is configured.
  */
-export function loadGoogleMaps(): Promise<typeof google> | null {
+export function loadGoogleMaps(): Promise<any> | null {
   const key = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined;
   if (!key) return null;
   if (typeof window === "undefined") return null;
