@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SectionCard } from "@/components/cards/SectionCard";
+import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -64,6 +65,7 @@ export default function Reset() {
   const period: Period = periodParam === "month" ? "month" : "week";
   const navigate = useNavigate();
 
+  const [anchor, setAnchor] = useState<Date>(new Date());
   const [current, setCurrent] = useState<Row | null>(null);
   const [history, setHistory] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,15 +73,15 @@ export default function Reset() {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
 
   const start = period === "week"
-    ? startOfWeek(new Date(), { weekStartsOn: 1 })
-    : startOfMonth(new Date());
+    ? startOfWeek(anchor, { weekStartsOn: 1 })
+    : startOfMonth(anchor);
   const end = period === "week" ? endOfWeek(start, { weekStartsOn: 1 }) : endOfMonth(start);
   const periodStart = start.toISOString().slice(0, 10);
   const rangeLabel = period === "week"
     ? `${format(start, "MMM d")} – ${format(end, "MMM d, yyyy")}`
     : format(start, "MMMM yyyy");
 
-  useEffect(() => { void load(); }, [period]);
+  useEffect(() => { void load(); }, [period, periodStart]);
 
   async function load() {
     setLoading(true);
@@ -193,6 +195,18 @@ export default function Reset() {
             </button>
           ))}
         </div>
+        <DayPickerButton
+          date={anchor}
+          onChange={(d) => setAnchor(d)}
+          label={period === "week" ? `Week of ${format(start, "MMM d")}` : format(start, "MMMM yyyy")}
+        />
+        {periodStart !== (period === "week"
+          ? startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString().slice(0,10)
+          : startOfMonth(new Date()).toISOString().slice(0,10)) && (
+          <Button size="sm" variant="ghost" onClick={() => setAnchor(new Date())} className="h-8 rounded-full px-3 text-xs">
+            Jump to now
+          </Button>
+        )}
       </header>
 
       {loading && !current && (
