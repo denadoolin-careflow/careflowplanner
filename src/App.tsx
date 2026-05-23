@@ -52,6 +52,8 @@ import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
 import { PomodoroBoundaryFlash } from "@/components/tasks/PomodoroBoundaryFlash";
 import { FullScreenFocus } from "@/components/tasks/FullScreenFocus";
 import { MoonPrefetcher } from "@/components/rhythm/MoonPrefetcher";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
+import { SwipeNav } from "@/components/layout/SwipeNav";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +67,8 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
+            <SwipeNav />
             <PomodoroToastsBridge />
             <FloatingPomodoro />
             <PomodoroBoundaryFlash />
