@@ -5,7 +5,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { SectionCard } from "@/components/cards/SectionCard";
-import { CheckCircle2, Plus, Trash2, Wrench } from "lucide-react";
+import { CheckCircle2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   BUCKET_LABEL, bucketOf, useHomeMaintenance, type MaintenanceBucket, type MaintenanceItem,
@@ -73,7 +73,7 @@ export function MaintenanceTab() {
 
   return (
     <div className="space-y-5">
-      <SectionCard title="Add maintenance task" accent="warm" icon={<Wrench className="h-4 w-4" />}>
+      <SectionCard title="Add maintenance task" accent="warm">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
           <Input
             placeholder="e.g. Replace HVAC filter"
