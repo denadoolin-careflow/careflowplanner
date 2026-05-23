@@ -22,6 +22,8 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
+import { JournalProjectPicker } from "@/components/journal/JournalProjectPicker";
+import { startOfWeek, endOfWeek, startOfYear, getYear } from "date-fns";
 
 type TemplateKey =
   | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
@@ -75,7 +77,10 @@ const ENERGIES: { value: string; label: string }[] = [
 const GROUP_LABEL = {
   none: "None",
   template: "Template",
+  day: "Day",
+  week: "Week",
   month: "Month",
+  year: "Year",
   mood: "Mood",
   energy: "Energy",
 } as const;
@@ -107,9 +112,23 @@ function groupEntries(items: JournalEntry[], group: GroupKey, sort: SortKey): { 
     if (group === "template") {
       const t = TEMPLATES.find(x => x.key === (e.template as TemplateKey));
       key = t?.key ?? "other"; label = t ? `${t.emoji} ${t.label}` : "Other";
+    } else if (group === "day") {
+      try { key = e.date; label = format(parseISO(e.date), "EEEE, MMM d, yyyy"); }
+      catch { key = "unknown"; label = "Unknown date"; }
+    } else if (group === "week") {
+      try {
+        const d = parseISO(e.date);
+        const ws = startOfWeek(d, { weekStartsOn: 1 });
+        const we = endOfWeek(d, { weekStartsOn: 1 });
+        key = format(ws, "yyyy-'W'II");
+        label = `Week of ${format(ws, "MMM d")} – ${format(we, "MMM d, yyyy")}`;
+      } catch { key = "unknown"; label = "Unknown week"; }
     } else if (group === "month") {
       try { key = format(parseISO(e.date), "yyyy-MM"); label = format(parseISO(e.date), "MMMM yyyy"); }
       catch { key = "unknown"; label = "Unknown date"; }
+    } else if (group === "year") {
+      try { key = String(getYear(parseISO(e.date))); label = key; }
+      catch { key = "unknown"; label = "Unknown year"; }
     } else if (group === "mood") {
       key = e.mood || "none"; label = e.mood || "No mood";
     } else if (group === "energy") {
