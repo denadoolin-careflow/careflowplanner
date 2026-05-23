@@ -82,8 +82,6 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
     setSyncToGoogle(!!appointment.syncToGoogle);
   }, [appointment]);
 
-  if (!appointment) return null;
-
   // Auto-color when project changes
   const onPickProject = (val: string) => {
     if (val === "__none") {
@@ -106,6 +104,8 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
   };
 
   const currentDuration = useMemo(() => minutesBetween(date, time, endDate || date, endTime), [date, time, endDate, endTime]);
+
+  if (!appointment) return null;
 
   const applyDuration = (minutes: number) => {
     if (!date || !time) return;
