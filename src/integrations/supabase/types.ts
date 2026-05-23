@@ -17,8 +17,11 @@ export type Database = {
       appointments: {
         Row: {
           all_day: boolean
+          area_name: string | null
+          color: string | null
           created_at: string
           date: string
+          end_date: string | null
           end_time: string | null
           google_calendar_id: string | null
           google_event_id: string | null
@@ -27,6 +30,7 @@ export type Database = {
           id: string
           location: string | null
           notes: string | null
+          project_id: string | null
           recipient_id: string | null
           sync_to_google: boolean
           time: string | null
@@ -38,8 +42,11 @@ export type Database = {
         }
         Insert: {
           all_day?: boolean
+          area_name?: string | null
+          color?: string | null
           created_at?: string
           date: string
+          end_date?: string | null
           end_time?: string | null
           google_calendar_id?: string | null
           google_event_id?: string | null
@@ -48,6 +55,7 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
+          project_id?: string | null
           recipient_id?: string | null
           sync_to_google?: boolean
           time?: string | null
@@ -59,8 +67,11 @@ export type Database = {
         }
         Update: {
           all_day?: boolean
+          area_name?: string | null
+          color?: string | null
           created_at?: string
           date?: string
+          end_date?: string | null
           end_time?: string | null
           google_calendar_id?: string | null
           google_event_id?: string | null
@@ -69,6 +80,7 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
+          project_id?: string | null
           recipient_id?: string | null
           sync_to_google?: boolean
           time?: string | null
@@ -78,7 +90,15 @@ export type Database = {
           user_id?: string
           with_name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "appointments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       areas: {
         Row: {
