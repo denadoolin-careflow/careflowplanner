@@ -853,6 +853,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     updateProfile: async (patch) => {
       if (!uid) return;
       setState(s => ({ ...s, settings: { ...s.settings, name: patch.name ?? s.settings.name, planningStyle: patch.planning_style ?? s.settings.planningStyle, timeZone: patch.time_zone ?? s.settings.timeZone, theme: (patch.theme as any) ?? s.settings.theme, defaultRoute: patch.default_route ?? s.settings.defaultRoute } }));
+      if (patch.default_route !== undefined) {
+        try { window.localStorage.setItem("careflow.defaultRoute", patch.default_route ?? "/"); } catch {}
+      }
       await supabase.from("profiles").update(patch).eq("id", uid);
     },
 
