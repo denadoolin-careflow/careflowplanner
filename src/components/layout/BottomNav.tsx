@@ -246,7 +246,28 @@ function CustomizeNavSheet({
               if (!dest) return null;
               const Icon = dest.icon;
               return (
-                <li key={to} className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2">
+                <li
+                  key={to}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("text/plain", String(i));
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const from = Number(e.dataTransfer.getData("text/plain"));
+                    if (Number.isNaN(from) || from === i) return;
+                    setWorking(prev => {
+                      const next = [...prev];
+                      const [moved] = next.splice(from, 1);
+                      next.splice(i, 0, moved);
+                      return next;
+                    });
+                    haptics.drop();
+                  }}
+                  className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2 cursor-grab active:cursor-grabbing"
+                >
                   <GripVertical className="h-4 w-4 text-muted-foreground/50" />
                   <Icon className="h-4 w-4 text-primary" />
                   <span className="flex-1 text-sm font-medium">{dest.label}</span>
