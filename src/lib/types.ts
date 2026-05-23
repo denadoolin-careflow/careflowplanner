@@ -133,6 +133,7 @@ export interface Appointment {
   id: string;
   date: string; // ISO date
   time?: string;
+  endDate?: string; // ISO date — optional end date for multi-day events
   endTime?: string;
   allDay?: boolean;
   notes?: string;
@@ -141,6 +142,9 @@ export interface Appointment {
   with?: string;
   location?: string;
   recipientId?: string;
+  projectId?: string;
+  areaName?: string;
+  color?: string; // hex; if absent, derive from project/area
   type?: "doctor" | "therapy" | "school" | "family" | "personal" | "other";
   // Google Calendar sync metadata — opt-in per appointment.
   syncToGoogle?: boolean;
