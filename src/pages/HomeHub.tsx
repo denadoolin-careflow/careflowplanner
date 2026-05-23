@@ -4,6 +4,8 @@ import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
 import { ElementBadge } from "@/components/rhythm/ElementBadge";
 import { MaintenanceTab } from "@/components/home-hub/MaintenanceTab";
 import { RhythmTab } from "@/components/home-hub/RhythmTab";
+import { ZonesTab } from "@/components/home-hub/ZonesTab";
+import { AnalyticsTab } from "@/components/home-hub/AnalyticsTab";
 import HomeReset from "@/pages/HomeReset";
 import { cn } from "@/lib/utils";
 import {
@@ -17,9 +19,9 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "rhythm", label: "Rhythm", icon: Sparkles },
   { id: "reset", label: "Reset", icon: ListChecks },
-  { id: "zones", label: "Zones", icon: Sprout, comingSoon: true },
+  { id: "zones", label: "Zones", icon: Sprout },
   { id: "maintenance", label: "Maintenance", icon: Wrench },
-  { id: "analytics", label: "Analytics", icon: BarChart3, comingSoon: true },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
 ];
 
 function ComingSoon({ title, blurb }: { title: string; blurb: string }) {
@@ -88,21 +90,11 @@ export default function HomeHub() {
 
       {tab === "reset" && <HomeReset />}
 
-      {tab === "zones" && (
-        <ComingSoon
-          title="Cleaning Zones — coming next"
-          blurb="A visual grid of Kitchen, Bathrooms, Bedrooms, Laundry, Outdoors, Living Room, and Playroom — with recurring schedules, progress bars, and drag-and-drop tasks."
-        />
-      )}
+      {tab === "zones" && <ZonesTab />}
 
       {tab === "maintenance" && <MaintenanceTab />}
 
-      {tab === "analytics" && (
-        <ComingSoon
-          title="Home Analytics — coming later"
-          blurb="Calming heatmaps and progress visuals for routines completed, cleaning consistency, busiest home days, and caregiving load."
-        />
-      )}
+      {tab === "analytics" && <AnalyticsTab />}
     </div>
   );
 }
