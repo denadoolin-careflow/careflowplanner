@@ -320,6 +320,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       projectSections: (sections as any[]).map(sectionFrom).sort((a,b) => a.sortOrder - b.sortOrder),
       resetTemplates: seedState().resetTemplates,
     });
+    // Cache the chosen default landing route for synchronous read on cold boot
+    // (eliminates the dashboard → today flash on next visit).
+    try { window.localStorage.setItem("careflow.defaultRoute", profile.default_route ?? "/"); } catch {}
     // Seed default areas from enum on first load (idempotent thanks to UNIQUE(user_id,name))
     if (!areas.length) {
       const seedAreas = AREAS.map((name, i) => ({ user_id: uid, name, sort_order: i }));
