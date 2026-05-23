@@ -288,6 +288,109 @@ function Toolbar({ editor }: { editor: Editor }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Color / Highlight picker                                          */
+/* ------------------------------------------------------------------ */
+const TEXT_COLORS = [
+  { label: "Default", value: null },
+  { label: "Gray", value: "#8a8a8a" },
+  { label: "Brown", value: "#9a6a3a" },
+  { label: "Orange", value: "#e07a3c" },
+  { label: "Yellow", value: "#d4a017" },
+  { label: "Green", value: "#3f8a52" },
+  { label: "Teal", value: "#2a8a8a" },
+  { label: "Blue", value: "#3a72d6" },
+  { label: "Purple", value: "#7a4fcf" },
+  { label: "Pink", value: "#d44a87" },
+  { label: "Red", value: "#d94b3a" },
+];
+
+const HIGHLIGHT_COLORS = [
+  { label: "None", value: null },
+  { label: "Yellow", value: "#fff3a3" },
+  { label: "Peach", value: "#ffd9b8" },
+  { label: "Pink", value: "#ffc7d8" },
+  { label: "Mint", value: "#c5ecd0" },
+  { label: "Sky", value: "#c6e2f5" },
+  { label: "Lavender", value: "#dccdf0" },
+  { label: "Sand", value: "#ece1c8" },
+];
+
+function ColorPickerPopover({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const active = editor.getAttributes("textStyle").color || editor.getAttributes("highlight").color;
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onMouseDown={(e) => { e.preventDefault(); setOpen(o => !o); }}
+        title="Text color & highlight"
+        className={cn(
+          "h-8 w-8 inline-flex items-center justify-center rounded-md transition",
+          open ? "bg-primary/15 text-primary" : "hover:bg-muted/60 text-muted-foreground",
+        )}
+      >
+        <Palette className="h-3.5 w-3.5" style={active ? { color: active } : undefined} />
+      </button>
+      {open && (
+        <div
+          onMouseDown={(e) => e.preventDefault()}
+          className="absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-border/60 bg-popover/95 p-2 shadow-xl backdrop-blur-md"
+        >
+          <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Text</div>
+          <div className="mb-2 grid grid-cols-6 gap-1">
+            {TEXT_COLORS.map((c) => (
+              <button
+                key={c.label}
+                title={c.label}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  try {
+                    if (c.value === null) editor.chain().focus().unsetColor().run();
+                    else editor.chain().focus().setColor(c.value).run();
+                  } catch {}
+                  setOpen(false);
+                }}
+                className="h-6 w-6 rounded-md border border-border/60 transition hover:scale-110"
+                style={{
+                  background: c.value ?? "transparent",
+                  backgroundImage: c.value
+                    ? undefined
+                    : "linear-gradient(45deg,transparent 45%,hsl(var(--muted-foreground)) 45% 55%,transparent 55%)",
+                }}
+              />
+            ))}
+          </div>
+          <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Highlight</div>
+          <div className="grid grid-cols-6 gap-1">
+            {HIGHLIGHT_COLORS.map((c) => (
+              <button
+                key={c.label}
+                title={c.label}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  try {
+                    if (c.value === null) editor.chain().focus().unsetHighlight().run();
+                    else editor.chain().focus().setHighlight({ color: c.value }).run();
+                  } catch {}
+                  setOpen(false);
+                }}
+                className="h-6 w-6 rounded-md border border-border/60 transition hover:scale-110"
+                style={{
+                  background: c.value ?? "transparent",
+                  backgroundImage: c.value
+                    ? undefined
+                    : "linear-gradient(45deg,transparent 45%,hsl(var(--muted-foreground)) 45% 55%,transparent 55%)",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Public component                                                  */
 /* ------------------------------------------------------------------ */
 export function BlockEditor({
