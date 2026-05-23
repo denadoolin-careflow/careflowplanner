@@ -27,6 +27,10 @@ const LISTS = [
 const STORAGE_KEY = "careflow:sidebar:open-groups";
 const COLLAPSED_KEY = "careflow:sidebar:collapsed";
 const GROUP_ORDER_KEY = "careflow:sidebar:group-order";
+const WIDTH_KEY = "careflow:sidebar:width";
+const MIN_WIDTH = 200;
+const MAX_WIDTH = 420;
+const DEFAULT_WIDTH = 256;
 
 function loadGroupOrder(): string[] {
   if (typeof window === "undefined") return NAV_GROUPS.map(g => g.id);
@@ -143,6 +147,24 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     const open = openMap[key] !== false; // default open
     const hasActive = pathname === `/projects/${p.id}` || children.some(c => pathname === `/projects/${c.id}`);
     const ProjIcon = getAreaIcon(p.icon);
+    const PROJ_MIME = "application/x-careflow-proj-id";
+    const reorderProject = async (draggedId: string, targetId: string) => {
+      if (draggedId === targetId) return;
+      const dragged = allProjects.find(x => x.id === draggedId);
+      const target = allProjects.find(x => x.id === targetId);
+      if (!dragged || !target) return;
+      // gather siblings under same parent
+      const siblings = allProjects
+        .filter(x => (x.parentProjectId ?? null) === (target.parentProjectId ?? null))
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      const without = siblings.filter(x => x.id !== draggedId);
+      const insertIdx = without.findIndex(x => x.id === targetId);
+      if (insertIdx < 0) return;
+      without.splice(insertIdx, 0, dragged);
+      await Promise.all(without.map((x, i) =>
+        updateProject(x.id, { sortOrder: (i + 1) * 10, parentProjectId: target.parentProjectId ?? undefined } as any)
+      ));
+    };
     return (
       <div key={p.id}>
         <div
@@ -151,6 +173,26 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             hasActive && "text-foreground",
           )}
+          draggable
+          onDragStart={(e) => {
+            e.stopPropagation();
+            e.dataTransfer.setData(PROJ_MIME, p.id);
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onDragOver={(e) => {
+            if (e.dataTransfer.types.includes(PROJ_MIME)) {
+              e.preventDefault();
+              e.stopPropagation();
+              e.dataTransfer.dropEffect = "move";
+            }
+          }}
+          onDrop={(e) => {
+            const id = e.dataTransfer.getData(PROJ_MIME);
+            if (!id) return;
+            e.preventDefault();
+            e.stopPropagation();
+            void reorderProject(id, p.id);
+          }}
         >
           {children.length > 0 ? (
             <button type="button" onClick={() => toggle(key)} className="grid h-5 w-5 place-items-center">
@@ -243,7 +285,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     <TooltipProvider>
     <div className={cn(
       "flex h-full flex-col gap-2 bg-sidebar p-3 transition-[width] duration-200 ease-out",
-      collapsed ? "w-[68px] items-center" : "w-full lg:w-64",
+      collapsed ? "w-[68px] items-center" : "w-full",
     )}>
       <div className={cn("flex items-center gap-2 px-1 py-2 w-full", collapsed && "justify-center")}>
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-glow">
@@ -523,9 +565,59 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
 }
 
 export function Sidebar() {
+  const [width, setWidth] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_WIDTH;
+    const raw = window.localStorage.getItem(WIDTH_KEY);
+    const n = raw ? parseInt(raw, 10) : DEFAULT_WIDTH;
+    return Number.isFinite(n) ? Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, n)) : DEFAULT_WIDTH;
+  });
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(COLLAPSED_KEY) === "1";
+  });
+  useEffect(() => {
+    const onStorage = () => {
+      setCollapsed(window.localStorage.getItem(COLLAPSED_KEY) === "1");
+    };
+    window.addEventListener("storage", onStorage);
+    const id = window.setInterval(onStorage, 600);
+    return () => { window.removeEventListener("storage", onStorage); window.clearInterval(id); };
+  }, []);
+  const startDrag = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = width;
+    const move = (ev: globalThis.MouseEvent) => {
+      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (ev.clientX - startX)));
+      setWidth(next);
+    };
+    const up = () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      try { window.localStorage.setItem(WIDTH_KEY, String(width)); } catch {}
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
+  useEffect(() => {
+    try { window.localStorage.setItem(WIDTH_KEY, String(width)); } catch {}
+  }, [width]);
   return (
-    <aside className="hidden lg:flex shrink-0 border-r border-sidebar-border">
+    <aside
+      className="hidden lg:flex relative shrink-0 border-r border-sidebar-border"
+      style={collapsed ? undefined : { width }}
+    >
       <SidebarBody />
+      {!collapsed && (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          onMouseDown={startDrag}
+          onDoubleClick={() => setWidth(DEFAULT_WIDTH)}
+          className="absolute right-0 top-0 z-10 h-full w-1.5 -translate-x-1/2 cursor-col-resize bg-transparent hover:bg-primary/30 transition-colors"
+        />
+      )}
     </aside>
   );
 }
