@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Check, Trash2, CalendarClock, Pencil, X } from "lucide-react";
+import { Check, Trash2, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { todayISO, fmtMoney, CADENCES, advanceDate, billStatus, daysUntil, gentleBillCopy } from "@/lib/wealth-utils";
 import { cn } from "@/lib/utils";
@@ -112,7 +112,7 @@ export function BillsTab({ uid }: { uid: string }) {
 
   return (
     <div className="space-y-4">
-      <SectionCard accent="calm" title="Bills" subtitle={gentleBillCopy(overdueCount, dueSoonCount)} icon={CalendarClock}>
+      <SectionCard accent="calm" title="Bills" subtitle={gentleBillCopy(overdueCount, dueSoonCount)}>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-6">
           <Input className="sm:col-span-2" placeholder="Bill name (e.g. Rent)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Input type="number" step="0.01" placeholder="$" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
