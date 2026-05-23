@@ -2162,6 +2162,198 @@ export type Database = {
         }
         Relationships: []
       }
+      payee_beneficiaries: {
+        Row: {
+          benefit_type: string
+          claim_number_last4: string | null
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          monthly_benefit_amount: number
+          notes: string | null
+          recipient_id: string | null
+          relationship: string | null
+          sort_order: number
+          started_payee_on: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          benefit_type?: string
+          claim_number_last4?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          monthly_benefit_amount?: number
+          notes?: string | null
+          recipient_id?: string | null
+          relationship?: string | null
+          sort_order?: number
+          started_payee_on?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          benefit_type?: string
+          claim_number_last4?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          monthly_benefit_amount?: number
+          notes?: string | null
+          recipient_id?: string | null
+          relationship?: string | null
+          sort_order?: number
+          started_payee_on?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payee_conserved_funds: {
+        Row: {
+          account_label: string | null
+          amount: number
+          beneficiary_id: string
+          created_at: string
+          date: string
+          id: string
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_label?: string | null
+          amount?: number
+          beneficiary_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_label?: string | null
+          amount?: number
+          beneficiary_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payee_conserved_funds_beneficiary_id_fkey"
+            columns: ["beneficiary_id"]
+            isOneToOne: false
+            referencedRelation: "payee_beneficiaries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payee_expenses: {
+        Row: {
+          amount: number
+          beneficiary_id: string
+          category: string
+          created_at: string
+          date: string
+          id: string
+          note: string | null
+          payment_method: string | null
+          receipt_url: string | null
+          subcategory: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          beneficiary_id: string
+          category?: string
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          payment_method?: string | null
+          receipt_url?: string | null
+          subcategory?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          beneficiary_id?: string
+          category?: string
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          payment_method?: string | null
+          receipt_url?: string | null
+          subcategory?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payee_expenses_beneficiary_id_fkey"
+            columns: ["beneficiary_id"]
+            isOneToOne: false
+            referencedRelation: "payee_beneficiaries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payee_income: {
+        Row: {
+          amount: number
+          beneficiary_id: string
+          created_at: string
+          date: string
+          id: string
+          note: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          beneficiary_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          beneficiary_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payee_income_beneficiary_id_fkey"
+            columns: ["beneficiary_id"]
+            isOneToOne: false
+            referencedRelation: "payee_beneficiaries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       period_reviews: {
         Row: {
           checklist: Json

@@ -1,78 +1,53 @@
+## Representative Payee — Wealth Hub
 
-# Wealth Hub — Phased Rebuild
+A new **Payee** tab inside Wealth Hub that lets a user act as a Representative Payee for one or more beneficiaries (SSI/SSDI recipients). Personal Wealth data stays untouched; payee data is fully segregated per beneficiary so funds are never co-mingled — matching SSA expectations and supporting annual reporting.
 
-The current `/wealth` page already has the core tables (`transactions`, `recurring_bills`, `subscriptions`, `debts`, `budget_categories`) and a basic Overview/Subscriptions/Debt UI. I'll rebuild it into a full **Wealth Hub** mirroring the Home Hub pattern — a tabbed command center with widgets, calendar integration, recurring logic, savings goals, and analytics.
+### New tab
+- Tab `Payee` (icon: Users) added between **Debts** and **Calendar**.
+- Empty state explains what a Representative Payee is and a button to enroll the first beneficiary.
+- Uses the existing **Hide amounts** eye toggle (consistency).
 
-This is too large for one turn. Below is a 5-phase plan. **I'll ship Phase 1 this turn** and the rest as you approve.
+### Database (new migration)
 
----
+```text
+payee_beneficiaries
+  recipient_id (FK → care_recipients, optional — can also be standalone)
+  display_name, relationship, ssa_claim_number (masked), benefit_type (SSI/SSDI/Both)
+  monthly_benefit_amount, started_payee_on, notes, is_active
 
-## Architecture
+payee_income
+  beneficiary_id, date, source (SSI/SSDI/Other), amount, note
 
-**Route**: `/wealth` becomes the unified Wealth Hub (sidebar label stays "Wealth").
+payee_expenses
+  beneficiary_id, date, amount, category (enum below), subcategory, note,
+  payment_method, receipt_url (optional)
 
-**Tabs (sticky, mobile-first)**:
-`Dashboard · Transactions · Bills · Recurring · Goals · Debts · Calendar · Analytics`
+payee_conserved_funds
+  beneficiary_id, date, amount (+ deposit / − withdrawal), account_label, note,
+  running_balance (derived in queries)
+```
 
-**Reused tables**: `transactions`, `recurring_bills`, `subscriptions`, `debts`, `budget_categories`.
+SSA spending categories:
+`housing`, `food`, `clothing`, `medical_dental`, `personal_items`,
+`recreation`, `education`, `transportation`, `savings_conserved`, `other`.
 
-**New tables** (added across phases):
-- `savings_goals` (title, target_amount, saved_amount, target_date, color, icon, linked_project_id, recurring_contribution, contribution_cadence, notes)
-- `goal_contributions` (goal_id, amount, date, transaction_id?) — feeds visual progress & milestones
-- `wealth_layouts` reuses `dashboard_layouts` with pageKey `wealth-hub`
+RLS: every table user-owned (`auth.uid() = user_id`).
 
-**Existing table edits** (Phase 2+):
-- `recurring_bills`: add `status` ('upcoming'|'paid'|'overdue'|'pending'), `priority`, `tags[]`, `linked_goal_id`, `paid_at`, `auto_create_task`
-- `transactions`: add `tags[]`, `linked_goal_id`, `linked_bill_id`, `status`
+### UI components (under `src/components/wealth-hub/payee/`)
+- `PayeeTab.tsx` — beneficiary picker + summary header (this-month income, expenses, conserved balance, "Untracked" gap) and sub-tabs.
+- `BeneficiaryForm.tsx` — create/edit beneficiary (SSN-style number is stored masked, only last 4 visible).
+- `PayeeIncomeList.tsx` — log SSI/SSDI/Other deposits, monthly auto-summary.
+- `PayeeExpensesList.tsx` — quick-add expense with SSA category selector, inline edit, monthly grouping.
+- `ConservedFundsCard.tsx` — running balance, deposits/withdrawals, gentle note "Conserved funds belong to the beneficiary."
+- `AnnualReportPanel.tsx` — Year picker → renders SSA Form 6230-shaped summary (Income received, Spent on housing/food, Spent on personal/clothing/medical, Saved/Conserved). One-click **Export CSV** and **Print** (uses existing `window.print` styling).
 
-**Visual language**: keep CareFlow palette — sage green (income), warm tan/gold (goals), cream surfaces, dark plum accents (overdue, used sparingly — no harsh red). Rounded cozy-card surfaces, soft gradients, gentle progress bars.
+### Visual tone
+Same calm gradient cards and pastel accents as the rest of Wealth Hub. Soft amber/sage palette for category chips, never harsh red. Gentle copy ("Funds in trust for…", "Saved for their future").
 
----
+### Privacy
+All `tabular-nums` amounts already blur under the existing `wealth-blur` class — no changes needed.
 
-## Phase 1 (this turn) — Wealth Hub shell + Dashboard + Bills tab
-
-1. **New** `src/pages/WealthHub.tsx` — replaces `Wealth.tsx` body. Calm header (greeting, "money is a tool, not a measure of you" tone), sticky tab strip, privacy eye toggle.
-2. **Customizable dashboard** — `CustomizableGrid` with `pageKey="wealth-hub"`. Widgets in Phase 1:
-   - This-month income / expenses / net
-   - Upcoming bills (next 14 days)
-   - Subscriptions monthly equivalent
-   - Debt snapshot
-   - Recent transactions
-   - Quick-add transaction
-3. **Bills tab** — full CRUD for `recurring_bills` with inline edit: name, amount, cadence, next due, category, notes, status badge. Filter (upcoming / overdue / paid). Mark paid → auto-create transaction + advance `next_due_date` by cadence. "Coming soon" placeholders for other tabs.
-4. **Sidebar nav** — keep `/wealth`, no rename.
-5. **No DB migration in Phase 1** — uses existing tables.
-
-## Phase 2 — Transactions + Recurring engine
-- Full transactions table view with inline edit, drag-reorder, grouping (date/category/tag), filters, search.
-- Quick add with NLP-light parsing ("rent 1800 monthly housing").
-- Add `status`, `tags[]`, `linked_goal_id`, `linked_bill_id` columns.
-- Recurring engine: `recurring_bills` and `subscriptions` get an edge function `wealth-roll-forward` (daily cron) that materializes upcoming entries and creates calendar appointments + tasks.
-- Cadences: daily, weekly, biweekly, monthly, yearly, custom (every N days).
-
-## Phase 3 — Savings Goals + Debts
-- New `savings_goals` + `goal_contributions` tables (with RLS).
-- Visual goal cards (progress ring, target date countdown, milestone toasts at 25/50/75/100%).
-- Recurring contributions auto-rolled forward.
-- Debts tab: snowball/avalanche view with projected payoff timeline.
-- Link transactions → goals (transfer of $200 boosts Vacation Fund).
-
-## Phase 4 — Calendar integration
-- Bills, paydays, savings transfers, debt payments appear in **Today / Upcoming / Week / Month / Calendar / Daily plan / Weekly plan / Monthly plan** via a unified `useWealthEvents()` hook.
-- Drag-and-drop reschedule on the calendar updates `next_due_date`.
-- Optional: push wealth events to Google Calendar (uses existing connector).
-
-## Phase 5 — Analytics + polish
-- Soft-gradient charts via recharts (already installed):
-  - Pie: spending by category
-  - Bar: income vs expenses by month
-  - Line: savings growth, debt payoff
-  - Heatmap: spending rhythm
-- "Budget health" summary with gentle copy ("Your upcoming bills are manageable this week").
-- Animated transitions (framer-motion), haptic feedback on mobile, monthly review section with reflective prompts.
-
----
-
-## What I need from you
-
-**Confirm to ship Phase 1 now.** Reply *go* (or tweak scope). The DB migration in Phase 2 will be small and additive — won't break existing data.
+### Notes
+- Beneficiaries can optionally link to existing `care_recipients`, so caregivers already tracking someone can connect the records.
+- Payee data is **never** mixed into the main Dashboard widgets or Analytics charts — strictly isolated for compliance.
+- This phase ships CRUD + report; recurring SSA deposits & calendar overlay can be layered on later if desired.
