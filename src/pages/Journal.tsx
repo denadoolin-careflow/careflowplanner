@@ -584,7 +584,7 @@ export default function Journal() {
   );
 }
 
-function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string, p: Partial<JournalEntry>) => void; onDelete: (id: string) => void }) {
+function EntryCard({ e, onPin, onDelete, timeline }: { e: JournalEntry; onPin: (id: string, p: Partial<JournalEntry>) => void; onDelete: (id: string) => void; timeline?: boolean }) {
   const { updateJournal } = useStore();
   const tpl = TEMPLATES.find(t => t.key === (e.template as TemplateKey)) ?? TEMPLATES[0];
   const [open, setOpen] = useState(false);
@@ -606,7 +606,16 @@ function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string
   };
 
   return (
-    <li className="group rounded-xl border border-border/60 bg-card transition hover:shadow-sm">
+    <li className={cn("group relative rounded-xl border border-border/60 bg-card transition hover:shadow-sm")}>
+      {timeline && (
+        <span
+          aria-hidden
+          className={cn(
+            "absolute -left-[26px] top-5 grid h-3 w-3 place-items-center rounded-full border-2 border-background",
+            e.pinned ? "bg-primary" : "bg-muted-foreground/60",
+          )}
+        />
+      )}
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
