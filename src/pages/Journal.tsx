@@ -517,28 +517,63 @@ export default function Journal() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <div className="ml-auto inline-flex rounded-md border border-border/60 bg-card/50 p-0.5">
+          <button
+            type="button"
+            onClick={() => switchEntriesView("timeline")}
+            className={cn(
+              "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] transition",
+              entriesView === "timeline" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <GanttChart className="h-3 w-3" /> Timeline
+          </button>
+          <button
+            type="button"
+            onClick={() => switchEntriesView("cards")}
+            className={cn(
+              "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] transition",
+              entriesView === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <LayoutList className="h-3 w-3" /> Cards
+          </button>
+        </div>
         </div>
 
         {pinned.length > 0 && (
           <div className="mb-4">
             <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Pinned</div>
-            <ul className="space-y-3">{pinned.map(e => <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} />)}</ul>
+            <ul className={cn("space-y-3", entriesView === "timeline" && "relative ml-3 border-l-2 border-border/50 pl-5")}>
+              {pinned.map(e => (
+                <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} timeline={entriesView === "timeline"} />
+              ))}
+            </ul>
           </div>
         )}
 
         {filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground">No entries yet.</p>
         ) : groupBy === "none" ? (
-          <ul className="space-y-3">
-            {sortEntries(rest, sortBy).map(e => <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} />)}
+          <ul className={cn("space-y-3", entriesView === "timeline" && "relative ml-3 border-l-2 border-border/50 pl-5")}>
+            {sortEntries(rest, sortBy).map(e => (
+              <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} timeline={entriesView === "timeline"} />
+            ))}
           </ul>
         ) : (
           <div className="space-y-5">
             {groupEntries(rest, groupBy, sortBy).map(g => (
-              <div key={g.key}>
-                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{g.label} <span className="ml-1 text-muted-foreground/70">({g.items.length})</span></div>
-                <ul className="space-y-3">
-                  {g.items.map(e => <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} />)}
+              <div key={g.key} className="space-y-2">
+                <div className="sticky top-0 z-[1] -mx-1 flex items-baseline gap-2 rounded bg-background/85 px-1 py-1 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                  <span className="font-display text-sm font-semibold text-foreground">{g.label}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{g.items.length} {g.items.length === 1 ? "entry" : "entries"}</span>
+                  <span className="ml-1 h-px flex-1 bg-border/60" />
+                </div>
+                <ul className={cn("space-y-3", entriesView === "timeline" && "relative ml-3 border-l-2 border-border/50 pl-5")}>
+                  {g.items.map(e => (
+                    <EntryCard key={e.id} e={e} onPin={updateJournal} onDelete={deleteJournal} timeline={entriesView === "timeline"} />
+                  ))}
                 </ul>
               </div>
             ))}
