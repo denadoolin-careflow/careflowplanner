@@ -232,7 +232,10 @@ function ToolbarButton({ active, onClick, label, children }: { active?: boolean;
   return (
     <button
       type="button"
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        try { onClick(); } catch (err) { console.warn("[editor] command failed", err); }
+      }}
       title={label}
       aria-label={label}
       className={cn(
