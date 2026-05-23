@@ -21,6 +21,7 @@ import Meals from "./pages/Meals";
 import MealsLibrary from "./pages/MealsLibrary";
 import Caregiving from "./pages/Caregiving";
 import HomeReset from "./pages/HomeReset";
+import HomeHub from "./pages/HomeHub";
 import Journal from "./pages/Journal";
 import JournalFlow from "./pages/JournalFlow";
 import Ideas from "./pages/Ideas";
@@ -108,7 +109,8 @@ const App = () => (
                 <Route path="/meals" element={<Meals />} />
                 <Route path="/meals/library" element={<MealsLibrary />} />
                 <Route path="/caregiving" element={<Caregiving />} />
-                <Route path="/home-reset" element={<HomeReset />} />
+                <Route path="/home-reset" element={<HomeHub />} />
+                <Route path="/home" element={<HomeHub />} />
                 <Route path="/health" element={<Health />} />
                 <Route path="/wealth" element={<Wealth />} />
                 <Route path="/home-areas" element={<HomeAreas />} />
