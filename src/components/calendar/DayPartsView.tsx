@@ -212,7 +212,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
           </span>
         </div>
       )}
-      <div className="grid grid-cols-3 gap-2 md:gap-3">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-3">
       {PARTS.map(p => {
         const Icon = p.icon;
         const items = (grouped as any)[p.key].items as any[];
