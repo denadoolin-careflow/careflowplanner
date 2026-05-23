@@ -908,6 +908,50 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_contributions: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          goal_id: string
+          id: string
+          linked_transaction_id: string | null
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          date?: string
+          goal_id: string
+          id?: string
+          linked_transaction_id?: string | null
+          note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          goal_id?: string
+          id?: string
+          linked_transaction_id?: string | null
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_contributions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "savings_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goals: {
         Row: {
           category: string
@@ -2642,6 +2686,66 @@ export type Database = {
           recipient_id?: string | null
           slot?: string
           tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      savings_goals: {
+        Row: {
+          category_id: string | null
+          color: string | null
+          contribution_amount: number | null
+          contribution_cadence: string | null
+          created_at: string
+          current_amount: number
+          icon: string | null
+          id: string
+          name: string
+          notes: string | null
+          priority: string
+          sort_order: number
+          status: string
+          target_amount: number
+          target_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          color?: string | null
+          contribution_amount?: number | null
+          contribution_cadence?: string | null
+          created_at?: string
+          current_amount?: number
+          icon?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          priority?: string
+          sort_order?: number
+          status?: string
+          target_amount?: number
+          target_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string | null
+          color?: string | null
+          contribution_amount?: number | null
+          contribution_cadence?: string | null
+          created_at?: string
+          current_amount?: number
+          icon?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          priority?: string
+          sort_order?: number
+          status?: string
+          target_amount?: number
+          target_date?: string | null
           updated_at?: string
           user_id?: string
         }

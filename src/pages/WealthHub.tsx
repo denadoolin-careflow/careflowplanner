@@ -5,6 +5,8 @@ import { SectionCard } from "@/components/cards/SectionCard";
 import { BillsTab } from "@/components/wealth-hub/BillsTab";
 import { TransactionsTab } from "@/components/wealth-hub/TransactionsTab";
 import { RecurringTab } from "@/components/wealth-hub/RecurringTab";
+import { GoalsTab } from "@/components/wealth-hub/GoalsTab";
+import { DebtsTab } from "@/components/wealth-hub/DebtsTab";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -19,8 +21,8 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon
   { id: "bills", label: "Bills", icon: CalendarClock },
   { id: "transactions", label: "Transactions", icon: Receipt },
   { id: "recurring", label: "Recurring", icon: Repeat },
-  { id: "goals", label: "Goals", icon: Sprout, comingSoon: true },
-  { id: "debts", label: "Debts", icon: TrendingDown, comingSoon: true },
+  { id: "goals", label: "Goals", icon: Sprout },
+  { id: "debts", label: "Debts", icon: TrendingDown },
   { id: "calendar", label: "Calendar", icon: CalendarDays, comingSoon: true },
   { id: "analytics", label: "Analytics", icon: BarChart3, comingSoon: true },
 ];
@@ -107,8 +109,8 @@ export default function WealthHub() {
           {tab === "bills" && <BillsTab uid={uid} />}
           {tab === "transactions" && <TransactionsTab uid={uid} />}
           {tab === "recurring" && <RecurringTab uid={uid} />}
-          {tab === "goals" && <ComingSoon title="Savings goals" blurb="Visual progress rings, milestone celebrations, recurring contributions, and target-date countdowns." />}
-          {tab === "debts" && <ComingSoon title="Debts" blurb="Snowball or avalanche payoff plans with projected timelines and gentle progress visuals." />}
+          {tab === "goals" && <GoalsTab uid={uid} />}
+          {tab === "debts" && <DebtsTab uid={uid} />}
           {tab === "calendar" && <ComingSoon title="Calendar overlay" blurb="Bills, paydays, savings transfers, and debt payments appear in Today, Week, Month, and Daily plan." />}
           {tab === "analytics" && <ComingSoon title="Analytics" blurb="Soft-gradient charts for spending by category, income vs expenses, savings growth, and budget rhythm." />}
         </>
