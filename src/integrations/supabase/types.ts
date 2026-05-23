@@ -2966,6 +2966,36 @@ export type Database = {
         }
         Relationships: []
       }
+      whiteboards: {
+        Row: {
+          created_at: string
+          data: Json
+          description: string | null
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          description?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          description?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       widget_text_overrides: {
         Row: {
           created_at: string

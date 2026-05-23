@@ -320,6 +320,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       projectSections: (sections as any[]).map(sectionFrom).sort((a,b) => a.sortOrder - b.sortOrder),
       resetTemplates: seedState().resetTemplates,
     });
+    // Cache the chosen default landing route for synchronous read on cold boot
+    // (eliminates the dashboard → today flash on next visit).
+    try { window.localStorage.setItem("careflow.defaultRoute", profile.default_route ?? "/"); } catch {}
     // Seed default areas from enum on first load (idempotent thanks to UNIQUE(user_id,name))
     if (!areas.length) {
       const seedAreas = AREAS.map((name, i) => ({ user_id: uid, name, sort_order: i }));
@@ -850,6 +853,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     updateProfile: async (patch) => {
       if (!uid) return;
       setState(s => ({ ...s, settings: { ...s.settings, name: patch.name ?? s.settings.name, planningStyle: patch.planning_style ?? s.settings.planningStyle, timeZone: patch.time_zone ?? s.settings.timeZone, theme: (patch.theme as any) ?? s.settings.theme, defaultRoute: patch.default_route ?? s.settings.defaultRoute } }));
+      if (patch.default_route !== undefined) {
+        try { window.localStorage.setItem("careflow.defaultRoute", patch.default_route ?? "/"); } catch {}
+      }
       await supabase.from("profiles").update(patch).eq("id", uid);
     },
 

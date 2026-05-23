@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { BlockEditor } from "@/components/notes/BlockEditor";
+import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -77,6 +78,7 @@ export default function NoteDetail() {
             body={body}
             onApply={(next) => { setBody(next); save({ body: next }); }}
           />
+          <EditorPrefsMenu />
           <Button variant="ghost" size="icon" onClick={togglePin} aria-label="Pin">
             <Pin className={cn("h-4 w-4", note.pinned && "fill-current text-accent-foreground")} />
           </Button>

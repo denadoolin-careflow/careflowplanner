@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { EditorContent, useEditor, ReactRenderer, Editor } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
@@ -34,6 +35,7 @@ import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { linkNote, type EntityType } from "@/lib/note-links";
+import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 
 /* ------------------------------------------------------------------ */
 /*  Markdown <-> HTML helpers (storage compat with existing notes)    */
@@ -287,6 +289,7 @@ export function BlockEditor({
 }) {
   const { state } = useStore();
   const navigate = useNavigate();
+  const [prefs] = useEditorPrefs();
   const refsRef = useRef<RefItem[]>([]);
   refsRef.current = useMemo(() => buildReferences(state), [state]);
   const lastSyncedRef = useRef<string>(body);
@@ -417,8 +420,47 @@ export function BlockEditor({
   }, [navigate]);
 
   return (
-    <div onClick={handleClick} className="block-editor">
+    <div
+      onClick={handleClick}
+      className={cn(
+        "block-editor",
+        `editor-theme-${prefs.theme}`,
+        `editor-density-${prefs.density}`,
+      )}
+      style={{
+        maxWidth: WIDTH_PX[prefs.width],
+        marginInline: prefs.width === "full" ? undefined : "auto",
+        ["--editor-font-scale" as any]: String(prefs.fontScale),
+      } as React.CSSProperties}
+    >
       {editor && <Toolbar editor={editor} />}
+      {editor && (
+        <BubbleMenu
+          editor={editor}
+          className="flex items-center gap-0.5 rounded-xl border border-border/60 bg-popover/95 px-1 py-1 shadow-lg backdrop-blur-md"
+        >
+          <ToolbarButton active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} label="Bold"><Bold className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} label="Italic"><Italic className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} label="Strike"><Strikethrough className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} label="Code"><Code className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-3.5 w-3.5" /></ToolbarButton>
+          <span className="mx-1 h-4 w-px bg-border" />
+          <ToolbarButton active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} label="H1"><Heading1 className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} label="H2"><Heading2 className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton
+            active={editor.isActive("link")}
+            onClick={() => {
+              const previous = editor.getAttributes("link").href;
+              const url = window.prompt("Link URL", previous ?? "https://");
+              if (url === null) return;
+              if (url === "") editor.chain().focus().unsetLink().run();
+              else editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+            }}
+            label="Link"
+          ><LinkIcon className="h-3.5 w-3.5" /></ToolbarButton>
+        </BubbleMenu>
+      )}
       <EditorContent editor={editor} />
     </div>
   );

@@ -47,6 +47,8 @@ import Reset from "./pages/Reset";
 import Routines from "./pages/Routines";
 import PlanTimeline from "./pages/PlanTimeline";
 import PlanDay from "./pages/PlanDay";
+import Whiteboards from "./pages/Whiteboards";
+import WhiteboardDetail from "./pages/WhiteboardDetail";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -90,6 +92,8 @@ const App = () => (
                 <Route path="/review" element={<Review />} />
                 <Route path="/reset" element={<Reset />} />
                 <Route path="/reset/:period" element={<Reset />} />
+                <Route path="/whiteboards" element={<Whiteboards />} />
+                <Route path="/whiteboards/:id" element={<WhiteboardDetail />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/areas/:name" element={<AreaPage />} />

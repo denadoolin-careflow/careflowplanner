@@ -588,6 +588,52 @@
 .block-editor .ProseMirror a.ref-chip:hover { background: hsl(var(--primary) / 0.2); }
 .block-editor .ProseMirror a { cursor: pointer; }
 
+/* ---------- Editor density + font scale ---------- */
+.block-editor { --editor-font-scale: 1; }
+.block-editor .ProseMirror { font-size: calc(15px * var(--editor-font-scale)); line-height: 1.7; }
+.block-editor.editor-density-cozy .ProseMirror > * { padding: 1px 0; }
+.block-editor.editor-density-comfortable .ProseMirror > * { padding: 3px 0; }
+.block-editor.editor-density-airy .ProseMirror > * { padding: 6px 0; }
+.block-editor.editor-density-airy .ProseMirror { line-height: 1.85; }
+
+/* ---------- Editor themes ---------- */
+.block-editor.editor-theme-cream { background: #f6efe1; color: #3a2f1f; border-radius: 14px; padding: 1.5rem; }
+.block-editor.editor-theme-cream .ProseMirror blockquote { border-left-color: #b08a4a; color: #6b5a3a; }
+
+.block-editor.editor-theme-sage { background: #e7ede1; color: #2f3a2b; border-radius: 14px; padding: 1.5rem; }
+.block-editor.editor-theme-sage .ProseMirror blockquote { border-left-color: #6f8a5d; color: #4a5840; }
+
+.block-editor.editor-theme-plum { background: #2a1b2e; color: #ede0eb; border-radius: 14px; padding: 1.5rem; }
+.block-editor.editor-theme-plum .ProseMirror blockquote { border-left-color: #b48fb4; color: #c9b3c7; }
+.block-editor.editor-theme-plum .ProseMirror code { background: rgba(255,255,255,0.08); color: #f0d8ed; }
+
+.block-editor.editor-theme-warm-night { background: #1f1a17; color: #f1e6d6; border-radius: 14px; padding: 1.5rem; }
+.block-editor.editor-theme-warm-night .ProseMirror blockquote { border-left-color: #d6a96b; color: #d8c9a8; }
+
+.block-editor.editor-theme-minimal { background: #ffffff; color: #1a1a1a; border-radius: 14px; padding: 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+.block-editor.editor-theme-minimal .ProseMirror blockquote { border-left-color: #999; color: #555; }
+
+.block-editor.editor-theme-soft-journal { background: #efe7df; color: #3a2f24; border-radius: 14px; padding: 1.5rem; }
+.block-editor.editor-theme-soft-journal .ProseMirror blockquote { border-left-color: #c79766; color: #6e5640; }
+
+/* Drag handle hint on hover */
+.block-editor .ProseMirror > *::before {
+  content: "";
+  position: absolute;
+  left: -1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 2px;
+  opacity: 0;
+  background-image: radial-gradient(hsl(var(--muted-foreground) / 0.55) 1px, transparent 1px);
+  background-size: 3px 3px;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+.block-editor .ProseMirror > *:hover::before { opacity: 0.7; }
+
 /* === Phase 7 polish === */
 
 /* Soft, layered card hover */
