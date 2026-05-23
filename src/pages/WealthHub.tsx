@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { BillsTab } from "@/components/wealth-hub/BillsTab";
+import { TransactionsTab } from "@/components/wealth-hub/TransactionsTab";
+import { RecurringTab } from "@/components/wealth-hub/RecurringTab";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -15,8 +17,8 @@ type TabId = "dashboard" | "transactions" | "bills" | "recurring" | "goals" | "d
 const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon?: boolean }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "bills", label: "Bills", icon: CalendarClock },
-  { id: "transactions", label: "Transactions", icon: Receipt, comingSoon: true },
-  { id: "recurring", label: "Recurring", icon: Repeat, comingSoon: true },
+  { id: "transactions", label: "Transactions", icon: Receipt },
+  { id: "recurring", label: "Recurring", icon: Repeat },
   { id: "goals", label: "Goals", icon: Sprout, comingSoon: true },
   { id: "debts", label: "Debts", icon: TrendingDown, comingSoon: true },
   { id: "calendar", label: "Calendar", icon: CalendarDays, comingSoon: true },
@@ -103,8 +105,8 @@ export default function WealthHub() {
         <>
           {tab === "dashboard" && <CustomizableGrid pageKey="wealth-hub" />}
           {tab === "bills" && <BillsTab uid={uid} />}
-          {tab === "transactions" && <ComingSoon title="Transactions" blurb="A full inline-editable transactions ledger with grouping, filters, tags, and quick NLP add." />}
-          {tab === "recurring" && <ComingSoon title="Recurring engine" blurb="Daily, weekly, biweekly, monthly, yearly, and custom recurrence — auto-materialized into your calendar." />}
+          {tab === "transactions" && <TransactionsTab uid={uid} />}
+          {tab === "recurring" && <RecurringTab uid={uid} />}
           {tab === "goals" && <ComingSoon title="Savings goals" blurb="Visual progress rings, milestone celebrations, recurring contributions, and target-date countdowns." />}
           {tab === "debts" && <ComingSoon title="Debts" blurb="Snowball or avalanche payoff plans with projected timelines and gentle progress visuals." />}
           {tab === "calendar" && <ComingSoon title="Calendar overlay" blurb="Bills, paydays, savings transfers, and debt payments appear in Today, Week, Month, and Daily plan." />}
