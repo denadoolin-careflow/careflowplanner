@@ -7,7 +7,8 @@ export type EditorTheme =
   | "plum"
   | "warm-night"
   | "minimal"
-  | "soft-journal";
+  | "soft-journal"
+  | "custom";
 
 export type EditorDensity = "cozy" | "comfortable" | "airy";
 export type EditorWidth = "narrow" | "regular" | "wide" | "full";
@@ -17,6 +18,8 @@ export interface EditorPrefs {
   density: EditorDensity;
   width: EditorWidth;
   fontScale: number; // 0.9 – 1.3
+  customBg: string;   // any CSS color
+  customFg: string;   // any CSS color
 }
 
 const KEY = "careflow.editorPrefs.v1";
@@ -26,6 +29,8 @@ const DEFAULTS: EditorPrefs = {
   density: "comfortable",
   width: "regular",
   fontScale: 1,
+  customBg: "#f4ede2",
+  customFg: "#2a2218",
 };
 
 function read(): EditorPrefs {
@@ -65,6 +70,7 @@ export const THEME_OPTIONS: { id: EditorTheme; label: string; swatch: string }[]
   { id: "warm-night", label: "Warm Night", swatch: "#1f1a17" },
   { id: "minimal", label: "Minimal White", swatch: "#ffffff" },
   { id: "soft-journal", label: "Soft Journal", swatch: "#efe7df" },
+  { id: "custom", label: "Custom", swatch: "linear-gradient(135deg,#f4ede2 0%,#c79766 50%,#2a2218 100%)" },
 ];
 
 export const WIDTH_PX: Record<EditorWidth, string> = {
