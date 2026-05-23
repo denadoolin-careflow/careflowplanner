@@ -592,6 +592,115 @@ export function PayeeTab({ uid }: { uid: string }) {
             </SectionCard>
           )}
 
+          {view === "monthly" && (
+            <SectionCard
+              title="Monthly report"
+              subtitle={`Income, spending, and conserved activity for ${monthLabel}.`}
+              accent="calm"
+              action={
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="month"
+                    className="h-8 w-[150px]"
+                    value={reportMonth}
+                    onChange={(e) => setReportMonth(e.target.value)}
+                  />
+                  <Button size="sm" variant="outline" onClick={exportMonthlyCSV}><Download className="mr-1 h-3.5 w-3.5" /> CSV</Button>
+                  <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="mr-1 h-3.5 w-3.5" /> Print</Button>
+                </div>
+              }
+            >
+              <div className="space-y-4 text-sm">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border border-border/40 bg-card/40 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Income</p>
+                    <p className="font-display text-lg tabular-nums text-emerald-600 dark:text-emerald-300" data-money>+{fmtMoney(monthlyData.totalIncome)}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/40 bg-card/40 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Spent</p>
+                    <p className="font-display text-lg tabular-nums" data-money>−{fmtMoney(monthlyData.totalExpenses)}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/40 bg-card/40 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Net to conserved</p>
+                    <p className="font-display text-lg tabular-nums" data-money>
+                      {monthlyData.savedDelta >= 0 ? "+" : "−"}{fmtMoney(Math.abs(monthlyData.savedDelta))}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Income by source</p>
+                  <div className="mt-1 divide-y divide-border/40 rounded-lg border border-border/40">
+                    {INCOME_SOURCES.map((s) => (
+                      <div key={s} className="flex justify-between px-3 py-2">
+                        <span>{s}</span>
+                        <span className="tabular-nums" data-money>{fmtMoney(monthlyData.incomeBySource[s])}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between px-3 py-2 font-medium">
+                      <span>Total income</span>
+                      <span className="tabular-nums" data-money>{fmtMoney(monthlyData.totalIncome)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Expenses by category</p>
+                  <div className="mt-1 divide-y divide-border/40 rounded-lg border border-border/40">
+                    {CATEGORIES.map((c) => (
+                      <div key={c.value} className="flex justify-between px-3 py-2">
+                        <span>{c.label}</span>
+                        <span className="tabular-nums" data-money>{fmtMoney(monthlyData.expensesByCat[c.value])}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between px-3 py-2 font-medium">
+                      <span>Total expenses</span>
+                      <span className="tabular-nums" data-money>{fmtMoney(monthlyData.totalExpenses)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Transactions ({monthlyData.inc.length + monthlyData.exp.length + monthlyData.con.length})</p>
+                  <div className="mt-1 divide-y divide-border/40 rounded-lg border border-border/40">
+                    {[
+                      ...monthlyData.inc.map((r) => ({ kind: "income" as const, r })),
+                      ...monthlyData.exp.map((r) => ({ kind: "expense" as const, r })),
+                      ...monthlyData.con.map((r) => ({ kind: "conserved" as const, r })),
+                    ]
+                      .sort((a, b) => b.r.date.localeCompare(a.r.date))
+                      .map((row) => (
+                        <div key={`${row.kind}-${row.r.id}`} className="flex items-center justify-between px-3 py-2">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="text-muted-foreground tabular-nums text-xs">{row.r.date}</span>
+                            {row.kind === "income" && <Badge variant="outline" className="font-normal">{(row.r as Income).source}</Badge>}
+                            {row.kind === "expense" && <Badge variant="outline" className={cn("font-normal", catStyle((row.r as Expense).category))}>{catLabel((row.r as Expense).category)}</Badge>}
+                            {row.kind === "conserved" && <Badge variant="outline" className="font-normal">{Number(row.r.amount) >= 0 ? "Conserved +" : "Conserved −"}</Badge>}
+                            <span className="truncate text-muted-foreground">
+                              {(row.r as any).subcategory ? `${(row.r as any).subcategory}` : ""}
+                              {(row.r as any).note ? ` ${(row.r as any).subcategory ? "· " : ""}${(row.r as any).note}` : ""}
+                              {(row.r as any).account_label ? ` ${(row.r as any).account_label}` : ""}
+                            </span>
+                          </div>
+                          <span className={cn(
+                            "tabular-nums text-sm",
+                            row.kind === "income" ? "text-emerald-600 dark:text-emerald-300" : "",
+                            row.kind === "conserved" && Number(row.r.amount) < 0 ? "text-rose-600 dark:text-rose-300" : "",
+                          )} data-money>
+                            {row.kind === "income" ? "+" : row.kind === "expense" ? "−" : (Number(row.r.amount) >= 0 ? "+" : "−")}
+                            {fmtMoney(Math.abs(Number(row.r.amount)))}
+                          </span>
+                        </div>
+                      ))}
+                    {monthlyData.inc.length + monthlyData.exp.length + monthlyData.con.length === 0 && (
+                      <p className="px-3 py-3 text-muted-foreground">No activity recorded for {monthLabel}.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+          )}
+
           {view === "report" && (
             <SectionCard
               title="Annual accounting report"
