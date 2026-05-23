@@ -8,6 +8,7 @@ import { RecurringTab } from "@/components/wealth-hub/RecurringTab";
 import { GoalsTab } from "@/components/wealth-hub/GoalsTab";
 import { DebtsTab } from "@/components/wealth-hub/DebtsTab";
 import { CalendarTab } from "@/components/wealth-hub/CalendarTab";
+import { AnalyticsTab } from "@/components/wealth-hub/AnalyticsTab";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -25,7 +26,7 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon
   { id: "goals", label: "Goals", icon: Sprout },
   { id: "debts", label: "Debts", icon: TrendingDown },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
-  { id: "analytics", label: "Analytics", icon: BarChart3, comingSoon: true },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
 ];
 
 function ComingSoon({ title, blurb }: { title: string; blurb: string }) {
@@ -113,7 +114,7 @@ export default function WealthHub() {
           {tab === "goals" && <GoalsTab uid={uid} />}
           {tab === "debts" && <DebtsTab uid={uid} />}
           {tab === "calendar" && <CalendarTab uid={uid} />}
-          {tab === "analytics" && <ComingSoon title="Analytics" blurb="Soft-gradient charts for spending by category, income vs expenses, savings growth, and budget rhythm." />}
+          {tab === "analytics" && <AnalyticsTab uid={uid} />}
         </>
       )}
     </div>
