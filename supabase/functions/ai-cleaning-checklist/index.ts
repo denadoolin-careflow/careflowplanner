@@ -37,7 +37,11 @@ Deno.serve(async (req) => {
 - Time budget: ${minutes} minutes total
 - Caregiving load: ${caregiving}
 
-Group items by room/zone (Kitchen, Bathroom, Living, Bedrooms, Laundry, Entryway, Whole home, Outdoor). Each zone has 2-5 short subtasks. Suggest a time block (morning/afternoon/evening) and estimated minutes per group.`;
+Group items by room/zone (Kitchen, Bathroom, Living, Bedrooms, Laundry, Entryway, Whole home, Outdoor).
+IMPORTANT:
+- Return BETWEEN 4 AND 8 GROUPS.
+- EVERY group MUST include 2-5 short concrete subtasks (imperative phrasing, e.g. "Wipe counters", "Run dishwasher"). Never return an empty subtasks array.
+- Suggest a time block (morning/afternoon/evening) and estimated minutes per group.`;
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) return json({ error: "LOVABLE_API_KEY missing" }, 500);
@@ -48,6 +52,7 @@ Group items by room/zone (Kitchen, Bathroom, Living, Bedrooms, Laundry, Entryway
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "system", content: sys }, { role: "user", content: user }],
+        max_tokens: 4096,
         tools: [{
           type: "function",
           function: {
@@ -59,6 +64,7 @@ Group items by room/zone (Kitchen, Bathroom, Living, Bedrooms, Laundry, Entryway
                 name: { type: "string" },
                 groups: {
                   type: "array",
+                  minItems: 4,
                   items: {
                     type: "object",
                     properties: {
@@ -66,7 +72,7 @@ Group items by room/zone (Kitchen, Bathroom, Living, Bedrooms, Laundry, Entryway
                       category: { type: "string" },
                       time_block: { type: "string", enum: ["morning","afternoon","evening"] },
                       est_minutes: { type: "number" },
-                      subtasks: { type: "array", items: { type: "string" } },
+                      subtasks: { type: "array", minItems: 2, items: { type: "string" } },
                     },
                     required: ["title","subtasks"],
                   },
@@ -89,9 +95,24 @@ Group items by room/zone (Kitchen, Bathroom, Living, Bedrooms, Laundry, Entryway
     }
 
     const data = await resp.json();
+    const finish = data?.choices?.[0]?.finish_reason;
     const call = data?.choices?.[0]?.message?.tool_calls?.[0];
-    const args = call?.function?.arguments ? JSON.parse(call.function.arguments) : null;
-    if (!args?.groups) return json({ error: "No checklist returned" }, 500);
+    const rawArgs = call?.function?.arguments;
+    let args: any = null;
+    try { args = rawArgs ? JSON.parse(rawArgs) : null; }
+    catch (e) {
+      console.error("Failed to parse tool args. finish_reason:", finish, "raw:", rawArgs?.slice(0, 500));
+      return json({ error: "AI response was incomplete — please try again." }, 500);
+    }
+    console.log("AI finish_reason:", finish, "groups:", args?.groups?.length);
+    if (!args || !Array.isArray(args.groups) || args.groups.length === 0) {
+      return json({ error: "AI returned an empty checklist — please try again." }, 500);
+    }
+    // Drop groups that came back with no subtasks; if all empty, fail loudly.
+    args.groups = args.groups.filter((g: any) => Array.isArray(g?.subtasks) && g.subtasks.length > 0);
+    if (args.groups.length === 0) {
+      return json({ error: "AI returned groups with no tasks — please try again." }, 500);
+    }
 
     // Insert checklist + items
     const { data: cl, error: clErr } = await supabase.from("reset_checklists").insert({
@@ -105,8 +126,9 @@ Group items by room/zone (Kitchen, Bathroom, Living, Bedrooms, Laundry, Entryway
     if (clErr || !cl) return json({ error: clErr?.message ?? "insert failed" }, 500);
 
     let order = 0;
+    let insertedItems = 0;
     for (const g of args.groups) {
-      const { data: parent } = await supabase.from("reset_items").insert({
+      const { data: parent, error: pErr } = await supabase.from("reset_items").insert({
         user_id: u.user.id,
         checklist_id: cl.id,
         title: g.title,
@@ -115,10 +137,14 @@ Group items by room/zone (Kitchen, Bathroom, Living, Bedrooms, Laundry, Entryway
         est_minutes: g.est_minutes ?? null,
         sort_order: order++,
       }).select("*").single();
-      if (!parent) continue;
+      if (pErr || !parent) {
+        console.error("Failed to insert group", g.title, pErr);
+        continue;
+      }
+      insertedItems++;
       let subOrder = 0;
       for (const s of (g.subtasks || [])) {
-        await supabase.from("reset_items").insert({
+        const { error: sErr } = await supabase.from("reset_items").insert({
           user_id: u.user.id,
           checklist_id: cl.id,
           parent_id: parent.id,
@@ -127,10 +153,17 @@ Group items by room/zone (Kitchen, Bathroom, Living, Bedrooms, Laundry, Entryway
           time_block: g.time_block ?? null,
           sort_order: subOrder++,
         });
+        if (sErr) console.error("Failed to insert subtask", s, sErr);
+        else insertedItems++;
       }
     }
 
-    return json({ checklist_id: cl.id });
+    if (insertedItems === 0) {
+      // Roll back the empty checklist so the user doesn't see a ghost title.
+      await supabase.from("reset_checklists").delete().eq("id", cl.id);
+      return json({ error: "Could not save any tasks — please try again." }, 500);
+    }
+    return json({ checklist_id: cl.id, items: insertedItems });
   } catch (e: any) {
     console.error(e);
     return json({ error: e?.message ?? "unknown" }, 500);
