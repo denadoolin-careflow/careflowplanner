@@ -11,6 +11,7 @@ import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconCol
 import { AreaDetailDialog } from "@/components/areas/AreaDetailDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TaskRow } from "@/components/cards/TaskRow";
+import { AllTasksViews } from "@/components/tasks/AllTasksViews";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 
@@ -270,47 +271,8 @@ export default function Projects() {
 
         </TabsContent>
 
-        <TabsContent value="tasks" className="space-y-6">
-          <div className="flex items-center justify-between gap-2 px-1">
-            <p className="text-sm text-muted-foreground">
-              {allTasks.length} {allTasks.length === 1 ? "task" : "tasks"} grouped by area
-            </p>
-            <Button variant="ghost" size="sm" onClick={() => setShowDoneTasks(v => !v)}>
-              {showDoneTasks ? "Hide done" : "Show done"}
-            </Button>
-          </div>
-
-          {allTasks.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-10 text-center text-sm text-muted-foreground">
-              No tasks yet.
-            </div>
-          )}
-
-          {tasksByArea.map(({ area, items }) => {
-            const rec = (state.areas ?? []).find(a => a.name === area);
-            const AreaIcon = getAreaIcon(rec?.icon);
-            return (
-              <section key={area} className="space-y-2">
-                <div className="flex items-center gap-2 px-1">
-                  <AreaIcon className="h-3.5 w-3.5" style={rec?.color ? { color: rec.color } : undefined} />
-                  <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{area}</span>
-                  <span className="text-[10px] text-muted-foreground/70">{items.length}</span>
-                </div>
-                <div className="space-y-1.5">
-                  {items.map(t => <TaskRow key={t.id} task={t} showArea={false} />)}
-                </div>
-              </section>
-            );
-          })}
-
-          {tasksNoArea.length > 0 && (
-            <section className="space-y-2">
-              <div className="px-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">No area</div>
-              <div className="space-y-1.5">
-                {tasksNoArea.map(t => <TaskRow key={t.id} task={t} showArea={false} />)}
-              </div>
-            </section>
-          )}
+        <TabsContent value="tasks" className="space-y-4">
+          <AllTasksViews />
         </TabsContent>
       </Tabs>
 
