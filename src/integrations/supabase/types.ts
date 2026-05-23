@@ -2053,6 +2053,54 @@ export type Database = {
         }
         Relationships: []
       }
+      period_reviews: {
+        Row: {
+          checklist: Json
+          content: Json | null
+          created_at: string
+          id: string
+          intentions: string[]
+          kind: string
+          period: string
+          period_start: string
+          reflection: string | null
+          releases: string[]
+          updated_at: string
+          user_id: string
+          wins: string[]
+        }
+        Insert: {
+          checklist?: Json
+          content?: Json | null
+          created_at?: string
+          id?: string
+          intentions?: string[]
+          kind?: string
+          period: string
+          period_start: string
+          reflection?: string | null
+          releases?: string[]
+          updated_at?: string
+          user_id: string
+          wins?: string[]
+        }
+        Update: {
+          checklist?: Json
+          content?: Json | null
+          created_at?: string
+          id?: string
+          intentions?: string[]
+          kind?: string
+          period?: string
+          period_start?: string
+          reflection?: string | null
+          releases?: string[]
+          updated_at?: string
+          user_id?: string
+          wins?: string[]
+        }
+        Relationships: []
+      }
       pomodoro_sessions: {
         Row: {
           completed_at: string
