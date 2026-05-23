@@ -2429,9 +2429,15 @@ export type Database = {
           category_id: string | null
           created_at: string
           id: string
+          last_paid_at: string | null
+          linked_goal_id: string | null
           name: string
           next_due_date: string | null
           notes: string | null
+          priority: string
+          recurrence_interval: number
+          status: string
+          tags: string[]
           updated_at: string
           user_id: string
         }
@@ -2442,9 +2448,15 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           id?: string
+          last_paid_at?: string | null
+          linked_goal_id?: string | null
           name: string
           next_due_date?: string | null
           notes?: string | null
+          priority?: string
+          recurrence_interval?: number
+          status?: string
+          tags?: string[]
           updated_at?: string
           user_id: string
         }
@@ -2455,9 +2467,15 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           id?: string
+          last_paid_at?: string | null
+          linked_goal_id?: string | null
           name?: string
           next_due_date?: string | null
           notes?: string | null
+          priority?: string
+          recurrence_interval?: number
+          status?: string
+          tags?: string[]
           updated_at?: string
           user_id?: string
         }
@@ -2636,9 +2654,13 @@ export type Database = {
           category_id: string | null
           created_at: string
           id: string
+          last_charged_at: string | null
           name: string
           next_charge_date: string | null
           notes: string | null
+          recurrence_interval: number
+          status: string
+          tags: string[]
           updated_at: string
           user_id: string
         }
@@ -2648,9 +2670,13 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           id?: string
+          last_charged_at?: string | null
           name: string
           next_charge_date?: string | null
           notes?: string | null
+          recurrence_interval?: number
+          status?: string
+          tags?: string[]
           updated_at?: string
           user_id: string
         }
@@ -2660,9 +2686,13 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           id?: string
+          last_charged_at?: string | null
           name?: string
           next_charge_date?: string | null
           notes?: string | null
+          recurrence_interval?: number
+          status?: string
+          tags?: string[]
           updated_at?: string
           user_id?: string
         }
@@ -2857,7 +2887,12 @@ export type Database = {
           date: string
           id: string
           kind: string
+          linked_bill_id: string | null
+          linked_goal_id: string | null
+          linked_subscription_id: string | null
           note: string | null
+          status: string
+          tags: string[]
           updated_at: string
           user_id: string
         }
@@ -2869,7 +2904,12 @@ export type Database = {
           date?: string
           id?: string
           kind?: string
+          linked_bill_id?: string | null
+          linked_goal_id?: string | null
+          linked_subscription_id?: string | null
           note?: string | null
+          status?: string
+          tags?: string[]
           updated_at?: string
           user_id: string
         }
@@ -2881,7 +2921,12 @@ export type Database = {
           date?: string
           id?: string
           kind?: string
+          linked_bill_id?: string | null
+          linked_goal_id?: string | null
+          linked_subscription_id?: string | null
           note?: string | null
+          status?: string
+          tags?: string[]
           updated_at?: string
           user_id?: string
         }
