@@ -4,22 +4,47 @@ import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FolderOpen, Plus } from "lucide-react";
+import { FolderOpen, Plus, LayoutGrid, List as ListIcon, Columns3 } from "lucide-react";
 import { AREAS } from "@/lib/types";
 import { toast } from "sonner";
 import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
 import { AreaDetailDialog } from "@/components/areas/AreaDetailDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TaskRow } from "@/components/cards/TaskRow";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
+
+type ProjectsView = "grid" | "list" | "board";
+const VIEW_KEY = "projects.view";
+const PROJECT_STATUSES = ["active", "paused", "someday", "done"] as const;
+const STATUS_LABEL: Record<string, string> = { active: "Active", paused: "Paused", someday: "Someday", done: "Done" };
 
 export default function Projects() {
   const { state, addProject, updateArea } = useStore();
-  const projects = (state.projects ?? []).filter(p => p.status !== "done");
+  const allProjects = state.projects ?? [];
   const [name, setName] = useState("");
   const [areaName, setAreaName] = useState<string>("Personal");
   const [openArea, setOpenArea] = useState<string | null>(null);
   const [tab, setTab] = useState<"projects" | "tasks">("projects");
   const [showDoneTasks, setShowDoneTasks] = useState(false);
+  const [view, setView] = useState<ProjectsView>(() => {
+    if (typeof window === "undefined") return "grid";
+    return (localStorage.getItem(VIEW_KEY) as ProjectsView) ?? "grid";
+  });
+  const [showDoneProjects, setShowDoneProjects] = useState(false);
+
+  const projects = showDoneProjects ? allProjects : allProjects.filter(p => p.status !== "done");
+
+  const setProjectsView = (v: ProjectsView) => {
+    setView(v);
+    try { localStorage.setItem(VIEW_KEY, v); } catch {}
+  };
+
+  const projectStats = (pid: string) => {
+    const ts = (state.tasks ?? []).filter(t => t.projectId === pid && !t.parentTaskId);
+    const done = ts.filter(t => t.done).length;
+    return { total: ts.length, done, open: ts.length - done, pct: ts.length ? Math.round((done / ts.length) * 100) : 0 };
+  };
 
   const grouped = AREAS.map(a => ({ area: a, items: projects.filter(p => p.areaName === a) })).filter(g => g.items.length);
   const noArea = projects.filter(p => !p.areaName);
@@ -67,13 +92,35 @@ export default function Projects() {
         </Button>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <ToggleGroup
+          type="single"
+          value={view}
+          onValueChange={(v) => v && setProjectsView(v as ProjectsView)}
+          className="rounded-lg border border-border/60 bg-card/40 p-0.5"
+        >
+          <ToggleGroupItem value="grid" className="h-8 gap-1.5 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            <LayoutGrid className="h-3.5 w-3.5" /> Grid
+          </ToggleGroupItem>
+          <ToggleGroupItem value="list" className="h-8 gap-1.5 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            <ListIcon className="h-3.5 w-3.5" /> List
+          </ToggleGroupItem>
+          <ToggleGroupItem value="board" className="h-8 gap-1.5 px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            <Columns3 className="h-3.5 w-3.5" /> Board
+          </ToggleGroupItem>
+        </ToggleGroup>
+        <Button variant="ghost" size="sm" onClick={() => setShowDoneProjects(v => !v)}>
+          {showDoneProjects ? "Hide done" : "Show done"}
+        </Button>
+      </div>
+
       {projects.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-10 text-center text-sm text-muted-foreground">
           No projects yet. Create one above, or use Quick Add with <code className="rounded bg-muted px-1">+ProjectName</code>.
         </div>
       )}
 
-      {grouped.map(({ area, items }) => {
+      {view === "grid" && grouped.map(({ area, items }) => {
         const rec = (state.areas ?? []).find(a => a.name === area);
         const AreaIcon = getAreaIcon(rec?.icon);
         return (
@@ -106,11 +153,7 @@ export default function Projects() {
           <div className="grid gap-2 sm:grid-cols-2">
             {items.map(p => (
               (() => {
-                const projTasks = state.tasks.filter(t => t.projectId === p.id && !t.parentTaskId);
-                const total = projTasks.length;
-                const done = projTasks.filter(t => t.done).length;
-                const pct = total ? Math.round((done / total) * 100) : 0;
-                const open = total - done;
+                const { total, done, open, pct } = projectStats(p.id);
                 return (
               <Link
                 key={p.id}
@@ -139,7 +182,7 @@ export default function Projects() {
         );
       })}
 
-      {noArea.length > 0 && (
+      {view === "grid" && noArea.length > 0 && (
         <section className="space-y-2">
           <div className="px-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">No area</div>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -152,6 +195,79 @@ export default function Projects() {
           </div>
         </section>
       )}
+
+      {view === "list" && projects.length > 0 && (
+        <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/60">
+          <div className="grid grid-cols-[1fr_8rem_7rem_5rem] gap-3 border-b border-border/40 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div>Project</div><div>Area</div><div>Status</div><div className="text-right">Progress</div>
+          </div>
+          {projects.map(p => {
+            const { total, done, pct } = projectStats(p.id);
+            return (
+              <Link
+                key={p.id}
+                to={`/projects/${p.id}`}
+                className="grid grid-cols-[1fr_8rem_7rem_5rem] items-center gap-3 border-b border-border/30 px-4 py-2.5 transition last:border-b-0 hover:bg-muted/40"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span className="truncate text-sm font-medium">{p.name}</span>
+                </div>
+                <div className="truncate text-xs text-muted-foreground">{p.areaName ?? "—"}</div>
+                <div className="text-xs capitalize text-muted-foreground">{p.status}</div>
+                <div className="flex items-center justify-end gap-2 text-xs tabular-nums">
+                  <span className="text-muted-foreground">{done}/{total}</span>
+                  <span className="w-10 text-right text-muted-foreground">{pct}%</span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {view === "board" && (
+        <div className="grid auto-cols-[minmax(240px,1fr)] grid-flow-col gap-3 overflow-x-auto pb-2 sm:auto-cols-[minmax(260px,1fr)]">
+          {PROJECT_STATUSES.filter(s => showDoneProjects || s !== "done").map(status => {
+            const items = projects.filter(p => p.status === status);
+            return (
+              <div key={status} className="flex min-h-[200px] flex-col rounded-2xl border border-border/60 bg-card/50">
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{STATUS_LABEL[status]}</span>
+                  <span className="text-[10px] text-muted-foreground/70">{items.length}</span>
+                </div>
+                <div className="flex flex-col gap-2 p-2 pt-0">
+                  {items.length === 0 && (
+                    <div className="rounded-lg border border-dashed border-border/50 px-3 py-4 text-center text-[11px] text-muted-foreground/70">
+                      Nothing here
+                    </div>
+                  )}
+                  {items.map(p => {
+                    const { total, done, pct } = projectStats(p.id);
+                    return (
+                      <Link
+                        key={p.id}
+                        to={`/projects/${p.id}`}
+                        className={cn(
+                          "rounded-xl border border-border/60 bg-background/60 p-2.5 transition hover:border-primary/40",
+                        )}
+                      >
+                        <div className="truncate text-sm font-medium">{p.name}</div>
+                        <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                          {p.areaName ?? "No area"} · {done}/{total}
+                        </div>
+                        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
+                          <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
         </TabsContent>
 
         <TabsContent value="tasks" className="space-y-6">

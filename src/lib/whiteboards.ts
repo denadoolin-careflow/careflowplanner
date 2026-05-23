@@ -5,6 +5,7 @@ export interface Whiteboard {
   userId: string;
   title: string;
   description: string | null;
+  projectId: string | null;
   data: { nodes: any[]; edges: any[] };
   createdAt: string;
   updatedAt: string;
@@ -15,6 +16,7 @@ const fromRow = (r: any): Whiteboard => ({
   userId: r.user_id,
   title: r.title ?? "Untitled board",
   description: r.description ?? null,
+  projectId: r.project_id ?? null,
   data: (r.data && typeof r.data === "object") ? r.data : { nodes: [], edges: [] },
   createdAt: r.created_at,
   updatedAt: r.updated_at,
@@ -48,6 +50,7 @@ export async function createWhiteboard(patch: Partial<Whiteboard> = {}): Promise
       user_id: u.user.id,
       title: patch.title ?? "Untitled board",
       description: patch.description ?? null,
+      project_id: patch.projectId ?? null,
       data: patch.data ?? { nodes: [], edges: [] },
     } as any)
     .select()
@@ -58,14 +61,25 @@ export async function createWhiteboard(patch: Partial<Whiteboard> = {}): Promise
 
 export async function updateWhiteboard(
   id: string,
-  patch: Partial<Pick<Whiteboard, "title" | "description" | "data">>,
+  patch: Partial<Pick<Whiteboard, "title" | "description" | "data" | "projectId">>,
 ): Promise<void> {
   const row: any = {};
   if (patch.title !== undefined) row.title = patch.title;
   if (patch.description !== undefined) row.description = patch.description;
   if (patch.data !== undefined) row.data = patch.data;
+  if (patch.projectId !== undefined) row.project_id = patch.projectId;
   const { error } = await supabase.from("whiteboards" as any).update(row).eq("id", id);
   if (error) throw error;
+}
+
+export async function listWhiteboardsForProject(projectId: string): Promise<Whiteboard[]> {
+  const { data, error } = await supabase
+    .from("whiteboards" as any)
+    .select("*")
+    .eq("project_id", projectId)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map(fromRow);
 }
 
 export async function deleteWhiteboard(id: string): Promise<void> {

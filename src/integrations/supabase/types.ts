@@ -2972,6 +2972,7 @@ export type Database = {
           data: Json
           description: string | null
           id: string
+          project_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -2981,6 +2982,7 @@ export type Database = {
           data?: Json
           description?: string | null
           id?: string
+          project_id?: string | null
           title?: string
           updated_at?: string
           user_id: string
@@ -2990,11 +2992,20 @@ export type Database = {
           data?: Json
           description?: string | null
           id?: string
+          project_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "whiteboards_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       widget_text_overrides: {
         Row: {

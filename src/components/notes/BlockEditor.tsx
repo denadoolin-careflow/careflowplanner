@@ -25,6 +25,7 @@ import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-detai
 import Suggestion from "@tiptap/suggestion";
 import { Extension } from "@tiptap/core";
 import { PluginKey } from "@tiptap/pm/state";
+import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import tippy, { Instance as TippyInstance } from "tippy.js";
 import { marked } from "marked";
 import TurndownService from "turndown";
@@ -231,7 +232,10 @@ function ToolbarButton({ active, onClick, label, children }: { active?: boolean;
   return (
     <button
       type="button"
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        try { onClick(); } catch (err) { console.warn("[editor] command failed", err); }
+      }}
       title={label}
       aria-label={label}
       className={cn(
@@ -386,6 +390,11 @@ export function BlockEditor({
       Details.configure({ persist: true, HTMLAttributes: { class: "cf-toggle" } }),
       DetailsSummary,
       DetailsContent,
+      GlobalDragHandle.configure({
+        dragHandleWidth: 20,
+        scrollTreshold: 50,
+        excludedTags: ["summary"],
+      }),
       slashExtension,
       refExtension,
     ],
