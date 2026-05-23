@@ -16,10 +16,11 @@ function isoIn(n: number) {
   return new Date(Date.now() + n * 86400_000).toISOString().slice(0, 10);
 }
 
-async function loadContext(supabase: any, userId: string) {
-  const sevenAgo = isoDaysAgo(7);
+async function loadContext(supabase: any, userId: string, period: "week" | "month" = "week") {
+  const lookback = period === "month" ? 30 : 7;
+  const sevenAgo = isoDaysAgo(lookback);
   const today = new Date().toISOString().slice(0, 10);
-  const inSeven = isoIn(7);
+  const inSeven = isoIn(period === "month" ? 30 : 7);
 
   const [completed, openTasks, projects, inbox] = await Promise.all([
     supabase.from("tasks")
@@ -77,9 +78,14 @@ Deno.serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const ctx = await loadContext(supabase, u.user.id);
+    let period: "week" | "month" = "week";
+    try {
+      const body = await req.json();
+      if (body?.period === "month") period = "month";
+    } catch {}
+    const ctx = await loadContext(supabase, u.user.id, period);
 
-    const userPrompt = `Produce this user's weekly review. Be warm and brief.
+    const userPrompt = `Produce this user's ${period === "month" ? "monthly" : "weekly"} review. Be warm and brief.
 Return JSON with keys:
   "summary": 2-3 sentence celebratory summary of the past week,
   "wins": up to 5 short bullet strings of notable completions,
