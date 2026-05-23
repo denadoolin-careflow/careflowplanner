@@ -409,6 +409,7 @@ export function BlockEditor({
   placeholder?: string;
 }) {
   const { state } = useStore();
+  const { addTask } = useStore();
   const navigate = useNavigate();
   const [prefs] = useEditorPrefs();
   const refsRef = useRef<RefItem[]>([]);
@@ -494,6 +495,7 @@ export function BlockEditor({
       RefLink.configure({ openOnClick: false, autolink: true, HTMLAttributes: { class: "text-primary underline-offset-2 hover:underline" } }),
       TaskList,
       TaskItem.configure({ nested: true }),
+      Underline,
       Typography,
       TextStyle,
       Color,
@@ -550,6 +552,25 @@ export function BlockEditor({
     if (href.startsWith("/")) { e.preventDefault(); navigate(href); }
   }, [navigate]);
 
+  // Promote the currently focused task-list item into a real Task
+  const promoteTaskItemToTask = useCallback(() => {
+    if (!editor) return;
+    const { $from } = editor.state.selection;
+    for (let d = $from.depth; d > 0; d--) {
+      const node = $from.node(d);
+      if (node.type.name === "taskItem") {
+        const title = (node.textContent || "").trim();
+        if (!title) { toast.message("Add some text first"); return; }
+        void addTask({ title });
+        // mark it visually as promoted
+        editor.chain().focus().updateAttributes("taskItem", { checked: false }).run();
+        toast.success("Added to Tasks", { description: title });
+        return;
+      }
+    }
+    toast.message("Place cursor on a checkbox first");
+  }, [editor, addTask]);
+
   return (
     <div
       onClick={handleClick}
@@ -576,6 +597,7 @@ export function BlockEditor({
         >
           <ToolbarButton active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} label="Bold"><Bold className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} label="Italic"><Italic className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()} label="Underline"><UnderlineIcon className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} label="Strike"><Strikethrough className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} label="Code"><Code className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-3.5 w-3.5" /></ToolbarButton>
@@ -595,6 +617,14 @@ export function BlockEditor({
             }}
             label="Link"
           ><LinkIcon className="h-3.5 w-3.5" /></ToolbarButton>
+          {editor.isActive("taskItem") && (
+            <>
+              <span className="mx-1 h-4 w-px bg-border" />
+              <ToolbarButton onClick={promoteTaskItemToTask} label="Add to Tasks">
+                <ListPlus className="h-3.5 w-3.5" />
+              </ToolbarButton>
+            </>
+          )}
         </BubbleMenu>
       )}
       <EditorContent editor={editor} />
