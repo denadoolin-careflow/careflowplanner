@@ -1456,6 +1456,51 @@ export type Database = {
         }
         Relationships: []
       }
+      home_rhythm_assignments: {
+        Row: {
+          created_at: string
+          date: string
+          done: boolean
+          id: string
+          notes: string | null
+          slot: string
+          sort_order: number
+          source_id: string | null
+          source_type: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          done?: boolean
+          id?: string
+          notes?: string | null
+          slot: string
+          sort_order?: number
+          source_id?: string | null
+          source_type: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          done?: boolean
+          id?: string
+          notes?: string | null
+          slot?: string
+          sort_order?: number
+          source_id?: string | null
+          source_type?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       household_members: {
         Row: {
           avatar_emoji: string | null
