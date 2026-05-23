@@ -162,6 +162,8 @@ export default function Journal() {
   const moonPhase = getMoonPhase(new Date());
   const moon = MOON_INFO[moonPhase];
   const [searchParams, setSearchParams] = useSearchParams();
+  const linkProjectId = searchParams.get("linkProject");
+  const linkProjectLabel = searchParams.get("label") ?? undefined;
 
   const switchTemplate = (k: TemplateKey) => {
     setTemplate(k);
@@ -220,6 +222,9 @@ export default function Journal() {
       prompts: activePrompts,
       gratitudeItems: template === "gratitude" ? gratitudeItems.filter(Boolean) : undefined,
       tags,
+      linkedIds: linkProjectId
+        ? [{ type: "project", id: linkProjectId, label: linkProjectLabel }]
+        : undefined,
     } as any);
     setBody(""); setTitle(""); setMood(""); setEnergy(""); setGratitudeItems(["", "", ""]); setTags([]);
     toast.success("Saved to your journal");
@@ -519,9 +524,26 @@ export default function Journal() {
 }
 
 function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string, p: Partial<JournalEntry>) => void; onDelete: (id: string) => void }) {
+  const { updateJournal } = useStore();
   const tpl = TEMPLATES.find(t => t.key === (e.template as TemplateKey)) ?? TEMPLATES[0];
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(e.title ?? "");
+  const [draftBody, setDraftBody] = useState(e.body ?? "");
   const preview = (e.body || "").replace(/[*_`#>\-]/g, "").replace(/\s+/g, " ").trim().slice(0, 120);
+
+  const startEdit = () => {
+    setDraftTitle(e.title ?? "");
+    setDraftBody(e.body ?? "");
+    setEditing(true);
+    setOpen(true);
+  };
+  const saveEdit = async () => {
+    await updateJournal(e.id, { title: draftTitle || undefined, body: draftBody });
+    setEditing(false);
+    toast.success("Entry updated");
+  };
+
   return (
     <li className="group rounded-xl border border-border/60 bg-card transition hover:shadow-sm">
       <button
@@ -550,10 +572,11 @@ function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string
           )}
         </div>
         <div
-          className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-80"
+          className="flex items-center gap-2 opacity-60 transition-opacity group-hover:opacity-100"
           onClick={(ev) => ev.stopPropagation()}
           role="presentation"
         >
+          <button onClick={startEdit} title="Edit" className="text-muted-foreground hover:text-foreground text-[11px] underline">Edit</button>
           <button onClick={() => onPin(e.id, { pinned: !e.pinned })} title={e.pinned ? "Unpin" : "Pin"}>
             {e.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
           </button>
@@ -562,14 +585,35 @@ function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string
       </button>
       {open && (
         <div className="space-y-2 border-t border-border/50 px-4 pb-4 pt-3">
-          <div className="text-sm leading-relaxed">
-            <NoteMarkdown body={e.body} />
-          </div>
+          {editing ? (
+            <div className="space-y-2">
+              <Input
+                value={draftTitle}
+                onChange={(ev) => setDraftTitle(ev.target.value)}
+                placeholder="Title (optional)"
+                className="h-9"
+              />
+              <div className="rounded-xl border border-border/60 bg-card/60 p-2 min-h-[160px]">
+                <BlockEditor body={draftBody} onChange={setDraftBody} placeholder="Edit your entry…" />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+                <Button size="sm" onClick={saveEdit}>Save changes</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm leading-relaxed">
+              <NoteMarkdown body={e.body} />
+            </div>
+          )}
           {e.tags && e.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {e.tags.map(t => <span key={t} className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px]">#{t}</span>)}
             </div>
           )}
+          <div className="pt-1">
+            <JournalProjectPicker entry={e} />
+          </div>
         </div>
       )}
     </li>
