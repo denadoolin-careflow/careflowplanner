@@ -21,6 +21,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Typography from "@tiptap/extension-typography";
 import Highlight from "@tiptap/extension-highlight";
+import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import Suggestion from "@tiptap/suggestion";
 import { Extension } from "@tiptap/core";
 import { PluginKey } from "@tiptap/pm/state";
@@ -30,6 +31,7 @@ import TurndownService from "turndown";
 import {
   Heading1, Heading2, Heading3, Bold, Italic, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
+  ChevronRight,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
@@ -83,6 +85,7 @@ const slashItems = (): SlashItem[] => [
   { title: "Code block", icon: Code, keywords: ["code"], command: (e) => e.chain().focus().toggleCodeBlock().run() },
   { title: "Divider", icon: Minus, keywords: ["hr", "rule"], command: (e) => e.chain().focus().setHorizontalRule().run() },
   { title: "Highlight", icon: HighlighterIcon, keywords: ["mark"], command: (e) => e.chain().focus().toggleHighlight().run() },
+  { title: "Toggle", icon: ChevronRight, keywords: ["toggle", "collapse", "details", "fold", "nest"], command: (e) => e.chain().focus().setDetails().run() },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -269,6 +272,11 @@ function Toolbar({ editor }: { editor: Editor }) {
       <ToolbarButton active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} label="To-do list"><CheckSquare className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} label="Divider"><Minus className="h-4 w-4" /></ToolbarButton>
+      <ToolbarButton
+        active={editor.isActive("details")}
+        onClick={() => editor.chain().focus().setDetails().run()}
+        label="Toggle (nest indented content)"
+      ><ChevronRight className="h-4 w-4" /></ToolbarButton>
     </div>
   );
 }
@@ -375,6 +383,9 @@ export function BlockEditor({
       TaskItem.configure({ nested: true }),
       Typography,
       Highlight.configure({ multicolor: false }),
+      Details.configure({ persist: true, HTMLAttributes: { class: "cf-toggle" } }),
+      DetailsSummary,
+      DetailsContent,
       slashExtension,
       refExtension,
     ],
