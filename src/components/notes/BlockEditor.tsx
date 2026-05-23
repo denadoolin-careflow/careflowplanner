@@ -591,6 +591,7 @@ export function BlockEditor({
           .setTextSelection({ from: start, to: end })
           .setLink({ href: "/anytime", class: "task-chip" } as any)
           .setTextSelection(end)
+          .unsetMark("link")
           .run();
         toast.success("Added to Tasks", { description: title });
         return;
