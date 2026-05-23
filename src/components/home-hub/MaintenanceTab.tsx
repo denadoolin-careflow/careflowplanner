@@ -11,6 +11,9 @@ import {
   BUCKET_LABEL, bucketOf, useHomeMaintenance, type MaintenanceBucket, type MaintenanceItem,
 } from "@/lib/home-maintenance";
 import { cn } from "@/lib/utils";
+import {
+  useAiSuggest, AiPanelShell, MaintenanceSuggestionList, type MaintenanceSuggestion,
+} from "@/components/home-hub/AiSuggestionsPanel";
 
 const INTERVAL_PRESETS: { label: string; value: number | "" }[] = [
   { label: "One-off", value: "" },
@@ -32,6 +35,8 @@ export function MaintenanceTab() {
   const { items, loading, add, update, remove, markDone } = useHomeMaintenance();
   const [form, setForm] = useState({ title: "", category: "", interval: "" as number | "", next_due: "" });
   const [filter, setFilter] = useState<string>("all");
+  const ai = useAiSuggest<{ suggestions: MaintenanceSuggestion[] }>();
+  const [aiOpen, setAiOpen] = useState(true);
 
   const categories = useMemo(() => {
     const s = new Set<string>();
@@ -73,6 +78,31 @@ export function MaintenanceTab() {
 
   return (
     <div className="space-y-5">
+      {aiOpen && (
+        <AiPanelShell
+          title="AI maintenance suggestions"
+          loading={ai.loading}
+          hasData={!!ai.data}
+          onRun={() => ai.run("maintenance", { existing: items.map((i) => i.title) })}
+          onClose={() => { ai.setData(null); setAiOpen(false); }}
+        >
+          {ai.data && (
+            <MaintenanceSuggestionList
+              items={ai.data.suggestions ?? []}
+              onAccept={async (s) => {
+                const err = await add({
+                  title: s.title,
+                  category: s.category || null,
+                  interval_months: s.interval_months > 0 ? s.interval_months : null,
+                });
+                if (err) toast.error(err.message);
+                else toast.success(`Added "${s.title}"`);
+              }}
+            />
+          )}
+        </AiPanelShell>
+      )}
+
       <SectionCard title="Add maintenance task" accent="warm">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
           <Input
