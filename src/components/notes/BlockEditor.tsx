@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { EditorContent, useEditor, ReactRenderer, Editor, BubbleMenu } from "@tiptap/react";
+import { EditorContent, useEditor, ReactRenderer, Editor } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
@@ -429,9 +430,8 @@ export function BlockEditor({
       style={{
         maxWidth: WIDTH_PX[prefs.width],
         marginInline: prefs.width === "full" ? undefined : "auto",
-        // @ts-expect-error CSS var
         ["--editor-font-scale" as any]: String(prefs.fontScale),
-      }}
+      } as React.CSSProperties}
     >
       {editor && <Toolbar editor={editor} />}
       {editor && (
