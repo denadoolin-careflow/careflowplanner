@@ -635,20 +635,23 @@
 .drag-handle {
   position: fixed;
   opacity: 0;
-  transition: opacity 160ms ease, background-color 160ms ease;
-  width: 14px;
-  height: 20px;
+  transition: opacity 160ms ease;
+  width: 12px;
+  height: 18px;
   z-index: 50;
   cursor: grab;
-  border-radius: 4px;
-  background-image: radial-gradient(hsl(var(--muted-foreground) / 0.55) 1px, transparent 1px);
+  border-radius: 3px;
+  background-color: transparent;
+  /* Two-column dot grid, vertically centered to match the line-height of the adjacent text */
+  background-image: radial-gradient(circle, hsl(var(--muted-foreground) / 0.45) 1px, transparent 1.25px);
   background-size: 4px 4px;
-  background-position: center;
-  background-repeat: repeat;
+  background-position: center center;
+  background-repeat: round;
+  /* Nudge the handle so its dots sit on the text baseline grid */
+  transform: translateY(0.35em);
 }
-.block-editor:hover .drag-handle,
-.drag-handle:hover { opacity: 0.55; }
-.drag-handle:hover { background-color: hsl(var(--muted) / 0.6); opacity: 0.9; }
+.block-editor:hover .drag-handle { opacity: 0.35; }
+.drag-handle:hover { opacity: 0.7; background-color: transparent; }
 .drag-handle:active { cursor: grabbing; }
 .drag-handle.hide { opacity: 0 !important; pointer-events: none; }
 
