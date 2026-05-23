@@ -27,6 +27,10 @@ const LISTS = [
 const STORAGE_KEY = "careflow:sidebar:open-groups";
 const COLLAPSED_KEY = "careflow:sidebar:collapsed";
 const GROUP_ORDER_KEY = "careflow:sidebar:group-order";
+const WIDTH_KEY = "careflow:sidebar:width";
+const MIN_WIDTH = 200;
+const MAX_WIDTH = 420;
+const DEFAULT_WIDTH = 256;
 
 function loadGroupOrder(): string[] {
   if (typeof window === "undefined") return NAV_GROUPS.map(g => g.id);
@@ -523,9 +527,59 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
 }
 
 export function Sidebar() {
+  const [width, setWidth] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_WIDTH;
+    const raw = window.localStorage.getItem(WIDTH_KEY);
+    const n = raw ? parseInt(raw, 10) : DEFAULT_WIDTH;
+    return Number.isFinite(n) ? Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, n)) : DEFAULT_WIDTH;
+  });
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(COLLAPSED_KEY) === "1";
+  });
+  useEffect(() => {
+    const onStorage = () => {
+      setCollapsed(window.localStorage.getItem(COLLAPSED_KEY) === "1");
+    };
+    window.addEventListener("storage", onStorage);
+    const id = window.setInterval(onStorage, 600);
+    return () => { window.removeEventListener("storage", onStorage); window.clearInterval(id); };
+  }, []);
+  const startDrag = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = width;
+    const move = (ev: MouseEvent) => {
+      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (ev.clientX - startX)));
+      setWidth(next);
+    };
+    const up = () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      try { window.localStorage.setItem(WIDTH_KEY, String(width)); } catch {}
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
+  useEffect(() => {
+    try { window.localStorage.setItem(WIDTH_KEY, String(width)); } catch {}
+  }, [width]);
   return (
-    <aside className="hidden lg:flex shrink-0 border-r border-sidebar-border">
-      <SidebarBody />
+    <aside
+      className="hidden lg:flex relative shrink-0 border-r border-sidebar-border"
+      style={collapsed ? undefined : { width }}
+    >
+      <SidebarBody width={collapsed ? undefined : width} />
+      {!collapsed && (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          onMouseDown={startDrag}
+          onDoubleClick={() => setWidth(DEFAULT_WIDTH)}
+          className="absolute right-0 top-0 z-10 h-full w-1.5 -translate-x-1/2 cursor-col-resize bg-transparent hover:bg-primary/30 transition-colors"
+        />
+      )}
     </aside>
   );
 }
