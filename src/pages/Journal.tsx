@@ -152,7 +152,7 @@ export default function Journal() {
   const [aiLoading, setAiLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | TemplateKey>("all");
   const [q, setQ] = useState("");
-  const [groupBy, setGroupBy] = useState<"none" | "template" | "month" | "mood" | "energy">("none");
+  const [groupBy, setGroupBy] = useState<GroupKey>("none");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "template" | "mood">("newest");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
