@@ -2,7 +2,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-type Mode = "maintenance" | "rhythm";
+type Mode = "maintenance" | "rhythm" | "zone_checklist";
 
 interface Body {
   mode: Mode;
@@ -11,6 +11,8 @@ interface Body {
     slotsSummary?: Record<string, string[]>;
     season?: string;
     notes?: string;
+    zone?: string;
+    energy?: "low" | "medium" | "deep";
   };
 }
 
@@ -63,13 +65,43 @@ const RHYTHM_TOOL = {
   },
 };
 
+const ZONE_CHECKLIST_TOOL = {
+  type: "function",
+  function: {
+    name: "suggest_zone_checklist",
+    description: "Build a calm, ordered cleaning checklist for a single home zone.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Short title for the checklist, e.g. 'Kitchen reset'" },
+        items: {
+          type: "array",
+          description: "6-12 ordered tasks, short and actionable",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              category: { type: "string", description: "e.g. Surfaces, Floors, Declutter, Deep" },
+              est_minutes: { type: "number" },
+            },
+            required: ["title", "est_minutes"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["name", "items"],
+      additionalProperties: false,
+    },
+  },
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
     const { mode, context = {} } = (await req.json()) as Body;
-    if (mode !== "maintenance" && mode !== "rhythm") {
+    if (mode !== "maintenance" && mode !== "rhythm" && mode !== "zone_checklist") {
       return new Response(JSON.stringify({ error: "Invalid mode" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -85,11 +117,16 @@ Deno.serve(async (req) => {
     if (mode === "maintenance") {
       tool = MAINTENANCE_TOOL;
       userPrompt = `Season: ${season}.\nAlready tracked: ${existing}.\nSuggest 4-6 maintenance tasks the household likely needs but hasn't tracked. Avoid duplicates of the tracked list. Mix seasonal + always-relevant. Use realistic recurrence intervals.`;
-    } else {
+    } else if (mode === "rhythm") {
       tool = RHYTHM_TOOL;
       const slots = context.slotsSummary ?? {};
       const slotsText = Object.entries(slots).map(([k, v]) => `${k}: ${(v ?? []).join(", ") || "(empty)"}`).join("\n");
       userPrompt = `Today's planned rhythm so far:\n${slotsText || "(empty)"}\n${context.notes ? `Notes: ${context.notes}\n` : ""}Fill in gentle additions for each time slot. Keep items short (2-6 words). Mix tiny resets, self-care, family, and home tasks. Don't repeat what's already planned.`;
+    } else {
+      tool = ZONE_CHECKLIST_TOOL;
+      const zone = context.zone ?? "Whole home";
+      const energy = context.energy ?? "medium";
+      userPrompt = `Build a ${energy}-energy cleaning checklist for the ${zone}.\nAlready tracked tasks (avoid duplicates): ${existing}.\nKeep items short, ordered top-to-bottom, and realistic to finish in one session. Include estimated minutes per task.`;
     }
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
