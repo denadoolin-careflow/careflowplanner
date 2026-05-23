@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { ProjectJournalPanel } from "@/components/journal/ProjectJournalPanel";
 import { listWhiteboardsForProject, createWhiteboard, type Whiteboard } from "@/lib/whiteboards";
-import { useEffect } from "react";
 import { PenLine } from "lucide-react";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
 import { applyFilters, groupTasks, sortTasks } from "@/lib/task-grouping";
