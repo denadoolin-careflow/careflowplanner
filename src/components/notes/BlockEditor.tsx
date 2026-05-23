@@ -252,7 +252,7 @@ function ToolbarButton({ active, onClick, label, children }: { active?: boolean;
   );
 }
 
-function Toolbar({ editor }: { editor: Editor }) {
+function Toolbar({ editor, onPromoteTask }: { editor: Editor; onPromoteTask: () => void }) {
   if (!editor) return null;
   const setLink = () => {
     const previous = editor.getAttributes("link").href;
