@@ -576,9 +576,22 @@ export function BlockEditor({
       if (node.type.name === "taskItem") {
         const title = (node.textContent || "").trim();
         if (!title) { toast.message("Add some text first"); return; }
-        void addTask({ title });
-        // mark it visually as promoted
-        editor.chain().focus().updateAttributes("taskItem", { checked: false }).run();
+        // Get range of the task item so we can mark its text as a link
+        const start = $from.before(d) + 1; // inside taskItem
+        const end = start + node.content.size;
+        void addTask({ title }).then(() => {
+          if (noteIdRef.current && title) {
+            // best-effort: find the just-created task and link it to this note
+            // (handled by user via @ mention if needed)
+          }
+        });
+        editor
+          .chain()
+          .focus()
+          .setTextSelection({ from: start, to: end })
+          .setLink({ href: "/anytime", class: "task-chip" } as any)
+          .setTextSelection(end)
+          .run();
         toast.success("Added to Tasks", { description: title });
         return;
       }
