@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useHomeRhythm, SLOTS, RhythmSlot, RhythmAssignment } from "@/lib/home-rhythm";
+import {
+  useAiSuggest, AiPanelShell, RhythmSuggestionList, type RhythmSuggestion,
+} from "@/components/home-hub/AiSuggestionsPanel";
 
 const SLOT_ICONS: Record<RhythmSlot, typeof Sun> = {
   morning: Sun,
@@ -17,6 +20,7 @@ const SLOT_ICONS: Record<RhythmSlot, typeof Sun> = {
 export function RhythmTab() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const { items, loading, add, update, remove, move } = useHomeRhythm(date);
+  const ai = useAiSuggest<RhythmSuggestion>();
 
   const grouped = useMemo(() => {
     const map: Record<RhythmSlot, RhythmAssignment[]> = { morning: [], afternoon: [], evening: [], night: [] };
@@ -41,6 +45,24 @@ export function RhythmTab() {
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
+
+      <AiPanelShell
+        title="AI rhythm suggestions"
+        loading={ai.loading}
+        hasData={!!ai.data}
+        onRun={() => ai.run("rhythm", {
+          slotsSummary: Object.fromEntries(SLOTS.map((s) => [s.id, grouped[s.id].map((i) => i.title)])),
+        })}
+        onClose={() => ai.setData(null)}
+        runLabel="Suggest a gentle rhythm"
+      >
+        {ai.data && (
+          <RhythmSuggestionList
+            data={ai.data}
+            onAccept={(slot, title) => add(slot, title)}
+          />
+        )}
+      </AiPanelShell>
 
       {loading ? (
         <div className="rounded-2xl border border-border/60 bg-card/50 p-8 text-center text-sm text-muted-foreground">Loading your rhythm…</div>
