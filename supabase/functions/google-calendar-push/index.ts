@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     if (!appointment_id) return json({ error: "appointment_id required" }, 400);
 
     const token = await getValidAccessToken(uid);
-    if (!token) return json({ error: "Google Calendar not connected" }, 412);
+    if (!token) return json({ ok: false, skipped: "not_connected" }, 200);
 
     const supa = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
