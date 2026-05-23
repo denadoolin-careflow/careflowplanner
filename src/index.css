@@ -616,88 +616,94 @@
 .block-editor.editor-theme-soft-journal { background: #efe7df; color: #3a2f24; border-radius: 14px; padding: 1.5rem; }
 .block-editor.editor-theme-soft-journal .ProseMirror blockquote { border-left-color: #c79766; color: #6e5640; }
 
-/* Drag handle hint on hover */
-.block-editor .ProseMirror > *::before {
-  content: "";
-  position: absolute;
-  left: -1.25rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 2px;
-  opacity: 0;
-  background-image: radial-gradient(hsl(var(--muted-foreground) / 0.55) 1px, transparent 1px);
-  background-size: 3px 3px;
-  transition: opacity 120ms ease;
-  pointer-events: none;
+/* Custom user-defined theme */
+.block-editor.editor-theme-custom {
+  background: var(--editor-custom-bg, #f4ede2);
+  color: var(--editor-custom-fg, #2a2218);
+  border-radius: 14px;
+  padding: 1.5rem;
 }
-.block-editor .ProseMirror > *:hover::before { opacity: 0.7; }
+.block-editor.editor-theme-custom .ProseMirror blockquote {
+  border-left-color: color-mix(in srgb, var(--editor-custom-fg, #2a2218) 50%, transparent);
+  color: color-mix(in srgb, var(--editor-custom-fg, #2a2218) 70%, transparent);
+}
+.block-editor.editor-theme-custom .ProseMirror code {
+  background: color-mix(in srgb, var(--editor-custom-fg, #2a2218) 12%, transparent);
+}
 
-/* ---------- Global drag handle (block reordering) ---------- */
+/* ---------- Global drag handle (block reordering) — subtle ---------- */
 .drag-handle {
   position: fixed;
-  opacity: 0.55;
-  transition: opacity 120ms ease;
-  width: 18px;
-  height: 22px;
+  opacity: 0;
+  transition: opacity 160ms ease, background-color 160ms ease;
+  width: 14px;
+  height: 20px;
   z-index: 50;
   cursor: grab;
   border-radius: 4px;
-  background-image: radial-gradient(hsl(var(--muted-foreground) / 0.6) 1.1px, transparent 1.1px);
+  background-image: radial-gradient(hsl(var(--muted-foreground) / 0.55) 1px, transparent 1px);
   background-size: 4px 4px;
   background-position: center;
   background-repeat: repeat;
 }
-.drag-handle:hover { background-color: hsl(var(--muted) / 0.6); }
+.block-editor:hover .drag-handle,
+.drag-handle:hover { opacity: 0.55; }
+.drag-handle:hover { background-color: hsl(var(--muted) / 0.6); opacity: 0.9; }
 .drag-handle:active { cursor: grabbing; }
-.drag-handle:hover { opacity: 1; }
 .drag-handle.hide { opacity: 0 !important; pointer-events: none; }
 
-/* ---------- Toggle / Details blocks ---------- */
+/* ---------- Toggle / Details blocks — minimal & seamless ---------- */
 .block-editor .ProseMirror .cf-toggle {
   display: grid;
-  grid-template-columns: 1.25rem 1fr;
-  gap: 0.25rem 0.5rem;
+  grid-template-columns: 1.1rem 1fr;
+  gap: 0.1rem 0.35rem;
   align-items: start;
-  margin: 0.35rem 0;
-  padding: 0.35rem 0.5rem 0.35rem 0;
-  border-radius: 8px;
+  margin: 0.15rem 0;
+  padding: 0;
+  border-radius: 6px;
 }
 .block-editor .ProseMirror .cf-toggle > button {
   appearance: none;
   background: transparent;
   border: 0;
   cursor: pointer;
-  width: 1.25rem;
-  height: 1.5rem;
+  width: 1.1rem;
+  height: 1.6rem;
   display: inline-grid;
   place-items: center;
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--muted-foreground) / 0.65);
   padding: 0;
-  margin-top: 2px;
+  margin: 0;
   border-radius: 4px;
-  transition: background 120ms ease, transform 160ms ease;
+  opacity: 0.55;
+  transition: opacity 160ms ease, background 120ms ease, color 120ms ease;
 }
-.block-editor .ProseMirror .cf-toggle > button:hover { background: hsl(var(--muted) / 0.6); }
+.block-editor .ProseMirror .cf-toggle:hover > button,
+.block-editor .ProseMirror .cf-toggle.is-open > button { opacity: 1; color: hsl(var(--muted-foreground)); }
+.block-editor .ProseMirror .cf-toggle > button:hover { background: hsl(var(--muted) / 0.5); }
 .block-editor .ProseMirror .cf-toggle > button::before {
-  content: "▶";
-  font-size: 9px;
-  line-height: 1;
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  margin-left: -2px;
   transition: transform 160ms ease;
 }
-.block-editor .ProseMirror .cf-toggle.is-open > button::before { transform: rotate(90deg); }
+.block-editor .ProseMirror .cf-toggle.is-open > button::before { transform: rotate(45deg); margin-top: -3px; }
 .block-editor .ProseMirror .cf-toggle > summary {
   list-style: none;
   font-weight: 600;
   cursor: text;
+  padding: 1px 0;
 }
 .block-editor .ProseMirror .cf-toggle > summary::-webkit-details-marker { display: none; }
 .block-editor .ProseMirror .cf-toggle > div[data-type="detailsContent"] {
   grid-column: 2;
-  padding-left: 0.25rem;
-  border-left: 2px solid hsl(var(--border));
-  margin-top: 0.25rem;
+  padding-left: 0.6rem;
+  margin-top: 0.1rem;
+  border-left: 1px solid hsl(var(--border) / 0.6);
 }
 .block-editor .ProseMirror .cf-toggle:not(.is-open) > div[data-type="detailsContent"] { display: none; }
 
