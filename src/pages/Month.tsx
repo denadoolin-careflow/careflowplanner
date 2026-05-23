@@ -8,7 +8,8 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Flower2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
@@ -131,6 +132,12 @@ export default function Month() {
             <DayPickerButton date={cursor} onChange={setCursor} label={format(cursor, "MMM yyyy")} />
             <Button variant="ghost" size="sm" className="h-8 px-3 text-xs" onClick={() => setCursor(new Date())}>Today</Button>
             <Button variant="ghost" size="icon" onClick={() => setCursor(addMonths(cursor, 1))} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
+            <Link
+              to="/reset/month"
+              className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
+            >
+              <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
+            </Link>
           </div>
         </div>
 
