@@ -29,7 +29,7 @@ import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
 import PomodoroPicker from "./pages/PomodoroPicker";
 import Health from "./pages/Health";
-import Wealth from "./pages/Wealth";
+import WealthHub from "./pages/WealthHub";
 import HomeAreas from "./pages/HomeAreas";
 import AreaPage from "./pages/AreaPage";
 import NotFound from "./pages/NotFound";
@@ -112,7 +112,7 @@ const App = () => (
                 <Route path="/home-reset" element={<HomeHub />} />
                 <Route path="/home" element={<HomeHub />} />
                 <Route path="/health" element={<Health />} />
-                <Route path="/wealth" element={<Wealth />} />
+                <Route path="/wealth" element={<WealthHub />} />
                 <Route path="/home-areas" element={<HomeAreas />} />
                 <Route path="/journal" element={<Journal />} />
                 <Route path="/journal-flow" element={<JournalFlow />} />
