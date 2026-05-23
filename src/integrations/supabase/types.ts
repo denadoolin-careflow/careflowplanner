@@ -169,6 +169,42 @@ export type Database = {
         }
         Relationships: []
       }
+      brain_dumps: {
+        Row: {
+          ai_category: string | null
+          ai_title: string | null
+          content: string
+          created_at: string
+          id: string
+          promoted_task_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_category?: string | null
+          ai_title?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          promoted_task_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_category?: string | null
+          ai_title?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          promoted_task_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       budget_categories: {
         Row: {
           color: string | null
@@ -1915,6 +1951,69 @@ export type Database = {
           provider?: string | null
           recipient_id?: string
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mental_load_checkins: {
+        Row: {
+          caregiving: number
+          created_at: string
+          date: string
+          emotional: number
+          energy: number
+          id: string
+          minimum_mode: boolean
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          caregiving?: number
+          created_at?: string
+          date?: string
+          emotional?: number
+          energy?: number
+          id?: string
+          minimum_mode?: boolean
+          note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          caregiving?: number
+          created_at?: string
+          date?: string
+          emotional?: number
+          energy?: number
+          id?: string
+          minimum_mode?: boolean
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      minimum_viable_day: {
+        Row: {
+          created_at: string
+          id: string
+          items: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: string[]
           updated_at?: string
           user_id?: string
         }
