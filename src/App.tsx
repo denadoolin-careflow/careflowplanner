@@ -43,6 +43,7 @@ import Logbook from "./pages/Logbook";
 import Notes from "./pages/Notes";
 import NoteDetail from "./pages/NoteDetail";
 import Review from "./pages/Review";
+import Reset from "./pages/Reset";
 import Routines from "./pages/Routines";
 import PlanTimeline from "./pages/PlanTimeline";
 import PlanDay from "./pages/PlanDay";
@@ -87,6 +88,8 @@ const App = () => (
                 <Route path="/notes" element={<Notes />} />
                 <Route path="/notes/:id" element={<NoteDetail />} />
                 <Route path="/review" element={<Review />} />
+                <Route path="/reset" element={<Reset />} />
+                <Route path="/reset/:period" element={<Reset />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/areas/:name" element={<AreaPage />} />
