@@ -147,6 +147,24 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     const open = openMap[key] !== false; // default open
     const hasActive = pathname === `/projects/${p.id}` || children.some(c => pathname === `/projects/${c.id}`);
     const ProjIcon = getAreaIcon(p.icon);
+    const PROJ_MIME = "application/x-careflow-proj-id";
+    const reorderProject = async (draggedId: string, targetId: string) => {
+      if (draggedId === targetId) return;
+      const dragged = allProjects.find(x => x.id === draggedId);
+      const target = allProjects.find(x => x.id === targetId);
+      if (!dragged || !target) return;
+      // gather siblings under same parent
+      const siblings = allProjects
+        .filter(x => (x.parentProjectId ?? null) === (target.parentProjectId ?? null))
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      const without = siblings.filter(x => x.id !== draggedId);
+      const insertIdx = without.findIndex(x => x.id === targetId);
+      if (insertIdx < 0) return;
+      without.splice(insertIdx, 0, dragged);
+      await Promise.all(without.map((x, i) =>
+        updateProject(x.id, { sortOrder: (i + 1) * 10, parentProjectId: target.parentProjectId ?? undefined } as any)
+      ));
+    };
     return (
       <div key={p.id}>
         <div
@@ -155,6 +173,26 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             hasActive && "text-foreground",
           )}
+          draggable
+          onDragStart={(e) => {
+            e.stopPropagation();
+            e.dataTransfer.setData(PROJ_MIME, p.id);
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onDragOver={(e) => {
+            if (e.dataTransfer.types.includes(PROJ_MIME)) {
+              e.preventDefault();
+              e.stopPropagation();
+              e.dataTransfer.dropEffect = "move";
+            }
+          }}
+          onDrop={(e) => {
+            const id = e.dataTransfer.getData(PROJ_MIME);
+            if (!id) return;
+            e.preventDefault();
+            e.stopPropagation();
+            void reorderProject(id, p.id);
+          }}
         >
           {children.length > 0 ? (
             <button type="button" onClick={() => toggle(key)} className="grid h-5 w-5 place-items-center">
