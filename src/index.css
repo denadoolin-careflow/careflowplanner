@@ -634,6 +634,27 @@
 }
 .block-editor .ProseMirror > *:hover::before { opacity: 0.7; }
 
+/* ---------- Global drag handle (block reordering) ---------- */
+.drag-handle {
+  position: fixed;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  width: 18px;
+  height: 22px;
+  z-index: 50;
+  cursor: grab;
+  border-radius: 4px;
+  background-image: radial-gradient(hsl(var(--muted-foreground) / 0.6) 1.1px, transparent 1.1px);
+  background-size: 4px 4px;
+  background-position: center;
+  background-repeat: repeat;
+}
+.drag-handle:hover { background-color: hsl(var(--muted) / 0.6); }
+.drag-handle:active { cursor: grabbing; }
+.block-editor .ProseMirror:hover ~ .drag-handle,
+.drag-handle:hover { opacity: 0.85; }
+.drag-handle.hide { opacity: 0 !important; pointer-events: none; }
+
 /* ---------- Toggle / Details blocks ---------- */
 .block-editor .ProseMirror .cf-toggle {
   display: grid;
