@@ -24,6 +24,8 @@ import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-pre
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { WeekRhythmRow } from "@/components/rhythm/WeekRhythmRow";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
+import { Link } from "react-router-dom";
+import { Flower2 } from "lucide-react";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
@@ -95,6 +97,13 @@ export default function Week() {
             </p>
             <div className="mt-3"><WeekNavigator weekStart={start} onChange={setStart} /></div>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/reset/week"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
+          >
+            <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
+          </Link>
           <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1">
             <Button
               size="sm"
@@ -112,6 +121,7 @@ export default function Week() {
             >
               <Sparkles className="mr-1 h-3.5 w-3.5" /> Plan
             </Button>
+          </div>
           </div>
         </div>
 
