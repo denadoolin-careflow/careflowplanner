@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Heart, Sparkles, RefreshCw, MoonStar, ExternalLink } from "lucide-react";
+import { Heart, Sparkles, RefreshCw, MoonStar, ExternalLink, AlertTriangle, Copy, Mail } from "lucide-react";
 
 // Detect known in-app browsers that block Google OAuth (Instagram/Facebook/
 // TikTok/LinkedIn webviews). These don't let users complete sign-in and just
@@ -34,10 +34,35 @@ export default function Auth() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [inApp] = useState<string | null>(() => detectInAppBrowser());
+  const [oauthError, setOauthError] = useState<string | null>(null);
+  const [resetEmail, setResetEmail] = useState("");
 
   useEffect(() => {
     if (user) navigate("/", { replace: true });
   }, [user, navigate]);
+
+  // Surface OAuth errors that Supabase returns via the URL hash/query
+  // (e.g. "?error=access_denied&error_description=..."). Without this the
+  // user just lands back on /auth with no explanation.
+  useEffect(() => {
+    try {
+      const hash = window.location.hash.startsWith("#")
+        ? new URLSearchParams(window.location.hash.slice(1))
+        : null;
+      const query = new URLSearchParams(window.location.search);
+      const err =
+        query.get("error_description") ||
+        query.get("error") ||
+        hash?.get("error_description") ||
+        hash?.get("error");
+      if (err) {
+        setOauthError(decodeURIComponent(err.replace(/\+/g, " ")));
+        // Clean the URL so the banner doesn't reappear on refresh.
+        const clean = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, "", clean);
+      }
+    } catch { /* noop */ }
+  }, []);
 
   if (loading) return null;
   if (user) return <Navigate to="/" replace />;
@@ -59,7 +84,31 @@ export default function Auth() {
     if (error) return toast.error(error.message);
     toast.success("Account created — setting up your planner…");
   };
+
+  const sendMagicLink = async () => {
+    const target = (resetEmail || email).trim();
+    if (!target) return toast.error("Enter your email above first.");
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email: target,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Check your email for a sign-in link.");
+  };
+
+  const copyCurrentUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied — paste it into Safari or Chrome.");
+    } catch {
+      toast.error("Couldn't copy. Long-press the address bar to copy the URL.");
+    }
+  };
+
   const signInGoogle = async () => {
+    setOauthError(null);
     if (inApp) {
       toast.error(
         `Google sign-in is blocked inside ${inApp}. Tap the menu (•••) and choose "Open in browser" — Safari or Chrome.`,
@@ -86,14 +135,15 @@ export default function Auth() {
           options: { redirectTo: window.location.origin },
         });
         if (error) {
-          toast.error(
-            error.message || "Google sign-in failed. Try again or use email.",
-            { duration: 8000 },
-          );
+          const msg = error.message || "Google sign-in failed.";
+          setOauthError(msg);
+          toast.error(msg, { duration: 8000 });
         }
       }
     } catch (e: any) {
-      toast.error(e?.message ?? "Google sign-in failed. Try again or use email.");
+      const msg = e?.message ?? "Google sign-in failed. Try again or use email.";
+      setOauthError(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
     }
@@ -131,6 +181,28 @@ export default function Auth() {
               </div>
               You're inside the <strong>{inApp}</strong> in-app browser. Google sign-in won't work here.
               Tap the menu (•••) and choose <em>Open in Safari/Chrome</em>, then sign in.
+            </div>
+          )}
+          {oauthError && (
+            <div className="mb-4 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+              <div className="mb-1 flex items-center gap-1.5 font-semibold">
+                <AlertTriangle className="h-3.5 w-3.5" /> Google sign-in didn't complete
+              </div>
+              <p className="mb-2 leading-relaxed text-destructive/90">{oauthError}</p>
+              <p className="mb-2 leading-relaxed text-destructive/80">
+                Try again, or use email + password below. On mobile this can also be caused by pop-up blockers or private browsing.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="h-8" onClick={signInGoogle} disabled={busy}>
+                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry Google
+                </Button>
+                <Button size="sm" variant="outline" className="h-8" onClick={copyCurrentUrl}>
+                  <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
+                </Button>
+                <Button size="sm" variant="outline" className="h-8" onClick={sendMagicLink} disabled={busy}>
+                  <Mail className="mr-1.5 h-3.5 w-3.5" /> Email me a link
+                </Button>
+              </div>
             </div>
           )}
           <Tabs defaultValue="signin">
