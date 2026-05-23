@@ -549,7 +549,7 @@ export function Sidebar() {
     e.preventDefault();
     const startX = e.clientX;
     const startW = width;
-    const move = (ev: MouseEvent) => {
+    const move = (ev: globalThis.MouseEvent) => {
       const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (ev.clientX - startX)));
       setWidth(next);
     };
@@ -569,7 +569,7 @@ export function Sidebar() {
       className="hidden lg:flex relative shrink-0 border-r border-sidebar-border"
       style={collapsed ? undefined : { width }}
     >
-      <SidebarBody width={collapsed ? undefined : width} />
+      <SidebarBody />
       {!collapsed && (
         <div
           role="separator"
