@@ -437,7 +437,6 @@ export function BlockEditor({
       {editor && (
         <BubbleMenu
           editor={editor}
-          tippyOptions={{ duration: 120, placement: "top" }}
           className="flex items-center gap-0.5 rounded-xl border border-border/60 bg-popover/95 px-1 py-1 shadow-lg backdrop-blur-md"
         >
           <ToolbarButton active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} label="Bold"><Bold className="h-3.5 w-3.5" /></ToolbarButton>
