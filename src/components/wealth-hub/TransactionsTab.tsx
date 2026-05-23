@@ -74,7 +74,14 @@ export function TransactionsTab({ uid }: { uid: string }) {
   async function quickAdd() {
     const parsed = parseQuick(quick, cats);
     if (!parsed) return toast.error('Try "rent 1800 housing" or "+ paycheck 2500"');
-    const { error } = await supabase.from("transactions").insert({ user_id: uid, ...parsed });
+    const { error } = await supabase.from("transactions").insert({
+      user_id: uid,
+      amount: parsed.amount as number,
+      date: parsed.date,
+      kind: parsed.kind,
+      category_id: parsed.category_id ?? null,
+      note: parsed.note ?? null,
+    });
     if (error) return toast.error(error.message);
     setQuick("");
     toast.success(`Added ${parsed.kind} ${fmtMoney(parsed.amount as number)}`);
