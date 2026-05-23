@@ -256,7 +256,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
               onTaskDropAt(id, iso, p.dropHour);
             }}
             className={cn(
-              "group/part relative flex min-h-[180px] flex-col rounded-2xl border bg-card/60 p-3 transition-all duration-150",
+              "group/part relative flex min-h-[180px] flex-col rounded-2xl border bg-card/60 p-2 md:p-3 transition-all duration-150",
               "border-border/60 hover:bg-card/80",
               anyDragging && "border-dashed border-primary/40 bg-primary/[0.03]",
               isOver && "scale-[1.01] border-solid border-primary bg-primary/10 shadow-glow ring-2 ring-primary/40",
@@ -272,8 +272,8 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                 </div>
               </div>
             )}
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="mb-2 flex items-center justify-between gap-1">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 md:gap-2">
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary">
                   <Icon className="h-3.5 w-3.5" />
                 </span>
@@ -304,7 +304,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                       <button
                         type="button"
                         onClick={() => beginEditLabel(partKey)}
-                        className="truncate rounded text-left text-sm font-semibold leading-tight hover:text-primary"
+                        className="truncate rounded text-left text-xs md:text-sm font-semibold leading-tight hover:text-primary"
                         title="Click to rename"
                       >
                         {customLabel}
@@ -320,20 +320,20 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                       </button>
                     </div>
                   )}
-                  <div className="text-[10px] text-muted-foreground">{p.hint}</div>
+                  <div className="hidden md:block text-[10px] text-muted-foreground">{p.hint}</div>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1">
                 {wx && (
                   <span
-                    className="flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                    className="hidden md:flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground"
                     title={`${wx.label} · ${formatTemp(wx.temp, unit)}`}
                   >
                     <WxIcon c={wx.condition} className="text-primary" />
                     <span className="font-medium tabular-nums">{formatTemp(wx.temp, unit)}</span>
                   </span>
                 )}
-                <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{items.length}</span>
+                <span className="hidden md:inline rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{items.length}</span>
                 <button
                   type="button"
                   onClick={() => { setComposerPart(p.key as any); setDraft(""); }}
