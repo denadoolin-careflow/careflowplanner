@@ -16,6 +16,8 @@ import "reactflow/dist/style.css";
 import { ArrowLeft, Plus, Save, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { getWhiteboard, updateWhiteboard, type Whiteboard } from "@/lib/whiteboards";
 
@@ -36,7 +38,10 @@ const nodeTypes = { sticky: StickyNode };
 
 function WhiteboardCanvas({ board }: { board: Whiteboard }) {
   const nav = useNavigate();
+  const { state } = useStore();
+  const projects = (state.projects ?? []).filter(p => p.status !== "done");
   const [title, setTitle] = useState(board.title);
+  const [projectId, setProjectId] = useState<string | null>(board.projectId);
   const [nodes, setNodes, onNodesChange] = useNodesState<any>(
     (board.data.nodes ?? []) as Node[],
   );
@@ -76,7 +81,7 @@ function WhiteboardCanvas({ board }: { board: Whiteboard }) {
     saveTimer.current = window.setTimeout(async () => {
       try {
         setSaving(true);
-        await updateWhiteboard(board.id, { title, data: { nodes, edges } });
+        await updateWhiteboard(board.id, { title, projectId, data: { nodes, edges } });
       } catch (e: any) {
         toast.error(e?.message ?? "Save failed");
       } finally {
@@ -84,7 +89,7 @@ function WhiteboardCanvas({ board }: { board: Whiteboard }) {
       }
     }, 700);
     return () => { if (saveTimer.current) window.clearTimeout(saveTimer.current); };
-  }, [board.id, title, nodes, edges]);
+  }, [board.id, title, projectId, nodes, edges]);
 
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
@@ -97,6 +102,20 @@ function WhiteboardCanvas({ board }: { board: Whiteboard }) {
           onChange={(e) => setTitle(e.target.value)}
           className="h-8 max-w-xs border-none bg-transparent text-sm font-semibold focus-visible:ring-1"
         />
+        <Select
+          value={projectId ?? "__none__"}
+          onValueChange={(v) => setProjectId(v === "__none__" ? null : v)}
+        >
+          <SelectTrigger className="h-8 w-44 text-xs">
+            <SelectValue placeholder="Link to project…" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">No project</SelectItem>
+            {projects.map(p => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[11px] text-muted-foreground">
             {saving ? "Saving…" : <span className="inline-flex items-center gap-1"><Save className="h-3 w-3" /> Saved</span>}
