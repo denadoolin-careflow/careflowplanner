@@ -65,7 +65,7 @@ const uid = () =>
   (crypto as any)?.randomUUID?.() ??
   Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-export const PAGE_KEYS = ["home", "today", "week", "home-hub"] as const;
+export const PAGE_KEYS = ["home", "today", "week", "home-hub", "wealth-hub"] as const;
 export type PageKey = (typeof PAGE_KEYS)[number];
 
 /* Presets: stored as separate dashboard_layouts rows with name `${page}::${preset}` */
@@ -127,6 +127,15 @@ export function defaultLayout(page: PageKey): DashboardLayoutData {
       { type: "holidays", w: 4, h: 5 },
       { type: "weather", w: 8, h: 5 },
       { type: "moon", w: 4, h: 5 },
+    ]);
+  }
+  if (page === "wealth-hub") {
+    return packLayout([
+      { type: "budget-summary", w: 4, h: 4 },
+      { type: "upcoming-bills", w: 4, h: 5 },
+      { type: "debt-progress", w: 4, h: 4 },
+      { type: "goals", w: 4, h: 5 },
+      { type: "note", w: 8, h: 5, props: { title: "Money notes", body: "" } } as any,
     ]);
   }
   if (page === "today") {
