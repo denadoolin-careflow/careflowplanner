@@ -247,7 +247,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     <TooltipProvider>
     <div className={cn(
       "flex h-full flex-col gap-2 bg-sidebar p-3 transition-[width] duration-200 ease-out",
-      collapsed ? "w-[68px] items-center" : "w-full lg:w-64",
+      collapsed ? "w-[68px] items-center" : "w-full",
     )}>
       <div className={cn("flex items-center gap-2 px-1 py-2 w-full", collapsed && "justify-center")}>
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-glow">
