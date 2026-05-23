@@ -19,6 +19,7 @@ const RefLink = Link.extend({
 
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+import Underline from "@tiptap/extension-underline";
 import Typography from "@tiptap/extension-typography";
 import Highlight from "@tiptap/extension-highlight";
 import { TextStyle } from "@tiptap/extension-text-style";
@@ -32,12 +33,13 @@ import tippy, { Instance as TippyInstance } from "tippy.js";
 import { marked } from "marked";
 import TurndownService from "turndown";
 import {
-  Heading1, Heading2, Heading3, Bold, Italic, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
+  Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
-  ChevronRight, Palette,
+  ChevronRight, Palette, ListPlus,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { linkNote, type EntityType } from "@/lib/note-links";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
@@ -250,7 +252,7 @@ function ToolbarButton({ active, onClick, label, children }: { active?: boolean;
   );
 }
 
-function Toolbar({ editor }: { editor: Editor }) {
+function Toolbar({ editor, onPromoteTask }: { editor: Editor; onPromoteTask: () => void }) {
   if (!editor) return null;
   const setLink = () => {
     const previous = editor.getAttributes("link").href;
@@ -268,6 +270,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       <span className="mx-1 h-5 w-px bg-border" />
       <ToolbarButton active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} label="Bold"><Bold className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} label="Italic"><Italic className="h-4 w-4" /></ToolbarButton>
+      <ToolbarButton active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()} label="Underline"><UnderlineIcon className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} label="Strikethrough"><Strikethrough className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} label="Code"><Code className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-4 w-4" /></ToolbarButton>
@@ -277,6 +280,9 @@ function Toolbar({ editor }: { editor: Editor }) {
       <ToolbarButton active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} label="Bullet list"><List className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} label="Numbered list"><ListOrdered className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} label="To-do list"><CheckSquare className="h-4 w-4" /></ToolbarButton>
+      {editor.isActive("taskItem") && (
+        <ToolbarButton onClick={onPromoteTask} label="Add this checkbox to Tasks"><ListPlus className="h-4 w-4" /></ToolbarButton>
+      )}
       <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} label="Divider"><Minus className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton
@@ -405,7 +411,7 @@ export function BlockEditor({
   noteId?: string;
   placeholder?: string;
 }) {
-  const { state } = useStore();
+  const { state, addTask } = useStore();
   const navigate = useNavigate();
   const [prefs] = useEditorPrefs();
   const refsRef = useRef<RefItem[]>([]);
@@ -491,6 +497,7 @@ export function BlockEditor({
       RefLink.configure({ openOnClick: false, autolink: true, HTMLAttributes: { class: "text-primary underline-offset-2 hover:underline" } }),
       TaskList,
       TaskItem.configure({ nested: true }),
+      Underline,
       Typography,
       TextStyle,
       Color,
@@ -547,6 +554,25 @@ export function BlockEditor({
     if (href.startsWith("/")) { e.preventDefault(); navigate(href); }
   }, [navigate]);
 
+  // Promote the currently focused task-list item into a real Task
+  const promoteTaskItemToTask = useCallback(() => {
+    if (!editor) return;
+    const { $from } = editor.state.selection;
+    for (let d = $from.depth; d > 0; d--) {
+      const node = $from.node(d);
+      if (node.type.name === "taskItem") {
+        const title = (node.textContent || "").trim();
+        if (!title) { toast.message("Add some text first"); return; }
+        void addTask({ title });
+        // mark it visually as promoted
+        editor.chain().focus().updateAttributes("taskItem", { checked: false }).run();
+        toast.success("Added to Tasks", { description: title });
+        return;
+      }
+    }
+    toast.message("Place cursor on a checkbox first");
+  }, [editor, addTask]);
+
   return (
     <div
       onClick={handleClick}
@@ -565,7 +591,7 @@ export function BlockEditor({
         } : {}),
       } as React.CSSProperties}
     >
-      {editor && <Toolbar editor={editor} />}
+      {editor && <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} />}
       {editor && (
         <BubbleMenu
           editor={editor}
@@ -573,6 +599,7 @@ export function BlockEditor({
         >
           <ToolbarButton active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} label="Bold"><Bold className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} label="Italic"><Italic className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()} label="Underline"><UnderlineIcon className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} label="Strike"><Strikethrough className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} label="Code"><Code className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-3.5 w-3.5" /></ToolbarButton>
@@ -592,6 +619,14 @@ export function BlockEditor({
             }}
             label="Link"
           ><LinkIcon className="h-3.5 w-3.5" /></ToolbarButton>
+          {editor.isActive("taskItem") && (
+            <>
+              <span className="mx-1 h-4 w-px bg-border" />
+              <ToolbarButton onClick={promoteTaskItemToTask} label="Add to Tasks">
+                <ListPlus className="h-3.5 w-3.5" />
+              </ToolbarButton>
+            </>
+          )}
         </BubbleMenu>
       )}
       <EditorContent editor={editor} />
