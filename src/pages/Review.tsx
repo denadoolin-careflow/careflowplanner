@@ -70,7 +70,7 @@ export default function Review() {
         period: tab,
         kind: "review",
         period_start,
-        content: review,
+        content: review as any,
         wins: review.wins ?? [],
       }).select().single();
       if (insErr) throw insErr;
