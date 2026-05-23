@@ -65,7 +65,7 @@ const uid = () =>
   (crypto as any)?.randomUUID?.() ??
   Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-export const PAGE_KEYS = ["home", "today", "week"] as const;
+export const PAGE_KEYS = ["home", "today", "week", "home-hub"] as const;
 export type PageKey = (typeof PAGE_KEYS)[number];
 
 /* Presets: stored as separate dashboard_layouts rows with name `${page}::${preset}` */
@@ -108,6 +108,26 @@ export function defaultLayout(page: PageKey): DashboardLayoutData {
       { type: "soft-moment", w: 4, h: 5 },
     ];
     return packLayout(items);
+  }
+  if (page === "home-hub") {
+    return packLayout([
+      { type: "top3", w: 4, h: 5 },
+      { type: "rhythm", w: 4, h: 5 },
+      { type: "weekly-reset", w: 4, h: 5 },
+      { type: "appointments-today", w: 4, h: 5 },
+      { type: "meals-today", w: 4, h: 5 },
+      { type: "home-reset", w: 4, h: 5 },
+      { type: "home-reset-checklist", w: 8, h: 6 },
+      { type: "chore-today", w: 4, h: 5 },
+      { type: "home-overdue", w: 4, h: 5 },
+      { type: "family-tasks", w: 4, h: 5 },
+      { type: "care-checkins", w: 4, h: 5 },
+      { type: "habits-today", w: 4, h: 5 },
+      { type: "birthdays", w: 4, h: 5 },
+      { type: "holidays", w: 4, h: 5 },
+      { type: "weather", w: 8, h: 5 },
+      { type: "moon", w: 4, h: 5 },
+    ]);
   }
   if (page === "today") {
     return packLayout([

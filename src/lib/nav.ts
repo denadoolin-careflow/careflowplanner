@@ -23,7 +23,7 @@ export const NAV = [
   { to: "/health", label: "Health", icon: HeartPulse },
   { to: "/wealth", label: "Wealth", icon: Wallet },
   { to: "/home-areas", label: "Home", icon: Home },
-  { to: "/home-reset", label: "Home Reset", icon: Sparkle },
+  { to: "/home-reset", label: "Home Hub", icon: Sparkle },
   { to: "/journal", label: "Journal", icon: BookHeart },
   { to: "/journal-flow", label: "Journal & Flow", icon: Wind },
   { to: "/ideas", label: "Ideas", icon: Lightbulb },
@@ -72,7 +72,7 @@ export const NAV_GROUPS = [
       { to: "/meals", label: "Meals", icon: UtensilsCrossed },
       { to: "/meals/library", label: "Meals Library", icon: BookOpen },
       { to: "/home-areas", label: "Home", icon: Home },
-      { to: "/home-reset", label: "Home Reset", icon: Sparkle },
+      { to: "/home-reset", label: "Home Hub", icon: Sparkle },
     ],
   },
   {
