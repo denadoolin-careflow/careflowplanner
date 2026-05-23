@@ -153,7 +153,7 @@ export function GoalsTab({ uid }: { uid: string }) {
   return (
     <div className="space-y-4">
       <SectionCard title="Savings goals" accent="calm"
-        right={
+        action={
           <Button size="sm" variant="outline" onClick={() => setCreating((v) => !v)}>
             <Plus className="mr-1 h-3.5 w-3.5" /> New goal
           </Button>
