@@ -22,6 +22,8 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
+import { JournalProjectPicker } from "@/components/journal/JournalProjectPicker";
+import { startOfWeek, endOfWeek, startOfYear, getYear } from "date-fns";
 
 type TemplateKey =
   | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
@@ -75,7 +77,10 @@ const ENERGIES: { value: string; label: string }[] = [
 const GROUP_LABEL = {
   none: "None",
   template: "Template",
+  day: "Day",
+  week: "Week",
   month: "Month",
+  year: "Year",
   mood: "Mood",
   energy: "Energy",
 } as const;
@@ -107,9 +112,23 @@ function groupEntries(items: JournalEntry[], group: GroupKey, sort: SortKey): { 
     if (group === "template") {
       const t = TEMPLATES.find(x => x.key === (e.template as TemplateKey));
       key = t?.key ?? "other"; label = t ? `${t.emoji} ${t.label}` : "Other";
+    } else if (group === "day") {
+      try { key = e.date; label = format(parseISO(e.date), "EEEE, MMM d, yyyy"); }
+      catch { key = "unknown"; label = "Unknown date"; }
+    } else if (group === "week") {
+      try {
+        const d = parseISO(e.date);
+        const ws = startOfWeek(d, { weekStartsOn: 1 });
+        const we = endOfWeek(d, { weekStartsOn: 1 });
+        key = format(ws, "yyyy-'W'II");
+        label = `Week of ${format(ws, "MMM d")} – ${format(we, "MMM d, yyyy")}`;
+      } catch { key = "unknown"; label = "Unknown week"; }
     } else if (group === "month") {
       try { key = format(parseISO(e.date), "yyyy-MM"); label = format(parseISO(e.date), "MMMM yyyy"); }
       catch { key = "unknown"; label = "Unknown date"; }
+    } else if (group === "year") {
+      try { key = String(getYear(parseISO(e.date))); label = key; }
+      catch { key = "unknown"; label = "Unknown year"; }
     } else if (group === "mood") {
       key = e.mood || "none"; label = e.mood || "No mood";
     } else if (group === "energy") {
@@ -133,7 +152,7 @@ export default function Journal() {
   const [aiLoading, setAiLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | TemplateKey>("all");
   const [q, setQ] = useState("");
-  const [groupBy, setGroupBy] = useState<"none" | "template" | "month" | "mood" | "energy">("none");
+  const [groupBy, setGroupBy] = useState<GroupKey>("none");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "template" | "mood">("newest");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
@@ -143,6 +162,8 @@ export default function Journal() {
   const moonPhase = getMoonPhase(new Date());
   const moon = MOON_INFO[moonPhase];
   const [searchParams, setSearchParams] = useSearchParams();
+  const linkProjectId = searchParams.get("linkProject");
+  const linkProjectLabel = searchParams.get("label") ?? undefined;
 
   const switchTemplate = (k: TemplateKey) => {
     setTemplate(k);
@@ -201,6 +222,9 @@ export default function Journal() {
       prompts: activePrompts,
       gratitudeItems: template === "gratitude" ? gratitudeItems.filter(Boolean) : undefined,
       tags,
+      linkedIds: linkProjectId
+        ? [{ type: "project", id: linkProjectId, label: linkProjectLabel }]
+        : undefined,
     } as any);
     setBody(""); setTitle(""); setMood(""); setEnergy(""); setGratitudeItems(["", "", ""]); setTags([]);
     toast.success("Saved to your journal");
@@ -246,6 +270,24 @@ export default function Journal() {
 
   return (
     <div className="space-y-6">
+      {linkProjectId && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm">
+          <span className="text-primary">
+            New entry will be linked to project
+            {linkProjectLabel ? <strong className="ml-1">{linkProjectLabel}</strong> : null}.
+          </span>
+          <button
+            onClick={() => {
+              const next = new URLSearchParams(searchParams);
+              next.delete("linkProject"); next.delete("label");
+              setSearchParams(next, { replace: true });
+            }}
+            className="text-xs text-primary/80 underline hover:text-primary"
+          >
+            Clear
+          </button>
+        </div>
+      )}
       <div className="cozy-card gradient-warm p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -500,9 +542,26 @@ export default function Journal() {
 }
 
 function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string, p: Partial<JournalEntry>) => void; onDelete: (id: string) => void }) {
+  const { updateJournal } = useStore();
   const tpl = TEMPLATES.find(t => t.key === (e.template as TemplateKey)) ?? TEMPLATES[0];
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(e.title ?? "");
+  const [draftBody, setDraftBody] = useState(e.body ?? "");
   const preview = (e.body || "").replace(/[*_`#>\-]/g, "").replace(/\s+/g, " ").trim().slice(0, 120);
+
+  const startEdit = () => {
+    setDraftTitle(e.title ?? "");
+    setDraftBody(e.body ?? "");
+    setEditing(true);
+    setOpen(true);
+  };
+  const saveEdit = async () => {
+    await updateJournal(e.id, { title: draftTitle || undefined, body: draftBody });
+    setEditing(false);
+    toast.success("Entry updated");
+  };
+
   return (
     <li className="group rounded-xl border border-border/60 bg-card transition hover:shadow-sm">
       <button
@@ -531,10 +590,11 @@ function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string
           )}
         </div>
         <div
-          className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-80"
+          className="flex items-center gap-2 opacity-60 transition-opacity group-hover:opacity-100"
           onClick={(ev) => ev.stopPropagation()}
           role="presentation"
         >
+          <button onClick={startEdit} title="Edit" className="text-muted-foreground hover:text-foreground text-[11px] underline">Edit</button>
           <button onClick={() => onPin(e.id, { pinned: !e.pinned })} title={e.pinned ? "Unpin" : "Pin"}>
             {e.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
           </button>
@@ -543,14 +603,35 @@ function EntryCard({ e, onPin, onDelete }: { e: JournalEntry; onPin: (id: string
       </button>
       {open && (
         <div className="space-y-2 border-t border-border/50 px-4 pb-4 pt-3">
-          <div className="text-sm leading-relaxed">
-            <NoteMarkdown body={e.body} />
-          </div>
+          {editing ? (
+            <div className="space-y-2">
+              <Input
+                value={draftTitle}
+                onChange={(ev) => setDraftTitle(ev.target.value)}
+                placeholder="Title (optional)"
+                className="h-9"
+              />
+              <div className="rounded-xl border border-border/60 bg-card/60 p-2 min-h-[160px]">
+                <BlockEditor body={draftBody} onChange={setDraftBody} placeholder="Edit your entry…" />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+                <Button size="sm" onClick={saveEdit}>Save changes</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm leading-relaxed">
+              <NoteMarkdown body={e.body} />
+            </div>
+          )}
           {e.tags && e.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {e.tags.map(t => <span key={t} className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px]">#{t}</span>)}
             </div>
           )}
+          <div className="pt-1">
+            <JournalProjectPicker entry={e} />
+          </div>
         </div>
       )}
     </li>

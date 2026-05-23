@@ -10,6 +10,7 @@ import { ArrowLeft, FolderOpen, Plus, Trash2, GripVertical, ChevronRight, Layout
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
+import { ProjectJournalPanel } from "@/components/journal/ProjectJournalPanel";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
 import { applyFilters, groupTasks, sortTasks } from "@/lib/task-grouping";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
@@ -236,6 +237,7 @@ export default function ProjectDetail() {
 
       {/* notes-as-gallery is rendered above; keep this for compact linked-notes management */}
       <LinkedNotesPanel entityType="project" entityId={project.id} contextTitle={project.name} compact />
+      <ProjectJournalPanel projectId={project.id} projectName={project.name} />
     </div>
   );
 }

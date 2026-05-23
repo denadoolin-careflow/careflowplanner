@@ -26,6 +26,21 @@ const LISTS = [
 
 const STORAGE_KEY = "careflow:sidebar:open-groups";
 const COLLAPSED_KEY = "careflow:sidebar:collapsed";
+const GROUP_ORDER_KEY = "careflow:sidebar:group-order";
+
+function loadGroupOrder(): string[] {
+  if (typeof window === "undefined") return NAV_GROUPS.map(g => g.id);
+  try {
+    const raw = window.localStorage.getItem(GROUP_ORDER_KEY);
+    if (!raw) return NAV_GROUPS.map(g => g.id);
+    const ids = JSON.parse(raw);
+    if (!Array.isArray(ids)) return NAV_GROUPS.map(g => g.id);
+    // merge with any newly-added groups
+    const merged = [...ids.filter((x: string) => NAV_GROUPS.some(g => g.id === x))];
+    for (const g of NAV_GROUPS) if (!merged.includes(g.id)) merged.push(g.id);
+    return merged;
+  } catch { return NAV_GROUPS.map(g => g.id); }
+}
 
 function loadOpen(): Record<string, boolean> {
   if (typeof window === "undefined") return {};
@@ -96,6 +111,13 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const { pathname, openMap, toggle, setOpenMap, collapsed, setCollapsed, areas, projects, updateArea } = useSidebarData(forceExpanded);
   const { updateProject, addProject } = useStore();
   const { openPanel } = useWorkspaceLayout();
+  const [groupOrder, setGroupOrder] = useState<string[]>(() => loadGroupOrder());
+  useEffect(() => {
+    try { window.localStorage.setItem(GROUP_ORDER_KEY, JSON.stringify(groupOrder)); } catch {}
+  }, [groupOrder]);
+  const orderedGroups = groupOrder
+    .map(id => NAV_GROUPS.find(g => g.id === id))
+    .filter(Boolean) as typeof NAV_GROUPS[number][];
 
   const handleNavClick = (to: string) => (e: MouseEvent<HTMLAnchorElement>) => {
     const panelId = PANEL_BY_ROUTE[to];
@@ -399,7 +421,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           </div>
         )}
 
-        {NAV_GROUPS.map((group) => {
+        {orderedGroups.map((group, idx) => {
           const open = !!openMap[group.id];
           const GroupIcon = group.icon;
           const hasActive = group.items.some((it) => it.to === pathname);
@@ -425,7 +447,28 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             );
           }
           return (
-            <div key={group.id} className="mb-1">
+            <div
+              key={group.id}
+              className="mb-1"
+              draggable={!forceExpanded}
+              onDragStart={(e) => {
+                e.dataTransfer.setData("text/plain", group.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const fromId = e.dataTransfer.getData("text/plain");
+                if (!fromId || fromId === group.id) return;
+                setGroupOrder(prev => {
+                  const next = prev.filter(x => x !== fromId);
+                  const insertAt = next.indexOf(group.id);
+                  if (insertAt < 0) return prev;
+                  next.splice(insertAt, 0, fromId);
+                  return next;
+                });
+              }}
+            >
               <button
                 type="button"
                 onClick={() => toggle(group.id)}
