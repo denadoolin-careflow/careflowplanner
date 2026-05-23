@@ -585,6 +585,7 @@ export function BlockEditor({
     }
     toast.message("Place cursor on a checkbox first");
   }, [editor, addTask]);
+  promoteRef.current = promoteTaskItemToTask;
 
   return (
     <div
