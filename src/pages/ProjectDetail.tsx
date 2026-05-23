@@ -11,6 +11,9 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { ProjectJournalPanel } from "@/components/journal/ProjectJournalPanel";
+import { listWhiteboardsForProject, createWhiteboard, type Whiteboard } from "@/lib/whiteboards";
+import { useEffect } from "react";
+import { PenLine } from "lucide-react";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
 import { applyFilters, groupTasks, sortTasks } from "@/lib/task-grouping";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
@@ -238,6 +241,47 @@ export default function ProjectDetail() {
       {/* notes-as-gallery is rendered above; keep this for compact linked-notes management */}
       <LinkedNotesPanel entityType="project" entityId={project.id} contextTitle={project.name} compact />
       <ProjectJournalPanel projectId={project.id} projectName={project.name} />
+      <WhiteboardsPanel projectId={project.id} projectName={project.name} />
+    </div>
+  );
+}
+
+/* ---------------- Linked whiteboards ---------------- */
+function WhiteboardsPanel({ projectId, projectName }: { projectId: string; projectName: string }) {
+  const navigate = useNavigate();
+  const [boards, setBoards] = useState<Whiteboard[] | null>(null);
+  const refresh = () => listWhiteboardsForProject(projectId).then(setBoards).catch(() => setBoards([]));
+  useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [projectId]);
+  const create = async () => {
+    const b = await createWhiteboard({ title: `${projectName} board`, projectId });
+    navigate(`/whiteboards/${b.id}`);
+  };
+  return (
+    <div className="rounded-2xl border border-border/60 bg-card/60 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <PenLine className="h-3.5 w-3.5 text-primary" /> Whiteboards
+        </div>
+        <Button size="sm" variant="ghost" onClick={create} className="h-7 gap-1 text-xs">
+          <Plus className="h-3 w-3" /> New board
+        </Button>
+      </div>
+      {boards == null ? (
+        <div className="text-xs text-muted-foreground">Loading…</div>
+      ) : boards.length === 0 ? (
+        <div className="text-xs text-muted-foreground">No boards linked to this project yet.</div>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {boards.map(b => (
+            <Link key={b.id} to={`/whiteboards/${b.id}`} className="rounded-xl border border-border/60 bg-background/60 p-3 transition hover:border-primary/40">
+              <div className="truncate text-sm font-medium">{b.title}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {b.data.nodes.length} note{b.data.nodes.length === 1 ? "" : "s"} · {b.data.edges.length} link{b.data.edges.length === 1 ? "" : "s"}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
