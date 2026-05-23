@@ -270,6 +270,24 @@ export default function Journal() {
 
   return (
     <div className="space-y-6">
+      {linkProjectId && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm">
+          <span className="text-primary">
+            New entry will be linked to project
+            {linkProjectLabel ? <strong className="ml-1">{linkProjectLabel}</strong> : null}.
+          </span>
+          <button
+            onClick={() => {
+              const next = new URLSearchParams(searchParams);
+              next.delete("linkProject"); next.delete("label");
+              setSearchParams(next, { replace: true });
+            }}
+            className="text-xs text-primary/80 underline hover:text-primary"
+          >
+            Clear
+          </button>
+        </div>
+      )}
       <div className="cozy-card gradient-warm p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
