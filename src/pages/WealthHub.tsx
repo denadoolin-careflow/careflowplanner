@@ -9,14 +9,15 @@ import { GoalsTab } from "@/components/wealth-hub/GoalsTab";
 import { DebtsTab } from "@/components/wealth-hub/DebtsTab";
 import { CalendarTab } from "@/components/wealth-hub/CalendarTab";
 import { AnalyticsTab } from "@/components/wealth-hub/AnalyticsTab";
+import { PayeeTab } from "@/components/wealth-hub/PayeeTab";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Receipt, CalendarClock, Repeat, Sprout, TrendingDown,
-  CalendarDays, BarChart3, Eye, EyeOff,
+  CalendarDays, BarChart3, Eye, EyeOff, ShieldCheck,
 } from "lucide-react";
 
-type TabId = "dashboard" | "transactions" | "bills" | "recurring" | "goals" | "debts" | "calendar" | "analytics";
+type TabId = "dashboard" | "transactions" | "bills" | "recurring" | "goals" | "debts" | "payee" | "calendar" | "analytics";
 
 const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon?: boolean }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -25,6 +26,7 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon
   { id: "recurring", label: "Recurring", icon: Repeat },
   { id: "goals", label: "Goals", icon: Sprout },
   { id: "debts", label: "Debts", icon: TrendingDown },
+  { id: "payee", label: "Payee", icon: ShieldCheck },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
 ];
@@ -113,6 +115,7 @@ export default function WealthHub() {
           {tab === "recurring" && <RecurringTab uid={uid} />}
           {tab === "goals" && <GoalsTab uid={uid} />}
           {tab === "debts" && <DebtsTab uid={uid} />}
+          {tab === "payee" && <PayeeTab uid={uid} />}
           {tab === "calendar" && <CalendarTab uid={uid} />}
           {tab === "analytics" && <AnalyticsTab uid={uid} />}
         </>
