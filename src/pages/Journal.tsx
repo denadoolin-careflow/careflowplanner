@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format, parseISO, subDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
-import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter, Layers, ArrowUpDown } from "lucide-react";
+import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter, Layers, ArrowUpDown, LayoutList, GanttChart } from "lucide-react";
 import { ChevronDown, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { JournalEntry } from "@/lib/types";
@@ -156,6 +156,14 @@ export default function Journal() {
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "template" | "mood">("newest");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [entriesView, setEntriesView] = useState<"cards" | "timeline">(() => {
+    if (typeof window === "undefined") return "timeline";
+    return (localStorage.getItem("journal.entriesView") as "cards" | "timeline") ?? "timeline";
+  });
+  const switchEntriesView = (v: "cards" | "timeline") => {
+    setEntriesView(v);
+    try { localStorage.setItem("journal.entriesView", v); } catch {}
+  };
 
   const tpl = TEMPLATES.find(t => t.key === template) ?? TEMPLATES[0];
   const todaysMoonTpl = useMemo(() => templateForToday(), []);
