@@ -97,28 +97,28 @@ const TYPE_TO_ENTITY: Record<string, EntityType> = {
 
 function buildReferences(state: ReturnType<typeof useStore>["state"]): RefItem[] {
   const items: RefItem[] = [];
-  state.tasks.slice(0, 200).forEach(t => items.push({
+  (state.tasks ?? []).slice(0, 200).forEach(t => items.push({
     id: t.id, label: t.title, type: "Task", icon: CheckCircle2, href: "/anytime", insertText: t.title,
   }));
-  state.projects.forEach(p => items.push({
+  (state.projects ?? []).forEach(p => items.push({
     id: p.id, label: p.name, type: "Project", href: `/projects/${p.id}`, icon: Folder, insertText: p.name,
   }));
-  state.goals.forEach(g => items.push({
+  (state.goals ?? []).forEach(g => items.push({
     id: g.id, label: g.title, type: "Goal", href: "/goals", icon: Target, insertText: g.title,
   }));
-  state.habits.forEach(h => items.push({
+  (state.habits ?? []).forEach(h => items.push({
     id: h.id, label: h.title, type: "Habit", href: "/habits", icon: Sparkles, insertText: h.title,
   }));
-  state.recipients.forEach(p => items.push({
+  (state.recipients ?? []).forEach(p => items.push({
     id: p.id, label: p.name, type: "Person", href: "/caregiving", icon: Users, insertText: p.name,
   }));
-  state.appointments.slice(0, 50).forEach(a => items.push({
+  (state.appointments ?? []).slice(0, 50).forEach(a => items.push({
     id: a.id, label: a.title, type: "Appointment", href: "/calendar", icon: CalendarDays, insertText: a.title,
   }));
-  state.meals.slice(0, 80).forEach(m => items.push({
+  (state.meals ?? []).slice(0, 80).forEach(m => items.push({
     id: m.id, label: m.name, type: "Meal", href: "/meals", icon: Utensils, insertText: m.name,
   }));
-  state.journal.slice(0, 80).forEach(j => items.push({
+  (state.journal ?? []).slice(0, 80).forEach(j => items.push({
     id: j.id, label: j.title || j.body.slice(0, 40), type: "Journal", href: "/journal", icon: BookOpen, insertText: j.title || j.date,
   }));
   return items;
