@@ -272,6 +272,11 @@ function Toolbar({ editor }: { editor: Editor }) {
       <ToolbarButton active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} label="To-do list"><CheckSquare className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} label="Divider"><Minus className="h-4 w-4" /></ToolbarButton>
+      <ToolbarButton
+        active={editor.isActive("details")}
+        onClick={() => editor.chain().focus().setDetails().run()}
+        label="Toggle (nest indented content)"
+      ><ChevronRight className="h-4 w-4" /></ToolbarButton>
     </div>
   );
 }
