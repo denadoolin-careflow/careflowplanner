@@ -66,13 +66,14 @@ export function PayeeTab({ uid }: { uid: string }) {
   const [creatingBen, setCreatingBen] = useState(false);
   const [editingBen, setEditingBen] = useState(false);
   const [benDraft, setBenDraft] = useState<Partial<Beneficiary> & { claim_full?: string }>({});
-  const [view, setView] = useState<"overview" | "income" | "expenses" | "conserved" | "report">("overview");
+  const [view, setView] = useState<"overview" | "income" | "expenses" | "conserved" | "monthly" | "report">("overview");
 
   const [income, setIncome] = useState<Income[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [conserved, setConserved] = useState<Conserved[]>([]);
 
   const [reportYear, setReportYear] = useState(new Date().getFullYear());
+  const [reportMonth, setReportMonth] = useState(todayISO().slice(0, 7));
 
   async function loadBens() {
     const { data } = await supabase.from("payee_beneficiaries").select("*")
@@ -246,6 +247,67 @@ export function PayeeTab({ uid }: { uid: string }) {
     URL.revokeObjectURL(url);
   }
 
+  // ===== Monthly report =====
+  const monthlyData = useMemo(() => {
+    const inMonth = (d: string) => d.startsWith(`${reportMonth}-`);
+    const inc = income.filter((r) => inMonth(r.date));
+    const exp = expenses.filter((r) => inMonth(r.date));
+    const con = conserved.filter((r) => inMonth(r.date));
+    const incomeBySource = INCOME_SOURCES.reduce<Record<string, number>>((acc, s) => {
+      acc[s] = inc.filter((r) => r.source === s).reduce((sum, r) => sum + Number(r.amount), 0);
+      return acc;
+    }, {});
+    const expensesByCat = CATEGORIES.reduce<Record<string, number>>((acc, c) => {
+      acc[c.value] = exp.filter((r) => r.category === c.value).reduce((sum, r) => sum + Number(r.amount), 0);
+      return acc;
+    }, {});
+    const totalIncome = inc.reduce((s, r) => s + Number(r.amount), 0);
+    const totalExpenses = exp.reduce((s, r) => s + Number(r.amount), 0);
+    const savedDelta = con.reduce((s, r) => s + Number(r.amount), 0);
+    return { inc, exp, con, incomeBySource, expensesByCat, totalIncome, totalExpenses, savedDelta };
+  }, [income, expenses, conserved, reportMonth]);
+
+  const monthLabel = useMemo(() => {
+    const [y, m] = reportMonth.split("-").map(Number);
+    return new Date(y, (m || 1) - 1, 1).toLocaleString(undefined, { month: "long", year: "numeric" });
+  }, [reportMonth]);
+
+  function exportMonthlyCSV() {
+    if (!active) return;
+    const esc = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
+    const rows: string[] = [
+      `Representative Payee Monthly Report — ${monthLabel}`,
+      `Beneficiary,${esc(active.display_name)}`,
+      `Relationship,${esc(active.relationship ?? "")}`,
+      `Benefit type,${active.benefit_type}`,
+      `Claim # (last 4),${active.claim_number_last4 ?? ""}`,
+      "",
+      "INCOME RECEIVED",
+      ...INCOME_SOURCES.map((s) => `${s},${monthlyData.incomeBySource[s].toFixed(2)}`),
+      `Total income,${monthlyData.totalIncome.toFixed(2)}`,
+      "",
+      "EXPENSES BY CATEGORY",
+      ...CATEGORIES.map((c) => `${c.label},${monthlyData.expensesByCat[c.value].toFixed(2)}`),
+      `Total expenses,${monthlyData.totalExpenses.toFixed(2)}`,
+      "",
+      `Net to / from conserved funds,${monthlyData.savedDelta.toFixed(2)}`,
+      `Current conserved balance,${conservedBalance.toFixed(2)}`,
+      "",
+      "TRANSACTIONS",
+      "Date,Type,Category/Source,Detail,Amount",
+      ...monthlyData.inc.map((r) => `${r.date},Income,${r.source},${esc(r.note ?? "")},${Number(r.amount).toFixed(2)}`),
+      ...monthlyData.exp.map((r) => `${r.date},Expense,${catLabel(r.category)},${esc([r.subcategory, r.note].filter(Boolean).join(" — "))},${(-Number(r.amount)).toFixed(2)}`),
+      ...monthlyData.con.map((r) => `${r.date},Conserved,${esc(r.account_label ?? "")},${esc(r.note ?? "")},${Number(r.amount).toFixed(2)}`),
+    ];
+    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `payee-monthly-${active.display_name.replace(/\s+/g, "_")}-${reportMonth}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // ===== Empty state =====
   if (bens.length === 0 && !creatingBen) {
     return (
@@ -374,7 +436,7 @@ export function PayeeTab({ uid }: { uid: string }) {
             <div className="mt-3 flex flex-wrap gap-1.5">
               {([
                 ["overview", "Overview"], ["income", "Income"], ["expenses", "Expenses"],
-                ["conserved", "Conserved"], ["report", "Annual report"],
+                ["conserved", "Conserved"], ["monthly", "Monthly report"], ["report", "Annual report"],
               ] as const).map(([k, l]) => (
                 <button key={k} onClick={() => setView(k)}
                   className={cn(
