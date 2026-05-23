@@ -3,6 +3,7 @@ import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
 import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
 import { ElementBadge } from "@/components/rhythm/ElementBadge";
 import { MaintenanceTab } from "@/components/home-hub/MaintenanceTab";
+import { RhythmTab } from "@/components/home-hub/RhythmTab";
 import HomeReset from "@/pages/HomeReset";
 import { cn } from "@/lib/utils";
 import {
@@ -14,7 +15,7 @@ type TabId = "dashboard" | "rhythm" | "reset" | "zones" | "maintenance" | "analy
 
 const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon?: boolean }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "rhythm", label: "Rhythm", icon: Sparkles, comingSoon: true },
+  { id: "rhythm", label: "Rhythm", icon: Sparkles },
   { id: "reset", label: "Reset", icon: ListChecks },
   { id: "zones", label: "Zones", icon: Sprout, comingSoon: true },
   { id: "maintenance", label: "Maintenance", icon: Wrench },
@@ -83,12 +84,7 @@ export default function HomeHub() {
 
       {tab === "dashboard" && <CustomizableGrid pageKey="home-hub" />}
 
-      {tab === "rhythm" && (
-        <ComingSoon
-          title="Daily Home Rhythm — coming next"
-          blurb="A gentle Morning · Afternoon · Evening · Night Reset planner. Drag routines, chores, meals, and caregiving tasks into the slot that fits your day."
-        />
-      )}
+      {tab === "rhythm" && <RhythmTab />}
 
       {tab === "reset" && <HomeReset />}
 
