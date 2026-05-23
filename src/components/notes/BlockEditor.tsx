@@ -408,8 +408,7 @@ export function BlockEditor({
   noteId?: string;
   placeholder?: string;
 }) {
-  const { state } = useStore();
-  const { addTask } = useStore();
+  const { state, addTask } = useStore();
   const navigate = useNavigate();
   const [prefs] = useEditorPrefs();
   const refsRef = useRef<RefItem[]>([]);
@@ -589,7 +588,7 @@ export function BlockEditor({
         } : {}),
       } as React.CSSProperties}
     >
-      {editor && <Toolbar editor={editor} />}
+      {editor && <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} />}
       {editor && (
         <BubbleMenu
           editor={editor}
