@@ -1,21 +1,36 @@
-import { useMemo } from "react";
 import { Navigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import Dashboard from "@/pages/Dashboard";
 
 /**
- * Renders at "/" — if the user has chosen a different default landing
- * page, redirect them there once per session. Otherwise render the
- * Dashboard normally. Only redirects on the very first hit so a manual
- * navigation to "/" still works.
+ * Renders at "/" and honours the user's chosen default landing page.
+ *
+ * To eliminate the dashboard ↔ today flash on cold boot, we read the
+ * cached defaultRoute synchronously from localStorage BEFORE the store
+ * has finished loading. This way we know where to send the user on the
+ * very first paint instead of mounting Dashboard, then redirecting once
+ * settings arrive from the server.
  */
+function readCachedDefaultRoute(): string {
+  if (typeof window === "undefined") return "/";
+  try {
+    const v = window.localStorage.getItem("careflow.defaultRoute");
+    return v && v !== "/" ? v : "/";
+  } catch {
+    return "/";
+  }
+}
+
 export function IndexRedirect() {
   const { state, loading } = useStore();
-  const target = state.settings.defaultRoute ?? "/";
+  const cached = readCachedDefaultRoute();
+  const live = state.settings.defaultRoute ?? "/";
+  // Prefer live value once loaded, otherwise the synchronously-cached one.
+  const target = !loading ? live : cached;
 
-  // The <html> element paints the gradient before React mounts, so we
-  // can return null while loading without showing a blank flash.
-  if (loading) return null;
   if (target && target !== "/") return <Navigate to={target} replace />;
+  // While the store is still loading and there is no cached redirect,
+  // render nothing rather than flashing Dashboard.
+  if (loading) return null;
   return <Dashboard />;
 }
