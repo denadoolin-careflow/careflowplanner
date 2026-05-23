@@ -53,6 +53,28 @@ export function EditorPrefsMenu() {
               </button>
             ))}
           </div>
+          {prefs.theme === "custom" && (
+            <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-border/60 bg-muted/30 p-2">
+              <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <input
+                  type="color"
+                  value={prefs.customBg}
+                  onChange={(e) => set({ customBg: e.target.value })}
+                  className="h-7 w-9 cursor-pointer rounded border border-border/60 bg-transparent p-0"
+                />
+                Background
+              </label>
+              <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <input
+                  type="color"
+                  value={prefs.customFg}
+                  onChange={(e) => set({ customFg: e.target.value })}
+                  className="h-7 w-9 cursor-pointer rounded border border-border/60 bg-transparent p-0"
+                />
+                Text
+              </label>
+            </div>
+          )}
         </div>
         <div>
           <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Width</div>

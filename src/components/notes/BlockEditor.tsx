@@ -21,6 +21,8 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Typography from "@tiptap/extension-typography";
 import Highlight from "@tiptap/extension-highlight";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import Suggestion from "@tiptap/suggestion";
 import { Extension } from "@tiptap/core";
@@ -32,7 +34,7 @@ import TurndownService from "turndown";
 import {
   Heading1, Heading2, Heading3, Bold, Italic, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
-  ChevronRight,
+  ChevronRight, Palette,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
@@ -269,6 +271,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       <ToolbarButton active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} label="Strikethrough"><Strikethrough className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} label="Code"><Code className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-4 w-4" /></ToolbarButton>
+      <ColorPickerPopover editor={editor} />
       <ToolbarButton active={editor.isActive("link")} onClick={setLink} label="Link"><LinkIcon className="h-4 w-4" /></ToolbarButton>
       <span className="mx-1 h-5 w-px bg-border" />
       <ToolbarButton active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} label="Bullet list"><List className="h-4 w-4" /></ToolbarButton>
@@ -281,6 +284,109 @@ function Toolbar({ editor }: { editor: Editor }) {
         onClick={() => editor.chain().focus().setDetails().run()}
         label="Toggle (nest indented content)"
       ><ChevronRight className="h-4 w-4" /></ToolbarButton>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Color / Highlight picker                                          */
+/* ------------------------------------------------------------------ */
+const TEXT_COLORS = [
+  { label: "Default", value: null },
+  { label: "Gray", value: "#8a8a8a" },
+  { label: "Brown", value: "#9a6a3a" },
+  { label: "Orange", value: "#e07a3c" },
+  { label: "Yellow", value: "#d4a017" },
+  { label: "Green", value: "#3f8a52" },
+  { label: "Teal", value: "#2a8a8a" },
+  { label: "Blue", value: "#3a72d6" },
+  { label: "Purple", value: "#7a4fcf" },
+  { label: "Pink", value: "#d44a87" },
+  { label: "Red", value: "#d94b3a" },
+];
+
+const HIGHLIGHT_COLORS = [
+  { label: "None", value: null },
+  { label: "Yellow", value: "#fff3a3" },
+  { label: "Peach", value: "#ffd9b8" },
+  { label: "Pink", value: "#ffc7d8" },
+  { label: "Mint", value: "#c5ecd0" },
+  { label: "Sky", value: "#c6e2f5" },
+  { label: "Lavender", value: "#dccdf0" },
+  { label: "Sand", value: "#ece1c8" },
+];
+
+function ColorPickerPopover({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const active = editor.getAttributes("textStyle").color || editor.getAttributes("highlight").color;
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onMouseDown={(e) => { e.preventDefault(); setOpen(o => !o); }}
+        title="Text color & highlight"
+        className={cn(
+          "h-8 w-8 inline-flex items-center justify-center rounded-md transition",
+          open ? "bg-primary/15 text-primary" : "hover:bg-muted/60 text-muted-foreground",
+        )}
+      >
+        <Palette className="h-3.5 w-3.5" style={active ? { color: active } : undefined} />
+      </button>
+      {open && (
+        <div
+          onMouseDown={(e) => e.preventDefault()}
+          className="absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-border/60 bg-popover/95 p-2 shadow-xl backdrop-blur-md"
+        >
+          <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Text</div>
+          <div className="mb-2 grid grid-cols-6 gap-1">
+            {TEXT_COLORS.map((c) => (
+              <button
+                key={c.label}
+                title={c.label}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  try {
+                    if (c.value === null) editor.chain().focus().unsetColor().run();
+                    else editor.chain().focus().setColor(c.value).run();
+                  } catch {}
+                  setOpen(false);
+                }}
+                className="h-6 w-6 rounded-md border border-border/60 transition hover:scale-110"
+                style={{
+                  background: c.value ?? "transparent",
+                  backgroundImage: c.value
+                    ? undefined
+                    : "linear-gradient(45deg,transparent 45%,hsl(var(--muted-foreground)) 45% 55%,transparent 55%)",
+                }}
+              />
+            ))}
+          </div>
+          <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Highlight</div>
+          <div className="grid grid-cols-6 gap-1">
+            {HIGHLIGHT_COLORS.map((c) => (
+              <button
+                key={c.label}
+                title={c.label}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  try {
+                    if (c.value === null) editor.chain().focus().unsetHighlight().run();
+                    else editor.chain().focus().setHighlight({ color: c.value }).run();
+                  } catch {}
+                  setOpen(false);
+                }}
+                className="h-6 w-6 rounded-md border border-border/60 transition hover:scale-110"
+                style={{
+                  background: c.value ?? "transparent",
+                  backgroundImage: c.value
+                    ? undefined
+                    : "linear-gradient(45deg,transparent 45%,hsl(var(--muted-foreground)) 45% 55%,transparent 55%)",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -386,7 +492,9 @@ export function BlockEditor({
       TaskList,
       TaskItem.configure({ nested: true }),
       Typography,
-      Highlight.configure({ multicolor: false }),
+      TextStyle,
+      Color,
+      Highlight.configure({ multicolor: true }),
       Details.configure({ persist: true, HTMLAttributes: { class: "cf-toggle" } }),
       DetailsSummary,
       DetailsContent,
@@ -451,6 +559,10 @@ export function BlockEditor({
         maxWidth: WIDTH_PX[prefs.width],
         marginInline: prefs.width === "full" ? undefined : "auto",
         ["--editor-font-scale" as any]: String(prefs.fontScale),
+        ...(prefs.theme === "custom" ? {
+          ["--editor-custom-bg" as any]: prefs.customBg,
+          ["--editor-custom-fg" as any]: prefs.customFg,
+        } : {}),
       } as React.CSSProperties}
     >
       {editor && <Toolbar editor={editor} />}
@@ -464,6 +576,7 @@ export function BlockEditor({
           <ToolbarButton active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} label="Strike"><Strikethrough className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} label="Code"><Code className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-3.5 w-3.5" /></ToolbarButton>
+          <ColorPickerPopover editor={editor} />
           <span className="mx-1 h-4 w-px bg-border" />
           <ToolbarButton active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} label="H1"><Heading1 className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} label="H2"><Heading2 className="h-3.5 w-3.5" /></ToolbarButton>
