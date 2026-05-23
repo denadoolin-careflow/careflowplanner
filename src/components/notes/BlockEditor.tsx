@@ -559,6 +559,10 @@ export function BlockEditor({
         maxWidth: WIDTH_PX[prefs.width],
         marginInline: prefs.width === "full" ? undefined : "auto",
         ["--editor-font-scale" as any]: String(prefs.fontScale),
+        ...(prefs.theme === "custom" ? {
+          ["--editor-custom-bg" as any]: prefs.customBg,
+          ["--editor-custom-fg" as any]: prefs.customFg,
+        } : {}),
       } as React.CSSProperties}
     >
       {editor && <Toolbar editor={editor} />}
