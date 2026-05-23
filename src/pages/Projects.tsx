@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
 import { AreaDetailDialog } from "@/components/areas/AreaDetailDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { TaskRow } from "@/components/cards/TaskRow";
 import { AllTasksViews } from "@/components/tasks/AllTasksViews";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
@@ -27,7 +26,6 @@ export default function Projects() {
   const [areaName, setAreaName] = useState<string>("Personal");
   const [openArea, setOpenArea] = useState<string | null>(null);
   const [tab, setTab] = useState<"projects" | "tasks">("projects");
-  const [showDoneTasks, setShowDoneTasks] = useState(false);
   const [view, setView] = useState<ProjectsView>(() => {
     if (typeof window === "undefined") return "grid";
     return (localStorage.getItem(VIEW_KEY) as ProjectsView) ?? "grid";
@@ -49,10 +47,6 @@ export default function Projects() {
 
   const grouped = AREAS.map(a => ({ area: a, items: projects.filter(p => p.areaName === a) })).filter(g => g.items.length);
   const noArea = projects.filter(p => !p.areaName);
-
-  const allTasks = (state.tasks ?? []).filter(t => !t.parentTaskId && (showDoneTasks || !t.done));
-  const tasksByArea = AREAS.map(a => ({ area: a, items: allTasks.filter(t => t.area === a) })).filter(g => g.items.length);
-  const tasksNoArea = allTasks.filter(t => !t.area || !AREAS.includes(t.area as any));
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 p-4 md:p-6">
