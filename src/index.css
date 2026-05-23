@@ -637,7 +637,7 @@
 /* ---------- Global drag handle (block reordering) ---------- */
 .drag-handle {
   position: fixed;
-  opacity: 0;
+  opacity: 0.55;
   transition: opacity 120ms ease;
   width: 18px;
   height: 22px;
@@ -651,8 +651,7 @@
 }
 .drag-handle:hover { background-color: hsl(var(--muted) / 0.6); }
 .drag-handle:active { cursor: grabbing; }
-.block-editor .ProseMirror:hover ~ .drag-handle,
-.drag-handle:hover { opacity: 0.85; }
+.drag-handle:hover { opacity: 1; }
 .drag-handle.hide { opacity: 0 !important; pointer-events: none; }
 
 /* ---------- Toggle / Details blocks ---------- */
