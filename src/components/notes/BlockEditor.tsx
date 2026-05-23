@@ -419,17 +419,30 @@ export function BlockEditor({
   const lastSyncedRef = useRef<string>(body);
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
+  const promoteRef = useRef<() => void>(() => {});
 
   const slashExtension = useMemo(() => Extension.create({
     name: "slashCommand",
     addOptions() { return { suggestion: {} as any }; },
+    addKeyboardShortcuts() {
+      return {
+        "Mod-Shift-Enter": () => { promoteRef.current?.(); return true; },
+      };
+    },
     addProseMirrorPlugins() {
       return [makeSuggestion<SlashItem>(this.editor as Editor, {
         char: "/",
         pluginKey: new PluginKey("slashSuggestion"),
         getItems: (query) => {
           const q = query.toLowerCase();
-          return slashItems().filter(i =>
+          const extra: SlashItem[] = [{
+            title: "Add to Tasks",
+            description: "Promote this checkbox to a Task (⌘⇧↵)",
+            icon: ListPlus,
+            keywords: ["task", "todo", "promote", "add", "send"],
+            command: () => promoteRef.current?.(),
+          }];
+          return [...slashItems(), ...extra].filter(i =>
             i.title.toLowerCase().includes(q) || (i.keywords ?? []).some(k => k.includes(q))
           ).slice(0, 8);
         },
