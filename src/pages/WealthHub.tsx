@@ -7,6 +7,7 @@ import { TransactionsTab } from "@/components/wealth-hub/TransactionsTab";
 import { RecurringTab } from "@/components/wealth-hub/RecurringTab";
 import { GoalsTab } from "@/components/wealth-hub/GoalsTab";
 import { DebtsTab } from "@/components/wealth-hub/DebtsTab";
+import { CalendarTab } from "@/components/wealth-hub/CalendarTab";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -23,7 +24,7 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon
   { id: "recurring", label: "Recurring", icon: Repeat },
   { id: "goals", label: "Goals", icon: Sprout },
   { id: "debts", label: "Debts", icon: TrendingDown },
-  { id: "calendar", label: "Calendar", icon: CalendarDays, comingSoon: true },
+  { id: "calendar", label: "Calendar", icon: CalendarDays },
   { id: "analytics", label: "Analytics", icon: BarChart3, comingSoon: true },
 ];
 
@@ -111,7 +112,7 @@ export default function WealthHub() {
           {tab === "recurring" && <RecurringTab uid={uid} />}
           {tab === "goals" && <GoalsTab uid={uid} />}
           {tab === "debts" && <DebtsTab uid={uid} />}
-          {tab === "calendar" && <ComingSoon title="Calendar overlay" blurb="Bills, paydays, savings transfers, and debt payments appear in Today, Week, Month, and Daily plan." />}
+          {tab === "calendar" && <CalendarTab uid={uid} />}
           {tab === "analytics" && <ComingSoon title="Analytics" blurb="Soft-gradient charts for spending by category, income vs expenses, savings growth, and budget rhythm." />}
         </>
       )}
