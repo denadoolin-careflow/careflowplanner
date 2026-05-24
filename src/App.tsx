@@ -126,6 +126,8 @@ const App = () => (
                 <Route path="/journal-flow" element={<JournalFlow />} />
                 <Route path="/routines" element={<Routines />} />
                 <Route path="/ideas" element={<Ideas />} />
+               <Route path="/tags" element={<Tags />} />
+               <Route path="/tags/:name" element={<TagDetail />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/focus" element={<PomodoroPicker />} />
                 <Route path="/settings" element={<Settings />} />
