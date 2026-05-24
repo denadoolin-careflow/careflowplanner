@@ -134,7 +134,7 @@ function Group({
         )}
       </div>
       <div className="space-y-2 rounded-2xl border border-border/60 bg-card/60 p-2">
-        {tasks.map((t: any) => (
+        {tasks.map((t) => (
           <div key={t.id} className="space-y-1.5">
             <TaskRow task={t} />
             <div className="ml-10 flex flex-wrap items-center gap-1.5">
