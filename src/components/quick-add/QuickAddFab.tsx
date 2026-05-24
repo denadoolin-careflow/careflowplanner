@@ -739,6 +739,18 @@ function BrainDumpForm({ onClose, initialText }: { onClose: () => void; initialT
             {dictation.listening ? "Listening…" : "Voice"}
           </Button>
         )}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            onClose();
+            window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "voice" } }));
+          }}
+          title="Record audio — we'll transcribe and organize into tasks"
+        >
+          <Sparkles className="mr-1 h-3.5 w-3.5" /> AI voice
+        </Button>
         <label className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-[11px]">
           <input
             type="checkbox"
