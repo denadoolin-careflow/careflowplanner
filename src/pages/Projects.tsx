@@ -14,6 +14,7 @@ import { AllTasksViews } from "@/components/tasks/AllTasksViews";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { ProjectsAISummary } from "@/components/projects/ProjectsAISummary";
+import { formatRelativeDate } from "@/lib/date-format";
 
 type ProjectsView = "grid" | "list" | "board";
 const VIEW_KEY = "projects.view";
@@ -43,7 +44,29 @@ export default function Projects() {
   const projectStats = (pid: string) => {
     const ts = (state.tasks ?? []).filter(t => t.projectId === pid && !t.parentTaskId);
     const done = ts.filter(t => t.done).length;
-    return { total: ts.length, done, open: ts.length - done, pct: ts.length ? Math.round((done / ts.length) * 100) : 0 };
+    const openTasks = ts.filter(t => !t.done);
+    const priorityRank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    const topOpen = [...openTasks].sort((a, b) => {
+      const ad = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      const bd = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      if (ad !== bd) return ad - bd;
+      const ap = priorityRank[a.priority] ?? 3;
+      const bp = priorityRank[b.priority] ?? 3;
+      if (ap !== bp) return ap - bp;
+      return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    })[0];
+    const nextDue = openTasks
+      .map(t => t.dueDate)
+      .filter((d): d is string => !!d)
+      .sort()[0];
+    return {
+      total: ts.length,
+      done,
+      open: openTasks.length,
+      pct: ts.length ? Math.round((done / ts.length) * 100) : 0,
+      topOpen,
+      nextDue,
+    };
   };
 
   const renderProjectIcon = (p: { id: string; icon?: string; color?: string; areaName?: string }) => {
@@ -175,7 +198,7 @@ export default function Projects() {
           <div className="grid gap-2 sm:grid-cols-2">
             {items.map(p => (
               (() => {
-                const { total, done, open, pct } = projectStats(p.id);
+                const { open, pct, topOpen, nextDue } = projectStats(p.id);
                 return (
               <Link
                 key={p.id}
@@ -192,6 +215,19 @@ export default function Projects() {
                     <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
                       <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
                     </div>
+                    {(topOpen || nextDue) && (
+                      <div className="mt-2 space-y-0.5 border-t border-border/40 pt-1.5 text-[11px]">
+                        {topOpen && (
+                          <div className="flex items-start gap-1.5 text-foreground/80">
+                            <span className="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70" />
+                            <span className="line-clamp-1 break-words">{topOpen.title}</span>
+                          </div>
+                        )}
+                        {nextDue && (
+                          <div className="pl-3 text-muted-foreground">Next due {formatRelativeDate(nextDue)}</div>
+                        )}
+                      </div>
+                    )}
                 </div>
               </Link>
                 );
@@ -265,7 +301,7 @@ export default function Projects() {
                     </div>
                   )}
                   {items.map(p => {
-                    const { total, done, pct } = projectStats(p.id);
+                    const { total, done, pct, topOpen, nextDue } = projectStats(p.id);
                     const areaRec = (state.areas ?? []).find(a => a.name === p.areaName);
                     const PIcon = getAreaIcon(p.icon ?? areaRec?.icon);
                     const pColor = p.color ?? areaRec?.color;
@@ -288,6 +324,16 @@ export default function Projects() {
                         <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
                           <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
                         </div>
+                        {(topOpen || nextDue) && (
+                          <div className="mt-1.5 space-y-0.5 border-t border-border/40 pt-1.5 text-[11px]">
+                            {topOpen && (
+                              <div className="line-clamp-1 break-words text-foreground/80">{topOpen.title}</div>
+                            )}
+                            {nextDue && (
+                              <div className="text-muted-foreground">Due {formatRelativeDate(nextDue)}</div>
+                            )}
+                          </div>
+                        )}
                       </Link>
                     );
                   })}
