@@ -1544,6 +1544,7 @@ export type Database = {
       }
       home_notes: {
         Row: {
+          attachments: Json
           body: string | null
           created_at: string
           id: string
@@ -1554,6 +1555,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachments?: Json
           body?: string | null
           created_at?: string
           id?: string
@@ -1564,6 +1566,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachments?: Json
           body?: string | null
           created_at?: string
           id?: string
@@ -1685,6 +1688,7 @@ export type Database = {
       }
       journal_entries: {
         Row: {
+          attachments: Json
           body: string
           created_at: string
           date: string
@@ -1703,6 +1707,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachments?: Json
           body: string
           created_at?: string
           date?: string
@@ -1721,6 +1726,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachments?: Json
           body?: string
           created_at?: string
           date?: string
@@ -3135,6 +3141,7 @@ export type Database = {
       tasks: {
         Row: {
           area: string
+          attachments: Json
           auto_reset: boolean
           created_at: string
           day_part: string | null
@@ -3169,6 +3176,7 @@ export type Database = {
         }
         Insert: {
           area?: string
+          attachments?: Json
           auto_reset?: boolean
           created_at?: string
           day_part?: string | null
@@ -3203,6 +3211,7 @@ export type Database = {
         }
         Update: {
           area?: string
+          attachments?: Json
           auto_reset?: boolean
           created_at?: string
           day_part?: string | null

@@ -9,6 +9,17 @@ export type DayPart = "Morning" | "Afternoon" | "Evening" | "Late Night";
 export type RecurrenceType = "none" | "daily" | "weekly" | "monthly" | "custom";
 export type TaskStatus = "active" | "someday" | "this_week" | "waiting" | "done" | "parked";
 
+export interface Attachment {
+  id: string;
+  /** Storage path inside the `attachments` bucket: `{uid}/{scope}/{ownerId}/{file}` */
+  path: string;
+  name: string;
+  mimeType?: string;
+  size?: number;
+  /** ISO timestamp */
+  uploadedAt: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -41,6 +52,7 @@ export interface Task {
   sectionId?: string;
   /** Date (ISO yyyy-mm-dd) when a parked task should automatically return to active. */
   snoozedUntil?: string;
+  attachments?: Attachment[];
 }
 
 export interface AreaRecord {
@@ -108,6 +120,7 @@ export interface JournalEntry {
   tags?: string[];
   pinned?: boolean;
   linkedIds?: { type: string; id: string; label?: string }[];
+  attachments?: Attachment[];
 }
 
 export interface Meal {

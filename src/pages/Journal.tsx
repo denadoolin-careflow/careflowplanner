@@ -23,6 +23,8 @@ import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 import { JournalProjectPicker } from "@/components/journal/JournalProjectPicker";
+import { AttachmentsField } from "@/components/attachments/AttachmentsField";
+import type { Attachment } from "@/lib/types";
 import { startOfWeek, endOfWeek, startOfYear, getYear } from "date-fns";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 
@@ -157,6 +159,7 @@ export default function Journal() {
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "template" | "mood">("newest");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [draftAttachments, setDraftAttachments] = useState<Attachment[]>([]);
   const [entriesView, setEntriesView] = useState<"cards" | "timeline">(() => {
     if (typeof window === "undefined") return "timeline";
     return (localStorage.getItem("journal.entriesView") as "cards" | "timeline") ?? "timeline";
@@ -234,8 +237,9 @@ export default function Journal() {
       linkedIds: linkProjectId
         ? [{ type: "project", id: linkProjectId, label: linkProjectLabel }]
         : undefined,
+      attachments: draftAttachments.length ? draftAttachments : undefined,
     } as any);
-    setBody(""); setTitle(""); setMood(""); setEnergy(""); setGratitudeItems(["", "", ""]); setTags([]);
+    setBody(""); setTitle(""); setMood(""); setEnergy(""); setGratitudeItems(["", "", ""]); setTags([]); setDraftAttachments([]);
     toast.success("Saved to your journal");
   };
 
@@ -450,6 +454,14 @@ export default function Journal() {
             className="h-7 w-32 text-xs"
           />
           <Button className="ml-auto" onClick={save}>Save entry</Button>
+        </div>
+        <div className="mt-3">
+          <AttachmentsField
+            scope="journal"
+            ownerId="new"
+            value={draftAttachments}
+            onChange={setDraftAttachments}
+          />
         </div>
       </SectionCard>
 
@@ -683,6 +695,13 @@ function EntryCard({ e, onPin, onDelete, timeline }: { e: JournalEntry; onPin: (
               {e.tags.map(t => <span key={t} className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px]">#{t}</span>)}
             </div>
           )}
+          <AttachmentsField
+            scope="journal"
+            ownerId={e.id}
+            value={e.attachments}
+            onChange={(next) => { void updateJournal(e.id, { attachments: next } as any); }}
+            compact
+          />
           <div className="pt-1">
             <JournalProjectPicker entry={e} />
           </div>

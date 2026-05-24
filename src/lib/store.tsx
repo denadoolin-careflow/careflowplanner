@@ -51,6 +51,7 @@ const taskFrom = (r: any): Task => ({
   resetItemId: r.reset_item_id ?? undefined,
   sectionId: r.section_id ?? undefined,
   snoozedUntil: r.snoozed_until ?? undefined,
+  attachments: Array.isArray(r.attachments) ? r.attachments : [],
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null, done: t.done,
@@ -72,6 +73,7 @@ const taskTo = (t: Partial<Task>) => ({
   // Pass through undefined → supabase omits the field, so updates don't accidentally
   // unpark a task. Use `null` explicitly via patch to clear.
   snoozed_until: t.snoozedUntil === undefined ? undefined : t.snoozedUntil,
+  attachments: (t.attachments ?? []) as any,
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 const habitFrom = (r: any): Habit => ({ id: r.id, title: r.title, cadence: r.cadence, category: r.category, streak: r.streak, log: {} });
@@ -84,6 +86,7 @@ const journalFrom = (r: any): JournalEntry => ({
   tags: Array.isArray(r.tags) ? r.tags : [],
   pinned: !!r.pinned,
   linkedIds: Array.isArray(r.linked_ids) ? r.linked_ids : [],
+  attachments: Array.isArray(r.attachments) ? r.attachments : [],
 });
 const mealFrom = (r: any): Meal => ({
   id: r.id, date: r.date, slot: r.slot, name: r.name,
@@ -579,6 +582,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (linkedIds !== undefined) row.linked_ids = linkedIds;
       if (tags !== undefined) row.tags = tags;
       if (pinned !== undefined) row.pinned = pinned;
+      if ((j as any).attachments !== undefined) row.attachments = (j as any).attachments;
       const { data } = await supabase.from("journal_entries").insert(row).select().single();
       if (data) {
         const entry = journalFrom(data);
@@ -601,6 +605,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.tags !== undefined) dbPatch.tags = patch.tags;
       if (patch.pinned !== undefined) dbPatch.pinned = patch.pinned;
       if (patch.date !== undefined) dbPatch.date = patch.date;
+      if ((patch as any).attachments !== undefined) dbPatch.attachments = (patch as any).attachments;
       setState(s => ({ ...s, journal: s.journal.map(j => j.id === id ? { ...j, ...patch } : j) }));
       if (Object.keys(dbPatch).length) await supabase.from("journal_entries").update(dbPatch).eq("id", id);
     },

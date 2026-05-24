@@ -13,6 +13,8 @@ import { useResetChecklists } from "@/lib/reset-checklists";
 import { ChecklistTree } from "@/components/reset/ChecklistTree";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { AttachmentsField } from "@/components/attachments/AttachmentsField";
+import type { Attachment } from "@/lib/types";
 
 const today = () => new Date().toISOString().slice(0, 10);
 function weekStart(d = new Date()) { const x = new Date(d); const day = (x.getDay() + 6) % 7; x.setDate(x.getDate() - day); return x.toISOString().slice(0, 10); }
@@ -306,23 +308,42 @@ function DocumentsPanel({ uid }: { uid: string }) {
 function NotesPanel({ uid }: { uid: string }) {
   const [notes, setNotes] = useState<any[]>([]);
   const [form, setForm] = useState<any>({ title: "", body: "" });
+  const [draftAttachments, setDraftAttachments] = useState<Attachment[]>([]);
   async function load() {
     const { data } = await supabase.from("home_notes").select("*").eq("user_id", uid).order("pinned", { ascending: false }).order("created_at", { ascending: false });
     setNotes(data ?? []);
   }
   useEffect(() => { load(); }, [uid]);
   async function add() {
-    if (!form.title && !form.body) return;
-    await supabase.from("home_notes").insert({ user_id: uid, title: form.title || null, body: form.body || null });
-    setForm({ title: "", body: "" }); load();
+    if (!form.title && !form.body && draftAttachments.length === 0) return;
+    await supabase.from("home_notes").insert({
+      user_id: uid,
+      title: form.title || null,
+      body: form.body || null,
+      attachments: draftAttachments as any,
+    });
+    setForm({ title: "", body: "" });
+    setDraftAttachments([]);
+    load();
   }
   async function pin(n: any) { await supabase.from("home_notes").update({ pinned: !n.pinned }).eq("id", n.id); load(); }
   async function del(id: string) { await supabase.from("home_notes").delete().eq("id", id); load(); }
+  async function setNoteAttachments(id: string, next: Attachment[]) {
+    await supabase.from("home_notes").update({ attachments: next as any }).eq("id", id);
+    setNotes((prev) => prev.map((n) => n.id === id ? { ...n, attachments: next } : n));
+  }
   return (
     <SectionCard title="Notes" accent="warm">
       <div className="space-y-2">
         <Input placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
         <Textarea placeholder="Body…" value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} />
+        <AttachmentsField
+          scope="home-note"
+          ownerId="new"
+          value={draftAttachments}
+          onChange={setDraftAttachments}
+          compact
+        />
         <div className="flex justify-end"><Button onClick={add}>Add note</Button></div>
       </div>
       <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -332,6 +353,15 @@ function NotesPanel({ uid }: { uid: string }) {
               <div className="flex-1">
                 {n.title && <div className="font-medium">{n.title}</div>}
                 {n.body && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{n.body}</p>}
+                <div className="mt-2">
+                  <AttachmentsField
+                    scope="home-note"
+                    ownerId={n.id}
+                    value={(n.attachments as Attachment[] | undefined) ?? []}
+                    onChange={(next) => setNoteAttachments(n.id, next)}
+                    compact
+                  />
+                </div>
               </div>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => pin(n)}><Pin className={`h-3.5 w-3.5 ${n.pinned ? "fill-current" : ""}`} /></Button>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => del(n.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
