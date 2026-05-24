@@ -39,7 +39,7 @@ function InboxInner() {
   const [triaging, setTriaging] = useState(false);
   const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
   const groups = useMemo(() => {
-    const base = state.tasks.filter(t => t.inbox && !t.done && !t.parentTaskId);
+    const base = state.tasks.filter(t => t.inbox && !t.done && !t.parentTaskId && t.status !== "parked");
     const filtered = applyFilters(base, prefs.filter);
     const sorted = sortTasks(filtered, prefs.sort);
     return groupTasks(sorted, prefs.group, state.projects ?? []);

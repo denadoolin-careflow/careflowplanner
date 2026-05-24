@@ -50,6 +50,7 @@ const taskFrom = (r: any): Task => ({
   inbox: !!r.inbox,
   resetItemId: r.reset_item_id ?? undefined,
   sectionId: r.section_id ?? undefined,
+  snoozedUntil: r.snoozed_until ?? undefined,
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null, done: t.done,
@@ -68,6 +69,9 @@ const taskTo = (t: Partial<Task>) => ({
   parent_task_id: t.parentTaskId ?? null,
   inbox: t.inbox ?? false,
   section_id: t.sectionId ?? null,
+  // Pass through undefined → supabase omits the field, so updates don't accidentally
+  // unpark a task. Use `null` explicitly via patch to clear.
+  snoozed_until: t.snoozedUntil === undefined ? undefined : t.snoozedUntil,
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 const habitFrom = (r: any): Habit => ({ id: r.id, title: r.title, cadence: r.cadence, category: r.category, streak: r.streak, log: {} });
@@ -313,7 +317,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       energyToday: profile.energy_today ?? undefined,
       energyDate: profile.energy_date ?? undefined,
-      tasks: (tasks as any[]).map(taskFrom),
+      tasks: (tasks as any[]).map(taskFrom).map((t) => {
+        // Auto-unpark: when a parked task's snoozedUntil has arrived, surface it again.
+        if (t.status === "parked" && t.snoozedUntil && t.snoozedUntil <= todayISO()) {
+          // Fire-and-forget DB sync; local state already reflects the change below.
+          void supabase.from("tasks").update({ status: "active", snoozed_until: null }).eq("id", t.id);
+          return { ...t, status: "active" as const, snoozedUntil: undefined };
+        }
+        return t;
+      }),
       goals: (goals as any[]).map(goalFrom),
       habits: (habits as any[]).map(h => ({ ...habitFrom(h), log: logsByHabit[h.id] ?? {} })),
       journal: (journal as any[]).map(journalFrom),

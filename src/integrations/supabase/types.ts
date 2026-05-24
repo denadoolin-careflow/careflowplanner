@@ -3159,6 +3159,7 @@ export type Database = {
           recurrence_type: string
           reset_item_id: string | null
           section_id: string | null
+          snoozed_until: string | null
           sort_order: number
           status: string
           tags: string[]
@@ -3192,6 +3193,7 @@ export type Database = {
           recurrence_type?: string
           reset_item_id?: string | null
           section_id?: string | null
+          snoozed_until?: string | null
           sort_order?: number
           status?: string
           tags?: string[]
@@ -3225,6 +3227,7 @@ export type Database = {
           recurrence_type?: string
           reset_item_id?: string | null
           section_id?: string | null
+          snoozed_until?: string | null
           sort_order?: number
           status?: string
           tags?: string[]

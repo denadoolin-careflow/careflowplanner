@@ -106,7 +106,7 @@ function TodayInner() {
 
   const todayISO = format(today, "yyyy-MM-dd");
   const visibleTaskIds = useMemo(
-    () => state.tasks.filter(t => t.dueDate === todayISO && !t.parentTaskId).map(t => t.id),
+    () => state.tasks.filter(t => t.dueDate === todayISO && !t.parentTaskId && t.status !== "parked").map(t => t.id),
     [state.tasks, todayISO],
   );
   useEffect(() => { setOrderedIds(visibleTaskIds); }, [visibleTaskIds, setOrderedIds]);

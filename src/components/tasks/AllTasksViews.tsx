@@ -31,7 +31,7 @@ const SORT_KEY = "tasks.sort.all";
 const PRIORITY_RANK: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
 const STATUSES: TaskStatus[] = ["active", "this_week", "waiting", "someday", "done"];
 const STATUS_LABEL: Record<TaskStatus, string> = {
-  active: "Active", this_week: "This Week", waiting: "Waiting", someday: "Someday", done: "Done",
+  active: "Active", this_week: "This Week", waiting: "Waiting", someday: "Someday", done: "Done", parked: "Not today",
 };
 
 function priorityColor(p?: Priority) {

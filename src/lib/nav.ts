@@ -3,7 +3,7 @@ import {
   UtensilsCrossed, HeartHandshake, Sparkle, BookHeart, Lightbulb, CalendarCheck,
   Timer, Settings as SettingsIcon, BookOpen, HeartPulse, Wallet, Home,
   ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
-  Wind, PenLine,
+  Wind, PenLine, Coffee,
 } from "lucide-react";
 
 export const NAV = [
@@ -65,6 +65,7 @@ export const NAV_GROUPS = [
       { to: "/month", label: "Month", icon: CalendarDays },
       { to: "/year", label: "Year", icon: Calendar },
       { to: "/calendar", label: "Calendar", icon: CalendarCheck },
+      { to: "/not-today", label: "Not Today", icon: Coffee },
     ],
   },
   {

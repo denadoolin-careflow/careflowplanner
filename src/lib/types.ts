@@ -7,7 +7,7 @@ export type Energy = "low" | "medium" | "high";
 export type Priority = "low" | "medium" | "high";
 export type DayPart = "Morning" | "Afternoon" | "Evening" | "Late Night";
 export type RecurrenceType = "none" | "daily" | "weekly" | "monthly" | "custom";
-export type TaskStatus = "active" | "someday" | "this_week" | "waiting" | "done";
+export type TaskStatus = "active" | "someday" | "this_week" | "waiting" | "done" | "parked";
 
 export interface Task {
   id: string;
@@ -39,6 +39,8 @@ export interface Task {
   inbox?: boolean;
   resetItemId?: string;
   sectionId?: string;
+  /** Date (ISO yyyy-mm-dd) when a parked task should automatically return to active. */
+  snoozedUntil?: string;
 }
 
 export interface AreaRecord {
