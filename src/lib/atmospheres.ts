@@ -9,7 +9,8 @@ export type AtmosphereId =
   | "golden-hearth"
   | "dark-sage-glass"
   | "dawn"
-  | "mist";
+  | "mist"
+  | "blossom";
 
 export type AtmosphereVibe = {
   /** how strong the gradients feel */
@@ -126,6 +127,17 @@ export const ATMOSPHERES: Atmosphere[] = [
     fontDisplay: "Playfair Display",
     fontBody: "DM Sans",
     vibe: { gradient: "whisper", glow: "none", glass: false, prefersDark: false, animation: "still" },
+  },
+  {
+    id: "blossom",
+    name: "Blossom",
+    tagline: "Soft, feminine, emotionally nurturing.",
+    mood: ["soft", "feminine", "comforting", "gentle joy"],
+    bestFor: ["Self-care", "Journaling", "Emotional reset", "Cozy routines", "Heart-centered planning"],
+    palette: ["#D98FAF", "#E8B7C8", "#FAF2F5", "#B57C95", "#D8B06A", "#B7C1AE"],
+    fontDisplay: "Cormorant Garamond",
+    fontBody: "Plus Jakarta Sans",
+    vibe: { gradient: "rich", glow: "warm", glass: true, prefersDark: false, animation: "breath" },
   },
 ];
 
