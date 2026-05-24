@@ -455,6 +455,14 @@ export default function Journal() {
           />
           <Button className="ml-auto" onClick={save}>Save entry</Button>
         </div>
+        <div className="mt-3">
+          <AttachmentsField
+            scope="journal"
+            ownerId="new"
+            value={draftAttachments}
+            onChange={setDraftAttachments}
+          />
+        </div>
       </SectionCard>
 
       <SectionCard
