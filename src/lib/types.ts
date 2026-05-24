@@ -25,6 +25,7 @@ export interface Task {
   title: string;
   notes?: string;
   icon?: string;
+  coverUrl?: string;
   done: boolean;
   dueDate?: string; // ISO date
   priority: Priority;
@@ -85,6 +86,7 @@ export interface Project {
   linkedGoalIds?: string[];
   linkedHabitIds?: string[];
   isFavorite?: boolean;
+  coverUrl?: string;
 }
 
 export interface Goal {
