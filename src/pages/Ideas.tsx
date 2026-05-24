@@ -14,7 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 const IDEA_TAG = "idea";
 
 export default function Ideas() {
-  const { state, addTask, updateTask, deleteTask, toggleTask, addIdea, deleteIdea, addGoal } = useStore();
+  const { state, addTask, updateTask, deleteTask, toggleTask, deleteIdea, addGoal } = useStore();
   const { ensure } = useTags();
   const [title, setTitle] = useState("");
   const [draftTags, setDraftTags] = useState<string[]>([]);
