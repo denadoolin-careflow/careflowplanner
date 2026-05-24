@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Plus, Repeat, Sparkles, Tag, Trash2, UserPlus, Users, X } from "lucide-react";
+import { ChevronRight, Clock, Plus, Repeat, Sparkles, Tag, Timer, Trash2, UserPlus, Users, X } from "lucide-react";
 import {
   routines as routinesApi,
   useRoutines,
@@ -7,6 +7,8 @@ import {
   ROUTINE_CADENCES,
   SLOT_LABEL,
   CADENCE_LABEL,
+  SLOT_DEFAULT_TIME,
+  formatTime12,
   type Routine,
   type RoutineSlot,
   type RoutineCadence,
@@ -22,6 +24,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { PomodoroDialog } from "@/components/routines/PomodoroDialog";
 
 type GroupBy = "person" | "timeframe" | "cadence" | "tag";
 
