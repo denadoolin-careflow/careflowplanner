@@ -50,6 +50,7 @@ import PlanTimeline from "./pages/PlanTimeline";
 import PlanDay from "./pages/PlanDay";
 import Whiteboards from "./pages/Whiteboards";
 import WhiteboardDetail from "./pages/WhiteboardDetail";
+import MentalLoad from "./pages/MentalLoad";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -113,6 +114,7 @@ const App = () => (
                 <Route path="/home" element={<HomeHub />} />
                 <Route path="/health" element={<Health />} />
                 <Route path="/wealth" element={<WealthHub />} />
+                <Route path="/mental-load" element={<MentalLoad />} />
                 <Route path="/home-areas" element={<HomeAreas />} />
                 <Route path="/journal" element={<Journal />} />
                 <Route path="/journal-flow" element={<JournalFlow />} />
