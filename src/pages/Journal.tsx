@@ -23,6 +23,8 @@ import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 import { JournalProjectPicker } from "@/components/journal/JournalProjectPicker";
+import { AttachmentsField } from "@/components/attachments/AttachmentsField";
+import type { Attachment } from "@/lib/types";
 import { startOfWeek, endOfWeek, startOfYear, getYear } from "date-fns";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 
