@@ -312,6 +312,45 @@ export type Database = {
           },
         ]
       }
+      care_profile: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          mvp_items: Json
+          pillars_enabled: Json
+          pillars_order: Json
+          season: string | null
+          top_n: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mvp_items?: Json
+          pillars_enabled?: Json
+          pillars_order?: Json
+          season?: string | null
+          top_n?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mvp_items?: Json
+          pillars_enabled?: Json
+          pillars_order?: Json
+          season?: string | null
+          top_n?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       care_providers: {
         Row: {
           address: string | null
