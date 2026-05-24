@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { format, addDays, parseISO, isAfter } from "date-fns";
 import { Coffee, CalendarDays, Undo2, Sparkles, Inbox as InboxIcon } from "lucide-react";
 import { useStore, todayISO } from "@/lib/store";
+import type { Task } from "@/lib/types";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -114,7 +115,7 @@ function Group({
 }: {
   label: string;
   description?: string;
-  tasks: ReturnType<typeof Array.prototype.filter>;
+  tasks: Task[];
   onBring: (id: string, when: "today" | "tomorrow" | "next-week" | "clear" | Date) => void;
   onReschedule: (id: string, d: Date) => void;
   showWhen?: boolean;
