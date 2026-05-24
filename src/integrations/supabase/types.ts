@@ -3002,6 +3002,7 @@ export type Database = {
           recipient_id: string | null
           slot: string
           tags: string[]
+          time_of_day: string | null
           updated_at: string
           user_id: string
         }
@@ -3015,6 +3016,7 @@ export type Database = {
           recipient_id?: string | null
           slot: string
           tags?: string[]
+          time_of_day?: string | null
           updated_at?: string
           user_id: string
         }
@@ -3028,6 +3030,7 @@ export type Database = {
           recipient_id?: string | null
           slot?: string
           tags?: string[]
+          time_of_day?: string | null
           updated_at?: string
           user_id?: string
         }
