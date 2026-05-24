@@ -211,7 +211,7 @@ interface Ctx {
   setGroceryStock: (id: string, status: "in" | "low" | "out") => Promise<void>;
   updateGroceryItem: (id: string, patch: { name?: string; qty?: string | null; category?: string | null }) => Promise<void>;
 
-  addAppointment: (a: Partial<Appointment> & { title: string; date: string }) => Promise<void>;
+  addAppointment: (a: Partial<Appointment> & { title: string; date: string }) => Promise<Appointment | null>;
   deleteAppointment: (id: string) => Promise<void>;
   updateAppointment: (id: string, patch: Partial<Appointment>) => Promise<void>;
 
