@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AllTasksViews } from "@/components/tasks/AllTasksViews";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
+import { ProjectsAISummary } from "@/components/projects/ProjectsAISummary";
 
 type ProjectsView = "grid" | "list" | "board";
 const VIEW_KEY = "projects.view";
@@ -20,7 +21,7 @@ const PROJECT_STATUSES = ["active", "paused", "someday", "done"] as const;
 const STATUS_LABEL: Record<string, string> = { active: "Active", paused: "Paused", someday: "Someday", done: "Done" };
 
 export default function Projects() {
-  const { state, addProject, updateArea } = useStore();
+  const { state, addProject, updateArea, updateProject } = useStore();
   const allProjects = state.projects ?? [];
   const [name, setName] = useState("");
   const [areaName, setAreaName] = useState<string>("Personal");
@@ -45,6 +46,30 @@ export default function Projects() {
     return { total: ts.length, done, open: ts.length - done, pct: ts.length ? Math.round((done / ts.length) * 100) : 0 };
   };
 
+  const renderProjectIcon = (p: { id: string; icon?: string; color?: string; areaName?: string }) => {
+    const areaRec = (state.areas ?? []).find(a => a.name === p.areaName);
+    const fallbackColor = p.color ?? areaRec?.color;
+    const Icon = getAreaIcon(p.icon ?? areaRec?.icon);
+    return (
+      <AreaIconColorPicker
+        icon={p.icon ?? areaRec?.icon}
+        color={p.color ?? areaRec?.color}
+        onChange={(patch) => updateProject(p.id, patch)}
+        trigger={
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg transition hover:scale-105"
+            style={{ background: fallbackColor ? `${fallbackColor}1f` : undefined }}
+            aria-label="Edit project icon and color"
+          >
+            <Icon className="h-4 w-4" style={fallbackColor ? { color: fallbackColor } : undefined} />
+          </button>
+        }
+      />
+    );
+  };
+
   const grouped = AREAS.map(a => ({ area: a, items: projects.filter(p => p.areaName === a) })).filter(g => g.items.length);
   const noArea = projects.filter(p => !p.areaName);
 
@@ -64,6 +89,8 @@ export default function Projects() {
         </TabsList>
 
         <TabsContent value="projects" className="space-y-6">
+      <ProjectsAISummary projectCount={projects.length} />
+
       <div className="rounded-2xl border border-border/60 bg-card/60 p-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <Input
           placeholder="New project name…"
@@ -153,14 +180,12 @@ export default function Projects() {
               <Link
                 key={p.id}
                 to={`/projects/${p.id}`}
-                className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/70 p-3 transition hover:border-primary/40 hover:bg-card"
+                className="flex items-start gap-3 rounded-xl border border-border/60 bg-card/70 p-3 transition hover:border-primary/40 hover:bg-card"
               >
-                <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <FolderOpen className="h-4 w-4" />
-                </div>
+                {renderProjectIcon(p)}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{p.name}</div>
-                  <div className="truncate text-xs text-muted-foreground">
+                  <div className="text-sm font-medium leading-snug break-words">{p.name}</div>
+                  <div className="text-xs text-muted-foreground break-words">
                       {open} open · {pct}% ·{" "}
                     {p.deadline ? `due ${p.deadline}` : p.status}
                   </div>
@@ -182,9 +207,9 @@ export default function Projects() {
           <div className="px-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">No area</div>
           <div className="grid gap-2 sm:grid-cols-2">
             {noArea.map(p => (
-              <Link key={p.id} to={`/projects/${p.id}`} className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/70 p-3 hover:border-primary/40">
-                <FolderOpen className="h-4 w-4 text-primary" />
-                <span className="truncate text-sm">{p.name}</span>
+              <Link key={p.id} to={`/projects/${p.id}`} className="flex items-start gap-3 rounded-xl border border-border/60 bg-card/70 p-3 hover:border-primary/40">
+                {renderProjectIcon(p)}
+                <span className="text-sm leading-snug break-words">{p.name}</span>
               </Link>
             ))}
           </div>
@@ -198,6 +223,9 @@ export default function Projects() {
           </div>
           {projects.map(p => {
             const { total, done, pct } = projectStats(p.id);
+            const areaRec = (state.areas ?? []).find(a => a.name === p.areaName);
+            const PIcon = getAreaIcon(p.icon ?? areaRec?.icon);
+            const pColor = p.color ?? areaRec?.color;
             return (
               <Link
                 key={p.id}
@@ -205,7 +233,7 @@ export default function Projects() {
                 className="grid grid-cols-[1fr_8rem_7rem_5rem] items-center gap-3 border-b border-border/30 px-4 py-2.5 transition last:border-b-0 hover:bg-muted/40"
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <PIcon className="h-3.5 w-3.5 shrink-0" style={pColor ? { color: pColor } : { color: "hsl(var(--primary))" }} />
                   <span className="truncate text-sm font-medium">{p.name}</span>
                 </div>
                 <div className="truncate text-xs text-muted-foreground">{p.areaName ?? "—"}</div>
@@ -238,6 +266,9 @@ export default function Projects() {
                   )}
                   {items.map(p => {
                     const { total, done, pct } = projectStats(p.id);
+                    const areaRec = (state.areas ?? []).find(a => a.name === p.areaName);
+                    const PIcon = getAreaIcon(p.icon ?? areaRec?.icon);
+                    const pColor = p.color ?? areaRec?.color;
                     return (
                       <Link
                         key={p.id}
@@ -245,9 +276,13 @@ export default function Projects() {
                         className={cn(
                           "rounded-xl border border-border/60 bg-background/60 p-2.5 transition hover:border-primary/40",
                         )}
+                        style={pColor ? { boxShadow: `inset 3px 0 0 0 ${pColor}` } : undefined}
                       >
-                        <div className="truncate text-sm font-medium">{p.name}</div>
-                        <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                        <div className="flex items-start gap-1.5">
+                          <PIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" style={pColor ? { color: pColor } : { color: "hsl(var(--primary))" }} />
+                          <div className="text-sm font-medium leading-snug break-words">{p.name}</div>
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-muted-foreground break-words">
                           {p.areaName ?? "No area"} · {done}/{total}
                         </div>
                         <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
