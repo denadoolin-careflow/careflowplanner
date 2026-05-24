@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
+import { useCareProfile } from "@/lib/care-methodology";
 
 const FALLBACK_ROUTE = "/today";
 
@@ -24,10 +25,14 @@ function readCachedDefaultRoute(): string {
 
 export function IndexRedirect() {
   const { state, loading } = useStore();
+  const { profile, loading: careLoading } = useCareProfile();
   const cached = readCachedDefaultRoute();
   const liveRaw = state.settings.defaultRoute;
   const live = liveRaw && liveRaw !== "/" ? liveRaw : FALLBACK_ROUTE;
   // Prefer live value once loaded, otherwise the synchronously-cached one.
   const target = !loading ? live : cached;
+  if (!careLoading && !profile.completed_at) {
+    return <Navigate to="/onboarding" replace />;
+  }
   return <Navigate to={target} replace />;
 }
