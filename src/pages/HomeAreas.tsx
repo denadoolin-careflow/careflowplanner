@@ -13,6 +13,8 @@ import { useResetChecklists } from "@/lib/reset-checklists";
 import { ChecklistTree } from "@/components/reset/ChecklistTree";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { AttachmentsField } from "@/components/attachments/AttachmentsField";
+import type { Attachment } from "@/lib/types";
 
 const today = () => new Date().toISOString().slice(0, 10);
 function weekStart(d = new Date()) { const x = new Date(d); const day = (x.getDay() + 6) % 7; x.setDate(x.getDate() - day); return x.toISOString().slice(0, 10); }
