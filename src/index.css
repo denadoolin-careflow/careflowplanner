@@ -871,3 +871,336 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 
 /* Tighter rhythm for the editor so indents read as a clean tree */
 .block-editor .ProseMirror { line-height: 1.6; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   ATMOSPHERES — emotional, immersive theming.
+   Each atmosphere defines: surfaces, primary/accent, gradients, glow,
+   shadows, and the active typography pair. Applied via `data-atmosphere`
+   on <html>. Backward compat: existing `data-theme` presets still work.
+   ════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --atmo-glow: radial-gradient(60% 50% at 20% 10%, hsl(var(--primary) / 0.10), transparent 70%),
+               radial-gradient(50% 40% at 90% 90%, hsl(var(--accent) / 0.10), transparent 70%);
+  --atmo-grain: none;
+  --atmo-blur: 18px;
+}
+
+html.atmo-transition,
+html.atmo-transition * {
+  transition: background-color 600ms ease, color 500ms ease,
+              border-color 500ms ease, box-shadow 500ms ease,
+              background-image 700ms ease !important;
+}
+
+html[data-atmosphere] body {
+  font-family: var(--atmo-font-body);
+}
+html[data-atmosphere] h1,
+html[data-atmosphere] h2,
+html[data-atmosphere] h3,
+html[data-atmosphere] h4,
+html[data-atmosphere] .font-display {
+  font-family: var(--atmo-font-display);
+}
+
+/* ───── Sage Sanctuary (default) ───── */
+:root[data-atmosphere="sage-sanctuary"] {
+  --background: 60 22% 95%;
+  --foreground: 285 18% 18%;
+  --card: 50 35% 98%;
+  --popover: 50 35% 98%;
+  --primary: 95 14% 46%;
+  --primary-foreground: 50 35% 98%;
+  --primary-soft: 95 22% 90%;
+  --secondary: 95 18% 78%;
+  --secondary-soft: 95 25% 92%;
+  --accent: 38 55% 70%;
+  --accent-foreground: 285 30% 22%;
+  --accent-soft: 38 65% 94%;
+  --muted: 50 18% 92%;
+  --muted-foreground: 285 10% 42%;
+  --border: 50 18% 86%;
+  --input: 50 18% 86%;
+  --ring: 95 22% 50%;
+  --gradient-dawn: linear-gradient(160deg, hsl(60 30% 96%) 0%, hsl(95 25% 92%) 50%, hsl(38 50% 94%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 15% 10%, hsl(95 30% 70% / 0.18), transparent 70%),
+               radial-gradient(45% 40% at 90% 95%, hsl(38 65% 75% / 0.18), transparent 70%);
+}
+.dark[data-atmosphere="sage-sanctuary"] {
+  --background: 150 14% 8%;
+  --card: 150 14% 11%;
+  --primary: 95 30% 62%;
+  --primary-soft: 95 25% 20%;
+  --accent: 38 55% 60%;
+  --ring: 95 30% 62%;
+  --gradient-dawn: linear-gradient(160deg, hsl(150 18% 10%) 0%, hsl(95 22% 16%) 50%, hsl(285 20% 14%) 100%);
+}
+
+/* ───── Moonlit Plum ───── */
+:root[data-atmosphere="moonlit-plum"] {
+  --atmo-font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --background: 285 22% 95%;
+  --foreground: 285 35% 18%;
+  --card: 285 30% 98%;
+  --popover: 285 30% 98%;
+  --primary: 285 18% 40%;
+  --primary-foreground: 285 30% 98%;
+  --primary-soft: 285 30% 90%;
+  --secondary: 270 25% 80%;
+  --accent: 40 55% 64%;
+  --accent-foreground: 285 35% 18%;
+  --muted: 285 18% 92%;
+  --muted-foreground: 285 12% 42%;
+  --border: 285 18% 86%;
+  --input: 285 18% 86%;
+  --ring: 285 30% 50%;
+  --gradient-dawn: linear-gradient(160deg, hsl(285 25% 96%) 0%, hsl(270 30% 92%) 50%, hsl(40 50% 94%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 20% 15%, hsl(270 50% 75% / 0.22), transparent 70%),
+               radial-gradient(45% 40% at 90% 90%, hsl(40 65% 75% / 0.18), transparent 70%);
+}
+.dark[data-atmosphere="moonlit-plum"] {
+  --background: 285 30% 10%;
+  --card: 285 28% 13%;
+  --primary: 270 50% 78%;
+  --primary-soft: 285 30% 22%;
+  --accent: 40 60% 65%;
+  --ring: 270 50% 78%;
+  --gradient-dawn: linear-gradient(160deg, hsl(285 35% 9%) 0%, hsl(270 35% 18%) 50%, hsl(40 25% 16%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 20% 15%, hsl(270 60% 50% / 0.30), transparent 70%),
+               radial-gradient(45% 40% at 90% 90%, hsl(40 70% 55% / 0.20), transparent 70%);
+}
+
+/* ───── Soft Linen ───── */
+:root[data-atmosphere="soft-linen"] {
+  --atmo-font-display: 'Playfair Display', ui-serif, Georgia, serif;
+  --atmo-font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 35 30% 96%;
+  --foreground: 28 18% 22%;
+  --card: 35 40% 99%;
+  --popover: 35 40% 99%;
+  --primary: 28 22% 35%;
+  --primary-foreground: 35 40% 98%;
+  --primary-soft: 35 30% 92%;
+  --secondary: 95 14% 78%;
+  --accent: 30 25% 70%;
+  --accent-foreground: 28 18% 22%;
+  --muted: 35 22% 92%;
+  --muted-foreground: 28 12% 45%;
+  --border: 35 22% 88%;
+  --input: 35 22% 88%;
+  --ring: 28 20% 45%;
+  --gradient-dawn: linear-gradient(180deg, hsl(35 40% 97%) 0%, hsl(35 30% 94%) 100%);
+  --atmo-glow: none;
+  --shadow-soft: 0 1px 6px -2px hsl(28 20% 20% / 0.05);
+  --shadow-cozy: 0 4px 18px -10px hsl(28 20% 20% / 0.10);
+  --shadow-glow: 0 0 0 1px hsl(28 20% 30% / 0.06);
+}
+.dark[data-atmosphere="soft-linen"] {
+  --background: 28 12% 11%;
+  --card: 28 12% 14%;
+  --primary: 35 30% 78%;
+  --primary-soft: 28 18% 22%;
+  --accent: 30 22% 55%;
+  --ring: 35 30% 78%;
+  --gradient-dawn: linear-gradient(180deg, hsl(28 14% 11%) 0%, hsl(28 12% 14%) 100%);
+}
+
+/* ───── Coastal Calm ───── */
+:root[data-atmosphere="coastal-calm"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 190 28% 96%;
+  --foreground: 195 25% 18%;
+  --card: 190 40% 99%;
+  --popover: 190 40% 99%;
+  --primary: 175 18% 42%;
+  --primary-foreground: 190 40% 98%;
+  --primary-soft: 175 30% 90%;
+  --secondary: 195 30% 80%;
+  --accent: 35 45% 70%;
+  --accent-foreground: 195 25% 18%;
+  --muted: 190 20% 92%;
+  --muted-foreground: 195 12% 42%;
+  --border: 190 18% 86%;
+  --input: 190 18% 86%;
+  --ring: 175 30% 45%;
+  --gradient-dawn: linear-gradient(160deg, hsl(190 35% 96%) 0%, hsl(195 35% 92%) 50%, hsl(35 40% 94%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 20% 15%, hsl(195 50% 75% / 0.18), transparent 70%),
+               radial-gradient(45% 40% at 90% 90%, hsl(175 40% 70% / 0.18), transparent 70%);
+}
+.dark[data-atmosphere="coastal-calm"] {
+  --background: 195 28% 8%;
+  --card: 195 24% 12%;
+  --primary: 175 40% 62%;
+  --primary-soft: 175 25% 20%;
+  --accent: 35 50% 60%;
+  --ring: 175 40% 62%;
+  --gradient-dawn: linear-gradient(160deg, hsl(195 30% 9%) 0%, hsl(195 32% 16%) 50%, hsl(175 25% 14%) 100%);
+}
+
+/* ───── Golden Hearth ───── */
+:root[data-atmosphere="golden-hearth"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --background: 35 45% 95%;
+  --foreground: 25 35% 20%;
+  --card: 35 55% 98%;
+  --popover: 35 55% 98%;
+  --primary: 35 55% 45%;
+  --primary-foreground: 35 55% 98%;
+  --primary-soft: 35 60% 90%;
+  --secondary: 18 45% 72%;
+  --accent: 95 14% 60%;
+  --accent-foreground: 25 35% 20%;
+  --muted: 35 30% 92%;
+  --muted-foreground: 25 18% 42%;
+  --border: 35 28% 86%;
+  --input: 35 28% 86%;
+  --ring: 35 55% 50%;
+  --gradient-dawn: linear-gradient(160deg, hsl(35 50% 95%) 0%, hsl(18 55% 92%) 50%, hsl(35 60% 94%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 25% 15%, hsl(35 75% 70% / 0.22), transparent 70%),
+               radial-gradient(50% 40% at 90% 90%, hsl(18 65% 70% / 0.18), transparent 70%);
+}
+.dark[data-atmosphere="golden-hearth"] {
+  --background: 25 22% 9%;
+  --card: 25 20% 12%;
+  --primary: 35 65% 62%;
+  --primary-soft: 35 30% 22%;
+  --accent: 95 25% 55%;
+  --ring: 35 65% 62%;
+  --gradient-dawn: linear-gradient(160deg, hsl(25 25% 10%) 0%, hsl(25 28% 16%) 50%, hsl(18 25% 14%) 100%);
+}
+
+/* ───── Dark Sage Glass (cinematic dark) ───── */
+:root[data-atmosphere="dark-sage-glass"] {
+  --atmo-font-display: 'Playfair Display', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 155 14% 10%;
+  --foreground: 50 30% 92%;
+  --card: 155 16% 13%;
+  --popover: 155 16% 14%;
+  --primary: 110 22% 62%;
+  --primary-foreground: 155 20% 10%;
+  --primary-soft: 110 18% 22%;
+  --secondary: 155 14% 28%;
+  --secondary-foreground: 50 30% 92%;
+  --accent: 42 55% 62%;
+  --accent-foreground: 155 20% 10%;
+  --muted: 155 14% 16%;
+  --muted-foreground: 50 12% 65%;
+  --border: 155 14% 20%;
+  --input: 155 14% 20%;
+  --ring: 110 35% 62%;
+  --gradient-dawn: linear-gradient(160deg, hsl(155 18% 8%) 0%, hsl(155 22% 14%) 50%, hsl(42 18% 14%) 100%);
+  --shadow-soft: 0 4px 18px -8px hsl(0 0% 0% / 0.55);
+  --shadow-cozy: 0 14px 40px -14px hsl(0 0% 0% / 0.7);
+  --shadow-glow: 0 0 0 1px hsl(110 35% 62% / 0.25), 0 8px 30px -8px hsl(42 55% 62% / 0.30);
+  --atmo-glow: radial-gradient(55% 45% at 20% 15%, hsl(110 40% 50% / 0.28), transparent 70%),
+               radial-gradient(45% 40% at 90% 90%, hsl(42 65% 55% / 0.20), transparent 70%);
+}
+.dark[data-atmosphere="dark-sage-glass"] { /* same as light — always dark */
+  --background: 155 14% 7%;
+  --card: 155 16% 11%;
+}
+
+/* ───── Dawn ───── */
+:root[data-atmosphere="dawn"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 28 60% 96%;
+  --foreground: 20 35% 22%;
+  --card: 28 70% 99%;
+  --popover: 28 70% 99%;
+  --primary: 18 70% 56%;
+  --primary-foreground: 28 70% 98%;
+  --primary-soft: 28 65% 92%;
+  --secondary: 35 55% 76%;
+  --accent: 95 18% 70%;
+  --accent-foreground: 20 35% 22%;
+  --muted: 28 40% 92%;
+  --muted-foreground: 20 18% 42%;
+  --border: 28 35% 86%;
+  --input: 28 35% 86%;
+  --ring: 18 70% 56%;
+  --gradient-dawn: linear-gradient(160deg, hsl(28 80% 92%) 0%, hsl(20 70% 85%) 45%, hsl(38 75% 88%) 100%);
+  --atmo-glow: radial-gradient(60% 50% at 18% 12%, hsl(38 95% 70% / 0.30), transparent 72%),
+               radial-gradient(50% 45% at 90% 90%, hsl(18 80% 70% / 0.22), transparent 72%);
+}
+.dark[data-atmosphere="dawn"] {
+  --background: 20 30% 10%;
+  --card: 20 26% 13%;
+  --primary: 20 80% 68%;
+  --primary-soft: 20 35% 22%;
+  --accent: 95 25% 55%;
+  --ring: 20 80% 68%;
+  --gradient-dawn: linear-gradient(160deg, hsl(20 32% 11%) 0%, hsl(20 38% 18%) 50%, hsl(38 28% 16%) 100%);
+}
+
+/* ───── Mist (reduce-overwhelm mode) ───── */
+:root[data-atmosphere="mist"] {
+  --atmo-font-display: 'Playfair Display', ui-serif, Georgia, serif;
+  --atmo-font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 80 6% 95%;
+  --foreground: 180 6% 24%;
+  --card: 80 10% 98%;
+  --popover: 80 10% 98%;
+  --primary: 180 6% 40%;
+  --primary-foreground: 80 10% 98%;
+  --primary-soft: 180 10% 90%;
+  --secondary: 95 10% 82%;
+  --accent: 195 12% 65%;
+  --accent-foreground: 180 8% 22%;
+  --muted: 80 8% 92%;
+  --muted-foreground: 180 6% 45%;
+  --border: 80 8% 88%;
+  --input: 80 8% 88%;
+  --ring: 180 12% 50%;
+  --gradient-dawn: linear-gradient(180deg, hsl(80 12% 96%) 0%, hsl(95 10% 94%) 60%, hsl(195 10% 93%) 100%);
+  --atmo-glow: none;
+  --shadow-soft: 0 1px 6px -2px hsl(180 12% 30% / 0.06);
+  --shadow-cozy: 0 4px 16px -10px hsl(180 12% 30% / 0.10);
+  --shadow-glow: 0 0 0 1px hsl(180 12% 40% / 0.08);
+}
+.dark[data-atmosphere="mist"] {
+  --background: 195 10% 10%;
+  --card: 195 10% 13%;
+  --primary: 180 14% 68%;
+  --primary-soft: 195 10% 22%;
+  --accent: 95 12% 60%;
+  --ring: 180 14% 68%;
+  --gradient-dawn: linear-gradient(180deg, hsl(195 10% 10%) 0%, hsl(95 8% 14%) 100%);
+}
+
+/* ───── Ambient layer + glass utilities ───── */
+.atmo-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--atmo-glow);
+  opacity: 0.9;
+  animation: atmo-drift 24s ease-in-out infinite;
+}
+@keyframes atmo-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.85; }
+  50%      { transform: translate3d(0, -1.5%, 0) scale(1.03); opacity: 1; }
+}
+
+.atmo-glass {
+  background: hsl(var(--card) / 0.65);
+  backdrop-filter: blur(var(--atmo-blur)) saturate(120%);
+  -webkit-backdrop-filter: blur(var(--atmo-blur)) saturate(120%);
+  border: 1px solid hsl(var(--border) / 0.6);
+}
+
+/* In Dark Sage Glass, cards lean glassy by default */
+html[data-atmosphere="dark-sage-glass"] .cozy-card,
+html[data-atmosphere="moonlit-plum"].dark .cozy-card {
+  background: hsl(var(--card) / 0.72);
+  backdrop-filter: blur(14px) saturate(115%);
+  -webkit-backdrop-filter: blur(14px) saturate(115%);
+}
