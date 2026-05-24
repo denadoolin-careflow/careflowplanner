@@ -1,0 +1,1 @@
+ALTER TABLE public.routines ADD COLUMN IF NOT EXISTS time_of_day TEXT;
