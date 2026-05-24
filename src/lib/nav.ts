@@ -8,6 +8,7 @@ import {
 
 export const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/care", label: "CARE Loop", icon: Flower2 },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/projects", label: "Projects", icon: FolderOpen },
   { to: "/today", label: "Today", icon: Sun },
@@ -50,6 +51,7 @@ export const NAV_GROUPS = [
     icon: Compass,
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/care", label: "CARE Loop", icon: Flower2 },
       { to: "/projects", label: "Projects", icon: FolderOpen },
     ],
   },
