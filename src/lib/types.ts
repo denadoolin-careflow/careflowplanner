@@ -63,6 +63,7 @@ export interface AreaRecord {
   color?: string;
   sortOrder: number;
   isArchived?: boolean;
+  coverUrl?: string;
 }
 
 export type ProjectStatus = "active" | "paused" | "done" | "someday";
