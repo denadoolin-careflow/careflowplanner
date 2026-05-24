@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { TodayEnergy } from "@/components/today/TodayEnergy";
 import { EndOfDaySummary } from "@/components/today/EndOfDaySummary";
 import { WeatherHeroCard } from "@/components/today/WeatherHeroCard";
+import { CarePriorities } from "@/components/today/CarePriorities";
 
 const MOON_TEMPLATE_MAP: Record<string, string> = {
   "new": "new-moon",
@@ -247,6 +248,8 @@ function TodayInner() {
         {!rhythmOn && (
           <WeatherHeroCard />
         )}
+
+        <CarePriorities date={today} onTaskClick={setEditTaskId} />
 
         {layout === "plan" ? (
           <DailyPlanningDashboard day={today} />
