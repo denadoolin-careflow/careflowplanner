@@ -666,6 +666,25 @@ export function BlockEditor({
   // Open internal links via router when user clicks
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.target as HTMLElement;
+    // Click on a bullet/numbered marker collapses or expands its nested list
+    if (el.tagName === "LI") {
+      const li = el as HTMLLIElement;
+      const parentList = li.parentElement;
+      const isList =
+        parentList?.tagName === "UL" || parentList?.tagName === "OL";
+      const isTaskList = parentList?.getAttribute("data-type") === "taskList";
+      const hasChildren = !!li.querySelector(":scope > ul, :scope > ol");
+      if (isList && !isTaskList && hasChildren) {
+        const rect = li.getBoundingClientRect();
+        // Marker sits in the left padding zone
+        if (e.clientX - rect.left < 24) {
+          e.preventDefault();
+          li.classList.toggle("cf-collapsed");
+          try { (navigator as any).vibrate?.(6); } catch {}
+          return;
+        }
+      }
+    }
     // Haptic + tiny scale pulse when collapsing/expanding a toggle
     const summary = el.closest("summary");
     if (summary && summary.parentElement?.classList.contains("cf-toggle")) {
