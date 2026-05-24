@@ -1,72 +1,101 @@
-# Areas Upgrade Plan
 
-I'll ship this in 4 focused parts. Each part is independently shippable so you can preview as we go.
+# Atmospheres — emotional theming system
 
----
+Rebrand the current "Themes" feature as **Atmospheres** and elevate it from color swaps into a full ambient experience: mood, gradients, glow, shadows, typography, and auto-switching rules.
 
-## Part 1 — Area page polish & project reordering
+## What gets built
 
-**Files**: `src/pages/AreaPage.tsx`, `src/components/areas/*`, `src/lib/store.tsx`
+### 1. Atmosphere library (`src/lib/atmospheres.ts`)
+New typed registry replacing/wrapping `theme-preset.ts`. Each atmosphere has:
+- `id`, `name`, `tagline`, `mood[]`, `bestFor[]`
+- Full palette (6 named colors as HSL)
+- `typography` pair (display + body Google Fonts)
+- `vibe` flags: `gradientIntensity`, `glow`, `glass`, `grain`, `animationLevel`
+- `darkVariant` flag (which mode it shines in)
 
-- Remove the active/selected highlight on Area cards/rows (find the `ring`/`bg-primary/10` styling tied to selected state and drop it).
-- Drag-and-drop project reordering inside an Area using `@dnd-kit/sortable` (already a common stack pattern). Persist via `projects.sortOrder` (already exists in `Project` type).
-- View switcher above projects: **List | Board | Grid**, with controls:
-  - **Sort**: name, deadline, recently updated, manual (sortOrder)
-  - **Group**: none, status, deadline bucket (this week / month / later), favorites
-  - **Filter**: status (active/paused/done/someday), favorites only, has deadline
-- Persist view prefs per area in `localStorage` (key: `area-view:{areaId}`).
+The 8 atmospheres (per spec): Sage Sanctuary, Moonlit Plum, Soft Linen, Coastal Calm, Golden Hearth, Dark Sage Glass, Dawn, Mist.
 
-## Part 2 — Auto task icons (replace emoji field)
+### 2. CSS tokens (`src/index.css`)
+Replace the existing 16 preset blocks with 8 atmosphere blocks (`:root[data-atmosphere="..."]` + `.dark[data-atmosphere="..."]`). Each block defines:
+- Surfaces, primary/secondary/accent, muted, border
+- `--gradient-dawn/warm/calm/sage` recolored to the palette
+- `--shadow-soft/cozy/glow` tuned per mood (Dark Sage Glass = deep + glassy; Soft Linen = barely-there)
+- `--atmo-glow` (radial accent for ambient backdrops)
+- `--atmo-font-display` / `--atmo-font-body` CSS variables
 
-**Files**: `src/lib/task-icons.ts` (new), `src/components/cards/TaskRow.tsx`, `src/components/tasks/*` editors
+Add new utility classes:
+- `.atmo-ambient` — animated radial-gradient backdrop using `--atmo-glow`
+- `.atmo-glass` — backdrop-blur card variant
+- `.atmo-transition` — applied to `html` for smooth 600ms color transitions when switching
 
-- New `inferTaskIcon(title, notes?)` using a keyword → Lucide map (~80 mappings: phone/call→Phone, buy/grocery→ShoppingCart, doctor/appt→Stethoscope, email→Mail, clean→Sparkles, pay/bill→CreditCard, gym/workout→Dumbbell, etc.). Falls back to `CheckSquare`.
-- Remove emoji input from task editors. `task.icon` still stored but now optional override.
-- `TaskRow` renders: `task.icon` (manual override, looked up via existing lucide map) → else `inferTaskIcon(title)` → else default.
-- Add a small icon-override popover for users who want to pin a specific icon.
+### 3. Atmosphere store (`src/lib/atmospheres.ts` + provider)
+- `useAtmosphere()` hook → `{ current, set, favorites, toggleFavorite, recent, auto, setAuto }`
+- LocalStorage keys: `careflow:atmosphere`, `careflow:atmosphere:favorites`, `careflow:atmosphere:auto`, `careflow:atmosphere:recent`
+- `auto` config: `{ enabled, rules: { morning, evening, lowEnergy, focus, moonPhase } }`
+- Auto-resolver runs on: mount, hour change, lowEnergyMode change, moon phase change. Picks the highest-priority matched rule.
+- Smooth swap: add `atmo-transition` class to `<html>`, swap `data-atmosphere`, lazy-load Google Font pair, remove transition class after 700ms.
 
-## Part 3 — Trello-style Kanban + Unsplash cover images
+### 4. Picker UI (`src/components/atmospheres/AtmospherePicker.tsx`)
+Replaces `ThemePicker.tsx` in the header. Modal (Dialog) with:
+- Hero header: "Choose the atmosphere that supports your day."
+- Grid of preview cards: each shows gradient swatch, name, mood chips, tagline, favorite star, "Apply" button
+- Hover → live preview overlay (animated gradient + typography sample)
+- Sections: **Recommended for now** (resolved from time/energy/moon), **Favorites**, **All atmospheres**, **Recently used**
+- "Auto-switch" toggle + accordion to configure rules (morning/evening/low-energy/focus/moon)
 
-**Files**: `src/components/tasks/KanbanBoard.tsx` (rewrite), `src/components/common/CoverImagePicker.tsx` (new), `src/lib/covers.ts` (new), migration for `cover_url` columns.
+Suggestion copy generator (`src/lib/atmosphere-suggestions.ts`):
+- Low energy → "You seem overloaded today. Try **Mist**."
+- Evening + moon visible → "**Moonlit Plum** pairs well with reflection nights."
+- Morning → "Start soft with **Dawn**."
+- Focus mode on → "**Dark Sage Glass** for deep work."
 
-Kanban redesign:
-- Card visuals: cover image at top (if set), title, labels (tags as colored chips), due date pill, icon, avatar/recipient, subtask progress bar.
-- Vertical drag-reorder within a column + cross-column drag (already drag works between columns; add `sortOrder` write-back within a column).
-- "Add column" disabled (columns are semantic: Inbox/Today/Upcoming/Waiting/Done) — but allow collapsing columns.
-- Inline card open → side sheet with full editor.
+### 5. Header integration
+Update `src/components/layout/AppLayout.tsx` to render `<AtmospherePicker />` in place of `<ThemePicker />`. Add a small ambient layer (`<div class="atmo-ambient pointer-events-none fixed inset-0 -z-10" />`) so backgrounds breathe.
 
-Cover images (free Unsplash via `source.unsplash.com`):
-- `CoverImagePicker` dialog: keyword search input → grid of `https://source.unsplash.com/400x240/?{keyword}&sig={i}` thumbnails (6 results, regenerate button), plus "Remove cover" and "Paste URL".
-- Apply to: tasks, projects, notes, areas. Add `cover_url text` column to each of these tables via migration.
+Keep `ThemePicker.tsx` as a thin re-export to avoid breaking imports elsewhere.
 
-## Part 4 — Area Hub
+### 6. Suggestions banner (optional, lightweight)
+Tiny dismissible chip near the picker: "✨ Try Mist for a calmer afternoon →" that opens the picker pre-scrolled to the suggestion. Stored dismissal in localStorage per-suggestion-id per-day.
 
-**Files**: `src/pages/AreaPage.tsx` (new "Hub" tab), `src/components/areas/AreaHub.tsx` (new), `src/components/areas/AreaResourceEditor.tsx` (new), migration.
+## Files
 
-- New tab in AreaPage: **Hub**. Sections:
-  - **Pinned Resources** — custom links/files/embeds (new `area_resources` table: `id, user_id, area_name, kind (link|file|embed|note_ref), title, url, icon, color, sort_order`).
-  - **Linked Goals** — goals where `category` matches area or manually linked (use existing `goals`).
-  - **Linked Habits** — habits filtered by area tag.
-  - **Linked Notes & Journal** — notes/journal entries tagged with area name.
-  - **Projects** — quick list with covers.
-- Resources support drag reorder, edit, delete, open-in-new-tab.
+**New**
+- `src/lib/atmospheres.ts` — registry + types + store hook
+- `src/lib/atmosphere-suggestions.ts` — suggestion logic
+- `src/components/atmospheres/AtmospherePicker.tsx` — modal picker
+- `src/components/atmospheres/AtmosphereCard.tsx` — preview card
+- `src/components/atmospheres/AtmosphereAmbient.tsx` — fixed ambient layer
+- `src/components/atmospheres/AtmosphereSuggestion.tsx` — chip
+- `src/components/atmospheres/AutoSwitchConfig.tsx` — rules form
 
----
+**Edited**
+- `src/index.css` — replace 16 presets with 8 atmosphere blocks + new utilities
+- `src/lib/theme-preset.ts` — backward-compat re-export that maps old preset ids → atmospheres
+- `src/components/layout/AppLayout.tsx` — swap picker + add ambient layer
+- `src/components/layout/ThemePicker.tsx` — re-export `AtmospherePicker`
 
-## Technical notes
+## Backward compatibility
 
-- **DnD library**: use `@dnd-kit/core` + `@dnd-kit/sortable` (lightweight, mobile-friendly).
-- **Migrations** (one combined migration):
-  - `ALTER TABLE tasks ADD COLUMN cover_url text;`
-  - `ALTER TABLE projects ADD COLUMN cover_url text;`
-  - `ALTER TABLE areas ADD COLUMN cover_url text;`
-  - `ALTER TABLE home_notes ADD COLUMN cover_url text;`
-  - `CREATE TABLE area_resources (...)` with RLS `auth.uid() = user_id`.
-- **Type sync**: after migration, `src/integrations/supabase/types.ts` regenerates automatically.
-- **Backward compat**: keep `task.icon` (manual override wins over inference).
+Old `theme-preset` keys (`sage`, `plum`, `dusk`, etc.) map to nearest atmosphere:
+- `sage`/`moss`/`forest` → `sage-sanctuary`
+- `plum`/`dusk`/`lavender`/`blossom` → `moonlit-plum`
+- `sand`/`warm` → `golden-hearth`
+- `ocean`/`midnight` → `coastal-calm`
+- `mono`/`noir` → `dark-sage-glass`
+- default fallback → `sage-sanctuary`
 
----
+Anyone calling `setThemePreset(...)` continues to work via the mapping.
 
-## Suggested order
+## Out of scope (can follow up if you want)
 
-I'll ship **Part 1 first**, then pause for you to preview. Reply "next" to continue to Part 2, or steer me if priorities shift.
+- Per-page atmosphere overrides ("assign atmospheres to routines/pages") — I'll wire the data layer (`pageAtmospheres` localStorage map) but not add the UI in every page settings; you can ask for that next.
+- Custom user-built atmospheres
+- Server sync of atmosphere prefs (currently localStorage only)
+
+## Order of work
+
+1. Atmosphere registry + suggestion logic
+2. CSS tokens + utilities for all 8
+3. Picker + ambient layer + header swap
+4. Auto-switch resolver + config UI
+5. Backward-compat shim
