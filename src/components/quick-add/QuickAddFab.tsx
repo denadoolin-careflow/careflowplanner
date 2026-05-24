@@ -123,7 +123,7 @@ function CommandPalette({
   value: string;
   onChange: (v: string) => void;
   presets: QuickAddPreset[];
-  onPick: (k: QuickAddKind) => void;
+  onPick: (k: Mode) => void;
   onClose: () => void;
 }) {
   const { addTask, addProject, state } = useStore();
@@ -132,6 +132,7 @@ function CommandPalette({
   const hasText = value.trim().length > 0;
   const projects = state.projects ?? [];
   const areas = state.areas ?? [];
+  const dictation = useVoiceDictation((t) => onChange(t));
 
   // Overrides set by the picker chips. Undefined = follow NLP defaults.
   const [pickedProjectId, setPickedProjectId] = useState<string | undefined | null>(undefined); // null = explicit "no project"
