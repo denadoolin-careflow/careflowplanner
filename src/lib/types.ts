@@ -120,6 +120,7 @@ export interface JournalEntry {
   tags?: string[];
   pinned?: boolean;
   linkedIds?: { type: string; id: string; label?: string }[];
+  attachments?: Attachment[];
 }
 
 export interface Meal {
