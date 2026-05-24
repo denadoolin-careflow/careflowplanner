@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { ProjectJournalPanel } from "@/components/journal/ProjectJournalPanel";
+import { ProjectProgressTimeline } from "@/components/projects/ProjectProgressTimeline";
 import { listWhiteboardsForProject, createWhiteboard, type Whiteboard } from "@/lib/whiteboards";
 import { PenLine } from "lucide-react";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
@@ -239,6 +240,7 @@ export default function ProjectDetail() {
 
       {/* notes-as-gallery is rendered above; keep this for compact linked-notes management */}
       <LinkedNotesPanel entityType="project" entityId={project.id} contextTitle={project.name} compact />
+      <ProjectProgressTimeline projectId={project.id} />
       <ProjectJournalPanel projectId={project.id} projectName={project.name} />
       <WhiteboardsPanel projectId={project.id} projectName={project.name} />
     </div>
