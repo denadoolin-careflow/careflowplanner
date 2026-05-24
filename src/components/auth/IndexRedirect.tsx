@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
-import Dashboard from "@/pages/Dashboard";
+
+const FALLBACK_ROUTE = "/today";
 
 /**
  * Renders at "/" and honours the user's chosen default landing page.
@@ -12,25 +13,21 @@ import Dashboard from "@/pages/Dashboard";
  * settings arrive from the server.
  */
 function readCachedDefaultRoute(): string {
-  if (typeof window === "undefined") return "/";
+  if (typeof window === "undefined") return FALLBACK_ROUTE;
   try {
     const v = window.localStorage.getItem("careflow.defaultRoute");
-    return v && v !== "/" ? v : "/";
+    return v && v !== "/" ? v : FALLBACK_ROUTE;
   } catch {
-    return "/";
+    return FALLBACK_ROUTE;
   }
 }
 
 export function IndexRedirect() {
   const { state, loading } = useStore();
   const cached = readCachedDefaultRoute();
-  const live = state.settings.defaultRoute ?? "/";
+  const liveRaw = state.settings.defaultRoute;
+  const live = liveRaw && liveRaw !== "/" ? liveRaw : FALLBACK_ROUTE;
   // Prefer live value once loaded, otherwise the synchronously-cached one.
   const target = !loading ? live : cached;
-
-  if (target && target !== "/") return <Navigate to={target} replace />;
-  // While the store is still loading and there is no cached redirect,
-  // render nothing rather than flashing Dashboard.
-  if (loading) return null;
-  return <Dashboard />;
+  return <Navigate to={target} replace />;
 }
