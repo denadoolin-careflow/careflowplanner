@@ -358,6 +358,18 @@ function CommandPalette({
           </CommandGroup>
         )}
 
+        <CommandGroup heading="Modes">
+          <CommandItem value="brain dump inbox" onSelect={() => onPick("braindump" as Mode)} className="gap-3">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-accent/30 text-accent-foreground">
+              <Brain className="h-3.5 w-3.5" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="truncate text-sm">Brain dump</div>
+              <div className="truncate text-[11px] text-muted-foreground">Empty your head — we'll route each line.</div>
+            </div>
+          </CommandItem>
+        </CommandGroup>
+
         {hasText && projects.length > 0 && (
           <CommandGroup heading="Add to project">
             {projects.slice(0, 6).map((p) => (
