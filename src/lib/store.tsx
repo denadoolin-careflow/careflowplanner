@@ -51,6 +51,7 @@ const taskFrom = (r: any): Task => ({
   resetItemId: r.reset_item_id ?? undefined,
   sectionId: r.section_id ?? undefined,
   snoozedUntil: r.snoozed_until ?? undefined,
+  attachments: Array.isArray(r.attachments) ? r.attachments : [],
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null, done: t.done,
@@ -72,6 +73,7 @@ const taskTo = (t: Partial<Task>) => ({
   // Pass through undefined → supabase omits the field, so updates don't accidentally
   // unpark a task. Use `null` explicitly via patch to clear.
   snoozed_until: t.snoozedUntil === undefined ? undefined : t.snoozedUntil,
+  attachments: t.attachments ?? [],
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 const habitFrom = (r: any): Habit => ({ id: r.id, title: r.title, cadence: r.cadence, category: r.category, streak: r.streak, log: {} });
