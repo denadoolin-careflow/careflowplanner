@@ -561,7 +561,17 @@ export function BlockEditor({
 
   // Open internal links via router when user clicks
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const target = (e.target as HTMLElement).closest("a") as HTMLAnchorElement | null;
+    const el = e.target as HTMLElement;
+    // Haptic + tiny scale pulse when collapsing/expanding a toggle
+    const summary = el.closest("summary");
+    if (summary && summary.parentElement?.classList.contains("cf-toggle")) {
+      try { (navigator as any).vibrate?.(8); } catch {}
+      summary.animate(
+        [{ transform: "scale(1)" }, { transform: "scale(0.985)" }, { transform: "scale(1)" }],
+        { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" },
+      );
+    }
+    const target = el.closest("a") as HTMLAnchorElement | null;
     if (!target) return;
     const href = target.getAttribute("href") || "";
     if (href.startsWith("/")) { e.preventDefault(); navigate(href); }
