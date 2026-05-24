@@ -30,6 +30,7 @@ const STATUS_LABEL: Record<TaskStatus, string> = {
   someday: "Someday",
   waiting: "Waiting",
   done: "Done",
+  parked: "Not today",
 };
 
 export function QuickAddFab() {
