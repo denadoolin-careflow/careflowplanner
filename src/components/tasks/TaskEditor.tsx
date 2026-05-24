@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import {
   CalendarIcon, X, Tag, Flag, Zap, Clock, Repeat, FolderKanban, Target,
-  Star, Trash2, FileText, Link2, AlignLeft,
+  Star, Trash2, FileText, Link2, AlignLeft, Paperclip,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { IconPicker } from "@/components/common/IconPicker";
+import { AttachmentsField } from "@/components/attachments/AttachmentsField";
 
 type Props = {
   open: boolean;
@@ -282,6 +283,23 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                 <Link2 className="h-3 w-3" /> Linked notes
               </div>
               <LinkedNotesPanel entityType="task" entityId={draft.id} contextTitle={draft.title} compact />
+            </Section>
+
+            {/* Attachments */}
+            <Section title={undefined}>
+              <div className="flex items-center gap-1.5 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                <Paperclip className="h-3 w-3" /> Attachments
+              </div>
+              <AttachmentsField
+                scope="task"
+                ownerId={draft.id}
+                value={draft.attachments}
+                onChange={(next) => {
+                  set("attachments", next);
+                  // Persist immediately so files survive cancel.
+                  void updateTask(draft.id, { attachments: next });
+                }}
+              />
             </Section>
           </div>
         </div>
