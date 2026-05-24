@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { addMonths, eachDayOfInterval, endOfMonth, format, isSameMonth, startOfMonth, subMonths } from "date-fns";
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Heart, ListChecks,
-  Map, MapPin, Moon, Plus, Sparkles, Sprout, Trash2, X,
+  Map as MapIcon, MapPin, Moon, Plus, Sparkles, Sprout, Trash2, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
   type MoonPhaseItem, type CyclePhaseItem,
 } from "@/lib/monthly-plan";
 import { useStore } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
 import { useCycle } from "@/lib/cycle-store";
 import { phaseForDate, PHASE_META } from "@/lib/cycle";
 import { getRhythmForecast } from "@/lib/rhythm-forecast";
@@ -53,6 +54,7 @@ export default function MonthOverview() {
   const month = useMemo(() => monthKey(cursor), [cursor]);
   const { plan, loaded, setPlan } = useMonthlyPlan(month);
   const { state, addTask, addAppointment } = useStore();
+  const { updateAppointment } = useStore();
   const { settings: cycleSettings, periods: cyclePeriods } = useCycle();
   const [generating, setGenerating] = useState(false);
   const [aiContext, setAiContext] = useState("");
@@ -223,16 +225,35 @@ export default function MonthOverview() {
     void patch({ outings: [...(plan?.outings ?? []), { id: monthlyPlans.newItemId(), title: title.trim() }] });
   };
   const updateOuting = (id: string, p: Partial<OutingItem>) => {
-    void patch({ outings: (plan?.outings ?? []).map(o => o.id === id ? { ...o, ...p } : o) });
+    const current = (plan?.outings ?? []).find(o => o.id === id);
+    const next = (plan?.outings ?? []).map(o => o.id === id ? { ...o, ...p } : o);
+    void patch({ outings: next });
+    // Mirror edits to a linked calendar appointment so both surfaces stay in sync.
+    if (current?.linked_appt_id && current.linked_appt_id !== "linked") {
+      const apptPatch: any = {};
+      if (p.title !== undefined) apptPatch.title = p.title;
+      if (p.date !== undefined) apptPatch.date = p.date || format(monthStart, "yyyy-MM-dd");
+      if (p.notes !== undefined) apptPatch.notes = p.notes ?? undefined;
+      if (Object.keys(apptPatch).length > 0) {
+        void updateAppointment(current.linked_appt_id, apptPatch);
+      }
+    }
   };
   const removeOuting = (id: string) => {
     void patch({ outings: (plan?.outings ?? []).filter(o => o.id !== id) });
   };
   const sendOutingToCalendar = async (o: OutingItem) => {
     const date = o.date || format(monthStart, "yyyy-MM-dd");
-    await addAppointment({ title: o.title, date, notes: o.notes ?? undefined, type: "personal", icon: "📍" });
+    const apptId = await createLinkedAppointment({
+      title: o.title, date, notes: o.notes ?? null, icon: "📍",
+    });
+    if (!apptId) return;
+    const next = (plan?.outings ?? []).map(x =>
+      x.id === o.id ? { ...x, linked_appt_id: apptId, date } : x,
+    );
+    setPlan(prev => prev ? { ...prev, outings: next } : prev);
+    await patch({ outings: next });
     toast.success(`Added “${o.title}” to calendar`);
-    updateOuting(o.id, { linked_appt_id: "linked", date });
   };
 
   // Activities
@@ -246,6 +267,80 @@ export default function MonthOverview() {
   const removeActivity = (id: string) => {
     void patch({ activities: (plan?.activities ?? []).filter(a => a.id !== id) });
   };
+  const updateActivity = (id: string, p: Partial<ActivityItem>) => {
+    const current = (plan?.activities ?? []).find(a => a.id === id);
+    const next = (plan?.activities ?? []).map(a => a.id === id ? { ...a, ...p } : a);
+    void patch({ activities: next });
+    if (current?.linked_appt_id && current.linked_appt_id !== "linked") {
+      const apptPatch: any = {};
+      if (p.title !== undefined) apptPatch.title = p.title;
+      if (p.date !== undefined) apptPatch.date = p.date || format(monthStart, "yyyy-MM-dd");
+      if (p.notes !== undefined) apptPatch.notes = p.notes ?? undefined;
+      if (Object.keys(apptPatch).length > 0) {
+        void updateAppointment(current.linked_appt_id, apptPatch);
+      }
+    }
+  };
+  const sendActivityToCalendar = async (a: ActivityItem) => {
+    const date = a.date || format(monthStart, "yyyy-MM-dd");
+    const apptId = await createLinkedAppointment({
+      title: a.title, date, notes: a.notes ?? null, icon: "✨",
+    });
+    if (!apptId) return;
+    const next = (plan?.activities ?? []).map(x =>
+      x.id === a.id ? { ...x, linked_appt_id: apptId, date } : x,
+    );
+    setPlan(prev => prev ? { ...prev, activities: next } : prev);
+    await patch({ activities: next });
+    toast.success(`Added “${a.title}” to calendar`);
+  };
+
+  // Insert via the store (so state.appointments is updated) and return the new id.
+  async function createLinkedAppointment(args: {
+    title: string; date: string; notes: string | null; icon: string;
+  }): Promise<string | null> {
+    const appt = await addAppointment({
+      title: args.title, date: args.date, notes: args.notes ?? undefined,
+      type: "personal", icon: args.icon, allDay: true,
+    });
+    if (!appt) { toast.error("Couldn't add to calendar"); return null; }
+    return appt.id;
+  }
+
+  // Reconcile linked items with the live calendar:
+  // - mirror title/date from the appointment if it changed elsewhere
+  // - clear linked_appt_id when the appointment was deleted from the calendar
+  useEffect(() => {
+    if (!loaded || !plan) return;
+    const apptMap = new Map(state.appointments.map(a => [a.id, a]));
+    let outingsChanged = false;
+    const outings = (plan.outings ?? []).map(o => {
+      if (!o.linked_appt_id || o.linked_appt_id === "linked") return o;
+      const appt = apptMap.get(o.linked_appt_id);
+      if (!appt) { outingsChanged = true; return { ...o, linked_appt_id: null }; }
+      if (appt.title !== o.title || appt.date !== o.date) {
+        outingsChanged = true;
+        return { ...o, title: appt.title, date: appt.date };
+      }
+      return o;
+    });
+    let activitiesChanged = false;
+    const activities = (plan.activities ?? []).map(a => {
+      if (!a.linked_appt_id || a.linked_appt_id === "linked") return a;
+      const appt = apptMap.get(a.linked_appt_id);
+      if (!appt) { activitiesChanged = true; return { ...a, linked_appt_id: null }; }
+      if (appt.title !== a.title || appt.date !== a.date) {
+        activitiesChanged = true;
+        return { ...a, title: appt.title, date: appt.date };
+      }
+      return a;
+    });
+    if (outingsChanged || activitiesChanged) {
+      setPlan(prev => prev ? { ...prev, outings, activities } : prev);
+      void patch({ outings, activities });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, state.appointments, plan?.id]);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-6">
@@ -499,7 +594,7 @@ export default function MonthOverview() {
       </SectionCard>
 
       {/* Outings */}
-      <SectionCard title="Outings" accent="warm" action={<Map className="h-4 w-4 text-muted-foreground" />}>
+      <SectionCard title="Outings" accent="warm" action={<MapIcon className="h-4 w-4 text-muted-foreground" />}>
         <OutingList
           items={plan?.outings ?? []}
           onAdd={addOuting}
@@ -517,6 +612,9 @@ export default function MonthOverview() {
           onAdd={addActivity}
           onToggle={toggleActivity}
           onRemove={removeActivity}
+          onUpdate={updateActivity}
+          onSendToCalendar={sendActivityToCalendar}
+          monthIso={format(monthStart, "yyyy-MM-dd")}
         />
       </SectionCard>
     </div>
@@ -635,12 +733,15 @@ function OutingList({
 }
 
 function ActivityList({
-  items, onAdd, onToggle, onRemove,
+  items, onAdd, onToggle, onRemove, onUpdate, onSendToCalendar, monthIso,
 }: {
   items: ActivityItem[];
   onAdd: (t: string) => void;
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
+  onUpdate: (id: string, p: Partial<ActivityItem>) => void;
+  onSendToCalendar: (a: ActivityItem) => void;
+  monthIso: string;
 }) {
   const [draft, setDraft] = useState("");
   return (
@@ -649,7 +750,30 @@ function ActivityList({
       {items.map(a => (
         <div key={a.id} className="group flex items-center gap-2 rounded-md bg-muted/30 px-2 py-1.5 text-sm">
           <Checkbox checked={!!a.done} onCheckedChange={() => onToggle(a.id)} />
-          <span className={cn("flex-1 truncate", a.done && "line-through text-muted-foreground")}>{a.title}</span>
+          <Input
+            value={a.title}
+            onChange={(e) => onUpdate(a.id, { title: e.target.value })}
+            className={cn(
+              "h-7 flex-1 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0",
+              a.done && "line-through text-muted-foreground",
+            )}
+          />
+          <Input
+            type="date"
+            value={a.date ?? ""}
+            min={monthIso}
+            onChange={(e) => onUpdate(a.id, { date: e.target.value || null })}
+            className="h-7 w-[140px] text-xs"
+          />
+          {!a.linked_appt_id ? (
+            <button
+              onClick={() => onSendToCalendar(a)}
+              className="rounded-full px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              title="Add to calendar"
+            >→ Calendar</button>
+          ) : (
+            <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[10px]">On calendar</Badge>
+          )}
           <button onClick={() => onRemove(a.id)} className="opacity-0 group-hover:opacity-60 hover:opacity-100" aria-label="Remove">
             <X className="h-3.5 w-3.5" />
           </button>

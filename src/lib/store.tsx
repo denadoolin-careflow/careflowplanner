@@ -211,7 +211,7 @@ interface Ctx {
   setGroceryStock: (id: string, status: "in" | "low" | "out") => Promise<void>;
   updateGroceryItem: (id: string, patch: { name?: string; qty?: string | null; category?: string | null }) => Promise<void>;
 
-  addAppointment: (a: Partial<Appointment> & { title: string; date: string }) => Promise<void>;
+  addAppointment: (a: Partial<Appointment> & { title: string; date: string }) => Promise<Appointment | null>;
   deleteAppointment: (id: string) => Promise<void>;
   updateAppointment: (id: string, patch: Partial<Appointment>) => Promise<void>;
 
@@ -662,7 +662,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
 
     addAppointment: async (a) => {
-      if (!uid) return;
+      if (!uid) return null;
       const { data } = await supabase.from("appointments").insert({
         user_id: uid,
         title: a.title, date: a.date,
@@ -677,11 +677,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         color: a.color ?? null,
         sync_to_google: !!a.syncToGoogle,
       }).select().single();
-      if (data) {
-        const appt = apptFrom(data);
-        setState(s => ({ ...s, appointments: [appt, ...s.appointments] }));
-        if (appt.syncToGoogle) void pushAppointmentToGoogle(appt.id);
-      }
+      if (!data) return null;
+      const appt = apptFrom(data);
+      setState(s => ({ ...s, appointments: [appt, ...s.appointments] }));
+      if (appt.syncToGoogle) void pushAppointmentToGoogle(appt.id);
+      return appt;
     },
     deleteAppointment: async (id) => {
       const appt = state.appointments.find(a => a.id === id);

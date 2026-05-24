@@ -3,7 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface PriorityItem { id: string; title: string; done: boolean; linked_task_id?: string | null; }
 export interface OutingItem { id: string; title: string; date?: string | null; notes?: string | null; linked_appt_id?: string | null; }
-export interface ActivityItem { id: string; title: string; notes?: string | null; done?: boolean; }
+export interface ActivityItem {
+  id: string;
+  title: string;
+  notes?: string | null;
+  done?: boolean;
+  date?: string | null;
+  linked_appt_id?: string | null;
+}
 export interface MoonPhaseItem {
   id: string;
   iso: string;            // date YYYY-MM-DD
