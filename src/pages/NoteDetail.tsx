@@ -11,6 +11,7 @@ import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
+import { TagPicker } from "@/components/tags/TagPicker";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,7 @@ export default function NoteDetail() {
   const [note, setNote] = useState<Note | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [backlinks, setBacklinks] = useState<Note[]>([]);
   const saveTimer = useRef<number | null>(null);
 
@@ -25,7 +27,7 @@ export default function NoteDetail() {
     if (!id) return;
     void getNote(id).then(n => {
       if (!n) { toast.error("Note not found"); nav("/notes"); return; }
-      setNote(n); setTitle(n.title); setBody(n.body);
+      setNote(n); setTitle(n.title); setBody(n.body); setTags(n.tags ?? []);
     });
   }, [id, nav]);
 
@@ -102,6 +104,16 @@ export default function NoteDetail() {
         <p className="mt-1 text-xs text-muted-foreground">
           Updated {format(parseISO(note.updatedAt), "MMM d, h:mm a")}
         </p>
+
+        <div className="mt-3">
+          <TagPicker
+            value={tags}
+            onChange={(next) => {
+              setTags(next);
+              if (id) void updateNote(id, { tags: next }).catch(() => toast.error("Save failed"));
+            }}
+          />
+        </div>
 
         <div className="mt-4">
           <BlockEditor
