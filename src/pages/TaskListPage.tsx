@@ -32,10 +32,10 @@ function filterTasks(all: Task[], variant: Variant): Task[] {
   const root = all.filter(t => !t.parentTaskId);
   switch (variant) {
     case "upcoming":
-      return root.filter(t => !t.done && t.dueDate && t.dueDate > today)
+      return root.filter(t => !t.done && t.dueDate && t.dueDate > today && t.status !== "parked")
                  .sort((a,b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
     case "anytime":
-      return root.filter(t => !t.done && !t.dueDate && t.status !== "someday" && !t.inbox);
+      return root.filter(t => !t.done && !t.dueDate && t.status !== "someday" && t.status !== "parked" && !t.inbox);
     case "someday":
       return root.filter(t => !t.done && t.status === "someday");
     case "logbook":
