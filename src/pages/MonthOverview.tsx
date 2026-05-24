@@ -295,34 +295,16 @@ export default function MonthOverview() {
     toast.success(`Added “${a.title}” to calendar`);
   };
 
-  // Insert appointment directly so we can capture the new id and link it back.
+  // Insert via the store (so state.appointments is updated) and return the new id.
   async function createLinkedAppointment(args: {
     title: string; date: string; notes: string | null; icon: string;
   }): Promise<string | null> {
-    const { data: u } = await supabase.auth.getUser();
-    const uid = u?.user?.id;
-    if (!uid) return null;
-    const { data, error } = await supabase.from("appointments").insert({
-      user_id: uid,
-      title: args.title,
-      date: args.date,
-      notes: args.notes,
-      type: "personal",
-      icon: args.icon,
-      all_day: true,
-    }).select("id").single();
-    if (error || !data) {
-      toast.error("Couldn't add to calendar");
-      return null;
-    }
-    // Re-fetch appointments via store so the linked appt shows up in this view.
-    await addAppointment as any; // no-op; the realtime/state will reconcile below
-    // Manually push into store state by triggering a reload-like update through addAppointment is hard;
-    // instead, optimistically inject by re-using updateAppointment with a no-op patch is also moot.
-    // The Appointments & events section reads from state.appointments; we update it by reloading the page-level state.
-    // Simplest: window.dispatchEvent to ask store to refetch — but our store auto-syncs on auth change only.
-    // For now, force a soft refresh of the local list by appending via location reload-free trick:
-    return data.id;
+    const appt = await addAppointment({
+      title: args.title, date: args.date, notes: args.notes ?? undefined,
+      type: "personal", icon: args.icon, allDay: true,
+    });
+    if (!appt) { toast.error("Couldn't add to calendar"); return null; }
+    return appt.id;
   }
 
   // Reconcile linked items with the live calendar:
