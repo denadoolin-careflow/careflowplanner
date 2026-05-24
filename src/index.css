@@ -728,6 +728,23 @@
 .block-editor .ProseMirror details.cf-toggle[open] > div[data-type="detailsContent"] {
   animation: cf-toggle-expand 220ms cubic-bezier(.2, .8, .2, 1) both;
 }
+/* Collapsible bullet/ordered list items — click the marker to fold */
+.block-editor .ProseMirror li {
+  cursor: text;
+}
+.block-editor .ProseMirror li::marker {
+  cursor: pointer;
+  color: hsl(var(--muted-foreground));
+  transition: color 140ms ease;
+}
+.block-editor .ProseMirror li:hover::marker { color: hsl(var(--primary)); }
+.block-editor .ProseMirror li.cf-collapsed > ul,
+.block-editor .ProseMirror li.cf-collapsed > ol {
+  display: none;
+}
+.block-editor .ProseMirror li.cf-collapsed::marker {
+  color: hsl(var(--primary));
+}
 @keyframes cf-toggle-expand {
   from { opacity: 0; transform: translateY(-3px); max-height: 0; }
   to   { opacity: 1; transform: none;            max-height: 9999px; }
