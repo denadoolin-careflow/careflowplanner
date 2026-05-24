@@ -906,3 +906,9 @@ export function useStore() {
   if (!c) throw new Error("useStore must be used inside StoreProvider");
   return c;
 }
+
+/** Like useStore, but returns null instead of throwing when no provider is mounted.
+ *  Useful for always-mounted overlays that may render during HMR transitions. */
+export function useStoreOptional() {
+  return useContext(StoreCtx);
+}
