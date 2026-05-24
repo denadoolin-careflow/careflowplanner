@@ -101,7 +101,7 @@ export default function CareLoop() {
                 </span>
               }
               subtitle={p.tagline}
-              icon={<Icon className="h-4 w-4" />}
+              action={<Icon className="h-4 w-4 text-muted-foreground" />}
             >
               <div className="flex flex-wrap gap-1.5">
                 {p.links.map((l) => (
