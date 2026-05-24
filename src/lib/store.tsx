@@ -317,7 +317,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       energyToday: profile.energy_today ?? undefined,
       energyDate: profile.energy_date ?? undefined,
-      tasks: (tasks as any[]).map(taskFrom),
+      tasks: (tasks as any[]).map(taskFrom).map((t) => {
+        // Auto-unpark: when a parked task's snoozedUntil has arrived, surface it again.
+        if (t.status === "parked" && t.snoozedUntil && t.snoozedUntil <= todayISO()) {
+          // Fire-and-forget DB sync; local state already reflects the change below.
+          void supabase.from("tasks").update({ status: "active", snoozed_until: null }).eq("id", t.id);
+          return { ...t, status: "active" as const, snoozedUntil: undefined };
+        }
+        return t;
+      }),
       goals: (goals as any[]).map(goalFrom),
       habits: (habits as any[]).map(h => ({ ...habitFrom(h), log: logsByHabit[h.id] ?? {} })),
       journal: (journal as any[]).map(journalFrom),
