@@ -21,6 +21,7 @@ import { parseTaskInput } from "@/lib/nlp-task";
 import { useQuickAddPresets, type QuickAddKind, type QuickAddPreset } from "@/lib/quick-add-presets";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { supabase } from "@/integrations/supabase/client";
+import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
 
 type Mode = QuickAddKind | "command" | "braindump";
 
@@ -37,6 +38,7 @@ export function QuickAddFab() {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("command");
   const [palette, setPalette] = useState("");
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const drag = useDraggableFab("careflow:fab:quickadd", { right: 16, bottom: 88 });
   const { presets } = useQuickAddPresets();
 
@@ -50,6 +52,7 @@ export function QuickAddFab() {
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ tab?: string }>).detail;
+      if (detail?.tab === "voice") { setVoiceOpen(true); haptics.pickup(); return; }
       const next = (detail?.tab as Mode) || "command";
       openWith(next);
     };
@@ -73,6 +76,7 @@ export function QuickAddFab() {
   const close = () => { setOpen(false); setPalette(""); setMode("command"); };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
       <button
         ref={drag.ref}
@@ -100,7 +104,10 @@ export function QuickAddFab() {
             value={palette}
             onChange={setPalette}
             presets={presets}
-            onPick={(k) => setMode(k)}
+            onPick={(k) => {
+              if (k === "voice") { setOpen(false); setVoiceOpen(true); return; }
+              setMode(k);
+            }}
             onClose={close}
           />
         ) : (
@@ -108,6 +115,8 @@ export function QuickAddFab() {
         )}
       </DialogContent>
     </Dialog>
+    <VoiceCaptureDialog open={voiceOpen} onOpenChange={setVoiceOpen} />
+    </>
   );
 }
 
