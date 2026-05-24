@@ -23,7 +23,7 @@ import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { supabase } from "@/integrations/supabase/client";
 import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
 
-type Mode = QuickAddKind | "command" | "braindump";
+type Mode = QuickAddKind | "command" | "braindump" | "voice";
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
   active: "Active",
