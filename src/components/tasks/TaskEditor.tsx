@@ -23,6 +23,7 @@ import { AttachmentsField } from "@/components/attachments/AttachmentsField";
 import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { SubtaskAddMenu } from "@/components/tasks/SubtaskAddMenu";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TagPicker } from "@/components/tags/TagPicker";
 import { supabase } from "@/integrations/supabase/client";
 
 type Props = {
@@ -189,6 +190,14 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                 className="resize-y"
               />
             </div>
+
+            {/* Tags */}
+            <Field icon={Tag} label="Tags">
+              <TagPicker
+                value={draft.tags ?? []}
+                onChange={(next) => set("tags", next)}
+              />
+            </Field>
 
             {/* Subtasks */}
             <Section title={undefined}>
