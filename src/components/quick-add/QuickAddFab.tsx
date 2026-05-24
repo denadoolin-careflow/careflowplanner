@@ -369,6 +369,15 @@ function CommandPalette({
         )}
 
         <CommandGroup heading="Modes">
+          <CommandItem value="voice capture record" onSelect={() => onPick("voice" as Mode)} className="gap-3">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-300">
+              <Mic className="h-3.5 w-3.5" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="truncate text-sm">Voice capture</div>
+              <div className="truncate text-[11px] text-muted-foreground">Record — we transcribe & organize into tasks.</div>
+            </div>
+          </CommandItem>
           <CommandItem value="brain dump inbox" onSelect={() => onPick("braindump" as Mode)} className="gap-3">
             <span className="grid h-7 w-7 place-items-center rounded-md bg-accent/30 text-accent-foreground">
               <Brain className="h-3.5 w-3.5" />
