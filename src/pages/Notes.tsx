@@ -16,6 +16,26 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 
+/** Strip markdown markers so list previews show plain text. */
+function stripMarkdown(s: string): string {
+  if (!s) return "";
+  return s
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/!\[[^\]]*]\([^)]+\)/g, "")
+    .replace(/\[([^\]]+)]\([^)]+\)/g, "$1")
+    .replace(/\[\[([^\]]+)]]/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^[-*+]\s+\[[ xX]]\s+/gm, "")
+    .replace(/^[-*+]\s+/gm, "")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/^>\s?/gm, "")
+    .replace(/[*_~]{1,3}([^*_~]+)[*_~]{1,3}/g, "$1")
+    .replace(/^---+$/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 type View = "list" | "gallery" | "kanban" | "calendar";
 type Group = "none" | "kind" | "project" | "month";
 
@@ -280,7 +300,7 @@ function ListView({ notes, group, projectsById }: { notes: Note[]; group: Group;
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{title}</div>
-                    <div className="truncate text-xs text-muted-foreground">{n.body.replace(/\s+/g, " ").slice(0, 120) || "Empty"}</div>
+                    <div className="truncate text-xs text-muted-foreground">{stripMarkdown(n.body).slice(0, 140) || "Empty"}</div>
                   </div>
                   <span className="hidden text-[11px] text-muted-foreground sm:inline">
                     {format(parseISO(n.updatedAt), "MMM d")}
