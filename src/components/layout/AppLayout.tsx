@@ -2,7 +2,9 @@ import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar, MobileSidebarTrigger } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { ThemeToggle } from "./ThemeToggle";
-import { ThemePicker } from "./ThemePicker";
+import { AtmospherePicker } from "@/components/atmospheres/AtmospherePicker";
+import { AtmosphereAmbient } from "@/components/atmospheres/AtmosphereAmbient";
+import { useAutoAtmosphereResolver } from "@/lib/atmospheres";
 import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
 import { AIAssistantFab } from "@/components/ai/AIAssistantFab";
 import { useStore } from "@/lib/store";
@@ -18,9 +20,11 @@ export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
   const { pathname } = useLocation();
   const current = NAV.find(n => n.to === pathname) ?? NAV[0];
+  useAutoAtmosphereResolver({ lowEnergy: state.settings.lowEnergyMode });
 
   return (
     <div className="min-h-screen w-full gradient-dawn">
+      <AtmosphereAmbient />
       <div className="flex w-full">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
@@ -39,7 +43,7 @@ export function AppLayout() {
                 <Label htmlFor="low-energy" className="text-xs text-muted-foreground">Low-energy mode</Label>
                 <Switch id="low-energy" checked={state.settings.lowEnergyMode} onCheckedChange={setLowEnergyMode} />
               </div>
-              <ThemePicker />
+              <AtmospherePicker />
               <ThemeToggle />
             </div>
           </header>
