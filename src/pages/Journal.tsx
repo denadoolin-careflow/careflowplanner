@@ -159,6 +159,7 @@ export default function Journal() {
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "template" | "mood">("newest");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [draftAttachments, setDraftAttachments] = useState<Attachment[]>([]);
   const [entriesView, setEntriesView] = useState<"cards" | "timeline">(() => {
     if (typeof window === "undefined") return "timeline";
     return (localStorage.getItem("journal.entriesView") as "cards" | "timeline") ?? "timeline";
@@ -236,8 +237,9 @@ export default function Journal() {
       linkedIds: linkProjectId
         ? [{ type: "project", id: linkProjectId, label: linkProjectLabel }]
         : undefined,
+      attachments: draftAttachments.length ? draftAttachments : undefined,
     } as any);
-    setBody(""); setTitle(""); setMood(""); setEnergy(""); setGratitudeItems(["", "", ""]); setTags([]);
+    setBody(""); setTitle(""); setMood(""); setEnergy(""); setGratitudeItems(["", "", ""]); setTags([]); setDraftAttachments([]);
     toast.success("Saved to your journal");
   };
 
