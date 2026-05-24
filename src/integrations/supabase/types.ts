@@ -1550,6 +1550,7 @@ export type Database = {
           id: string
           pinned: boolean
           sort_order: number
+          tags: string[]
           title: string | null
           updated_at: string
           user_id: string
@@ -1561,6 +1562,7 @@ export type Database = {
           id?: string
           pinned?: boolean
           sort_order?: number
+          tags?: string[]
           title?: string | null
           updated_at?: string
           user_id: string
@@ -1572,6 +1574,7 @@ export type Database = {
           id?: string
           pinned?: boolean
           sort_order?: number
+          tags?: string[]
           title?: string | null
           updated_at?: string
           user_id?: string
@@ -2235,6 +2238,7 @@ export type Database = {
           kind: string
           pinned: boolean
           project_id: string | null
+          tags: string[]
           title: string
           updated_at: string
           user_id: string
@@ -2248,6 +2252,7 @@ export type Database = {
           kind?: string
           pinned?: boolean
           project_id?: string | null
+          tags?: string[]
           title?: string
           updated_at?: string
           user_id: string
@@ -2261,6 +2266,7 @@ export type Database = {
           kind?: string
           pinned?: boolean
           project_id?: string | null
+          tags?: string[]
           title?: string
           updated_at?: string
           user_id?: string
@@ -3133,6 +3139,36 @@ export type Database = {
           recurrence_interval?: number
           status?: string
           tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
           updated_at?: string
           user_id?: string
         }

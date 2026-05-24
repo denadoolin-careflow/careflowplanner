@@ -31,11 +31,11 @@ export function CareLoopIndicator({ active, className, compact = false }: Props)
       aria-label="CARE Loop progress"
       className={cn(
         "group/loop relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm",
-        compact ? "p-2" : "p-3",
+        compact ? "p-1.5" : "p-2 sm:p-3",
         className,
       )}
     >
-      <ol className="relative flex items-stretch gap-1 sm:gap-2">
+      <ol className="relative flex items-stretch gap-0.5 sm:gap-2">
         {PHASES.map((p, i) => {
           const Icon = p.icon;
           const isActive = p.id === active;
@@ -43,7 +43,7 @@ export function CareLoopIndicator({ active, className, compact = false }: Props)
           const showConnector = i < PHASES.length - 1;
           const connectorActive = i < activeIdx;
           return (
-            <li key={p.id} className="relative flex-1 min-w-0">
+            <li key={p.id} className="relative flex-1 basis-0 min-w-0">
               {showConnector && (
                 <span
                   aria-hidden
@@ -57,7 +57,7 @@ export function CareLoopIndicator({ active, className, compact = false }: Props)
                 to={p.href}
                 aria-current={isActive ? "step" : undefined}
                 className={cn(
-                  "group/phase flex h-full items-center gap-2 rounded-xl px-2.5 py-2 transition-all",
+                  "group/phase flex h-full min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-1.5 transition-all sm:justify-start sm:gap-2 sm:px-2.5 sm:py-2",
                   "hover:bg-muted/50",
                   isActive && "bg-gradient-to-br shadow-[0_0_0_1px_hsl(var(--primary)/0.25),0_8px_24px_-12px_hsl(var(--primary)/0.4)]",
                   isActive && p.tint,
@@ -66,7 +66,7 @@ export function CareLoopIndicator({ active, className, compact = false }: Props)
                 <span
                   className={cn(
                     "grid shrink-0 place-items-center rounded-full transition-all",
-                    compact ? "h-7 w-7" : "h-8 w-8",
+                    compact ? "h-6 w-6 sm:h-7 sm:w-7" : "h-6 w-6 sm:h-8 sm:w-8",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-[0_0_18px_-4px_hsl(var(--primary)/0.7)]"
                       : isPast
@@ -74,26 +74,20 @@ export function CareLoopIndicator({ active, className, compact = false }: Props)
                         : "bg-muted/60 text-muted-foreground",
                   )}
                 >
-                  <Icon className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
+                  <Icon className={cn(compact ? "h-3 w-3 sm:h-3.5 sm:w-3.5" : "h-3 w-3 sm:h-4 sm:w-4")} />
                 </span>
-                <span className="hidden min-w-0 flex-1 sm:block">
+                <span className="min-w-0 flex-1">
                   <span className={cn(
-                    "block truncate text-xs font-semibold tracking-wide",
+                    "block truncate text-[10px] font-semibold tracking-wide sm:text-xs",
                     isActive ? "text-foreground" : "text-muted-foreground",
                   )}>
                     {p.label}
                   </span>
                   {!compact && (
-                    <span className="block truncate text-[10px] text-muted-foreground/80">
+                    <span className="hidden truncate text-[10px] text-muted-foreground/80 sm:block">
                       {p.hint}
                     </span>
                   )}
-                </span>
-                <span className={cn(
-                  "block text-[10px] font-semibold uppercase tracking-[0.16em] sm:hidden",
-                  isActive ? "text-foreground" : "text-muted-foreground",
-                )}>
-                  {p.label}
                 </span>
               </Link>
             </li>
