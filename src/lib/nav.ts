@@ -22,6 +22,7 @@ export const NAV = [
   { to: "/routines", label: "Routines", icon: Repeat },
   { to: "/health", label: "Health", icon: HeartPulse },
   { to: "/wealth", label: "Wealth", icon: Wallet },
+  { to: "/mental-load", label: "Mental Load", icon: Leaf },
   { to: "/home-areas", label: "Home", icon: Home },
   { to: "/home-reset", label: "Home Hub", icon: Sparkle },
   { to: "/journal", label: "Journal", icon: BookHeart },
@@ -85,6 +86,7 @@ export const NAV_GROUPS = [
       { to: "/health", label: "Health", icon: HeartPulse },
       { to: "/habits", label: "Habits", icon: Sparkles },
       { to: "/goals", label: "Goals", icon: Target },
+      { to: "/mental-load", label: "Mental Load", icon: Leaf },
     ],
   },
   {
