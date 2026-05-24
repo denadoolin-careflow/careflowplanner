@@ -211,12 +211,31 @@ function CommandPalette({
       }}
     >
       <div className="border-b border-border/60 px-3 py-2">
-        <CommandInput
-          autoFocus
-          placeholder="Type a task in plain English  —  e.g. Doctor tomorrow 3pm #health p2 for 30m"
-          value={value}
-          onValueChange={onChange}
-        />
+        <div className="flex items-center gap-1">
+          <CommandInput
+            autoFocus
+            placeholder="Type or speak — e.g. Doctor tomorrow 3pm #health p2 for 30m"
+            value={value}
+            onValueChange={onChange}
+            className="flex-1"
+          />
+          {dictation.supported && (
+            <button
+              type="button"
+              onClick={dictation.toggle}
+              title={dictation.listening ? "Stop voice capture" : "Voice capture"}
+              aria-label="Voice capture"
+              className={cn(
+                "mr-1 grid h-8 w-8 place-items-center rounded-full border border-border/60 transition-colors",
+                dictation.listening
+                  ? "border-rose-400/60 bg-rose-500/10 text-rose-600 dark:text-rose-300 animate-pulse"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              )}
+            >
+              {dictation.listening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+            </button>
+          )}
+        </div>
         {parsed.chips.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5 px-2 pb-2">
             {parsed.chips.map((c, i) => (
