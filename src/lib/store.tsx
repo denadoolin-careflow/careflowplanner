@@ -50,6 +50,7 @@ const taskFrom = (r: any): Task => ({
   inbox: !!r.inbox,
   resetItemId: r.reset_item_id ?? undefined,
   sectionId: r.section_id ?? undefined,
+  snoozedUntil: r.snoozed_until ?? undefined,
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null, done: t.done,
@@ -68,6 +69,7 @@ const taskTo = (t: Partial<Task>) => ({
   parent_task_id: t.parentTaskId ?? null,
   inbox: t.inbox ?? false,
   section_id: t.sectionId ?? null,
+  snoozed_until: t.snoozedUntil ?? null,
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 const habitFrom = (r: any): Habit => ({ id: r.id, title: r.title, cadence: r.cadence, category: r.category, streak: r.streak, log: {} });
