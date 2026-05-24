@@ -31,6 +31,7 @@ export interface Routine {
   cadence: RoutineCadence;
   tags: string[];
   recipient_id: string | null;
+  time_of_day: string | null;
 }
 
 let cache: Routine[] = [];
@@ -62,6 +63,7 @@ function mapRow(r: any): Routine {
     cadence: (r.cadence ?? "daily") as RoutineCadence,
     tags: Array.isArray(r.tags) ? r.tags : [],
     recipient_id: r.recipient_id ?? null,
+    time_of_day: r.time_of_day ?? null,
   };
 }
 
@@ -95,7 +97,7 @@ export const routines = {
   async upsert(
     person: string,
     slot: RoutineSlot,
-    patch: Partial<Pick<Routine, "items" | "notes" | "cadence" | "tags" | "recipient_id">>,
+    patch: Partial<Pick<Routine, "items" | "notes" | "cadence" | "tags" | "recipient_id" | "time_of_day">>,
   ) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -105,7 +107,8 @@ export const routines = {
     const cadence = patch.cadence ?? existing?.cadence ?? "daily";
     const tags = patch.tags ?? existing?.tags ?? [];
     const recipient_id = patch.recipient_id !== undefined ? patch.recipient_id : (existing?.recipient_id ?? null);
-    const row = { user_id: user.id, person_name: person, slot, items, notes, cadence, tags, recipient_id };
+    const time_of_day = patch.time_of_day !== undefined ? patch.time_of_day : (existing?.time_of_day ?? null);
+    const row = { user_id: user.id, person_name: person, slot, items, notes, cadence, tags, recipient_id, time_of_day };
     const { data } = await supabase
       .from("routines" as any)
       .upsert(row as any, { onConflict: "user_id,person_name,slot" })
