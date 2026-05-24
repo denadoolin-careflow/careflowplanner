@@ -142,7 +142,7 @@ export default function MonthOverview() {
   };
   const sendOutingToCalendar = async (o: OutingItem) => {
     const date = o.date || format(monthStart, "yyyy-MM-dd");
-    await addAppointment({ title: o.title, date, notes: o.notes ?? undefined, type: "outing", icon: "📍" });
+    await addAppointment({ title: o.title, date, notes: o.notes ?? undefined, type: "personal", icon: "📍" });
     toast.success(`Added “${o.title}” to calendar`);
     updateOuting(o.id, { linked_appt_id: "linked", date });
   };
