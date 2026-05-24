@@ -50,6 +50,7 @@ export const NAV_GROUPS = [
     icon: Compass,
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/care", label: "CARE Loop", icon: Flower2 },
       { to: "/projects", label: "Projects", icon: FolderOpen },
     ],
   },
