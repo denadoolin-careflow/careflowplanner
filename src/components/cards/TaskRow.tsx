@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Plus, Sparkle, CalendarDays, Wand2, Loader2 } from "lucide-react";
+import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Sparkle, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -14,6 +14,7 @@ import { pickAffirmation } from "@/lib/affirmations";
 import { Input } from "@/components/ui/input";
 import { QuickScheduleButton } from "@/components/tasks/QuickScheduleButton";
 import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
+import { SubtaskAddMenu } from "@/components/tasks/SubtaskAddMenu";
 import { QuickEditPopover } from "@/components/tasks/QuickEditPopover";
 import { haptics } from "@/lib/haptics";
 import { formatRelativeDate } from "@/lib/date-format";
@@ -249,24 +250,14 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       <QuickScheduleButton task={task} />
       <QuickDayPartButton task={task} />
       {!isSubtask && (
-        <Button
-          variant="ghost" size="icon"
-          className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
-          onClick={generateSubtasks}
-          disabled={aiLoading}
-          aria-label="AI breakdown" title="Break into steps with AI"
-        >
-          {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-        </Button>
+        <div className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <SubtaskAddMenu
+            onAddManual={() => { setExpanded(true); setAddingSub(true); }}
+            onAddWithAI={generateSubtasks}
+            aiLoading={aiLoading}
+          />
+        </div>
       )}
-      <Button
-        variant="ghost" size="icon"
-        className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
-        onClick={() => { setExpanded(true); setAddingSub(true); }}
-        aria-label="Add subtask" title="Add subtask"
-      >
-        <Plus className="h-3.5 w-3.5" />
-      </Button>
       <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setOpen(true)} aria-label="More options" title="Details">
         <Settings2 className="h-3.5 w-3.5" />
       </Button>
