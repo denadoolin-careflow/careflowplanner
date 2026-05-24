@@ -86,6 +86,7 @@ const journalFrom = (r: any): JournalEntry => ({
   tags: Array.isArray(r.tags) ? r.tags : [],
   pinned: !!r.pinned,
   linkedIds: Array.isArray(r.linked_ids) ? r.linked_ids : [],
+  attachments: Array.isArray(r.attachments) ? r.attachments : [],
 });
 const mealFrom = (r: any): Meal => ({
   id: r.id, date: r.date, slot: r.slot, name: r.name,
