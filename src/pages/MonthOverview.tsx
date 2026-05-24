@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { addMonths, eachDayOfInterval, endOfMonth, format, isSameMonth, startOfMonth, subMonths } from "date-fns";
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Heart, ListChecks,
-  Map, MapPin, Moon, Plus, Sparkles, Sprout, Trash2, X,
+  Map as MapIcon, MapPin, Moon, Plus, Sparkles, Sprout, Trash2, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -594,7 +594,7 @@ export default function MonthOverview() {
       </SectionCard>
 
       {/* Outings */}
-      <SectionCard title="Outings" accent="warm" action={<Map className="h-4 w-4 text-muted-foreground" />}>
+      <SectionCard title="Outings" accent="warm" action={<MapIcon className="h-4 w-4 text-muted-foreground" />}>
         <OutingList
           items={plan?.outings ?? []}
           onAdd={addOuting}
