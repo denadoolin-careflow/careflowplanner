@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
-import { Moon, Sun, CheckCircle2, Calendar as CalIcon, Flame, Sparkles, ArrowRight, CloudSun } from "lucide-react";
+import { Moon, Sun, CheckCircle2, Calendar as CalIcon, Flame, Sparkles, ArrowRight, CloudSun, Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store";
 import { toast } from "sonner";
+import { ExhaleFlow } from "./ExhaleFlow";
 
 interface Props { date: Date }
 
@@ -14,6 +15,7 @@ export function EndOfDaySummary({ date }: Props) {
   const [unit] = useTempUnit();
   const weather = useWeatherSnapshot();
   const [rescheduling, setRescheduling] = useState(false);
+  const [exhaleOpen, setExhaleOpen] = useState(false);
 
   const iso = format(date, "yyyy-MM-dd");
   const tomorrow = useMemo(() => addDays(date, 1), [date]);
@@ -74,10 +76,17 @@ export function EndOfDaySummary({ date }: Props) {
             <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-primary">
               <Moon className="h-4 w-4" />
             </span>
-            <div>
+            <div className="flex-1">
               <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Wind down</p>
               <h3 className="font-display text-xl font-semibold">End of day</h3>
             </div>
+            <Button
+              size="sm"
+              onClick={() => setExhaleOpen(true)}
+              className="rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-[0_0_18px_-4px_hsl(var(--primary)/0.6)] hover:opacity-95"
+            >
+              <Wind className="mr-1.5 h-3.5 w-3.5" /> Begin Exhale
+            </Button>
           </div>
           <p className="mt-3 font-display text-base text-foreground/80">{closingNote}</p>
 
@@ -189,6 +198,7 @@ export function EndOfDaySummary({ date }: Props) {
           </div>
         </div>
       </div>
+      <ExhaleFlow open={exhaleOpen} onOpenChange={setExhaleOpen} date={date} />
     </section>
   );
 }
