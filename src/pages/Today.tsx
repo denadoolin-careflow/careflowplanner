@@ -38,6 +38,7 @@ import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getMoonPhase } from "@/lib/moon";
+import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
 import { TodayEnergy } from "@/components/today/TodayEnergy";
@@ -154,6 +155,7 @@ function TodayInner() {
   const body = (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-6">
+        <CareLoopIndicator active="anchor" />
         <div className="cozy-card overflow-hidden">
           <div className="relative gradient-calm p-6">
             <div

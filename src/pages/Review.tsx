@@ -8,6 +8,7 @@ import { format, parseISO, startOfWeek, startOfMonth } from "date-fns";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 
 interface ReviewData {
   summary?: string;
@@ -98,6 +99,7 @@ export default function Review() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5 p-4 md:p-6">
+      <CareLoopIndicator active="exhale" />
       <header className="flex flex-wrap items-start gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary">
           <BookHeart className="h-5 w-5" />
