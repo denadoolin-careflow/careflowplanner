@@ -462,6 +462,109 @@ export function BlockEditor({
     },
   }), []);
 
+  /* --------------------------------------------------------------- */
+  /*  Seamless toggle / bullet keymap                                */
+  /*  - Enter on a toggle summary jumps into the toggle content and  */
+  /*    inserts a bullet list ready to type.                         */
+  /*  - Tab on a bullet item converts it into a toggle whose summary */
+  /*    is the current text and whose content is a fresh bullet.     */
+  /* --------------------------------------------------------------- */
+  const toggleKeymap = useMemo(() => Extension.create({
+    name: "toggleBulletKeymap",
+    addKeyboardShortcuts() {
+      return {
+        Enter: ({ editor }) => {
+          const { state } = editor;
+          const { $from, empty } = state.selection;
+          if (!empty) return false;
+
+          // Enter inside a details summary -> jump into content as a bullet
+          for (let d = $from.depth; d > 0; d--) {
+            if ($from.node(d).type.name === "detailsSummary") {
+              const details = $from.node(d - 1);
+              if (!details || details.type.name !== "details") return false;
+              const detailsStart = $from.before(d - 1);
+              const detailsEnd = detailsStart + details.nodeSize;
+              // Ensure open
+              editor.chain().command(({ tr }) => {
+                tr.setNodeMarkup(detailsStart, undefined, { ...details.attrs, open: true });
+                return true;
+              }).run();
+              // Place cursor just inside the detailsContent and insert a bullet
+              const contentNode = details.lastChild;
+              if (!contentNode || contentNode.type.name !== "detailsContent") return false;
+              const contentStart = detailsEnd - contentNode.nodeSize;
+              const isEmpty =
+                contentNode.childCount === 1 &&
+                contentNode.firstChild?.type.name === "paragraph" &&
+                contentNode.firstChild?.content.size === 0;
+              if (isEmpty) {
+                editor
+                  .chain()
+                  .focus()
+                  .setTextSelection(contentStart + 1)
+                  .toggleBulletList()
+                  .run();
+              } else {
+                editor.chain().focus().setTextSelection(contentStart + 1).run();
+              }
+              return true;
+            }
+          }
+          return false;
+        },
+        Tab: ({ editor }) => {
+          const { state } = editor;
+          const { $from, empty } = state.selection;
+          if (!empty) return false;
+
+          // Find an enclosing listItem
+          for (let d = $from.depth; d > 0; d--) {
+            const node = $from.node(d);
+            if (node.type.name === "listItem" || node.type.name === "taskItem") {
+              // Prefer default nest behavior if it works
+              if (editor.can().sinkListItem(node.type.name)) {
+                return editor.chain().focus().sinkListItem(node.type.name).run();
+              }
+              // Top-level item -> convert into a toggle with bullet inside
+              const text = (node.textContent || "").trim();
+              const itemStart = $from.before(d);
+              const itemEnd = itemStart + node.nodeSize;
+              const summaryJSON = text
+                ? [{ type: "text", text }]
+                : [];
+              const detailsJSON = {
+                type: "details",
+                attrs: { open: true },
+                content: [
+                  { type: "detailsSummary", content: summaryJSON },
+                  {
+                    type: "detailsContent",
+                    content: [
+                      {
+                        type: "bulletList",
+                        content: [
+                          { type: "listItem", content: [{ type: "paragraph" }] },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              };
+              editor
+                .chain()
+                .focus()
+                .insertContentAt({ from: itemStart, to: itemEnd }, detailsJSON)
+                .run();
+              return true;
+            }
+          }
+          return false;
+        },
+      };
+    },
+  }), []);
+
   const refExtension = useMemo(() => Extension.create({
     name: "refMention",
     addProseMirrorPlugins() {
@@ -525,6 +628,7 @@ export function BlockEditor({
       }),
       slashExtension,
       refExtension,
+      toggleKeymap,
     ],
     content: bodyToHtml(body),
     editorProps: {
