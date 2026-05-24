@@ -424,6 +424,7 @@ function FormShell({ mode, onBack, onClose, initialText }: { mode: Exclude<Mode,
         <HolidayForm onClose={onClose} />
         <CleaningForm onClose={onClose} initialText={initialText} />
         <CareForm onClose={onClose} initialText={initialText} />
+        <BrainDumpForm onClose={onClose} initialText={initialText} />
       </Tabs>
     </div>
   );
