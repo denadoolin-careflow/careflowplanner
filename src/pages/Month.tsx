@@ -138,6 +138,12 @@ export default function Month() {
             >
               <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
             </Link>
+            <Link
+              to="/month/overview"
+              className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-primary/15"
+            >
+              <Moon className="h-3.5 w-3.5" /> Monthly overview
+            </Link>
           </div>
         </div>
 

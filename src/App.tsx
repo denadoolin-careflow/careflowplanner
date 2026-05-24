@@ -14,6 +14,7 @@ import { IndexRedirect } from "@/components/auth/IndexRedirect";
 import Today from "./pages/Today";
 import Week from "./pages/Week";
 import Month from "./pages/Month";
+import MonthOverview from "./pages/MonthOverview";
 import Year from "./pages/Year";
 import Goals from "./pages/Goals";
 import Habits from "./pages/Habits";
@@ -110,6 +111,7 @@ const App = () => (
                 <Route path="/plan/:date" element={<PlanDay />} />
                 <Route path="/week" element={<Week />} />
                 <Route path="/month" element={<Month />} />
+               <Route path="/month/overview" element={<MonthOverview />} />
                 <Route path="/year" element={<Year />} />
                 <Route path="/goals" element={<Goals />} />
                 <Route path="/habits" element={<Habits />} />
