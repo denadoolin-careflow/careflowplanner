@@ -40,6 +40,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Upcoming from "./pages/Upcoming";
 import Anytime from "./pages/Anytime";
 import Someday from "./pages/Someday";
+import NotToday from "./pages/NotToday";
 import Logbook from "./pages/Logbook";
 import Notes from "./pages/Notes";
 import NoteDetail from "./pages/NoteDetail";
@@ -90,6 +91,7 @@ const App = () => (
                 <Route path="/upcoming" element={<Upcoming />} />
                 <Route path="/anytime" element={<Anytime />} />
                 <Route path="/someday" element={<Someday />} />
+                <Route path="/not-today" element={<NotToday />} />
                 <Route path="/logbook" element={<Logbook />} />
                 <Route path="/notes" element={<Notes />} />
                 <Route path="/notes/:id" element={<NoteDetail />} />
