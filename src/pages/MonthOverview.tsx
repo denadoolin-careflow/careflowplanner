@@ -733,12 +733,15 @@ function OutingList({
 }
 
 function ActivityList({
-  items, onAdd, onToggle, onRemove,
+  items, onAdd, onToggle, onRemove, onUpdate, onSendToCalendar, monthIso,
 }: {
   items: ActivityItem[];
   onAdd: (t: string) => void;
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
+  onUpdate: (id: string, p: Partial<ActivityItem>) => void;
+  onSendToCalendar: (a: ActivityItem) => void;
+  monthIso: string;
 }) {
   const [draft, setDraft] = useState("");
   return (
@@ -747,7 +750,30 @@ function ActivityList({
       {items.map(a => (
         <div key={a.id} className="group flex items-center gap-2 rounded-md bg-muted/30 px-2 py-1.5 text-sm">
           <Checkbox checked={!!a.done} onCheckedChange={() => onToggle(a.id)} />
-          <span className={cn("flex-1 truncate", a.done && "line-through text-muted-foreground")}>{a.title}</span>
+          <Input
+            value={a.title}
+            onChange={(e) => onUpdate(a.id, { title: e.target.value })}
+            className={cn(
+              "h-7 flex-1 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0",
+              a.done && "line-through text-muted-foreground",
+            )}
+          />
+          <Input
+            type="date"
+            value={a.date ?? ""}
+            min={monthIso}
+            onChange={(e) => onUpdate(a.id, { date: e.target.value || null })}
+            className="h-7 w-[140px] text-xs"
+          />
+          {!a.linked_appt_id ? (
+            <button
+              onClick={() => onSendToCalendar(a)}
+              className="rounded-full px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              title="Add to calendar"
+            >→ Calendar</button>
+          ) : (
+            <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[10px]">On calendar</Badge>
+          )}
           <button onClick={() => onRemove(a.id)} className="opacity-0 group-hover:opacity-60 hover:opacity-100" aria-label="Remove">
             <X className="h-3.5 w-3.5" />
           </button>
