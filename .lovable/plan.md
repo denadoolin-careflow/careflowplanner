@@ -1,98 +1,118 @@
-# Mental Load + Decision Support
+## Goals
 
-A new `/mental-load` surface in CareFlow that acts as a calm second brain for caregivers and neurodivergent planners. Tone: soft, supportive, never productivity-shaming.
+Five connected improvements: a tighter mobile CARE strip on Today, a more Obsidian-feel notes editor, a real tag system shared by tasks and notes, prettier color+icon labels, and an Ideas page that behaves like a tag-aware task list.
 
-## What ships in this phase
+---
 
-### 1. Mental Load page (`/mental-load`)
-New route + sidebar entry (sage leaf icon). Calm hero with today's gentle check-in summary ("You're carrying a moderate load today — here's a softer plan"). Page is organized into 4 panels in a single flowing column on mobile, two columns on desktop:
+## 1. CARE methodology mobile alignment
+
+**File:** `src/components/care/CareLoopIndicator.tsx`
+
+- On mobile each phase pill currently stacks the icon above a tiny uppercase label, and on very narrow widths they overlap.
+- Switch the mobile rendering to a single horizontal row: icon + label inline, smaller icon (`h-6 w-6`), label `text-[10px]` truncated, equal `flex-1 basis-0` columns so all four phases sit on one line at 360px+.
+- Replace the dual hidden/visible label spans with one responsive label that shows next to the icon at every breakpoint.
+- Reduce `nav` padding to `p-1.5` and gap to `gap-0.5` on mobile so four pills fit without wrap.
+
+No business logic touched.
+
+---
+
+## 2. Notes editor — Obsidian-style toggles, indent, alignment
+
+**Files:** `src/components/notes/BlockEditor.tsx`, `src/components/notes/NoteMarkdown.tsx`, `src/pages/Notes.tsx`
+
+Editor refinements:
+- Replace the current toggle/callout node with an Obsidian-style collapsible "toggle" block: a chevron that rotates, a one-line summary, and an indented child container that visually inherits the left guide line.
+- Make `Tab` / `Shift+Tab` indent and outdent the current list item or toggle child (sink/lift list item commands).
+- Add a 2px left guide line on indented children so nesting reads cleanly.
+- Tighten typography: use `leading-[1.6]`, consistent `text-[15px]`, monospace inline code with `bg-muted/60 px-1 rounded`, and align bullets/numbers to a fixed gutter (`pl-6 -indent-6`) so text never staircases.
+- Add a thin "indent guide" CSS rule for nested lists.
+
+List preview (`Notes.tsx` cards):
+- Strip markdown from the snippet shown in the notes list — render the first ~140 chars of plain text only (no `#`, `**`, `>`, etc.), with a small util `stripMarkdown(md)`.
+- Keep full markdown rendering inside the note detail view.
+
+---
+
+## 3. Tags system for tasks + notes
+
+Tags already exist as `string[]` on `Task` and `JournalEntry`. We'll formalize them.
+
+**Migration:**
+- New `public.tags` table: `id`, `user_id`, `name` (unique per user, case-insensitive), `color` (hex), `icon` (lucide name), timestamps. Standard RLS so each user only sees their own tags.
+- Notes are stored in `home_notes` today — add a `tags text[]` column to `home_notes` so notes can carry tags like tasks do.
+
+**Store:**
+- `src/lib/store.tsx`: load tags, expose `tags`, `addTag`, `updateTag`, `deleteTag`. Map note rows to include `tags`.
+
+**UI components (new):**
+- `src/components/tags/TagChip.tsx` — colored pill with icon + name.
+- `src/components/tags/TagPicker.tsx` — multi-select popover with search, "Create new tag" inline, color swatch + icon picker (reuses `IconPicker`). Used in `TaskEditor`, `QuickEditPopover`, note detail, and Ideas.
+- `src/components/tags/TagManagerDialog.tsx` — rename, recolor, change icon, delete tag (with confirmation).
+
+**Tag browse view:**
+- New route `src/pages/Tags.tsx` (`/tags`) listing all tags as colored cards with counts.
+- New route `src/pages/TagDetail.tsx` (`/tags/:name`) showing every task and note carrying that tag, grouped by type, with the same `TaskRow` / note card components.
+- Nav entry under "Library" or alongside Notes.
+
+**Filtering in existing lists:**
+- `TaskListPage` and `Notes.tsx` get a "Filter by tag" chip row above the list.
+
+---
+
+## 4. Custom color + icon options for tags
+
+- `TagPicker`'s "create" flow shows a 12-swatch color palette (warm / sage / sky / rose / amber / indigo / etc., all HSL semantic-friendly) and an icon grid (Sparkle, Heart, Star, Flag, Bookmark, Leaf, Sun, Moon, Compass, Tag, Flame, Cloud).
+- Tag chips render with `style={{ backgroundColor: hsl from color, color: contrast }}` while still respecting dark mode via opacity overlays.
+- Color + icon stored on the `tags` row (see migration) and reused everywhere a tag chip appears.
+
+---
+
+## 5. Ideas → task-style with tags
+
+**File:** `src/pages/Ideas.tsx` (rewrite, keep the `ideas` store table for backwards compatibility — render existing `Idea` rows as `IdeaCard` plus allow converting to task; new captures save as tagged tasks with `inbox: true` and tag `idea`.)
+
+- Header capture row mirrors task quick-add: title input + tag picker + Add button.
+- Body becomes a single list of `TaskRow` instances filtered to tasks with the `idea` tag, grouped by user-selected tag, with the standard hover actions (schedule, convert, delete).
+- Legacy `state.ideas` items render in a "Migrate older ideas" collapsible at the bottom with a one-click "Convert to tagged task" button.
+
+---
+
+## Technical details
 
 ```text
-┌──────────────────────────────────────────────────┐
-│  Today, gently — soft summary + tone copy        │
-├────────────────────────┬─────────────────────────┤
-│  Brain Dump Inbox      │  Overwhelm Check-in     │
-│  Quick capture + AI    │  Energy · Emotional ·   │
-│  sort into buckets     │  Caregiving sliders     │
-├────────────────────────┼─────────────────────────┤
-│  Priority Assistant    │  Decision Support       │
-│  Today / Can wait /    │  Prompt cards →         │
-│  Delegate / Low-energy │  AI gentle answer       │
-├────────────────────────┴─────────────────────────┤
-│  Minimum Viable Day · template + "Activate"      │
-├──────────────────────────────────────────────────┤
-│  Gentle rhythm — 14-day check-in heatmap         │
-└──────────────────────────────────────────────────┘
+DB additions
+  tags(id, user_id, name, color, icon, created_at, updated_at)  RLS by user_id
+  home_notes.tags text[]                                          (default '{}')
+
+Routes
+  /tags             → src/pages/Tags.tsx          (grid of tag cards)
+  /tags/:name       → src/pages/TagDetail.tsx     (mixed task+note list)
+
+New components
+  src/components/tags/TagChip.tsx
+  src/components/tags/TagPicker.tsx
+  src/components/tags/TagManagerDialog.tsx
+
+Edited components
+  src/components/care/CareLoopIndicator.tsx       (mobile layout)
+  src/components/notes/BlockEditor.tsx            (toggle node, indent, guides)
+  src/components/notes/NoteMarkdown.tsx           (plain-text snippet helper)
+  src/pages/Notes.tsx                             (use snippet, add tag filter)
+  src/pages/Ideas.tsx                             (rewrite as tagged tasks)
+  src/components/tasks/TaskEditor.tsx             (TagPicker section)
+  src/components/tasks/QuickEditPopover.tsx       (TagPicker inline)
+  src/lib/store.tsx                               (tags CRUD, note tags)
+  src/lib/nav.ts                                  (Tags nav link)
 ```
 
-### 2. Brain Dump Inbox
-- Single textarea + mic button → drop thoughts without organizing
-- Each capture saved instantly to `brain_dumps`
-- "Sort gently" button calls AI to assign one of: `task`, `appointment`, `errand`, `worry`, `idea`, `someday`, `routine` + optional one-line cleaned title
-- Sorted items show pills, can be one-click promoted to `tasks` (existing table) or archived
-- Voice capture via Web Speech API (no extra dep)
+---
 
-### 3. Overwhelm Check-in
-- Three soft sliders: energy (1–5 leaf icons), emotional weight (1–5 heart), caregiving load (1–5 hand). Optional note.
-- Saved once per day to `mental_load_checkins` (upsert by date)
-- Drives the Priority Assistant and the Minimum-Viable-Day auto-activation
+## Out of scope (call out if you want me to include)
 
-### 4. Priority Assistant
-- Pulls today's `tasks` (existing table) + latest check-in + caregiving counts
-- AI returns 4 buckets: Most important · Can wait · Could delegate · Low-energy wins
-- Each bucket is a gentle list with one supportive sentence at the top ("Two things would be enough today.")
+- Per-user "favorite tags" or pinned tags.
+- AI tag suggestions.
+- Bulk re-tag from tag detail view.
+- Migrating existing `Idea` rows automatically into the tasks table.
 
-### 5. Decision Support
-- 5 preset prompt chips: "What matters most today?" · "What will reduce stress tomorrow?" · "What's actually urgent?" · "What can be simplified?" · "What would future me appreciate?"
-- Tapping a chip streams an AI answer rooted in the user's current load + tasks
-- Answers are ephemeral (not stored) so it stays low-pressure
-
-### 6. Minimum Viable Day
-- Editable list of 5 gentle defaults (drink water, feed family, one home reset, one important task, rest)
-- Stored per-user in `minimum_viable_day`
-- "Activate today" button surfaces only this list in the Priority Assistant and hides everything else with a soft "The rest can wait" banner (state stored in `mental_load_checkins.minimum_mode`)
-
-### 7. Gentle rhythm strip
-- 14-day heatmap of energy + overwhelm from `mental_load_checkins`
-- Pure SVG, no chart lib. One supportive insight under it ("Thursdays tend to feel heaviest — consider a softer plan.")
-
-## Database (new tables, all RLS-protected by user_id)
-
-- `brain_dumps` — raw text, ai_category, ai_title, status (inbox/sorted/promoted/archived)
-- `mental_load_checkins` — date (unique per user), energy 1-5, emotional 1-5, caregiving 1-5, note, minimum_mode bool
-- `minimum_viable_day` — one row per user, items text[] (default 5 gentle items)
-
-## Edge function: `ai-mental-load`
-Single function, action-routed (`categorize_dump`, `prioritize`, `decision_support`, `simplify`). Uses Lovable AI gateway with `google/gemini-3-flash-preview`, tool calls for structured returns. System prompt enforces the tone rules (no shaming, soft phrasing, never use "should/must/overdue").
-
-## Connected planning
-- Reads from existing `tasks`, `cleaning_tasks`, `care_recipients`, `meal_plan_entries`
-- Promote-to-task writes back into `tasks` with `area="Self"` and inherits Mental Load tag
-- No changes to those existing tables
-
-## Design system
-- Reuses existing semantic tokens. Adds a `calm` accent variant for SectionCard if not present (sage→cream gradient).
-- Sage/cream/tan palette already in tokens; uses `font-display` for soft headings, generous padding, rounded-3xl cards, motion-safe fade-ins.
-
-## Out of scope this phase (can layer later)
-- Streaming voice transcription via ElevenLabs (we use browser Web Speech free path)
-- Cross-device push notifications for recovery suggestions
-- Sharing minimum-viable-day with a partner
-
-## Files
-
-New:
-- `supabase/migrations/<ts>_mental_load.sql`
-- `supabase/functions/ai-mental-load/index.ts`
-- `src/pages/MentalLoad.tsx`
-- `src/components/mental-load/BrainDumpInbox.tsx`
-- `src/components/mental-load/OverwhelmCheckin.tsx`
-- `src/components/mental-load/PriorityAssistant.tsx`
-- `src/components/mental-load/DecisionSupport.tsx`
-- `src/components/mental-load/MinimumViableDay.tsx`
-- `src/components/mental-load/GentleRhythm.tsx`
-- `src/lib/mental-load.ts` (queries + types)
-
-Edited:
-- `src/App.tsx` (add route)
-- `src/components/layout/AppSidebar.tsx` (or equivalent — sidebar link)
+If any of those should be in, say the word and I'll fold them into this plan; otherwise reply approve and I'll start with the migration and work through the five sections in order.
