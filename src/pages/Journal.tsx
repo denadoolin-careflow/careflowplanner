@@ -695,6 +695,13 @@ function EntryCard({ e, onPin, onDelete, timeline }: { e: JournalEntry; onPin: (
               {e.tags.map(t => <span key={t} className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px]">#{t}</span>)}
             </div>
           )}
+          <AttachmentsField
+            scope="journal"
+            ownerId={e.id}
+            value={e.attachments}
+            onChange={(next) => { void updateJournal(e.id, { attachments: next } as any); }}
+            compact
+          />
           <div className="pt-1">
             <JournalProjectPicker entry={e} />
           </div>
