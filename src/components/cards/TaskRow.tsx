@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { pickAffirmation } from "@/lib/affirmations";
 import { Input } from "@/components/ui/input";
 import { QuickScheduleButton } from "@/components/tasks/QuickScheduleButton";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 import { QuickEditPopover } from "@/components/tasks/QuickEditPopover";
 import { haptics } from "@/lib/haptics";
 import { formatRelativeDate } from "@/lib/date-format";
@@ -246,6 +247,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
         )}
       </div>
       <QuickScheduleButton task={task} />
+      <QuickDayPartButton task={task} />
       {!isSubtask && (
         <Button
           variant="ghost" size="icon"
