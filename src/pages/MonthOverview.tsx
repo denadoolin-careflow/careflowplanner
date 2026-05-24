@@ -16,11 +16,25 @@ import { cn } from "@/lib/utils";
 import {
   monthlyPlans, useMonthlyPlan, monthKey,
   type MonthlyPlan, type PriorityItem, type OutingItem, type ActivityItem,
+  type MoonPhaseItem, type CyclePhaseItem,
 } from "@/lib/monthly-plan";
 import { useStore } from "@/lib/store";
 import { useCycle } from "@/lib/cycle-store";
 import { phaseForDate, PHASE_META } from "@/lib/cycle";
 import { getRhythmForecast } from "@/lib/rhythm-forecast";
+
+const MOON_PROMPTS: Record<string, string> = {
+  "New Moon": "What seed are you planting this cycle?",
+  "First Quarter": "What needs your commitment right now?",
+  "Full Moon": "What's coming to light — and what's ready to release?",
+  "Last Quarter": "What can you gently let go of?",
+};
+const CYCLE_PROMPTS: Record<string, string> = {
+  menstrual: "Rest & reflect — what wants to be released?",
+  follicular: "What's beginning? Where will fresh energy go?",
+  ovulatory: "Where will you show up, connect, or create?",
+  luteal: "What needs completing? Where will you slow down?",
+};
 
 const SEASON_META: Record<string, { label: string; chip: string; icon: string }> = {
   spring: { label: "Spring", chip: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300", icon: "🌱" },
@@ -77,6 +91,80 @@ export default function MonthOverview() {
     }
     return Object.entries(phaseDays).sort((a, b) => b[1] - a[1]);
   }, [cycleSettings, cyclePeriods, monthDays]);
+
+  // Sync stored moon highlights with detected ones — preserve user state on match.
+  useEffect(() => {
+    if (!loaded || !plan) return;
+    const stored = plan.moon_phase_items ?? [];
+    const next: MoonPhaseItem[] = moonHighlights.map(m => {
+      const prev = stored.find(s => s.iso === m.iso && s.label === m.label);
+      return {
+        id: prev?.id ?? monthlyPlans.newItemId(),
+        iso: m.iso,
+        label: m.label,
+        glyph: m.glyph,
+        element: m.element,
+        prompt: prev?.prompt ?? MOON_PROMPTS[m.label] ?? "What does this phase invite?",
+        reflection: prev?.reflection ?? null,
+        done: prev?.done ?? false,
+      };
+    });
+    const same = next.length === stored.length &&
+      next.every((n, i) => stored[i] && stored[i].iso === n.iso && stored[i].label === n.label);
+    if (!same) {
+      setPlan(p => p ? { ...p, moon_phase_items: next } : p);
+      void patch({ moon_phase_items: next });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, moonHighlights, plan?.id]);
+
+  // Sync stored cycle phase items with detected phases for the month.
+  useEffect(() => {
+    if (!loaded || !plan) return;
+    if (!cycleSettings.enabled || !cycleSummary) {
+      if ((plan.cycle_phase_items ?? []).length > 0) {
+        setPlan(p => p ? { ...p, cycle_phase_items: [] } : p);
+        void patch({ cycle_phase_items: [] });
+      }
+      return;
+    }
+    const stored = plan.cycle_phase_items ?? [];
+    const next: CyclePhaseItem[] = cycleSummary.map(([phase]) => {
+      const prev = stored.find(s => s.phase === phase);
+      const meta = PHASE_META[phase as keyof typeof PHASE_META];
+      return {
+        id: prev?.id ?? monthlyPlans.newItemId(),
+        phase,
+        label: meta?.label ?? phase,
+        prompt: prev?.prompt ?? CYCLE_PROMPTS[phase] ?? "How will you honor this phase?",
+        reflection: prev?.reflection ?? null,
+        done: prev?.done ?? false,
+      };
+    });
+    const same = next.length === stored.length &&
+      next.every((n, i) => stored[i] && stored[i].phase === n.phase);
+    if (!same) {
+      setPlan(p => p ? { ...p, cycle_phase_items: next } : p);
+      void patch({ cycle_phase_items: next });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, cycleSummary, cycleSettings.enabled, plan?.id]);
+
+  const moonItems = plan?.moon_phase_items ?? [];
+  const cycleItems = plan?.cycle_phase_items ?? [];
+  const moonDone = moonItems.filter(m => m.done).length;
+  const cycleDone = cycleItems.filter(c => c.done).length;
+
+  const updateMoonItem = (id: string, p: Partial<MoonPhaseItem>) => {
+    const next = moonItems.map(m => m.id === id ? { ...m, ...p } : m);
+    setPlan(prev => prev ? { ...prev, moon_phase_items: next } : prev);
+    void patch({ moon_phase_items: next });
+  };
+  const updateCycleItem = (id: string, p: Partial<CyclePhaseItem>) => {
+    const next = cycleItems.map(c => c.id === id ? { ...c, ...p } : c);
+    setPlan(prev => prev ? { ...prev, cycle_phase_items: next } : prev);
+    void patch({ cycle_phase_items: next });
+  };
 
   const monthAppts = useMemo(
     () => state.appointments
@@ -263,17 +351,49 @@ export default function MonthOverview() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Moon */}
-        <SectionCard title="Moon phases" accent="calm" action={<Moon className="h-4 w-4 text-muted-foreground" />}>
-          {moonHighlights.length === 0 ? (
+        <SectionCard
+          title="Moon phases"
+          accent="calm"
+          action={
+            <div className="flex items-center gap-2">
+              {moonItems.length > 0 && (
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {moonDone}/{moonItems.length} reflected
+                </span>
+              )}
+              <Moon className="h-4 w-4 text-muted-foreground" />
+            </div>
+          }
+        >
+          {moonItems.length === 0 ? (
             <p className="text-xs text-muted-foreground">No major phases this month.</p>
           ) : (
-            <ul className="space-y-1.5">
-              {moonHighlights.map(m => (
-                <li key={m.iso} className="flex items-center gap-2 rounded-md bg-muted/30 px-2 py-1.5 text-xs">
-                  <span aria-hidden className="text-base">{m.glyph}</span>
-                  <span className="font-medium">{m.label}</span>
-                  <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[10px] capitalize">{m.element}</Badge>
-                  <span className="ml-auto text-muted-foreground">{format(m.date, "EEE, MMM d")}</span>
+            <ul className="space-y-2">
+              {moonItems.map(m => (
+                <li key={m.id} className="rounded-md bg-muted/30 p-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Checkbox checked={!!m.done} onCheckedChange={() => updateMoonItem(m.id, { done: !m.done })} />
+                    <span aria-hidden className="text-base">{m.glyph}</span>
+                    <span className={cn("font-medium", m.done && "line-through text-muted-foreground")}>{m.label}</span>
+                    {m.element && (
+                      <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[10px] capitalize">{m.element}</Badge>
+                    )}
+                    <span className="ml-auto text-muted-foreground">
+                      {format(new Date(m.iso + "T00:00:00"), "EEE, MMM d")}
+                    </span>
+                  </div>
+                  <p className="ml-6 mt-1 text-[11px] italic text-muted-foreground">{m.prompt}</p>
+                  <Textarea
+                    value={m.reflection ?? ""}
+                    onChange={(e) => setPlan(prev => prev ? {
+                      ...prev,
+                      moon_phase_items: prev.moon_phase_items.map(x => x.id === m.id ? { ...x, reflection: e.target.value } : x),
+                    } : prev)}
+                    onBlur={(e) => updateMoonItem(m.id, { reflection: e.target.value })}
+                    placeholder="A few words…"
+                    rows={2}
+                    className="ml-6 mt-1 text-[11px]"
+                  />
                 </li>
               ))}
             </ul>
@@ -289,24 +409,55 @@ export default function MonthOverview() {
         </SectionCard>
 
         {/* Cycle */}
-        <SectionCard title="Cycle check-in" accent="warm" action={<Heart className="h-4 w-4 text-muted-foreground" />}>
+        <SectionCard
+          title="Cycle check-in"
+          accent="warm"
+          action={
+            <div className="flex items-center gap-2">
+              {cycleItems.length > 0 && (
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {cycleDone}/{cycleItems.length} reflected
+                </span>
+              )}
+              <Heart className="h-4 w-4 text-muted-foreground" />
+            </div>
+          }
+        >
           {!cycleSettings.enabled ? (
             <p className="text-xs text-muted-foreground">
               Cycle tracking is off.{" "}
               <Link to="/settings" className="underline">Enable it</Link> to see phases this month.
             </p>
-          ) : cycleSummary && cycleSummary.length > 0 ? (
-            <ul className="space-y-1">
-              {cycleSummary.map(([phase, count]) => {
-                const meta = PHASE_META[phase as keyof typeof PHASE_META];
+          ) : cycleItems.length > 0 ? (
+            <ul className="space-y-2">
+              {cycleItems.map(c => {
+                const meta = PHASE_META[c.phase as keyof typeof PHASE_META];
+                const count = cycleSummary?.find(([p]) => p === c.phase)?.[1];
                 return (
-                  <li key={phase} className="flex items-center gap-2 text-xs">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ background: `hsl(var(${meta.tokenVar}))` }}
+                  <li key={c.id} className="rounded-md bg-muted/30 p-2">
+                    <div className="flex items-center gap-2 text-xs">
+                      <Checkbox checked={!!c.done} onCheckedChange={() => updateCycleItem(c.id, { done: !c.done })} />
+                      <span
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ background: meta ? `hsl(var(${meta.tokenVar}))` : undefined }}
+                      />
+                      <span className={cn("font-medium", c.done && "line-through text-muted-foreground")}>{c.label}</span>
+                      {count != null && (
+                        <span className="ml-auto text-muted-foreground">{count}d</span>
+                      )}
+                    </div>
+                    <p className="ml-6 mt-1 text-[11px] italic text-muted-foreground">{c.prompt}</p>
+                    <Textarea
+                      value={c.reflection ?? ""}
+                      onChange={(e) => setPlan(prev => prev ? {
+                        ...prev,
+                        cycle_phase_items: prev.cycle_phase_items.map(x => x.id === c.id ? { ...x, reflection: e.target.value } : x),
+                      } : prev)}
+                      onBlur={(e) => updateCycleItem(c.id, { reflection: e.target.value })}
+                      placeholder="How this phase felt or what you noticed…"
+                      rows={2}
+                      className="ml-6 mt-1 text-[11px]"
                     />
-                    <span className="font-medium">{meta.label}</span>
-                    <span className="ml-auto text-muted-foreground">{count}d</span>
                   </li>
                 );
               })}
