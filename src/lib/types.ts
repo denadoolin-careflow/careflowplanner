@@ -25,6 +25,7 @@ export interface Task {
   title: string;
   notes?: string;
   icon?: string;
+  coverUrl?: string;
   done: boolean;
   dueDate?: string; // ISO date
   priority: Priority;
@@ -62,6 +63,7 @@ export interface AreaRecord {
   color?: string;
   sortOrder: number;
   isArchived?: boolean;
+  coverUrl?: string;
 }
 
 export type ProjectStatus = "active" | "paused" | "done" | "someday";
@@ -85,6 +87,7 @@ export interface Project {
   linkedGoalIds?: string[];
   linkedHabitIds?: string[];
   isFavorite?: boolean;
+  coverUrl?: string;
 }
 
 export interface Goal {

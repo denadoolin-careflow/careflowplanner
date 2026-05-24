@@ -100,9 +100,55 @@ export type Database = {
           },
         ]
       }
+      area_resources: {
+        Row: {
+          area_name: string
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          kind: string
+          sort_order: number
+          title: string
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          area_name: string
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          kind?: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          area_name?: string
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          kind?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       areas: {
         Row: {
           color: string | null
+          cover_url: string | null
           created_at: string
           icon: string | null
           id: string
@@ -114,6 +160,7 @@ export type Database = {
         }
         Insert: {
           color?: string | null
+          cover_url?: string | null
           created_at?: string
           icon?: string | null
           id?: string
@@ -125,6 +172,7 @@ export type Database = {
         }
         Update: {
           color?: string | null
+          cover_url?: string | null
           created_at?: string
           icon?: string | null
           id?: string
@@ -1546,6 +1594,7 @@ export type Database = {
         Row: {
           attachments: Json
           body: string | null
+          cover_url: string | null
           created_at: string
           id: string
           pinned: boolean
@@ -1558,6 +1607,7 @@ export type Database = {
         Insert: {
           attachments?: Json
           body?: string | null
+          cover_url?: string | null
           created_at?: string
           id?: string
           pinned?: boolean
@@ -1570,6 +1620,7 @@ export type Database = {
         Update: {
           attachments?: Json
           body?: string | null
+          cover_url?: string | null
           created_at?: string
           id?: string
           pinned?: boolean
@@ -2743,6 +2794,7 @@ export type Database = {
           area_id: string | null
           area_name: string | null
           color: string | null
+          cover_url: string | null
           created_at: string
           deadline: string | null
           icon: string | null
@@ -2765,6 +2817,7 @@ export type Database = {
           area_id?: string | null
           area_name?: string | null
           color?: string | null
+          cover_url?: string | null
           created_at?: string
           deadline?: string | null
           icon?: string | null
@@ -2787,6 +2840,7 @@ export type Database = {
           area_id?: string | null
           area_name?: string | null
           color?: string | null
+          cover_url?: string | null
           created_at?: string
           deadline?: string | null
           icon?: string | null
@@ -3245,6 +3299,7 @@ export type Database = {
           area: string
           attachments: Json
           auto_reset: boolean
+          cover_url: string | null
           created_at: string
           day_part: string | null
           done: boolean
@@ -3280,6 +3335,7 @@ export type Database = {
           area?: string
           attachments?: Json
           auto_reset?: boolean
+          cover_url?: string | null
           created_at?: string
           day_part?: string | null
           done?: boolean
@@ -3315,6 +3371,7 @@ export type Database = {
           area?: string
           attachments?: Json
           auto_reset?: boolean
+          cover_url?: string | null
           created_at?: string
           day_part?: string | null
           done?: boolean

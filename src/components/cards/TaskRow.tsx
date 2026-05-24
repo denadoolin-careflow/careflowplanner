@@ -22,6 +22,7 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { useTaskSelection } from "@/lib/task-selection";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { inferTaskIcon } from "@/lib/task-icons";
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
@@ -133,6 +134,8 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
     setEditing(true);
   };
 
+  const AutoIcon = inferTaskIcon(task.title, task.notes);
+
   return (
     <>
     <RowShell
@@ -149,6 +152,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       onContextMenu={onContextMenu}
     >
       <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-0.5" />
+      <AutoIcon className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground/70" aria-hidden />
       {(hasSubs || addingSub) && (
         <button
           type="button"

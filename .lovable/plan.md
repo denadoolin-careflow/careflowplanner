@@ -1,118 +1,72 @@
-## Goals
+# Areas Upgrade Plan
 
-Five connected improvements: a tighter mobile CARE strip on Today, a more Obsidian-feel notes editor, a real tag system shared by tasks and notes, prettier color+icon labels, and an Ideas page that behaves like a tag-aware task list.
-
----
-
-## 1. CARE methodology mobile alignment
-
-**File:** `src/components/care/CareLoopIndicator.tsx`
-
-- On mobile each phase pill currently stacks the icon above a tiny uppercase label, and on very narrow widths they overlap.
-- Switch the mobile rendering to a single horizontal row: icon + label inline, smaller icon (`h-6 w-6`), label `text-[10px]` truncated, equal `flex-1 basis-0` columns so all four phases sit on one line at 360px+.
-- Replace the dual hidden/visible label spans with one responsive label that shows next to the icon at every breakpoint.
-- Reduce `nav` padding to `p-1.5` and gap to `gap-0.5` on mobile so four pills fit without wrap.
-
-No business logic touched.
+I'll ship this in 4 focused parts. Each part is independently shippable so you can preview as we go.
 
 ---
 
-## 2. Notes editor — Obsidian-style toggles, indent, alignment
+## Part 1 — Area page polish & project reordering
 
-**Files:** `src/components/notes/BlockEditor.tsx`, `src/components/notes/NoteMarkdown.tsx`, `src/pages/Notes.tsx`
+**Files**: `src/pages/AreaPage.tsx`, `src/components/areas/*`, `src/lib/store.tsx`
 
-Editor refinements:
-- Replace the current toggle/callout node with an Obsidian-style collapsible "toggle" block: a chevron that rotates, a one-line summary, and an indented child container that visually inherits the left guide line.
-- Make `Tab` / `Shift+Tab` indent and outdent the current list item or toggle child (sink/lift list item commands).
-- Add a 2px left guide line on indented children so nesting reads cleanly.
-- Tighten typography: use `leading-[1.6]`, consistent `text-[15px]`, monospace inline code with `bg-muted/60 px-1 rounded`, and align bullets/numbers to a fixed gutter (`pl-6 -indent-6`) so text never staircases.
-- Add a thin "indent guide" CSS rule for nested lists.
+- Remove the active/selected highlight on Area cards/rows (find the `ring`/`bg-primary/10` styling tied to selected state and drop it).
+- Drag-and-drop project reordering inside an Area using `@dnd-kit/sortable` (already a common stack pattern). Persist via `projects.sortOrder` (already exists in `Project` type).
+- View switcher above projects: **List | Board | Grid**, with controls:
+  - **Sort**: name, deadline, recently updated, manual (sortOrder)
+  - **Group**: none, status, deadline bucket (this week / month / later), favorites
+  - **Filter**: status (active/paused/done/someday), favorites only, has deadline
+- Persist view prefs per area in `localStorage` (key: `area-view:{areaId}`).
 
-List preview (`Notes.tsx` cards):
-- Strip markdown from the snippet shown in the notes list — render the first ~140 chars of plain text only (no `#`, `**`, `>`, etc.), with a small util `stripMarkdown(md)`.
-- Keep full markdown rendering inside the note detail view.
+## Part 2 — Auto task icons (replace emoji field)
 
----
+**Files**: `src/lib/task-icons.ts` (new), `src/components/cards/TaskRow.tsx`, `src/components/tasks/*` editors
 
-## 3. Tags system for tasks + notes
+- New `inferTaskIcon(title, notes?)` using a keyword → Lucide map (~80 mappings: phone/call→Phone, buy/grocery→ShoppingCart, doctor/appt→Stethoscope, email→Mail, clean→Sparkles, pay/bill→CreditCard, gym/workout→Dumbbell, etc.). Falls back to `CheckSquare`.
+- Remove emoji input from task editors. `task.icon` still stored but now optional override.
+- `TaskRow` renders: `task.icon` (manual override, looked up via existing lucide map) → else `inferTaskIcon(title)` → else default.
+- Add a small icon-override popover for users who want to pin a specific icon.
 
-Tags already exist as `string[]` on `Task` and `JournalEntry`. We'll formalize them.
+## Part 3 — Trello-style Kanban + Unsplash cover images
 
-**Migration:**
-- New `public.tags` table: `id`, `user_id`, `name` (unique per user, case-insensitive), `color` (hex), `icon` (lucide name), timestamps. Standard RLS so each user only sees their own tags.
-- Notes are stored in `home_notes` today — add a `tags text[]` column to `home_notes` so notes can carry tags like tasks do.
+**Files**: `src/components/tasks/KanbanBoard.tsx` (rewrite), `src/components/common/CoverImagePicker.tsx` (new), `src/lib/covers.ts` (new), migration for `cover_url` columns.
 
-**Store:**
-- `src/lib/store.tsx`: load tags, expose `tags`, `addTag`, `updateTag`, `deleteTag`. Map note rows to include `tags`.
+Kanban redesign:
+- Card visuals: cover image at top (if set), title, labels (tags as colored chips), due date pill, icon, avatar/recipient, subtask progress bar.
+- Vertical drag-reorder within a column + cross-column drag (already drag works between columns; add `sortOrder` write-back within a column).
+- "Add column" disabled (columns are semantic: Inbox/Today/Upcoming/Waiting/Done) — but allow collapsing columns.
+- Inline card open → side sheet with full editor.
 
-**UI components (new):**
-- `src/components/tags/TagChip.tsx` — colored pill with icon + name.
-- `src/components/tags/TagPicker.tsx` — multi-select popover with search, "Create new tag" inline, color swatch + icon picker (reuses `IconPicker`). Used in `TaskEditor`, `QuickEditPopover`, note detail, and Ideas.
-- `src/components/tags/TagManagerDialog.tsx` — rename, recolor, change icon, delete tag (with confirmation).
+Cover images (free Unsplash via `source.unsplash.com`):
+- `CoverImagePicker` dialog: keyword search input → grid of `https://source.unsplash.com/400x240/?{keyword}&sig={i}` thumbnails (6 results, regenerate button), plus "Remove cover" and "Paste URL".
+- Apply to: tasks, projects, notes, areas. Add `cover_url text` column to each of these tables via migration.
 
-**Tag browse view:**
-- New route `src/pages/Tags.tsx` (`/tags`) listing all tags as colored cards with counts.
-- New route `src/pages/TagDetail.tsx` (`/tags/:name`) showing every task and note carrying that tag, grouped by type, with the same `TaskRow` / note card components.
-- Nav entry under "Library" or alongside Notes.
+## Part 4 — Area Hub
 
-**Filtering in existing lists:**
-- `TaskListPage` and `Notes.tsx` get a "Filter by tag" chip row above the list.
+**Files**: `src/pages/AreaPage.tsx` (new "Hub" tab), `src/components/areas/AreaHub.tsx` (new), `src/components/areas/AreaResourceEditor.tsx` (new), migration.
 
----
-
-## 4. Custom color + icon options for tags
-
-- `TagPicker`'s "create" flow shows a 12-swatch color palette (warm / sage / sky / rose / amber / indigo / etc., all HSL semantic-friendly) and an icon grid (Sparkle, Heart, Star, Flag, Bookmark, Leaf, Sun, Moon, Compass, Tag, Flame, Cloud).
-- Tag chips render with `style={{ backgroundColor: hsl from color, color: contrast }}` while still respecting dark mode via opacity overlays.
-- Color + icon stored on the `tags` row (see migration) and reused everywhere a tag chip appears.
+- New tab in AreaPage: **Hub**. Sections:
+  - **Pinned Resources** — custom links/files/embeds (new `area_resources` table: `id, user_id, area_name, kind (link|file|embed|note_ref), title, url, icon, color, sort_order`).
+  - **Linked Goals** — goals where `category` matches area or manually linked (use existing `goals`).
+  - **Linked Habits** — habits filtered by area tag.
+  - **Linked Notes & Journal** — notes/journal entries tagged with area name.
+  - **Projects** — quick list with covers.
+- Resources support drag reorder, edit, delete, open-in-new-tab.
 
 ---
 
-## 5. Ideas → task-style with tags
+## Technical notes
 
-**File:** `src/pages/Ideas.tsx` (rewrite, keep the `ideas` store table for backwards compatibility — render existing `Idea` rows as `IdeaCard` plus allow converting to task; new captures save as tagged tasks with `inbox: true` and tag `idea`.)
-
-- Header capture row mirrors task quick-add: title input + tag picker + Add button.
-- Body becomes a single list of `TaskRow` instances filtered to tasks with the `idea` tag, grouped by user-selected tag, with the standard hover actions (schedule, convert, delete).
-- Legacy `state.ideas` items render in a "Migrate older ideas" collapsible at the bottom with a one-click "Convert to tagged task" button.
-
----
-
-## Technical details
-
-```text
-DB additions
-  tags(id, user_id, name, color, icon, created_at, updated_at)  RLS by user_id
-  home_notes.tags text[]                                          (default '{}')
-
-Routes
-  /tags             → src/pages/Tags.tsx          (grid of tag cards)
-  /tags/:name       → src/pages/TagDetail.tsx     (mixed task+note list)
-
-New components
-  src/components/tags/TagChip.tsx
-  src/components/tags/TagPicker.tsx
-  src/components/tags/TagManagerDialog.tsx
-
-Edited components
-  src/components/care/CareLoopIndicator.tsx       (mobile layout)
-  src/components/notes/BlockEditor.tsx            (toggle node, indent, guides)
-  src/components/notes/NoteMarkdown.tsx           (plain-text snippet helper)
-  src/pages/Notes.tsx                             (use snippet, add tag filter)
-  src/pages/Ideas.tsx                             (rewrite as tagged tasks)
-  src/components/tasks/TaskEditor.tsx             (TagPicker section)
-  src/components/tasks/QuickEditPopover.tsx       (TagPicker inline)
-  src/lib/store.tsx                               (tags CRUD, note tags)
-  src/lib/nav.ts                                  (Tags nav link)
-```
+- **DnD library**: use `@dnd-kit/core` + `@dnd-kit/sortable` (lightweight, mobile-friendly).
+- **Migrations** (one combined migration):
+  - `ALTER TABLE tasks ADD COLUMN cover_url text;`
+  - `ALTER TABLE projects ADD COLUMN cover_url text;`
+  - `ALTER TABLE areas ADD COLUMN cover_url text;`
+  - `ALTER TABLE home_notes ADD COLUMN cover_url text;`
+  - `CREATE TABLE area_resources (...)` with RLS `auth.uid() = user_id`.
+- **Type sync**: after migration, `src/integrations/supabase/types.ts` regenerates automatically.
+- **Backward compat**: keep `task.icon` (manual override wins over inference).
 
 ---
 
-## Out of scope (call out if you want me to include)
+## Suggested order
 
-- Per-user "favorite tags" or pinned tags.
-- AI tag suggestions.
-- Bulk re-tag from tag detail view.
-- Migrating existing `Idea` rows automatically into the tasks table.
-
-If any of those should be in, say the word and I'll fold them into this plan; otherwise reply approve and I'll start with the migration and work through the five sections in order.
+I'll ship **Part 1 first**, then pause for you to preview. Reply "next" to continue to Part 2, or steer me if priorities shift.

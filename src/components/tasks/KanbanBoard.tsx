@@ -5,8 +5,14 @@ import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { addDays, format } from "date-fns";
 import { haptics } from "@/lib/haptics";
-import { Plus } from "lucide-react";
+import { Plus, CalendarDays, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
+import { inferTaskIcon } from "@/lib/task-icons";
+import { CoverImagePicker } from "@/components/common/CoverImagePicker";
+import { Badge } from "@/components/ui/badge";
+import { differenceInCalendarDays, parseISO } from "date-fns";
+import { formatRelativeDate } from "@/lib/date-format";
+import { TaskEditor } from "@/components/tasks/TaskEditor";
 
 type ColumnKey = "inbox" | "today" | "upcoming" | "waiting" | "done";
 type Column = { key: ColumnKey; label: string; accent: string; match: (t: Task, today: string) => boolean; onDrop: (t: Task) => Partial<Task> };
@@ -80,7 +86,13 @@ export function KanbanBoard({ tasks, scope = "all" }: { tasks: Task[]; scope?: "
 }
 
 function KanbanCard({ task }: { task: Task }) {
+  const { updateTask, state } = useStore();
+  const Icon = inferTaskIcon(task.title, task.notes);
+  const areaColor = (state.areas ?? []).find(a => a.name === task.area)?.color;
+  const overdue = task.dueDate ? differenceInCalendarDays(parseISO(task.dueDate), new Date()) < 0 && !task.done : false;
+  const [openEditor, setOpenEditor] = useState(false);
   return (
+    <>
     <div
       draggable
       onDragStart={(e) => {
@@ -89,10 +101,48 @@ function KanbanCard({ task }: { task: Task }) {
         e.dataTransfer.effectAllowed = "move";
         haptics.pickup?.();
       }}
-      className="rounded-xl bg-card/80 hover:shadow-[0_4px_18px_-12px_hsl(var(--primary)/0.45)] cursor-grab active:cursor-grabbing"
+      className="group overflow-hidden rounded-xl border border-border/60 bg-card/90 transition hover:border-primary/40 hover:shadow-[0_8px_24px_-14px_hsl(var(--primary)/0.55)] cursor-grab active:cursor-grabbing"
+      style={areaColor ? { boxShadow: `inset 3px 0 0 0 ${areaColor}` } : undefined}
     >
-      <TaskRow task={task} dense />
+      {task.coverUrl && (
+        <div className="aspect-[16/7] overflow-hidden bg-muted">
+          <img src={task.coverUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => setOpenEditor(true)}
+        className="block w-full text-left px-2.5 py-2"
+      >
+        <div className="flex items-start gap-1.5">
+          <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <span className={cn("flex-1 text-sm leading-snug", task.done && "text-muted-foreground line-through")}>{task.title}</span>
+        </div>
+        {(task.tags?.length || task.dueDate || task.priority === "high") && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {(task.tags ?? []).slice(0, 3).map(t => (
+              <Badge key={t} variant="secondary" className="rounded-full px-1.5 py-0 text-[10px] font-normal">{t}</Badge>
+            ))}
+            {task.dueDate && (
+              <Badge variant="outline" className={cn("gap-1 rounded-full text-[10px] font-normal", overdue && "border-destructive/60 bg-destructive/10 text-destructive")}>
+                <CalendarDays className="h-2.5 w-2.5" /> {formatRelativeDate(task.dueDate)}
+              </Badge>
+            )}
+            {task.priority === "high" && <Badge className="rounded-full bg-accent text-[10px] font-normal text-accent-foreground hover:bg-accent">priority</Badge>}
+          </div>
+        )}
+      </button>
+      <div className="flex items-center justify-end gap-1 border-t border-border/40 bg-background/40 px-1.5 py-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <CoverImagePicker
+          value={task.coverUrl}
+          defaultQuery={task.title}
+          onChange={(url) => updateTask(task.id, { coverUrl: url ?? undefined })}
+          trigger={<button type="button" className="rounded p-1 text-muted-foreground hover:text-primary" title="Cover image"><ImagePlus className="h-3.5 w-3.5" /></button>}
+        />
+      </div>
     </div>
+    <TaskEditor open={openEditor} onOpenChange={setOpenEditor} task={task} />
+    </>
   );
 }
 
