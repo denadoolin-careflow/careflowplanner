@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format, addDays } from "date-fns";
-import { CalendarDays, Check, FolderKanban, Tag, Trash2, X } from "lucide-react";
+import { CalendarDays, Check, FolderKanban, Tag, Trash2, X, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -62,6 +62,20 @@ export function BulkActionBar() {
   const setArea = async (area: string) => {
     await run((id) => updateTask(id, { area: area as any }));
     toast.success(`Area set to ${area}`);
+    clear();
+  };
+
+  const parkUntil = async (offset: number | null) => {
+    const iso = offset === null ? undefined : format(addDays(new Date(), offset), "yyyy-MM-dd");
+    await run((id) => updateTask(id, {
+      status: "parked",
+      snoozedUntil: iso,
+      dueDate: undefined,
+      isTopThree: false,
+    }));
+    toast.success(
+      iso ? `Parked — will return ${format(addDays(new Date(), offset!), "EEE MMM d")}` : "Parked in Not Today",
+    );
     clear();
   };
 
@@ -143,6 +157,21 @@ export function BulkActionBar() {
         <Button size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full text-destructive hover:text-destructive" onClick={remove}>
           <Trash2 className="h-3.5 w-3.5" /> Delete
         </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full">
+              <Coffee className="h-3.5 w-3.5" /> Not today
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="center" className="w-48 p-1">
+            <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted" onClick={() => parkUntil(1)}>Bring back tomorrow</button>
+            <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted" onClick={() => parkUntil(3)}>In 3 days</button>
+            <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted" onClick={() => parkUntil(7)}>Next week</button>
+            <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted" onClick={() => parkUntil(14)}>In 2 weeks</button>
+            <div className="my-1 h-px bg-border/50" />
+            <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted" onClick={() => parkUntil(null)}>Indefinitely</button>
+          </PopoverContent>
+        </Popover>
         <div className="h-5 w-px bg-border/60" />
         <Button size="sm" variant="ghost" className="h-8 w-8 rounded-full p-0" onClick={clear} aria-label="Clear selection">
           <X className="h-3.5 w-3.5" />
