@@ -25,6 +25,8 @@ import HomeHub from "./pages/HomeHub";
 import Journal from "./pages/Journal";
 import JournalFlow from "./pages/JournalFlow";
 import Ideas from "./pages/Ideas";
+import Tags from "./pages/Tags";
+import TagDetail from "./pages/TagDetail";
 import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
 import PomodoroPicker from "./pages/PomodoroPicker";
@@ -126,6 +128,8 @@ const App = () => (
                 <Route path="/journal-flow" element={<JournalFlow />} />
                 <Route path="/routines" element={<Routines />} />
                 <Route path="/ideas" element={<Ideas />} />
+               <Route path="/tags" element={<Tags />} />
+               <Route path="/tags/:name" element={<TagDetail />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/focus" element={<PomodoroPicker />} />
                 <Route path="/settings" element={<Settings />} />
