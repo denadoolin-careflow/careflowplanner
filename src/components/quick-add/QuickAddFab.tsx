@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Plus, Sparkles, X, CornerDownLeft, FolderOpen, Layers, Flag, Check } from "lucide-react";
+import { Plus, Sparkles, X, CornerDownLeft, FolderOpen, Layers, Flag, Check, Mic, MicOff, Brain, Wand2 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -19,8 +19,10 @@ import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { useQuickAddPresets, type QuickAddKind, type QuickAddPreset } from "@/lib/quick-add-presets";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { supabase } from "@/integrations/supabase/client";
 
-type Mode = QuickAddKind | "command";
+type Mode = QuickAddKind | "command" | "braindump";
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
   active: "Active",
@@ -121,7 +123,7 @@ function CommandPalette({
   value: string;
   onChange: (v: string) => void;
   presets: QuickAddPreset[];
-  onPick: (k: QuickAddKind) => void;
+  onPick: (k: Mode) => void;
   onClose: () => void;
 }) {
   const { addTask, addProject, state } = useStore();
@@ -130,6 +132,7 @@ function CommandPalette({
   const hasText = value.trim().length > 0;
   const projects = state.projects ?? [];
   const areas = state.areas ?? [];
+  const dictation = useVoiceDictation((t) => onChange(t));
 
   // Overrides set by the picker chips. Undefined = follow NLP defaults.
   const [pickedProjectId, setPickedProjectId] = useState<string | undefined | null>(undefined); // null = explicit "no project"
@@ -208,12 +211,31 @@ function CommandPalette({
       }}
     >
       <div className="border-b border-border/60 px-3 py-2">
-        <CommandInput
-          autoFocus
-          placeholder="Type a task in plain English  —  e.g. Doctor tomorrow 3pm #health p2 for 30m"
-          value={value}
-          onValueChange={onChange}
-        />
+        <div className="flex items-center gap-1">
+          <CommandInput
+            autoFocus
+            placeholder="Type or speak — e.g. Doctor tomorrow 3pm #health p2 for 30m"
+            value={value}
+            onValueChange={onChange}
+            className="flex-1"
+          />
+          {dictation.supported && (
+            <button
+              type="button"
+              onClick={dictation.toggle}
+              title={dictation.listening ? "Stop voice capture" : "Voice capture"}
+              aria-label="Voice capture"
+              className={cn(
+                "mr-1 grid h-8 w-8 place-items-center rounded-full border border-border/60 transition-colors",
+                dictation.listening
+                  ? "border-rose-400/60 bg-rose-500/10 text-rose-600 dark:text-rose-300 animate-pulse"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              )}
+            >
+              {dictation.listening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+            </button>
+          )}
+        </div>
         {parsed.chips.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5 px-2 pb-2">
             {parsed.chips.map((c, i) => (
@@ -336,6 +358,18 @@ function CommandPalette({
           </CommandGroup>
         )}
 
+        <CommandGroup heading="Modes">
+          <CommandItem value="brain dump inbox" onSelect={() => onPick("braindump" as Mode)} className="gap-3">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-accent/30 text-accent-foreground">
+              <Brain className="h-3.5 w-3.5" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="truncate text-sm">Brain dump</div>
+              <div className="truncate text-[11px] text-muted-foreground">Empty your head — we'll route each line.</div>
+            </div>
+          </CommandItem>
+        </CommandGroup>
+
         {hasText && projects.length > 0 && (
           <CommandGroup heading="Add to project">
             {projects.slice(0, 6).map((p) => (
@@ -422,6 +456,7 @@ function FormShell({ mode, onBack, onClose, initialText }: { mode: Exclude<Mode,
         <HolidayForm onClose={onClose} />
         <CleaningForm onClose={onClose} initialText={initialText} />
         <CareForm onClose={onClose} initialText={initialText} />
+        <BrainDumpForm onClose={onClose} initialText={initialText} />
       </Tabs>
     </div>
   );
@@ -591,6 +626,116 @@ function CareForm({ onClose, initialText }: { onClose: () => void; initialText: 
       </Select>
       <Textarea rows={4} placeholder="Note for the care log..." value={body} onChange={e => setBody(e.target.value)} autoFocus />
       <Button className="w-full" onClick={() => { if (!body.trim() || !recipientId) return; addCareNote({ recipientId, body }); toast.success("Care note saved."); onClose(); }}>Add care note</Button>
+    </TabsContent>
+  );
+}
+
+/* ───────────────────────── Brain dump ───────────────────────── */
+
+function BrainDumpForm({ onClose, initialText }: { onClose: () => void; initialText: string }) {
+  const { addTask } = useStore();
+  const [text, setText] = useState(initialText);
+  const [busy, setBusy] = useState(false);
+  const [autoTriage, setAutoTriage] = useState(true);
+  const dictation = useVoiceDictation((t) => {
+    // Append final dictation as a new line so multiple thoughts stay separate.
+    setText((prev) => {
+      const sep = prev && !prev.endsWith("\n") ? "\n" : "";
+      return prev + sep + t;
+    });
+  });
+
+  const lines = useMemo(
+    () => text.split(/\r?\n|;|•|·/).map((l) => l.trim()).filter(Boolean),
+    [text]
+  );
+
+  const flush = async () => {
+    if (lines.length === 0) return;
+    setBusy(true);
+    try {
+      for (const line of lines) {
+        const parsed = parseTaskInput(line);
+        if (!parsed.title) continue;
+        await addTask({
+          title: parsed.title,
+          area: (parsed.area ?? "Personal") as any,
+          priority: parsed.priority ?? "medium",
+          dueDate: parsed.dueDate,
+          tags: parsed.tags,
+          estMinutes: parsed.estMinutes,
+          recurrenceType: parsed.recurrenceType,
+          recurrenceInterval: parsed.recurrenceInterval,
+          recurrenceDays: parsed.recurrenceDays,
+          inbox: !parsed.dueDate,
+          status: parsed.someday ? "someday" : "active",
+        });
+      }
+      toast.success(`Captured ${lines.length} item${lines.length === 1 ? "" : "s"}`, {
+        description: autoTriage ? "Routing with smart triage…" : "Everything landed in your inbox.",
+      });
+      if (autoTriage) {
+        // Fire-and-forget — the inbox will reflect updated suggestions next time it's opened.
+        supabase.functions
+          .invoke("ai-inbox-triage", { body: {} })
+          .then(() => toast.success("Smart triage ready in Inbox"))
+          .catch(() => {});
+      }
+      haptics.tap();
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not save brain dump");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <TabsContent value="braindump" className="mt-0 space-y-3">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Brain className="h-3.5 w-3.5 text-primary" />
+        One thought per line. We'll route each one to the right place.
+      </div>
+      <Textarea
+        rows={8}
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={"call vet tomorrow 3pm #pet\nlaundry today\ngrocery run ~someday\nreply to mom @home"}
+        className="rounded-2xl bg-card/60 text-sm leading-relaxed"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); flush(); }
+        }}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        {dictation.supported && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={dictation.toggle}
+            className={cn(dictation.listening && "border-rose-400/60 text-rose-600 dark:text-rose-300")}
+          >
+            {dictation.listening ? <MicOff className="mr-1 h-3.5 w-3.5" /> : <Mic className="mr-1 h-3.5 w-3.5" />}
+            {dictation.listening ? "Listening…" : "Voice"}
+          </Button>
+        )}
+        <label className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-[11px]">
+          <input
+            type="checkbox"
+            className="h-3 w-3 accent-primary"
+            checked={autoTriage}
+            onChange={(e) => setAutoTriage(e.target.checked)}
+          />
+          <Wand2 className="h-3 w-3" /> Smart route after
+        </label>
+        <span className="ml-auto text-[11px] text-muted-foreground">
+          {lines.length} item{lines.length === 1 ? "" : "s"} · ⌘↵ to save
+        </span>
+      </div>
+      <Button className="w-full" onClick={flush} disabled={busy || lines.length === 0}>
+        {busy ? "Saving…" : `Capture ${lines.length || ""} ${lines.length === 1 ? "thought" : "thoughts"}`.trim()}
+      </Button>
     </TabsContent>
   );
 }
