@@ -4,6 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 export interface PriorityItem { id: string; title: string; done: boolean; linked_task_id?: string | null; }
 export interface OutingItem { id: string; title: string; date?: string | null; notes?: string | null; linked_appt_id?: string | null; }
 export interface ActivityItem { id: string; title: string; notes?: string | null; done?: boolean; }
+export interface MoonPhaseItem {
+  id: string;
+  iso: string;            // date YYYY-MM-DD
+  label: string;          // e.g. "Full Moon"
+  glyph: string;
+  element?: string | null;
+  prompt: string;
+  reflection?: string | null;
+  done?: boolean;
+}
+export interface CyclePhaseItem {
+  id: string;
+  phase: string;          // "menstrual" | "follicular" | "ovulation" | "luteal"
+  label: string;
+  prompt: string;
+  reflection?: string | null;
+  done?: boolean;
+}
 
 export interface MonthlyPlan {
   id: string;
@@ -19,6 +37,8 @@ export interface MonthlyPlan {
   activities: ActivityItem[];
   moon_notes: string | null;
   cycle_notes: string | null;
+  moon_phase_items: MoonPhaseItem[];
+  cycle_phase_items: CyclePhaseItem[];
   ai_generated_at: string | null;
 }
 
@@ -45,6 +65,8 @@ function mapRow(r: any): MonthlyPlan {
     activities: Array.isArray(r.activities) ? r.activities : [],
     moon_notes: r.moon_notes ?? null,
     cycle_notes: r.cycle_notes ?? null,
+    moon_phase_items: Array.isArray(r.moon_phase_items) ? r.moon_phase_items : [],
+    cycle_phase_items: Array.isArray(r.cycle_phase_items) ? r.cycle_phase_items : [],
     ai_generated_at: r.ai_generated_at ?? null,
   };
 }
@@ -79,6 +101,8 @@ export const monthlyPlans = {
       activities: patch.activities ?? existing?.activities ?? [],
       moon_notes: patch.moon_notes ?? existing?.moon_notes ?? null,
       cycle_notes: patch.cycle_notes ?? existing?.cycle_notes ?? null,
+      moon_phase_items: patch.moon_phase_items ?? existing?.moon_phase_items ?? [],
+      cycle_phase_items: patch.cycle_phase_items ?? existing?.cycle_phase_items ?? [],
       ai_generated_at: patch.ai_generated_at ?? existing?.ai_generated_at ?? null,
     };
     const { data } = await supabase

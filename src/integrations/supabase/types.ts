@@ -2121,10 +2121,12 @@ export type Database = {
           ai_generated_at: string | null
           created_at: string
           cycle_notes: string | null
+          cycle_phase_items: Json
           id: string
           intention: string | null
           month: string
           moon_notes: string | null
+          moon_phase_items: Json
           outings: Json
           priorities: Json
           season: string | null
@@ -2139,10 +2141,12 @@ export type Database = {
           ai_generated_at?: string | null
           created_at?: string
           cycle_notes?: string | null
+          cycle_phase_items?: Json
           id?: string
           intention?: string | null
           month: string
           moon_notes?: string | null
+          moon_phase_items?: Json
           outings?: Json
           priorities?: Json
           season?: string | null
@@ -2157,10 +2161,12 @@ export type Database = {
           ai_generated_at?: string | null
           created_at?: string
           cycle_notes?: string | null
+          cycle_phase_items?: Json
           id?: string
           intention?: string | null
           month?: string
           moon_notes?: string | null
+          moon_phase_items?: Json
           outings?: Json
           priorities?: Json
           season?: string | null
