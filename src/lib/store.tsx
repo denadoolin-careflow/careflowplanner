@@ -582,6 +582,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (linkedIds !== undefined) row.linked_ids = linkedIds;
       if (tags !== undefined) row.tags = tags;
       if (pinned !== undefined) row.pinned = pinned;
+      if ((j as any).attachments !== undefined) row.attachments = (j as any).attachments;
       const { data } = await supabase.from("journal_entries").insert(row).select().single();
       if (data) {
         const entry = journalFrom(data);
@@ -604,6 +605,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.tags !== undefined) dbPatch.tags = patch.tags;
       if (patch.pinned !== undefined) dbPatch.pinned = patch.pinned;
       if (patch.date !== undefined) dbPatch.date = patch.date;
+      if ((patch as any).attachments !== undefined) dbPatch.attachments = (patch as any).attachments;
       setState(s => ({ ...s, journal: s.journal.map(j => j.id === id ? { ...j, ...patch } : j) }));
       if (Object.keys(dbPatch).length) await supabase.from("journal_entries").update(dbPatch).eq("id", id);
     },
