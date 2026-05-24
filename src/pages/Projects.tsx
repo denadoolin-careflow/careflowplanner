@@ -4,7 +4,7 @@ import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FolderOpen, Plus, LayoutGrid, List as ListIcon, Columns3 } from "lucide-react";
+import { Plus, LayoutGrid, List as ListIcon, Columns3 } from "lucide-react";
 import { AREAS } from "@/lib/types";
 import { toast } from "sonner";
 import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
