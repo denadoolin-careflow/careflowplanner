@@ -228,7 +228,9 @@ export function RoutineCard({
   const [draft, setDraft] = useState("");
   const [newTag, setNewTag] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [pomo, setPomo] = useState<{ open: boolean; title: string }>({ open: false, title: "" });
   const doneCount = r.items.filter(i => i.done).length;
+  const timeValue = r.time_of_day ?? SLOT_DEFAULT_TIME[r.slot];
 
   const generate = async () => {
     setGenerating(true);
@@ -262,6 +264,9 @@ export function RoutineCard({
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="font-medium text-sm">{r.person_name}</span>
             <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[10px]">{SLOT_LABEL[r.slot]}</Badge>
+            <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[10px]">
+              <Clock className="mr-0.5 inline h-2.5 w-2.5" />{formatTime12(timeValue)}
+            </Badge>
             <Badge variant="secondary" className="rounded-full px-1.5 py-0 text-[10px]">
               <Repeat className="mr-0.5 inline h-2.5 w-2.5" />{CADENCE_LABEL[r.cadence]}
             </Badge>
@@ -271,6 +276,13 @@ export function RoutineCard({
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <Input
+            type="time"
+            value={timeValue}
+            onChange={(e) => routinesApi.upsert(r.person_name, r.slot, { time_of_day: e.target.value || null })}
+            className="h-7 w-[88px] px-1.5 text-[11px]"
+            aria-label="Time of day"
+          />
           <Select
             value={r.cadence}
             onValueChange={(v) => routinesApi.upsert(r.person_name, r.slot, { cadence: v as RoutineCadence })}
@@ -283,6 +295,14 @@ export function RoutineCard({
           <Button size="sm" variant="ghost" onClick={generate} disabled={generating} className="h-7 px-2 text-[11px]">
             <Sparkles className={cn("mr-1 h-3 w-3", generating && "animate-pulse")} />
             AI
+          </Button>
+          <Button
+            size="sm" variant="ghost"
+            onClick={() => setPomo({ open: true, title: `${r.person_name} · ${SLOT_LABEL[r.slot]}` })}
+            className="h-7 px-2 text-[11px]"
+            aria-label="Start pomodoro for routine"
+          >
+            <Timer className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
@@ -311,6 +331,12 @@ export function RoutineCard({
             <Checkbox checked={it.done} onCheckedChange={() => routinesApi.toggleItem(r.person_name, r.slot, it.id)} />
             <span className={cn("flex-1 truncate", it.done && "line-through text-muted-foreground")}>{it.text}</span>
             <button
+              onClick={() => setPomo({ open: true, title: it.text })}
+              className="opacity-0 group-hover:opacity-60 hover:opacity-100"
+              aria-label="Start pomodoro for step"
+              title="Start pomodoro"
+            ><Timer className="h-3 w-3" /></button>
+            <button
               onClick={() => routinesApi.removeItem(r.person_name, r.slot, it.id)}
               className="opacity-0 group-hover:opacity-60 hover:opacity-100"
               aria-label="Remove"
@@ -330,6 +356,13 @@ export function RoutineCard({
           />
         </form>
       </div>
+
+      <PomodoroDialog
+        open={pomo.open}
+        onOpenChange={(o) => setPomo(s => ({ ...s, open: o }))}
+        title={pomo.title}
+        subtitle={`${SLOT_LABEL[r.slot]} · ${formatTime12(timeValue)}`}
+      />
 
       {/* Tags */}
       <div className="mt-2 flex flex-wrap items-center gap-1">
