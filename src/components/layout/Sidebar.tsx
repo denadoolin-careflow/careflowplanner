@@ -409,10 +409,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                       <NavLink
                         to={`/areas/${encodeURIComponent(area.name)}`}
                         onClick={onNavigate}
-                        className={({ isActive }) => cn(
-                          "flex-1 truncate text-left -mx-1 transition-colors text-foreground border-none rounded-md opacity-100 bg-transparent border-4 border-transparent px-[4px] shadow-none",
-                          isActive && "bg-primary-soft text-foreground"
-                        )}
+                        className="flex-1 truncate text-left -mx-1 rounded-md bg-transparent px-[4px] text-foreground transition-colors hover:text-primary"
                       >
                         {area.name}
                       </NavLink>

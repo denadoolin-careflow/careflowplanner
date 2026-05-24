@@ -36,7 +36,8 @@ export { todayISO };
 
 /* ---------- mappers (db row <-> app shape) ---------- */
 const taskFrom = (r: any): Task => ({
-  id: r.id, title: r.title, notes: r.notes ?? undefined, icon: r.icon ?? undefined, done: r.done,
+  id: r.id, title: r.title, notes: r.notes ?? undefined, icon: r.icon ?? undefined,
+  coverUrl: r.cover_url ?? undefined, done: r.done,
   dueDate: r.due_date ?? undefined, priority: r.priority, area: r.area,
   tags: r.tags ?? [], energy: r.energy ?? undefined, estMinutes: r.est_minutes ?? undefined,
   goalId: r.goal_id ?? undefined, recipientId: r.recipient_id ?? undefined,
@@ -54,7 +55,8 @@ const taskFrom = (r: any): Task => ({
   attachments: Array.isArray(r.attachments) ? r.attachments : [],
 });
 const taskTo = (t: Partial<Task>) => ({
-  title: t.title, notes: t.notes ?? null, icon: t.icon ?? null, done: t.done,
+  title: t.title, notes: t.notes ?? null, icon: t.icon ?? null,
+  cover_url: t.coverUrl === undefined ? undefined : (t.coverUrl ?? null), done: t.done,
   due_date: t.dueDate ?? null, priority: t.priority, area: t.area,
   tags: t.tags ?? [], energy: t.energy ?? null, est_minutes: t.estMinutes ?? null,
   goal_id: t.goalId ?? null, recipient_id: t.recipientId ?? null,
@@ -155,6 +157,7 @@ const projectFrom = (r: any): Project => ({
   linkedGoalIds: Array.isArray(r.linked_goal_ids) ? r.linked_goal_ids : [],
   linkedHabitIds: Array.isArray(r.linked_habit_ids) ? r.linked_habit_ids : [],
   isFavorite: !!r.is_favorite,
+  coverUrl: r.cover_url ?? undefined,
 });
 const sectionFrom = (r: any): ProjectSection => ({
   id: r.id, projectId: r.project_id, name: r.name,
@@ -462,6 +465,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.linkedGoalIds !== undefined) dbPatch.linked_goal_ids = patch.linkedGoalIds ?? [];
       if (patch.linkedHabitIds !== undefined) dbPatch.linked_habit_ids = patch.linkedHabitIds ?? [];
       if (patch.isFavorite !== undefined) dbPatch.is_favorite = !!patch.isFavorite;
+      if (patch.coverUrl !== undefined) dbPatch.cover_url = patch.coverUrl ?? null;
       await supabase.from("projects").update(dbPatch).eq("id", id);
     },
     deleteProject: async (id) => {
