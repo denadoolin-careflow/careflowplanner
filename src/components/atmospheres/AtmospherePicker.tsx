@@ -32,16 +32,11 @@ export function AtmospherePicker() {
           variant="ghost"
           size="sm"
           aria-label="Choose atmosphere"
-          className="hidden gap-1.5 rounded-full text-xs sm:inline-flex"
+          className="gap-1.5 rounded-full px-2 text-xs sm:px-3"
         >
           <Sparkles className="h-3.5 w-3.5" />
           <span className="hidden md:inline">Atmosphere:</span>
-          <span className="font-medium">{active.name}</span>
-        </Button>
-      </DialogTrigger>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Choose atmosphere" className="rounded-full sm:hidden">
-          <Sparkles className="h-4 w-4" />
+          <span className="hidden font-medium sm:inline">{active.name}</span>
         </Button>
       </DialogTrigger>
 
