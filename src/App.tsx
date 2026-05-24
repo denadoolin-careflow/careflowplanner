@@ -25,6 +25,8 @@ import HomeHub from "./pages/HomeHub";
 import Journal from "./pages/Journal";
 import JournalFlow from "./pages/JournalFlow";
 import Ideas from "./pages/Ideas";
+import Tags from "./pages/Tags";
+import TagDetail from "./pages/TagDetail";
 import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
 import PomodoroPicker from "./pages/PomodoroPicker";
