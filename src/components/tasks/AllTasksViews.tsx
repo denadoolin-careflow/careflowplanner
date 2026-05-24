@@ -27,6 +27,7 @@ type SortBy = "manual" | "title" | "due" | "priority" | "created";
 const VIEW_KEY = "tasks.view.all";
 const GROUP_KEY = "tasks.group.all";
 const SORT_KEY = "tasks.sort.all";
+const FILTERS_KEY = "tasks.filters.all";
 
 const PRIORITY_RANK: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
 const STATUSES: TaskStatus[] = ["active", "this_week", "waiting", "someday", "done"];
@@ -56,10 +57,24 @@ export function AllTasksViews() {
   const [view, setView] = useState<View>(() => (localStorage.getItem(VIEW_KEY) as View) ?? "list");
   const [group, setGroup] = useState<GroupBy>(() => (localStorage.getItem(GROUP_KEY) as GroupBy) ?? "area");
   const [sort, setSort] = useState<SortBy>(() => (localStorage.getItem(SORT_KEY) as SortBy) ?? "manual");
-  const [query, setQuery] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
-  const [areaFilter, setAreaFilter] = useState<string>("all");
-  const [showDone, setShowDone] = useState(false);
+  const savedFilters = (() => {
+    try { return JSON.parse(localStorage.getItem(FILTERS_KEY) ?? "{}"); } catch { return {}; }
+  })();
+  const [query, setQuery] = useState<string>(savedFilters.query ?? "");
+  const [priorityFilter, setPriorityFilter] = useState<Priority | "all">(savedFilters.priority ?? "all");
+  const [areaFilter, setAreaFilter] = useState<string>(savedFilters.area ?? "all");
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">(savedFilters.status ?? "all");
+  const [tagFilter, setTagFilter] = useState<string>(savedFilters.tag ?? "all");
+  const [showDone, setShowDone] = useState<boolean>(savedFilters.showDone ?? false);
+
+  // Persist filters
+  useMemo(() => {
+    try {
+      localStorage.setItem(FILTERS_KEY, JSON.stringify({
+        query, priority: priorityFilter, area: areaFilter, status: statusFilter, tag: tagFilter, showDone,
+      }));
+    } catch {}
+  }, [query, priorityFilter, areaFilter, statusFilter, tagFilter, showDone]);
 
   const persist = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch {} };
 
@@ -68,16 +83,25 @@ export function AllTasksViews() {
     [state.projects],
   );
 
+  const allTags = useMemo(() => {
+    const s = new Set<string>();
+    for (const t of state.tasks ?? []) (t.tags ?? []).forEach(tag => s.add(tag));
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [state.tasks]);
+
   const tasks = useMemo(() => {
     let list = (state.tasks ?? []).filter(t => !t.parentTaskId);
     if (!showDone) list = list.filter(t => !t.done);
     if (priorityFilter !== "all") list = list.filter(t => t.priority === priorityFilter);
     if (areaFilter !== "all") list = list.filter(t => t.area === areaFilter);
+    if (statusFilter !== "all") list = list.filter(t => (t.status ?? "active") === statusFilter);
+    if (tagFilter !== "all") list = list.filter(t => (t.tags ?? []).includes(tagFilter));
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter(t =>
         t.title.toLowerCase().includes(q) ||
-        (t.notes ?? "").toLowerCase().includes(q),
+        (t.notes ?? "").toLowerCase().includes(q) ||
+        (t.tags ?? []).some(tag => tag.toLowerCase().includes(q)),
       );
     }
     const sorted = [...list];
@@ -93,7 +117,7 @@ export function AllTasksViews() {
       return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
     });
     return sorted;
-  }, [state.tasks, showDone, priorityFilter, areaFilter, query, sort]);
+  }, [state.tasks, showDone, priorityFilter, areaFilter, statusFilter, tagFilter, query, sort]);
 
   const groups = useMemo(() => {
     const map = new Map<string, Task[]>();
@@ -120,6 +144,18 @@ export function AllTasksViews() {
   const counts = {
     total: tasks.length,
     done: tasks.filter(t => t.done).length,
+  };
+
+  const activeFilters: { label: string; clear: () => void }[] = [];
+  if (query.trim()) activeFilters.push({ label: `“${query.trim()}”`, clear: () => setQuery("") });
+  if (areaFilter !== "all") activeFilters.push({ label: `Area: ${areaFilter}`, clear: () => setAreaFilter("all") });
+  if (priorityFilter !== "all") activeFilters.push({ label: `Priority: ${priorityFilter}`, clear: () => setPriorityFilter("all") });
+  if (statusFilter !== "all") activeFilters.push({ label: `Status: ${STATUS_LABEL[statusFilter]}`, clear: () => setStatusFilter("all") });
+  if (tagFilter !== "all") activeFilters.push({ label: `Tag: ${tagFilter}`, clear: () => setTagFilter("all") });
+  if (showDone) activeFilters.push({ label: "Including done", clear: () => setShowDone(false) });
+  const clearAll = () => {
+    setQuery(""); setAreaFilter("all"); setPriorityFilter("all");
+    setStatusFilter("all"); setTagFilter("all"); setShowDone(false);
   };
 
   return (
@@ -159,6 +195,24 @@ export function AllTasksViews() {
           </SelectContent>
         </Select>
 
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+          <SelectTrigger className="h-9 w-[140px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {STATUSES.map(s => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
+        {allTags.length > 0 && (
+          <Select value={tagFilter} onValueChange={setTagFilter}>
+            <SelectTrigger className="h-9 w-[140px] text-xs"><SelectValue placeholder="Tag" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tags</SelectItem>
+              {allTags.map(t => <SelectItem key={t} value={t}>#{t}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+
         <Select value={group} onValueChange={(v) => { setGroup(v as GroupBy); persist(GROUP_KEY, v); }}>
           <SelectTrigger className="h-9 w-[140px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -186,6 +240,28 @@ export function AllTasksViews() {
           {showDone ? "Hide done" : "Show done"}
         </Button>
       </div>
+
+      {activeFilters.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 px-1">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Filters:</span>
+          {activeFilters.map((f, i) => (
+            <Badge key={i} variant="secondary" className="gap-1 text-[11px]">
+              {f.label}
+              <button
+                type="button"
+                onClick={f.clear}
+                className="-mr-0.5 rounded p-0.5 hover:bg-background/70"
+                aria-label={`Clear ${f.label}`}
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </Badge>
+          ))}
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-[11px]" onClick={clearAll}>
+            Clear all
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-1">
         <ToggleGroup
