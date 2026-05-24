@@ -3,6 +3,7 @@ import { useStore } from "@/lib/store";
 import { useCareProfile } from "@/lib/care-methodology";
 
 const FALLBACK_ROUTE = "/today";
+const ONBOARDING_DONE_KEY = "careflow.onboarding.completed";
 
 /**
  * Renders at "/" and honours the user's chosen default landing page.
@@ -23,16 +24,37 @@ function readCachedDefaultRoute(): string {
   }
 }
 
+function cachedOnboardingDone(): boolean | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.localStorage.getItem(ONBOARDING_DONE_KEY);
+    return v === "1" ? true : v === "0" ? false : null;
+  } catch { return null; }
+}
+
 export function IndexRedirect() {
   const { state, loading } = useStore();
   const { profile, loading: careLoading } = useCareProfile();
   const cached = readCachedDefaultRoute();
   const liveRaw = state.settings.defaultRoute;
   const live = liveRaw && liveRaw !== "/" ? liveRaw : FALLBACK_ROUTE;
-  // Prefer live value once loaded, otherwise the synchronously-cached one.
   const target = !loading ? live : cached;
-  if (!careLoading && !profile.completed_at) {
-    return <Navigate to="/onboarding" replace />;
+
+  // Persist onboarding state to localStorage so the very first render after
+  // login knows where to go — no flash from /today → /onboarding.
+  if (!careLoading) {
+    try {
+      window.localStorage.setItem(
+        ONBOARDING_DONE_KEY,
+        profile.completed_at ? "1" : "0",
+      );
+    } catch { /* noop */ }
+    if (!profile.completed_at) return <Navigate to="/onboarding" replace />;
+    return <Navigate to={target} replace />;
   }
+
+  // Care profile still loading — use cached signal to avoid a wrong jump.
+  const cachedDone = cachedOnboardingDone();
+  if (cachedDone === false) return <Navigate to="/onboarding" replace />;
   return <Navigate to={target} replace />;
 }

@@ -159,6 +159,10 @@ interface Ctx {
   state: AppState;
   user: User | null;
   loading: boolean;
+  /** True only while the initial Supabase session is being resolved.
+   *  Use this to gate auth-protected routes — NOT data fetching, which
+   *  has its own `loading` flag and should be handled with skeletons. */
+  authLoading: boolean;
   signOut: () => Promise<void>;
 
   addTask: (t: Partial<Task> & { title: string }) => Promise<void>;
@@ -241,6 +245,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(() => seedState());
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const seededRef = useRef(false);
 
   /* auth subscription (listener BEFORE getSession) */
@@ -251,11 +256,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") return;
       const nextId = session?.user?.id ?? null;
       setUser(prev => (prev?.id === nextId ? prev : session?.user ?? null));
+      setAuthLoading(false);
     });
     supabase.auth.getSession().then(({ data }) => {
       const nextId = data.session?.user?.id ?? null;
       setUser(prev => (prev?.id === nextId ? prev : data.session?.user ?? null));
       if (!data.session) setLoading(false);
+      setAuthLoading(false);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -366,7 +373,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const uid = user?.id;
 
   const ctx: Ctx = {
-    state, user, loading,
+    state, user, loading, authLoading,
     signOut: async () => { await supabase.auth.signOut(); },
 
     addTask: async (t) => {
