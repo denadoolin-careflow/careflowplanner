@@ -35,15 +35,24 @@ export function CareLoopIndicator({ active, className, compact = false }: Props)
         className,
       )}
     >
-      {/* progress rail */}
-      <div className="pointer-events-none absolute inset-x-3 top-1/2 hidden h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-border to-transparent sm:block" />
       <ol className="relative flex items-stretch gap-1 sm:gap-2">
         {PHASES.map((p, i) => {
           const Icon = p.icon;
           const isActive = p.id === active;
           const isPast = i < activeIdx;
+          const showConnector = i < PHASES.length - 1;
+          const connectorActive = i < activeIdx;
           return (
-            <li key={p.id} className="flex-1 min-w-0">
+            <li key={p.id} className="relative flex-1 min-w-0">
+              {showConnector && (
+                <span
+                  aria-hidden
+                  className={cn(
+                    "pointer-events-none absolute right-[-4px] top-1/2 hidden h-px w-2 -translate-y-1/2 sm:block",
+                    connectorActive ? "bg-primary/40" : "bg-border/60",
+                  )}
+                />
+              )}
               <Link
                 to={p.href}
                 aria-current={isActive ? "step" : undefined}
