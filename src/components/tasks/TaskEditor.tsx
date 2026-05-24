@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import {
   CalendarIcon, X, Tag, Flag, Zap, Clock, Repeat, FolderKanban, Target,
-  Star, Trash2, FileText, Link2, AlignLeft, Paperclip,
+  Star, Trash2, FileText, Link2, AlignLeft, Paperclip, ListTree,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,10 @@ import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { IconPicker } from "@/components/common/IconPicker";
 import { AttachmentsField } from "@/components/attachments/AttachmentsField";
+import { NoteAIButton } from "@/components/notes/NoteAIButton";
+import { SubtaskAddMenu } from "@/components/tasks/SubtaskAddMenu";
+import { Checkbox } from "@/components/ui/checkbox";
+import { supabase } from "@/integrations/supabase/client";
 
 type Props = {
   open: boolean;
@@ -89,13 +93,46 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
 }
 
 export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleLabel = "Unschedule" }: Props) {
-  const { updateTask, deleteTask } = useStore();
+  const { updateTask, deleteTask, addTask, toggleTask, state } = useStore();
   const [draft, setDraft] = useState<Task | null>(task);
+  const [subDraft, setSubDraft] = useState("");
+  const [addingSub, setAddingSub] = useState(false);
+  const [subAiLoading, setSubAiLoading] = useState(false);
 
   useEffect(() => { setDraft(task); }, [task]);
   if (!draft) return null;
 
   const set = <K extends keyof Task>(k: K, v: Task[K]) => setDraft(d => d ? { ...d, [k]: v } : d);
+
+  const subtasks = (state.tasks ?? []).filter(t => t.parentTaskId === draft.id);
+
+  const addSubtaskNow = async (title: string) => {
+    const t = title.trim();
+    if (!t) return;
+    await addTask({ title: t, area: draft.area, parentTaskId: draft.id, projectId: draft.projectId });
+    setSubDraft("");
+  };
+
+  const generateSubtasksAI = async () => {
+    if (subAiLoading) return;
+    setSubAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-subtasks", {
+        body: { title: draft.title, notes: draft.notes, area: draft.area, count: 5 },
+      });
+      if (error) throw error;
+      const list: string[] = Array.isArray((data as any)?.subtasks) ? (data as any).subtasks : [];
+      if (list.length === 0) { toast.error("No subtasks generated"); return; }
+      for (const title of list) {
+        await addTask({ title, area: draft.area, parentTaskId: draft.id, projectId: draft.projectId });
+      }
+      toast.success(`Added ${list.length} steps`);
+    } catch (e: any) {
+      toast.error("AI breakdown failed", { description: e?.message ?? String(e) });
+    } finally {
+      setSubAiLoading(false);
+    }
+  };
 
   const save = async () => {
     if (!draft.title.trim()) { toast.error("Title is needed."); return; }
@@ -132,7 +169,18 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             </div>
 
             {/* Notes */}
-            <Field icon={AlignLeft} label="Notes">
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <AlignLeft className="h-3 w-3" />
+                  Notes
+                </Label>
+                <NoteAIButton
+                  title={draft.title}
+                  body={draft.notes ?? ""}
+                  onApply={(next) => set("notes", next)}
+                />
+              </div>
               <Textarea
                 rows={3}
                 value={draft.notes ?? ""}
@@ -140,7 +188,67 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                 placeholder="Anything to remember…"
                 className="resize-y"
               />
-            </Field>
+            </div>
+
+            {/* Subtasks */}
+            <Section title={undefined}>
+              <div className="flex items-center justify-between gap-2 pb-1">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                  <ListTree className="h-3 w-3" /> Subtasks
+                  {subtasks.length > 0 && (
+                    <span className="ml-1 rounded-full bg-muted px-1.5 py-px text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
+                      {subtasks.filter(s => s.done).length}/{subtasks.length}
+                    </span>
+                  )}
+                </div>
+                <SubtaskAddMenu
+                  size="md"
+                  onAddManual={() => setAddingSub(true)}
+                  onAddWithAI={generateSubtasksAI}
+                  aiLoading={subAiLoading}
+                />
+              </div>
+              <div className="space-y-1">
+                {subtasks.map(s => (
+                  <div key={s.id} className="group flex items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2 py-1.5">
+                    <Checkbox checked={s.done} onCheckedChange={() => toggleTask(s.id)} />
+                    <span className={cn("flex-1 truncate text-sm", s.done && "text-muted-foreground line-through")}>{s.title}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={() => deleteTask(s.id)}
+                      aria-label="Delete subtask"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+                {addingSub && (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      autoFocus
+                      value={subDraft}
+                      onChange={(e) => setSubDraft(e.target.value)}
+                      placeholder="Subtask…"
+                      className="h-8 text-sm"
+                      onBlur={() => { if (!subDraft.trim()) setAddingSub(false); }}
+                      onKeyDown={async (e) => {
+                        if (e.key === "Enter" && subDraft.trim()) {
+                          await addSubtaskNow(subDraft);
+                        } else if (e.key === "Escape") {
+                          setSubDraft("");
+                          setAddingSub(false);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+                {!addingSub && subtasks.length === 0 && (
+                  <p className="text-xs text-muted-foreground">No subtasks yet — break this down with the + menu.</p>
+                )}
+              </div>
+            </Section>
 
             {/* Schedule */}
             <Section title="Schedule">
