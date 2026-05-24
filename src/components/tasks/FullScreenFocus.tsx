@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { formatPomoTime, pomoTotal, pomodoro, usePomodoro } from "@/lib/pomodoro-store";
 import { SOUNDSCAPES, soundscapes, type SoundscapeId } from "@/lib/soundscapes";
 import { AFFIRMATIONS } from "@/lib/affirmations";
-import { useStore } from "@/lib/store";
+import { useStoreOptional } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,7 +21,8 @@ function affirmationFor(taskId: string | null, taskTitle: string) {
 
 export function FullScreenFocus() {
   const s = usePomodoro();
-  const { state } = useStore();
+  const ctx = useStoreOptional();
+  const state = ctx?.state;
   const [open, setOpen] = useState(false);
   const [scape, setScape] = useState<SoundscapeId>(soundscapes.current());
   const [vol, setVol] = useState(soundscapes.getVolume());
@@ -52,12 +53,12 @@ export function FullScreenFocus() {
 
   const todayISO = new Date().toISOString().slice(0, 10);
   const upcoming = useMemo(
-    () => state.tasks
+    () => (state?.tasks ?? [])
       .filter(t => !t.done && t.id !== s.taskId)
       .filter(t => !t.dueDate || t.dueDate <= todayISO || t.isTopThree)
       .sort((a, b) => Number(!!b.isTopThree) - Number(!!a.isTopThree))
       .slice(0, 8),
-    [state.tasks, s.taskId, todayISO],
+    [state?.tasks, s.taskId, todayISO],
   );
 
   if (!open || !s.taskId) return null;
