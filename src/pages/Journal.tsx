@@ -24,6 +24,7 @@ import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 import { JournalProjectPicker } from "@/components/journal/JournalProjectPicker";
 import { startOfWeek, endOfWeek, startOfYear, getYear } from "date-fns";
+import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 
 type TemplateKey =
   | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
@@ -278,6 +279,7 @@ export default function Journal() {
 
   return (
     <div className="space-y-6">
+      <CareLoopIndicator active="exhale" />
       {linkProjectId && (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm">
           <span className="text-primary">
