@@ -2115,6 +2115,63 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_plans: {
+        Row: {
+          activities: Json
+          ai_generated_at: string | null
+          created_at: string
+          cycle_notes: string | null
+          id: string
+          intention: string | null
+          month: string
+          moon_notes: string | null
+          outings: Json
+          priorities: Json
+          season: string | null
+          season_notes: string | null
+          theme: string | null
+          updated_at: string
+          user_id: string
+          word: string | null
+        }
+        Insert: {
+          activities?: Json
+          ai_generated_at?: string | null
+          created_at?: string
+          cycle_notes?: string | null
+          id?: string
+          intention?: string | null
+          month: string
+          moon_notes?: string | null
+          outings?: Json
+          priorities?: Json
+          season?: string | null
+          season_notes?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id: string
+          word?: string | null
+        }
+        Update: {
+          activities?: Json
+          ai_generated_at?: string | null
+          created_at?: string
+          cycle_notes?: string | null
+          id?: string
+          intention?: string | null
+          month?: string
+          moon_notes?: string | null
+          outings?: Json
+          priorities?: Json
+          season?: string | null
+          season_notes?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id?: string
+          word?: string | null
+        }
+        Relationships: []
+      }
       monthly_reviews: {
         Row: {
           challenges: string | null
