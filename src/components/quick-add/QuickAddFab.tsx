@@ -21,8 +21,9 @@ import { parseTaskInput } from "@/lib/nlp-task";
 import { useQuickAddPresets, type QuickAddKind, type QuickAddPreset } from "@/lib/quick-add-presets";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { supabase } from "@/integrations/supabase/client";
+import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
 
-type Mode = QuickAddKind | "command" | "braindump";
+type Mode = QuickAddKind | "command" | "braindump" | "voice";
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
   active: "Active",
@@ -37,6 +38,7 @@ export function QuickAddFab() {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("command");
   const [palette, setPalette] = useState("");
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const drag = useDraggableFab("careflow:fab:quickadd", { right: 16, bottom: 88 });
   const { presets } = useQuickAddPresets();
 
@@ -50,6 +52,7 @@ export function QuickAddFab() {
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ tab?: string }>).detail;
+      if (detail?.tab === "voice") { setVoiceOpen(true); haptics.pickup(); return; }
       const next = (detail?.tab as Mode) || "command";
       openWith(next);
     };
@@ -73,6 +76,7 @@ export function QuickAddFab() {
   const close = () => { setOpen(false); setPalette(""); setMode("command"); };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
       <button
         ref={drag.ref}
@@ -100,7 +104,10 @@ export function QuickAddFab() {
             value={palette}
             onChange={setPalette}
             presets={presets}
-            onPick={(k) => setMode(k)}
+            onPick={(k) => {
+              if (k === "voice") { setOpen(false); setVoiceOpen(true); return; }
+              setMode(k);
+            }}
             onClose={close}
           />
         ) : (
@@ -108,6 +115,8 @@ export function QuickAddFab() {
         )}
       </DialogContent>
     </Dialog>
+    <VoiceCaptureDialog open={voiceOpen} onOpenChange={setVoiceOpen} />
+    </>
   );
 }
 
@@ -360,6 +369,15 @@ function CommandPalette({
         )}
 
         <CommandGroup heading="Modes">
+          <CommandItem value="voice capture record" onSelect={() => onPick("voice" as Mode)} className="gap-3">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-rose-500/15 text-rose-600 dark:text-rose-300">
+              <Mic className="h-3.5 w-3.5" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="truncate text-sm">Voice capture</div>
+              <div className="truncate text-[11px] text-muted-foreground">Record — we transcribe & organize into tasks.</div>
+            </div>
+          </CommandItem>
           <CommandItem value="brain dump inbox" onSelect={() => onPick("braindump" as Mode)} className="gap-3">
             <span className="grid h-7 w-7 place-items-center rounded-md bg-accent/30 text-accent-foreground">
               <Brain className="h-3.5 w-3.5" />
@@ -721,6 +739,18 @@ function BrainDumpForm({ onClose, initialText }: { onClose: () => void; initialT
             {dictation.listening ? "Listening…" : "Voice"}
           </Button>
         )}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            onClose();
+            window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "voice" } }));
+          }}
+          title="Record audio — we'll transcribe and organize into tasks"
+        >
+          <Sparkles className="mr-1 h-3.5 w-3.5" /> AI voice
+        </Button>
         <label className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-[11px]">
           <input
             type="checkbox"
