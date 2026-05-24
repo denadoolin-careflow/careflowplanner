@@ -21,6 +21,26 @@ export const CADENCE_LABEL: Record<RoutineCadence, string> = {
   custom: "Custom",
 };
 
+export const SLOT_DEFAULT_TIME: Record<RoutineSlot, string> = {
+  morning: "07:00",
+  afternoon: "13:00",
+  evening: "18:00",
+  night: "21:00",
+  nap: "12:30",
+  anytime: "09:00",
+};
+
+export function formatTime12(t: string | null | undefined): string {
+  if (!t) return "";
+  const [hStr, mStr] = t.split(":");
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr ?? "0", 10);
+  if (Number.isNaN(h)) return "";
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return m ? `${h12}:${String(m).padStart(2, "0")} ${period}` : `${h12} ${period}`;
+}
+
 export interface RoutineItem { id: string; text: string; done: boolean; }
 export interface Routine {
   id: string;
