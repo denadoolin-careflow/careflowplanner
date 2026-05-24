@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Plus, Sparkles, X, CornerDownLeft, FolderOpen, Layers, Flag, Check } from "lucide-react";
+import { Plus, Sparkles, X, CornerDownLeft, FolderOpen, Layers, Flag, Check, Mic, MicOff, Brain, Wand2 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -19,8 +19,10 @@ import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { useQuickAddPresets, type QuickAddKind, type QuickAddPreset } from "@/lib/quick-add-presets";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { supabase } from "@/integrations/supabase/client";
 
-type Mode = QuickAddKind | "command";
+type Mode = QuickAddKind | "command" | "braindump";
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
   active: "Active",
