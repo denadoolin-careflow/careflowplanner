@@ -12,8 +12,10 @@ import { cn } from "@/lib/utils";
 import { AREAS, type Task, type Priority, type TaskStatus } from "@/lib/types";
 import {
   LayoutGrid, List as ListIcon, Columns3, CalendarDays, CalendarRange,
-  Search, X, Flag, Folder,
+  Search, X, Flag, Folder, ArrowUp, ArrowDown, Zap,
 } from "lucide-react";
+import { ViewOptionsMenu } from "@/components/tasks/ViewOptionsMenu";
+import { useViewPrefs, type TaskViewType } from "@/hooks/useViewPrefs";
 import {
   addMonths, endOfMonth, endOfWeek, format, isSameDay, isSameMonth,
   parseISO, startOfMonth, startOfWeek, addDays, isPast, isToday, isTomorrow,
@@ -21,12 +23,14 @@ import {
 } from "date-fns";
 
 type View = "grid" | "list" | "board" | "schedule" | "calendar";
-type GroupBy = "none" | "area" | "project" | "priority" | "status" | "due";
-type SortBy = "manual" | "title" | "due" | "priority" | "created";
+type GroupBy = "none" | "area" | "project" | "priority" | "status" | "due" | "tag" | "energy";
+type SortBy = "manual" | "title" | "due" | "priority" | "created" | "energy" | "estMinutes";
+type SortDir = "asc" | "desc";
 
 const VIEW_KEY = "tasks.view.all";
 const GROUP_KEY = "tasks.group.all";
 const SORT_KEY = "tasks.sort.all";
+const SORT_DIR_KEY = "tasks.sortDir.all";
 const FILTERS_KEY = "tasks.filters.all";
 
 const PRIORITY_RANK: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
@@ -57,6 +61,7 @@ export function AllTasksViews() {
   const [view, setView] = useState<View>(() => (localStorage.getItem(VIEW_KEY) as View) ?? "list");
   const [group, setGroup] = useState<GroupBy>(() => (localStorage.getItem(GROUP_KEY) as GroupBy) ?? "area");
   const [sort, setSort] = useState<SortBy>(() => (localStorage.getItem(SORT_KEY) as SortBy) ?? "manual");
+  const [sortDir, setSortDir] = useState<SortDir>(() => (localStorage.getItem(SORT_DIR_KEY) as SortDir) ?? "asc");
   const savedFilters = (() => {
     try { return JSON.parse(localStorage.getItem(FILTERS_KEY) ?? "{}"); } catch { return {}; }
   })();
@@ -114,10 +119,16 @@ export function AllTasksViews() {
       }
       if (sort === "priority") return PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
       if (sort === "created") return +new Date(b.createdAt) - +new Date(a.createdAt);
+      if (sort === "energy") {
+        const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        return (rank[a.energy ?? "z"] ?? 9) - (rank[b.energy ?? "z"] ?? 9);
+      }
+      if (sort === "estMinutes") return (a.estMinutes ?? 9999) - (b.estMinutes ?? 9999);
       return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
     });
+    if (sortDir === "desc") sorted.reverse();
     return sorted;
-  }, [state.tasks, showDone, priorityFilter, areaFilter, statusFilter, tagFilter, query, sort]);
+  }, [state.tasks, showDone, priorityFilter, areaFilter, statusFilter, tagFilter, query, sort, sortDir]);
 
   const groups = useMemo(() => {
     const map = new Map<string, Task[]>();
@@ -132,11 +143,19 @@ export function AllTasksViews() {
       else if (group === "priority") key = t.priority ? t.priority[0].toUpperCase() + t.priority.slice(1) : "None";
       else if (group === "status") key = STATUS_LABEL[t.status ?? "active"];
       else if (group === "due") key = dueBucket(t.dueDate);
-      push(key, t);
+      else if (group === "energy") key = t.energy ? t.energy[0].toUpperCase() + t.energy.slice(1) : "No energy";
+      if (group === "tag") {
+        const tags = t.tags ?? [];
+        if (tags.length === 0) push("No tag", t);
+        else tags.forEach(tg => push(`#${tg}`, t));
+      } else {
+        push(key, t);
+      }
     }
     const entries = Array.from(map.entries());
     if (group === "due") entries.sort((a, b) => DUE_ORDER.indexOf(a[0]) - DUE_ORDER.indexOf(b[0]));
     else if (group === "priority") entries.sort((a, b) => ["High","Medium","Low","None"].indexOf(a[0]) - ["High","Medium","Low","None"].indexOf(b[0]));
+    else if (group === "energy") entries.sort((a, b) => ["High","Medium","Low","No energy"].indexOf(a[0]) - ["High","Medium","Low","No energy"].indexOf(b[0]));
     else entries.sort((a, b) => a[0].localeCompare(b[0]));
     return entries;
   }, [tasks, group, projectsById]);
@@ -222,6 +241,8 @@ export function AllTasksViews() {
             <SelectItem value="priority">Group: Priority</SelectItem>
             <SelectItem value="status">Group: Status</SelectItem>
             <SelectItem value="due">Group: Due date</SelectItem>
+            <SelectItem value="tag">Group: Tag</SelectItem>
+            <SelectItem value="energy">Group: Energy</SelectItem>
           </SelectContent>
         </Select>
 
@@ -233,8 +254,20 @@ export function AllTasksViews() {
             <SelectItem value="due">Sort: Due date</SelectItem>
             <SelectItem value="priority">Sort: Priority</SelectItem>
             <SelectItem value="created">Sort: Newest</SelectItem>
+            <SelectItem value="energy">Sort: Energy</SelectItem>
+            <SelectItem value="estMinutes">Sort: Time</SelectItem>
           </SelectContent>
         </Select>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 w-9 p-0"
+          title={sortDir === "asc" ? "Ascending" : "Descending"}
+          onClick={() => { const d = sortDir === "asc" ? "desc" : "asc"; setSortDir(d); persist(SORT_DIR_KEY, d); }}
+        >
+          {sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+        </Button>
 
         <Button variant="ghost" size="sm" className="h-9" onClick={() => setShowDone(v => !v)}>
           {showDone ? "Hide done" : "Show done"}
@@ -276,7 +309,10 @@ export function AllTasksViews() {
           <ToggleGroupItem value="schedule" className="h-8 gap-1.5 px-2.5 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"><CalendarRange className="h-3.5 w-3.5" /> Schedule</ToggleGroupItem>
           <ToggleGroupItem value="calendar" className="h-8 gap-1.5 px-2.5 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"><CalendarDays className="h-3.5 w-3.5" /> Calendar</ToggleGroupItem>
         </ToggleGroup>
-        <span className="text-xs text-muted-foreground">{counts.total} {counts.total === 1 ? "task" : "tasks"}{showDone && ` · ${counts.done} done`}</span>
+        <div className="flex items-center gap-2">
+          <ViewOptionsMenu view={view as TaskViewType} />
+          <span className="text-xs text-muted-foreground">{counts.total} {counts.total === 1 ? "task" : "tasks"}{showDone && ` · ${counts.done} done`}</span>
+        </div>
       </div>
 
       {tasks.length === 0 ? (
@@ -325,25 +361,35 @@ function ListView({ groups, group }: { groups: [string, Task[]][]; group: GroupB
 
 function GridCard({ task, projectName }: { task: Task; projectName?: string }) {
   const { toggleTask } = useStore();
+  const { visible } = useViewPrefs("grid");
   return (
     <div className={cn(
       "group rounded-xl border border-border/60 bg-card/70 p-3 transition hover:border-primary/40 hover:bg-card",
       task.done && "opacity-60",
     )}>
       <div className="flex items-start gap-2">
-        <Checkbox checked={task.done} onCheckedChange={() => toggleTask(task.id)} className="mt-0.5" />
+        {visible.checkbox && <Checkbox checked={task.done} onCheckedChange={() => toggleTask(task.id)} className="mt-0.5" />}
         <div className="min-w-0 flex-1">
           <div className={cn("truncate text-sm font-medium", task.done && "line-through")}>{task.title}</div>
-          {task.notes && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{task.notes}</div>}
+          {visible.description && task.notes && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{task.notes}</div>}
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <Badge variant="secondary" className="text-[10px]">{task.area}</Badge>
-            {projectName && (
+            {visible.area && <Badge variant="secondary" className="text-[10px]">{task.area}</Badge>}
+            {visible.project && projectName && (
               <Badge variant="outline" className="gap-1 text-[10px]"><Folder className="h-2.5 w-2.5" />{projectName}</Badge>
             )}
-            {task.dueDate && (
+            {visible.dueDate && task.dueDate && (
               <Badge variant="outline" className="gap-1 text-[10px]"><CalendarDays className="h-2.5 w-2.5" />{format(parseISO(task.dueDate), "MMM d")}</Badge>
             )}
-            <Flag className={cn("h-3 w-3", priorityColor(task.priority))} />
+            {visible.priority && <Flag className={cn("h-3 w-3", priorityColor(task.priority))} />}
+            {visible.energy && task.energy && (
+              <Badge variant="outline" className="gap-1 text-[10px]"><Zap className="h-2.5 w-2.5" />{task.energy}</Badge>
+            )}
+            {visible.estMinutes && task.estMinutes != null && (
+              <Badge variant="outline" className="text-[10px]">{task.estMinutes}m</Badge>
+            )}
+            {visible.tags && (task.tags ?? []).slice(0, 4).map(tg => (
+              <Badge key={tg} variant="secondary" className="rounded-full px-1.5 py-0 text-[10px] font-normal">#{tg}</Badge>
+            ))}
           </div>
         </div>
       </div>
@@ -382,6 +428,25 @@ function BoardView({ tasks, group, projectsById }: { tasks: Task[]; group: Group
     }
     if (group === "due") {
       return DUE_ORDER.map(b => ({ key: b, label: b, items: tasks.filter(t => dueBucket(t.dueDate) === b) })).filter(c => c.items.length);
+    }
+    if (group === "energy") {
+      const order = ["high","medium","low"] as const;
+      const cols = order
+        .map(e => ({ key: e, label: e[0].toUpperCase()+e.slice(1), items: tasks.filter(t => t.energy === e) }))
+        .filter(c => c.items.length);
+      const noEn = tasks.filter(t => !t.energy);
+      if (noEn.length) cols.push({ key: "_none" as any, label: "No energy", items: noEn });
+      return cols;
+    }
+    if (group === "tag") {
+      const set = new Set<string>();
+      tasks.forEach(t => (t.tags ?? []).forEach(tg => set.add(tg)));
+      const cols = Array.from(set).sort().map(tg => ({
+        key: tg, label: `#${tg}`, items: tasks.filter(t => (t.tags ?? []).includes(tg)),
+      }));
+      const noTag = tasks.filter(t => !(t.tags ?? []).length);
+      if (noTag.length) cols.push({ key: "_none", label: "No tag", items: noTag });
+      return cols;
     }
     // project / none -> by project
     const byProj = new Map<string, Task[]>();
