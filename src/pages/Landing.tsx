@@ -235,8 +235,22 @@ export default function Landing() {
     return () => { if (had) root.classList.add("dark"); };
   }, []);
 
+  const [activeAtmos, setActiveAtmos] = useState<typeof atmospheres[number] | null>(null);
+  const isDark = !!activeAtmos?.dark;
+
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[hsl(36_42%_95%)] text-foreground">
+    <div
+      className={`relative min-h-screen overflow-x-hidden transition-colors duration-700 ${isDark ? "text-[hsl(36_50%_96%)]" : "text-foreground"}`}
+      style={activeAtmos ? { background: activeAtmos.bg } : { background: "hsl(36 42% 95%)" }}
+    >
+      {/* atmosphere tint overlay for readability on dark themes */}
+      {isDark && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 -z-10"
+          style={{ background: "linear-gradient(180deg, hsl(0 0% 0% / 0.15), hsl(0 0% 0% / 0.35))" }}
+        />
+      )}
       {/* ambient gradients */}
       <div
         aria-hidden
