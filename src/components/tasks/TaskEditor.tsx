@@ -191,13 +191,13 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                   onApply={(next) => set("notes", next)}
                 />
               </div>
-              <Textarea
-                rows={3}
-                value={draft.notes ?? ""}
-                onChange={e => set("notes", e.target.value)}
-                placeholder="Anything to remember…"
-                className="resize-y"
-              />
+              <div className="rounded-xl border border-border/60 bg-background/40 p-2">
+                <BlockEditor
+                  body={draft.notes ?? ""}
+                  onChange={(markdown) => set("notes", markdown)}
+                  placeholder="Anything to remember… press / for blocks"
+                />
+              </div>
             </div>
 
             {/* Tags */}
