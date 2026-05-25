@@ -471,7 +471,7 @@ export default function Journal() {
         action={
           <div className="relative">
             <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input className="h-8 w-44 pl-7 text-xs" placeholder="Search…" value={q} onChange={e => setQ(e.target.value)} />
+            <Input className="h-8 w-44 pl-7 text-xs rounded-full border-none bg-muted/40 focus-visible:ring-1 focus-visible:ring-primary/40" placeholder="Search…" value={q} onChange={e => setQ(e.target.value)} />
           </div>
         }
       >
