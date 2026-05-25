@@ -78,6 +78,20 @@ export default function Onboarding() {
                   <li><strong className="text-foreground">Exhale</strong> — close loops and soften the landing</li>
                 </ul>
               </div>
+              <button
+                type="button"
+                onClick={() => nav("/quiz")}
+                className="mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-accent/30 bg-gradient-to-r from-primary/10 to-accent/15 p-4 text-left transition hover:border-accent/60"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/30 to-accent/40">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">Take the Caregiver Archetype Quiz</p>
+                  <p className="text-xs text-muted-foreground">Personalize your atmosphere, routines, and dashboard in 2 minutes.</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
             </div>
           )}
 
