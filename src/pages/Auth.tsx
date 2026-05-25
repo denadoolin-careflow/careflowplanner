@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Heart, Sparkles, RefreshCw, MoonStar, ExternalLink, AlertTriangle, Copy, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
+import { loadQuizResult, getArchetype } from "@/lib/archetype-quiz";
 
 // Detect known in-app browsers that block Google OAuth (Instagram/Facebook/
 // TikTok/LinkedIn webviews). These don't let users complete sign-in and just
@@ -158,6 +160,7 @@ export default function Auth() {
           <p className="max-w-md text-base text-muted-foreground">
             Sign in to keep your planner in sync — across your phone, tablet, and computer. Your tasks, meals, journal, and care notes travel with you.
           </p>
+          <QuizPromo />
           <div className="grid grid-cols-2 gap-3 max-w-md">
             {[
               { icon: Heart, label: "Care notes that stay close" },
