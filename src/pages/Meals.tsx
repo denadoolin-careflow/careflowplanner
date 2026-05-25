@@ -332,7 +332,60 @@ export default function Meals() {
         </div>
       </div>
 
-      <SectionCard title="Weekly meal plan" accent="warm">
+      <SectionCard
+        title="Weekly meal plan"
+        accent="warm"
+        action={
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-8 w-8 rounded-full"
+              onClick={() => setWeekStart(d => addDays(d, -7))}
+              aria-label="Previous week"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 rounded-full px-3 text-xs">
+                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                  {format(weekStart, "MMM d")} – {format(addDays(weekStart, 6), "MMM d")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={weekStart}
+                  onSelect={(d) => d && setWeekStart(startOfWeek(d, { weekStartsOn: 1 }))}
+                  initialFocus
+                  weekStartsOn={1}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-8 w-8 rounded-full"
+              onClick={() => setWeekStart(d => addDays(d, 7))}
+              aria-label="Next week"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            {!isSameDay(weekStart, startOfWeek(new Date(), { weekStartsOn: 1 })) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 rounded-full px-2 text-xs"
+                onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+              >
+                This week
+              </Button>
+            )}
+          </div>
+        }
+      >
         <DndContext onDragEnd={onDragEnd}>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="inline-flex rounded-full border border-border/60 bg-background/40 p-0.5 text-xs">
