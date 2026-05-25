@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Sparkles, Leaf, Moon, Heart, Calendar, Brain, Utensils,
   Wallet, NotebookPen, Sun, Mountain, Flower2, Waves,
@@ -179,18 +179,18 @@ const features = [
 ];
 
 const atmospheres = [
-  { name: "Sage Sanctuary", tone: "Grounded",  icon: Leaf,    bg: "linear-gradient(135deg,hsl(145 32% 84%),hsl(36 45% 94%))" },
-  { name: "Moonlit Plum",   tone: "Dreamy",    icon: Moon,    bg: "linear-gradient(135deg,hsl(280 30% 70%),hsl(260 25% 35%))" },
-  { name: "Blossom",        tone: "Soft",      icon: Flower2, bg: "linear-gradient(135deg,hsl(350 70% 92%),hsl(36 55% 95%))" },
-  { name: "Mist",           tone: "Minimal",   icon: Cloud,   bg: "linear-gradient(135deg,hsl(215 30% 92%),hsl(36 30% 96%))" },
-  { name: "Dawn",           tone: "Hopeful",   icon: Sunrise, bg: "linear-gradient(135deg,hsl(28 75% 80%),hsl(350 60% 88%))" },
-  { name: "Forest",         tone: "Focused",   icon: Trees,   bg: "linear-gradient(135deg,hsl(150 30% 30%),hsl(150 25% 18%))" },
-  { name: "Midnight",       tone: "Quiet",     icon: Moon,    bg: "linear-gradient(135deg,hsl(240 30% 18%),hsl(260 25% 10%))" },
-  { name: "Coastal Calm",   tone: "Open",      icon: Waves,   bg: "linear-gradient(135deg,hsl(200 55% 82%),hsl(36 40% 94%))" },
-  { name: "Soft Linen",     tone: "Warm",      icon: Sun,     bg: "linear-gradient(135deg,hsl(36 55% 92%),hsl(32 45% 86%))" },
-  { name: "Ember",          tone: "Cozy",      icon: Coffee,  bg: "linear-gradient(135deg,hsl(20 65% 60%),hsl(15 40% 30%))" },
-  { name: "Ocean",          tone: "Steady",    icon: Waves,   bg: "linear-gradient(135deg,hsl(210 55% 55%),hsl(220 50% 25%))" },
-  { name: "Dark Sage Glass",tone: "Held",      icon: Mountain,bg: "linear-gradient(135deg,hsl(150 18% 22%),hsl(150 15% 12%))" },
+  { name: "Sage Sanctuary", tone: "Grounded",  icon: Leaf,    bg: "linear-gradient(135deg,hsl(145 32% 84%),hsl(36 45% 94%))", dark: false },
+  { name: "Moonlit Plum",   tone: "Dreamy",    icon: Moon,    bg: "linear-gradient(135deg,hsl(280 30% 70%),hsl(260 25% 35%))", dark: true  },
+  { name: "Blossom",        tone: "Soft",      icon: Flower2, bg: "linear-gradient(135deg,hsl(350 70% 92%),hsl(36 55% 95%))", dark: false },
+  { name: "Mist",           tone: "Minimal",   icon: Cloud,   bg: "linear-gradient(135deg,hsl(215 30% 92%),hsl(36 30% 96%))", dark: false },
+  { name: "Dawn",           tone: "Hopeful",   icon: Sunrise, bg: "linear-gradient(135deg,hsl(28 75% 80%),hsl(350 60% 88%))", dark: false },
+  { name: "Forest",         tone: "Focused",   icon: Trees,   bg: "linear-gradient(135deg,hsl(150 30% 30%),hsl(150 25% 18%))", dark: true  },
+  { name: "Midnight",       tone: "Quiet",     icon: Moon,    bg: "linear-gradient(135deg,hsl(240 30% 18%),hsl(260 25% 10%))", dark: true  },
+  { name: "Coastal Calm",   tone: "Open",      icon: Waves,   bg: "linear-gradient(135deg,hsl(200 55% 82%),hsl(36 40% 94%))", dark: false },
+  { name: "Soft Linen",     tone: "Warm",      icon: Sun,     bg: "linear-gradient(135deg,hsl(36 55% 92%),hsl(32 45% 86%))", dark: false },
+  { name: "Ember",          tone: "Cozy",      icon: Coffee,  bg: "linear-gradient(135deg,hsl(20 65% 60%),hsl(15 40% 30%))", dark: true  },
+  { name: "Ocean",          tone: "Steady",    icon: Waves,   bg: "linear-gradient(135deg,hsl(210 55% 55%),hsl(220 50% 25%))", dark: true  },
+  { name: "Dark Sage Glass",tone: "Held",      icon: Mountain,bg: "linear-gradient(135deg,hsl(150 18% 22%),hsl(150 15% 12%))", dark: true  },
 ];
 
 const archetypes = [
@@ -235,23 +235,43 @@ export default function Landing() {
     return () => { if (had) root.classList.add("dark"); };
   }, []);
 
+  const [activeAtmos, setActiveAtmos] = useState<typeof atmospheres[number] | null>(null);
+  const isDark = !!activeAtmos?.dark;
+
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[hsl(36_42%_95%)] text-foreground">
+    <div
+      className={`relative min-h-screen overflow-x-hidden transition-colors duration-700 ${isDark ? "text-[hsl(36_50%_96%)]" : "text-foreground"}`}
+      style={{
+        background: activeAtmos ? activeAtmos.bg : "hsl(36 42% 95%)",
+      }}
+    >
+      {/* atmosphere tint overlay for readability on dark themes */}
+      {isDark && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 -z-10"
+          style={{ background: "linear-gradient(180deg, hsl(0 0% 0% / 0.15), hsl(0 0% 0% / 0.35))" }}
+        />
+      )}
       {/* ambient gradients */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[900px] -z-10"
-        style={{
-          background:
-            "radial-gradient(60% 50% at 80% 10%, hsl(350 65% 92% / 0.7), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(145 40% 88% / 0.7), transparent 60%), linear-gradient(180deg, hsl(36 55% 96%) 0%, hsl(36 42% 95%) 100%)",
-        }}
-      />
-      <img
-        src={botanical}
-        alt=""
-        aria-hidden
-        className="pointer-events-none absolute -left-16 top-24 -z-10 hidden w-[420px] opacity-80 md:block"
-      />
+      {!activeAtmos && (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-[900px] -z-10"
+            style={{
+              background:
+                "radial-gradient(60% 50% at 80% 10%, hsl(350 65% 92% / 0.7), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(145 40% 88% / 0.7), transparent 60%), linear-gradient(180deg, hsl(36 55% 96%) 0%, hsl(36 42% 95%) 100%)",
+            }}
+          />
+          <img
+            src={botanical}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute -left-16 top-24 -z-10 hidden w-[420px] opacity-80 md:block"
+          />
+        </>
+      )}
 
       {/* Nav */}
       <header className="sticky top-0 z-30 border-b border-border/30 bg-[hsl(36_50%_97%)]/70 backdrop-blur-xl">
@@ -419,21 +439,42 @@ export default function Landing() {
         <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {atmospheres.map(a => {
             const Icon = a.icon;
+            const selected = activeAtmos?.name === a.name;
             return (
-              <div
+              <button
                 key={a.name}
-                className="group relative overflow-hidden rounded-3xl border border-border/40 p-4 shadow-soft transition-transform hover:scale-[1.02]"
+                type="button"
+                onClick={() => setActiveAtmos(selected ? null : a)}
+                aria-pressed={selected}
+                className={`group relative overflow-hidden rounded-3xl border p-4 text-left shadow-soft transition-all hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(36_50%_96%)] ${
+                  selected ? "border-white/80 ring-2 ring-white/70 scale-[1.02]" : "border-border/40"
+                } ${a.dark ? "text-[hsl(36_50%_96%)]" : "text-[hsl(145_30%_18%)]"}`}
                 style={{ background: a.bg, minHeight: 150 }}
               >
-                <Icon className="h-5 w-5 text-foreground/70 mix-blend-luminosity" />
+                <Icon className="h-5 w-5 opacity-80" />
                 <div className="mt-12">
-                  <div className="font-display text-sm text-foreground/90">{a.name}</div>
-                  <div className="text-[11px] uppercase tracking-widest text-foreground/60">{a.tone}</div>
+                  <div className="font-display text-sm">{a.name}</div>
+                  <div className="text-[11px] uppercase tracking-widest opacity-70">{a.tone}</div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
+        {activeAtmos && (
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => setActiveAtmos(null)}
+              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium backdrop-blur transition-colors ${
+                isDark
+                  ? "border-white/30 bg-white/10 text-[hsl(36_50%_96%)] hover:bg-white/20"
+                  : "border-border/60 bg-card/70 text-foreground hover:bg-card"
+              }`}
+            >
+              Reset atmosphere
+            </button>
+          </div>
+        )}
       </section>
 
       {/* STORY */}
