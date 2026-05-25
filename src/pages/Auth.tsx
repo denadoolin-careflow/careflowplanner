@@ -8,10 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Heart, Sparkles, RefreshCw, MoonStar, ExternalLink, AlertTriangle, Copy, Mail } from "lucide-react";
+import { Leaf, RefreshCw, ExternalLink, AlertTriangle, Copy, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
-import { loadQuizResult, getArchetype } from "@/lib/archetype-quiz";
-import { CaregiverArchetypeQuiz } from "@/components/quiz/CaregiverArchetypeQuiz";
 
 // Detect known in-app browsers that block Google OAuth (Instagram/Facebook/
 // TikTok/LinkedIn webviews). These don't let users complete sign-in and just
@@ -39,12 +37,21 @@ export default function Auth() {
   const [inApp] = useState<string | null>(() => detectInAppBrowser());
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [resetEmail, setResetEmail] = useState("");
+  const [tab, setTab] = useState<"signin" | "signup">("signin");
 
   // (QuizPromo defined at module bottom)
 
   useEffect(() => {
     if (user) navigate("/", { replace: true });
   }, [user, navigate]);
+
+  // Force light theme on the auth page so the sage palette renders consistently.
+  useEffect(() => {
+    const root = document.documentElement;
+    const had = root.classList.contains("dark");
+    if (had) root.classList.remove("dark");
+    return () => { if (had) root.classList.add("dark"); };
+  }, []);
 
   // Surface OAuth errors that Supabase returns via the URL hash/query
   // (e.g. "?error=access_denied&error_description=..."). Without this the
@@ -155,36 +162,34 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen w-full gradient-dawn">
-      <div className="mx-auto grid min-h-screen w-full max-w-6xl grid-cols-1 gap-10 px-6 py-10 lg:grid-cols-2 lg:items-center lg:py-16">
-        <div className="space-y-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">CareFlow Planner</p>
-          <h1 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">A gentle home for your days, weeks, and the people you love.</h1>
-          <p className="max-w-md text-base text-muted-foreground">
-            Sign in to keep your planner in sync — across your phone, tablet, and computer. Your tasks, meals, journal, and care notes travel with you.
-          </p>
-          <QuizPromo />
-          <div className="grid grid-cols-2 gap-3 max-w-md">
-            {[
-              { icon: Heart, label: "Care notes that stay close" },
-              { icon: Sparkles, label: "Soft reminders, not shame" },
-              { icon: RefreshCw, label: "Weekly reset on autopilot" },
-              { icon: MoonStar, label: "Low-energy mode for hard days" },
-            ].map(({ icon: Icon, label }) => (
-              <div key={label} className="cozy-card flex items-center gap-3 p-3">
-                <Icon className="h-5 w-5 text-primary" />
-                <span className="text-sm">{label}</span>
-              </div>
-            ))}
+    <div
+      className="relative min-h-screen w-full overflow-hidden text-foreground"
+      style={{
+        background:
+          "radial-gradient(60% 50% at 80% 10%, hsl(350 65% 92% / 0.7), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(145 40% 88% / 0.7), transparent 60%), linear-gradient(180deg, hsl(36 55% 96%) 0%, hsl(36 42% 95%) 100%)",
+      }}
+    >
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
+        <Link to="/" className="mb-6 flex items-center gap-2.5">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-[hsl(145_30%_28%)] text-[hsl(36_50%_96%)] shadow-sm">
+            <Leaf className="h-4 w-4" />
+          </span>
+          <span className="leading-tight">
+            <span className="font-display text-lg font-semibold text-foreground">CareFlow</span>
+            <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">plan, care, grow</span>
+          </span>
+        </Link>
+
+        <div className="w-full rounded-3xl border border-border/50 bg-card/85 p-6 shadow-cozy backdrop-blur-md sm:p-8">
+          <div className="mb-5 text-center">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+              {tab === "signin" ? "Welcome back" : "Create your account"}
+            </p>
+            <h1 className="mt-1 font-display text-2xl text-foreground sm:text-3xl">
+              {tab === "signin" ? "Sign in to CareFlow" : "Start your CareFlow"}
+            </h1>
           </div>
 
-          {/* Embedded quiz — same UI & progress flow as /quiz */}
-          <div className="cozy-card overflow-hidden p-0">
-            <CaregiverArchetypeQuiz embedded />
-          </div>
-        </div>
-
-        <div className="cozy-card p-6 sm:p-8">
           {inApp && (
             <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
               <div className="mb-1 flex items-center gap-1.5 font-semibold">
@@ -216,7 +221,7 @@ export default function Auth() {
               </div>
             </div>
           )}
-          <Tabs defaultValue="signin">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
               <TabsTrigger value="signup">Create account</TabsTrigger>
@@ -225,6 +230,14 @@ export default function Auth() {
               <div className="space-y-1.5"><Label>Email</Label><Input type="email" inputMode="email" autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} className="h-11 text-base" value={email} onChange={e => setEmail(e.target.value)} /></div>
               <div className="space-y-1.5"><Label>Password</Label><Input type="password" autoComplete="current-password" className="h-11 text-base" value={password} onChange={e => setPassword(e.target.value)} /></div>
               <Button className="w-full" disabled={busy} onClick={signIn}>{busy ? "Signing in…" : "Sign in"}</Button>
+              <button
+                type="button"
+                onClick={sendMagicLink}
+                disabled={busy}
+                className="block w-full text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Forgot password? Email me a magic link instead
+              </button>
             </TabsContent>
             <TabsContent value="signup" className="space-y-3 pt-4">
               <div className="space-y-1.5"><Label>Your name</Label><Input autoComplete="name" className="h-11 text-base" value={name} onChange={e => setName(e.target.value)} placeholder="What should we call you?" /></div>
@@ -239,41 +252,18 @@ export default function Auth() {
           <Button variant="outline" className="h-11 w-full text-base" disabled={busy} onClick={signInGoogle}>
             Continue with Google
           </Button>
-          <p className="mt-4 text-center text-xs text-muted-foreground">By signing in you'll get a private planner just for you.</p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            By continuing you agree to our gentle, no-spam approach to your data.
+          </p>
         </div>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          Not ready yet?{" "}
+          <Link to="/waitlist" className="font-medium text-foreground underline underline-offset-4">
+            Join the waitlist
+          </Link>
+        </p>
       </div>
     </div>
-  );
-}
-
-function QuizPromo() {
-  const prior = loadQuizResult();
-  if (prior) {
-    const a = getArchetype(prior.archetype);
-    return (
-      <Link
-        to="/quiz"
-        className="block max-w-md rounded-2xl border border-primary/30 bg-primary/5 p-4 transition hover:border-primary/60 hover:bg-primary/10"
-      >
-        <p className="text-[11px] uppercase tracking-[0.18em] text-primary/80">Your saved archetype</p>
-        <p className="mt-1 font-display text-lg font-semibold">{a.title}</p>
-        <p className="text-xs text-muted-foreground">Sign in to apply it to your CareFlow — or retake the quiz.</p>
-      </Link>
-    );
-  }
-  return (
-    <Link
-      to="/quiz"
-      className="group inline-flex max-w-md items-center gap-3 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 to-accent/10 p-4 transition hover:from-primary/15 hover:to-accent/15"
-    >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/30 to-accent/30">
-        <Sparkles className="h-4 w-4 text-primary" />
-      </div>
-      <div className="flex-1">
-        <p className="text-sm font-semibold">Take the Caregiver Archetype Quiz</p>
-        <p className="text-xs text-muted-foreground">2 minutes · personalize CareFlow to your real energy</p>
-      </div>
-      <span className="text-primary opacity-60 transition group-hover:translate-x-0.5 group-hover:opacity-100">→</span>
-    </Link>
   );
 }
