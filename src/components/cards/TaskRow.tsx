@@ -198,7 +198,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
             type="button"
             onClick={handleTitleClick}
             className={cn(
-              "block w-full cursor-text rounded-md text-left text-sm transition-all",
+              "block w-full cursor-text rounded-md text-left text-sm leading-snug transition-all break-words whitespace-normal",
               task.done && "text-muted-foreground line-through",
               celebrate && "text-primary",
             )}
