@@ -24,7 +24,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { TaskSelectionProvider, useTaskSelection } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
 import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
-import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { MoonJournalReminderBanner } from "@/components/cycle/MoonJournalReminderBanner";
 import { RhythmForecastCard } from "@/components/rhythm/RhythmForecastCard";
@@ -37,7 +36,6 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getMoonPhase } from "@/lib/moon";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
@@ -46,17 +44,6 @@ import { EndOfDaySummary } from "@/components/today/EndOfDaySummary";
 import { WeatherHeroCard } from "@/components/today/WeatherHeroCard";
 import { CarePriorities } from "@/components/today/CarePriorities";
 import { AffirmationHeader } from "@/components/today/AffirmationHeader";
-
-const MOON_TEMPLATE_MAP: Record<string, string> = {
-  "new": "new-moon",
-  "waxing-crescent": "new-moon",
-  "first-quarter": "first-quarter-moon",
-  "waxing-gibbous": "first-quarter-moon",
-  "full": "full-moon",
-  "waning-gibbous": "full-moon",
-  "last-quarter": "last-quarter-moon",
-  "waning-crescent": "last-quarter-moon",
-};
 
 export default function Today() {
   return (
