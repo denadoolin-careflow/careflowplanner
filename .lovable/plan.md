@@ -1,87 +1,82 @@
-## 1. Fix the Auth page
 
-Rewrite `src/pages/Auth.tsx` so it's a single centered card on a soft sage/cream background:
+# Revamp plan
 
-- Remove the two-column hero layout, the feature pills grid, and the embedded quiz card.
-- One container: `min-h-screen flex items-center justify-center px-4`.
-- Card: max-width ~420px, rounded-3xl, soft shadow, contains:
-  - CareFlow logo mark + "CareFlow Planner" eyebrow, centered.
-  - H1 "Welcome back" / "Create your account" (changes with active tab).
-  - Sign in / Sign up tabs (existing logic preserved).
-  - Email + password (+ name on signup), primary CTA, Google button, "Email me a magic link" link, "Forgot password?" link.
-  - In-app browser warning + OAuth error banners stay, restyled inside the card.
-- Replace `gradient-dawn` background with the landing-page sage→cream radial so it feels like the same product.
-- Keep all existing auth handlers (`signIn`, `signUp`, `signInGoogle`, `sendMagicLink`, OAuth error parsing) unchanged.
+Delivered as one large plan, sequenced so dependencies land first. All changes use existing semantic tokens; new tables get RLS.
 
-## 2. Embed the Caregiver Quiz on the landing page
+---
 
-In `src/pages/Landing.tsx`, replace the current "Quiz" promo section (the one with the rotating archetype cards) with the actual quiz:
+## 1. Task views: grouping, sorting, visible columns, tags
 
-- New full-width section anchored at `#quiz`, with the existing Pill + headline ("Find your caregiver archetype").
-- Below the headline, render `<CaregiverArchetypeQuiz embedded />` inside a rounded card on a soft cream surface.
-- After completion (the component already stores the result in localStorage), show a "Join the waitlist with this archetype" CTA that links to `/waitlist`.
-- Keep the existing standalone `/quiz` route as-is for direct links.
+**Touch:** `KanbanBoard.tsx`, `AllTasksViews.tsx`, `TaskListControls.tsx`, `TaskSortMenu.tsx`, `lib/task-grouping.ts`, new `lib/view-prefs.ts`.
 
-## 3. Pricing page (waitlist-only)
+- Extend `GroupMode` to: `section | dueDate | tag | project | priority | energy | status | area | none`. Add tag grouping (tasks with multiple tags appear in each group; "Untagged" bucket).
+- Apply grouping + sorting consistently across **list, grid, board, schedule, calendar**. Board columns become the active group (today: status → tomorrow: any group key).
+- New "View options" menu (gear icon next to sort) with toggles for visible fields: tag chips, priority, due date, project, energy, est. minutes, icon, cover. Stored **globally per view type** (board/list/grid/schedule/calendar) in `localStorage` under `careflow:view:<type>`, with a Reset button.
+- Render tag chips inline on every view's task row/card (compact, color from `tags` table).
 
-New route `/pricing` → `src/pages/Pricing.tsx`:
+## 2. Pomodoro timer contrast
 
-- Sage palette, matches landing page chrome (reuse `Pill`, `PrimaryCTA`).
-- Hero: "Pricing is coming soon" + subhead "We're polishing the plans. Join the waitlist to get early access and founding-member pricing."
-- Three teaser cards (Free / Pro / Family) shown as blurred placeholders with a "Coming soon" badge — no prices.
-- Big CTA card with the waitlist form (see step 4) embedded directly.
-- Add "Pricing" link in the landing nav + footer.
+**Touch:** `PomodoroTimer.tsx`, `FloatingPomodoro.tsx`, `FullScreenFocus.tsx`.
 
-## 4. Waitlist signup + backend
+- Replace hardcoded timer text color with theme-aware token: `text-foreground/90` on light, `text-foreground` (near-white) on dark. Add subtle backdrop for the floating pill so digits stay legible over any atmosphere.
 
-Add a `Waitlist` page at `/waitlist` (also embedded on `/pricing`) that collects:
+## 3. NLP tag autocomplete in task composer
 
-- Email (required)
-- Name (required)
-- Archetype (auto-filled from `loadQuizResult()` if available, otherwise a dropdown of the 7 archetypes)
-- "Why you're interested" (textarea, optional, 500-char limit)
+**Touch:** `InlineTaskComposer.tsx`, `TaskEditor.tsx`, `lib/nlp-task.ts`, new `components/tags/TagAutocomplete.tsx`.
 
-Form uses zod validation + a Supabase insert. On success, fires the two automated emails (step 5) and shows a sage success state with a "Take the quiz" link for users who haven't.
+- While typing, detect `#token` (and bare words matching a tag name). Show a floating suggestion list anchored to the caret with matching tags from `useTags()`. Arrow keys + Enter to insert, Esc to dismiss. Falls back to "Create #new-tag".
 
-### Database
+## 4. Timeline + table views for Projects and Tasks
 
-Migration creates `public.waitlist_signups`:
+**Touch:** `pages/Projects.tsx`, `pages/ProjectDetail.tsx`, `pages/TaskListPage.tsx`, new `components/tasks/TaskTableView.tsx`, `components/tasks/TaskTimelineView.tsx`, `components/projects/ProjectsTimeline.tsx`, `components/projects/ProjectsTable.tsx`.
 
-- `id uuid pk`, `email text unique not null`, `name text not null`, `archetype text`, `reason text`, `quiz_score jsonb`, `source text` (e.g. `pricing`, `landing`), `created_at timestamptz`.
-- RLS on. Policy: anyone can `INSERT` (anonymous signups), only authenticated admins can `SELECT`. Admin check via a `user_roles` table with an `admin` role + `has_role()` security-definer function (per platform best practice).
-- Unique constraint on lowercased email handled via a `before insert` trigger that normalizes email and rejects duplicates with a friendly error.
+- **Table view:** sortable columns including any custom fields (see §5). Resizable, sticky header.
+- **Timeline view:** horizontal Gantt-style strip using `dueDate`/`createdAt` (and `deadline` for projects). Drag to reschedule, zoom by day/week/month.
+- View switcher pill: `List | Grid | Board | Table | Timeline | Schedule | Calendar`.
 
-## 5. Automated emails (Lovable Emails)
+## 5. AI-assisted custom fields (database-like) for Tasks, Projects, Notes
 
-Use Lovable's built-in email infrastructure. Required setup:
+**Touch:** new tables, new `components/common/CustomFieldsEditor.tsx`, new `lib/custom-fields.ts`, integrated into Task/Project/Note detail panes + table view columns.
 
-1. Set up email domain (user completes the in-product dialog).
-2. Provision email infrastructure (queues, tables, cron).
-3. Scaffold auth email templates so signup confirmations, magic links, and password resets match the sage brand.
-4. Scaffold the transactional email pipeline.
-5. Create two transactional templates in `supabase/functions/_shared/transactional-email-templates/`:
-   - `waitlist-welcome.tsx` — branded confirmation to the signup ("You're on the CareFlow waitlist 🌿"), warm sage styling, mentions their archetype if provided.
-   - `waitlist-admin-notification.tsx` — internal email to your address with name, email, archetype, reason.
-6. Register both in `registry.ts`, deploy edge functions.
-7. The waitlist form invokes `send-transactional-email` twice (welcome → user, admin notification → owner) with idempotency keys derived from the new row id.
+- New tables:
+  - `custom_field_defs(id, user_id, entity_type ['task'|'project'|'note'], name, kind ['text'|'number'|'select'|'multiselect'|'date'|'checkbox'|'url'], options jsonb, sort_order)`
+  - `custom_field_values(id, user_id, field_id, entity_id, value jsonb)`
+  - Full RLS on `auth.uid() = user_id`.
+- Editor UI: add/rename/reorder/delete fields per entity type; values render in detail panes and as columns in table view.
+- New edge function `ai-custom-fields` (Lovable AI, `google/gemini-2.5-flash`): given a sample of the user's tasks/projects/notes, suggests field schemas; given an item, proposes values for empty fields. Surfaced via "✨ Suggest fields" and "✨ Fill" buttons.
 
-Admin recipient address is needed — I'll ask for it during build (defaults to the Lovable account email shown in the prompt).
+## 6. Notes editor polish
 
-## Files touched
+**Touch:** `BlockEditor.tsx`, `NoteDetail.tsx`, `NoteMarkdown.tsx`.
 
-- `src/pages/Auth.tsx` — rewrite for centered layout.
-- `src/pages/Landing.tsx` — replace quiz teaser with embedded `CaregiverArchetypeQuiz`, add Pricing + Waitlist nav links.
-- `src/pages/Pricing.tsx` — new.
-- `src/pages/Waitlist.tsx` — new (also reused as a component inside Pricing).
-- `src/App.tsx` — add `/pricing` and `/waitlist` routes (public).
-- New migration: `waitlist_signups` table + `user_roles` + `has_role()` + RLS.
-- New Supabase email templates + registry update.
-- Lovable Email infra setup (domain dialog, infra, auth templates, transactional scaffold, deploy).
+- Align body content's left edge to the title's left edge (remove inherited padding mismatch in BlockEditor wrapper).
+- Hover/selection background on blocks: `rounded-lg` + `bg-muted/30` (was square/opaque).
+- Fix `@` mention dropdown: keep open while typing, anchor to caret using a portal + `floating-ui` style positioning, dismiss only on Esc / outside click / selection. Currently the dropdown closes because of a blur race — switch to `onMouseDown preventDefault` on the menu and track open state in a ref.
 
-## Technical details
+## 7. Knowledge graph
 
-- Quiz already exposes `embedded` mode and persists results in localStorage via `loadQuizResult()` — reused as-is on both Landing and Waitlist.
-- Waitlist insert uses the anon client; RLS policy `INSERT to anon` is scoped to this single table.
-- `has_role(_user_id uuid, _role app_role)` is a `security definer` function on a separate `user_roles` table (never on profiles), per platform security rules.
-- Email body backgrounds stay `#ffffff`; sage accents applied via inline styles inside React Email components.
-- No marketing/bulk emails — both messages are 1:1 transactional sends triggered by the signup event.
+**Touch:** new `pages/Graph.tsx`, new `components/graph/KnowledgeGraph.tsx`, route added in `App.tsx`, nav entry.
+
+- Aggregate nodes: notes, tasks, projects, habits, tags, dates (daily notes), goals. Edges: `[[wikilinks]]`, shared tags, task↔project, task↔goal, habit↔date logs, note↔date.
+- Render with `react-force-graph-2d` (small, canvas-based, performant). Drag, pin (click-to-fix), zoom, search box, type filters (toggle chips), cluster by tag or area.
+- Click a node → opens its detail route in side drawer.
+
+---
+
+## Technical notes
+
+- All new prefs use `localStorage` (no schema change for view prefs).
+- DB migrations: only §5 (`custom_field_defs`, `custom_field_values`) plus updated trigger for `updated_at`.
+- New dep: `react-force-graph-2d` (and its `d3-force` peer).
+- Edge function `ai-custom-fields` follows existing `ai-*` pattern, uses `LOVABLE_API_KEY`.
+- No business-logic changes to existing task/project store APIs — additions only.
+
+## Sequencing
+
+1. Pomo contrast (§2) — tiny, immediate win.
+2. Task view options + tag chips + grouping/sort everywhere (§1).
+3. Tag autocomplete (§3).
+4. Notes editor polish + sticky @ (§6).
+5. Custom fields schema + UI + AI (§5).
+6. Table + Timeline views (§4) — uses §5 columns.
+7. Knowledge graph page (§7).

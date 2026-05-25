@@ -206,6 +206,9 @@ function makeSuggestion<T>(editor: Editor, opts: {
             trigger: "manual",
             placement: "bottom-start",
             theme: "light-border",
+            hideOnClick: false,
+            interactiveBorder: 12,
+            offset: [0, 6],
           });
         },
         onUpdate: (props: any) => {
@@ -744,7 +747,7 @@ export function BlockEditor({
       )}
       style={{
         maxWidth: WIDTH_PX[prefs.width],
-        marginInline: prefs.width === "full" ? undefined : "auto",
+        marginInline: 0,
         ["--editor-font-scale" as any]: String(prefs.fontScale),
         ...(prefs.theme === "custom" ? {
           ["--editor-custom-bg" as any]: prefs.customBg,

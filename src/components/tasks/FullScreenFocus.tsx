@@ -193,7 +193,7 @@ export function FullScreenFocus() {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="font-display text-6xl tabular-nums sm:text-7xl">
+            <div className="font-display text-6xl font-semibold tabular-nums text-foreground sm:text-7xl drop-shadow-[0_2px_8px_hsl(var(--background)/0.6)]">
               {formatPomoTime(s.remaining)}
             </div>
             <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
