@@ -44,6 +44,7 @@ import { EndOfDaySummary } from "@/components/today/EndOfDaySummary";
 import { WeatherHeroCard } from "@/components/today/WeatherHeroCard";
 import { CarePriorities } from "@/components/today/CarePriorities";
 import { AffirmationHeader } from "@/components/today/AffirmationHeader";
+import { personalGreeting } from "@/lib/greeting";
 
 export default function Today() {
   return (
@@ -155,7 +156,9 @@ function TodayInner() {
             />
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{format(today, "EEEE")}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  {personalGreeting(state.settings.name)} <span className="opacity-60">· {format(today, "EEEE")}</span>
+                </p>
                 <h2 className="text-gradient-glow font-display text-3xl font-semibold sm:text-4xl">
                   {format(today, "MMMM d, yyyy")}
                 </h2>
