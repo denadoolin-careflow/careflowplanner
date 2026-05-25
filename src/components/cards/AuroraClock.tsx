@@ -1,44 +1,27 @@
 import { useEffect, useState, useMemo, memo } from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { MoonGlyph } from "@/components/widgets/MoonGlyph";
+import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
+import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Moon, Sun, Zap } from "lucide-react";
+import type { WeatherCondition } from "@/lib/weather";
 
-/** Inner ticker — re-renders only the rotating hands every second.
- *  Keeps the parent (and the surrounding hero) from re-rendering. */
-const ClockHands = memo(function ClockHands() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  const h = now.getHours();
-  const m = now.getMinutes();
-  const s = now.getSeconds();
-  const hourDeg = ((h % 12) + m / 60) * 30;
-  const minDeg = (m + s / 60) * 6;
-  const secDeg = s * 6;
-  return (
-    <>
-      <span
-        className="absolute left-1/2 top-1/2 h-7 w-[3px] -translate-x-1/2 -translate-y-full rounded-full bg-foreground"
-        style={{ transform: `translate(-50%, -100%) rotate(${hourDeg}deg)`, transformOrigin: "50% 100%" }}
-      />
-      <span
-        className="absolute left-1/2 top-1/2 h-9 w-[2px] -translate-x-1/2 -translate-y-full rounded-full bg-foreground/85"
-        style={{ transform: `translate(-50%, -100%) rotate(${minDeg}deg)`, transformOrigin: "50% 100%" }}
-      />
-      <span
-        className="absolute left-1/2 top-1/2 h-10 w-px -translate-x-1/2 -translate-y-full rounded-full bg-primary"
-        style={{ transform: `translate(-50%, -100%) rotate(${secDeg}deg)`, transformOrigin: "50% 100%" }}
-      />
-    </>
-  );
-});
+function ConditionIcon({ condition, isNight, className }: { condition: WeatherCondition; isNight?: boolean; className?: string }) {
+  if (condition === "clear") return isNight ? <Moon className={className} /> : <Sun className={className} />;
+  if (condition === "partly-cloudy") return <CloudSun className={className} />;
+  if (condition === "cloudy") return <Cloud className={className} />;
+  if (condition === "fog") return <CloudFog className={className} />;
+  if (condition === "drizzle") return <CloudDrizzle className={className} />;
+  if (condition === "rain") return <CloudRain className={className} />;
+  if (condition === "snow") return <CloudSnow className={className} />;
+  if (condition === "thunderstorm") return <Zap className={className} />;
+  return <Cloud className={className} />;
+}
 
 /** Minute-resolution digital readout — re-renders at most once per minute. */
-const DigitalReadout = memo(function DigitalReadout() {
+const DigitalReadout = memo(function DigitalReadout({ compact = false }: { compact?: boolean }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    // Align to top of the next minute, then tick every 60s.
     let intervalId: ReturnType<typeof setInterval> | null = null;
     const msToNextMin = 60_000 - (Date.now() % 60_000);
     const timeoutId = setTimeout(() => {
@@ -56,48 +39,57 @@ const DigitalReadout = memo(function DigitalReadout() {
   return (
     <div className="flex flex-col leading-none">
       <div className="flex items-baseline gap-1.5 font-display tabular-nums">
-        <span className="text-gradient-glow text-4xl font-semibold sm:text-5xl">{time}</span>
-        <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{ampm}</span>
+        <span className={cn(
+          "text-gradient-glow font-semibold",
+          compact ? "text-xl" : "text-4xl sm:text-5xl",
+        )}>{time}</span>
+        <span className={cn(
+          "font-medium uppercase tracking-[0.2em] text-muted-foreground",
+          compact ? "text-[9px]" : "text-xs",
+        )}>{ampm}</span>
       </div>
-      <span className="mt-2 text-xs uppercase tracking-[0.25em] text-muted-foreground">{sub}</span>
+      <span className={cn(
+        "uppercase tracking-[0.22em] text-muted-foreground",
+        compact ? "mt-1 text-[9px]" : "mt-2 text-xs tracking-[0.25em]",
+      )}>{sub}</span>
     </div>
   );
 });
 
-/**
- * AuroraClock — analog + digital readout with a soft aurora glow.
- * Memoized so it never re-renders from parent updates; internal tickers
- * are isolated to their own subtrees so the surrounding hero stays still.
- */
-export const AuroraClock = memo(function AuroraClock({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex items-center gap-4", className)}>
-      {/* Analog face */}
-      <div className="relative h-24 w-24 shrink-0">
-        {/* aurora halo */}
-        <div
-          aria-hidden
-          className="absolute -inset-2 rounded-full opacity-70 blur-xl"
-          style={{
-            background:
-              "conic-gradient(from 0deg, hsl(var(--primary)/0.35), hsl(var(--moon, var(--primary))/0.25), hsl(var(--primary)/0.35))",
-          }}
-        />
-        <div className="clock-glow relative flex h-24 w-24 items-center justify-center rounded-full border border-border/60 bg-card/70 backdrop-blur">
-          {/* tick marks */}
-          {Array.from({ length: 12 }).map((_, i) => (
-            <span
-              key={i}
-              className="absolute left-1/2 top-1 h-1.5 w-px -translate-x-1/2 bg-foreground/40"
-              style={{ transform: `translateX(-50%) rotate(${i * 30}deg)`, transformOrigin: "50% 46px" }}
-            />
-          ))}
-          <ClockHands />
-          <span className="absolute h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary))]" />
-        </div>
-      </div>
+const fmtTemp = (c: number, u: "C" | "F") => `${u === "F" ? cToF(c) : Math.round(c)}°`;
 
-      <DigitalReadout />
+const WeatherLine = memo(function WeatherLine({ compact = false }: { compact?: boolean }) {
+  const snap = useWeatherSnapshot();
+  const [unit] = useTempUnit();
+  if (!snap) return null;
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 text-muted-foreground",
+      compact ? "text-[10px]" : "text-xs",
+    )}>
+      <ConditionIcon condition={snap.condition} isNight={snap.isNight} className={compact ? "h-3 w-3" : "h-3.5 w-3.5"} />
+      <span className="tabular-nums">{fmtTemp(snap.tempC, unit)}</span>
+      {!compact && <span className="truncate max-w-[8rem]">{snap.conditionLabel}</span>}
+    </span>
+  );
+});
+
+/**
+ * AuroraClock — calm digital readout with moon phase + weather beneath the time.
+ * Pass `compact` to render the slim header variant.
+ */
+export const AuroraClock = memo(function AuroraClock({
+  className,
+  compact = false,
+}: { className?: string; compact?: boolean }) {
+  const moonSize = compact ? 24 : 40;
+  return (
+    <div className={cn("flex flex-col", compact ? "gap-0.5" : "gap-1.5", className)}>
+      <DigitalReadout compact={compact} />
+      <div className={cn("flex items-center", compact ? "gap-1.5" : "gap-2")}>
+        <MoonGlyph size={moonSize} />
+        <WeatherLine compact={compact} />
+      </div>
     </div>
   );
 });
