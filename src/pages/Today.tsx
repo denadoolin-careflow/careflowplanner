@@ -24,7 +24,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { TaskSelectionProvider, useTaskSelection } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
 import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
-import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { MoonJournalReminderBanner } from "@/components/cycle/MoonJournalReminderBanner";
 import { RhythmForecastCard } from "@/components/rhythm/RhythmForecastCard";
@@ -36,8 +35,7 @@ import { Wand2 } from "lucide-react";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { getMoonPhase } from "@/lib/moon";
+import { useSearchParams } from "react-router-dom";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
@@ -45,17 +43,7 @@ import { TodayEnergy } from "@/components/today/TodayEnergy";
 import { EndOfDaySummary } from "@/components/today/EndOfDaySummary";
 import { WeatherHeroCard } from "@/components/today/WeatherHeroCard";
 import { CarePriorities } from "@/components/today/CarePriorities";
-
-const MOON_TEMPLATE_MAP: Record<string, string> = {
-  "new": "new-moon",
-  "waxing-crescent": "new-moon",
-  "first-quarter": "first-quarter-moon",
-  "waxing-gibbous": "first-quarter-moon",
-  "full": "full-moon",
-  "waning-gibbous": "full-moon",
-  "last-quarter": "last-quarter-moon",
-  "waning-crescent": "last-quarter-moon",
-};
+import { AffirmationHeader } from "@/components/today/AffirmationHeader";
 
 export default function Today() {
   return (
@@ -97,10 +85,8 @@ function TodayInner() {
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [cycleSheetOpen, setCycleSheetOpen] = useState(false);
   const [layout, setLayout] = useState<"schedule" | "plan">("schedule");
-  const navigate = useNavigate();
   const today = day;
   const isReallyToday = isSameDay(day, new Date());
-  const lowMode = state.settings.lowEnergyMode;
 
   // Stable reference list so child memoization doesn't break on each parent render.
   const days = useMemo(() => [today], [today]);
@@ -173,9 +159,9 @@ function TodayInner() {
                 <h2 className="text-gradient-glow font-display text-3xl font-semibold sm:text-4xl">
                   {format(today, "MMMM d, yyyy")}
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {lowMode ? "Low-energy mode: only the essentials." : "Drag tasks from the right onto your day."}
-                </p>
+                <div className="mt-3">
+                  <AffirmationHeader date={today} />
+                </div>
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDayAndUrl(addDays(day, -1))} aria-label="Previous day">
                     <ChevronLeft className="h-4 w-4" />
@@ -196,14 +182,6 @@ function TodayInner() {
                   >
                     <Wand2 className="mr-1 h-3.5 w-3.5" /> Plan with this energy
                   </Button>
-                  <PhaseBadge
-                    date={today}
-                    className="ml-1"
-                    onClick={() => {
-                      const tpl = MOON_TEMPLATE_MAP[getMoonPhase(today)] ?? "daily";
-                      navigate(`/journal?template=${tpl}`);
-                    }}
-                  />
                   <div className="ml-2 inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1">
                     <Button
                       size="sm" variant="ghost"

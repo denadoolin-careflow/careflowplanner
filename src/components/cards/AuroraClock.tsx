@@ -5,6 +5,8 @@ import { MoonGlyph } from "@/components/widgets/MoonGlyph";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Moon, Sun, Zap } from "lucide-react";
 import type { WeatherCondition } from "@/lib/weather";
+import { getMoonPhase, MOON_INFO, getIllumination } from "@/lib/moon";
+import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 
 function ConditionIcon({ condition, isNight, className }: { condition: WeatherCondition; isNight?: boolean; className?: string }) {
   if (condition === "clear") return isNight ? <Moon className={className} /> : <Sun className={className} />;
@@ -35,23 +37,16 @@ const DigitalReadout = memo(function DigitalReadout({ compact = false }: { compa
   }, []);
   const time = useMemo(() => format(now, "h:mm"), [now]);
   const ampm = useMemo(() => format(now, "a"), [now]);
-  const sub  = useMemo(() => format(now, "EEE • MMM d"), [now]);
   return (
-    <div className="flex flex-col leading-none">
-      <div className="flex items-baseline gap-1.5 font-display tabular-nums">
-        <span className={cn(
-          "text-gradient-glow font-semibold",
-          compact ? "text-xl" : "text-4xl sm:text-5xl",
-        )}>{time}</span>
-        <span className={cn(
-          "font-medium uppercase tracking-[0.2em] text-muted-foreground",
-          compact ? "text-[9px]" : "text-xs",
-        )}>{ampm}</span>
-      </div>
+    <div className="flex items-baseline gap-1.5 font-display tabular-nums leading-none">
       <span className={cn(
-        "uppercase tracking-[0.22em] text-muted-foreground",
-        compact ? "mt-1 text-[9px]" : "mt-2 text-xs tracking-[0.25em]",
-      )}>{sub}</span>
+        "text-gradient-glow font-semibold",
+        compact ? "text-xl" : "text-4xl sm:text-5xl",
+      )}>{time}</span>
+      <span className={cn(
+        "font-medium uppercase tracking-[0.2em] text-muted-foreground",
+        compact ? "text-[9px]" : "text-xs",
+      )}>{ampm}</span>
     </div>
   );
 });
@@ -82,13 +77,38 @@ export const AuroraClock = memo(function AuroraClock({
   className,
   compact = false,
 }: { className?: string; compact?: boolean }) {
-  const moonSize = compact ? 24 : 40;
+  const moonSize = compact ? 24 : 48;
+  const today = new Date();
+  const moon = MOON_INFO[getMoonPhase(today)];
+  const illum = getIllumination(today);
+
+  if (compact) {
+    return (
+      <div className={cn("flex flex-col gap-0.5", className)}>
+        <DigitalReadout compact />
+        <div className="flex items-center gap-1.5">
+          <MoonGlyph size={moonSize} />
+          <WeatherLine compact />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("flex flex-col", compact ? "gap-0.5" : "gap-1.5", className)}>
-      <DigitalReadout compact={compact} />
-      <div className={cn("flex items-center", compact ? "gap-1.5" : "gap-2")}>
+    <div className={cn("flex flex-col items-center gap-3 sm:items-end", className)}>
+      <div className="flex items-center gap-3">
+        <DigitalReadout />
+        <WeatherLine />
+      </div>
+      <div className="flex flex-col items-center gap-1.5">
         <MoonGlyph size={moonSize} />
-        <WeatherLine compact={compact} />
+        <div className="flex flex-col items-center leading-tight">
+          <span className="font-display text-sm text-foreground/85">{moon.label}</span>
+          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
+            {illum}% lit
+          </span>
+        </div>
+        <PhaseBadge date={today} />
       </div>
     </div>
   );

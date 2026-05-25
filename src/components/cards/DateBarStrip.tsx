@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Sparkles, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Sun, Zap, RefreshCw } from "lucide-react";
+import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Sun, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWeekForecast } from "@/lib/use-week-forecast";
 import { useTempUnit, cToF } from "@/lib/weather-store";
 import { getMoonPhase, MOON_INFO, getIllumination } from "@/lib/moon";
 import type { WeatherCondition } from "@/lib/weather";
-import { pickAffirmation } from "@/lib/affirmations";
 
 function CondIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-3.5 w-3.5", className);
@@ -40,9 +39,6 @@ export function DateBarStrip({ date, className }: { date: Date; className?: stri
   const illum = getIllumination(date);
   const fmtTemp = (c: number) => `${unit === "F" ? cToF(c) : c}°`;
 
-  const [affirmation, setAffirmation] = useState(() => pickAffirmation());
-  const refresh = () => setAffirmation(pickAffirmation());
-
   const time = useMemo(() => format(now, "h:mm a"), [now]);
 
   return (
@@ -68,18 +64,6 @@ export function DateBarStrip({ date, className }: { date: Date; className?: stri
         <span className="text-foreground/85">{moon.label}</span>
         <span className="opacity-60 tabular-nums">{illum}%</span>
       </div>
-
-      {/* Affirmation */}
-      <button
-        type="button"
-        onClick={refresh}
-        className="group inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-primary transition-colors hover:bg-primary/15"
-        title="Tap for another"
-      >
-        <Sparkles className="h-3.5 w-3.5" />
-        <span className="italic">{affirmation}</span>
-        <RefreshCw className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-70" />
-      </button>
     </div>
   );
 }
