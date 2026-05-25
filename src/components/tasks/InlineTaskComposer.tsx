@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { TagAutocomplete } from "@/components/tags/TagAutocomplete";
 
 type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId" | "energy">>;
 
@@ -90,6 +91,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
             placeholder={placeholder}
             className="h-8 border-0 bg-transparent px-1 text-sm shadow-none focus-visible:ring-0"
           />
+          <TagAutocomplete inputRef={inputRef} value={text} onChange={setText} />
 
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {/* Date pill */}
