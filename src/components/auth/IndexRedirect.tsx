@@ -37,8 +37,19 @@ export function IndexRedirect() {
   const { state, loading, user, authLoading } = useStore();
   const { profile, loading: careLoading } = useCareProfile();
 
+  // Wait for auth to hydrate before deciding where to send the visitor.
+  // Otherwise a brief Navigate→/today happens, RequireAuth catches it,
+  // and the user lands on /auth before our Landing check can run.
+  if (authLoading) {
+    return (
+      <div aria-hidden className="fixed inset-0 z-[100] grid place-items-center gradient-dawn">
+        <div className="h-6 w-6 animate-pulse rounded-full bg-primary/50" />
+      </div>
+    );
+  }
+
   // Public landing page for signed-out visitors.
-  if (!authLoading && !user) return <Landing />;
+  if (!user) return <Landing />;
 
   const cached = readCachedDefaultRoute();
   const liveRaw = state.settings.defaultRoute;
