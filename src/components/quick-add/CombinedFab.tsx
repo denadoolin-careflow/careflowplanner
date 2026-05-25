@@ -37,13 +37,9 @@ export function CombinedFab() {
 
   return (
     <div
-      ref={(node) => {
-        wrapRef.current = node;
-        (drag.ref as React.MutableRefObject<HTMLElement | null>).current = node;
-      }}
-      {...drag.handlers}
-      style={drag.style}
+      ref={wrapRef}
       className={cn("fixed z-40 flex flex-col items-end gap-2")}
+      style={drag.style}
     >
       {/* AI action — slides up when expanded */}
       <button
@@ -64,6 +60,8 @@ export function CombinedFab() {
       {/* Main FAB */}
       <button
         type="button"
+        ref={drag.ref as React.RefObject<HTMLButtonElement>}
+        {...drag.handlers}
         onClick={(e) => {
           if (drag.dragging) { e.preventDefault(); return; }
           haptics.pickup();
