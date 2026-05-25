@@ -19,6 +19,7 @@ import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
 import { WeatherPrefsSection } from "@/components/settings/WeatherPrefsSection";
 import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/TimeZoneSelect";
+import { ArchetypeThemeSection } from "@/components/settings/ArchetypeThemeSection";
 import { useRhythmForecastEnabled, useRecommendationTone } from "@/lib/rhythm-forecast";
 import { MOON_PROVIDERS, useMoonProvider } from "@/lib/moon-providers";
 import { useEffect } from "react";
@@ -114,6 +115,8 @@ export default function Settings() {
           </div>
         </div>
       </SectionCard>
+
+      <ArchetypeThemeSection />
 
       <SectionCard title="Low-energy mode" subtitle="Hide non-essentials when you need a softer day." accent="calm">
         <div className="flex items-center gap-3">
