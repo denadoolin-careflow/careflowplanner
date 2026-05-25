@@ -236,7 +236,7 @@ export default function Landing() {
     return () => { if (had) root.classList.add("dark"); };
   }, []);
 
-  const [activeAtmos, setActiveAtmos] = useState<typeof atmospheres[number] | null>(null);
+  const [activeAtmos, setActiveAtmos] = useState<typeof atmospheres[number] | null>(atmospheres[0]);
   const isDark = !!activeAtmos?.dark;
 
   return (
