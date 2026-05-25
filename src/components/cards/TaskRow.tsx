@@ -3,7 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Sparkle, CalendarDays } from "lucide-react";
+import { Trash2, GripVertical, Timer, Settings2, ChevronRight, Sparkle, CalendarDays, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -42,6 +45,8 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
   const hasSubs = subtasks.length > 0;
   const doneSubs = subtasks.filter(s => s.done).length;
   const pct = hasSubs ? Math.round((doneSubs / subtasks.length) * 100) : 0;
+  const allDone = hasSubs && doneSubs === subtasks.length;
+  const [subDueDate, setSubDueDate] = useState<string | undefined>(undefined);
   const [aiLoading, setAiLoading] = useState(false);
   const isSubtask = !!task.parentTaskId;
 
