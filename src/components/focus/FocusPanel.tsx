@@ -92,6 +92,8 @@ export function FocusPanel() {
         className={cn(
           "relative rounded-3xl border border-border/60 bg-card/80 p-3 backdrop-blur-xl",
           "shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.35)]",
+          "max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain",
+          "[scrollbar-width:thin]",
           isFocus && s.running && "ring-1 ring-primary/30",
         )}
       >
