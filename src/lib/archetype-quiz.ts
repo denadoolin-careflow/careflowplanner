@@ -1,4 +1,5 @@
 import type { AtmosphereId } from "./atmospheres";
+import { supabase } from "@/integrations/supabase/client";
 
 /** Caregiver Archetype Quiz: data, types, scoring, persistence. */
 
@@ -486,6 +487,7 @@ export type QuizResult = {
   atmosphere: AtmosphereId;
   planningStyle: PlanningStyle;
   takenAt: string;
+  answers?: QuizAnswers;
 };
 
 export function saveQuizResult(r: QuizResult) {
@@ -522,4 +524,76 @@ export function loadQuizProgress(): QuizProgress | null {
 
 export function clearQuizProgress() {
   try { localStorage.removeItem(K_PROGRESS); } catch { /* */ }
+}
+
+// ────────────── Remote (Supabase) sync ──────────────
+
+/** Upsert the current user's quiz result to the database. */
+export async function saveQuizResultRemote(r: QuizResult): Promise<void> {
+  try {
+    const { data: auth } = await supabase.auth.getUser();
+    const uid = auth.user?.id;
+    if (!uid) return;
+    await supabase.from("quiz_results").upsert(
+      {
+        user_id: uid,
+        archetype: r.archetype,
+        identity: r.identity,
+        atmosphere: r.atmosphere,
+        planning_style: r.planningStyle,
+        answers: r.answers ?? {},
+        taken_at: r.takenAt,
+      },
+      { onConflict: "user_id" }
+    );
+  } catch { /* ignore */ }
+}
+
+/** Fetch the current user's quiz result from the database (if any). */
+export async function loadQuizResultRemote(): Promise<QuizResult | null> {
+  try {
+    const { data: auth } = await supabase.auth.getUser();
+    const uid = auth.user?.id;
+    if (!uid) return null;
+    const { data, error } = await supabase
+      .from("quiz_results")
+      .select("archetype, identity, atmosphere, planning_style, answers, taken_at")
+      .eq("user_id", uid)
+      .maybeSingle();
+    if (error || !data) return null;
+    return {
+      archetype: data.archetype as ArchetypeId,
+      identity: (data.identity as Identity | null) ?? null,
+      atmosphere: data.atmosphere as AtmosphereId,
+      planningStyle: data.planning_style as PlanningStyle,
+      takenAt: data.taken_at as string,
+      answers: (data.answers as QuizAnswers) ?? {},
+    };
+  } catch { return null; }
+}
+
+/** Sync between local and remote: pushes local result if remote missing, or hydrates local from remote. */
+export async function syncQuizResult(): Promise<QuizResult | null> {
+  try {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user?.id) return loadQuizResult();
+    const remote = await loadQuizResultRemote();
+    const local = loadQuizResult();
+    if (remote && !local) {
+      saveQuizResult(remote);
+      return remote;
+    }
+    if (local && !remote) {
+      await saveQuizResultRemote(local);
+      return local;
+    }
+    if (local && remote) {
+      // pick newest by takenAt
+      const newer = new Date(remote.takenAt) > new Date(local.takenAt) ? remote : local;
+      saveQuizResult(newer);
+      if (newer === local) await saveQuizResultRemote(local);
+      return newer;
+    }
+    return null;
+  } catch { return loadQuizResult(); }
 }

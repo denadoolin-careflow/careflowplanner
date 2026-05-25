@@ -2924,6 +2924,45 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_results: {
+        Row: {
+          answers: Json
+          archetype: string
+          atmosphere: string
+          created_at: string
+          id: string
+          identity: string | null
+          planning_style: string
+          taken_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          archetype: string
+          atmosphere: string
+          created_at?: string
+          id?: string
+          identity?: string | null
+          planning_style: string
+          taken_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          archetype?: string
+          atmosphere?: string
+          created_at?: string
+          id?: string
+          identity?: string | null
+          planning_style?: string
+          taken_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       recurring_bills: {
         Row: {
           amount: number
