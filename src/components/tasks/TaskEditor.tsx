@@ -18,6 +18,7 @@ import { Task, AREAS, Priority, Energy, RecurrenceType } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
+import { BlockEditor } from "@/components/notes/BlockEditor";
 import { IconPicker } from "@/components/common/IconPicker";
 import { LucideIconPicker } from "@/components/common/LucideIconPicker";
 import { AttachmentsField } from "@/components/attachments/AttachmentsField";
