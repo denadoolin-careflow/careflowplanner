@@ -116,9 +116,9 @@ function KanbanCard({ task }: { task: Task }) {
         onClick={() => setOpenEditor(true)}
         className="block w-full text-left px-2.5 py-2"
       >
-        <div className="flex items-start gap-1.5">
+        <div className="flex items-start gap-1.5 min-w-0">
           {visible.icon && <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-          <span className={cn("flex-1 text-sm leading-snug", task.done && "text-muted-foreground line-through")}>{task.title}</span>
+          <span className={cn("flex-1 min-w-0 text-sm leading-snug break-words whitespace-normal", task.done && "text-muted-foreground line-through")}>{task.title}</span>
         </div>
         {((visible.tags && task.tags?.length) || (visible.dueDate && task.dueDate) || (visible.priority && task.priority === "high")) && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1">
