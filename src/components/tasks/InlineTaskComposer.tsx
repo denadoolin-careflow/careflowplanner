@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react";
-import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap, Tag as TagIcon, Timer } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
@@ -11,8 +11,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { TagAutocomplete } from "@/components/tags/TagAutocomplete";
+import { TagPicker } from "@/components/tags/TagPicker";
+import { TagChip } from "@/components/tags/TagChip";
 
-type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId" | "energy">>;
+type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId" | "energy" | "estMinutes" | "tags">>;
 
 interface Props {
   /** Defaults applied to created tasks (e.g. { inbox: true } for the inbox page). */
@@ -22,16 +24,23 @@ interface Props {
   placeholder?: string;
   /** Initial date to populate the date pill. */
   initialDate?: string;
+  /** Tags to keep selected across submissions (sticky). */
+  defaultTags?: string[];
 }
 
-export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "Add a task…", initialDate }: Props) {
+export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "Add a task…", initialDate, defaultTags }: Props) {
   const { state, addTask } = useStore();
   const [text, setText] = useState("");
   const [date, setDate] = useState<string | undefined>(initialDate ?? defaults.dueDate);
   const [projectId, setProjectId] = useState<string | undefined>(defaults.projectId);
   const [area, setArea] = useState<Area | undefined>(defaults.area);
   const [energy, setEnergy] = useState<Energy | undefined>(defaults.energy);
+  const [tags, setTags] = useState<string[]>(() => defaultTags ?? defaults.tags ?? []);
+  const [estMinutes, setEstMinutes] = useState<number | undefined>(defaults.estMinutes);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Keep sticky tag selection in sync when the parent's defaultTags changes.
+  useEffect(() => { setTags(defaultTags ?? defaults.tags ?? []); }, [JSON.stringify(defaultTags)]);
 
   const parsed = useMemo(() => (nlp && text.trim() ? parseTaskInput(text) : null), [text, nlp]);
 
@@ -46,15 +55,20 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     const finalArea = area ?? p.area;
     const finalDate = date ?? p.dueDate ?? defaults.dueDate;
     const finalEnergy = energy ?? p.energy ?? defaults.energy;
+    const mergedTags = Array.from(new Set([
+      ...(tags ?? []),
+      ...((p.tags as string[] | undefined) ?? []),
+    ].map(t => t.trim()).filter(Boolean)));
+    const finalEst = estMinutes ?? p.estMinutes ?? defaults.estMinutes;
     await addTask({
       title: p.title || raw,
       notes: undefined,
       dueDate: finalDate,
       priority: p.priority ?? "medium",
       area: (finalArea ?? "Personal") as Area,
-      tags: p.tags,
+      tags: mergedTags.length ? mergedTags : undefined,
       energy: finalEnergy,
-      estMinutes: p.estMinutes,
+      estMinutes: finalEst,
       recurrenceType: p.recurrenceType,
       recurrenceInterval: p.recurrenceInterval,
       recurrenceDays: p.recurrenceDays,
@@ -68,6 +82,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     setProjectId(defaults.projectId);
     setArea(defaults.area);
     setEnergy(defaults.energy);
+    // Sticky tags + time: keep them so subsequent captures share the same.
+    setTags(defaultTags ?? defaults.tags ?? tags);
     inputRef.current?.focus();
   };
 
