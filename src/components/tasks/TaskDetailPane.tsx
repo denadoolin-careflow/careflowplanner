@@ -3,8 +3,8 @@ import { useStore } from "@/lib/store";
 import { useTaskSelection } from "@/lib/task-selection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
+import { BlockEditor } from "@/components/notes/BlockEditor";
 import { CalendarDays, Check, Settings2, Trash2, X, FolderKanban, Tag } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { cn } from "@/lib/utils";
@@ -95,12 +95,13 @@ export function TaskDetailPane() {
 
           <div className="space-y-1">
             <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Notes</label>
-            <Textarea
-              value={task.notes ?? ""}
-              onChange={(e) => updateTask(task.id, { notes: e.target.value })}
-              placeholder="Add notes…"
-              className="min-h-[96px] text-sm"
-            />
+            <div className="rounded-xl border border-border/60 bg-background/40 p-2">
+              <BlockEditor
+                body={task.notes ?? ""}
+                onChange={(markdown) => updateTask(task.id, { notes: markdown })}
+                placeholder="Add notes… press / for blocks"
+              />
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
