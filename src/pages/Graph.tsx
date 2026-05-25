@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ForceGraph2D from "react-force-graph-2d";
 import { useStore } from "@/lib/store";
-import { listNotes, extractWikiLinks, type Note } from "@/lib/notes";
+import { listNotes, extractBacklinks, type Note } from "@/lib/notes";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -113,7 +113,7 @@ export default function Graph() {
         if (filters.tag) (n.tags ?? []).forEach(tg => links.push({ source: `note:${n.id}`, target: `tag:${tg}`, kind: "note-tag" }));
         if (filters.date && n.date) { dateSet.add(n.date); links.push({ source: `note:${n.id}`, target: `date:${n.date}`, kind: "note-date" }); }
         // wiki links
-        const refs = extractWikiLinks(n.body);
+        const refs = extractBacklinks(n.body);
         refs.forEach(title => {
           const target = byTitle.get(title.toLowerCase());
           if (target && target.id !== n.id) links.push({ source: `note:${n.id}`, target: `note:${target.id}`, kind: "wikilink" });
