@@ -414,14 +414,14 @@ export default function Landing() {
               return (
                 <div
                   key={f.title}
-                  className="relative flex h-[220px] flex-col justify-between overflow-hidden rounded-3xl border border-border/50 p-6 shadow-[0_8px_30px_-12px_hsl(258_30%_50%/0.18)] backdrop-blur-md"
+                  className="relative flex h-[240px] flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl border border-border/50 p-6 text-center shadow-[0_8px_30px_-12px_hsl(258_30%_50%/0.18)] backdrop-blur-md"
                   style={{
                     background:
                       "radial-gradient(120% 90% at 0% 0%, hsl(145 40% 92% / 0.95) 0%, hsl(36 55% 97% / 0.85) 45%, hsl(350 55% 94% / 0.75) 100%)",
                   }}
                 >
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-[hsl(145_30%_28%)]/10 text-[hsl(145_30%_28%)]">
-                    <Icon className="h-5 w-5" />
+                  <span className="grid h-16 w-16 place-items-center rounded-2xl bg-[hsl(145_30%_28%)]/10 text-[hsl(145_30%_28%)]">
+                    <Icon className="h-8 w-8" />
                   </span>
                   <div>
                     <div className="font-display text-lg text-foreground">{f.title}</div>
