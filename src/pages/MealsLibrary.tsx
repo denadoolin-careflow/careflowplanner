@@ -95,7 +95,7 @@ export default function MealsLibrary() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-            <Input value={q} onChange={e => setQ(e.target.value)} placeholder="Search…" className="h-9 w-48 pl-7" />
+            <Input value={q} onChange={e => setQ(e.target.value)} placeholder="Search…" className="h-9 w-48 pl-7 rounded-full border-none bg-muted/40 focus-visible:ring-1 focus-visible:ring-primary/40" />
           </div>
           <div className="flex gap-1">
             {SLOT_TABS.map(s => (

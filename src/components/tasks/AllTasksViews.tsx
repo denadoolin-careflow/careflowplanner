@@ -168,7 +168,7 @@ export function AllTasksViews() {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search tasks…"
-            className="h-9 pl-8 pr-7"
+            className="h-9 pl-8 pr-7 rounded-full border-none bg-muted/40 focus-visible:ring-1 focus-visible:ring-primary/40"
           />
           {query && (
             <button type="button" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-muted">
