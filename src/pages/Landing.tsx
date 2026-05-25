@@ -291,7 +291,8 @@ export default function Landing() {
             <a href="#features" className="hover:text-foreground">Features</a>
             <a href="#archetypes" className="hover:text-foreground">Archetypes</a>
             <a href="#atmospheres" className="hover:text-foreground">Atmospheres</a>
-            <a href="#story" className="hover:text-foreground">Our Story</a>
+            <a href="#quiz" className="hover:text-foreground">Quiz</a>
+            <Link to="/pricing" className="hover:text-foreground">Pricing</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link
@@ -300,7 +301,7 @@ export default function Landing() {
             >
               Log in
             </Link>
-            <PrimaryCTA><Sparkles className="h-4 w-4" /> Start Your CareFlow</PrimaryCTA>
+            <PrimaryCTA to="/waitlist"><Sparkles className="h-4 w-4" /> Join the Waitlist</PrimaryCTA>
           </div>
         </div>
       </header>
