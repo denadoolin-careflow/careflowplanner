@@ -370,7 +370,7 @@ function GridCard({ task, projectName }: { task: Task; projectName?: string }) {
       <div className="flex items-start gap-2">
         {visible.checkbox && <Checkbox checked={task.done} onCheckedChange={() => toggleTask(task.id)} className="mt-0.5" />}
         <div className="min-w-0 flex-1">
-          <div className={cn("truncate text-sm font-medium", task.done && "line-through")}>{task.title}</div>
+          <div className={cn("text-sm font-medium break-words", task.done && "line-through")}>{task.title}</div>
           {visible.description && task.notes && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{task.notes}</div>}
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {visible.area && <Badge variant="secondary" className="text-[10px]">{task.area}</Badge>}
