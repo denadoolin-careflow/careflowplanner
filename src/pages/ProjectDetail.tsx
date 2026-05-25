@@ -203,6 +203,7 @@ export default function ProjectDetail() {
           </ToggleGroup>
           {view === "list" && <TaskListControls prefs={prefs} onChange={setPrefs} />}
           {view === "kanban" && <ProjectKanbanGroupSelect value={kanbanGroup} onChange={setKanbanGroupPersist} />}
+          {view === "kanban" && <KanbanColorBySelect value={kanbanColor} onChange={setKanbanColorPersist} />}
           <ViewOptionsMenu view={(view === "kanban" ? "board" : view) as TaskViewType} />
         </div>
       </div>
@@ -237,7 +238,7 @@ export default function ProjectDetail() {
         </div>
 
         {view === "kanban" && (
-          <ProjectKanbanBoard tasks={visibleTasks} projectId={project.id} group={kanbanGroup} />
+          <ProjectKanbanBoard tasks={visibleTasks} projectId={project.id} group={kanbanGroup} colorBy={kanbanColor} />
         )}
         {view === "schedule" && <ScheduleView tasks={visibleTasks} />}
         {view === "list" && (
