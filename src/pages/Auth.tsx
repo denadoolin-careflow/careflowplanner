@@ -39,6 +39,8 @@ export default function Auth() {
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [resetEmail, setResetEmail] = useState("");
 
+  // (QuizPromo defined at module bottom)
+
   useEffect(() => {
     if (user) navigate("/", { replace: true });
   }, [user, navigate]);
@@ -235,5 +237,37 @@ export default function Auth() {
         </div>
       </div>
     </div>
+  );
+}
+
+function QuizPromo() {
+  const prior = loadQuizResult();
+  if (prior) {
+    const a = getArchetype(prior.archetype);
+    return (
+      <Link
+        to="/quiz"
+        className="block max-w-md rounded-2xl border border-primary/30 bg-primary/5 p-4 transition hover:border-primary/60 hover:bg-primary/10"
+      >
+        <p className="text-[11px] uppercase tracking-[0.18em] text-primary/80">Your saved archetype</p>
+        <p className="mt-1 font-display text-lg font-semibold">{a.title}</p>
+        <p className="text-xs text-muted-foreground">Sign in to apply it to your CareFlow — or retake the quiz.</p>
+      </Link>
+    );
+  }
+  return (
+    <Link
+      to="/quiz"
+      className="group inline-flex max-w-md items-center gap-3 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 to-accent/10 p-4 transition hover:from-primary/15 hover:to-accent/15"
+    >
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/30 to-accent/30">
+        <Sparkles className="h-4 w-4 text-primary" />
+      </div>
+      <div className="flex-1">
+        <p className="text-sm font-semibold">Take the Caregiver Archetype Quiz</p>
+        <p className="text-xs text-muted-foreground">2 minutes · personalize CareFlow to your real energy</p>
+      </div>
+      <span className="text-primary opacity-60 transition group-hover:translate-x-0.5 group-hover:opacity-100">→</span>
+    </Link>
   );
 }
