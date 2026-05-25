@@ -20,7 +20,7 @@ const SUGGESTIONS = [
   { label: "Reset after hard day", icon: Heart, text: "Help me reset after a hard day." },
 ];
 
-export function AIAssistantFab() {
+export function AIAssistantFab({ hideButton = false }: { hideButton?: boolean } = {}) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,6 +37,13 @@ export function AIAssistantFab() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, busy]);
+
+  // Allow external triggers to open the assistant.
+  useEffect(() => {
+    const handler = () => { setOpen(true); haptics.pickup(); };
+    window.addEventListener("careflow:open-ai-assistant", handler);
+    return () => window.removeEventListener("careflow:open-ai-assistant", handler);
+  }, []);
 
   async function send(text: string, action: "chat" | "organize_day" | "organize_week" = "chat") {
     const trimmed = text.trim();
@@ -71,7 +78,7 @@ export function AIAssistantFab() {
 
   return (
     <>
-      <button
+      {!hideButton && <button
         ref={drag.ref}
         {...drag.handlers}
         type="button"
@@ -90,7 +97,7 @@ export function AIAssistantFab() {
       >
         <Sparkles className="h-6 w-6" />
         <span className="absolute inset-0 rounded-full" style={{ animation: "soft-pulse 2.6s ease-out infinite" }} />
-      </button>
+      </button>}
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
