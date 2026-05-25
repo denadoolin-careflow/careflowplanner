@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Heart, Sparkles, RefreshCw, MoonStar, ExternalLink, AlertTriangle, Copy, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { loadQuizResult, getArchetype } from "@/lib/archetype-quiz";
+import { CaregiverArchetypeQuiz } from "@/components/quiz/CaregiverArchetypeQuiz";
 
 // Detect known in-app browsers that block Google OAuth (Instagram/Facebook/
 // TikTok/LinkedIn webviews). These don't let users complete sign-in and just
