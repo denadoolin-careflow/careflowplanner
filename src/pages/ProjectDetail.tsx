@@ -16,7 +16,6 @@ import { listWhiteboardsForProject, createWhiteboard, type Whiteboard } from "@/
 import { PenLine } from "lucide-react";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
 import { applyFilters, groupTasks, sortTasks } from "@/lib/task-grouping";
-import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import { ProjectKanbanBoard, ProjectKanbanGroupSelect, type ProjectKanbanGroup } from "@/components/tasks/ProjectKanbanBoard";
 import { ViewOptionsMenu } from "@/components/tasks/ViewOptionsMenu";
 import type { TaskViewType } from "@/hooks/useViewPrefs";
