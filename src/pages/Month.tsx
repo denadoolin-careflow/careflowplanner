@@ -16,6 +16,7 @@ import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import type { Task } from "@/lib/types";
+import { personalGreeting } from "@/lib/greeting";
 import { haptics } from "@/lib/haptics";
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { getRhythmForecast, type Element } from "@/lib/rhythm-forecast";
@@ -123,9 +124,10 @@ export default function Month() {
       <div className="min-w-0 flex-1 space-y-6">
         <div className="cozy-card gradient-warm flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Month of</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              {personalGreeting(state.settings.name)} <span className="opacity-60">· Month of</span>
+            </p>
             <h2 className="font-display text-3xl font-semibold sm:text-4xl">{format(cursor, "MMMM yyyy")}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Drag tasks from the right onto any day.</p>
           </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={() => setCursor(subMonths(cursor, 1))} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
