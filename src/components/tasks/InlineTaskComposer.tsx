@@ -240,6 +240,98 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
               );
             })}
 
+            {/* Tag pill — sticky selection across submissions */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    tags.length ? "text-foreground" : "text-muted-foreground",
+                  )}
+                  title="Tags"
+                >
+                  <TagIcon className="h-3 w-3" />
+                  {tags.length === 0
+                    ? "Tag"
+                    : tags.length === 1
+                    ? `#${tags[0]}`
+                    : `${tags.length} tags`}
+                  {tags.length > 0 && (
+                    <X
+                      className="h-3 w-3 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setTags([]); }}
+                    />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2" align="start">
+                <TagPicker value={tags} onChange={setTags} inline={false} triggerLabel="Pick tag" />
+                {tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {tags.map(name => (
+                      <TagChip key={name} name={name} size="xs" onRemove={() => setTags(tags.filter(t => t !== name))} />
+                    ))}
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+
+            {/* Time estimate pill */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    estMinutes ? "text-foreground" : "text-muted-foreground",
+                  )}
+                  title="Time estimate"
+                >
+                  <Timer className="h-3 w-3" />
+                  {estMinutes ? `${estMinutes}m` : "Time"}
+                  {estMinutes != null && (
+                    <X
+                      className="h-3 w-3 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setEstMinutes(undefined); }}
+                    />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-44 p-1.5" align="start">
+                <div className="grid grid-cols-3 gap-1">
+                  {[5, 10, 15, 25, 30, 45, 60, 90, 120].map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setEstMinutes(m)}
+                      className={cn(
+                        "rounded-md px-1.5 py-1 text-[11px] transition-colors",
+                        estMinutes === m ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                      )}
+                    >
+                      {m < 60 ? `${m}m` : `${m / 60}h${m % 60 ? ` ${m % 60}m` : ""}`}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 flex items-center gap-1.5 border-t border-border/50 pt-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="Custom"
+                    className="h-7 text-[11px]"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const v = parseInt((e.target as HTMLInputElement).value, 10);
+                        if (Number.isFinite(v) && v > 0) setEstMinutes(v);
+                      }
+                    }}
+                  />
+                  <span className="text-[10px] text-muted-foreground">min</span>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             {/* NLP chips */}
             {parsed && parsed.chips.length > 0 && (
               <div className="flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
