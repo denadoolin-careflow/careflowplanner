@@ -528,33 +528,29 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* QUIZ */}
-      <section className="mx-auto w-full max-w-6xl px-5 pb-20">
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-border/40 p-10 sm:p-14"
-          style={{ background: "linear-gradient(135deg, hsl(350 65% 94%), hsl(36 55% 96%))" }}>
-          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-center">
-            <div>
-              <Pill><Sparkles className="h-3 w-3" /> The Quiz</Pill>
-              <h2 className="mt-4 font-display text-3xl tracking-tight text-foreground sm:text-4xl">
-                Find your caregiver archetype.
-              </h2>
-              <p className="mt-3 max-w-md text-foreground/80">
-                Discover the planning rhythm that supports your real life. Two minutes. Zero pressure.
-              </p>
-              <div className="mt-6"><PrimaryCTA to="/quiz"><Sparkles className="h-4 w-4" /> Take the Quiz</PrimaryCTA></div>
-            </div>
-            <div className="relative hidden h-[200px] lg:block">
-              {archetypes.slice(0,3).map((a, i) => (
-                <div key={a.name}
-                  className="absolute rounded-2xl border border-border/40 bg-card/80 p-4 shadow-cozy backdrop-blur"
-                  style={{ top: i*24, left: i*40, transform: `rotate(${(i-1)*4}deg)`, width: 220 }}>
-                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{a.atmosphere}</div>
-                  <div className="mt-1 font-display text-base text-foreground">{a.name}</div>
-                  <div className="mt-2 text-xs italic text-foreground/70">{a.quote}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* QUIZ (embedded) */}
+      <section id="quiz" className="mx-auto w-full max-w-5xl px-5 pb-20">
+        <div className="text-center">
+          <Pill><Sparkles className="h-3 w-3" /> The Quiz</Pill>
+          <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl tracking-tight text-foreground sm:text-4xl">
+            Find your caregiver archetype.
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+            Two minutes. Zero pressure. Discover the planning rhythm that supports your real life.
+          </p>
+        </div>
+        <div
+          className="mt-10 overflow-hidden rounded-[2rem] border border-border/40 bg-[hsl(36_55%_97%)]/85 shadow-cozy backdrop-blur"
+        >
+          <CaregiverArchetypeQuiz embedded />
+        </div>
+        <div className="mt-6 flex justify-center">
+          <Link
+            to="/waitlist"
+            className="inline-flex items-center gap-2 rounded-full bg-[hsl(145_30%_28%)] px-6 py-3 text-sm font-medium text-[hsl(36_50%_96%)] shadow-cozy transition-transform hover:scale-[1.02]"
+          >
+            <Heart className="h-4 w-4" /> Join the waitlist with your result
+          </Link>
         </div>
       </section>
 
