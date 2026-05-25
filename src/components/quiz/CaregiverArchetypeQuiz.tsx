@@ -13,6 +13,7 @@ import {
 import { setAtmosphere, getAtmosphere } from "@/lib/atmospheres";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
+import { applyArchetypeSetup } from "@/lib/apply-archetype-setup";
 
 type Stage = "welcome" | "identity" | "quiz" | "result";
 
@@ -112,7 +113,12 @@ export function CaregiverArchetypeQuiz({ embedded = false }: { embedded?: boolea
 
   function applyAndEnter() {
     if (recommendedAtmo) setAtmosphere(recommendedAtmo as any);
-    toast.success("Your CareFlow has been personalized.", { description: "Welcome home." });
+    if (result) {
+      void applyArchetypeSetup(result.id).catch(() => {});
+    }
+    toast.success("Your CareFlow has been personalized.", {
+      description: "Dashboard, routines, and reminders tuned to your archetype.",
+    });
     if (user) nav("/dashboard");
     else nav("/auth");
   }
