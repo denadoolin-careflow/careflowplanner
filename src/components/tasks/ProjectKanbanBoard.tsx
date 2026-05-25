@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useStore, todayISO } from "@/lib/store";
-import { KanbanCard } from "@/components/tasks/KanbanBoard";
+import { KanbanCard, type KanbanColorBy } from "@/components/tasks/KanbanBoard";
 import type { Task, ProjectSection, Priority, TaskStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { addDays, format, parseISO, isPast, isToday, isTomorrow, isThisWeek } from "date-fns";
@@ -176,11 +176,12 @@ export function ProjectKanbanGroupSelect({
 }
 
 export function ProjectKanbanBoard({
-  tasks, projectId, group,
+  tasks, projectId, group, colorBy = "area",
 }: {
   tasks: Task[];
   projectId: string;
   group: ProjectKanbanGroup;
+  colorBy?: KanbanColorBy;
 }) {
   const { state, updateTask, addTask } = useStore();
   const [hover, setHover] = useState<string | null>(null);
@@ -242,7 +243,7 @@ export function ProjectKanbanBoard({
             <span className="text-[11px] text-muted-foreground">{col.items.length}</span>
           </div>
           <div className="flex-1 space-y-1 min-h-32">
-            {col.items.map(t => <KanbanCard key={t.id} task={t} />)}
+            {col.items.map(t => <KanbanCard key={t.id} task={t} colorBy={colorBy} />)}
           </div>
           <QuickAdd
             label={col.label}
