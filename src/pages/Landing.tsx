@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import {
   Sparkles, Leaf, Moon, Heart, Calendar, Brain, Utensils,
   Wallet, NotebookPen, Sun, Mountain, Flower2, Waves,
@@ -11,7 +12,7 @@ import storyImg from "@/assets/landing-story.jpg";
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-secondary/40 bg-secondary-soft/70 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-secondary-foreground/80 backdrop-blur">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[hsl(145_22%_70%)]/50 bg-[hsl(145_35%_92%)]/80 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-[hsl(145_30%_22%)] backdrop-blur">
       {children}
     </span>
   );
@@ -226,6 +227,14 @@ const footerNav = {
 /* ---------- Page ---------- */
 
 export default function Landing() {
+  // Force light theme on landing regardless of app theme.
+  useEffect(() => {
+    const root = document.documentElement;
+    const had = root.classList.contains("dark");
+    if (had) root.classList.remove("dark");
+    return () => { if (had) root.classList.add("dark"); };
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[hsl(36_42%_95%)] text-foreground">
       {/* ambient gradients */}
