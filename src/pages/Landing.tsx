@@ -433,21 +433,42 @@ export default function Landing() {
         <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {atmospheres.map(a => {
             const Icon = a.icon;
+            const selected = activeAtmos?.name === a.name;
             return (
-              <div
+              <button
                 key={a.name}
-                className="group relative overflow-hidden rounded-3xl border border-border/40 p-4 shadow-soft transition-transform hover:scale-[1.02]"
+                type="button"
+                onClick={() => setActiveAtmos(selected ? null : a)}
+                aria-pressed={selected}
+                className={`group relative overflow-hidden rounded-3xl border p-4 text-left shadow-soft transition-all hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(36_50%_96%)] ${
+                  selected ? "border-white/80 ring-2 ring-white/70 scale-[1.02]" : "border-border/40"
+                } ${a.dark ? "text-[hsl(36_50%_96%)]" : "text-[hsl(145_30%_18%)]"}`}
                 style={{ background: a.bg, minHeight: 150 }}
               >
-                <Icon className="h-5 w-5 text-foreground/70 mix-blend-luminosity" />
+                <Icon className="h-5 w-5 opacity-80" />
                 <div className="mt-12">
-                  <div className="font-display text-sm text-foreground/90">{a.name}</div>
-                  <div className="text-[11px] uppercase tracking-widest text-foreground/60">{a.tone}</div>
+                  <div className="font-display text-sm">{a.name}</div>
+                  <div className="text-[11px] uppercase tracking-widest opacity-70">{a.tone}</div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
+        {activeAtmos && (
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => setActiveAtmos(null)}
+              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium backdrop-blur transition-colors ${
+                isDark
+                  ? "border-white/30 bg-white/10 text-[hsl(36_50%_96%)] hover:bg-white/20"
+                  : "border-border/60 bg-card/70 text-foreground hover:bg-card"
+              }`}
+            >
+              Reset atmosphere
+            </button>
+          </div>
+        )}
       </section>
 
       {/* STORY */}
