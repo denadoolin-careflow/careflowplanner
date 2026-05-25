@@ -3,7 +3,7 @@ import {
   UtensilsCrossed, HeartHandshake, Sparkle, BookHeart, Lightbulb, CalendarCheck,
   Timer, Settings as SettingsIcon, BookOpen, HeartPulse, Wallet, Home,
   ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
-  Wind, PenLine, Coffee,
+  Wind, PenLine, Coffee, Share2,
 } from "lucide-react";
 
 export const NAV = [
