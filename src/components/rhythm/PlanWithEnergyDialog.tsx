@@ -28,9 +28,10 @@ const KIND_ICON: Record<EnergyPick["kind"], typeof Leaf> = {
 export function PlanWithEnergyDialog({ open, onOpenChange, date, forecast }: Props) {
   const { state, addTask, updateTask } = useStore();
   const iso = format(date, "yyyy-MM-dd");
+  const energy = state.energyToday;
   const picks = useMemo(
-    () => pickEnergyTaskSuggestions(state.tasks, forecast),
-    [state.tasks, forecast],
+    () => pickEnergyTaskSuggestions(state.tasks, forecast, energy),
+    [state.tasks, forecast, energy],
   );
 
   const scheduleExisting = async (pick: EnergyPick) => {
@@ -43,7 +44,7 @@ export function PlanWithEnergyDialog({ open, onOpenChange, date, forecast }: Pro
   const createFromSuggestion = async (pick: EnergyPick) => {
     const title = pick.fallbackTitle ?? "One small thing";
     const area = pick.kind === "home-care" ? "Home" : "Personal";
-    await addTask({ title, area, energy: "low", dueDate: iso, priority: "low" });
+    await addTask({ title, area, energy: energy ?? "low", dueDate: iso, priority: "low" });
     toast.success(`Added “${title}” to ${format(date, "EEE MMM d")}`);
     onOpenChange(false);
   };
@@ -67,7 +68,9 @@ export function PlanWithEnergyDialog({ open, onOpenChange, date, forecast }: Pro
         <DialogHeader>
           <DialogTitle className="font-display">Plan with this energy</DialogTitle>
           <DialogDescription>
-            {forecast.phaseLabel} in {forecast.sign.sign}. Four small choices — pick what feels true.
+            {energy
+              ? `Tuned for ${energy} energy · ${forecast.phaseLabel} in ${forecast.sign.sign}.`
+              : `${forecast.phaseLabel} in ${forecast.sign.sign}. Four small choices — pick what feels true.`}
           </DialogDescription>
         </DialogHeader>
 
