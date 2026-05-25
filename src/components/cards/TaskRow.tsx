@@ -285,15 +285,27 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
     <QuickEditPopover task={task} open={quickEditOpen} onOpenChange={setQuickEditOpen} />
     {hasSubs && (
       <div className="ml-8 mr-2 mt-0.5 mb-1 flex items-center gap-2">
-        <Progress value={pct} className="h-1.5 flex-1" />
-        <span className="text-[10px] tabular-nums text-muted-foreground">{doneSubs}/{subtasks.length}</span>
+        <Progress
+          value={pct}
+          className={cn(
+            "h-1.5 flex-1 transition-all",
+            allDone && "[&>div]:bg-primary [&>div]:shadow-[0_0_10px_hsl(var(--primary)/0.6)]",
+          )}
+        />
+        <span className={cn(
+          "flex items-center gap-0.5 text-[10px] tabular-nums",
+          allDone ? "font-semibold text-primary" : "text-muted-foreground",
+        )}>
+          {allDone && <Check className="h-2.5 w-2.5" />}
+          {doneSubs}/{subtasks.length}
+        </span>
       </div>
     )}
     {expanded && (
       <div className="ml-8 space-y-1 border-l border-border/40 pl-2">
         {subtasks.map(s => <TaskRow key={s.id} task={s} dense showArea={false} />)}
         {addingSub && (
-          <div className="flex gap-1 py-1">
+          <div className="flex items-center gap-1 py-1">
             <Input
               autoFocus
               value={subDraft}
@@ -308,14 +320,47 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
                     area: task.area,
                     parentTaskId: task.id,
                     projectId: task.projectId,
+                    dueDate: subDueDate,
                   });
                   setSubDraft("");
+                  setSubDueDate(undefined);
                 } else if (e.key === "Escape") {
                   setSubDraft("");
+                  setSubDueDate(undefined);
                   setAddingSub(false);
                 }
               }}
             />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={cn("h-8 gap-1 px-2 text-[11px]", subDueDate && "text-primary")}
+                  onMouseDown={(e) => e.preventDefault()}
+                  title="Set due date"
+                >
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {subDueDate ? format(parseISO(subDueDate), "MMM d") : "Date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={subDueDate ? parseISO(subDueDate) : undefined}
+                  onSelect={(d) => setSubDueDate(d ? format(d, "yyyy-MM-dd") : undefined)}
+                  initialFocus
+                />
+                {subDueDate && (
+                  <div className="border-t border-border/60 p-2">
+                    <Button variant="ghost" size="sm" className="h-7 w-full text-xs" onClick={() => setSubDueDate(undefined)}>
+                      Clear
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
         )}
       </div>
