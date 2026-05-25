@@ -13,7 +13,14 @@ import { CaregiverArchetypeQuiz } from "@/components/quiz/CaregiverArchetypeQuiz
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[hsl(145_22%_70%)]/50 bg-[hsl(145_35%_92%)]/80 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-[hsl(145_30%_22%)] backdrop-blur">
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] backdrop-blur transition-colors duration-700"
+      style={{
+        background: "var(--atmos-pill-bg, hsl(145 35% 92% / 0.8))",
+        borderColor: "var(--atmos-pill-border, hsl(145 22% 70% / 0.5))",
+        color: "var(--atmos-pill-text, hsl(145 30% 22%))",
+      }}
+    >
       {children}
     </span>
   );
@@ -36,7 +43,11 @@ function PrimaryCTA({ to = "/auth", children }: { to?: string; children: React.R
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-2 rounded-full bg-[hsl(145_30%_28%)] px-6 py-3 text-sm font-medium text-[hsl(36_50%_96%)] shadow-cozy transition-transform hover:scale-[1.02] hover:bg-[hsl(145_32%_24%)]"
+      className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium shadow-cozy transition-all duration-700 hover:scale-[1.02] hover:brightness-110"
+      style={{
+        background: "var(--atmos-cta-bg, hsl(145 30% 28%))",
+        color: "var(--atmos-cta-fg, hsl(36 50% 96%))",
+      }}
     >
       {children}
     </Link>
