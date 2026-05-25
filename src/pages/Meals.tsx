@@ -35,7 +35,15 @@ const FOCUS_KEY = "meals.focusedDate";
 export default function Meals() {
   const { state, user, addMeal, updateMeal, reloadAll } = useStore();
   const { items: themes } = useMealThemes();
-  const start = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const [weekStart, setWeekStart] = useState<Date>(() => {
+    const s = localStorage.getItem("meals.weekStart");
+    const base = s ? parseISO(s) : new Date();
+    return startOfWeek(base, { weekStartsOn: 1 });
+  });
+  const start = weekStart;
+  useEffect(() => {
+    localStorage.setItem("meals.weekStart", weekStart.toISOString().slice(0, 10));
+  }, [weekStart]);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const slots = ["Breakfast","Lunch","Dinner","Snack"] as const;
   const [prefsOpen, setPrefsOpen] = useState(false);
