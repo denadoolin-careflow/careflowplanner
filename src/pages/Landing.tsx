@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import botanical from "@/assets/landing-botanical.png";
 import storyImg from "@/assets/landing-story.jpg";
+import { CaregiverArchetypeQuiz } from "@/components/quiz/CaregiverArchetypeQuiz";
 
 /* ---------- Local presentational helpers ---------- */
 
@@ -220,9 +221,26 @@ const testimonials = [
 ];
 
 const footerNav = {
-  Product: ["Features", "Archetypes", "Atmospheres", "Pricing"],
-  Support: ["Help Center", "Guides", "Contact Us", "Accessibility"],
-  Company: ["Our Story", "Blog", "Careers", "Press"],
+  Product: [
+    { label: "Features", href: "#features" },
+    { label: "Archetypes", href: "#archetypes" },
+    { label: "Atmospheres", href: "#atmospheres" },
+    { label: "Quiz", href: "#quiz" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Waitlist", href: "/waitlist" },
+  ],
+  Support: [
+    { label: "Help Center", href: "#" },
+    { label: "Guides", href: "#" },
+    { label: "Contact Us", href: "#" },
+    { label: "Accessibility", href: "#" },
+  ],
+  Company: [
+    { label: "Our Story", href: "#story" },
+    { label: "Blog", href: "#" },
+    { label: "Careers", href: "#" },
+    { label: "Press", href: "#" },
+  ],
 };
 
 /* ---------- Page ---------- */
@@ -290,7 +308,8 @@ export default function Landing() {
             <a href="#features" className="hover:text-foreground">Features</a>
             <a href="#archetypes" className="hover:text-foreground">Archetypes</a>
             <a href="#atmospheres" className="hover:text-foreground">Atmospheres</a>
-            <a href="#story" className="hover:text-foreground">Our Story</a>
+            <a href="#quiz" className="hover:text-foreground">Quiz</a>
+            <Link to="/pricing" className="hover:text-foreground">Pricing</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link
@@ -299,7 +318,7 @@ export default function Landing() {
             >
               Log in
             </Link>
-            <PrimaryCTA><Sparkles className="h-4 w-4" /> Start Your CareFlow</PrimaryCTA>
+            <PrimaryCTA to="/waitlist"><Sparkles className="h-4 w-4" /> Join the Waitlist</PrimaryCTA>
           </div>
         </div>
       </header>
@@ -528,33 +547,29 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* QUIZ */}
-      <section className="mx-auto w-full max-w-6xl px-5 pb-20">
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-border/40 p-10 sm:p-14"
-          style={{ background: "linear-gradient(135deg, hsl(350 65% 94%), hsl(36 55% 96%))" }}>
-          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-center">
-            <div>
-              <Pill><Sparkles className="h-3 w-3" /> The Quiz</Pill>
-              <h2 className="mt-4 font-display text-3xl tracking-tight text-foreground sm:text-4xl">
-                Find your caregiver archetype.
-              </h2>
-              <p className="mt-3 max-w-md text-foreground/80">
-                Discover the planning rhythm that supports your real life. Two minutes. Zero pressure.
-              </p>
-              <div className="mt-6"><PrimaryCTA to="/quiz"><Sparkles className="h-4 w-4" /> Take the Quiz</PrimaryCTA></div>
-            </div>
-            <div className="relative hidden h-[200px] lg:block">
-              {archetypes.slice(0,3).map((a, i) => (
-                <div key={a.name}
-                  className="absolute rounded-2xl border border-border/40 bg-card/80 p-4 shadow-cozy backdrop-blur"
-                  style={{ top: i*24, left: i*40, transform: `rotate(${(i-1)*4}deg)`, width: 220 }}>
-                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{a.atmosphere}</div>
-                  <div className="mt-1 font-display text-base text-foreground">{a.name}</div>
-                  <div className="mt-2 text-xs italic text-foreground/70">{a.quote}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* QUIZ (embedded) */}
+      <section id="quiz" className="mx-auto w-full max-w-5xl px-5 pb-20">
+        <div className="text-center">
+          <Pill><Sparkles className="h-3 w-3" /> The Quiz</Pill>
+          <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl tracking-tight text-foreground sm:text-4xl">
+            Find your caregiver archetype.
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+            Two minutes. Zero pressure. Discover the planning rhythm that supports your real life.
+          </p>
+        </div>
+        <div
+          className="mt-10 overflow-hidden rounded-[2rem] border border-border/40 bg-[hsl(36_55%_97%)]/85 shadow-cozy backdrop-blur"
+        >
+          <CaregiverArchetypeQuiz embedded />
+        </div>
+        <div className="mt-6 flex justify-center">
+          <Link
+            to="/waitlist"
+            className="inline-flex items-center gap-2 rounded-full bg-[hsl(145_30%_28%)] px-6 py-3 text-sm font-medium text-[hsl(36_50%_96%)] shadow-cozy transition-transform hover:scale-[1.02]"
+          >
+            <Heart className="h-4 w-4" /> Join the waitlist with your result
+          </Link>
         </div>
       </section>
 
@@ -635,7 +650,15 @@ export default function Landing() {
             <div key={h}>
               <div className="text-xs uppercase tracking-widest text-muted-foreground">{h}</div>
               <ul className="mt-3 space-y-2 text-sm text-foreground/80">
-                {items.map(i => <li key={i}><a href="#" className="hover:text-foreground">{i}</a></li>)}
+                {items.map(i => (
+                  <li key={i.label}>
+                    {i.href.startsWith("/") ? (
+                      <Link to={i.href} className="hover:text-foreground">{i.label}</Link>
+                    ) : (
+                      <a href={i.href} className="hover:text-foreground">{i.label}</a>
+                    )}
+                  </li>
+                ))}
               </ul>
             </div>
           ))}

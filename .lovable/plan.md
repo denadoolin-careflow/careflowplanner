@@ -1,101 +1,87 @@
+## 1. Fix the Auth page
 
-# Atmospheres — emotional theming system
+Rewrite `src/pages/Auth.tsx` so it's a single centered card on a soft sage/cream background:
 
-Rebrand the current "Themes" feature as **Atmospheres** and elevate it from color swaps into a full ambient experience: mood, gradients, glow, shadows, typography, and auto-switching rules.
+- Remove the two-column hero layout, the feature pills grid, and the embedded quiz card.
+- One container: `min-h-screen flex items-center justify-center px-4`.
+- Card: max-width ~420px, rounded-3xl, soft shadow, contains:
+  - CareFlow logo mark + "CareFlow Planner" eyebrow, centered.
+  - H1 "Welcome back" / "Create your account" (changes with active tab).
+  - Sign in / Sign up tabs (existing logic preserved).
+  - Email + password (+ name on signup), primary CTA, Google button, "Email me a magic link" link, "Forgot password?" link.
+  - In-app browser warning + OAuth error banners stay, restyled inside the card.
+- Replace `gradient-dawn` background with the landing-page sage→cream radial so it feels like the same product.
+- Keep all existing auth handlers (`signIn`, `signUp`, `signInGoogle`, `sendMagicLink`, OAuth error parsing) unchanged.
 
-## What gets built
+## 2. Embed the Caregiver Quiz on the landing page
 
-### 1. Atmosphere library (`src/lib/atmospheres.ts`)
-New typed registry replacing/wrapping `theme-preset.ts`. Each atmosphere has:
-- `id`, `name`, `tagline`, `mood[]`, `bestFor[]`
-- Full palette (6 named colors as HSL)
-- `typography` pair (display + body Google Fonts)
-- `vibe` flags: `gradientIntensity`, `glow`, `glass`, `grain`, `animationLevel`
-- `darkVariant` flag (which mode it shines in)
+In `src/pages/Landing.tsx`, replace the current "Quiz" promo section (the one with the rotating archetype cards) with the actual quiz:
 
-The 8 atmospheres (per spec): Sage Sanctuary, Moonlit Plum, Soft Linen, Coastal Calm, Golden Hearth, Dark Sage Glass, Dawn, Mist.
+- New full-width section anchored at `#quiz`, with the existing Pill + headline ("Find your caregiver archetype").
+- Below the headline, render `<CaregiverArchetypeQuiz embedded />` inside a rounded card on a soft cream surface.
+- After completion (the component already stores the result in localStorage), show a "Join the waitlist with this archetype" CTA that links to `/waitlist`.
+- Keep the existing standalone `/quiz` route as-is for direct links.
 
-### 2. CSS tokens (`src/index.css`)
-Replace the existing 16 preset blocks with 8 atmosphere blocks (`:root[data-atmosphere="..."]` + `.dark[data-atmosphere="..."]`). Each block defines:
-- Surfaces, primary/secondary/accent, muted, border
-- `--gradient-dawn/warm/calm/sage` recolored to the palette
-- `--shadow-soft/cozy/glow` tuned per mood (Dark Sage Glass = deep + glassy; Soft Linen = barely-there)
-- `--atmo-glow` (radial accent for ambient backdrops)
-- `--atmo-font-display` / `--atmo-font-body` CSS variables
+## 3. Pricing page (waitlist-only)
 
-Add new utility classes:
-- `.atmo-ambient` — animated radial-gradient backdrop using `--atmo-glow`
-- `.atmo-glass` — backdrop-blur card variant
-- `.atmo-transition` — applied to `html` for smooth 600ms color transitions when switching
+New route `/pricing` → `src/pages/Pricing.tsx`:
 
-### 3. Atmosphere store (`src/lib/atmospheres.ts` + provider)
-- `useAtmosphere()` hook → `{ current, set, favorites, toggleFavorite, recent, auto, setAuto }`
-- LocalStorage keys: `careflow:atmosphere`, `careflow:atmosphere:favorites`, `careflow:atmosphere:auto`, `careflow:atmosphere:recent`
-- `auto` config: `{ enabled, rules: { morning, evening, lowEnergy, focus, moonPhase } }`
-- Auto-resolver runs on: mount, hour change, lowEnergyMode change, moon phase change. Picks the highest-priority matched rule.
-- Smooth swap: add `atmo-transition` class to `<html>`, swap `data-atmosphere`, lazy-load Google Font pair, remove transition class after 700ms.
+- Sage palette, matches landing page chrome (reuse `Pill`, `PrimaryCTA`).
+- Hero: "Pricing is coming soon" + subhead "We're polishing the plans. Join the waitlist to get early access and founding-member pricing."
+- Three teaser cards (Free / Pro / Family) shown as blurred placeholders with a "Coming soon" badge — no prices.
+- Big CTA card with the waitlist form (see step 4) embedded directly.
+- Add "Pricing" link in the landing nav + footer.
 
-### 4. Picker UI (`src/components/atmospheres/AtmospherePicker.tsx`)
-Replaces `ThemePicker.tsx` in the header. Modal (Dialog) with:
-- Hero header: "Choose the atmosphere that supports your day."
-- Grid of preview cards: each shows gradient swatch, name, mood chips, tagline, favorite star, "Apply" button
-- Hover → live preview overlay (animated gradient + typography sample)
-- Sections: **Recommended for now** (resolved from time/energy/moon), **Favorites**, **All atmospheres**, **Recently used**
-- "Auto-switch" toggle + accordion to configure rules (morning/evening/low-energy/focus/moon)
+## 4. Waitlist signup + backend
 
-Suggestion copy generator (`src/lib/atmosphere-suggestions.ts`):
-- Low energy → "You seem overloaded today. Try **Mist**."
-- Evening + moon visible → "**Moonlit Plum** pairs well with reflection nights."
-- Morning → "Start soft with **Dawn**."
-- Focus mode on → "**Dark Sage Glass** for deep work."
+Add a `Waitlist` page at `/waitlist` (also embedded on `/pricing`) that collects:
 
-### 5. Header integration
-Update `src/components/layout/AppLayout.tsx` to render `<AtmospherePicker />` in place of `<ThemePicker />`. Add a small ambient layer (`<div class="atmo-ambient pointer-events-none fixed inset-0 -z-10" />`) so backgrounds breathe.
+- Email (required)
+- Name (required)
+- Archetype (auto-filled from `loadQuizResult()` if available, otherwise a dropdown of the 7 archetypes)
+- "Why you're interested" (textarea, optional, 500-char limit)
 
-Keep `ThemePicker.tsx` as a thin re-export to avoid breaking imports elsewhere.
+Form uses zod validation + a Supabase insert. On success, fires the two automated emails (step 5) and shows a sage success state with a "Take the quiz" link for users who haven't.
 
-### 6. Suggestions banner (optional, lightweight)
-Tiny dismissible chip near the picker: "✨ Try Mist for a calmer afternoon →" that opens the picker pre-scrolled to the suggestion. Stored dismissal in localStorage per-suggestion-id per-day.
+### Database
 
-## Files
+Migration creates `public.waitlist_signups`:
 
-**New**
-- `src/lib/atmospheres.ts` — registry + types + store hook
-- `src/lib/atmosphere-suggestions.ts` — suggestion logic
-- `src/components/atmospheres/AtmospherePicker.tsx` — modal picker
-- `src/components/atmospheres/AtmosphereCard.tsx` — preview card
-- `src/components/atmospheres/AtmosphereAmbient.tsx` — fixed ambient layer
-- `src/components/atmospheres/AtmosphereSuggestion.tsx` — chip
-- `src/components/atmospheres/AutoSwitchConfig.tsx` — rules form
+- `id uuid pk`, `email text unique not null`, `name text not null`, `archetype text`, `reason text`, `quiz_score jsonb`, `source text` (e.g. `pricing`, `landing`), `created_at timestamptz`.
+- RLS on. Policy: anyone can `INSERT` (anonymous signups), only authenticated admins can `SELECT`. Admin check via a `user_roles` table with an `admin` role + `has_role()` security-definer function (per platform best practice).
+- Unique constraint on lowercased email handled via a `before insert` trigger that normalizes email and rejects duplicates with a friendly error.
 
-**Edited**
-- `src/index.css` — replace 16 presets with 8 atmosphere blocks + new utilities
-- `src/lib/theme-preset.ts` — backward-compat re-export that maps old preset ids → atmospheres
-- `src/components/layout/AppLayout.tsx` — swap picker + add ambient layer
-- `src/components/layout/ThemePicker.tsx` — re-export `AtmospherePicker`
+## 5. Automated emails (Lovable Emails)
 
-## Backward compatibility
+Use Lovable's built-in email infrastructure. Required setup:
 
-Old `theme-preset` keys (`sage`, `plum`, `dusk`, etc.) map to nearest atmosphere:
-- `sage`/`moss`/`forest` → `sage-sanctuary`
-- `plum`/`dusk`/`lavender`/`blossom` → `moonlit-plum`
-- `sand`/`warm` → `golden-hearth`
-- `ocean`/`midnight` → `coastal-calm`
-- `mono`/`noir` → `dark-sage-glass`
-- default fallback → `sage-sanctuary`
+1. Set up email domain (user completes the in-product dialog).
+2. Provision email infrastructure (queues, tables, cron).
+3. Scaffold auth email templates so signup confirmations, magic links, and password resets match the sage brand.
+4. Scaffold the transactional email pipeline.
+5. Create two transactional templates in `supabase/functions/_shared/transactional-email-templates/`:
+   - `waitlist-welcome.tsx` — branded confirmation to the signup ("You're on the CareFlow waitlist 🌿"), warm sage styling, mentions their archetype if provided.
+   - `waitlist-admin-notification.tsx` — internal email to your address with name, email, archetype, reason.
+6. Register both in `registry.ts`, deploy edge functions.
+7. The waitlist form invokes `send-transactional-email` twice (welcome → user, admin notification → owner) with idempotency keys derived from the new row id.
 
-Anyone calling `setThemePreset(...)` continues to work via the mapping.
+Admin recipient address is needed — I'll ask for it during build (defaults to the Lovable account email shown in the prompt).
 
-## Out of scope (can follow up if you want)
+## Files touched
 
-- Per-page atmosphere overrides ("assign atmospheres to routines/pages") — I'll wire the data layer (`pageAtmospheres` localStorage map) but not add the UI in every page settings; you can ask for that next.
-- Custom user-built atmospheres
-- Server sync of atmosphere prefs (currently localStorage only)
+- `src/pages/Auth.tsx` — rewrite for centered layout.
+- `src/pages/Landing.tsx` — replace quiz teaser with embedded `CaregiverArchetypeQuiz`, add Pricing + Waitlist nav links.
+- `src/pages/Pricing.tsx` — new.
+- `src/pages/Waitlist.tsx` — new (also reused as a component inside Pricing).
+- `src/App.tsx` — add `/pricing` and `/waitlist` routes (public).
+- New migration: `waitlist_signups` table + `user_roles` + `has_role()` + RLS.
+- New Supabase email templates + registry update.
+- Lovable Email infra setup (domain dialog, infra, auth templates, transactional scaffold, deploy).
 
-## Order of work
+## Technical details
 
-1. Atmosphere registry + suggestion logic
-2. CSS tokens + utilities for all 8
-3. Picker + ambient layer + header swap
-4. Auto-switch resolver + config UI
-5. Backward-compat shim
+- Quiz already exposes `embedded` mode and persists results in localStorage via `loadQuizResult()` — reused as-is on both Landing and Waitlist.
+- Waitlist insert uses the anon client; RLS policy `INSERT to anon` is scoped to this single table.
+- `has_role(_user_id uuid, _role app_role)` is a `security definer` function on a separate `user_roles` table (never on profiles), per platform security rules.
+- Email body backgrounds stay `#ffffff`; sage accents applied via inline styles inside React Email components.
+- No marketing/bulk emails — both messages are 1:1 transactional sends triggered by the signup event.

@@ -58,6 +58,8 @@ import MentalLoad from "./pages/MentalLoad";
 import Onboarding from "./pages/Onboarding";
 import CareLoop from "./pages/CareLoop";
 import Quiz from "./pages/Quiz";
+import Pricing from "./pages/Pricing";
+import Waitlist from "./pages/Waitlist";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -89,6 +91,8 @@ const App = () => (
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/quiz" element={<Quiz />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/waitlist" element={<Waitlist />} />
               <Route path="/" element={<IndexRedirect />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
