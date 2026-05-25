@@ -179,18 +179,18 @@ const features = [
 ];
 
 const atmospheres = [
-  { name: "Sage Sanctuary", tone: "Grounded",  icon: Leaf,    bg: "linear-gradient(135deg,hsl(145 32% 84%),hsl(36 45% 94%))" },
-  { name: "Moonlit Plum",   tone: "Dreamy",    icon: Moon,    bg: "linear-gradient(135deg,hsl(280 30% 70%),hsl(260 25% 35%))" },
-  { name: "Blossom",        tone: "Soft",      icon: Flower2, bg: "linear-gradient(135deg,hsl(350 70% 92%),hsl(36 55% 95%))" },
-  { name: "Mist",           tone: "Minimal",   icon: Cloud,   bg: "linear-gradient(135deg,hsl(215 30% 92%),hsl(36 30% 96%))" },
-  { name: "Dawn",           tone: "Hopeful",   icon: Sunrise, bg: "linear-gradient(135deg,hsl(28 75% 80%),hsl(350 60% 88%))" },
-  { name: "Forest",         tone: "Focused",   icon: Trees,   bg: "linear-gradient(135deg,hsl(150 30% 30%),hsl(150 25% 18%))" },
-  { name: "Midnight",       tone: "Quiet",     icon: Moon,    bg: "linear-gradient(135deg,hsl(240 30% 18%),hsl(260 25% 10%))" },
-  { name: "Coastal Calm",   tone: "Open",      icon: Waves,   bg: "linear-gradient(135deg,hsl(200 55% 82%),hsl(36 40% 94%))" },
-  { name: "Soft Linen",     tone: "Warm",      icon: Sun,     bg: "linear-gradient(135deg,hsl(36 55% 92%),hsl(32 45% 86%))" },
-  { name: "Ember",          tone: "Cozy",      icon: Coffee,  bg: "linear-gradient(135deg,hsl(20 65% 60%),hsl(15 40% 30%))" },
-  { name: "Ocean",          tone: "Steady",    icon: Waves,   bg: "linear-gradient(135deg,hsl(210 55% 55%),hsl(220 50% 25%))" },
-  { name: "Dark Sage Glass",tone: "Held",      icon: Mountain,bg: "linear-gradient(135deg,hsl(150 18% 22%),hsl(150 15% 12%))" },
+  { name: "Sage Sanctuary", tone: "Grounded",  icon: Leaf,    bg: "linear-gradient(135deg,hsl(145 32% 84%),hsl(36 45% 94%))", dark: false },
+  { name: "Moonlit Plum",   tone: "Dreamy",    icon: Moon,    bg: "linear-gradient(135deg,hsl(280 30% 70%),hsl(260 25% 35%))", dark: true  },
+  { name: "Blossom",        tone: "Soft",      icon: Flower2, bg: "linear-gradient(135deg,hsl(350 70% 92%),hsl(36 55% 95%))", dark: false },
+  { name: "Mist",           tone: "Minimal",   icon: Cloud,   bg: "linear-gradient(135deg,hsl(215 30% 92%),hsl(36 30% 96%))", dark: false },
+  { name: "Dawn",           tone: "Hopeful",   icon: Sunrise, bg: "linear-gradient(135deg,hsl(28 75% 80%),hsl(350 60% 88%))", dark: false },
+  { name: "Forest",         tone: "Focused",   icon: Trees,   bg: "linear-gradient(135deg,hsl(150 30% 30%),hsl(150 25% 18%))", dark: true  },
+  { name: "Midnight",       tone: "Quiet",     icon: Moon,    bg: "linear-gradient(135deg,hsl(240 30% 18%),hsl(260 25% 10%))", dark: true  },
+  { name: "Coastal Calm",   tone: "Open",      icon: Waves,   bg: "linear-gradient(135deg,hsl(200 55% 82%),hsl(36 40% 94%))", dark: false },
+  { name: "Soft Linen",     tone: "Warm",      icon: Sun,     bg: "linear-gradient(135deg,hsl(36 55% 92%),hsl(32 45% 86%))", dark: false },
+  { name: "Ember",          tone: "Cozy",      icon: Coffee,  bg: "linear-gradient(135deg,hsl(20 65% 60%),hsl(15 40% 30%))", dark: true  },
+  { name: "Ocean",          tone: "Steady",    icon: Waves,   bg: "linear-gradient(135deg,hsl(210 55% 55%),hsl(220 50% 25%))", dark: true  },
+  { name: "Dark Sage Glass",tone: "Held",      icon: Mountain,bg: "linear-gradient(135deg,hsl(150 18% 22%),hsl(150 15% 12%))", dark: true  },
 ];
 
 const archetypes = [
