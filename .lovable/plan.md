@@ -1,63 +1,56 @@
-## Task Views Overhaul — Grouping, Sorting & Visible Field Options
+## Scope
 
-Implements the next phase: full grouping/sorting across all task views (List, Grid, Board, Schedule, Calendar) plus a per-view-type "View Options" menu for toggling visible fields. Tag chips become first-class on every task surface.
+Large multi-feature request spanning Inbox composer, Kanban, templates, task editor, completion UX, notifications, and AI daily brief. I'll group into 8 deliverables and ship them in one pass.
 
-### 1. Expanded grouping modes
+### 1. Quick date dropdown on Inbox composer
+- Add a "Date" pill next to Area/Tag/Time in `InlineTaskComposer.tsx` with presets: Today, Tomorrow, This Weekend, Next Week, Next Weekend, No date, Pick date…
+- Stores `dueDate` override; sticky until cleared. Pick date opens a popover calendar.
 
-Extend `GroupMode` in `src/lib/task-grouping.ts` from the current set to:
-`none | section | dueDate | tag | project | priority | energy | status | area`
+### 2. Kanban color-by (tag / project)
+- Extend `ProjectKanbanBoard` and `KanbanBoard` with a `colorBy` option ("none" | "tag" | "project") via small select next to group-by.
+- Apply a left accent bar / chip color on `KanbanCard` derived from first tag color or project color. Persist in `localStorage` per board.
 
-- **Tag grouping**: tasks with multiple tags appear in each matching group; untagged → "No tag" bucket.
-- **Due date**: Overdue / Today / Tomorrow / This week / Later / No date.
-- **Energy**: High / Medium / Low / Unset.
-- **Status**: Todo / In progress / Done / Cancelled.
-- **Project / Area / Priority**: bucket by entity, with "None" bucket.
+### 3. Task & Section templates
+- New `src/lib/templates.ts` storing user templates in Supabase table `task_templates` (name, kind: 'task' | 'section', payload jsonb).
+- New `TemplatePicker` dialog accessible from QuickAdd menu and project section header. "Save as template" action from task/section context menus.
+- Apply template = create task(s) with prefilled title/tags/est/priority, or insert a section with N child tasks.
 
-### 2. Expanded sort options
+### 4. Person link on task editor
+- Add `linked_person_id uuid` column on `tasks` referencing `care_recipients` (or new `people` table if not present — check first; fall back to existing recipients table).
+- In `TaskDetailDialog` add "Linked person" combobox.
+- Show small avatar/name chip on `KanbanCard` and `TaskRow`.
 
-In `TaskSortMenu.tsx`, add: Manual, Due date, Priority, Energy, Created, Updated, Title (A→Z), Project, Estimated minutes. Direction toggle (asc/desc). Sort applies inside each group.
+### 5. Asana-like gradient completion + sound
+- In `TaskRow` checkbox: on check, animate a gradient sweep + confetti burst (reuse existing motion). Add `playCompletionChime()` in `src/lib/completion-sound.ts` (WebAudio, like pomodoro chime).
+- Setting toggle in Settings → Sounds to mute.
 
-### 3. View Options menu (per view type, global)
+### 6. Notification Center
+- New `src/components/notifications/NotificationCenter.tsx` — bell icon in topbar opens sheet listing:
+  - Overdue tasks
+  - Due today
+  - Due tomorrow
+  - Upcoming appointments (next 3 days)
+  - Today's AI brief (link to brief)
+- Browser Notification API opt-in for upcoming task reminders (in-app polling every 60s).
 
-New `src/components/tasks/ViewOptionsMenu.tsx` — gear icon next to the view switcher. Toggles for visible fields:
-`tags · priority · dueDate · project · area · energy · estMinutes · icon · cover · checkbox · description · createdAt`
+### 7. Daily AI update
+- New edge function `ai-daily-update` returning a short narrative summarizing today's plan, overdue, upcoming this week.
+- Surfaced inside Notification Center and Today page (new card `DailyAIUpdate`). Cached per-day in localStorage.
 
-Stored globally per view type in `localStorage`:
-- `careflow:view:list` · `careflow:view:grid` · `careflow:view:board` · `careflow:view:schedule` · `careflow:view:calendar`
+### 8. Daily Brief
+- New `src/components/today/DailyBrief.tsx` combining weather snapshot, moon phase, today's plan count, top 3, AI update text. Rendered at top of Today page; shareable/printable.
 
-New hook `src/hooks/useViewPrefs.ts` exposes `{ visible, toggle, group, sort, setGroup, setSort }` for the current view type.
+## Technical Notes
 
-### 4. Tag chips on every task surface
+- DB migration: `task_templates` table (user-scoped RLS), add `linked_person_id` + optional `people` table only if no recipients table exists.
+- Reuse existing `useStore` for tasks; templates go through Supabase directly with realtime invalidation.
+- Edge function `ai-daily-update` uses Lovable AI Gateway via existing pattern in `ai-today-guidance`.
+- Completion sound mirrors `src/lib/pomodoro-chime.ts` (no assets needed).
+- Notification permission requested lazily on first opt-in click.
 
-- `KanbanBoard.tsx` card → render tag chips row when `visible.tags`.
-- `AllTasksViews.tsx` list rows + grid cards → tag chips.
-- `Schedule` and `Calendar` task chips → small tag dots/pills.
-- Reuse existing tag color tokens.
+## Out of scope
+- Push notifications (browser-only).
+- Cross-device template sharing.
+- Editing existing templates inline (delete + recreate).
 
-### 5. Group + sort UI
-
-Both controls live in `TaskListControls.tsx`:
-- `Group by ▾` dropdown reflecting the new `GroupMode` set
-- `Sort ▾` dropdown with field + direction
-- Both persist via `useViewPrefs` keyed by current view type
-
-Board view groups columns by the chosen mode (not just status) — e.g. "Group by priority" produces priority columns.
-
-### Files
-
-**New**
-- `src/hooks/useViewPrefs.ts`
-- `src/components/tasks/ViewOptionsMenu.tsx`
-- `src/components/tasks/TaskFieldChips.tsx` (small shared renderer for chips row)
-
-**Edited**
-- `src/lib/task-grouping.ts` — new group modes + helpers
-- `src/components/tasks/TaskListControls.tsx` — wire group/sort/view-options
-- `src/components/tasks/TaskSortMenu.tsx` — expanded sort fields
-- `src/components/tasks/KanbanBoard.tsx` — group-mode-driven columns, tag chips, respect `visible`
-- `src/components/tasks/AllTasksViews.tsx` — apply `visible` + grouping to list/grid
-- Schedule/Calendar task renderers — tag chips + `visible` flags
-
-### Out of scope (next phases)
-
-Table view, Timeline view, AI custom fields, knowledge graph — these come after this lands.
+Confirm and I'll start with the DB migration, then ship the rest in one pass.

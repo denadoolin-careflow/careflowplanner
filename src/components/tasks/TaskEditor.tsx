@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import {
   CalendarIcon, X, Tag, Flag, Zap, Clock, Repeat, FolderKanban, Target,
-  Star, Trash2, FileText, Link2, AlignLeft, Paperclip, ListTree,
+  Star, Trash2, FileText, Link2, AlignLeft, Paperclip, ListTree, User,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -88,6 +88,15 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
           <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
             <SelectItem value="none">No goal</SelectItem>
             {state.goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field icon={User} label="Linked person">
+        <Select value={draft.recipientId ?? "none"} onValueChange={v => set("recipientId", v === "none" ? undefined : v)}>
+          <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
+          <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
+            <SelectItem value="none">No one</SelectItem>
+            {(state.recipients ?? []).map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </Field>

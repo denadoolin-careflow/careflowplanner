@@ -17,6 +17,8 @@ import { PenLine } from "lucide-react";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
 import { applyFilters, groupTasks, sortTasks } from "@/lib/task-grouping";
 import { ProjectKanbanBoard, ProjectKanbanGroupSelect, type ProjectKanbanGroup } from "@/components/tasks/ProjectKanbanBoard";
+import { KanbanColorBySelect } from "@/components/tasks/KanbanColorBySelect";
+import type { KanbanColorBy } from "@/components/tasks/KanbanBoard";
 import { ViewOptionsMenu } from "@/components/tasks/ViewOptionsMenu";
 import type { TaskViewType } from "@/hooks/useViewPrefs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -60,6 +62,14 @@ export default function ProjectDetail() {
   const setKanbanGroupPersist = (g: ProjectKanbanGroup) => {
     setKanbanGroup(g);
     try { localStorage.setItem(`project:${id}:kanbanGroup`, g); } catch {}
+  };
+  const [kanbanColor, setKanbanColor] = useState<KanbanColorBy>(() => {
+    try { return (localStorage.getItem(`project:${id}:kanbanColor`) as KanbanColorBy) || "area"; }
+    catch { return "area"; }
+  });
+  const setKanbanColorPersist = (c: KanbanColorBy) => {
+    setKanbanColor(c);
+    try { localStorage.setItem(`project:${id}:kanbanColor`, c); } catch {}
   };
 
   const allTasks = useMemo(
@@ -193,6 +203,7 @@ export default function ProjectDetail() {
           </ToggleGroup>
           {view === "list" && <TaskListControls prefs={prefs} onChange={setPrefs} />}
           {view === "kanban" && <ProjectKanbanGroupSelect value={kanbanGroup} onChange={setKanbanGroupPersist} />}
+          {view === "kanban" && <KanbanColorBySelect value={kanbanColor} onChange={setKanbanColorPersist} />}
           <ViewOptionsMenu view={(view === "kanban" ? "board" : view) as TaskViewType} />
         </div>
       </div>
@@ -227,7 +238,7 @@ export default function ProjectDetail() {
         </div>
 
         {view === "kanban" && (
-          <ProjectKanbanBoard tasks={visibleTasks} projectId={project.id} group={kanbanGroup} />
+          <ProjectKanbanBoard tasks={visibleTasks} projectId={project.id} group={kanbanGroup} colorBy={kanbanColor} />
         )}
         {view === "schedule" && <ScheduleView tasks={visibleTasks} />}
         {view === "list" && (
