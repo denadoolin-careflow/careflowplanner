@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
-import { Inbox as InboxIcon, Sparkles, Check, X, RefreshCw, PanelRightOpen, PanelRightClose } from "lucide-react";
+import { Inbox as InboxIcon, Sparkles, Check, X, RefreshCw, PanelRightOpen, PanelRightClose, Eye, EyeOff } from "lucide-react";
 import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,6 +95,16 @@ function InboxInner() {
 
   const { tags } = useTags();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [tagLibraryVisible, setTagLibraryVisible] = useState<boolean>(() => {
+    try { return localStorage.getItem("inbox:tagLibrary") !== "0"; } catch { return true; }
+  });
+  const toggleTagLibrary = () => {
+    setTagLibraryVisible(v => {
+      const next = !v;
+      try { localStorage.setItem("inbox:tagLibrary", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
   const filteredGroups = useMemo(() => {
     if (!tagFilter) return groups;
     return groups
@@ -130,6 +140,16 @@ function InboxInner() {
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
+            onClick={toggleTagLibrary}
+            title={tagLibraryVisible ? "Hide tag library" : "Show tag library"}
+            aria-label="Toggle tag library"
+          >
+            {tagLibraryVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="hidden h-8 w-8 lg:inline-flex"
             onClick={togglePane}
             title={paneOpen ? "Hide details pane" : "Show details pane"}
@@ -142,11 +162,12 @@ function InboxInner() {
 
       <InlineTaskComposer
         defaults={{ inbox: true }}
+        defaultTags={tagFilter ? [tagFilter] : undefined}
         nlp
         placeholder="Capture anything — try “Call vet tomorrow at 3pm p2 #pet”"
       />
 
-      {tags.length > 0 && (
+      {tags.length > 0 && tagLibraryVisible && (
         <div className="rounded-2xl border border-border/60 bg-card/40 p-2.5">
           <div className="mb-1.5 flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
