@@ -49,7 +49,7 @@ export function WaitlistForm({ source = "waitlist" }: { source?: string }) {
         archetype: parsed.data.archetype || null,
         reason: parsed.data.reason || null,
         source,
-        quiz_score: prior ? (prior as unknown as Record<string, unknown>) : null,
+        quiz_score: prior ? JSON.parse(JSON.stringify(prior)) : null,
       };
 
       const { data: inserted, error } = await supabase
