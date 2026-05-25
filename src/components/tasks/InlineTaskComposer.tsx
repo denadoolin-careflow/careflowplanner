@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react";
-import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap, Tag as TagIcon, Timer } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
@@ -11,8 +11,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { TagAutocomplete } from "@/components/tags/TagAutocomplete";
+import { TagPicker } from "@/components/tags/TagPicker";
+import { TagChip } from "@/components/tags/TagChip";
 
-type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId" | "energy">>;
+type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId" | "energy" | "estMinutes" | "tags">>;
 
 interface Props {
   /** Defaults applied to created tasks (e.g. { inbox: true } for the inbox page). */
@@ -22,16 +24,23 @@ interface Props {
   placeholder?: string;
   /** Initial date to populate the date pill. */
   initialDate?: string;
+  /** Tags to keep selected across submissions (sticky). */
+  defaultTags?: string[];
 }
 
-export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "Add a task…", initialDate }: Props) {
+export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "Add a task…", initialDate, defaultTags }: Props) {
   const { state, addTask } = useStore();
   const [text, setText] = useState("");
   const [date, setDate] = useState<string | undefined>(initialDate ?? defaults.dueDate);
   const [projectId, setProjectId] = useState<string | undefined>(defaults.projectId);
   const [area, setArea] = useState<Area | undefined>(defaults.area);
   const [energy, setEnergy] = useState<Energy | undefined>(defaults.energy);
+  const [tags, setTags] = useState<string[]>(() => defaultTags ?? defaults.tags ?? []);
+  const [estMinutes, setEstMinutes] = useState<number | undefined>(defaults.estMinutes);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Keep sticky tag selection in sync when the parent's defaultTags changes.
+  useEffect(() => { setTags(defaultTags ?? defaults.tags ?? []); }, [JSON.stringify(defaultTags)]);
 
   const parsed = useMemo(() => (nlp && text.trim() ? parseTaskInput(text) : null), [text, nlp]);
 
@@ -46,15 +55,20 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     const finalArea = area ?? p.area;
     const finalDate = date ?? p.dueDate ?? defaults.dueDate;
     const finalEnergy = energy ?? p.energy ?? defaults.energy;
+    const mergedTags = Array.from(new Set([
+      ...(tags ?? []),
+      ...((p.tags as string[] | undefined) ?? []),
+    ].map(t => t.trim()).filter(Boolean)));
+    const finalEst = estMinutes ?? p.estMinutes ?? defaults.estMinutes;
     await addTask({
       title: p.title || raw,
       notes: undefined,
       dueDate: finalDate,
       priority: p.priority ?? "medium",
       area: (finalArea ?? "Personal") as Area,
-      tags: p.tags,
+      tags: mergedTags.length ? mergedTags : undefined,
       energy: finalEnergy,
-      estMinutes: p.estMinutes,
+      estMinutes: finalEst,
       recurrenceType: p.recurrenceType,
       recurrenceInterval: p.recurrenceInterval,
       recurrenceDays: p.recurrenceDays,
@@ -68,6 +82,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     setProjectId(defaults.projectId);
     setArea(defaults.area);
     setEnergy(defaults.energy);
+    // Sticky tags + time: keep them so subsequent captures share the same.
+    setTags(defaultTags ?? defaults.tags ?? tags);
     inputRef.current?.focus();
   };
 
@@ -223,6 +239,98 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 </button>
               );
             })}
+
+            {/* Tag pill — sticky selection across submissions */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    tags.length ? "text-foreground" : "text-muted-foreground",
+                  )}
+                  title="Tags"
+                >
+                  <TagIcon className="h-3 w-3" />
+                  {tags.length === 0
+                    ? "Tag"
+                    : tags.length === 1
+                    ? `#${tags[0]}`
+                    : `${tags.length} tags`}
+                  {tags.length > 0 && (
+                    <X
+                      className="h-3 w-3 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setTags([]); }}
+                    />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2" align="start">
+                <TagPicker value={tags} onChange={setTags} inline={false} triggerLabel="Pick tag" />
+                {tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {tags.map(name => (
+                      <TagChip key={name} name={name} size="xs" onRemove={() => setTags(tags.filter(t => t !== name))} />
+                    ))}
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+
+            {/* Time estimate pill */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    estMinutes ? "text-foreground" : "text-muted-foreground",
+                  )}
+                  title="Time estimate"
+                >
+                  <Timer className="h-3 w-3" />
+                  {estMinutes ? `${estMinutes}m` : "Time"}
+                  {estMinutes != null && (
+                    <X
+                      className="h-3 w-3 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setEstMinutes(undefined); }}
+                    />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-44 p-1.5" align="start">
+                <div className="grid grid-cols-3 gap-1">
+                  {[5, 10, 15, 25, 30, 45, 60, 90, 120].map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setEstMinutes(m)}
+                      className={cn(
+                        "rounded-md px-1.5 py-1 text-[11px] transition-colors",
+                        estMinutes === m ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                      )}
+                    >
+                      {m < 60 ? `${m}m` : `${m / 60}h${m % 60 ? ` ${m % 60}m` : ""}`}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 flex items-center gap-1.5 border-t border-border/50 pt-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="Custom"
+                    className="h-7 text-[11px]"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const v = parseInt((e.target as HTMLInputElement).value, 10);
+                        if (Number.isFinite(v) && v > 0) setEstMinutes(v);
+                      }
+                    }}
+                  />
+                  <span className="text-[10px] text-muted-foreground">min</span>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {/* NLP chips */}
             {parsed && parsed.chips.length > 0 && (
