@@ -51,7 +51,7 @@ const COLUMNS: Column[] = [
     onDrop: () => ({ done: true, lastCompletedAt: new Date().toISOString() }) },
 ];
 
-export function KanbanBoard({ tasks, scope = "all" }: { tasks: Task[]; scope?: "all" | "project" }) {
+export function KanbanBoard({ tasks, scope = "all", colorBy = "area" }: { tasks: Task[]; scope?: "all" | "project"; colorBy?: KanbanColorBy }) {
   const { updateTask, addTask } = useStore();
   const today = todayISO();
   const [hover, setHover] = useState<ColumnKey | null>(null);
@@ -94,7 +94,7 @@ export function KanbanBoard({ tasks, scope = "all" }: { tasks: Task[]; scope?: "
             <span className="text-[11px] text-muted-foreground">{col.items.length}</span>
           </div>
           <div className="flex-1 space-y-1 min-h-32">
-            {col.items.map(t => <KanbanCard key={t.id} task={t} />)}
+            {col.items.map(t => <KanbanCard key={t.id} task={t} colorBy={colorBy} />)}
           </div>
           <QuickAdd col={col} onAdd={async (title) => {
             const patch = col.onDrop({ id: "", title, area: "Personal", done: false, priority: "medium", createdAt: "" } as Task);
@@ -106,11 +106,12 @@ export function KanbanBoard({ tasks, scope = "all" }: { tasks: Task[]; scope?: "
   );
 }
 
-export function KanbanCard({ task }: { task: Task }) {
+export function KanbanCard({ task, colorBy = "area" }: { task: Task; colorBy?: KanbanColorBy }) {
   const { updateTask, state } = useStore();
   const { visible } = useViewPrefs("board");
   const Icon = inferTaskIcon(task.title, task.notes);
-  const areaColor = (state.areas ?? []).find(a => a.name === task.area)?.color;
+  const accent = resolveAccent(task, colorBy, { projects: state.projects ?? [], areas: state.areas ?? [] });
+  const recipient = task.recipientId ? state.recipients?.find(r => r.id === task.recipientId) : undefined;
   const overdue = task.dueDate ? differenceInCalendarDays(parseISO(task.dueDate), new Date()) < 0 && !task.done : false;
   const [openEditor, setOpenEditor] = useState(false);
   return (
@@ -124,7 +125,7 @@ export function KanbanCard({ task }: { task: Task }) {
         haptics.pickup?.();
       }}
       className="group overflow-hidden rounded-xl border border-border/60 bg-card/90 transition hover:border-primary/40 hover:shadow-[0_8px_24px_-14px_hsl(var(--primary)/0.55)] cursor-grab active:cursor-grabbing"
-      style={areaColor ? { boxShadow: `inset 3px 0 0 0 ${areaColor}` } : undefined}
+      style={accent ? { boxShadow: `inset 3px 0 0 0 ${accent}` } : undefined}
     >
       {visible.cover && task.coverUrl && (
         <div className="aspect-[16/7] overflow-hidden bg-muted">
@@ -151,6 +152,11 @@ export function KanbanCard({ task }: { task: Task }) {
               </Badge>
             )}
             {visible.priority && task.priority === "high" && <Badge className="rounded-full bg-accent text-[10px] font-normal text-accent-foreground hover:bg-accent">priority</Badge>}
+            {recipient && (
+              <Badge variant="outline" className="rounded-full text-[10px] font-normal">
+                · {recipient.name}
+              </Badge>
+            )}
           </div>
         )}
       </button>
