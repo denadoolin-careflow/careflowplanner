@@ -100,6 +100,7 @@ export const NAV_GROUPS = [
       { to: "/journal", label: "Journal", icon: BookHeart },
       { to: "/journal-flow", label: "Journal & Flow", icon: Wind },
       { to: "/notes", label: "Notes", icon: NotebookPen },
+      { to: "/graph", label: "Knowledge Graph", icon: Share2 },
       { to: "/whiteboards", label: "Whiteboards", icon: PenLine },
       { to: "/review", label: "Reviews Timeline", icon: BadgeCheck },
       { to: "/reset/week", label: "Weekly Reset", icon: CalendarRange },
