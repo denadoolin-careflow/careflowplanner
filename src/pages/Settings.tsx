@@ -19,6 +19,7 @@ import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
 import { WeatherPrefsSection } from "@/components/settings/WeatherPrefsSection";
 import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/TimeZoneSelect";
+import { ArchetypeThemeSection } from "@/components/settings/ArchetypeThemeSection";
 import { useRhythmForecastEnabled, useRecommendationTone } from "@/lib/rhythm-forecast";
 import { MOON_PROVIDERS, useMoonProvider } from "@/lib/moon-providers";
 import { useEffect } from "react";
