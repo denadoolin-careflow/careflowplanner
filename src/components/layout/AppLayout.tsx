@@ -7,6 +7,7 @@ import { AtmosphereAmbient } from "@/components/atmospheres/AtmosphereAmbient";
 import { useAutoAtmosphereResolver } from "@/lib/atmospheres";
 import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
 import { AIAssistantFab } from "@/components/ai/AIAssistantFab";
+import { CombinedFab } from "@/components/quick-add/CombinedFab";
 import { useStore } from "@/lib/store";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -56,8 +57,9 @@ export function AppLayout() {
           </main>
         </div>
       </div>
-      <QuickAddFab />
-      <AIAssistantFab />
+      <QuickAddFab hideButton />
+      <AIAssistantFab hideButton />
+      <CombinedFab />
       <BottomNav />
       <CommandPalette />
       <FocusPanel />
