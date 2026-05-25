@@ -105,6 +105,7 @@ const App = () => (
                 <Route path="/logbook" element={<Logbook />} />
                 <Route path="/notes" element={<Notes />} />
                 <Route path="/notes/:id" element={<NoteDetail />} />
+                <Route path="/graph" element={<Graph />} />
                 <Route path="/review" element={<Review />} />
                 <Route path="/reset" element={<Reset />} />
                 <Route path="/reset/:period" element={<Reset />} />
