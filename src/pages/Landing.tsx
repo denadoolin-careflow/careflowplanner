@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import botanical from "@/assets/landing-botanical.png";
 import storyImg from "@/assets/landing-story.jpg";
+import { CaregiverArchetypeQuiz } from "@/components/quiz/CaregiverArchetypeQuiz";
 
 /* ---------- Local presentational helpers ---------- */
 
