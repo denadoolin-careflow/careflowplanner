@@ -153,16 +153,16 @@ function HeroMockup() {
 const careLoop = [
   { k: "C", title: "Capture", lead: "Get it out of your head.", icon: Leaf,
     bullets: ["tasks", "groceries", "appointments", "mental load", "notes & reminders"],
-    tint: "secondary" },
+    glow: "bg-secondary/40", ink: "text-secondary-foreground/80" },
   { k: "A", title: "Anchor", lead: "Choose what matters today.", icon: Heart,
     bullets: ["top 3 priorities", "minimum viable day", "emotional pacing", "boundaries"],
-    tint: "accent" },
+    glow: "bg-accent/40", ink: "text-accent-foreground/80" },
   { k: "R", title: "Rhythm", lead: "Move through the day with support.", icon: Moon,
     bullets: ["routines", "time blocks", "recurring resets", "gentle reminders"],
-    tint: "moon" },
+    glow: "bg-moon/40", ink: "text-moon-foreground/80" },
   { k: "E", title: "Exhale", lead: "Close loops softly.", icon: Sparkles,
     bullets: ["reflections", "resets", "emotional check-ins", "prepare for tomorrow"],
-    tint: "warm" },
+    glow: "bg-warm/40", ink: "text-warm-foreground/80" },
 ] as const;
 
 const features = [
@@ -314,11 +314,11 @@ export default function Landing() {
             </h2>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            {careLoop.map(({ k, title, lead, bullets, icon: Icon, tint }) => (
+            {careLoop.map(({ k, title, lead, bullets, icon: Icon, glow, ink }) => (
               <GlassCard key={k} className="relative overflow-hidden">
-                <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full bg-${tint}/30 blur-2xl`} aria-hidden />
+                <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${glow} blur-2xl`} aria-hidden />
                 <div className="flex items-center justify-between">
-                  <Icon className={`h-5 w-5 text-${tint}-foreground/80`} />
+                  <Icon className={`h-5 w-5 ${ink}`} />
                   <span className="font-display text-[44px] leading-none text-foreground/80">{k}</span>
                 </div>
                 <div className="mt-4 font-display text-xl text-foreground">{title}</div>
@@ -326,7 +326,7 @@ export default function Landing() {
                 <ul className="mt-4 space-y-1.5 text-sm text-foreground/80">
                   {bullets.map(b => (
                     <li key={b} className="flex items-center gap-2">
-                      <Check className={`h-3.5 w-3.5 text-${tint}-foreground/80`} /> {b}
+                      <Check className={`h-3.5 w-3.5 ${ink}`} /> {b}
                     </li>
                   ))}
                 </ul>
