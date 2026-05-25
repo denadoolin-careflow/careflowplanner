@@ -177,6 +177,11 @@ export default function Auth() {
               </div>
             ))}
           </div>
+
+          {/* Embedded quiz — same UI & progress flow as /quiz */}
+          <div className="cozy-card overflow-hidden p-0">
+            <CaregiverArchetypeQuiz embedded />
+          </div>
         </div>
 
         <div className="cozy-card p-6 sm:p-8">
