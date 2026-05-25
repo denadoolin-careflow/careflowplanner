@@ -221,9 +221,26 @@ const testimonials = [
 ];
 
 const footerNav = {
-  Product: ["Features", "Archetypes", "Atmospheres", "Pricing"],
-  Support: ["Help Center", "Guides", "Contact Us", "Accessibility"],
-  Company: ["Our Story", "Blog", "Careers", "Press"],
+  Product: [
+    { label: "Features", href: "#features" },
+    { label: "Archetypes", href: "#archetypes" },
+    { label: "Atmospheres", href: "#atmospheres" },
+    { label: "Quiz", href: "#quiz" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Waitlist", href: "/waitlist" },
+  ],
+  Support: [
+    { label: "Help Center", href: "#" },
+    { label: "Guides", href: "#" },
+    { label: "Contact Us", href: "#" },
+    { label: "Accessibility", href: "#" },
+  ],
+  Company: [
+    { label: "Our Story", href: "#story" },
+    { label: "Blog", href: "#" },
+    { label: "Careers", href: "#" },
+    { label: "Press", href: "#" },
+  ],
 };
 
 /* ---------- Page ---------- */
