@@ -57,6 +57,7 @@ import WhiteboardDetail from "./pages/WhiteboardDetail";
 import MentalLoad from "./pages/MentalLoad";
 import Onboarding from "./pages/Onboarding";
 import CareLoop from "./pages/CareLoop";
+import Quiz from "./pages/Quiz";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -87,6 +88,7 @@ const App = () => (
             <MoonPrefetcher />
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/quiz" element={<Quiz />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/" element={<IndexRedirect />} />
                 <Route path="/dashboard" element={<Dashboard />} />
