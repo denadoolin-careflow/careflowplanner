@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
+import { KanbanCard } from "@/components/tasks/KanbanBoard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -471,7 +472,7 @@ function BoardView({ tasks, group, projectsById }: { tasks: Task[]; group: Group
           <div className="flex flex-col gap-1.5 p-2 pt-0">
             {col.items.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border/50 px-3 py-4 text-center text-[11px] text-muted-foreground/70">Nothing here</div>
-            ) : col.items.map(t => <TaskRow key={t.id} task={t} dense />)}
+            ) : col.items.map(t => <KanbanCard key={t.id} task={t} />)}
           </div>
         </div>
       ))}

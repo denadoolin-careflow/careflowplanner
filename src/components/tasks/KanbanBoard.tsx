@@ -86,7 +86,7 @@ export function KanbanBoard({ tasks, scope = "all" }: { tasks: Task[]; scope?: "
   );
 }
 
-function KanbanCard({ task }: { task: Task }) {
+export function KanbanCard({ task }: { task: Task }) {
   const { updateTask, state } = useStore();
   const { visible } = useViewPrefs("board");
   const Icon = inferTaskIcon(task.title, task.notes);
