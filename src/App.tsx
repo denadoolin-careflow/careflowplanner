@@ -89,8 +89,8 @@ const App = () => (
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/quiz" element={<Quiz />} />
+              <Route path="/" element={<IndexRedirect />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
-                <Route path="/" element={<IndexRedirect />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/inbox" element={<Inbox />} />
                 <Route path="/upcoming" element={<Upcoming />} />

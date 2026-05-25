@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { useCareProfile } from "@/lib/care-methodology";
+import Landing from "@/pages/Landing";
 
 const FALLBACK_ROUTE = "/today";
 const ONBOARDING_DONE_KEY = "careflow.onboarding.completed";
@@ -33,8 +34,12 @@ function cachedOnboardingDone(): boolean | null {
 }
 
 export function IndexRedirect() {
-  const { state, loading } = useStore();
+  const { state, loading, user, authLoading } = useStore();
   const { profile, loading: careLoading } = useCareProfile();
+
+  // Public landing page for signed-out visitors.
+  if (!authLoading && !user) return <Landing />;
+
   const cached = readCachedDefaultRoute();
   const liveRaw = state.settings.defaultRoute;
   const live = liveRaw && liveRaw !== "/" ? liveRaw : FALLBACK_ROUTE;
