@@ -17,6 +17,8 @@ import { PenLine } from "lucide-react";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
 import { applyFilters, groupTasks, sortTasks } from "@/lib/task-grouping";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
+import { ViewOptionsMenu } from "@/components/tasks/ViewOptionsMenu";
+import type { TaskViewType } from "@/hooks/useViewPrefs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
@@ -182,6 +184,7 @@ export default function ProjectDetail() {
             </ToggleGroupItem>
           </ToggleGroup>
           {view === "list" && <TaskListControls prefs={prefs} onChange={setPrefs} />}
+          <ViewOptionsMenu view={(view === "kanban" ? "board" : view) as TaskViewType} />
         </div>
       </div>
 
