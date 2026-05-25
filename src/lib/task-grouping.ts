@@ -2,8 +2,9 @@ import type { Task, Priority, Project } from "./types";
 import { todayISO } from "./store";
 import { formatRelativeDate } from "./date-format";
 
-export type GroupMode = "none" | "project" | "area" | "priority" | "date" | "energy" | "status";
-export type SortMode = "manual" | "date" | "priority" | "title" | "created" | "energy" | "estMinutes";
+export type GroupMode = "none" | "project" | "area" | "priority" | "date" | "energy" | "status" | "tag";
+export type SortMode = "manual" | "date" | "priority" | "title" | "created" | "updated" | "energy" | "estMinutes" | "project";
+export type SortDir = "asc" | "desc";
 export type FilterState = {
   areas?: string[];
   projectIds?: string[];
@@ -46,25 +47,35 @@ export function applyFilters(list: Task[], f: FilterState): Task[] {
   });
 }
 
-export function sortTasks(list: Task[], mode: SortMode): Task[] {
+export function sortTasks(list: Task[], mode: SortMode, dir: SortDir = "asc"): Task[] {
   const arr = [...list];
-  switch (mode) {
-    case "date":
-      return arr.sort((a, b) => (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999"));
-    case "priority":
-      return arr.sort((a, b) => (PRIO[a.priority] ?? 9) - (PRIO[b.priority] ?? 9));
-    case "title":
-      return arr.sort((a, b) => a.title.localeCompare(b.title));
-    case "energy":
-      return arr.sort((a, b) => (ENERGY[a.energy ?? "z"] ?? 9) - (ENERGY[b.energy ?? "z"] ?? 9));
-    case "estMinutes":
-      return arr.sort((a, b) => (a.estMinutes ?? 9999) - (b.estMinutes ?? 9999));
-    case "manual":
-      return arr.sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
-    case "created":
-    default:
-      return arr.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
-  }
+  const cmp = (a: Task, b: Task): number => {
+    switch (mode) {
+      case "date":
+        return (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999");
+      case "priority":
+        return (PRIO[a.priority] ?? 9) - (PRIO[b.priority] ?? 9);
+      case "title":
+        return a.title.localeCompare(b.title);
+      case "energy":
+        return (ENERGY[a.energy ?? "z"] ?? 9) - (ENERGY[b.energy ?? "z"] ?? 9);
+      case "estMinutes":
+        return (a.estMinutes ?? 9999) - (b.estMinutes ?? 9999);
+      case "project":
+        return (a.projectId ?? "~").localeCompare(b.projectId ?? "~");
+      case "updated":
+        return ((a as any).updatedAt ?? a.createdAt ?? "").localeCompare(((b as any).updatedAt ?? b.createdAt ?? ""));
+      case "manual":
+        return (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999);
+      case "created":
+      default:
+        return (a.createdAt ?? "").localeCompare(b.createdAt ?? "");
+    }
+  };
+  arr.sort(cmp);
+  // Defaults: "created" naturally newest-first when desc; expose dir for all.
+  if (dir === "desc") arr.reverse();
+  return arr;
 }
 
 export function groupTasks(list: Task[], mode: GroupMode, projects: Project[] = []): { key: string; label: string; tasks: Task[] }[] {
@@ -90,6 +101,10 @@ export function groupTasks(list: Task[], mode: GroupMode, projects: Project[] = 
       push(t.energy ?? "_none", t.energy ?? "No energy", t);
     } else if (mode === "status") {
       push(t.status ?? "active", (t.status ?? "active").replace("_", " "), t);
+    } else if (mode === "tag") {
+      const tags = t.tags ?? [];
+      if (tags.length === 0) push("_none", "No tag", t);
+      else for (const tag of tags) push(`#${tag}`, `#${tag}`, t);
     }
   }
   const order = mode === "priority"
@@ -110,9 +125,9 @@ export function groupTasks(list: Task[], mode: GroupMode, projects: Project[] = 
   return entries.map(([key, v]) => ({ key, label: v.label, tasks: v.tasks }));
 }
 
-export type TaskListPrefs = { group: GroupMode; sort: SortMode; filter: FilterState };
+export type TaskListPrefs = { group: GroupMode; sort: SortMode; sortDir?: SortDir; filter: FilterState };
 
-const DEFAULT_PREFS: TaskListPrefs = { group: "none", sort: "created", filter: {} };
+const DEFAULT_PREFS: TaskListPrefs = { group: "none", sort: "created", sortDir: "desc", filter: {} };
 
 export function loadPrefs(pageId: string): TaskListPrefs {
   try {
