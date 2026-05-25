@@ -3,7 +3,7 @@ import {
   UtensilsCrossed, HeartHandshake, Sparkle, BookHeart, Lightbulb, CalendarCheck,
   Timer, Settings as SettingsIcon, BookOpen, HeartPulse, Wallet, Home,
   ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
-  Wind, PenLine, Coffee,
+  Wind, PenLine, Coffee, Share2,
 } from "lucide-react";
 
 export const NAV = [
@@ -100,6 +100,7 @@ export const NAV_GROUPS = [
       { to: "/journal", label: "Journal", icon: BookHeart },
       { to: "/journal-flow", label: "Journal & Flow", icon: Wind },
       { to: "/notes", label: "Notes", icon: NotebookPen },
+      { to: "/graph", label: "Knowledge Graph", icon: Share2 },
       { to: "/whiteboards", label: "Whiteboards", icon: PenLine },
       { to: "/review", label: "Reviews Timeline", icon: BadgeCheck },
       { to: "/reset/week", label: "Weekly Reset", icon: CalendarRange },

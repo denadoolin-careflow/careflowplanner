@@ -38,6 +38,7 @@ import AreaPage from "./pages/AreaPage";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Inbox from "./pages/Inbox";
+import Graph from "./pages/Graph";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Upcoming from "./pages/Upcoming";
@@ -104,6 +105,7 @@ const App = () => (
                 <Route path="/logbook" element={<Logbook />} />
                 <Route path="/notes" element={<Notes />} />
                 <Route path="/notes/:id" element={<NoteDetail />} />
+                <Route path="/graph" element={<Graph />} />
                 <Route path="/review" element={<Review />} />
                 <Route path="/reset" element={<Reset />} />
                 <Route path="/reset/:period" element={<Reset />} />
