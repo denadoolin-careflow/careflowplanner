@@ -14,6 +14,26 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { formatRelativeDate } from "@/lib/date-format";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { useViewPrefs } from "@/hooks/useViewPrefs";
+import { getCachedTags } from "@/hooks/use-tags";
+import { fallbackColorFor } from "@/lib/tags";
+
+export type KanbanColorBy = "none" | "tag" | "project" | "area";
+
+export function resolveAccent(task: Task, colorBy: KanbanColorBy, ctx: { projects: any[]; areas: any[] }): string | undefined {
+  if (colorBy === "tag") {
+    const first = (task.tags ?? [])[0];
+    if (!first) return undefined;
+    const t = getCachedTags().find(x => x.name.toLowerCase() === first.toLowerCase());
+    return t?.color ?? fallbackColorFor(first);
+  }
+  if (colorBy === "project") {
+    return ctx.projects.find(p => p.id === task.projectId)?.color;
+  }
+  if (colorBy === "area") {
+    return ctx.areas.find(a => a.name === task.area)?.color;
+  }
+  return undefined;
+}
 
 type ColumnKey = "inbox" | "today" | "upcoming" | "waiting" | "done";
 type Column = { key: ColumnKey; label: string; accent: string; match: (t: Task, today: string) => boolean; onDrop: (t: Task) => Partial<Task> };
