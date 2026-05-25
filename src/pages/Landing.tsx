@@ -354,21 +354,21 @@ export default function Landing() {
 
       {/* HERO */}
       <section className="relative mx-auto grid w-full max-w-6xl gap-12 px-5 pb-24 pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-24">
-        <div className="relative">
+        <div className="relative text-center lg:text-left">
           <Pill><Heart className="h-3 w-3" /> Built for real-life caregivers</Pill>
           <h1 className="mt-5 font-display text-4xl leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-[58px]">
             Turn your daily workload into a{" "}
             <em className="not-italic text-[hsl(28_70%_45%)]">gentle loop</em>{" "}
             you can repeat.
           </h1>
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-muted-foreground">
+          <p className="mt-5 max-w-lg text-base leading-relaxed text-muted-foreground mx-auto lg:mx-0">
             CareFlow is the emotionally intelligent planning system for caregivers, overwhelmed minds, neurodivergent users, and busy households — without pressure, guilt, or perfectionism.
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
             <PrimaryCTA><Leaf className="h-4 w-4" /> Start Your CareFlow</PrimaryCTA>
             <SecondaryCTA><Sparkles className="h-4 w-4" /> Find Your Archetype</SecondaryCTA>
           </div>
-          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground lg:justify-start">
             <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> All-in-one planner</span>
             <span className="inline-flex items-center gap-1.5"><Brain className="h-3.5 w-3.5" /> Mental load support</span>
             <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> AI companion</span>
@@ -416,7 +416,7 @@ export default function Landing() {
 
       {/* ARCHETYPES */}
       <section id="archetypes" className="mx-auto w-full max-w-6xl px-5 py-20">
-        <div className="max-w-2xl">
+        <div className="max-w-2xl text-center sm:text-left mx-auto sm:mx-0">
           <Pill><Heart className="h-3 w-3" /> Who CareFlow is for</Pill>
           <h2 className="mt-4 font-display text-3xl tracking-tight text-foreground sm:text-4xl">
             Built for the people carrying the invisible load.
@@ -439,13 +439,13 @@ export default function Landing() {
             </GlassCard>
           ))}
         </div>
-        <div className="mt-6"><SecondaryCTA><Sparkles className="h-4 w-4" /> Find Your Archetype</SecondaryCTA></div>
+        <div className="mt-6 flex justify-center sm:justify-start"><SecondaryCTA><Sparkles className="h-4 w-4" /> Find Your Archetype</SecondaryCTA></div>
       </section>
 
       {/* FEATURES */}
       <section id="features" className="border-y border-border/40 bg-[hsl(36_55%_97%)]/70">
         <div className="mx-auto w-full max-w-6xl px-5 py-20">
-          <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
+          <div className="flex flex-col items-center justify-between gap-6 text-center sm:flex-row sm:items-end sm:text-left">
             <div className="max-w-xl">
               <Pill><Leaf className="h-3 w-3" /> App features</Pill>
               <h2 className="mt-4 font-display text-3xl tracking-tight text-foreground sm:text-4xl">
@@ -540,7 +540,7 @@ export default function Landing() {
           <div className="overflow-hidden rounded-3xl border border-border/40 shadow-cozy">
             <img src={storyImg} alt="A cozy candlelit reading nook with a journal and herbal tea" loading="lazy" width={1408} height={896} className="h-full w-full object-cover" />
           </div>
-          <div>
+          <div className="text-center lg:text-left">
             <Pill><Heart className="h-3 w-3" /> Our story</Pill>
             <h2 className="mt-4 font-display text-3xl tracking-tight text-foreground sm:text-4xl">
               CareFlow was born from real caregiving.
@@ -551,7 +551,7 @@ export default function Landing() {
             <p className="mt-3 text-foreground/85">
               This isn't just productivity. <em className="text-[hsl(28_70%_45%)] not-italic">It's support.</em>
             </p>
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex justify-center gap-3 lg:justify-start">
               <PrimaryCTA><Leaf className="h-4 w-4" /> Start Your CareFlow</PrimaryCTA>
             </div>
           </div>
@@ -626,14 +626,14 @@ export default function Landing() {
         <div className="relative overflow-hidden rounded-[2.5rem] p-10 text-[hsl(36_50%_96%)] shadow-cozy sm:p-14"
           style={{ background: "linear-gradient(120deg, hsl(150 28% 22%), hsl(150 32% 16%))" }}>
           <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-center">
-            <div>
+            <div className="text-center lg:text-left">
               <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
                 Care for your day. Care for yourself.
               </h2>
-              <p className="mt-3 max-w-md text-[hsl(36_45%_88%)]/85">
+              <p className="mt-3 max-w-md text-[hsl(36_45%_88%)]/85 mx-auto lg:mx-0">
                 CareFlow helps you create structure that feels supportive instead of overwhelming.
               </p>
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-wrap justify-center gap-3 lg:justify-start">
                 <Link
                   to="/auth"
                   className="inline-flex items-center gap-2 rounded-full bg-[hsl(36_50%_96%)] px-6 py-3 text-sm font-medium text-[hsl(150_30%_18%)] transition-transform hover:scale-[1.02]"
