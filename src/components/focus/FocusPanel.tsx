@@ -16,6 +16,7 @@ import {
   type SoundscapeId,
 } from "@/lib/soundscape";
 import { useAtmosphere } from "@/lib/atmospheres";
+import { MusicEmbed } from "./MusicEmbed";
 
 const DOCK_KEY = "careflow:focus:dock";
 const OPEN_KEY = "careflow:focus:open";
