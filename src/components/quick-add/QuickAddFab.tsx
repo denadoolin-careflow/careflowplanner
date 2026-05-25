@@ -34,7 +34,7 @@ const STATUS_LABEL: Record<TaskStatus, string> = {
   parked: "Not today",
 };
 
-export function QuickAddFab() {
+export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {}) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("command");
   const [palette, setPalette] = useState("");
@@ -78,7 +78,7 @@ export function QuickAddFab() {
   return (
     <>
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
-      <button
+      {!hideButton && <button
         ref={drag.ref}
         {...drag.handlers}
         onClick={(e) => {
@@ -96,7 +96,7 @@ export function QuickAddFab() {
         )}
       >
         <Plus className="h-6 w-6" />
-      </button>
+      </button>}
 
       <DialogContent className="max-w-xl p-0 overflow-hidden gap-0 border-primary/20 bg-card/95 backdrop-blur-xl">
         {mode === "command" ? (
