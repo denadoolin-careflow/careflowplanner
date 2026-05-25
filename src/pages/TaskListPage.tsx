@@ -96,7 +96,7 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
     const base = filterTasks(state.tasks, variant);
     const tf = showTimeframe ? applyTimeframe(base, timeframe) : base;
     const filtered = applyFilters(tf, prefs.filter);
-    return sortTasks(filtered, prefs.sort);
+    return sortTasks(filtered, prefs.sort, prefs.sortDir);
   }, [state.tasks, variant, prefs, timeframe, showTimeframe]);
 
   const groups = useMemo(() => {
