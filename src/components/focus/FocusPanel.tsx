@@ -362,6 +362,11 @@ function FocusRing({
             <stop offset="0%" stopColor="hsl(var(--primary))" />
             <stop offset="100%" stopColor="hsl(var(--accent-foreground))" />
           </linearGradient>
+          <radialGradient id="focus-ring-fill" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.35" />
+            <stop offset="60%" stopColor="hsl(var(--primary))" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="hsl(var(--accent-foreground))" stopOpacity="0.05" />
+          </radialGradient>
         </defs>
         <circle
           cx={size / 2}
@@ -369,7 +374,7 @@ function FocusRing({
           r={r}
           stroke="hsl(var(--muted))"
           strokeWidth={stroke}
-          fill="none"
+          fill="url(#focus-ring-fill)"
           opacity={0.4}
         />
         <circle
