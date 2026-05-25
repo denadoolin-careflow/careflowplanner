@@ -75,7 +75,7 @@ export function PomodoroPanel({ className, compact = false }: PomodoroPanelProps
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="font-display text-2xl tabular-nums leading-none">
+            <div className="font-display text-2xl font-semibold tabular-nums leading-none text-foreground">
               {formatPomoTime(s.remaining)}
             </div>
             <div className="mt-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">

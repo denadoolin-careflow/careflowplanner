@@ -120,7 +120,7 @@ export function FloatingPomodoro() {
       aria-label="Pomodoro timer"
     >
       <div className={cn(
-        "cozy-card flex items-center gap-2 rounded-full border border-border/70 bg-card/95 p-2 pr-3 backdrop-blur transition-shadow",
+        "cozy-card flex items-center gap-2 rounded-full border border-border/70 bg-background/95 p-2 pr-3 backdrop-blur-md transition-shadow",
         dragging ? "shadow-2xl scale-[1.02]" : "shadow-lg",
       )}>
         <button
@@ -158,9 +158,9 @@ export function FloatingPomodoro() {
 
         {!collapsed && (
           <div className="min-w-0 max-w-[180px]">
-            <div className="truncate text-xs font-medium leading-tight">{s.taskTitle}</div>
+            <div className="truncate text-xs font-medium leading-tight text-foreground">{s.taskTitle}</div>
             <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-              <span className="font-display text-[13px] tabular-nums normal-case tracking-normal text-foreground">
+              <span className="font-display text-[14px] font-semibold tabular-nums normal-case tracking-normal text-foreground">
                 {formatPomoTime(s.remaining)}
               </span>
               · {isFocus ? "focus" : "break"}
