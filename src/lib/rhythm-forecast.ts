@@ -606,7 +606,11 @@ const HOME_AREAS = new Set(["Home", "Meals", "Caregiving", "Appointments"]);
  * one low-energy, one home/care, one personal, one that can wait.
  * Falls back to a phase-aligned suggestion when no real task fits.
  */
-export function pickEnergyTaskSuggestions(tasks: Task[], forecast: RhythmForecast): EnergyPick[] {
+export function pickEnergyTaskSuggestions(
+  tasks: Task[],
+  forecast: RhythmForecast,
+  energy?: "low" | "medium" | "high",
+): EnergyPick[] {
   const open = tasks.filter(t => !t.done && !t.parentTaskId);
   const todayISO = new Date().toISOString().slice(0, 10);
 
@@ -615,27 +619,46 @@ export function pickEnergyTaskSuggestions(tasks: Task[], forecast: RhythmForecas
   const someday  = open.filter(t => t.status === "someday" || (!t.dueDate && t.status !== "this_week"));
   const recurring = open.filter(t => t.recurrenceType && t.recurrenceType !== "none");
 
-  const lowEnergy = [...dueToday, ...overdue, ...open]
-    .find(t => t.energy === "low" || (t.estMinutes ?? 0) > 0 && (t.estMinutes ?? 999) <= 15);
+  // Energy-aware ranking. When the user has checked in with an energy level,
+  // we shift the picks so they truly match how they feel right now.
+  const matchesEnergy = (t: Task): boolean => {
+    if (!energy) return true;
+    if (energy === "low") {
+      return t.energy === "low" || ((t.estMinutes ?? 999) <= 15) || t.priority === "low";
+    }
+    if (energy === "high") {
+      return t.energy === "high" || t.priority === "high" || ((t.estMinutes ?? 0) >= 45);
+    }
+    return t.energy === "medium" || (!t.energy);
+  };
+  const rank = (list: Task[]) => list.filter(matchesEnergy).concat(list.filter(t => !matchesEnergy(t)));
 
-  const homeCare = [...dueToday, ...overdue, ...recurring, ...open]
+  const lowEnergy = rank([...dueToday, ...overdue, ...open])
+    .find(t => t.energy === "low" || (t.estMinutes ?? 0) > 0 && (t.estMinutes ?? 999) <= 15)
+    ?? rank([...dueToday, ...open])[0];
+
+  const homeCare = rank([...dueToday, ...overdue, ...recurring, ...open])
     .find(t => HOME_AREAS.has(t.area));
 
-  const personal = [...dueToday, ...open]
+  const personal = rank([...dueToday, ...open])
     .find(t => (t.area === "Personal" || t.area === "Creative Projects") && t.id !== lowEnergy?.id);
 
   const canWait = [...someday, ...open.filter(t => t.priority === "low")]
     .find(t => t.id !== lowEnergy?.id && t.id !== homeCare?.id && t.id !== personal?.id);
 
   const fallback = getSuggestedTasks(forecast);
+  const tone =
+    energy === "low" ? "Soft enough for tired hands." :
+    energy === "high" ? "Channel this momentum." :
+    "Steady-paced and doable.";
 
   return [
     {
       kind: "low-energy",
-      label: "Low energy",
+      label: energy === "high" ? "Quick win" : "Low energy",
       task: lowEnergy,
       fallbackTitle: fallback[0]?.title,
-      reason: "Soft enough for a tired body.",
+      reason: tone,
     },
     {
       kind: "home-care",
@@ -653,10 +676,10 @@ export function pickEnergyTaskSuggestions(tasks: Task[], forecast: RhythmForecas
     },
     {
       kind: "can-wait",
-      label: "Can wait",
+      label: energy === "high" ? "Stretch goal" : "Can wait",
       fallbackTitle: "Let one open loop wait this week",
       task: canWait,
-      reason: "Protect your energy — it'll keep.",
+      reason: energy === "high" ? "If you still have fuel after the rest." : "Protect your energy — it'll keep.",
     },
   ];
 }
