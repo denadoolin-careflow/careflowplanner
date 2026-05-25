@@ -16,6 +16,7 @@ import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { PanelPicker } from "@/components/workspace/PanelPicker";
 import { AuroraClock } from "@/components/cards/AuroraClock";
+import { FocusPanel } from "@/components/focus/FocusPanel";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
@@ -61,6 +62,7 @@ export function AppLayout() {
       <AIAssistantFab />
       <BottomNav />
       <CommandPalette />
+      <FocusPanel />
     </div>
   );
 }
