@@ -18,6 +18,7 @@ import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarP
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { WeekNavigator } from "@/components/week/WeekNavigator";
+import { personalGreeting } from "@/lib/greeting";
 import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
