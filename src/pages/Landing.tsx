@@ -650,7 +650,15 @@ export default function Landing() {
             <div key={h}>
               <div className="text-xs uppercase tracking-widest text-muted-foreground">{h}</div>
               <ul className="mt-3 space-y-2 text-sm text-foreground/80">
-                {items.map(i => <li key={i}><a href="#" className="hover:text-foreground">{i}</a></li>)}
+                {items.map(i => (
+                  <li key={i.label}>
+                    {i.href.startsWith("/") ? (
+                      <Link to={i.href} className="hover:text-foreground">{i.label}</Link>
+                    ) : (
+                      <a href={i.href} className="hover:text-foreground">{i.label}</a>
+                    )}
+                  </li>
+                ))}
               </ul>
             </div>
           ))}
