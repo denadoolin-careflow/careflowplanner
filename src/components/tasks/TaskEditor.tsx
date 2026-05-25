@@ -19,6 +19,7 @@ import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { IconPicker } from "@/components/common/IconPicker";
+import { LucideIconPicker } from "@/components/common/LucideIconPicker";
 import { AttachmentsField } from "@/components/attachments/AttachmentsField";
 import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { SubtaskAddMenu } from "@/components/tasks/SubtaskAddMenu";
@@ -160,7 +161,14 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
           <div className="space-y-5">
             {/* Title — big and prominent */}
             <div className="flex items-center gap-2">
-              <IconPicker value={draft.icon} onChange={v => set("icon", v)} />
+              <IconPicker
+                value={draft.icon && !draft.icon.startsWith("lc:") ? draft.icon : undefined}
+                onChange={v => set("icon", v)}
+              />
+              <LucideIconPicker
+                value={draft.icon?.startsWith("lc:") ? draft.icon : undefined}
+                onChange={v => set("icon", v)}
+              />
               <Input
                 value={draft.title}
                 onChange={e => set("title", e.target.value)}
