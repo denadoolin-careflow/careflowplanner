@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, Filter, Layers, X } from "lucide-react";
+import { ArrowUpDown, Filter, Layers, X, ArrowUp, ArrowDown } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AREAS } from "@/lib/types";
 import type { Priority } from "@/lib/types";
 import { loadPrefs, savePrefs, type TaskListPrefs, type GroupMode, type SortMode, type FilterState } from "@/lib/task-grouping";
 
 const GROUP_LABEL: Record<GroupMode, string> = {
-  none: "None", project: "Project", area: "Area", priority: "Priority", date: "Date", energy: "Energy", status: "Status",
+  none: "None", project: "Project", area: "Area", priority: "Priority", date: "Date", energy: "Energy", status: "Status", tag: "Tag",
 };
 const SORT_LABEL: Record<SortMode, string> = {
-  manual: "Manual", date: "Date", priority: "Priority", title: "Title", created: "Newest", energy: "Energy", estMinutes: "Time",
+  manual: "Manual", date: "Date", priority: "Priority", title: "Title", created: "Created", updated: "Updated", energy: "Energy", estMinutes: "Time", project: "Project",
 };
 const DUE_LABEL: Record<string, string> = { any: "Any", overdue: "Overdue", today: "Today", week: "This week", month: "This month", none: "No date" };
 
@@ -132,6 +132,14 @@ export function TaskListControls({ prefs, onChange }: { prefs: TaskListPrefs; on
               {SORT_LABEL[k]}
             </DropdownMenuCheckboxItem>
           ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Direction</DropdownMenuLabel>
+          <DropdownMenuCheckboxItem checked={(prefs.sortDir ?? "asc") === "asc"} onCheckedChange={() => onChange({ sortDir: "asc" })}>
+            <ArrowUp className="mr-1 h-3 w-3" /> Ascending
+          </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem checked={prefs.sortDir === "desc"} onCheckedChange={() => onChange({ sortDir: "desc" })}>
+            <ArrowDown className="mr-1 h-3 w-3" /> Descending
+          </DropdownMenuCheckboxItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

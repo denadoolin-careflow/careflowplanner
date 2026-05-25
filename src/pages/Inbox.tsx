@@ -45,7 +45,7 @@ function InboxInner() {
   const groups = useMemo(() => {
     const base = state.tasks.filter(t => t.inbox && !t.done && !t.parentTaskId && t.status !== "parked");
     const filtered = applyFilters(base, prefs.filter);
-    const sorted = sortTasks(filtered, prefs.sort);
+    const sorted = sortTasks(filtered, prefs.sort, prefs.sortDir);
     return groupTasks(sorted, prefs.group, state.projects ?? []);
   }, [state.tasks, state.projects, prefs]);
   const items = useMemo(() => groups.flatMap(g => g.tasks), [groups]);

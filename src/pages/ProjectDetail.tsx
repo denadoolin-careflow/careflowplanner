@@ -564,7 +564,7 @@ function ProjectListView({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   // Filter + sort tasks once.
-  const filtered = useMemo(() => sortTasks(applyFilters(tasks, prefs.filter), prefs.sort), [tasks, prefs]);
+  const filtered = useMemo(() => sortTasks(applyFilters(tasks, prefs.filter), prefs.sort, prefs.sortDir), [tasks, prefs]);
 
   // If grouping isn't "none" or "project", show grouped buckets instead of sections.
   const useSectionLayout = prefs.group === "none" || prefs.group === "project";
