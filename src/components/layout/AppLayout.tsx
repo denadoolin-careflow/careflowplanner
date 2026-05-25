@@ -15,7 +15,6 @@ import { RoutinesStrip } from "@/components/routines/RoutinesStrip";
 import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { PanelPicker } from "@/components/workspace/PanelPicker";
-import { AuroraClock } from "@/components/cards/AuroraClock";
 import { FocusPanel } from "@/components/focus/FocusPanel";
 
 export function AppLayout() {
@@ -41,7 +40,6 @@ export function AppLayout() {
             <div className="flex items-center gap-2 sm:gap-3">
               <UniversalSearchBar />
               <PanelPicker />
-              <AuroraClock compact className="hidden md:flex shrink-0" />
               <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 sm:flex">
                 <Label htmlFor="low-energy" className="text-xs text-muted-foreground">Low-energy mode</Label>
                 <Switch id="low-energy" checked={state.settings.lowEnergyMode} onCheckedChange={setLowEnergyMode} />
