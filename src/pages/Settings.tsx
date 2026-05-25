@@ -116,6 +116,8 @@ export default function Settings() {
         </div>
       </SectionCard>
 
+      <ArchetypeThemeSection />
+
       <SectionCard title="Low-energy mode" subtitle="Hide non-essentials when you need a softer day." accent="calm">
         <div className="flex items-center gap-3">
           <Switch checked={state.settings.lowEnergyMode} onCheckedChange={setLowEnergyMode} />
