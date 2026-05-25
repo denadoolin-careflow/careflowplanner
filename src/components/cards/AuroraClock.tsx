@@ -95,19 +95,17 @@ export const AuroraClock = memo(function AuroraClock({
   }
 
   return (
-    <div className={cn("flex flex-col items-center gap-3 sm:items-end", className)}>
-      <div className="flex items-center gap-3">
-        <DigitalReadout />
-        <WeatherLine />
-      </div>
-      <div className="flex flex-col items-center gap-1.5">
+    <div className={cn("flex flex-col items-center gap-2 sm:items-end", className)}>
+      <DigitalReadout />
+      <div className="flex flex-col items-center gap-1.5 sm:items-end">
         <MoonGlyph size={moonSize} />
-        <div className="flex flex-col items-center leading-tight">
+        <div className="flex flex-col items-center leading-tight sm:items-end">
           <span className="font-display text-sm text-foreground/85">{moon.label}</span>
           <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
             {illum}% lit
           </span>
         </div>
+        <WeatherLine />
         <PhaseBadge date={today} />
       </div>
     </div>
