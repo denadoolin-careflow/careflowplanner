@@ -38,6 +38,7 @@ import AreaPage from "./pages/AreaPage";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Inbox from "./pages/Inbox";
+import Graph from "./pages/Graph";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Upcoming from "./pages/Upcoming";
