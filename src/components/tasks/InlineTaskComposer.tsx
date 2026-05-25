@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from "react";
-import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X } from "lucide-react";
+import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
-import { AREAS, type Area, type Task } from "@/lib/types";
+import { AREAS, type Area, type Energy, type Task } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
-type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId">>;
+type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId" | "energy">>;
 
 interface Props {
   /** Defaults applied to created tasks (e.g. { inbox: true } for the inbox page). */
@@ -29,6 +29,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
   const [date, setDate] = useState<string | undefined>(initialDate ?? defaults.dueDate);
   const [projectId, setProjectId] = useState<string | undefined>(defaults.projectId);
   const [area, setArea] = useState<Area | undefined>(defaults.area);
+  const [energy, setEnergy] = useState<Energy | undefined>(defaults.energy);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const parsed = useMemo(() => (nlp && text.trim() ? parseTaskInput(text) : null), [text, nlp]);
@@ -43,6 +44,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
       ?? (p.projectName ? state.projects?.find(pr => pr.name.toLowerCase() === p.projectName!.toLowerCase())?.id : undefined);
     const finalArea = area ?? p.area;
     const finalDate = date ?? p.dueDate ?? defaults.dueDate;
+    const finalEnergy = energy ?? p.energy ?? defaults.energy;
     await addTask({
       title: p.title || raw,
       notes: undefined,
@@ -50,6 +52,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
       priority: p.priority ?? "medium",
       area: (finalArea ?? "Personal") as Area,
       tags: p.tags,
+      energy: finalEnergy,
       estMinutes: p.estMinutes,
       recurrenceType: p.recurrenceType,
       recurrenceInterval: p.recurrenceInterval,
@@ -63,6 +66,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     setDate(initialDate ?? defaults.dueDate);
     setProjectId(defaults.projectId);
     setArea(defaults.area);
+    setEnergy(defaults.energy);
     inputRef.current?.focus();
   };
 
@@ -192,6 +196,31 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 </Command>
               </PopoverContent>
             </Popover>
+
+            {/* Energy dropper — quick tap or type @low / @med / @high */}
+            {(["low","medium","high"] as Energy[]).map(e => {
+              const active = energy === e;
+              const label = e === "medium" ? "med" : e;
+              return (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => setEnergy(active ? undefined : e)}
+                  title={`Energy: ${e}  (or type @${label})`}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
+                    active
+                      ? e === "low"  ? "border-transparent bg-secondary-soft text-secondary-foreground"
+                      : e === "high" ? "border-transparent bg-warm-soft text-warm-foreground"
+                      :                "border-transparent bg-primary-soft text-primary-foreground"
+                      : "border-border/60 text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  <Zap className="h-3 w-3" />
+                  {label}
+                </button>
+              );
+            })}
 
             {/* NLP chips */}
             {parsed && parsed.chips.length > 0 && (

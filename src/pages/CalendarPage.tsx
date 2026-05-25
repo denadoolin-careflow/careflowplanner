@@ -96,7 +96,7 @@ export default function CalendarPage() {
     ...state.tasks.filter(t => t.dueDate === k && !t.done && !t.parentTaskId).map(t => ({
       kind: (t.area === "Caregiving" ? "care" : "task") as "care" | "task",
       id: t.id,
-      label: `${t.icon ?? (t.done ? "✓" : "○")} ${t.title}`,
+      label: `${t.icon && !t.icon.startsWith("lc:") ? t.icon : (t.done ? "✓" : "○")} ${t.title}`,
       time: undefined,
     })),
     ...(state.meals ?? []).filter(m => m.date === k).map(m => ({

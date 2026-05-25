@@ -27,6 +27,7 @@ const fromRow = (r: any): Tag => ({
 /* ------------------------------------------------------------------ */
 
 export const TAG_COLORS: { name: string; hex: string }[] = [
+  // Saturated base
   { name: "Coral",     hex: "#f97373" },
   { name: "Amber",     hex: "#f59e0b" },
   { name: "Sun",       hex: "#facc15" },
@@ -39,6 +40,16 @@ export const TAG_COLORS: { name: string; hex: string }[] = [
   { name: "Rose",      hex: "#ec4899" },
   { name: "Stone",     hex: "#78716c" },
   { name: "Slate",     hex: "#64748b" },
+  // Soft atmosphere palette — pairs nicely with Sage Sanctuary, Soft Linen,
+  // Coastal Calm, Moonlit Plum, Golden Hearth, Blossom.
+  { name: "Linen",     hex: "#f4ead8" },
+  { name: "Mist",      hex: "#cfd8e3" },
+  { name: "Sage Soft", hex: "#c6d2bd" },
+  { name: "Coastal",   hex: "#b8d4d6" },
+  { name: "Plum Mist", hex: "#d8c7df" },
+  { name: "Hearth",    hex: "#f0c79a" },
+  { name: "Blossom",   hex: "#f5cdd7" },
+  { name: "Moss",      hex: "#a8b29a" },
 ];
 
 export const TAG_ICONS = [

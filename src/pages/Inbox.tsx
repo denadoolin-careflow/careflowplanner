@@ -13,6 +13,10 @@ import { applyFilters, sortTasks, groupTasks } from "@/lib/task-grouping";
 import { TaskSelectionProvider, useTaskSelection } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
 import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
+import { useTags } from "@/hooks/use-tags";
+import { TagChip } from "@/components/tags/TagChip";
+import { Link } from "react-router-dom";
+import { Tags as TagsIcon } from "lucide-react";
 
 interface Suggestion {
   task_id: string;
@@ -89,6 +93,15 @@ function InboxInner() {
   const dismiss = (taskId: string) =>
     setSuggestions(p => { const n = { ...p }; delete n[taskId]; return n; });
 
+  const { tags } = useTags();
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const filteredGroups = useMemo(() => {
+    if (!tagFilter) return groups;
+    return groups
+      .map(g => ({ ...g, tasks: g.tasks.filter(t => (t.tags ?? []).some(n => n.toLowerCase() === tagFilter.toLowerCase())) }))
+      .filter(g => g.tasks.length > 0);
+  }, [groups, tagFilter]);
+
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
@@ -133,12 +146,47 @@ function InboxInner() {
         placeholder="Capture anything — try “Call vet tomorrow at 3pm p2 #pet”"
       />
 
+      {tags.length > 0 && (
+        <div className="rounded-2xl border border-border/60 bg-card/40 p-2.5">
+          <div className="mb-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+              <TagsIcon className="h-3 w-3" /> Tag library
+            </div>
+            <div className="flex items-center gap-2">
+              {tagFilter && (
+                <button
+                  onClick={() => setTagFilter(null)}
+                  className="text-[11px] text-muted-foreground hover:text-foreground"
+                >Clear</button>
+              )}
+              <Link to="/tags" className="text-[11px] text-muted-foreground hover:text-foreground">Manage →</Link>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map(t => {
+              const active = tagFilter?.toLowerCase() === t.name.toLowerCase();
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTagFilter(active ? null : t.name)}
+                  className="transition-transform hover:-translate-y-px"
+                  aria-pressed={active}
+                >
+                  <TagChip name={t.name} subtle={!active} size="sm" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="rounded-2xl border border-border/60 bg-card/60 p-2">
-        {items.length === 0 ? (
+        {filteredGroups.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Your inbox is clear ✨</div>
         ) : (
           <div className="space-y-3">
-            {groups.map(g => (
+            {filteredGroups.map(g => (
               <div key={g.key} className="space-y-1">
                 {prefs.group !== "none" && (
                   <div className="px-2 pt-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">

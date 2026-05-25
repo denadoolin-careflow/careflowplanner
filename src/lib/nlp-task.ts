@@ -1,6 +1,6 @@
 import { addDays, endOfMonth, endOfWeek, format, nextDay, parse, startOfDay } from "date-fns";
 import type { Day } from "date-fns";
-import type { Area, Priority, RecurrenceType } from "./types";
+import type { Area, Energy, Priority, RecurrenceType } from "./types";
 import { AREAS } from "./types";
 
 export interface ParsedTask {
@@ -10,6 +10,7 @@ export interface ParsedTask {
   priority?: Priority;
   area?: Area;
   tags?: string[];
+  energy?: Energy;
   estMinutes?: number;
   recurrenceType?: RecurrenceType;
   recurrenceInterval?: number;
@@ -17,7 +18,7 @@ export interface ParsedTask {
   reminderMinutes?: number;
   projectName?: string;
   someday?: boolean;
-  chips: { label: string; kind: "date" | "time" | "priority" | "area" | "tag" | "duration" | "recur" | "remind" | "project" | "someday" }[];
+  chips: { label: string; kind: "date" | "time" | "priority" | "area" | "tag" | "duration" | "recur" | "remind" | "project" | "someday" | "energy" }[];
 }
 
 const WEEKDAYS: Record<string, number> = {
@@ -78,6 +79,14 @@ export function parseTaskInput(raw: string): ParsedTask {
   text = consume(text, /\s#([a-z0-9_-]+)/gi, (m) => {
     out.tags = [...(out.tags ?? []), m[1]];
     out.chips.push({ kind: "tag", label: `#${m[1]}` });
+  });
+
+  // Energy: @low / @med / @medium / @high  (parsed BEFORE area so it wins)
+  text = consume(text, /\s@(low|med|medium|high)\b/gi, (m) => {
+    const v = m[1].toLowerCase();
+    const e: Energy = v === "low" ? "low" : v === "high" ? "high" : "medium";
+    out.energy = e;
+    out.chips.push({ kind: "energy", label: `energy ${e}` });
   });
 
   // Project: +ProjectName  (allows hyphen/underscore/space-with-quotes)
