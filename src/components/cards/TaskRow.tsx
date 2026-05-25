@@ -208,7 +208,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
             {task.title}
           </button>
         )}
-        {!editing && (showArea || task.dueDate || task.dayPart || task.priority === "high" || task.resetItemId) && (
+        {!editing && (showArea || task.dueDate || task.dayPart || task.priority === "high" || task.resetItemId || (task.tags?.length ?? 0) > 0) && (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {showArea && (
               <Badge
@@ -254,6 +254,9 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
                 </Badge>
               </a>
             )}
+            {(task.tags ?? []).slice(0, 5).map(name => (
+              <TagChip key={name} name={name} size="xs" linkable />
+            ))}
           </div>
         )}
       </div>
