@@ -241,7 +241,17 @@ export default function Landing() {
   return (
     <div
       className={`relative min-h-screen overflow-x-hidden transition-colors duration-700 ${isDark ? "text-[hsl(36_50%_96%)]" : "text-foreground"}`}
-      style={activeAtmos ? { background: activeAtmos.bg } : { background: "hsl(36 42% 95%)" }}
+      style={{
+        background: activeAtmos ? activeAtmos.bg : "hsl(36 42% 95%)",
+        ...(isDark
+          ? ({
+              ["--foreground" as any]: "36 50% 96%",
+              ["--muted-foreground" as any]: "36 30% 85%",
+              ["--border" as any]: "36 20% 90%",
+              ["--card" as any]: "240 10% 12%",
+            } as React.CSSProperties)
+          : {}),
+      }}
     >
       {/* atmosphere tint overlay for readability on dark themes */}
       {isDark && (
