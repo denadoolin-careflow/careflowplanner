@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   ARCHETYPES, QUESTIONS, IDENTITIES,
-  scoreQuiz, saveQuizResult, saveQuizProgress, loadQuizProgress, clearQuizProgress,
+  scoreQuiz, saveQuizResult, saveQuizResultRemote, syncQuizResult,
+  saveQuizProgress, loadQuizProgress, clearQuizProgress,
   getArchetype, PLANNING_STYLE_LABEL,
   type Identity, type QuizAnswers, type Archetype,
 } from "@/lib/archetype-quiz";
@@ -37,6 +38,25 @@ export function CaregiverArchetypeQuiz({ embedded = false }: { embedded?: boolea
     }
   }, []);
 
+  // hydrate / sync result with the database when signed in
+  useEffect(() => {
+    let cancelled = false;
+    syncQuizResult().then((r) => {
+      if (cancelled || !r) return;
+      // only show synced result if user hasn't started a fresh attempt
+      if (Object.keys(answers).length === 0 && stage === "welcome") {
+        const a = getArchetype(r.archetype);
+        setResult(a);
+        setRecommendedAtmo(r.atmosphere);
+        setIdentity(r.identity);
+        if (r.answers) setAnswers(r.answers);
+        setStage("result");
+      }
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   // autosave progress
   useEffect(() => {
     if (stage === "quiz") saveQuizProgress({ identity, answers, step: qIdx });
@@ -67,13 +87,16 @@ export function CaregiverArchetypeQuiz({ embedded = false }: { embedded?: boolea
     setResult(archetype);
     const atmo = atmosphereVote ?? archetype.atmosphere;
     setRecommendedAtmo(atmo);
-    saveQuizResult({
+    const payload = {
       archetype: archetype.id,
       identity,
-      atmosphere: atmo,
+      atmosphere: atmo as any,
       planningStyle: archetype.planningStyle,
       takenAt: new Date().toISOString(),
-    });
+      answers: finalAnswers,
+    };
+    saveQuizResult(payload);
+    void saveQuizResultRemote(payload);
     clearQuizProgress();
     setStage("result");
   }
