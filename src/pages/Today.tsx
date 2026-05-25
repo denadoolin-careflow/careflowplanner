@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
-import { DateBarStrip } from "@/components/cards/DateBarStrip";
+import { EnergyCheckIn } from "@/components/cards/EnergyCheckIn";
 import { AuroraClock } from "@/components/cards/AuroraClock";
 import { format, isSameDay, addDays } from "date-fns";
 import { toast } from "sonner";
@@ -176,15 +176,6 @@ function TodayInner() {
                   {!isReallyToday && (
                     <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => setDayAndUrl(new Date())}>Today</Button>
                   )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 rounded-full px-3 text-xs"
-                    onClick={() => setPlanEnergyOpen(true)}
-                    title="Plan with this energy — low-energy, home/care, personal, can-wait"
-                  >
-                    <Wand2 className="mr-1 h-3.5 w-3.5" /> Plan with this energy
-                  </Button>
                   <div className="ml-2 inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1">
                     <Button
                       size="sm" variant="ghost"
@@ -212,11 +203,20 @@ function TodayInner() {
                     {paneOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
                   </Button>
                 </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <EnergyCheckIn />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 rounded-full px-3 text-xs"
+                    onClick={() => setPlanEnergyOpen(true)}
+                    title="Plan with this energy — low-energy, home/care, personal, can-wait"
+                  >
+                    <Wand2 className="mr-1 h-3.5 w-3.5" /> Plan with this energy
+                  </Button>
+                </div>
               </div>
-              <AuroraClock className="sm:self-center" />
-            </div>
-            <div className="relative mt-5">
-              <DateBarStrip date={today} />
+              <AuroraClock className="sm:self-start" />
             </div>
           </div>
         </div>
