@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap, Tag as TagIcon, Timer } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addDays, nextMonday, nextSaturday } from "date-fns";
 import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { AREAS, type Area, type Energy, type Task } from "@/lib/types";
@@ -131,6 +131,34 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
+                <div className="flex flex-col gap-1 border-b border-border/60 p-2">
+                  {([
+                    { label: "Today", get: () => new Date() },
+                    { label: "Tomorrow", get: () => addDays(new Date(), 1) },
+                    { label: "This weekend", get: () => nextSaturday(new Date()) },
+                    { label: "Next week", get: () => nextMonday(new Date()) },
+                    { label: "In 2 weeks", get: () => addDays(new Date(), 14) },
+                  ] as const).map(p => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => setDate(format(p.get(), "yyyy-MM-dd"))}
+                      className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted"
+                    >
+                      <span>{p.label}</span>
+                      <span className="text-[10px] text-muted-foreground">{format(p.get(), "EEE MMM d")}</span>
+                    </button>
+                  ))}
+                  {date && (
+                    <button
+                      type="button"
+                      onClick={() => setDate(undefined)}
+                      className="rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted"
+                    >
+                      Clear date
+                    </button>
+                  )}
+                </div>
                 <Calendar
                   mode="single"
                   selected={date ? parseISO(date) : undefined}
