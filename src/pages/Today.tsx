@@ -35,7 +35,7 @@ import { Wand2 } from "lucide-react";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
@@ -85,10 +85,8 @@ function TodayInner() {
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [cycleSheetOpen, setCycleSheetOpen] = useState(false);
   const [layout, setLayout] = useState<"schedule" | "plan">("schedule");
-  const navigate = useNavigate();
   const today = day;
   const isReallyToday = isSameDay(day, new Date());
-  const lowMode = state.settings.lowEnergyMode;
 
   // Stable reference list so child memoization doesn't break on each parent render.
   const days = useMemo(() => [today], [today]);
