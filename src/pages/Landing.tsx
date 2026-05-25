@@ -254,20 +254,24 @@ export default function Landing() {
         />
       )}
       {/* ambient gradients */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[900px] -z-10"
-        style={{
-          background:
-            "radial-gradient(60% 50% at 80% 10%, hsl(350 65% 92% / 0.7), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(145 40% 88% / 0.7), transparent 60%), linear-gradient(180deg, hsl(36 55% 96%) 0%, hsl(36 42% 95%) 100%)",
-        }}
-      />
-      <img
-        src={botanical}
-        alt=""
-        aria-hidden
-        className="pointer-events-none absolute -left-16 top-24 -z-10 hidden w-[420px] opacity-80 md:block"
-      />
+      {!activeAtmos && (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-[900px] -z-10"
+            style={{
+              background:
+                "radial-gradient(60% 50% at 80% 10%, hsl(350 65% 92% / 0.7), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(145 40% 88% / 0.7), transparent 60%), linear-gradient(180deg, hsl(36 55% 96%) 0%, hsl(36 42% 95%) 100%)",
+            }}
+          />
+          <img
+            src={botanical}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute -left-16 top-24 -z-10 hidden w-[420px] opacity-80 md:block"
+          />
+        </>
+      )}
 
       {/* Nav */}
       <header className="sticky top-0 z-30 border-b border-border/30 bg-[hsl(36_50%_97%)]/70 backdrop-blur-xl">
