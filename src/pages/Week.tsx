@@ -88,13 +88,17 @@ export default function Week() {
       <div className="min-w-0 flex-1 space-y-6">
         <div className="cozy-card gradient-sage flex flex-col gap-3 p-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Week of</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              {personalGreeting(state.settings.name)} <span className="opacity-60">· Week of</span>
+            </p>
             <h2 className="font-display text-3xl font-semibold sm:text-4xl">
               {format(start, "MMMM d")} – {format(addDays(start, 6), "MMMM d")}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {layout === "plan" ? "Set your intention, top three, and review the week." : "Drag tasks from the right onto any day or hour."}
-            </p>
+            {layout === "plan" && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Set your intention, top three, and review the week.
+              </p>
+            )}
             <div className="mt-3"><WeekNavigator weekStart={start} onChange={setStart} /></div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
