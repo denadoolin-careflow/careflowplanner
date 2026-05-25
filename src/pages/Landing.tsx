@@ -268,11 +268,29 @@ export default function Landing() {
   const [activeAtmos, setActiveAtmos] = useState<typeof atmospheres[number] | null>(atmospheres[0]);
   const isDark = !!activeAtmos?.dark;
 
+  // Build accent CSS variables from the chosen atmosphere so pills + CTAs
+  // recolor across the whole page.
+  const accent = activeAtmos?.accent ?? "145 30% 28%";
+  const atmosVars = {
+    ["--atmos-cta-bg" as any]: `hsl(${accent})`,
+    ["--atmos-cta-fg" as any]: isDark ? "hsl(240 25% 12%)" : "hsl(36 50% 96%)",
+    ["--atmos-pill-bg" as any]: isDark
+      ? "hsl(0 0% 100% / 0.10)"
+      : `hsl(${accent} / 0.14)`,
+    ["--atmos-pill-border" as any]: isDark
+      ? "hsl(0 0% 100% / 0.25)"
+      : `hsl(${accent} / 0.40)`,
+    ["--atmos-pill-text" as any]: isDark
+      ? "hsl(36 50% 96%)"
+      : `hsl(${accent})`,
+  } as React.CSSProperties;
+
   return (
     <div
       className={`relative min-h-screen overflow-x-hidden transition-colors duration-700 ${isDark ? "text-[hsl(36_50%_96%)]" : "text-foreground"}`}
       style={{
         background: activeAtmos ? activeAtmos.bg : "hsl(36 42% 95%)",
+        ...atmosVars,
       }}
     >
       {/* atmosphere tint overlay for readability on dark themes */}
