@@ -317,6 +317,9 @@ export function FocusPanel() {
                 </div>
               </details>
             </div>
+
+            {/* music (Spotify / YouTube) */}
+            <MusicEmbed autoplay={isFocus && s.running} />
           </>
         )}
 
