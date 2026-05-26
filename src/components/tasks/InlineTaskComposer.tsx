@@ -372,7 +372,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
               </div>
             )}
 
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-1">
               <TemplatePickerDialog
                 defaults={{
                   area: area ?? defaults.area,
