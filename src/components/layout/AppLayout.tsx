@@ -18,6 +18,7 @@ import { CommandPalette } from "@/components/command/CommandPalette";
 import { PanelPicker } from "@/components/workspace/PanelPicker";
 import { FocusPanel } from "@/components/focus/FocusPanel";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
@@ -65,6 +66,7 @@ export function AppLayout() {
       <BottomNav />
       <CommandPalette />
       <FocusPanel />
+      <GlobalTaskEditor />
     </div>
   );
 }
