@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { TagAutocomplete } from "@/components/tags/TagAutocomplete";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
+import { TemplatePickerDialog } from "@/components/tasks/TemplatePickerDialog";
+import { BookTemplate } from "lucide-react";
 
 type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId" | "energy" | "estMinutes" | "tags">>;
 
@@ -371,6 +373,26 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
             )}
 
             <div className="ml-auto">
+              <TemplatePickerDialog
+                defaults={{
+                  area: area ?? defaults.area,
+                  projectId: projectId ?? defaults.projectId,
+                  tags,
+                  energy: energy ?? defaults.energy,
+                  estMinutes: estMinutes ?? defaults.estMinutes,
+                  inbox: defaults.inbox,
+                  dueDate: date ?? defaults.dueDate,
+                }}
+                trigger={
+                  <button
+                    type="button"
+                    className="mr-1 inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted"
+                    title="Insert from template"
+                  >
+                    <BookTemplate className="h-3 w-3" /> Template
+                  </button>
+                }
+              />
               <Button size="sm" className="h-7 px-3 text-xs" onClick={submit} disabled={!text.trim()}>
                 Add
               </Button>
