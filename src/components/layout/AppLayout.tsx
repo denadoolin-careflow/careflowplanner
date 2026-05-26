@@ -17,6 +17,7 @@ import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { PanelPicker } from "@/components/workspace/PanelPicker";
 import { FocusPanel } from "@/components/focus/FocusPanel";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
@@ -40,6 +41,7 @@ export function AppLayout() {
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <UniversalSearchBar />
+              <NotificationCenter />
               <PanelPicker />
               <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 sm:flex">
                 <Label htmlFor="low-energy" className="text-xs text-muted-foreground">Low-energy mode</Label>
