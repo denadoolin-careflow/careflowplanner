@@ -29,13 +29,15 @@ export function getMoonPhase(date: Date = new Date()): MoonPhase {
   const diffDays = (date.getTime() - REF) / 86400000;
   const age = ((diffDays % SYNODIC) + SYNODIC) % SYNODIC;
   const frac = age / SYNODIC;
-  if (frac < 0.0303 || frac >= 0.9697) return "new";
-  if (frac < 0.2197) return "waxing-crescent";
-  if (frac < 0.2803) return "first-quarter";
-  if (frac < 0.4697) return "waxing-gibbous";
-  if (frac < 0.5303) return "full";
-  if (frac < 0.7197) return "waning-gibbous";
-  if (frac < 0.7803) return "last-quarter";
+  // Narrow exact-quarter bands (~0.4 days each) so the surrounding
+  // gibbous/crescent labels accurately match almanac data.
+  if (frac < 0.015 || frac >= 0.985) return "new";
+  if (frac < 0.245) return "waxing-crescent";
+  if (frac < 0.255) return "first-quarter";
+  if (frac < 0.485) return "waxing-gibbous";
+  if (frac < 0.515) return "full";
+  if (frac < 0.745) return "waning-gibbous";
+  if (frac < 0.755) return "last-quarter";
   return "waning-crescent";
 }
 

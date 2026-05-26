@@ -1,20 +1,26 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { format, parseISO, isBefore, addDays, startOfDay } from "date-fns";
-import { Sparkles, RefreshCw, Loader2, CalendarClock, AlertCircle, Star } from "lucide-react";
+import { Sparkles, RefreshCw, Loader2, CalendarClock, AlertCircle, Star, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/lib/store";
 import { getRhythmForecast } from "@/lib/rhythm-forecast";
+import { MOON_INFO } from "@/lib/moon";
+import { openTaskEditor } from "@/lib/open-task-editor";
+import { playCompletionChime } from "@/lib/completion-sound";
+import { toast } from "sonner";
 
 const cacheKey = (iso: string) => `careflow:daily-brief:${iso}`;
 
 export function DailyBrief({ date }: { date: Date }) {
   const iso = format(date, "yyyy-MM-dd");
   const today = startOfDay(date);
-  const { state } = useStore();
+  const { state, toggleTask } = useStore();
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<null | "today" | "overdue" | "appts" | "moon">(null);
   const forecast = useMemo(() => getRhythmForecast(date), [date]);
 
   const buckets = useMemo(() => {
@@ -75,10 +81,16 @@ export function DailyBrief({ date }: { date: Date }) {
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="Today" value={buckets.todays.length} icon={<CalendarClock className="h-3 w-3" />} />
-        <Stat label="Overdue" value={buckets.overdue.length} icon={<AlertCircle className="h-3 w-3" />} tone={buckets.overdue.length ? "warn" : "muted"} />
-        <Stat label="Appts" value={appts.length} icon={<CalendarClock className="h-3 w-3" />} />
-        <Stat label="Moon" value={forecast.phaseLabel} icon={<Star className="h-3 w-3" />} compact />
+        <Stat label="Today" value={buckets.todays.length} icon={<CalendarClock className="h-3 w-3" />} onClick={() => setDialog("today")} />
+        <Stat label="Overdue" value={buckets.overdue.length} icon={<AlertCircle className="h-3 w-3" />} tone={buckets.overdue.length ? "warn" : "muted"} onClick={() => setDialog("overdue")} />
+        <Stat label="Appts" value={appts.length} icon={<CalendarClock className="h-3 w-3" />} onClick={() => setDialog("appts")} />
+        <Stat
+          label="Moon"
+          value={`${forecast.phaseLabel} in ${forecast.sign.sign}`}
+          icon={<Star className="h-3 w-3" />}
+          compact
+          onClick={() => setDialog("moon")}
+        />
       </div>
 
       {topThree.length > 0 && (
@@ -109,16 +121,120 @@ export function DailyBrief({ date }: { date: Date }) {
           </Button>
         </div>
       </div>
+
+      <BriefDialog
+        open={dialog !== null}
+        onClose={() => setDialog(null)}
+        kind={dialog}
+        date={date}
+        tasks={dialog === "today" ? buckets.todays : dialog === "overdue" ? buckets.overdue : []}
+        appts={dialog === "appts" ? appts : []}
+        forecast={forecast}
+        onComplete={async (id, title) => {
+          await toggleTask(id);
+          try { playCompletionChime(); } catch {}
+          toast.success(`Completed “${title}”`);
+        }}
+      />
     </section>
   );
 }
 
-function Stat({ label, value, icon, tone = "default", compact = false }: { label: string; value: string | number; icon: React.ReactNode; tone?: "default" | "warn" | "muted"; compact?: boolean }) {
+function Stat({ label, value, icon, tone = "default", compact = false, onClick }: { label: string; value: string | number; icon: React.ReactNode; tone?: "default" | "warn" | "muted"; compact?: boolean; onClick?: () => void }) {
   const toneCls = tone === "warn" ? "text-destructive" : tone === "muted" ? "text-muted-foreground" : "text-foreground";
+  const Comp: any = onClick ? "button" : "div";
   return (
-    <div className="rounded-lg border border-border/50 bg-card/40 p-2">
+    <Comp
+      onClick={onClick}
+      className={`rounded-lg border border-border/50 bg-card/40 p-2 text-left transition-colors ${onClick ? "hover:bg-muted/60 cursor-pointer" : ""}`}
+    >
       <div className="flex items-center gap-1 text-[10px] uppercase tracking-[0.15em] text-muted-foreground">{icon} {label}</div>
       <div className={`mt-0.5 ${compact ? "text-xs font-medium" : "text-lg font-semibold"} ${toneCls}`}>{value}</div>
+    </Comp>
+  );
+}
+
+function BriefDialog({
+  open, onClose, kind, date, tasks, appts, forecast, onComplete,
+}: {
+  open: boolean;
+  onClose: () => void;
+  kind: null | "today" | "overdue" | "appts" | "moon";
+  date: Date;
+  tasks: any[];
+  appts: any[];
+  forecast: ReturnType<typeof getRhythmForecast>;
+  onComplete: (id: string, title: string) => Promise<void> | void;
+}) {
+  const titleMap: Record<string, string> = {
+    today: `Today · ${format(date, "EEE MMM d")}`,
+    overdue: "Overdue tasks",
+    appts: `Appointments · ${format(date, "EEE MMM d")}`,
+    moon: "Tonight's moon",
+  };
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display text-lg">{kind ? titleMap[kind] : ""}</DialogTitle>
+        </DialogHeader>
+        {kind === "moon" ? (
+          <MoonDetail forecast={forecast} date={date} />
+        ) : kind === "appts" ? (
+          <div className="space-y-1">
+            {appts.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">No appointments.</p>}
+            {appts.map(a => (
+              <div key={a.id} className="rounded-md border border-border/50 p-2">
+                <div className="text-sm font-medium">{a.title}</div>
+                <div className="text-[11px] text-muted-foreground">{a.time ?? "All day"}{a.location ? ` · ${a.location}` : ""}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {tasks.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">Nothing here. Nicely done.</p>}
+            {tasks.map(t => (
+              <div key={t.id} className="group flex items-center gap-2 rounded-md border border-border/50 p-2 hover:bg-muted/40">
+                <button
+                  className="grid h-4 w-4 shrink-0 place-items-center rounded-full border border-border text-transparent hover:border-primary hover:text-primary"
+                  title="Mark complete"
+                  onClick={() => onComplete(t.id, t.title)}
+                >✓</button>
+                <button
+                  className="min-w-0 flex-1 text-left"
+                  onClick={() => { onClose(); openTaskEditor(t.id); }}
+                >
+                  <div className="truncate text-sm font-medium">{t.title}</div>
+                  <div className="truncate text-[11px] text-muted-foreground">
+                    {t.dueDate ? format(parseISO(t.dueDate), "EEE MMM d") : "No date"}
+                    {t.area ? ` · ${t.area}` : ""}
+                  </div>
+                </button>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
+              </div>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function MoonDetail({ forecast, date }: { forecast: ReturnType<typeof getRhythmForecast>; date: Date }) {
+  const info = MOON_INFO[forecast.phase];
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="text-4xl">{info.glyph}</div>
+        <div>
+          <div className="font-display text-base">{forecast.phaseLabel} in {forecast.sign.sign} {forecast.sign.glyph}</div>
+          <div className="text-[11px] text-muted-foreground">{format(date, "EEEE, MMMM d")} · {forecast.illumination}% lit</div>
+        </div>
+      </div>
+      <p className="rounded-md bg-muted/40 p-3 text-sm italic text-foreground/85">{info.invitation}</p>
+      <p className="text-xs text-muted-foreground">{forecast.sign.insight}</p>
+      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Affirmation</p>
+      <p className="text-sm">{info.affirmation}</p>
     </div>
   );
 }
