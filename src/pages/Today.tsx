@@ -40,6 +40,7 @@ import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
 import { TodayEnergy } from "@/components/today/TodayEnergy";
+import { DailyBrief } from "@/components/today/DailyBrief";
 import { EndOfDaySummary } from "@/components/today/EndOfDaySummary";
 import { WeatherHeroCard } from "@/components/today/WeatherHeroCard";
 import { CarePriorities } from "@/components/today/CarePriorities";
@@ -222,6 +223,8 @@ function TodayInner() {
         </div>
 
         <MoonJournalReminderBanner date={today} />
+
+        <DailyBrief date={today} />
 
         {rhythmOn && (
           <TodayEnergy date={today} />
