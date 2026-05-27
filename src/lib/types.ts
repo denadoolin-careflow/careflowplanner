@@ -28,6 +28,14 @@ export interface Task {
   coverUrl?: string;
   done: boolean;
   dueDate?: string; // ISO date
+  /** Optional start date (ISO yyyy-mm-dd) for tasks that span a window. */
+  startDate?: string;
+  /** Optional start time "HH:MM" (24h). */
+  startTime?: string;
+  /** Optional end date (ISO yyyy-mm-dd) for tasks that span a window. */
+  endDate?: string;
+  /** Optional end time "HH:MM" (24h). */
+  endTime?: string;
   priority: Priority;
   area: Area;
   tags?: string[];
