@@ -45,7 +45,6 @@ import { EndOfDaySummary } from "@/components/today/EndOfDaySummary";
 import { WeatherHeroCard } from "@/components/today/WeatherHeroCard";
 import { CarePriorities } from "@/components/today/CarePriorities";
 import { AffirmationHeader } from "@/components/today/AffirmationHeader";
-import { TopThreeToday } from "@/components/today/TopThreeToday";
 import { personalGreeting } from "@/lib/greeting";
 
 export default function Today() {
@@ -239,8 +238,6 @@ function TodayInner() {
         {layout === "plan" ? (
           <DailyPlanningDashboard day={today} />
         ) : (
-        <>
-        <TopThreeToday date={today} onTaskClick={setEditTaskId} />
         <SectionCard
           title="Today"
           subtitle={view === "schedule" ? "Click a slot to add a time block, or drag a task in." : "Chronological view of everything on your day."}
@@ -252,6 +249,7 @@ function TodayInner() {
             </div>
           }
         >
+          <TopThreeStrip date={today} onTaskClick={setEditTaskId} />
           {view === "schedule" && (
             <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
           )}
@@ -268,7 +266,6 @@ function TodayInner() {
             <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
           )}
         </SectionCard>
-        </>
         )}
 
         {layout === "schedule" && <CalendarTasksPanel days={days} />}
