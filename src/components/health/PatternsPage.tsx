@@ -30,6 +30,7 @@ type MentalLog = {
   emotions: string[] | null;
   gratitude: string | null;
   support_needed: string | null;
+  intention: string | null;
 };
 
 type CheckIn = {
@@ -38,6 +39,7 @@ type CheckIn = {
   stress: string | null;
   sleep_hours: number | null;
   mindfulness_minutes: number | null;
+  intention: string | null;
 };
 
 const STRESS_VAL: Record<string, number> = { calm: 1, mild: 2, tense: 3, high: 4 };
@@ -115,9 +117,9 @@ export default function PatternsPage({ uid }: { uid: string }) {
     const since = new Date(); since.setDate(since.getDate() - range);
     const sinceIso = since.toISOString().slice(0, 10);
     Promise.all([
-      supabase.from("mental_health_logs").select("date, mood_score, anxiety, focus, sensory_load, emotions, gratitude, support_needed")
+      supabase.from("mental_health_logs").select("date, mood_score, anxiety, focus, sensory_load, emotions, gratitude, support_needed, intention")
         .eq("user_id", uid).gte("date", sinceIso).order("date"),
-      supabase.from("health_checkins").select("date, mood, stress, sleep_hours, mindfulness_minutes")
+      supabase.from("health_checkins").select("date, mood, stress, sleep_hours, mindfulness_minutes, intention")
         .eq("user_id", uid).gte("date", sinceIso).order("date"),
     ]).then(([m, c]) => {
       setMental((m.data as MentalLog[]) ?? []);
@@ -247,6 +249,53 @@ export default function PatternsPage({ uid }: { uid: string }) {
   }, [mental, checkins]);
 
   const topCorrelations = correlations.slice(0, 3);
+
+  // ------ Intention patterns over time ------
+  const intentionTimeline = useMemo(() => {
+    const map = new Map<string, { date: string; checkin?: string; mental?: string }>();
+    checkins.forEach(c => {
+      if (!c.intention) return;
+      const row = map.get(c.date) ?? { date: c.date };
+      row.checkin = c.intention;
+      map.set(c.date, row);
+    });
+    mental.forEach(m => {
+      if (!m.intention) return;
+      const row = map.get(m.date) ?? { date: m.date };
+      row.mental = m.intention;
+      map.set(m.date, row);
+    });
+    return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
+  }, [mental, checkins]);
+
+  const intentionWords = useMemo(() => {
+    const stop = new Set(["the","a","an","to","of","and","with","in","on","for","my","be","is","i","am","this","that","at","it","as","by","from","but","or","so","do","not"]);
+    const counts: Record<string, number> = {};
+    intentionTimeline.forEach(r => {
+      const txt = [r.checkin, r.mental].filter(Boolean).join(" ").toLowerCase();
+      txt.replace(/[^\p{L}\s']/gu, " ").split(/\s+/).forEach(w => {
+        const word = w.trim();
+        if (word.length < 3 || stop.has(word)) return;
+        counts[word] = (counts[word] || 0) + 1;
+      });
+    });
+    return Object.entries(counts)
+      .map(([word, count]) => ({ word, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+  }, [intentionTimeline]);
+
+  const intentionFlow = useMemo(() => {
+    const days: { date: string; count: number; label: string; intentions: string[] }[] = [];
+    for (let i = range - 1; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const iso = d.toISOString().slice(0, 10);
+      const row = intentionTimeline.find(r => r.date === iso);
+      const arr = [row?.checkin, row?.mental].filter(Boolean) as string[];
+      days.push({ date: iso, label: iso.slice(5), count: arr.length, intentions: arr });
+    }
+    return days;
+  }, [intentionTimeline, range]);
 
   // Radar data for phase × wellbeing
   const radarData = useMemo(() => {
@@ -418,12 +467,90 @@ export default function PatternsPage({ uid }: { uid: string }) {
             </div>
           )}
 
+          {/* Intention patterns over time */}
+          {intentionTimeline.length > 0 && (
+            <div className="cozy-card p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary/70" />
+                <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                  Intention patterns · last {range} days
+                </p>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
+                <div>
+                  <p className="mb-2 text-xs text-muted-foreground">Days you set an intention</p>
+                  <div className="flex h-20 items-end gap-1">
+                    {intentionFlow.map(d => (
+                      <div
+                        key={d.date}
+                        title={d.intentions.length ? `${d.date}: ${d.intentions.join(" · ")}` : d.date}
+                        className="flex-1 rounded-t-md transition-all"
+                        style={{
+                          height: d.count ? `${30 + d.count * 35}%` : "6%",
+                          background: d.count
+                            ? `hsl(145 50% ${65 - d.count * 8}%)`
+                            : "hsl(var(--muted))",
+                          minHeight: 4,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                    <span>{intentionFlow[0]?.label}</span>
+                    <span>{intentionFlow[intentionFlow.length - 1]?.label}</span>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {intentionTimeline.length} of {range} days held an intention
+                    {intentionTimeline.length > 0 && (
+                      <> · {Math.round((intentionTimeline.length / range) * 100)}% consistency</>
+                    )}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs text-muted-foreground">Recurring words</p>
+                  {intentionWords.length === 0 ? (
+                    <p className="text-xs italic text-muted-foreground/70">Not enough to chart yet.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {intentionWords.map(w => (
+                        <span
+                          key={w.word}
+                          className="rounded-full bg-primary/10 px-3 py-1 text-xs"
+                          style={{ fontSize: `${11 + Math.min(w.count, 5)}px` }}
+                        >
+                          {w.word}
+                          <span className="ml-1 text-muted-foreground">×{w.count}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <ol className="mt-5 space-y-2 border-t border-border/40 pt-4">
+                {intentionTimeline.slice(0, 8).map(r => (
+                  <li key={r.date} className="flex gap-3 text-sm">
+                    <span className="w-16 shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {r.date.slice(5)}
+                    </span>
+                    <div className="flex-1 space-y-1">
+                      {r.checkin && <p>🌿 <span className="italic">{r.checkin}</span></p>}
+                      {r.mental && <p>💭 <span className="italic">{r.mental}</span></p>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
           {/* Intentions / gratitude scroll */}
           {intentions.length > 0 && (
             <div className="cozy-card p-5">
               <div className="mb-3 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary/70" />
-                <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Recent intentions & gratitude</p>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Recent gratitude & support</p>
               </div>
               <ul className="space-y-2">
                 {intentions.map(i => (

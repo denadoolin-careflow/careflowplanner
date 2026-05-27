@@ -31,11 +31,12 @@ type Log = {
   gratitude: string | null;
   support_needed: string | null;
   notes: string | null;
+  intention: string | null;
 };
 
 const empty = {
   mood_score: 3, anxiety: 3, focus: 3, sensory_load: 3,
-  emotions: [] as string[], gratitude: "", support_needed: "", notes: "",
+  emotions: [] as string[], gratitude: "", support_needed: "", notes: "", intention: "",
 };
 
 export default function MentalHealthPage({ uid }: { uid: string }) {
@@ -62,6 +63,7 @@ export default function MentalHealthPage({ uid }: { uid: string }) {
         gratitude: todays.gratitude ?? "",
         support_needed: todays.support_needed ?? "",
         notes: todays.notes ?? "",
+        intention: todays.intention ?? "",
       });
     }
     setLoaded(true);
@@ -80,6 +82,7 @@ export default function MentalHealthPage({ uid }: { uid: string }) {
       gratitude: form.gratitude || null,
       support_needed: form.support_needed || null,
       notes: form.notes || null,
+      intention: form.intention?.trim() ? form.intention.trim() : null,
     }, { onConflict: "user_id,date" });
     if (error) return toast.error(error.message);
     toast.success("Felt and honored 💚");
@@ -199,6 +202,19 @@ export default function MentalHealthPage({ uid }: { uid: string }) {
 
       {/* Gratitude & Support */}
       <div className="grid gap-4 md:grid-cols-2">
+        <div className="cozy-card p-5 md:col-span-2">
+          <div className="mb-2 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary/70" />
+            <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Today's intention</p>
+          </div>
+          <input
+            type="text"
+            placeholder="A word or phrase to anchor the day…"
+            value={form.intention}
+            onChange={e => setForm(f => ({ ...f, intention: e.target.value }))}
+            className="w-full rounded-2xl border border-border/40 bg-card/60 px-4 py-3 text-base outline-none transition focus:border-primary"
+          />
+        </div>
         <div className="cozy-card p-5">
           <div className="mb-2 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary/70" />

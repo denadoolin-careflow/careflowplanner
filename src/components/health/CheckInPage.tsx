@@ -39,6 +39,7 @@ export default function CheckInPage({ uid }: { uid: string }) {
     meds_taken: false,
     mindfulness_minutes: "",
     notes: "",
+    intention: "",
   });
   const [needs, setNeeds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +58,7 @@ export default function CheckInPage({ uid }: { uid: string }) {
             sleep_hours: data.sleep_hours ?? "",
             water_cups: data.water_cups ?? "",
             mindfulness_minutes: data.mindfulness_minutes ?? "",
+            intention: data.intention ?? "",
           });
         }
         setLoading(false);
@@ -77,6 +79,7 @@ export default function CheckInPage({ uid }: { uid: string }) {
       meds_taken: !!row.meds_taken,
       mindfulness_minutes: row.mindfulness_minutes === "" ? null : Number(row.mindfulness_minutes),
       notes: notesWithNeeds || null,
+      intention: row.intention?.trim() ? row.intention.trim() : null,
     };
     const { error } = await supabase.from("health_checkins").upsert(payload, { onConflict: "user_id,date" });
     if (error) toast.error(error.message);
@@ -225,6 +228,18 @@ export default function CheckInPage({ uid }: { uid: string }) {
             <div className="text-center">
               <Moon className="mx-auto h-8 w-8 text-primary/60" />
               <h3 className="mt-4 font-display text-3xl">Anything else you want to remember?</h3>
+            </div>
+            <div>
+              <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                Today's intention
+              </p>
+              <input
+                type="text"
+                placeholder="A word or phrase to anchor the day…"
+                value={row.intention ?? ""}
+                onChange={e => setRow({ ...row, intention: e.target.value })}
+                className="w-full rounded-2xl border border-border/40 bg-card/70 px-4 py-3 text-base outline-none transition focus:border-primary"
+              />
             </div>
             <Textarea
               rows={6}
