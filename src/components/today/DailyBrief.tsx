@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { format, parseISO, isBefore, addDays, startOfDay } from "date-fns";
-import { Sparkles, RefreshCw, Loader2, CalendarClock, AlertCircle, Star, ChevronRight } from "lucide-react";
+import { Sparkles, RefreshCw, Loader2, CalendarClock, AlertCircle, Star, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { MOON_INFO } from "@/lib/moon";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { toast } from "sonner";
+import { QuickTaskInlineEditor } from "@/components/tasks/QuickTaskInlineEditor";
 
 const cacheKey = (iso: string) => `careflow:daily-brief:${iso}`;
 
@@ -166,6 +167,7 @@ function BriefDialog({
   forecast: ReturnType<typeof getRhythmForecast>;
   onComplete: (id: string, title: string) => Promise<void> | void;
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
   const titleMap: Record<string, string> = {
     today: `Today · ${format(date, "EEE MMM d")}`,
     overdue: "Overdue tasks",
@@ -194,23 +196,40 @@ function BriefDialog({
           <div className="space-y-1">
             {tasks.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">Nothing here. Nicely done.</p>}
             {tasks.map(t => (
-              <div key={t.id} className="group flex items-center gap-2 rounded-md border border-border/50 p-2 hover:bg-muted/40">
-                <button
-                  className="grid h-4 w-4 shrink-0 place-items-center rounded-full border border-border text-transparent hover:border-primary hover:text-primary"
-                  title="Mark complete"
-                  onClick={() => onComplete(t.id, t.title)}
-                >✓</button>
-                <button
-                  className="min-w-0 flex-1 text-left"
-                  onClick={() => { onClose(); openTaskEditor(t.id); }}
-                >
-                  <div className="truncate text-sm font-medium">{t.title}</div>
-                  <div className="truncate text-[11px] text-muted-foreground">
-                    {t.dueDate ? format(parseISO(t.dueDate), "EEE MMM d") : "No date"}
-                    {t.area ? ` · ${t.area}` : ""}
+              <div key={t.id} className="rounded-md border border-border/50">
+                <div className="group flex items-center gap-2 p-2 hover:bg-muted/40">
+                  <button
+                    className="grid h-4 w-4 shrink-0 place-items-center rounded-full border border-border text-transparent hover:border-primary hover:text-primary"
+                    title="Mark complete"
+                    onClick={() => onComplete(t.id, t.title)}
+                  >✓</button>
+                  <button
+                    className="min-w-0 flex-1 text-left"
+                    onClick={() => setEditingId(editingId === t.id ? null : t.id)}
+                  >
+                    <div className="truncate text-sm font-medium">{t.title}</div>
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      {t.dueDate ? format(parseISO(t.dueDate), "EEE MMM d") : "No date"}
+                      {t.area ? ` · ${t.area}` : ""}
+                    </div>
+                  </button>
+                  <Button
+                    variant="ghost" size="icon" className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                    title="Quick edit"
+                    onClick={(e) => { e.stopPropagation(); setEditingId(editingId === t.id ? null : t.id); }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost" size="sm" className="h-7 px-2 text-[11px]"
+                    onClick={() => { onClose(); openTaskEditor(t.id); }}
+                  >Open</Button>
+                </div>
+                {editingId === t.id && (
+                  <div className="border-t border-border/50 p-2">
+                    <QuickTaskInlineEditor taskId={t.id} onClose={() => setEditingId(null)} />
                   </div>
-                </button>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                )}
               </div>
             ))}
           </div>
