@@ -14,6 +14,9 @@ import { HealthHero } from "@/components/health/HealthHero";
 import { HealthDashboard } from "@/components/health/HealthDashboard";
 import CyclicalLivingPage from "@/components/health/CyclicalLivingPage";
 import LunarLivingPage from "@/components/health/LunarLivingPage";
+import CheckInPage from "@/components/health/CheckInPage";
+import MovementPage from "@/components/health/MovementPage";
+import MentalHealthPage from "@/components/health/MentalHealthPage";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -196,14 +199,14 @@ export default function Health() {
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-5"><HealthDashboard /></TabsContent>
-        <TabsContent value="checkin" className="mt-5"><CheckInPanel uid={uid} /></TabsContent>
+        <TabsContent value="checkin" className="mt-5"><CheckInPage uid={uid} /></TabsContent>
         <TabsContent value="cycle" className="mt-5"><CyclicalLivingPage /></TabsContent>
         <TabsContent value="lunar" className="mt-5"><LunarLivingPage /></TabsContent>
-        <TabsContent value="movement" className="mt-5"><MovementPanel uid={uid} /></TabsContent>
+        <TabsContent value="movement" className="mt-5"><MovementPage uid={uid} /></TabsContent>
         <TabsContent value="wellness" className="mt-5"><ComingSoonPanel title="Wellness" blurb="Hydration, breath, nervous-system support, and gentle hydration rituals — coming next." /></TabsContent>
         <TabsContent value="nourishment" className="mt-5"><ComingSoonPanel title="Nourishment" blurb="Body-neutral meal logging woven with your cycle phase and energy." /></TabsContent>
         <TabsContent value="sleep" className="mt-5"><ComingSoonPanel title="Sleep" blurb="Soft sleep trends, wind-down rituals, and dream journaling." /></TabsContent>
-        <TabsContent value="mental" className="mt-5"><ComingSoonPanel title="Mental Health" blurb="Mood, stress, anxiety, sensory load — tracked with care, not judgment." /></TabsContent>
+        <TabsContent value="mental" className="mt-5"><MentalHealthPage uid={uid} /></TabsContent>
         <TabsContent value="goals" className="mt-5"><GoalsPanel uid={uid} /></TabsContent>
         <TabsContent value="calendar" className="mt-5"><ComingSoonPanel title="Health Calendar" blurb="Appointments, symptoms, cycle and moon phases — all in one calming view." /></TabsContent>
         <TabsContent value="reflections" className="mt-5"><ComingSoonPanel title="Reflections" blurb="Wellness, moon, symptom, and emotional journaling — beautifully threaded together." /></TabsContent>
