@@ -27,6 +27,8 @@ import { SubtaskAddMenu } from "@/components/tasks/SubtaskAddMenu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { supabase } from "@/integrations/supabase/client";
+import { detectAreaAndProject } from "@/lib/task-auto-detect";
+import { Sparkles } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -110,11 +112,39 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   const [subDraft, setSubDraft] = useState("");
   const [addingSub, setAddingSub] = useState(false);
   const [subAiLoading, setSubAiLoading] = useState(false);
+  const [autoBusy, setAutoBusy] = useState(false);
 
   useEffect(() => { setDraft(task); }, [task]);
   if (!draft) return null;
 
   const set = <K extends keyof Task>(k: K, v: Task[K]) => setDraft(d => d ? { ...d, [k]: v } : d);
+
+  const runAutoDetect = () => {
+    if (!draft) return;
+    setAutoBusy(true);
+    try {
+      const guess = detectAreaAndProject({
+        title: draft.title,
+        notes: draft.notes,
+        areas: state.areas,
+        projects: state.projects,
+      });
+      const next: Partial<Task> = {};
+      if (guess.area && guess.area !== draft.area) next.area = guess.area as Task["area"];
+      if (guess.projectId && guess.projectId !== draft.projectId) next.projectId = guess.projectId;
+      if (!next.area && !next.projectId) {
+        toast("No confident match — set them manually.");
+        return;
+      }
+      setDraft(d => d ? { ...d, ...next } : d);
+      const bits: string[] = [];
+      if (next.area) bits.push(`Area → ${next.area}`);
+      if (guess.projectName && next.projectId) bits.push(`Project → ${guess.projectName}`);
+      toast.success("Auto-detected", { description: bits.join(" · ") });
+    } finally {
+      setAutoBusy(false);
+    }
+  };
 
   const subtasks = (state.tasks ?? []).filter(t => t.parentTaskId === draft.id);
 
@@ -350,6 +380,20 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
 
             {/* Attributes */}
             <Section title="Attributes">
+              <div className="-mt-2 flex justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={runAutoDetect}
+                  disabled={autoBusy || !draft.title.trim()}
+                  className="h-7 gap-1 px-2 text-[11px] text-primary hover:bg-primary/10 hover:text-primary"
+                  title="Auto-detect area and project from the title and notes"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  Auto-detect area & project
+                </Button>
+              </div>
               <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
                 <Field icon={Tag} label="Area">
                   <Select value={draft.area} onValueChange={v => set("area", v as any)}>

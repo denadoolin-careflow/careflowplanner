@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveTaskIcon } from "@/lib/task-icons";
 import { TagChip } from "@/components/tags/TagChip";
 import { playCompletionChime } from "@/lib/completion-sound";
+import { PriorityHoverButton } from "@/components/tasks/PriorityHoverButton";
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
@@ -326,6 +327,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       <div className="hidden sm:contents">
         <QuickScheduleButton task={task} />
         <QuickDayPartButton task={task} />
+        <PriorityHoverButton task={task} />
       </div>
       {!isSubtask && (
         <div className="hidden opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 sm:block">
