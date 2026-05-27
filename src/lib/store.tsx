@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import { seedState, newUserSeed } from "./seed";
 import { AREAS } from "./types";
+import { toast } from "sonner";
 
 /* Fire-and-forget push of one CareFlow appointment to Google Calendar.
    Failures are silent — the local DB is the source of truth and the cron
