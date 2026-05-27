@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { format, parseISO, addDays } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getMoonPhase,
   MOON_INFO,
   type MoonPhase,
-  daysUntilFull,
-  daysUntilNew,
-  getIllumination,
 } from "@/lib/moon";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo } from "@/lib/cycle";
@@ -18,7 +15,9 @@ import { Input } from "@/components/ui/input";
 import { MoonGlyph } from "@/components/widgets/MoonGlyph";
 import { MoonCalendar } from "./MoonCalendar";
 import { toast } from "sonner";
-import { Save, Sparkles, Trash2 } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
+import { LunarPhaseWidget } from "@/components/lunar/LunarPhaseWidget";
+import { PhasePlanningCard } from "@/components/lunar/PhasePlanningCard";
 
 const RITUALS: Record<
   MoonPhase,
@@ -218,73 +217,10 @@ export default function LunarLivingPage() {
     reload();
   }
 
-  const next3Phases = useMemo(() => {
-    const out: { date: Date; phase: MoonPhase }[] = [];
-    let last: MoonPhase | null = null;
-    for (let i = 0; i < 32 && out.length < 4; i++) {
-      const d = addDays(new Date(), i);
-      const p = getMoonPhase(d);
-      if (
-        (p === "new" || p === "first-quarter" || p === "full" || p === "last-quarter") &&
-        p !== last
-      ) {
-        out.push({ date: d, phase: p });
-        last = p;
-      }
-    }
-    return out;
-  }, []);
-
   return (
     <div className="space-y-6">
-      {/* HERO: current moon */}
-      <div
-        className="cozy-card relative overflow-hidden p-6 sm:p-8"
-        style={{
-          background:
-            "linear-gradient(135deg, hsl(215 45% 18%) 0%, hsl(258 35% 22%) 50%, hsl(145 22% 18%) 100%)",
-          color: "hsl(36 30% 92%)",
-        }}
-      >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full opacity-40 blur-3xl"
-          style={{ background: "hsl(215 60% 70% / 0.5)" }}
-        />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
-          <MoonGlyph date={new Date()} size={92} />
-          <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] opacity-70">
-              <Sparkles className="h-3 w-3" /> Tonight
-            </p>
-            <h2 className="mt-1 font-display text-3xl">
-              {MOON_INFO[getMoonPhase()].label}
-            </h2>
-            <p className="mt-1 text-sm opacity-80">
-              {getIllumination()}% illuminated · {daysUntilFull()}d to full · {daysUntilNew()}d to new
-            </p>
-            <p className="mt-3 max-w-xl text-base italic opacity-90">
-              "{MOON_INFO[getMoonPhase()].invitation}"
-            </p>
-          </div>
-        </div>
-
-        {/* Upcoming key phases */}
-        <div className="relative mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {next3Phases.map((n) => (
-            <div
-              key={n.date.toISOString()}
-              className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 backdrop-blur-sm"
-            >
-              <MoonGlyph date={n.date} size={28} />
-              <div className="text-[11px] leading-tight">
-                <p className="font-medium">{MOON_INFO[n.phase].label}</p>
-                <p className="opacity-70">{format(n.date, "MMM d")}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <LunarPhaseWidget date={selected} />
+      <PhasePlanningCard date={selected} />
 
       {/* CALENDAR + JOURNAL */}
       <div className="grid gap-5 lg:grid-cols-[1fr,1.2fr]">

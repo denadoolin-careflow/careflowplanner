@@ -21,6 +21,8 @@ import { BirthdayHolidayEditor } from "@/components/calendar/BirthdayHolidayEdit
 import { InboxCapture } from "@/components/calendar/InboxCapture";
 import { MonthPlanningDashboard } from "@/components/calendar/MonthPlanningDashboard";
 import { moonPhaseFor } from "@/lib/moon-phase";
+import { getMoonPhase } from "@/lib/moon";
+import { getKeyPhaseInfo, isKeyPhaseDay } from "@/lib/lunar-phases";
 import { Globe2 } from "lucide-react";
 import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
 import { ElementBadge } from "@/components/rhythm/ElementBadge";
@@ -483,15 +485,20 @@ function MonthView({
                 <div className="flex items-center gap-1">
                   {(() => {
                     const moon = moonPhaseFor(d);
-                    return moon ? (
+                    if (!moon) return null;
+                    const p = getMoonPhase(d);
+                    const key = isKeyPhaseDay(p) ? getKeyPhaseInfo(p) : null;
+                    return (
                       <span
-                        className="text-[11px] leading-none"
-                        title={moon.label}
-                        aria-label={moon.label}
+                        className="inline-flex items-center gap-1 rounded-full px-1 text-[11px] leading-none"
+                        style={key ? { background: `hsl(${key.hsl} / 0.18)`, color: `hsl(${key.hsl})` } : undefined}
+                        title={key ? `${moon.label} · ${key.verb} — ${key.invitation}` : moon.label}
+                        aria-label={key ? `${moon.label}, ${key.verb}` : moon.label}
                       >
-                        {moon.emoji}
+                        <span>{moon.emoji}</span>
+                        {key && <span className="hidden font-medium sm:inline">{key.verb}</span>}
                       </span>
-                    ) : null;
+                    );
                   })()}
                   <span className={cn(
                     "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold",

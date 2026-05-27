@@ -21,6 +21,8 @@ import { haptics } from "@/lib/haptics";
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { getRhythmForecast, type Element } from "@/lib/rhythm-forecast";
 import { Moon } from "lucide-react";
+import { getMoonPhase } from "@/lib/moon";
+import { getKeyPhaseInfo, isKeyPhaseDay } from "@/lib/lunar-phases";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
@@ -210,6 +212,9 @@ export default function Month() {
               // Mark element transitions — when today's element differs from yesterday's.
               const prevMoon = showMoon ? getRhythmForecast(addDays(d, -1)) : null;
               const elementChanged = !!(moon && prevMoon && moon.element !== prevMoon.element);
+              // Key lunar phase (Sow/Grow/Glow/Let go) — only on the 4 exact days.
+              const dayPhase = getMoonPhase(d);
+              const keyPhase = isKeyPhaseDay(dayPhase) ? getKeyPhaseInfo(dayPhase) : null;
               return (
                 <div
                   key={k}
@@ -243,16 +248,37 @@ export default function Month() {
                     inMonth && elementChanged && "ring-2 ring-offset-1 ring-offset-background ring-foreground/40",
                     hoverISO === k && "scale-[1.03] bg-primary/10 ring-2 ring-primary shadow-md",
                   )}
+                  style={inMonth && keyPhase && !today ? {
+                    boxShadow: `inset 0 0 0 2px hsl(${keyPhase.hsl} / 0.55)`,
+                  } : undefined}
                 >
                   <div className="flex items-center justify-between">
                     {moon ? (
                       <span
-                        title={`${moon.phaseLabel} · Moon in ${moon.sign.sign} (${moonStyle!.label})`}
+                        title={`${moon.phaseLabel} · Moon in ${moon.sign.sign} (${moonStyle!.label})${keyPhase ? ` · ${keyPhase.verb}` : ""}`}
                         aria-label={`${moon.phaseLabel}, moon in ${moon.sign.sign}`}
                         className="inline-flex items-center gap-1 text-[10px] leading-none sm:text-[11px]"
                       >
                         <span aria-hidden>{moon.glyph}</span>
                         <span className="hidden text-[10px] text-muted-foreground sm:inline" aria-hidden>{moon.sign.glyph}</span>
+                        {keyPhase && (
+                          <span
+                            className="hidden rounded-full px-1 text-[9px] font-medium sm:inline"
+                            style={{ background: `hsl(${keyPhase.hsl} / 0.18)`, color: `hsl(${keyPhase.hsl})` }}
+                          >
+                            {keyPhase.verb}
+                          </span>
+                        )}
+                      </span>
+                    ) : keyPhase ? (
+                      <span
+                        title={`${keyPhase.label} · ${keyPhase.invitation}`}
+                        aria-label={keyPhase.label}
+                        className="inline-flex items-center gap-1 rounded-full px-1 text-[10px] font-medium sm:text-[11px]"
+                        style={{ background: `hsl(${keyPhase.hsl} / 0.18)`, color: `hsl(${keyPhase.hsl})` }}
+                      >
+                        <span aria-hidden>{keyPhase.glyph}</span>
+                        <span className="hidden sm:inline">{keyPhase.verb}</span>
                       </span>
                     ) : phaseVar ? (
                       <span
