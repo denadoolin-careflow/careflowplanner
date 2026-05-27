@@ -7,6 +7,8 @@ export type MemoryType =
   | "home" | "meal" | "creative" | "grief_healing" | "birthday"
   | "trip" | "pet" | "custom";
 
+export type MemoryPrivacy = "private" | "family" | "shared";
+
 export interface Memory {
   id: string;
   userId: string;
@@ -38,6 +40,8 @@ export interface Memory {
   isPinned: boolean;
   chapter?: string;
   coverIndex: number;
+  privacy: MemoryPrivacy;
+  sharedLovedOneIds: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -69,6 +73,8 @@ function fromRow(r: any): Memory {
     isFavorite: !!r.is_favorite, isPinned: !!r.is_pinned,
     chapter: r.chapter ?? undefined,
     coverIndex: r.cover_index ?? 0,
+    privacy: (r.privacy ?? "private") as MemoryPrivacy,
+    sharedLovedOneIds: r.shared_loved_one_ids ?? [],
     createdAt: r.created_at, updatedAt: r.updated_at,
   };
 }
@@ -103,8 +109,16 @@ function toRow(m: Partial<Memory>): any {
   if (m.isPinned !== undefined) out.is_pinned = m.isPinned;
   if (m.chapter !== undefined) out.chapter = m.chapter;
   if (m.coverIndex !== undefined) out.cover_index = m.coverIndex;
+  if (m.privacy !== undefined) out.privacy = m.privacy;
+  if (m.sharedLovedOneIds !== undefined) out.shared_loved_one_ids = m.sharedLovedOneIds;
   return out;
 }
+
+export const MEMORY_PRIVACY_META: Record<MemoryPrivacy, { label: string; description: string; emoji: string }> = {
+  private: { label: "Private", description: "Just for you. No one else sees it.", emoji: "🔒" },
+  family:  { label: "Family", description: "Visible to anyone in your family circle.", emoji: "🏠" },
+  shared:  { label: "Shared", description: "Tied to specific loved ones you choose.", emoji: "💞" },
+};
 
 export async function listMemories(): Promise<Memory[]> {
   const { data, error } = await (supabase as any)
