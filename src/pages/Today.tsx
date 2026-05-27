@@ -35,7 +35,7 @@ import { Wand2 } from "lucide-react";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
@@ -61,6 +61,7 @@ function TodayInner() {
   const { state, updateTask, updateAppointment } = useStore();
   const { paneOpen, togglePane, setOrderedIds, clear } = useTaskSelection();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [day, setDay] = useState<Date>(() => {
     const d = searchParams.get("date");
     if (d) {
@@ -192,6 +193,29 @@ function TodayInner() {
                       onClick={() => setLayout("plan")}
                     >
                       <Sparkles className="mr-1 h-3.5 w-3.5" /> Plan
+                    </Button>
+                  </div>
+                  <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1">
+                    <Button
+                      size="sm" variant="ghost"
+                      className={cn("h-7 rounded-full px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
+                      aria-current="page"
+                    >
+                      Today
+                    </Button>
+                    <Button
+                      size="sm" variant="ghost"
+                      className="h-7 rounded-full px-3 text-xs"
+                      onClick={() => navigate("/week")}
+                    >
+                      Week
+                    </Button>
+                    <Button
+                      size="sm" variant="ghost"
+                      className="h-7 rounded-full px-3 text-xs"
+                      onClick={() => navigate("/month")}
+                    >
+                      Month
                     </Button>
                   </div>
                   <Button

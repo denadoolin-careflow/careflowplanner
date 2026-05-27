@@ -1,34 +1,27 @@
 ## Goal
 
-List Health under both **Rhythm** and **Exhale** in the Care Loop (`/care`), reflecting that the hub is daily/cyclical support while Patterns + Timeline are reflective.
+Add a **Today / Week / Month** toggle to the Today view header so users can jump to the corresponding routes in one click.
 
 ## Changes
 
-### 1. `src/pages/CareLoop.tsx`
-Add Health entries to two phases:
+### `src/pages/Today.tsx`
+- Import `useNavigate` from `react-router-dom`.
+- Add a new pill-style toggle group next to the existing Schedule / Plan toggle (same visual treatment: rounded-full container, ghost buttons, primary background on the active option).
+- Buttons:
+  - **Today** → `/today` (active state on this page)
+  - **Week** → `/week`
+  - **Month** → `/month`
+- Place it in the header action row at lines ~181–207 (the row that already contains the day stepper and Schedule/Plan toggle). On the narrow viewport it wraps naturally since the row is `flex-wrap`.
 
-- **Rhythm** links → append `{ to: "/health", label: "Health Hub" }`
-- **Exhale** links → append:
-  - `{ to: "/health?tab=reflections", label: "Health patterns" }`
-  - `{ to: "/health?tab=timeline", label: "Health timeline" }`
-
-### 2. `src/pages/Health.tsx`
-Make the Tabs component URL-driven so Exhale deep-links land on the right tab:
-
-- Read `?tab=` from `useSearchParams`.
-- Replace `<Tabs defaultValue="dashboard">` with a controlled `<Tabs value={tab} onValueChange={...}>` that writes the value back to the URL (`setSearchParams({ tab })`, using `replace: true` to avoid history spam).
-- Default to `"dashboard"` when the param is missing or invalid (validate against the known tab id list).
-
-No backend, schema, or business-logic changes. Pure navigation/IA.
+No changes to Week/Month pages, routing, or business logic.
 
 ## Out of scope
 
-- No redesign of the CareLoop card UI.
-- No changes to Health tab contents.
-- No changes to the bottom nav / sidebar.
+- Adding the same toggle to Week or Month pages (can be a follow-up if desired).
+- Restyling the existing Schedule/Plan toggle.
 
 ## Verification
 
-- `/care` shows Health Hub under Rhythm, and Health patterns + Health timeline under Exhale.
-- Clicking each link lands on `/health` with the correct tab pre-selected.
-- Switching tabs manually updates the URL; refreshing the page preserves the active tab.
+- On `/today`, the new toggle shows Today highlighted.
+- Clicking Week navigates to `/week`; clicking Month navigates to `/month`.
+- Toggle wraps cleanly at 705px width without breaking the header layout.
