@@ -19,12 +19,15 @@ import { PanelPicker } from "@/components/workspace/PanelPicker";
 import { FocusPanel } from "@/components/focus/FocusPanel";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
+import { useEffect } from "react";
+import { applyAnimIntensity, readAnimIntensity } from "@/components/settings/AtmosphereFeelSection";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
   const { pathname } = useLocation();
   const current = NAV.find(n => n.to === pathname) ?? NAV[0];
   useAutoAtmosphereResolver({ lowEnergy: state.settings.lowEnergyMode });
+  useEffect(() => { applyAnimIntensity(readAnimIntensity()); }, []);
 
   return (
     <div className="min-h-screen w-full gradient-dawn">

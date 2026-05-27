@@ -1349,10 +1349,97 @@ html[data-atmosphere="blossom"] .cozy-card {
   background: var(--atmo-glow);
   opacity: 0.9;
   animation: atmo-drift 24s ease-in-out infinite;
+  will-change: transform, opacity, filter;
 }
 @keyframes atmo-drift {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.85; }
   50%      { transform: translate3d(0, -1.5%, 0) scale(1.03); opacity: 1; }
+}
+
+/* ───── Per-atmosphere ambient animations ─────
+   Each atmosphere gets its own motion personality. The
+   --atmo-anim-scale variable (set by Settings) globally
+   dials intensity: 1 = full, 0.5 = subtle, 0 = off.
+*/
+:root { --atmo-anim-scale: 1; }
+
+body[data-anim="off"] .atmo-ambient { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .atmo-ambient { animation: none !important; }
+}
+
+html[data-atmosphere="sage-sanctuary"] .atmo-ambient {
+  animation: atmo-breath 22s ease-in-out infinite;
+}
+@keyframes atmo-breath {
+  0%,100% { transform: scale(1); opacity: 0.85; }
+  50%     { transform: scale(calc(1 + 0.03 * var(--atmo-anim-scale))); opacity: 1; }
+}
+
+html[data-atmosphere="moonlit-plum"] .atmo-ambient {
+  animation: atmo-plum-drift 32s ease-in-out infinite;
+}
+@keyframes atmo-plum-drift {
+  0%,100% { transform: translate3d(0,0,0) scale(1); filter: hue-rotate(0deg); opacity: 0.85; }
+  50%     { transform: translate3d(calc(1.2% * var(--atmo-anim-scale)), calc(-1.5% * var(--atmo-anim-scale)), 0) scale(calc(1 + 0.04 * var(--atmo-anim-scale))); filter: hue-rotate(calc(8deg * var(--atmo-anim-scale))); opacity: 1; }
+}
+
+html[data-atmosphere="soft-linen"] .atmo-ambient {
+  animation: atmo-still 40s ease-in-out infinite;
+}
+@keyframes atmo-still {
+  0%,100% { opacity: 0.88; }
+  50%     { opacity: calc(0.88 + 0.08 * var(--atmo-anim-scale)); }
+}
+
+html[data-atmosphere="coastal-calm"] .atmo-ambient {
+  animation: atmo-tide 26s ease-in-out infinite;
+}
+@keyframes atmo-tide {
+  0%,100% { transform: translate3d(0,0,0) scale(1); opacity: 0.85; }
+  50%     { transform: translate3d(calc(2% * var(--atmo-anim-scale)), 0, 0) scale(calc(1 + 0.02 * var(--atmo-anim-scale))); opacity: 1; }
+}
+
+html[data-atmosphere="golden-hearth"] .atmo-ambient {
+  animation: atmo-pulse 18s ease-in-out infinite;
+}
+@keyframes atmo-pulse {
+  0%,100% { opacity: 0.8; transform: scale(1); }
+  50%     { opacity: 1; transform: scale(calc(1 + 0.025 * var(--atmo-anim-scale))); }
+}
+
+html[data-atmosphere="dark-sage-glass"] .atmo-ambient {
+  animation: atmo-cinema 36s ease-in-out infinite;
+}
+@keyframes atmo-cinema {
+  0%,100% { transform: translate3d(0,0,0) scale(1); opacity: 0.85; }
+  50%     { transform: translate3d(calc(-1% * var(--atmo-anim-scale)), calc(-1% * var(--atmo-anim-scale)), 0) scale(calc(1 + 0.05 * var(--atmo-anim-scale))); opacity: 1; }
+}
+
+html[data-atmosphere="dawn"] .atmo-ambient {
+  animation: atmo-dawn-rise 20s ease-in-out infinite;
+}
+@keyframes atmo-dawn-rise {
+  0%,100% { transform: translate3d(0, calc(2% * var(--atmo-anim-scale)), 0); opacity: 0.85; }
+  50%     { transform: translate3d(0, calc(-2% * var(--atmo-anim-scale)), 0); opacity: 1; }
+}
+
+html[data-atmosphere="mist"] .atmo-ambient {
+  animation: atmo-mist 45s ease-in-out infinite;
+}
+@keyframes atmo-mist {
+  0%,100% { opacity: 0.82; filter: blur(0); }
+  50%     { opacity: calc(0.82 + 0.1 * var(--atmo-anim-scale)); filter: blur(calc(2px * var(--atmo-anim-scale))); }
+}
+
+html[data-atmosphere="blossom"] .atmo-ambient {
+  animation: atmo-blossom 24s ease-in-out infinite;
+}
+@keyframes atmo-blossom {
+  0%,100% { transform: translate3d(0,0,0) scale(1); }
+  25%     { transform: translate3d(calc(1.5% * var(--atmo-anim-scale)), calc(-1% * var(--atmo-anim-scale)), 0) scale(calc(1 + 0.02 * var(--atmo-anim-scale))); }
+  50%     { transform: translate3d(0, calc(1% * var(--atmo-anim-scale)), 0) scale(calc(1 + 0.03 * var(--atmo-anim-scale))); }
+  75%     { transform: translate3d(calc(-1.5% * var(--atmo-anim-scale)), calc(-0.5% * var(--atmo-anim-scale)), 0) scale(calc(1 + 0.02 * var(--atmo-anim-scale))); }
 }
 
 .atmo-glass {
