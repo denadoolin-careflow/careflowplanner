@@ -543,7 +543,7 @@ function DayPartItem({
           ? <icon.Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/80" aria-hidden />
           : <span className="shrink-0 text-sm leading-none" aria-hidden>{icon.char}</span>
       )}
-      <span className={cn("min-w-0 flex-1 truncate", it.kind === "task" && it.done && "line-through")}>{it.label}</span>
+      <span className={cn("min-w-0 flex-1 whitespace-normal break-words", it.kind === "task" && it.done && "line-through")}>{it.label}</span>
       {it.kind === "task" && (
         <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
       )}
