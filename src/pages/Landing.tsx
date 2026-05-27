@@ -32,7 +32,7 @@ function GlassCard({
 }: { className?: string; children: React.ReactNode }) {
   return (
     <div
-      className={`rounded-3xl border border-border/50 bg-card/70 p-6 shadow-[0_8px_30px_-12px_hsl(258_30%_50%/0.18)] backdrop-blur-md ${className}`}
+      className={`rounded-2xl border border-border/50 bg-card/70 p-5 shadow-[0_8px_30px_-12px_hsl(258_30%_50%/0.18)] backdrop-blur-md sm:rounded-3xl sm:p-6 ${className}`}
     >
       {children}
     </div>
