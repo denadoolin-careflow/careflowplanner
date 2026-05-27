@@ -28,9 +28,11 @@ import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 import { Link } from "react-router-dom";
 import { Flower2 } from "lucide-react";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const [start, setStart] = useState(() => {
     const d = searchParams.get("date");
@@ -85,33 +87,36 @@ export default function Week() {
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
 
+  // On mobile, show one day at a time in the schedule view, controlled by WeekRhythmRow.
+  const visibleDays = isMobile && view === "schedule" ? [selectedDate] : days;
+
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-6">
-        <div className="cozy-card gradient-sage flex flex-col gap-3 p-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="cozy-card gradient-sage flex flex-col gap-3 p-4 sm:p-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
               {personalGreeting(state.settings.name)} <span className="opacity-60">· Week of</span>
             </p>
-            <h2 className="font-display text-3xl font-semibold sm:text-4xl">
+            <h2 className="font-display text-2xl font-semibold sm:text-4xl">
               {format(start, "MMMM d")} – {format(addDays(start, 6), "MMMM d")}
             </h2>
             {layout === "plan" && (
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 hidden text-sm text-muted-foreground sm:block">
                 Set your intention, top three, and review the week.
               </p>
             )}
             <div className="mt-3"><WeekNavigator weekStart={start} onChange={setStart} /></div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
           <ScopeNavToggle active="week" />
           <Link
             to="/reset/week"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
           >
             <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
           </Link>
-          <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1">
+          <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1">
             <Button
               size="sm"
               variant="ghost"
@@ -151,7 +156,7 @@ export default function Week() {
                 className="mb-2"
               />
               {view === "schedule" && (
-                <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
+                <TimeGrid days={visibleDays} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
               )}
               {view === "parts" && (
                 <div className="space-y-4">
