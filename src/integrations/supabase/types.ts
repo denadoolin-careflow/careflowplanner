@@ -2214,6 +2214,57 @@ export type Database = {
         }
         Relationships: []
       }
+      mental_health_logs: {
+        Row: {
+          anxiety: number | null
+          created_at: string
+          date: string
+          emotions: string[] | null
+          focus: number | null
+          gratitude: string | null
+          id: string
+          mood_score: number | null
+          mood_word: string | null
+          notes: string | null
+          sensory_load: number | null
+          support_needed: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anxiety?: number | null
+          created_at?: string
+          date?: string
+          emotions?: string[] | null
+          focus?: number | null
+          gratitude?: string | null
+          id?: string
+          mood_score?: number | null
+          mood_word?: string | null
+          notes?: string | null
+          sensory_load?: number | null
+          support_needed?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anxiety?: number | null
+          created_at?: string
+          date?: string
+          emotions?: string[] | null
+          focus?: number | null
+          gratitude?: string | null
+          id?: string
+          mood_score?: number | null
+          mood_word?: string | null
+          notes?: string | null
+          sensory_load?: number | null
+          support_needed?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mental_load_checkins: {
         Row: {
           caregiving: number
