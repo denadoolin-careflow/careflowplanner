@@ -17,6 +17,9 @@ import LunarLivingPage from "@/components/health/LunarLivingPage";
 import CheckInPage from "@/components/health/CheckInPage";
 import MovementPage from "@/components/health/MovementPage";
 import MentalHealthPage from "@/components/health/MentalHealthPage";
+import WellnessPage from "@/components/health/WellnessPage";
+import SleepPage from "@/components/health/SleepPage";
+import NourishmentPage from "@/components/health/NourishmentPage";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -203,9 +206,9 @@ export default function Health() {
         <TabsContent value="cycle" className="mt-5"><CyclicalLivingPage /></TabsContent>
         <TabsContent value="lunar" className="mt-5"><LunarLivingPage /></TabsContent>
         <TabsContent value="movement" className="mt-5"><MovementPage uid={uid} /></TabsContent>
-        <TabsContent value="wellness" className="mt-5"><ComingSoonPanel title="Wellness" blurb="Hydration, breath, nervous-system support, and gentle hydration rituals — coming next." /></TabsContent>
-        <TabsContent value="nourishment" className="mt-5"><ComingSoonPanel title="Nourishment" blurb="Body-neutral meal logging woven with your cycle phase and energy." /></TabsContent>
-        <TabsContent value="sleep" className="mt-5"><ComingSoonPanel title="Sleep" blurb="Soft sleep trends, wind-down rituals, and dream journaling." /></TabsContent>
+        <TabsContent value="wellness" className="mt-5"><WellnessPage uid={uid} /></TabsContent>
+        <TabsContent value="nourishment" className="mt-5"><NourishmentPage uid={uid} /></TabsContent>
+        <TabsContent value="sleep" className="mt-5"><SleepPage uid={uid} /></TabsContent>
         <TabsContent value="mental" className="mt-5"><MentalHealthPage uid={uid} /></TabsContent>
         <TabsContent value="goals" className="mt-5"><GoalsPanel uid={uid} /></TabsContent>
         <TabsContent value="calendar" className="mt-5"><ComingSoonPanel title="Health Calendar" blurb="Appointments, symptoms, cycle and moon phases — all in one calming view." /></TabsContent>
