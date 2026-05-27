@@ -202,6 +202,19 @@ export default function MentalHealthPage({ uid }: { uid: string }) {
 
       {/* Gratitude & Support */}
       <div className="grid gap-4 md:grid-cols-2">
+        <div className="cozy-card p-5 md:col-span-2">
+          <div className="mb-2 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary/70" />
+            <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Today's intention</p>
+          </div>
+          <input
+            type="text"
+            placeholder="A word or phrase to anchor the day…"
+            value={form.intention}
+            onChange={e => setForm(f => ({ ...f, intention: e.target.value }))}
+            className="w-full rounded-2xl border border-border/40 bg-card/60 px-4 py-3 text-base outline-none transition focus:border-primary"
+          />
+        </div>
         <div className="cozy-card p-5">
           <div className="mb-2 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary/70" />
