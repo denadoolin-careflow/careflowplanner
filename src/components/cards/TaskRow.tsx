@@ -77,6 +77,28 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
   const [quickEditOpen, setQuickEditOpen] = useState(false);
   const longPressTimer = useRef<number | null>(null);
   const longPressed = useRef(false);
+  const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    swipeStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s = swipeStart.current; swipeStart.current = null;
+    if (!s) return;
+    if (editing) return;
+    const end = e.changedTouches[0];
+    const dx = end.clientX - s.x;
+    const dy = end.clientY - s.y;
+    const dt = Date.now() - s.t;
+    if (dt > 500) return;
+    if (Math.abs(dx) < 60 || Math.abs(dy) > 40) return;
+    // Ignore swipes that start on interactive children (checkbox, buttons).
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("button,input,textarea,[role='checkbox']")) return;
+    haptics.swipe?.();
+    setOpen(true);
+  };
 
   const startLongPress = (e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -158,6 +180,8 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       onPointerLeave={cancelLongPress}
       onPointerCancel={cancelLongPress}
       onContextMenu={onContextMenu}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
       <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-0.5" />
       <AutoIcon className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground/70" aria-hidden />
@@ -393,6 +417,8 @@ type ShellHandlers = {
   onPointerLeave?: (e: React.PointerEvent) => void;
   onPointerCancel?: (e: React.PointerEvent) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
+  onTouchStart?: (e: React.TouchEvent) => void;
+  onTouchEnd?: (e: React.TouchEvent) => void;
 };
 
 function RowShell({ task, dense, draggable, celebrate, areaColor, selected, children, ...handlers }: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; areaColor?: string; selected?: boolean; children: React.ReactNode } & ShellHandlers) {
@@ -404,14 +430,14 @@ function RowShell({ task, dense, draggable, celebrate, areaColor, selected, chil
     selected && "border-primary/60 bg-primary/10 ring-1 ring-primary/40"
   );
   const style = areaColor ? { boxShadow: `inset 3px 0 0 0 ${areaColor}` } : undefined;
-  if (!draggable) return <div className={cls} style={style} {...handlers}>{children}</div>;
+  if (!draggable) return <div className={cls} style={style} data-no-swipe {...handlers}>{children}</div>;
   return <DraggableShell task={task} className={cls} style={style} handlers={handlers}>{children}</DraggableShell>;
 }
 
 function DraggableShell({ task, className, style, children, handlers }: { task: Task; className: string; style?: React.CSSProperties; children: React.ReactNode; handlers?: ShellHandlers }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   return (
-    <div ref={setNodeRef} className={cn(className, isDragging && "opacity-40")} style={style} {...handlers}>
+    <div ref={setNodeRef} className={cn(className, isDragging && "opacity-40")} style={style} data-no-swipe {...handlers}>
       <button {...listeners} {...attributes} aria-label="Drag" className="mt-0.5 -ml-1 cursor-grab touch-none rounded p-0.5 text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing">
         <GripVertical className="h-3.5 w-3.5" />
       </button>
