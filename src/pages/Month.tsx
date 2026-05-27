@@ -21,6 +21,8 @@ import { haptics } from "@/lib/haptics";
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { getRhythmForecast, type Element } from "@/lib/rhythm-forecast";
 import { Moon } from "lucide-react";
+import { Sunrise, Sun } from "lucide-react";
+import { formatTime12 } from "@/lib/routines";
 import { getMoonPhase } from "@/lib/moon";
 import { getKeyPhaseInfo, isKeyPhaseDay } from "@/lib/lunar-phases";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
@@ -436,36 +438,75 @@ export default function Month() {
             if (items.length === 0) {
               return <p className="mt-4 text-sm text-muted-foreground">Nothing on this day.</p>;
             }
+            const partOf = (hm?: string | null): "morning" | "afternoon" | "evening" | "allday" => {
+              if (!hm || !/^\d{2}:\d{2}/.test(hm)) return "allday";
+              const h = parseInt(hm.slice(0, 2), 10);
+              if (h < 12) return "morning";
+              if (h < 17) return "afternoon";
+              return "evening";
+            };
+            const groups: Record<"morning" | "afternoon" | "evening" | "allday", typeof items> = {
+              morning: [], afternoon: [], evening: [], allday: [],
+            };
+            for (const it of items) groups[partOf(it.time)].push(it);
+            for (const k of ["morning", "afternoon", "evening"] as const) {
+              groups[k].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+            }
+            const PARTS = [
+              { key: "morning", label: "Morning", icon: Sunrise, hint: "Before 12 PM" },
+              { key: "afternoon", label: "Afternoon", icon: Sun, hint: "12 – 5 PM" },
+              { key: "evening", label: "Evening", icon: Moon, hint: "After 5 PM" },
+              { key: "allday", label: "All day", icon: Check, hint: "No time" },
+            ] as const;
+            const handleClick = (it: typeof items[number]) => {
+              if (it.kind === "task" && it.taskId) {
+                const t = state.tasks.find(x => x.id === it.taskId);
+                if (t) { setEditingTask(t); setSheetISO(null); }
+              } else if (it.kind === "appt" && it.apptId) {
+                setEditApptId(it.apptId); setSheetISO(null);
+              } else if (it.kind === "block") {
+                openBlockInWeek(sheetISO!); setSheetISO(null);
+              }
+            };
             return (
-              <ul className="mt-4 space-y-2">
-                {items.map((it, i) => {
-                  const blockCls = it.kind === "block" && it.blockColor ? colorClasses(it.blockColor) : null;
+              <div className="mt-4 space-y-4">
+                {PARTS.map(p => {
+                  const list = groups[p.key];
+                  if (list.length === 0) return null;
+                  const Icon = p.icon;
                   return (
-                    <li
-                      key={i}
-                      onClick={() => {
-                        if (it.kind === "task" && it.taskId) {
-                          const t = state.tasks.find(x => x.id === it.taskId);
-                          if (t) { setEditingTask(t); setSheetISO(null); }
-                        } else if (it.kind === "appt" && it.apptId) {
-                          setEditApptId(it.apptId); setSheetISO(null);
-                        } else if (it.kind === "block") {
-                          openBlockInWeek(sheetISO!); setSheetISO(null);
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
-                        blockCls ? cn(blockCls.bg, blockCls.text, "ring-1 ring-inset", blockCls.ring) : colorOf(it.kind as any),
-                        (it.kind === "task" || it.kind === "appt" || it.kind === "block") && "cursor-pointer",
-                      )}
-                      style={blockCls?.style}
-                    >
-                      {it.time && <span className="font-mono text-xs opacity-70">{it.time.slice(0, 5)}</span>}
-                      <span className="min-w-0 flex-1">{it.label}</span>
-                    </li>
+                    <section key={p.key}>
+                      <div className="mb-1.5 flex items-baseline justify-between">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          <Icon className="h-3.5 w-3.5" />
+                          {p.label}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground/70">{p.hint}</span>
+                      </div>
+                      <ul className="space-y-1.5">
+                        {list.map((it, i) => {
+                          const blockCls = it.kind === "block" && it.blockColor ? colorClasses(it.blockColor) : null;
+                          return (
+                            <li
+                              key={i}
+                              onClick={() => handleClick(it)}
+                              className={cn(
+                                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+                                blockCls ? cn(blockCls.bg, blockCls.text, "ring-1 ring-inset", blockCls.ring) : colorOf(it.kind as any),
+                                (it.kind === "task" || it.kind === "appt" || it.kind === "block") && "cursor-pointer",
+                              )}
+                              style={blockCls?.style}
+                            >
+                              {it.time && <span className="shrink-0 font-mono text-xs opacity-70">{formatTime12(it.time.slice(0, 5))}</span>}
+                              <span className="min-w-0 flex-1">{it.label}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </section>
                   );
                 })}
-              </ul>
+              </div>
             );
           })()}
         </SheetContent>
