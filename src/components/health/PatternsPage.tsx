@@ -43,6 +43,68 @@ type CheckIn = {
 const STRESS_VAL: Record<string, number> = { calm: 1, mild: 2, tense: 3, high: 4 };
 const MOOD_VAL: Record<string, number> = { rough: 1, low: 2, ok: 3, good: 4, great: 5 };
 
+const METRIC_META: Record<string, { label: string; color: string; high: string; low: string }> = {
+  mood:    { label: "Mood",    color: "hsl(145 50% 50%)", high: "brighter", low: "lower" },
+  anxiety: { label: "Anxiety", color: "hsl(20 70% 60%)",  high: "higher",  low: "calmer" },
+  focus:   { label: "Focus",   color: "hsl(220 60% 60%)", high: "sharper", low: "fuzzier" },
+  sleep:   { label: "Sleep",   color: "hsl(265 50% 65%)", high: "longer",  low: "shorter" },
+  stress:  { label: "Stress",  color: "hsl(0 60% 60%)",   high: "tenser",  low: "calmer" },
+};
+
+function strengthLabel(r: number) {
+  const a = Math.abs(r);
+  if (a >= 0.7) return "strong";
+  if (a >= 0.4) return "moderate";
+  if (a >= 0.2) return "gentle";
+  return "faint";
+}
+
+function CorrelationCard({ a, b, r, n, rank }: { a: string; b: string; r: number; n: number; rank: number }) {
+  const ma = METRIC_META[a], mb = METRIC_META[b];
+  const positive = r >= 0;
+  const pct = Math.round(Math.abs(r) * 100);
+  const phrase = positive
+    ? `When ${ma.label.toLowerCase()} is ${ma.high}, ${mb.label.toLowerCase()} tends to be ${mb.high}.`
+    : `When ${ma.label.toLowerCase()} is ${ma.high}, ${mb.label.toLowerCase()} tends to be ${mb.low}.`;
+  return (
+    <div
+      className="rounded-2xl border border-border/50 bg-card/70 p-4"
+      style={{ borderLeft: `3px solid ${positive ? ma.color : mb.color}` }}
+    >
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+        <span>#{rank} · {strengthLabel(r)}</span>
+        <span>{n} days</span>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <Pill label={ma.label} color={ma.color} />
+        <span className="text-xs text-muted-foreground">{positive ? "↗ moves with" : "↘ moves opposite"}</span>
+        <Pill label={mb.label} color={mb.color} />
+      </div>
+      <p className="mt-2 text-sm leading-snug">{phrase}</p>
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, background: positive ? ma.color : mb.color }}
+        />
+      </div>
+      <p className="mt-1 text-[10px] text-muted-foreground/80">
+        r = {r >= 0 ? "+" : ""}{r.toFixed(2)}
+      </p>
+    </div>
+  );
+}
+
+function Pill({ label, color }: { label: string; color: string }) {
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 text-xs font-medium"
+      style={{ background: `${color}22`, color }}
+    >
+      {label}
+    </span>
+  );
+}
+
 export default function PatternsPage({ uid }: { uid: string }) {
   const { periods, settings } = useCycle();
   const [range, setRange] = useState<14 | 30 | 90>(30);
@@ -133,6 +195,59 @@ export default function PatternsPage({ uid }: { uid: string }) {
       .slice(0, 8);
   }, [mental]);
 
+  // ------ Correlations across mood / anxiety / focus / sleep / stress ------
+  const correlations = useMemo(() => {
+    const byDate = new Map<string, { mood?: number; anxiety?: number; focus?: number; sleep?: number; stress?: number }>();
+    mental.forEach(m => {
+      const row = byDate.get(m.date) ?? {};
+      if (m.mood_score != null) row.mood = m.mood_score;
+      if (m.anxiety != null) row.anxiety = m.anxiety;
+      if (m.focus != null) row.focus = m.focus;
+      byDate.set(m.date, row);
+    });
+    checkins.forEach(c => {
+      const row = byDate.get(c.date) ?? {};
+      if (row.mood == null && c.mood && MOOD_VAL[c.mood]) row.mood = MOOD_VAL[c.mood];
+      if (c.stress && STRESS_VAL[c.stress]) row.stress = STRESS_VAL[c.stress];
+      if (c.sleep_hours != null) row.sleep = Number(c.sleep_hours);
+      byDate.set(c.date, row);
+    });
+    const rows = Array.from(byDate.values());
+    const metrics = ["mood", "anxiety", "focus", "sleep", "stress"] as const;
+    type M = (typeof metrics)[number];
+
+    const pearson = (a: number[], b: number[]) => {
+      const n = a.length;
+      if (n < 4) return null;
+      const ma = a.reduce((s, x) => s + x, 0) / n;
+      const mb = b.reduce((s, x) => s + x, 0) / n;
+      let num = 0, da = 0, db = 0;
+      for (let i = 0; i < n; i++) {
+        const xa = a[i] - ma, xb = b[i] - mb;
+        num += xa * xb; da += xa * xa; db += xb * xb;
+      }
+      const denom = Math.sqrt(da * db);
+      if (denom === 0) return null;
+      return num / denom;
+    };
+
+    const pairs: { a: M; b: M; r: number; n: number }[] = [];
+    for (let i = 0; i < metrics.length; i++) {
+      for (let j = i + 1; j < metrics.length; j++) {
+        const a = metrics[i], b = metrics[j];
+        const xs: number[] = [], ys: number[] = [];
+        rows.forEach(r => {
+          if (r[a] != null && r[b] != null) { xs.push(r[a]!); ys.push(r[b]!); }
+        });
+        const r = pearson(xs, ys);
+        if (r != null) pairs.push({ a, b, r, n: xs.length });
+      }
+    }
+    return pairs.sort((x, y) => Math.abs(y.r) - Math.abs(x.r));
+  }, [mental, checkins]);
+
+  const topCorrelations = correlations.slice(0, 3);
+
   // Radar data for phase × wellbeing
   const radarData = useMemo(() => {
     if (!byPhase) return [];
@@ -198,6 +313,30 @@ export default function PatternsPage({ uid }: { uid: string }) {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+          </div>
+
+          {/* Correlation insights */}
+          <div className="cozy-card p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary/70" />
+              <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                Strongest relationships · last {range} days
+              </p>
+            </div>
+            {topCorrelations.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Log a few more paired check-ins and reflections to surface patterns.
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {topCorrelations.map((c, i) => (
+                  <CorrelationCard key={`${c.a}-${c.b}`} rank={i + 1} {...c} />
+                ))}
+              </div>
+            )}
+            <p className="mt-3 text-[11px] italic text-muted-foreground/80">
+              Soft observations, not diagnoses. Patterns need {`>`}4 paired days to appear.
+            </p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
