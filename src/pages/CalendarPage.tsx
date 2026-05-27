@@ -434,12 +434,34 @@ function MonthView({
   const days = eachDayOfInterval({ start: gs, end: addDays(gs, 41) });
   const [hoverISO, setHoverISO] = useState<string | null>(null);
   const [draggingItem, setDraggingItem] = useState<{ item: EventItem; sourceISO: string } | null>(null);
+  const isMobile = useIsMobile();
+  const [sheetISO, setSheetISO] = useState<string | null>(null);
+  const dotClass = (kind: EventItem["kind"]) =>
+    kind === "task" ? "bg-warm-foreground/70"
+    : kind === "appt" ? "bg-primary"
+    : kind === "care" ? "bg-rose-500"
+    : kind === "meal" ? "bg-amber-500"
+    : kind === "bday" ? "bg-accent-foreground"
+    : kind === "hol" ? "bg-secondary-foreground"
+    : "bg-muted-foreground";
+  const partOfTime = (t?: string | null): "morning" | "afternoon" | "evening" | "allday" => {
+    if (!t || !/^\d{2}:\d{2}/.test(t)) return "allday";
+    const h = parseInt(t.slice(0, 2), 10);
+    if (h < 12) return "morning";
+    if (h < 17) return "afternoon";
+    return "evening";
+  };
   return (
     <>
-      <div className="grid grid-cols-7 gap-1 text-xs uppercase tracking-wider text-muted-foreground">
-        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => <div key={d} className="px-2 py-1 text-center">{d}</div>)}
+      <div className="grid grid-cols-7 gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground sm:gap-1 sm:text-xs">
+        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
+          <div key={d} className="px-1 py-1 text-center sm:px-2">
+            <span className="sm:hidden">{d[0]}</span>
+            <span className="hidden sm:inline">{d}</span>
+          </div>
+        ))}
       </div>
-      <div className="mt-1 grid grid-cols-7 gap-1">
+      <div className="mt-1 grid grid-cols-7 gap-0.5 sm:gap-1">
         {days.map(d => {
           const k = d.toISOString().slice(0,10);
           const ev = eventsOn(k);
@@ -474,18 +496,20 @@ function MonthView({
                   onTaskDropDay(taskId, k);
                 }
               }}
+              onClick={isMobile && inMonth ? () => setSheetISO(k) : undefined}
               className={cn(
-                "flex min-h-28 flex-col rounded-xl border p-2 text-xs transition-colors sm:min-h-32",
+                "flex min-h-16 flex-col rounded-lg border p-1 text-xs transition-colors sm:min-h-32 sm:rounded-xl sm:p-2",
                 inMonth ? "border-border/60 bg-card" : "border-transparent bg-muted/20 text-muted-foreground/50",
                 today && "ring-2 ring-primary",
                 hoverISO === k && "ring-2 ring-primary bg-primary/10",
+                isMobile && inMonth && "cursor-pointer",
               )}
             >
-              <div className="mb-1 flex items-baseline justify-between">
+              <div className="mb-1 flex items-baseline justify-between gap-1">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
                   {d.getDate() === 1 ? format(d, "MMM") : ""}
                 </span>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 sm:gap-1">
                   {(() => {
                     const moon = moonPhaseFor(d);
                     if (!moon) return null;
@@ -493,7 +517,7 @@ function MonthView({
                     const key = isKeyPhaseDay(p) ? getKeyPhaseInfo(p) : null;
                     return (
                       <span
-                        className="inline-flex items-center gap-1 rounded-full px-1 text-[11px] leading-none"
+                        className="inline-flex items-center gap-1 rounded-full px-0.5 text-[10px] leading-none sm:px-1 sm:text-[11px]"
                         style={key ? { background: `hsl(${key.hsl} / 0.18)`, color: `hsl(${key.hsl})` } : undefined}
                         title={key ? `${moon.label} · ${key.verb} — ${key.invitation}` : moon.label}
                         aria-label={key ? `${moon.label}, ${key.verb}` : moon.label}
@@ -504,14 +528,26 @@ function MonthView({
                     );
                   })()}
                   <span className={cn(
-                    "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold",
+                    "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold sm:text-[11px]",
                     today ? "bg-primary text-primary-foreground" : "text-foreground/80",
                   )}>
                     {format(d, "d")}
                   </span>
                 </div>
               </div>
-              <div className="flex flex-1 flex-col gap-1">
+              {/* Mobile: dot indicators */}
+              {inMonth && ev.length > 0 && (
+                <div className="flex flex-wrap items-center gap-0.5 md:hidden">
+                  {ev.slice(0, 4).map((e, i) => (
+                    <span key={i} className={cn("h-1.5 w-1.5 rounded-full", dotClass(e.kind))} />
+                  ))}
+                  {ev.length > 4 && (
+                    <span className="text-[8px] leading-none text-muted-foreground">+{ev.length - 4}</span>
+                  )}
+                </div>
+              )}
+              {/* Desktop (md+): full event list */}
+              <div className="hidden flex-1 flex-col gap-1 md:flex">
                 {ev.map((e, i) => {
                   const editable = (e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol") && !!e.id;
                   const clickable = editable && !!onItemClick;
@@ -549,6 +585,85 @@ function MonthView({
           );
         })}
       </div>
+      {/* Mobile day-detail sheet — grouped by time of day */}
+      <Sheet open={!!sheetISO} onOpenChange={(o) => !o && setSheetISO(null)}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle className="text-base">
+              {sheetISO ? format(new Date(sheetISO + "T00:00:00"), "EEEE, MMM d") : ""}
+            </SheetTitle>
+          </SheetHeader>
+          {sheetISO && (() => {
+            const items = eventsOn(sheetISO);
+            if (items.length === 0) {
+              return <p className="mt-4 text-sm text-muted-foreground">Nothing on this day.</p>;
+            }
+            const groups: Record<"morning" | "afternoon" | "evening" | "allday", typeof items> = {
+              morning: [], afternoon: [], evening: [], allday: [],
+            };
+            for (const it of items) groups[partOfTime(it.time)].push(it);
+            for (const key of ["morning", "afternoon", "evening"] as const) {
+              groups[key].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+            }
+            const PARTS = [
+              { key: "morning" as const, label: "Morning", Icon: Sunrise, hint: "Before 12 PM" },
+              { key: "afternoon" as const, label: "Afternoon", Icon: Sun, hint: "12 – 5 PM" },
+              { key: "evening" as const, label: "Evening", Icon: Moon, hint: "After 5 PM" },
+              { key: "allday" as const, label: "All day", Icon: Check, hint: "No time" },
+            ];
+            const handle = (it: typeof items[number]) => {
+              const editable = (it.kind === "appt" || it.kind === "task" || it.kind === "care" || it.kind === "bday" || it.kind === "hol") && !!it.id;
+              if (editable && onItemClick) {
+                onItemClick(it);
+                setSheetISO(null);
+              }
+            };
+            return (
+              <div className="mt-4 space-y-4">
+                {PARTS.map(p => {
+                  const list = groups[p.key];
+                  if (list.length === 0) return null;
+                  const Icon = p.Icon;
+                  return (
+                    <section key={p.key}>
+                      <div className="mb-1.5 flex items-baseline justify-between">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          <Icon className="h-3.5 w-3.5" />
+                          {p.label}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground/70">{p.hint}</span>
+                      </div>
+                      <ul className="space-y-1.5">
+                        {list.map((it, i) => {
+                          const editable = (it.kind === "appt" || it.kind === "task" || it.kind === "care" || it.kind === "bday" || it.kind === "hol") && !!it.id;
+                          return (
+                            <li
+                              key={i}
+                              onClick={() => handle(it)}
+                              className={cn(
+                                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+                                colorOf(it.kind),
+                                editable && onItemClick && "cursor-pointer",
+                              )}
+                            >
+                              {it.time && (
+                                <span className="shrink-0 font-mono text-xs opacity-70">
+                                  {formatTime12(it.time.slice(0, 5))}
+                                </span>
+                              )}
+                              <span className="min-w-0 flex-1">{it.label}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </section>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
