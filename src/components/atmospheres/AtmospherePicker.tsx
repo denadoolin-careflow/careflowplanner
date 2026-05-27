@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ATMOSPHERES, AtmosphereId, useAtmosphere, getAtmosphere } from "@/lib/atmospheres";
 import { AtmosphereCard } from "./AtmosphereCard";
 import { AutoSwitchConfig } from "./AutoSwitchConfig";
+import { AtmosphereSettingsDialog } from "./AtmosphereSettingsDialog";
 import { useStore } from "@/lib/store";
 import { getSuggestions } from "@/lib/atmosphere-suggestions";
 
@@ -12,6 +13,7 @@ export function AtmospherePicker() {
   const { current, favorites, recent, auto, set, toggleFavorite, setAutoRules } = useAtmosphere();
   const { state } = useStore();
   const [open, setOpen] = useState(false);
+  const [settingsFor, setSettingsFor] = useState<AtmosphereId | null>(null);
   const active = getAtmosphere(current);
 
   const suggestions = useMemo(() => getSuggestions({
@@ -26,6 +28,7 @@ export function AtmospherePicker() {
   const recentList = ATMOSPHERES.filter(a => recent.includes(a.id) && a.id !== current).slice(0, 4);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
@@ -76,17 +79,17 @@ export function AtmospherePicker() {
 
         {favList.length > 0 && (
           <Section title="Favorites" icon={<Star className="h-3 w-3 fill-amber-300 text-amber-300" />}>
-            <Grid items={favList} current={current} favorites={favorites} onApply={apply} onFav={toggleFavorite} />
+            <Grid items={favList} current={current} favorites={favorites} onApply={apply} onFav={toggleFavorite} onSettings={setSettingsFor} />
           </Section>
         )}
 
         <Section title="All atmospheres">
-          <Grid items={ATMOSPHERES} current={current} favorites={favorites} onApply={apply} onFav={toggleFavorite} />
+          <Grid items={ATMOSPHERES} current={current} favorites={favorites} onApply={apply} onFav={toggleFavorite} onSettings={setSettingsFor} />
         </Section>
 
         {recentList.length > 0 && (
           <Section title="Recently used">
-            <Grid items={recentList} current={current} favorites={favorites} onApply={apply} onFav={toggleFavorite} />
+            <Grid items={recentList} current={current} favorites={favorites} onApply={apply} onFav={toggleFavorite} onSettings={setSettingsFor} />
           </Section>
         )}
 
@@ -97,6 +100,14 @@ export function AtmospherePicker() {
         </p>
       </DialogContent>
     </Dialog>
+    {settingsFor && (
+      <AtmosphereSettingsDialog
+        atmosphere={getAtmosphere(settingsFor)}
+        open={!!settingsFor}
+        onOpenChange={(v) => { if (!v) setSettingsFor(null); }}
+      />
+    )}
+    </>
   );
 }
 
@@ -111,12 +122,13 @@ function Section({ title, icon, children }: { title: string; icon?: React.ReactN
   );
 }
 
-function Grid({ items, current, favorites, onApply, onFav }: {
+function Grid({ items, current, favorites, onApply, onFav, onSettings }: {
   items: typeof ATMOSPHERES;
   current: AtmosphereId;
   favorites: AtmosphereId[];
   onApply: (id: AtmosphereId) => void;
   onFav: (id: AtmosphereId) => void;
+  onSettings: (id: AtmosphereId) => void;
 }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -128,6 +140,7 @@ function Grid({ items, current, favorites, onApply, onFav }: {
           isFavorite={favorites.includes(a.id)}
           onApply={onApply}
           onToggleFavorite={onFav}
+          onOpenSettings={onSettings}
         />
       ))}
     </div>
