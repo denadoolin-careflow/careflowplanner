@@ -1,5 +1,9 @@
-import { BookOpen, Brain, Coffee, Heart, Home, Pause, Play, RotateCcw, Sparkles, Square, Timer } from "lucide-react";
+import { BookOpen, Brain, Coffee, Heart, Home, Pause, Pencil, Play, RotateCcw, Sparkles, Square, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   formatPomoTime,
@@ -42,11 +46,17 @@ export function PomodoroPanel({ className, compact = false }: PomodoroPanelProps
             </span>
           )}
         </div>
-        {s.taskId && (
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-[11px]" onClick={() => pomodoro.stop()}>
-            <Square className="mr-1 h-3 w-3" /> end
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          <DurationEditor
+            focusSeconds={s.focusSeconds}
+            breakSeconds={s.breakSeconds}
+          />
+          {s.taskId && (
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-[11px]" onClick={() => pomodoro.stop()}>
+              <Square className="mr-1 h-3 w-3" /> end
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
