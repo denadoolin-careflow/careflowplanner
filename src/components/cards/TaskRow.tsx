@@ -275,7 +275,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
           />
         </div>
       )}
-      <Button variant="ghost" size="icon" className="hidden h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 sm:inline-flex" onClick={() => setOpen(true)} aria-label="More options" title="Details">
+      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground/70 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100" onClick={() => setOpen(true)} aria-label="More options" title="Details">
         <Settings2 className="h-3.5 w-3.5" />
       </Button>
       <Button variant="ghost" size="icon" className="hidden h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 sm:inline-flex" onClick={() => setPomOpen(true)} aria-label="Start pomodoro" title="Pomodoro">
