@@ -34,6 +34,7 @@ import { prefetchMoonMonth } from "@/lib/moon-providers";
 import { useTimeBlocks, colorClasses } from "@/lib/time-blocks";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
@@ -53,6 +54,7 @@ export default function Month() {
   const [view, setView] = useState<CalView>("schedule");
   const [showMoon, setShowMoon] = useState(false);
   const [sheetISO, setSheetISO] = useState<string | null>(null);
+  const [lunarDate, setLunarDate] = useState<Date | null>(null);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
   useEffect(() => { void prefetchMoonMonth(cursor, { neighbors: true }); }, [cursor]);
 
@@ -173,9 +175,15 @@ export default function Month() {
             >
               <Moon className="h-3.5 w-3.5" /> Moon
             </button>
-            <CalendarViewToggle value={view} onChange={setView} />
+            <div className="hidden sm:inline-flex">
+              <CalendarViewToggle value={view} onChange={setView} />
+            </div>
           </div>
         }>
+          {/* Mobile: full-width view toggle under Quick Add */}
+          <div className="-mx-1 mb-3 flex justify-center overflow-x-auto sm:hidden">
+            <CalendarViewToggle value={view} onChange={setView} />
+          </div>
           {view === "agenda" ? (
             <AgendaView
               days={monthDays}
@@ -194,6 +202,7 @@ export default function Month() {
                   {ELEMENT_STYLE[el].label}
                 </span>
               ))}
+              <span className="sm:hidden italic opacity-80">Tap any day's moon for guidance</span>
             </div>
           )}
           <div className="grid grid-cols-7 gap-1 text-xs uppercase tracking-wider text-muted-foreground">
@@ -254,10 +263,12 @@ export default function Month() {
                 >
                   <div className="flex items-center justify-between">
                     {moon ? (
-                      <span
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setLunarDate(d); }}
                         title={`${moon.phaseLabel} · Moon in ${moon.sign.sign} (${moonStyle!.label})${keyPhase ? ` · ${keyPhase.verb}` : ""}`}
                         aria-label={`${moon.phaseLabel}, moon in ${moon.sign.sign}`}
-                        className="inline-flex items-center gap-1 text-[10px] leading-none sm:text-[11px]"
+                        className="inline-flex items-center gap-1 rounded text-[10px] leading-none hover:bg-foreground/5 sm:text-[11px]"
                       >
                         <span aria-hidden>{moon.glyph}</span>
                         <span className="hidden text-[10px] text-muted-foreground sm:inline" aria-hidden>{moon.sign.glyph}</span>
@@ -269,17 +280,19 @@ export default function Month() {
                             {keyPhase.verb}
                           </span>
                         )}
-                      </span>
+                      </button>
                     ) : keyPhase ? (
-                      <span
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setLunarDate(d); }}
                         title={`${keyPhase.label} · ${keyPhase.invitation}`}
                         aria-label={keyPhase.label}
-                        className="inline-flex items-center gap-1 rounded-full px-1 text-[10px] font-medium sm:text-[11px]"
+                        className="inline-flex items-center gap-1 rounded-full px-1 text-[10px] font-medium hover:brightness-95 sm:text-[11px]"
                         style={{ background: `hsl(${keyPhase.hsl} / 0.18)`, color: `hsl(${keyPhase.hsl})` }}
                       >
                         <span aria-hidden>{keyPhase.glyph}</span>
                         <span className="hidden sm:inline">{keyPhase.verb}</span>
-                      </span>
+                      </button>
                     ) : phaseVar ? (
                       <span
                         title={`${PHASE_META[phase!].label} phase`}
@@ -404,6 +417,20 @@ export default function Month() {
               {sheetISO ? format(new Date(sheetISO + "T00:00:00"), "EEEE, MMM d") : ""}
             </SheetTitle>
           </SheetHeader>
+          {sheetISO && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 w-full"
+              onClick={() => {
+                const d = new Date(sheetISO + "T00:00:00");
+                setSheetISO(null);
+                setLunarDate(d);
+              }}
+            >
+              <Moon className="mr-1.5 h-3.5 w-3.5" /> Lunar guidance for this day
+            </Button>
+          )}
           {sheetISO && (() => {
             const items = eventsOn(sheetISO);
             if (items.length === 0) {
@@ -443,6 +470,7 @@ export default function Month() {
           })()}
         </SheetContent>
       </Sheet>
+      <DayLunarSheet date={lunarDate} open={!!lunarDate} onOpenChange={(o) => !o && setLunarDate(null)} />
     </div>
   );
 }

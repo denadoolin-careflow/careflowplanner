@@ -30,12 +30,34 @@ export function RoutinesStrip() {
   const { routines, loaded } = useRoutines();
   const [prefs, setPrefs] = useState(readPrefs);
   const location = useLocation();
-  const forceClosed = location.pathname.startsWith("/week");
+  const forceClosed =
+    location.pathname.startsWith("/week") ||
+    location.pathname.startsWith("/month") ||
+    location.pathname.startsWith("/calendar");
   const { person, slot } = prefs;
   const open = forceClosed ? false : prefs.open;
   const update = (patch: Partial<typeof prefs>) => {
     setPrefs(prev => { const next = { ...prev, ...patch }; writePrefs(next); return next; });
   };
+
+  // Auto-collapse when the page scrolls past a small threshold, so the
+  // strip gets out of the way on long scrolling pages. User keeps control:
+  // we never auto-reopen.
+  useEffect(() => {
+    if (forceClosed) return;
+    const onScroll = () => {
+      if (window.scrollY > 80) {
+        setPrefs(prev => {
+          if (!prev.open) return prev;
+          const next = { ...prev, open: false };
+          writePrefs(next);
+          return next;
+        });
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [forceClosed]);
 
   const people = useMemo(() => {
     const fromRoutines = routinesApi.people();
