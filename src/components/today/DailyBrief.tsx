@@ -176,28 +176,28 @@ function BriefDialog({
   };
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="font-display text-lg">{kind ? titleMap[kind] : ""}</DialogTitle>
+          <DialogTitle className="pr-8 font-display text-base sm:text-lg">{kind ? titleMap[kind] : ""}</DialogTitle>
         </DialogHeader>
         {kind === "moon" ? (
           <MoonDetail forecast={forecast} date={date} />
         ) : kind === "appts" ? (
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             {appts.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">No appointments.</p>}
             {appts.map(a => (
-              <div key={a.id} className="rounded-md border border-border/50 p-2">
-                <div className="text-sm font-medium">{a.title}</div>
-                <div className="text-[11px] text-muted-foreground">{a.time ?? "All day"}{a.location ? ` · ${a.location}` : ""}</div>
+              <div key={a.id} className="min-w-0 rounded-md border border-border/50 p-2">
+                <div className="break-words text-sm font-medium">{a.title}</div>
+                <div className="break-words text-[11px] text-muted-foreground">{a.time ?? "All day"}{a.location ? ` · ${a.location}` : ""}</div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             {tasks.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground">Nothing here. Nicely done.</p>}
             {tasks.map(t => (
-              <div key={t.id} className="rounded-md border border-border/50">
-                <div className="group flex items-center gap-2 p-2 hover:bg-muted/40">
+              <div key={t.id} className="min-w-0 rounded-md border border-border/50">
+                <div className="group flex min-w-0 items-center gap-2 p-2 hover:bg-muted/40">
                   <button
                     className="grid h-4 w-4 shrink-0 place-items-center rounded-full border border-border text-transparent hover:border-primary hover:text-primary"
                     title="Mark complete"
@@ -207,21 +207,21 @@ function BriefDialog({
                     className="min-w-0 flex-1 text-left"
                     onClick={() => setEditingId(editingId === t.id ? null : t.id)}
                   >
-                    <div className="truncate text-sm font-medium">{t.title}</div>
-                    <div className="truncate text-[11px] text-muted-foreground">
+                    <div className="break-words text-sm font-medium">{t.title}</div>
+                    <div className="break-words text-[11px] text-muted-foreground">
                       {t.dueDate ? format(parseISO(t.dueDate), "EEE MMM d") : "No date"}
                       {t.area ? ` · ${t.area}` : ""}
                     </div>
                   </button>
                   <Button
-                    variant="ghost" size="icon" className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
+                    variant="ghost" size="icon" className="hidden h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 sm:inline-flex"
                     title="Quick edit"
                     onClick={(e) => { e.stopPropagation(); setEditingId(editingId === t.id ? null : t.id); }}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   <Button
-                    variant="ghost" size="sm" className="h-7 px-2 text-[11px]"
+                    variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-[11px]"
                     onClick={() => { onClose(); openTaskEditor(t.id); }}
                   >Open</Button>
                 </div>
