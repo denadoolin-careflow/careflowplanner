@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap, Tag as TagIcon, Timer } from "lucide-react";
+import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap, Tag as TagIcon, Timer, AlignLeft } from "lucide-react";
 import { format, parseISO, addDays, nextMonday, nextSaturday } from "date-fns";
 import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
@@ -33,13 +33,25 @@ interface Props {
 export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "Add a task…", initialDate, defaultTags }: Props) {
   const { state, addTask } = useStore();
   const [text, setText] = useState("");
+  const [notes, setNotes] = useState("");
+  const [notesOpen, setNotesOpen] = useState(false);
   const [date, setDate] = useState<string | undefined>(initialDate ?? defaults.dueDate);
   const [projectId, setProjectId] = useState<string | undefined>(defaults.projectId);
   const [area, setArea] = useState<Area | undefined>(defaults.area);
   const [energy, setEnergy] = useState<Energy | undefined>(defaults.energy);
   const [tags, setTags] = useState<string[]>(() => defaultTags ?? defaults.tags ?? []);
   const [estMinutes, setEstMinutes] = useState<number | undefined>(defaults.estMinutes);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow helpers
+  const autoGrow = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 320)}px`;
+  };
+  useEffect(() => { autoGrow(inputRef.current); }, [text]);
+  useEffect(() => { if (notesOpen) autoGrow(notesRef.current); }, [notes, notesOpen]);
 
   // Keep sticky tag selection in sync when the parent's defaultTags changes.
   useEffect(() => { setTags(defaultTags ?? defaults.tags ?? []); }, [JSON.stringify(defaultTags)]);
@@ -64,7 +76,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     const finalEst = estMinutes ?? p.estMinutes ?? defaults.estMinutes;
     await addTask({
       title: p.title || raw,
-      notes: undefined,
+      notes: notes.trim() || undefined,
       dueDate: finalDate,
       priority: p.priority ?? "medium",
       area: (finalArea ?? "Personal") as Area,
@@ -80,6 +92,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
       done: false,
     });
     setText("");
+    setNotes("");
+    setNotesOpen(false);
     setDate(initialDate ?? defaults.dueDate);
     setProjectId(defaults.projectId);
     setArea(defaults.area);
@@ -90,7 +104,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
   };
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); }
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void submit(); return; }
+    if (e.key === "Enter" && !e.shiftKey && !notesOpen) { e.preventDefault(); void submit(); }
     if (e.key === "Escape") { setText(""); }
   };
 
@@ -101,24 +116,50 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
           <Plus className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <Input
+          <textarea
             ref={inputRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKey}
             placeholder={placeholder}
-            className="h-8 border-0 bg-transparent px-1 text-sm shadow-none focus-visible:ring-0"
+            rows={1}
+            className="w-full resize-none border-0 bg-transparent px-1 py-1 text-sm leading-snug shadow-none outline-none focus-visible:ring-0 placeholder:text-muted-foreground"
           />
-          <TagAutocomplete inputRef={inputRef} value={text} onChange={setText} />
+          <TagAutocomplete inputRef={inputRef as any} value={text} onChange={setText} />
 
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          {notesOpen && (
+            <textarea
+              ref={notesRef}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add a description…"
+              rows={2}
+              className="mt-1 w-full resize-none rounded-md border border-border/50 bg-background/50 px-2 py-1.5 text-xs leading-relaxed shadow-none outline-none focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground"
+            />
+          )}
+
+          {/* Scrollable pill row — keeps options accessible without wrapping */}
+          <div className="mt-1 -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <button
+              type="button"
+              onClick={() => { setNotesOpen(v => !v); setTimeout(() => notesRef.current?.focus(), 0); }}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                notesOpen || notes ? "text-foreground" : "text-muted-foreground",
+              )}
+              title="Add description"
+              aria-pressed={notesOpen}
+            >
+              <AlignLeft className="h-3 w-3" />
+              {notes ? "Description" : "Describe"}
+            </button>
             {/* Date pill */}
             <Popover>
               <PopoverTrigger asChild>
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
                     date ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
@@ -177,7 +218,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
                     project ? "text-foreground" : "text-muted-foreground",
                   )}
                   style={project?.color ? { color: project.color } : undefined}
@@ -216,7 +257,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
                     area ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
@@ -256,7 +297,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   onClick={() => setEnergy(active ? undefined : e)}
                   title={`Energy: ${e}  (or type @${label})`}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
                     active
                       ? e === "low"  ? "border-transparent bg-secondary-soft text-secondary-foreground"
                       : e === "high" ? "border-transparent bg-warm-soft text-warm-foreground"
@@ -276,7 +317,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
                     tags.length ? "text-foreground" : "text-muted-foreground",
                   )}
                   title="Tags"
@@ -313,7 +354,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
                     estMinutes ? "text-foreground" : "text-muted-foreground",
                   )}
                   title="Time estimate"
@@ -364,15 +405,17 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
 
             {/* NLP chips */}
             {parsed && parsed.chips.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
+              <div className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
                 <Sparkles className="h-3 w-3" />
                 {parsed.chips.map((c, i) => (
-                  <span key={i} className="rounded-full bg-primary/10 px-1.5 py-0.5 text-primary">{c.label}</span>
+                  <span key={i} className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-primary">{c.label}</span>
                 ))}
               </div>
             )}
+          </div>
 
-            <div className="ml-auto flex items-center gap-1">
+          {/* Actions row — pinned (not scrolled) */}
+          <div className="mt-1 flex items-center justify-end gap-1">
               <TemplatePickerDialog
                 defaults={{
                   area: area ?? defaults.area,
@@ -396,7 +439,6 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
               <Button size="sm" className="h-7 px-3 text-xs" onClick={submit} disabled={!text.trim()}>
                 Add
               </Button>
-            </div>
           </div>
         </div>
       </div>
