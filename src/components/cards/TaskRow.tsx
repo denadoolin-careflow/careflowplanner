@@ -25,7 +25,7 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { useTaskSelection } from "@/lib/task-selection";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { inferTaskIcon } from "@/lib/task-icons";
+import { resolveTaskIcon } from "@/lib/task-icons";
 import { TagChip } from "@/components/tags/TagChip";
 import { playCompletionChime } from "@/lib/completion-sound";
 
@@ -195,7 +195,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
     setEditing(true);
   };
 
-  const AutoIcon = inferTaskIcon(task.title, task.notes);
+  const resolvedIcon = resolveTaskIcon(task);
 
   return (
     <>
@@ -215,7 +215,13 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       onTouchEnd={onTouchEnd}
     >
       <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-0.5" />
-      <AutoIcon className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground/70" aria-hidden />
+      {resolvedIcon.kind === "lucide" ? (
+        <resolvedIcon.Icon className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground/70" aria-hidden />
+      ) : (
+        <span className="mt-0.5 inline-block w-4 shrink-0 text-center text-sm leading-none" aria-hidden>
+          {resolvedIcon.char}
+        </span>
+      )}
       {(hasSubs || addingSub) && (
         <button
           type="button"
