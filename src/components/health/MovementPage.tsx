@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import { Trash2, Wind, Flame, Waves, Mountain, Heart, Leaf } from "lucide-react";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo } from "@/lib/cycle";
+import { RitualSession, totalMinutes, type RitualTemplate } from "./RitualSession";
+import { RITUAL_TEMPLATES } from "./ritualTemplates";
+import { Play } from "lucide-react";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -40,6 +43,8 @@ export default function MovementPage({ uid }: { uid: string }) {
   const phaseToday = getPhaseInfo(new Date(), periods, settings)?.phase ?? null;
   const [logs, setLogs] = useState<any[]>([]);
   const [form, setForm] = useState({ date: today(), activity: "", minutes: "", intensity: "moderate", notes: "", intent: "restore" });
+  const [active, setActive] = useState<RitualTemplate | null>(null);
+  const [intentFilter, setIntentFilter] = useState<string>("all");
 
   async function load() {
     const { data } = await supabase.from("movement_logs").select("*").eq("user_id", uid).order("date", { ascending: false }).limit(60);
@@ -80,6 +85,10 @@ export default function MovementPage({ uid }: { uid: string }) {
 
   const maxDay = Math.max(60, ...last7Days.map(d => d.minutes));
   const guidance = PHASE_GUIDANCE[phaseToday ?? ""] ?? PHASE_GUIDANCE.follicular;
+
+  const filteredTemplates = intentFilter === "all"
+    ? RITUAL_TEMPLATES
+    : RITUAL_TEMPLATES.filter(t => t.intent === intentFilter);
 
   return (
     <div className="space-y-5">
@@ -128,6 +137,56 @@ export default function MovementPage({ uid }: { uid: string }) {
               className="rounded-full border border-border/50 bg-card/60 px-3 py-1.5 text-sm hover:border-primary/40 hover:bg-card transition-all"
             >
               + {q.activity} <span className="text-muted-foreground">· {q.minutes}m</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Ritual templates */}
+      <div className="cozy-card p-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Guided rituals</p>
+            <h3 className="font-display text-xl">Start a session in one click</h3>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            <FilterPill active={intentFilter === "all"} onClick={() => setIntentFilter("all")} label="All" />
+            {INTENTS.map(i => (
+              <FilterPill
+                key={i.key}
+                active={intentFilter === i.key}
+                onClick={() => setIntentFilter(i.key)}
+                label={i.label}
+                color={i.color}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredTemplates.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setActive(t)}
+              className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/70 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-border hover:shadow-md"
+              style={{ borderLeft: `3px solid ${t.color}` }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                    <span>{t.emoji}</span>
+                    <span>{t.intent} · {totalMinutes(t)}m · {t.steps.length} steps</span>
+                  </div>
+                  <p className="mt-1.5 font-display text-lg leading-tight">{t.name}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+                </div>
+                <span
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full transition-transform group-hover:scale-110"
+                  style={{ background: `${t.color}22`, color: t.color }}
+                >
+                  <Play className="h-4 w-4" fill="currentColor" />
+                </span>
+              </div>
             </button>
           ))}
         </div>
@@ -202,6 +261,22 @@ export default function MovementPage({ uid }: { uid: string }) {
           </ul>
         )}
       </div>
+
+      <RitualSession uid={uid} template={active} onClose={() => setActive(null)} onComplete={load} />
     </div>
+  );
+}
+
+function FilterPill({ active, onClick, label, color }: { active: boolean; onClick: () => void; label: string; color?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+        active ? "border-transparent bg-foreground text-background" : "border-border/50 bg-card/60 hover:border-primary/40"
+      }`}
+    >
+      {color && <span className="h-2 w-2 rounded-full" style={{ background: color }} />}
+      {label}
+    </button>
   );
 }
