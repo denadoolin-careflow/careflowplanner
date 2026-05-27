@@ -180,10 +180,17 @@ export function NotificationCenter() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-9 w-9" aria-label="Notifications">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-9 w-9 text-primary hover:bg-primary/10 hover:text-primary"
+          aria-label="Notifications"
+        >
           <Bell className="h-4 w-4" />
           {count > 0 && (
-            <Badge className="absolute -right-1 -top-1 h-4 min-w-[16px] rounded-full px-1 text-[9px]" variant="destructive">
+            <Badge
+              className="absolute -right-1 -top-1 h-4 min-w-[16px] rounded-full border border-background bg-primary px-1 text-[9px] text-primary-foreground shadow-soft hover:bg-primary"
+            >
               {count > 9 ? "9+" : count}
             </Badge>
           )}
