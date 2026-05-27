@@ -262,10 +262,12 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
           </div>
         )}
       </div>
-      <QuickScheduleButton task={task} />
-      <QuickDayPartButton task={task} />
+      <div className="hidden sm:contents">
+        <QuickScheduleButton task={task} />
+        <QuickDayPartButton task={task} />
+      </div>
       {!isSubtask && (
-        <div className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+        <div className="hidden opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 sm:block">
           <SubtaskAddMenu
             onAddManual={() => { setExpanded(true); setAddingSub(true); }}
             onAddWithAI={generateSubtasks}
@@ -273,13 +275,13 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
           />
         </div>
       )}
-      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setOpen(true)} aria-label="More options" title="Details">
+      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground/70 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100" onClick={() => setOpen(true)} aria-label="More options" title="Details">
         <Settings2 className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => setPomOpen(true)} aria-label="Start pomodoro" title="Pomodoro">
+      <Button variant="ghost" size="icon" className="hidden h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 sm:inline-flex" onClick={() => setPomOpen(true)} aria-label="Start pomodoro" title="Pomodoro">
         <Timer className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100" onClick={() => deleteTask(task.id)} aria-label="Delete">
+      <Button variant="ghost" size="icon" className="hidden h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 sm:inline-flex" onClick={() => deleteTask(task.id)} aria-label="Delete">
         <Trash2 className="h-3.5 w-3.5" />
       </Button>
       {celebrate && (
