@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, AlertCircle, Calendar, Clock, CheckCircle2, Check, X, CalendarClock, Pencil } from "lucide-react";
-import { format, isBefore, isAfter, addDays, parseISO, startOfDay, startOfWeek } from "date-fns";
+import { Bell, AlertCircle, Calendar, Clock, CheckCircle2, Check, X, CalendarClock, Pencil, Sparkles } from "lucide-react";
+import { format, isBefore, isAfter, addDays, parseISO, startOfDay, startOfWeek, differenceInCalendarYears } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,17 +10,36 @@ import { openTaskEditor } from "@/lib/open-task-editor";
 import { clearAllDismissed, dismiss, dismissMany, getDismissed, onDismissedChange } from "@/lib/dismissed-notifications";
 import { toast } from "sonner";
 import { playCompletionChime } from "@/lib/completion-sound";
+import { listMemories, memoryTypeMeta, type Memory } from "@/lib/memories";
 
 export function NotificationCenter() {
   const { state, toggleTask, updateTask } = useStore();
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(() => getDismissed());
   useEffect(() => onDismissedChange(() => setDismissed(getDismissed())), []);
+  const navigate = useNavigate();
+  const [memories, setMemories] = useState<Memory[]>([]);
+  useEffect(() => {
+    let cancel = false;
+    listMemories().then((m) => { if (!cancel) setMemories(m); }).catch(() => {});
+    return () => { cancel = true; };
+  }, []);
 
   const today = startOfDay(new Date());
   const todayISO = format(today, "yyyy-MM-dd");
   const tomorrowISO = format(addDays(today, 1), "yyyy-MM-dd");
   const weekEnd = addDays(today, 7);
+  const todayMD = format(today, "MM-dd");
+
+  const onThisDay = useMemo(() => {
+    return memories
+      .filter((m) => {
+        if (dismissed.has(m.id)) return false;
+        if (format(parseISO(m.date), "MM-dd") !== todayMD) return false;
+        return differenceInCalendarYears(today, parseISO(m.date)) >= 1;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [memories, dismissed, todayMD, today]);
 
   const buckets = useMemo(() => {
     const overdue: typeof state.tasks = [];
@@ -40,10 +60,10 @@ export function NotificationCenter() {
     return { overdue, dueToday, dueTomorrow, upcoming, todayAppts };
   }, [state.tasks, state.appointments, todayISO, tomorrowISO, today, weekEnd, dismissed]);
 
-  const count = buckets.overdue.length + buckets.dueToday.length + buckets.todayAppts.length;
+  const count = buckets.overdue.length + buckets.dueToday.length + buckets.todayAppts.length + onThisDay.length;
   const totalShown =
     buckets.overdue.length + buckets.dueToday.length + buckets.dueTomorrow.length +
-    buckets.upcoming.length + buckets.todayAppts.length;
+    buckets.upcoming.length + buckets.todayAppts.length + onThisDay.length;
 
   const handleComplete = async (id: string, title: string) => {
     await toggleTask(id);
@@ -169,6 +189,45 @@ export function NotificationCenter() {
           </div>
         </div>
         <div className="max-h-[60vh] overflow-y-auto">
+          {onThisDay.length > 0 && (
+            <div>
+              <div className="flex items-center gap-1.5 px-2 pb-1 pt-2 text-[10px] uppercase tracking-[0.15em] text-[hsl(350_55%_55%)]">
+                <Sparkles className="h-3 w-3" /> On this day <span className="ml-auto opacity-60">{onThisDay.length}</span>
+                <button
+                  className="ml-1 text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                  onClick={() => dismissMany(onThisDay.map(m => m.id))}
+                  title="Clear section"
+                >clear</button>
+              </div>
+              <div className="space-y-0.5">
+                {onThisDay.slice(0, 6).map((m) => {
+                  const meta = memoryTypeMeta(m.memoryType);
+                  const years = differenceInCalendarYears(today, parseISO(m.date));
+                  return (
+                    <div key={m.id} className="group flex items-start gap-2 rounded-md px-2 py-1.5 hover:bg-muted">
+                      <span className="mt-0.5 text-sm leading-none">{meta.emoji}</span>
+                      <button
+                        className="min-w-0 flex-1 text-left"
+                        onClick={() => { navigate(`/memories`); setOpen(false); }}
+                      >
+                        <div className="truncate text-xs font-medium">{m.title}</div>
+                        <div className="truncate text-[10px] text-muted-foreground">
+                          {years} {years === 1 ? "year" : "years"} ago · {format(parseISO(m.date), "MMM d, yyyy")}
+                        </div>
+                      </button>
+                      <Button
+                        variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                        title="Dismiss"
+                        onClick={(e) => { e.stopPropagation(); dismiss(m.id); }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <Section kind="task" label="Overdue" items={buckets.overdue} icon={<AlertCircle className="h-3 w-3" />} color="text-destructive" />
           <Section kind="task" label="Today" items={buckets.dueToday} icon={<Clock className="h-3 w-3" />} color="text-foreground" />
           <Section kind="appt" label="Appointments today" items={buckets.todayAppts} icon={<Calendar className="h-3 w-3" />} color="text-primary" />
