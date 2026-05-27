@@ -47,7 +47,7 @@ export function MemoryEditor({ open, onOpenChange, memory, lovedOnes, onSaved, o
         attachments: [],
         isFavorite: false,
         isPinned: false,
-        moonPhase: MOON_INFO[phase]?.name,
+        moonPhase: MOON_INFO[phase]?.label,
         season: seasonOf(today),
         coverIndex: 0,
         ...defaults,
