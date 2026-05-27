@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
@@ -182,13 +183,18 @@ function GoalsPanel({ uid }: { uid: string }) {
   );
 }
 
+const HEALTH_TABS = ["dashboard","checkin","cycle","lunar","movement","wellness","nourishment","sleep","mental","goals","calendar","timeline","reflections"] as const;
+
 export default function Health() {
   const uid = useUser();
+  const [params, setParams] = useSearchParams();
+  const raw = params.get("tab") ?? "dashboard";
+  const tab = (HEALTH_TABS as readonly string[]).includes(raw) ? raw : "dashboard";
   if (!uid) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   return (
     <div className="space-y-6">
       <HealthHero />
-      <Tabs defaultValue="dashboard">
+      <Tabs value={tab} onValueChange={(v) => setParams({ tab: v }, { replace: true })}>
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 bg-secondary-soft/50 p-1.5">
           <TabsTrigger value="dashboard">🌿 Dashboard</TabsTrigger>
           <TabsTrigger value="checkin">🩺 Check-In</TabsTrigger>
