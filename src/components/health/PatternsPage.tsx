@@ -467,12 +467,90 @@ export default function PatternsPage({ uid }: { uid: string }) {
             </div>
           )}
 
+          {/* Intention patterns over time */}
+          {intentionTimeline.length > 0 && (
+            <div className="cozy-card p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary/70" />
+                <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                  Intention patterns · last {range} days
+                </p>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
+                <div>
+                  <p className="mb-2 text-xs text-muted-foreground">Days you set an intention</p>
+                  <div className="flex h-20 items-end gap-1">
+                    {intentionFlow.map(d => (
+                      <div
+                        key={d.date}
+                        title={d.intentions.length ? `${d.date}: ${d.intentions.join(" · ")}` : d.date}
+                        className="flex-1 rounded-t-md transition-all"
+                        style={{
+                          height: d.count ? `${30 + d.count * 35}%` : "6%",
+                          background: d.count
+                            ? `hsl(145 50% ${65 - d.count * 8}%)`
+                            : "hsl(var(--muted))",
+                          minHeight: 4,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                    <span>{intentionFlow[0]?.label}</span>
+                    <span>{intentionFlow[intentionFlow.length - 1]?.label}</span>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {intentionTimeline.length} of {range} days held an intention
+                    {intentionTimeline.length > 0 && (
+                      <> · {Math.round((intentionTimeline.length / range) * 100)}% consistency</>
+                    )}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs text-muted-foreground">Recurring words</p>
+                  {intentionWords.length === 0 ? (
+                    <p className="text-xs italic text-muted-foreground/70">Not enough to chart yet.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {intentionWords.map(w => (
+                        <span
+                          key={w.word}
+                          className="rounded-full bg-primary/10 px-3 py-1 text-xs"
+                          style={{ fontSize: `${11 + Math.min(w.count, 5)}px` }}
+                        >
+                          {w.word}
+                          <span className="ml-1 text-muted-foreground">×{w.count}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <ol className="mt-5 space-y-2 border-t border-border/40 pt-4">
+                {intentionTimeline.slice(0, 8).map(r => (
+                  <li key={r.date} className="flex gap-3 text-sm">
+                    <span className="w-16 shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {r.date.slice(5)}
+                    </span>
+                    <div className="flex-1 space-y-1">
+                      {r.checkin && <p>🌿 <span className="italic">{r.checkin}</span></p>}
+                      {r.mental && <p>💭 <span className="italic">{r.mental}</span></p>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
           {/* Intentions / gratitude scroll */}
           {intentions.length > 0 && (
             <div className="cozy-card p-5">
               <div className="mb-3 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary/70" />
-                <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Recent intentions & gratitude</p>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Recent gratitude & support</p>
               </div>
               <ul className="space-y-2">
                 {intentions.map(i => (
