@@ -45,6 +45,7 @@ import { EndOfDaySummary } from "@/components/today/EndOfDaySummary";
 import { WeatherHeroCard } from "@/components/today/WeatherHeroCard";
 import { CarePriorities } from "@/components/today/CarePriorities";
 import { AffirmationHeader } from "@/components/today/AffirmationHeader";
+import { TopThreeStrip } from "@/components/today/TopThreeStrip";
 import { personalGreeting } from "@/lib/greeting";
 
 export default function Today() {
