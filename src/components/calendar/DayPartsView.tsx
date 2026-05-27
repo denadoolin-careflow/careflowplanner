@@ -5,6 +5,8 @@ import { useStore } from "@/lib/store";
 import { hmToHours } from "@/lib/time-blocks";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
 import { useLongPressDrag } from "@/lib/long-press-drag";
+import { resolveTaskIcon } from "@/lib/task-icons";
+import { useStore as useTaskStore } from "@/lib/store";
 import { toast } from "sonner";
 import { useDayPartLabels, DEFAULT_DAY_PART_LABELS } from "@/lib/day-part-labels";
 import { Pencil, Check, X } from "lucide-react";
