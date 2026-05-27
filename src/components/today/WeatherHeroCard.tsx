@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
-  Loader2, MapPin, Moon, MoonStar, Search, Sun, Wind, Zap, ChevronDown,
+  Loader2, MapPin, Moon, MoonStar, Search, Sun, Zap, ChevronDown, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import {
   fetchWeather, geocodeCity, loadSavedPlace, reverseLabel, savePlace,
-  type DayPartForecast, type GeoPlace, type WeatherCondition, type WeatherSnapshot,
+  type DayPartForecast, type GeoPlace, type HourlyForecast, type WeatherCondition, type WeatherSnapshot,
 } from "@/lib/weather";
 import { dayPartSuggestion, setWeatherSnapshot, useTempUnit, cToF, type TempUnit } from "@/lib/weather-store";
 
 const fmtTemp = (c: number, u: TempUnit) => `${u === "F" ? cToF(c) : Math.round(c)}°`;
+const fmtHour = (h: number) => {
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12} ${period}`;
+};
 
 function ConditionIcon({ condition, isNight, className }: { condition: WeatherCondition; isNight?: boolean; className?: string }) {
   const cls = cn("h-5 w-5", className);
@@ -52,6 +57,7 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [expandedPart, setExpandedPart] = useState<string | null>(null);
+  const [showHourly, setShowHourly] = useState(false);
   const triedRef = useRef(false);
 
   useEffect(() => { onSnapshot?.(snap); }, [snap, onSnapshot]);
@@ -207,7 +213,7 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
                       )}
                     >
                       <div className="min-h-0">
-                        <DayPartDetails dp={p} unit={unit} />
+                        <DayPartDetails dp={p} unit={unit} hours={snap?.todayHourly ?? []} />
                       </div>
                     </div>
                   </button>
@@ -216,27 +222,120 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
             })}
           </ul>
         )}
+
+        {/* Hourly forecast disclosure */}
+        {snap && snap.todayHourly.length > 0 && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setShowHourly(v => !v)}
+              aria-expanded={showHourly}
+              className={cn(
+                "inline-flex w-full items-center justify-between rounded-full border border-border/60 bg-card/60 px-4 py-2 text-[12px] font-medium text-foreground/85 backdrop-blur transition-colors hover:bg-card/80",
+                showHourly && "bg-card/80",
+              )}
+            >
+              <span className="inline-flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5" />
+                Hourly forecast
+              </span>
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showHourly && "rotate-180")} />
+            </button>
+            <div
+              className={cn(
+                "grid overflow-hidden transition-[grid-template-rows] duration-300",
+                showHourly ? "grid-rows-[1fr] mt-2" : "grid-rows-[0fr]",
+              )}
+            >
+              <div className="min-h-0">
+                <HourlyList hours={snap.todayHourly} unit={unit} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-function DayPartDetails({ dp, unit }: { dp: DayPartForecast; unit: TempUnit }) {
+function hoursForPart(part: string, hours: HourlyForecast[]): HourlyForecast[] {
+  if (part === "Morning") return hours.filter(h => h.hour >= 6 && h.hour < 12);
+  if (part === "Afternoon") return hours.filter(h => h.hour >= 12 && h.hour < 17);
+  if (part === "Evening") return hours.filter(h => h.hour >= 17 && h.hour < 21);
+  if (part === "Late Night") return hours.filter(h => h.hour >= 21 || h.hour < 6);
+  return hours;
+}
+
+function DayPartDetails({ dp, unit, hours }: { dp: DayPartForecast; unit: TempUnit; hours: HourlyForecast[] }) {
   const tip = dayPartSuggestion(dp);
+  const partHours = hoursForPart(dp.part, hours);
   return (
     <div className="border-t border-border/60 pt-2 text-[12px] text-foreground/80">
-      <div className="grid grid-cols-2 gap-1.5">
-        <div className="inline-flex items-center gap-1.5">
-          <CloudRain className="h-3.5 w-3.5 text-foreground/60" /> {dp.precipChance}% chance
-        </div>
-        <div className="inline-flex items-center gap-1.5">
-          <Wind className="h-3.5 w-3.5 text-foreground/60" /> {dp.isNight ? "Cooler hours" : "Mild breeze"}
-        </div>
-        <div className="inline-flex items-center gap-1.5 col-span-2">
-          <Sun className="h-3.5 w-3.5 text-foreground/60" /> Avg {fmtTemp(dp.avgTempC, unit)} · {dp.conditionLabel}
-        </div>
-      </div>
+      {partHours.length > 0 ? (
+        <HourlyList hours={partHours} unit={unit} compact />
+      ) : (
+        <p className="text-foreground/70">No hourly data.</p>
+      )}
       {tip && <p className="mt-1.5 italic text-foreground/75">{tip}.</p>}
+    </div>
+  );
+}
+
+function HourlyList({ hours, unit, compact = false }: { hours: HourlyForecast[]; unit: TempUnit; compact?: boolean }) {
+  const nowHour = new Date().getHours();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const nowRef = useRef<HTMLLIElement | null>(null);
+  useEffect(() => {
+    if (nowRef.current && scrollRef.current) {
+      const el = nowRef.current;
+      const container = scrollRef.current;
+      const top = el.offsetTop - container.offsetTop - 8;
+      container.scrollTo({ top, behavior: "smooth" });
+    }
+  }, [hours]);
+  return (
+    <div
+      ref={scrollRef}
+      className={cn(
+        "no-scrollbar overflow-y-auto rounded-xl border border-border/50 bg-card/40 backdrop-blur-sm",
+        compact ? "max-h-44" : "max-h-72",
+      )}
+    >
+      <ul className="divide-y divide-border/40">
+        {hours.map(h => {
+          const isNow = h.hour === nowHour;
+          return (
+            <li
+              key={h.hour}
+              ref={isNow ? nowRef : undefined}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 text-[12px] transition-colors",
+                h.isNight && !isNow && "bg-moon-soft/40",
+                isNow && "bg-primary/15 ring-1 ring-inset ring-primary/40 text-foreground",
+              )}
+            >
+              <span className={cn("w-12 shrink-0 font-mono tabular-nums text-foreground/80", isNow && "font-semibold text-primary")}>
+                {fmtHour(h.hour)}
+              </span>
+              <ConditionIcon condition={h.condition} isNight={h.isNight} className="h-4 w-4 shrink-0 text-foreground/70" />
+              <span className="min-w-0 flex-1 truncate text-foreground/80">{h.conditionLabel}</span>
+              {h.precipChance >= 10 && (
+                <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] text-foreground/65 tabular-nums">
+                  💧 {h.precipChance}%
+                </span>
+              )}
+              <span className={cn("w-10 shrink-0 text-right font-medium tabular-nums", isNow && "text-primary")}>
+                {fmtTemp(h.tempC, unit)}
+              </span>
+              {isNow && (
+                <span className="ml-0.5 shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary-foreground">
+                  Now
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
