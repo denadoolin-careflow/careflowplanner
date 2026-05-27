@@ -2,11 +2,11 @@ import jsPDF from "jspdf";
 import { format, parseISO } from "date-fns";
 import { memoryTypeMeta, type Memory } from "@/lib/memories";
 import type { LovedOne } from "@/lib/loved-ones";
-import type { Recipient } from "@/lib/types";
+import type { CareRecipient } from "@/lib/types";
 
 function nameFor(
   ids: string[],
-  recipients: Recipient[] | undefined,
+  recipients: CareRecipient[] | undefined,
   lovedOnes: LovedOne[],
   kind: "recipient" | "loved",
 ): string[] {
@@ -22,7 +22,7 @@ function nameFor(
 export interface ExportOptions {
   scopeLabel: string;
   favoritesOnly?: boolean;
-  recipients?: Recipient[];
+  recipients?: CareRecipient[];
   lovedOnes: LovedOne[];
 }
 
