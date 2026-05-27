@@ -21,6 +21,8 @@ import { haptics } from "@/lib/haptics";
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { getRhythmForecast, type Element } from "@/lib/rhythm-forecast";
 import { Moon } from "lucide-react";
+import { Sunrise, Sun } from "lucide-react";
+import { formatTime12 } from "@/lib/routines";
 import { getMoonPhase } from "@/lib/moon";
 import { getKeyPhaseInfo, isKeyPhaseDay } from "@/lib/lunar-phases";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
