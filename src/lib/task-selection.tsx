@@ -9,6 +9,13 @@ interface SelectionCtx {
   count: number;
   /** Ordered ids of currently visible rows; used for shift-range selection. */
   setOrderedIds: (ids: string[]) => void;
+  /** Ordered ids of currently visible rows (read-only access for callers). */
+  orderedIds: () => string[];
+  /** Select-mode: when true, tapping a task toggles its selection. */
+  selectionMode: boolean;
+  setSelectionMode: (v: boolean) => void;
+  toggleSelectionMode: () => void;
+  selectAll: () => void;
   paneOpen: boolean;
   setPaneOpen: (v: boolean) => void;
   togglePane: () => void;
@@ -18,6 +25,7 @@ const Ctx = createContext<SelectionCtx | null>(null);
 
 export function TaskSelectionProvider({ children, storageKey }: { children: ReactNode; storageKey?: string }) {
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [selectionMode, setSelectionModeState] = useState(false);
   const [paneOpen, setPaneOpenState] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return storageKey ? localStorage.getItem(`pane:${storageKey}`) === "1" : false;
@@ -26,6 +34,7 @@ export function TaskSelectionProvider({ children, storageKey }: { children: Reac
   const lastIdRef = useRef<string | null>(null);
 
   const setOrderedIds = useCallback((ids: string[]) => { orderedRef.current = ids; }, []);
+  const orderedIds = useCallback(() => orderedRef.current.slice(), []);
 
   const isSelected = useCallback((id: string) => selected.has(id), [selected]);
 
@@ -54,7 +63,21 @@ export function TaskSelectionProvider({ children, storageKey }: { children: Reac
     lastIdRef.current = id;
   }, []);
 
-  const clear = useCallback(() => { setSelected(new Set()); lastIdRef.current = null; }, []);
+  const clear = useCallback(() => {
+    setSelected(new Set());
+    lastIdRef.current = null;
+    setSelectionModeState(false);
+  }, []);
+
+  const setSelectionMode = useCallback((v: boolean) => {
+    setSelectionModeState(v);
+    if (!v) { setSelected(new Set()); lastIdRef.current = null; }
+  }, []);
+  const toggleSelectionMode = useCallback(() => setSelectionMode(!selectionMode), [selectionMode, setSelectionMode]);
+  const selectAll = useCallback(() => {
+    setSelected(new Set(orderedRef.current));
+    setSelectionModeState(true);
+  }, []);
 
   const setPaneOpen = useCallback((v: boolean) => {
     setPaneOpenState(v);
@@ -64,9 +87,10 @@ export function TaskSelectionProvider({ children, storageKey }: { children: Reac
 
   const value = useMemo<SelectionCtx>(() => ({
     selected, isSelected, toggle, selectOnly, clear,
-    count: selected.size, setOrderedIds,
+    count: selected.size, setOrderedIds, orderedIds,
+    selectionMode, setSelectionMode, toggleSelectionMode, selectAll,
     paneOpen, setPaneOpen, togglePane,
-  }), [selected, isSelected, toggle, selectOnly, clear, setOrderedIds, paneOpen, setPaneOpen, togglePane]);
+  }), [selected, isSelected, toggle, selectOnly, clear, setOrderedIds, orderedIds, selectionMode, setSelectionMode, toggleSelectionMode, selectAll, paneOpen, setPaneOpen, togglePane]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -83,6 +107,11 @@ export function useTaskSelection(): SelectionCtx {
       clear: () => {},
       count: 0,
       setOrderedIds: () => {},
+      orderedIds: () => [],
+      selectionMode: false,
+      setSelectionMode: () => {},
+      toggleSelectionMode: () => {},
+      selectAll: () => {},
       paneOpen: false,
       setPaneOpen: () => {},
       togglePane: () => {},
