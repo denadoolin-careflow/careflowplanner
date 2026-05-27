@@ -21,13 +21,14 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
 import { useEffect } from "react";
 import { applyAnimIntensity, readAnimIntensity } from "@/components/settings/AtmosphereFeelSection";
+import { applyFontPrefs } from "@/lib/font-prefs";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
   const { pathname } = useLocation();
   const current = NAV.find(n => n.to === pathname) ?? NAV[0];
   useAutoAtmosphereResolver({ lowEnergy: state.settings.lowEnergyMode });
-  useEffect(() => { applyAnimIntensity(readAnimIntensity()); }, []);
+  useEffect(() => { applyAnimIntensity(readAnimIntensity()); applyFontPrefs(); }, []);
 
   return (
     <div className="min-h-screen w-full gradient-dawn">
