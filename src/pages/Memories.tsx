@@ -87,7 +87,7 @@ export default function MemoriesPage() {
     });
     lovedOnes.forEach((l) => {
       const key = `loved:${l.id}`;
-      if (!seen.has(key)) { seen.add(key); out.push({ key, label: l.name, emoji: l.emoji }); }
+      if (!seen.has(key)) { seen.add(key); out.push({ key, label: l.name, emoji: l.avatarEmoji }); }
     });
     return out;
   }, [state.recipients, lovedOnes]);
