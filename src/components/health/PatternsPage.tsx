@@ -117,9 +117,9 @@ export default function PatternsPage({ uid }: { uid: string }) {
     const since = new Date(); since.setDate(since.getDate() - range);
     const sinceIso = since.toISOString().slice(0, 10);
     Promise.all([
-      supabase.from("mental_health_logs").select("date, mood_score, anxiety, focus, sensory_load, emotions, gratitude, support_needed")
+      supabase.from("mental_health_logs").select("date, mood_score, anxiety, focus, sensory_load, emotions, gratitude, support_needed, intention")
         .eq("user_id", uid).gte("date", sinceIso).order("date"),
-      supabase.from("health_checkins").select("date, mood, stress, sleep_hours, mindfulness_minutes")
+      supabase.from("health_checkins").select("date, mood, stress, sleep_hours, mindfulness_minutes, intention")
         .eq("user_id", uid).gte("date", sinceIso).order("date"),
     ]).then(([m, c]) => {
       setMental((m.data as MentalLog[]) ?? []);
