@@ -61,13 +61,13 @@ export function QuickAddCalendarPopover({ days, label = "Quick add" }: Props) {
               <Input autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="What needs doing?" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="min-w-0">
                 <Label className="text-xs">Due date</Label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
-              <div>
-                <Label className="text-xs">Day part</Label>
+              <div className="min-w-0">
+                <Label className="text-xs">Time of day</Label>
                 <Select value={dayPart || "any"} onValueChange={(v) => setDayPart(v === "any" ? "" : v as any)}>
                   <SelectTrigger><SelectValue placeholder="Any time" /></SelectTrigger>
                   <SelectContent>
@@ -87,12 +87,12 @@ export function QuickAddCalendarPopover({ days, label = "Quick add" }: Props) {
               <Input autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="Doctor, meeting…" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="min-w-0">
                 <Label className="text-xs">Date</Label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <Label className="text-xs">Time</Label>
                 <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
               </div>
