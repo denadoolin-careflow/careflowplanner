@@ -5,6 +5,7 @@ import { useTimeBlocks, colorClasses } from "@/lib/time-blocks";
 import { CalendarClock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
+import { resolveTaskIcon } from "@/lib/task-icons";
 
 type ApptLike = { label: string; time?: string | null; id?: string; kind?: "appt" | "gcal" | "task" | "bday" | "hol"; done?: boolean };
 
@@ -19,7 +20,7 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick }: 
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks } = useTimeBlocks(fromISO, toISO);
-  const { toggleTask } = useStore();
+  const { toggleTask, state } = useStore();
 
   const items = useMemo(() => {
     const rows: { iso: string; time?: string; label: string; color?: string; kind: "block" | "appt"; apptId?: string; apptKind?: string; done?: boolean }[] = [];
@@ -103,6 +104,14 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick }: 
                     </button>
                   )}
                   <span className="w-16 shrink-0 font-mono text-[11px] opacity-70">{r.time ? r.time : "All day"}</span>
+                  {isTask && (() => {
+                    const t = state.tasks.find(x => x.id === r.apptId);
+                    if (!t) return null;
+                    const ic = resolveTaskIcon(t);
+                    return ic.kind === "lucide"
+                      ? <ic.Icon className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+                      : <span className="shrink-0 text-sm leading-none" aria-hidden>{ic.char}</span>;
+                  })()}
                   <span className={cn("min-w-0 flex-1 truncate", isTask && r.done && "line-through text-muted-foreground")}>{r.label}</span>
                 </li>
                 );

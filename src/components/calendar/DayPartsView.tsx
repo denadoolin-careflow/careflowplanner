@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { hmToHours } from "@/lib/time-blocks";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
 import { useLongPressDrag } from "@/lib/long-press-drag";
+import { resolveTaskIcon } from "@/lib/task-icons";
 import { toast } from "sonner";
 import { useDayPartLabels, DEFAULT_DAY_PART_LABELS } from "@/lib/day-part-labels";
 import { Pencil, Check, X } from "lucide-react";
@@ -476,6 +477,9 @@ function DayPartItem({
   onToggle: (id: string) => void | Promise<void>;
   hideTime?: boolean;
 }) {
+  const { state: storeState } = useStore();
+  const taskForIcon = it.kind === "task" && it.taskId ? storeState.tasks.find(t => t.id === it.taskId) : undefined;
+  const icon = taskForIcon ? resolveTaskIcon(taskForIcon) : null;
   const [completing, setCompleting] = useState(false);
   const prevDone = useRef<boolean | undefined>(it.done);
   useEffect(() => {
@@ -534,6 +538,11 @@ function DayPartItem({
       ) : !hideTime ? (
         <span className="w-12 shrink-0 font-mono text-[10px] text-muted-foreground">{it.time?.slice(0, 5) ?? ""}</span>
       ) : null}
+      {icon && (
+        icon.kind === "lucide"
+          ? <icon.Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/80" aria-hidden />
+          : <span className="shrink-0 text-sm leading-none" aria-hidden>{icon.char}</span>
+      )}
       <span className={cn("min-w-0 flex-1 truncate", it.kind === "task" && it.done && "line-through")}>{it.label}</span>
       {it.kind === "task" && (
         <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
