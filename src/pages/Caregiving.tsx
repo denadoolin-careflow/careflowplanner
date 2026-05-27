@@ -10,6 +10,7 @@ import type { CareRecipient } from "@/lib/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PersonRoutinesPanel } from "@/pages/Routines";
 import { CareProfile } from "@/components/caregiving/CareProfile";
+import { CareTasksPanel } from "@/components/caregiving/CareTasksPanel";
 
 export default function Caregiving() {
   const { state, addCareNote, deleteCareNote } = useStore();
@@ -130,6 +131,15 @@ export default function Caregiving() {
           <SectionCard title="Upcoming appointments" accent="calm">
             {appts.length === 0 ? <p className="text-sm text-muted-foreground">Linked appointments will appear here.</p> :
               <ul className="space-y-1.5 text-sm">{appts.map(a => <li key={a.id} className="rounded-lg bg-muted/40 px-3 py-2">{a.title} <span className="text-xs text-muted-foreground">· {format(parseISO(a.date), "MMM d")} {a.time ?? ""}</span></li>)}</ul>}
+          </SectionCard>
+
+          <SectionCard
+            title="Care tasks"
+            subtitle={`Tasks linked to ${recipient.name}`}
+            accent="sage"
+            className="lg:col-span-2"
+          >
+            <CareTasksPanel recipientId={recipient.id} recipientName={recipient.name} />
           </SectionCard>
 
           <SectionCard title="Caregiving journal" accent="warm" className="lg:col-span-2">
