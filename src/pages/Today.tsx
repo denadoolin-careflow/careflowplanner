@@ -47,6 +47,7 @@ import { CarePriorities } from "@/components/today/CarePriorities";
 import { AffirmationHeader } from "@/components/today/AffirmationHeader";
 import { TopThreeStrip } from "@/components/today/TopThreeStrip";
 import { personalGreeting } from "@/lib/greeting";
+import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 
 export default function Today() {
   return (
