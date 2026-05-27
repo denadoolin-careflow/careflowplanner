@@ -10,8 +10,11 @@ import {
   MessageCircle, Send, Bell, AlarmClock, Timer, Tv, Gamepad2, Bookmark,
   Map as MapIcon, Star, Tag, Smile, Laptop, Smartphone, Printer,
   Package, Box, Hand, Footprints, Anchor, Sailboat, Mountain, Tent,
+  Leaf, Feather, Compass, Flame, Cloud, Lightbulb, Rocket, Gem, Sparkle,
   type LucideIcon,
 } from "lucide-react";
+
+import type { Task } from "./types";
 
 type Rule = { icon: LucideIcon; words: string[] };
 
@@ -121,4 +124,36 @@ export function inferTaskIcon(title: string, notes?: string): LucideIcon {
     }
   }
   return CheckSquare;
+}
+
+/** Map of lucide icon name → component for `lc:Name` task.icon refs.
+ *  Mirrors LucideIconPicker so any picked icon resolves consistently across views. */
+const LUCIDE_MAP: Record<string, LucideIcon> = {
+  CheckSquare, Phone, Mail, MessageCircle, Send, ShoppingCart, Utensils, ChefHat, Coffee,
+  Cake, Gift, PartyPopper, Stethoscope, Hospital, Pill, Heart, Dumbbell, Bike, Footprints,
+  Baby, Dog, Cat, WashingMachine, Sparkles, Trash2, Bed, Home, Wrench, Hammer, Paintbrush,
+  Scissors, Shirt, Droplet, Flower2, TreePine, Car, Plane, Train, Bus, Truck, MapPin,
+  MapIcon, Mountain, Tent, Sailboat, Anchor, CreditCard, DollarSign, Banknote,
+  PiggyBank, Receipt, Briefcase, Laptop, Smartphone, Printer, Wifi, Globe, BookOpen,
+  GraduationCap, School, Pencil, FileText, Camera, ImageIcon, Music, Film, Tv,
+  Gamepad2, Bookmark, Calendar, Clock, AlarmClock, Timer, Bell, Package, Box, Church,
+  Building2, Sun, Moon, CloudRain, Star, Smile, Leaf, Feather, Compass, Flame, Cloud,
+  Lightbulb, Rocket, Gem, Sparkle,
+};
+
+/** Resolves the saved task icon (lucide or emoji) into a kind we can render. */
+export function resolveTaskIcon(task: Pick<Task, "icon" | "title" | "notes">):
+  | { kind: "lucide"; Icon: LucideIcon }
+  | { kind: "emoji"; char: string }
+{
+  const raw = task.icon;
+  if (raw) {
+    if (raw.startsWith("lc:")) {
+      const I = LUCIDE_MAP[raw.slice(3)];
+      if (I) return { kind: "lucide", Icon: I };
+    } else if (raw.trim()) {
+      return { kind: "emoji", char: raw };
+    }
+  }
+  return { kind: "lucide", Icon: inferTaskIcon(task.title, task.notes) };
 }
