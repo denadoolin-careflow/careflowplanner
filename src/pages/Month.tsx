@@ -305,9 +305,9 @@ export default function Month() {
                     ) : <span />}
                     <div className={cn("text-right text-[10px] font-medium sm:text-[11px]", today && "text-primary")}>{format(d, "d")}</div>
                   </div>
-                  {/* Mobile: dot row indicator, max 4 dots */}
-                  {isMobile && inMonth && ev.length > 0 && (
-                    <div className="mt-0.5 flex flex-wrap gap-0.5">
+                  {/* Mobile (<md): dot row indicator, max 4 dots */}
+                  {inMonth && ev.length > 0 && (
+                    <div className="mt-0.5 flex flex-wrap gap-0.5 md:hidden">
                       {ev.slice(0, 4).map((it, i) => (
                         <span
                           key={i}
@@ -325,7 +325,7 @@ export default function Month() {
                       {ev.length > 4 && <span className="text-[8px] leading-none text-muted-foreground">+{ev.length - 4}</span>}
                     </div>
                   )}
-                  <div className="mt-0.5 hidden space-y-0.5 sm:block">
+                  <div className="mt-0.5 hidden space-y-0.5 md:block">
                     {ev.slice(0,3).map((it, i) => {
                       const isTask = it.kind === "task" && !!it.taskId;
                       const isAppt = it.kind === "appt" && !!it.apptId;
