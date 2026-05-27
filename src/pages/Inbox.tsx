@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
-import { Inbox as InboxIcon, Sparkles, Check, X, RefreshCw, PanelRightOpen, PanelRightClose, Eye, EyeOff } from "lucide-react";
+import { Inbox as InboxIcon, Sparkles, Check, X, RefreshCw, PanelRightOpen, PanelRightClose, Eye, EyeOff, CheckSquare } from "lucide-react";
 import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +39,7 @@ export default function Inbox() {
 
 function InboxInner() {
   const { state, updateTask } = useStore();
-  const { paneOpen, togglePane, setOrderedIds, clear } = useTaskSelection();
+  const { paneOpen, togglePane, setOrderedIds, clear, selectionMode, toggleSelectionMode, selectAll, count } = useTaskSelection();
   const [prefs, setPrefs] = useTaskListPrefs("inbox");
   const [triaging, setTriaging] = useState(false);
   const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
@@ -128,6 +128,16 @@ function InboxInner() {
         </div>
         <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
           <Button
+            variant={selectionMode ? "default" : "outline"}
+            size="sm"
+            onClick={toggleSelectionMode}
+            className="gap-1.5"
+            title={selectionMode ? "Exit select mode" : "Select multiple tasks"}
+          >
+            <CheckSquare className="h-3.5 w-3.5" />
+            {selectionMode ? "Done" : "Select"}
+          </Button>
+          <Button
             variant="outline"
             size="sm"
             onClick={triage}
@@ -160,6 +170,22 @@ function InboxInner() {
           </Button>
         </div>
       </header>
+
+      {selectionMode && (
+        <div className="flex items-center justify-between rounded-xl border border-primary/40 bg-primary/5 px-3 py-2 text-xs">
+          <span className="font-medium text-primary">
+            {count === 0 ? "Tap tasks to select" : `${count} selected`}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={selectAll}>
+              Select all
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={clear}>
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
 
       <InlineTaskComposer
         defaults={{ inbox: true }}

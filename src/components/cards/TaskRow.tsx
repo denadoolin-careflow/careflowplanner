@@ -152,6 +152,11 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
   };
 
   const handleTitleClick = (e: React.MouseEvent) => {
+    if (selection.selectionMode) {
+      e.preventDefault();
+      selection.toggle(task.id, { shift: e.shiftKey, meta: e.metaKey || e.ctrlKey });
+      return;
+    }
     if (e.metaKey || e.ctrlKey || e.shiftKey) {
       e.preventDefault();
       selection.toggle(task.id, { shift: e.shiftKey, meta: e.metaKey || e.ctrlKey });
