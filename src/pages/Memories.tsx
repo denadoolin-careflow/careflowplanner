@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { exportMemoriesJSON, exportMemoriesPDF } from "@/lib/memories-export";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
-import { listMemories, MEMORY_TYPES, type Memory, type MemoryType, seasonOf } from "@/lib/memories";
+import { listMemories, MEMORY_TYPES, MEMORY_PRIVACY_META, type Memory, type MemoryType, type MemoryPrivacy, seasonOf } from "@/lib/memories";
 import { listLovedOnes, type LovedOne } from "@/lib/loved-ones";
 import { MemoryEditor } from "@/components/memories/MemoryEditor";
 import { MemoryCard } from "@/components/memories/MemoryCard";
@@ -34,6 +34,7 @@ export default function MemoriesPage() {
   const [typeFilter, setTypeFilter] = useState<MemoryType | "all">("all");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [personKey, setPersonKey] = useState<string | null>(params.get("person"));
+  const [privacyFilter, setPrivacyFilter] = useState<MemoryPrivacy | "all">("all");
   const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [moodFilters, setMoodFilters] = useState<string[]>([]);
   const [personFilters, setPersonFilters] = useState<string[]>([]);
@@ -118,6 +119,7 @@ export default function MemoriesPage() {
     }
     if (typeFilter !== "all") out = out.filter((m) => m.memoryType === typeFilter);
     if (favoritesOnly) out = out.filter((m) => m.isFavorite);
+    if (privacyFilter !== "all") out = out.filter((m) => (m.privacy ?? "private") === privacyFilter);
     if (tagFilters.length) {
       out = out.filter((m) => tagFilters.every((t) => m.tags.includes(t)));
     }
@@ -154,7 +156,7 @@ export default function MemoriesPage() {
     return out;
   }, [memories, personKey, typeFilter, favoritesOnly, search,
       tagFilters, moodFilters, personFilters, dateFrom, dateTo,
-      state.recipients, lovedOnes]);
+      state.recipients, lovedOnes, privacyFilter]);
 
   const pinned = useMemo(() => filtered.filter((m) => m.isPinned), [filtered]);
 
@@ -244,6 +246,25 @@ export default function MemoriesPage() {
             <Heart className={`h-4 w-4 ${favoritesOnly ? "fill-[hsl(350_55%_60%)] text-[hsl(350_55%_60%)]" : ""}`} />
             Favorite Moments
           </button>
+
+          <div className="space-y-1">
+            <div className="px-1 text-xs uppercase tracking-wider text-[hsl(350_45%_45%)]">Privacy</div>
+            <button onClick={() => setPrivacyFilter("all")}
+              className={`w-full rounded-lg px-2.5 py-1.5 text-left text-sm ${privacyFilter === "all" ? "bg-[hsl(350_45%_94%)] text-[hsl(350_45%_30%)]" : "hover:bg-muted/40"}`}>
+              All memories
+            </button>
+            {(["private","family","shared"] as MemoryPrivacy[]).map((p) => {
+              const meta = MEMORY_PRIVACY_META[p];
+              const count = memories.filter((m) => (m.privacy ?? "private") === p).length;
+              return (
+                <button key={p} onClick={() => setPrivacyFilter(p)}
+                  className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm ${privacyFilter === p ? "bg-[hsl(350_45%_94%)] text-[hsl(350_45%_30%)]" : "hover:bg-muted/40"}`}>
+                  <span>{meta.emoji}</span><span>{meta.label}</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground">{count}</span>
+                </button>
+              );
+            })}
+          </div>
         </aside>
 
         {/* Right column */}
