@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Trash2, Wind, Flame, Waves, Mountain, Heart, Leaf } from "lucide-react";
-import { useCycle } from "@/lib/store";
+import { useCycle } from "@/lib/cycle-store";
+import { getPhaseInfo } from "@/lib/cycle";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -35,7 +36,8 @@ const PHASE_GUIDANCE: Record<string, { title: string; body: string }> = {
 };
 
 export default function MovementPage({ uid }: { uid: string }) {
-  const { phaseToday } = useCycle();
+  const { periods, settings } = useCycle();
+  const phaseToday = getPhaseInfo(new Date(), periods, settings)?.phase ?? null;
   const [logs, setLogs] = useState<any[]>([]);
   const [form, setForm] = useState({ date: today(), activity: "", minutes: "", intensity: "moderate", notes: "", intent: "restore" });
 
@@ -45,8 +47,8 @@ export default function MovementPage({ uid }: { uid: string }) {
   }
   useEffect(() => { load(); }, [uid]);
 
-  async function add(custom?: Partial<typeof form>) {
-    const f = { ...form, ...(custom ?? {}) };
+  async function add(custom?: { activity?: string; minutes?: number | string; intensity?: string; intent?: string; date?: string; notes?: string }) {
+    const f = { ...form, ...(custom ?? {}), minutes: String(custom?.minutes ?? form.minutes) };
     if (!f.activity || !f.minutes) return toast.error("Add an activity & minutes");
     const notes = f.intent ? `[${f.intent}] ${f.notes ?? ""}`.trim() : f.notes;
     const { error } = await supabase.from("movement_logs").insert({
