@@ -24,6 +24,7 @@ import { Moon } from "lucide-react";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
+import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useCycle } from "@/lib/cycle-store";
 import { phaseForDate, PHASE_META } from "@/lib/cycle";
@@ -130,6 +131,7 @@ export default function Month() {
             <h2 className="font-display text-3xl font-semibold sm:text-4xl">{format(cursor, "MMMM yyyy")}</h2>
           </div>
           <div className="flex items-center gap-1">
+            <ScopeNavToggle active="month" className="mr-1" />
             <Button variant="ghost" size="icon" onClick={() => setCursor(subMonths(cursor, 1))} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
             <DayPickerButton date={cursor} onChange={setCursor} label={format(cursor, "MMM yyyy")} />
             <Button variant="ghost" size="sm" className="h-8 px-3 text-xs" onClick={() => setCursor(new Date())}>Today</Button>

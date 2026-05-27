@@ -1,27 +1,23 @@
 ## Goal
 
-Add a **Today / Week / Month** toggle to the Today view header so users can jump to the corresponding routes in one click.
+Make the Today/Week/Month switcher consistent across all planning/calendar views. The toggle already exists on `/today` and navigates between routes (per the earlier decision). Mirror the same toggle on `/week` and `/month` so users can jump between scopes from any of the three pages.
 
-## Changes
+## Approach
 
-### `src/pages/Today.tsx`
-- Import `useNavigate` from `react-router-dom`.
-- Add a new pill-style toggle group next to the existing Schedule / Plan toggle (same visual treatment: rounded-full container, ghost buttons, primary background on the active option).
-- Buttons:
-  - **Today** → `/today` (active state on this page)
-  - **Week** → `/week`
-  - **Month** → `/month`
-- Place it in the header action row at lines ~181–207 (the row that already contains the day stepper and Schedule/Plan toggle). On the narrow viewport it wraps naturally since the row is `flex-wrap`.
+1. **Extract shared component** `src/components/calendar/ScopeNavToggle.tsx`
+   - Pill group with three buttons: Today / Week / Month
+   - Prop `active: "today" | "week" | "month"` controls which button shows the primary-filled state and `aria-current="page"`
+   - Inactive buttons use `useNavigate()` to push `/today`, `/week`, `/month`
+   - Same visual treatment currently inlined in `Today.tsx` (rounded-full container, ghost buttons, `bg-primary text-primary-foreground` for active)
 
-No changes to Week/Month pages, routing, or business logic.
+2. **`src/pages/Today.tsx`** — replace the inlined toggle block (~lines 198–220) with `<ScopeNavToggle active="today" />`. No layout change.
+
+3. **`src/pages/Week.tsx`** — add `<ScopeNavToggle active="week" />` into the existing header action row (next to the Reset link / Schedule-Plan group, ~lines 175–199). Wraps naturally on narrow widths.
+
+4. **`src/pages/Month.tsx`** — add `<ScopeNavToggle active="month" />` into the Month header action area (alongside the existing month nav arrows). Will read header location precisely when editing; visual placement matches the right-side action cluster.
 
 ## Out of scope
 
-- Adding the same toggle to Week or Month pages (can be a follow-up if desired).
-- Restyling the existing Schedule/Plan toggle.
-
-## Verification
-
-- On `/today`, the new toggle shows Today highlighted.
-- Clicking Week navigates to `/week`; clicking Month navigates to `/month`.
-- Toggle wraps cleanly at 705px width without breaking the header layout.
+- No changes to routing, business logic, data, or the Schedule/Plan/Parts/Agenda view toggles.
+- No restyling of existing controls.
+- No inline week/month rendering on the Today page — user previously chose route-based navigation.
