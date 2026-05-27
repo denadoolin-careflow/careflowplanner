@@ -265,7 +265,7 @@ function Toolbar({ editor, onPromoteTask }: { editor: Editor; onPromoteTask: () 
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
   return (
-    <div className="sticky top-2 z-10 mb-3 flex flex-wrap items-center gap-0.5 rounded-xl border border-border/60 bg-card/80 p-1 backdrop-blur-md shadow-sm">
+    <div className="sticky top-2 z-10 mb-3 flex items-center gap-0.5 overflow-x-auto rounded-xl border border-border/60 bg-card/80 p-1 backdrop-blur-md shadow-sm sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <ToolbarButton active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} label="Heading 1"><Heading1 className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} label="Heading 2"><Heading2 className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} label="Heading 3"><Heading3 className="h-4 w-4" /></ToolbarButton>
