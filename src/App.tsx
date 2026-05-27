@@ -57,6 +57,7 @@ import Whiteboards from "./pages/Whiteboards";
 import WhiteboardDetail from "./pages/WhiteboardDetail";
 import MentalLoad from "./pages/MentalLoad";
 import Onboarding from "./pages/Onboarding";
+import Memories from "./pages/Memories";
 import CareLoop from "./pages/CareLoop";
 import Quiz from "./pages/Quiz";
 import Pricing from "./pages/Pricing";
@@ -142,6 +143,7 @@ const App = () => (
                <Route path="/tags/:name" element={<TagDetail />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/focus" element={<PomodoroPicker />} />
+                <Route path="/memories" element={<Memories />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />

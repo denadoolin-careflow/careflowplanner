@@ -28,6 +28,7 @@ export const NAV = [
   { to: "/home-reset", label: "Home Hub", icon: Sparkle },
   { to: "/journal", label: "Journal", icon: BookHeart },
   { to: "/journal-flow", label: "Journal & Flow", icon: Wind },
+  { to: "/memories", label: "Memories", icon: Flower2 },
   { to: "/ideas", label: "Ideas", icon: Lightbulb },
   { to: "/calendar", label: "Calendar", icon: CalendarCheck },
   { to: "/focus", label: "Focus", icon: Timer },
@@ -99,6 +100,7 @@ export const NAV_GROUPS = [
     items: [
       { to: "/journal", label: "Journal", icon: BookHeart },
       { to: "/journal-flow", label: "Journal & Flow", icon: Wind },
+      { to: "/memories", label: "Memories", icon: Flower2 },
       { to: "/notes", label: "Notes", icon: NotebookPen },
       { to: "/graph", label: "Knowledge Graph", icon: Share2 },
       { to: "/whiteboards", label: "Whiteboards", icon: PenLine },
