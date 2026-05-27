@@ -233,8 +233,9 @@ export default function Month() {
                     setHoverISO(null);
                     setDraggingTaskId(null);
                   }}
+                  onClick={isMobile && inMonth ? () => setSheetISO(k) : undefined}
                   className={cn(
-                    "group/day relative min-h-24 rounded-lg border p-1.5 text-xs transition-all duration-200 ease-out",
+                    "group/day relative min-h-14 rounded-lg border p-1 text-xs transition-all duration-200 ease-out sm:min-h-24 sm:p-1.5",
                     inMonth
                       ? cn("border-border/60", moonStyle ? cn(moonStyle.tint, "ring-1 ring-inset", moonStyle.ring) : "bg-card")
                       : "border-transparent bg-transparent text-muted-foreground/50",
@@ -248,10 +249,10 @@ export default function Month() {
                       <span
                         title={`${moon.phaseLabel} · Moon in ${moon.sign.sign} (${moonStyle!.label})`}
                         aria-label={`${moon.phaseLabel}, moon in ${moon.sign.sign}`}
-                        className="inline-flex items-center gap-1 text-[11px] leading-none"
+                        className="inline-flex items-center gap-1 text-[10px] leading-none sm:text-[11px]"
                       >
                         <span aria-hidden>{moon.glyph}</span>
-                        <span className="text-[10px] text-muted-foreground" aria-hidden>{moon.sign.glyph}</span>
+                        <span className="hidden text-[10px] text-muted-foreground sm:inline" aria-hidden>{moon.sign.glyph}</span>
                       </span>
                     ) : phaseVar ? (
                       <span
@@ -261,9 +262,29 @@ export default function Month() {
                         style={{ background: `hsl(var(${phaseVar}))`, boxShadow: `0 0 0 2px hsl(var(${phaseVar}) / 0.18)` }}
                       />
                     ) : <span />}
-                    <div className={cn("text-right text-[11px] font-medium", today && "text-primary")}>{format(d, "d")}</div>
+                    <div className={cn("text-right text-[10px] font-medium sm:text-[11px]", today && "text-primary")}>{format(d, "d")}</div>
                   </div>
-                  <div className="mt-0.5 space-y-0.5">
+                  {/* Mobile: dot row indicator, max 4 dots */}
+                  {isMobile && inMonth && ev.length > 0 && (
+                    <div className="mt-0.5 flex flex-wrap gap-0.5">
+                      {ev.slice(0, 4).map((it, i) => (
+                        <span
+                          key={i}
+                          className={cn(
+                            "h-1.5 w-1.5 rounded-full",
+                            it.kind === "task" ? "bg-warm-foreground/70"
+                            : it.kind === "appt" ? "bg-primary"
+                            : it.kind === "block" ? "bg-accent"
+                            : it.kind === "bday" ? "bg-accent-foreground"
+                            : it.kind === "hol" ? "bg-secondary-foreground"
+                            : "bg-muted-foreground"
+                          )}
+                        />
+                      ))}
+                      {ev.length > 4 && <span className="text-[8px] leading-none text-muted-foreground">+{ev.length - 4}</span>}
+                    </div>
+                  )}
+                  <div className="mt-0.5 hidden space-y-0.5 sm:block">
                     {ev.slice(0,3).map((it, i) => {
                       const isTask = it.kind === "task" && !!it.taskId;
                       const isAppt = it.kind === "appt" && !!it.apptId;
