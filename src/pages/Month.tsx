@@ -263,10 +263,12 @@ export default function Month() {
                 >
                   <div className="flex items-center justify-between">
                     {moon ? (
-                      <span
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setLunarDate(d); }}
                         title={`${moon.phaseLabel} · Moon in ${moon.sign.sign} (${moonStyle!.label})${keyPhase ? ` · ${keyPhase.verb}` : ""}`}
                         aria-label={`${moon.phaseLabel}, moon in ${moon.sign.sign}`}
-                        className="inline-flex items-center gap-1 text-[10px] leading-none sm:text-[11px]"
+                        className="inline-flex items-center gap-1 rounded text-[10px] leading-none hover:bg-foreground/5 sm:text-[11px]"
                       >
                         <span aria-hidden>{moon.glyph}</span>
                         <span className="hidden text-[10px] text-muted-foreground sm:inline" aria-hidden>{moon.sign.glyph}</span>
@@ -278,17 +280,19 @@ export default function Month() {
                             {keyPhase.verb}
                           </span>
                         )}
-                      </span>
+                      </button>
                     ) : keyPhase ? (
-                      <span
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setLunarDate(d); }}
                         title={`${keyPhase.label} · ${keyPhase.invitation}`}
                         aria-label={keyPhase.label}
-                        className="inline-flex items-center gap-1 rounded-full px-1 text-[10px] font-medium sm:text-[11px]"
+                        className="inline-flex items-center gap-1 rounded-full px-1 text-[10px] font-medium hover:brightness-95 sm:text-[11px]"
                         style={{ background: `hsl(${keyPhase.hsl} / 0.18)`, color: `hsl(${keyPhase.hsl})` }}
                       >
                         <span aria-hidden>{keyPhase.glyph}</span>
                         <span className="hidden sm:inline">{keyPhase.verb}</span>
-                      </span>
+                      </button>
                     ) : phaseVar ? (
                       <span
                         title={`${PHASE_META[phase!].label} phase`}
