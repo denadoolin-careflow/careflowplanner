@@ -1,9 +1,23 @@
 import { useEffect, useState } from "react";
-import { Heart, Pin, MapPin, Calendar as CalendarIcon } from "lucide-react";
+import { Heart, Pin, MapPin, Calendar as CalendarIcon, Lock, Home as HomeIcon, Users } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { memoryTypeMeta, type Memory } from "@/lib/memories";
+import { memoryTypeMeta, MEMORY_PRIVACY_META, type Memory } from "@/lib/memories";
 import { cn } from "@/lib/utils";
+
+function PrivacyChip({ privacy, sharedCount, tone = "light" }: { privacy: Memory["privacy"]; sharedCount: number; tone?: "light" | "dark" }) {
+  const meta = MEMORY_PRIVACY_META[privacy ?? "private"];
+  const Icon = privacy === "family" ? HomeIcon : privacy === "shared" ? Users : Lock;
+  const label = privacy === "shared" && sharedCount > 0 ? `Shared · ${sharedCount}` : meta.label;
+  const base = tone === "dark"
+    ? "bg-black/35 text-white backdrop-blur"
+    : "bg-[hsl(350_45%_94%)] text-[hsl(350_45%_30%)]";
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${base}`} title={meta.description}>
+      <Icon className="h-3 w-3" /> {label}
+    </span>
+  );
+}
 
 export function useSignedUrl(path: string | undefined) {
   const [url, setUrl] = useState<string | null>(null);
@@ -41,6 +55,7 @@ export function MemoryCard({ memory, onClick, variant = "gallery" }: {
             <span className="truncate font-medium">{memory.title}</span>
             {memory.isFavorite && <Heart className="h-3 w-3 fill-[hsl(350_55%_60%)] text-[hsl(350_55%_60%)]" />}
             {memory.isPinned && <Pin className="h-3 w-3 fill-[hsl(20_60%_55%)] text-[hsl(20_60%_55%)]" />}
+            <PrivacyChip privacy={memory.privacy} sharedCount={memory.sharedLovedOneIds?.length ?? 0} />
           </div>
           <div className="truncate text-xs text-muted-foreground">
             {meta.emoji} {meta.label} · {format(parseISO(memory.date), "MMM d, yyyy")}
@@ -75,6 +90,9 @@ export function MemoryCard({ memory, onClick, variant = "gallery" }: {
           {memory.isFavorite && (
             <Heart className="absolute right-3 top-3 h-5 w-5 fill-[hsl(350_55%_60%)] text-[hsl(350_55%_60%)] drop-shadow" />
           )}
+          <div className="absolute left-3 top-3">
+            <PrivacyChip privacy={memory.privacy} sharedCount={memory.sharedLovedOneIds?.length ?? 0} tone="dark" />
+          </div>
         </div>
       ) : (
         <div className="space-y-2 p-5">
@@ -83,6 +101,7 @@ export function MemoryCard({ memory, onClick, variant = "gallery" }: {
             <span>{meta.label}</span>
             {memory.isFavorite && <Heart className="h-3 w-3 fill-[hsl(350_55%_60%)] text-[hsl(350_55%_60%)]" />}
             {memory.isPinned && <Pin className="h-3 w-3 fill-[hsl(20_60%_55%)] text-[hsl(20_60%_55%)]" />}
+            <span className="ml-auto"><PrivacyChip privacy={memory.privacy} sharedCount={memory.sharedLovedOneIds?.length ?? 0} /></span>
           </div>
           <div className="font-display text-xl leading-tight">{memory.title}</div>
           {memory.description && (
