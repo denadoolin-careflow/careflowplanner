@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/lib/store";
 import { openTaskEditor } from "@/lib/open-task-editor";
-import { clearAllDismissed, dismiss, dismissMany, getDismissed, onDismissedChange } from "@/lib/dismissed-notifications";
+import { clearAllDismissed, dismiss, dismissMany, getDismissed, onDismissedChange, undismiss, undismissMany } from "@/lib/dismissed-notifications";
 import { toast } from "sonner";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { listMemories, memoryTypeMeta, type Memory } from "@/lib/memories";
@@ -76,6 +76,21 @@ export function NotificationCenter() {
   const handleReschedule = async (id: string, iso: string, title: string, label: string) => {
     await updateTask(id, { dueDate: iso });
     toast(`Moved “${title}” to ${label}`);
+  };
+
+  const handleDismiss = (id: string, label?: string) => {
+    dismiss(id);
+    toast(label ? `Dismissed “${label}”` : "Dismissed", {
+      action: { label: "Undo", onClick: () => undismiss(id) },
+    });
+  };
+
+  const handleDismissMany = (ids: string[], label: string) => {
+    if (ids.length === 0) return;
+    dismissMany(ids);
+    toast(`Cleared ${ids.length} · ${label}`, {
+      action: { label: "Undo", onClick: () => undismissMany(ids) },
+    });
   };
 
   const TaskRow = ({ t }: { t: any }) => (
