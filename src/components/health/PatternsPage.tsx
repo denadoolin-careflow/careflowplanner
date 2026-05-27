@@ -133,6 +133,59 @@ export default function PatternsPage({ uid }: { uid: string }) {
       .slice(0, 8);
   }, [mental]);
 
+  // ------ Correlations across mood / anxiety / focus / sleep / stress ------
+  const correlations = useMemo(() => {
+    const byDate = new Map<string, { mood?: number; anxiety?: number; focus?: number; sleep?: number; stress?: number }>();
+    mental.forEach(m => {
+      const row = byDate.get(m.date) ?? {};
+      if (m.mood_score != null) row.mood = m.mood_score;
+      if (m.anxiety != null) row.anxiety = m.anxiety;
+      if (m.focus != null) row.focus = m.focus;
+      byDate.set(m.date, row);
+    });
+    checkins.forEach(c => {
+      const row = byDate.get(c.date) ?? {};
+      if (row.mood == null && c.mood && MOOD_VAL[c.mood]) row.mood = MOOD_VAL[c.mood];
+      if (c.stress && STRESS_VAL[c.stress]) row.stress = STRESS_VAL[c.stress];
+      if (c.sleep_hours != null) row.sleep = Number(c.sleep_hours);
+      byDate.set(c.date, row);
+    });
+    const rows = Array.from(byDate.values());
+    const metrics = ["mood", "anxiety", "focus", "sleep", "stress"] as const;
+    type M = (typeof metrics)[number];
+
+    const pearson = (a: number[], b: number[]) => {
+      const n = a.length;
+      if (n < 4) return null;
+      const ma = a.reduce((s, x) => s + x, 0) / n;
+      const mb = b.reduce((s, x) => s + x, 0) / n;
+      let num = 0, da = 0, db = 0;
+      for (let i = 0; i < n; i++) {
+        const xa = a[i] - ma, xb = b[i] - mb;
+        num += xa * xb; da += xa * xa; db += xb * xb;
+      }
+      const denom = Math.sqrt(da * db);
+      if (denom === 0) return null;
+      return num / denom;
+    };
+
+    const pairs: { a: M; b: M; r: number; n: number }[] = [];
+    for (let i = 0; i < metrics.length; i++) {
+      for (let j = i + 1; j < metrics.length; j++) {
+        const a = metrics[i], b = metrics[j];
+        const xs: number[] = [], ys: number[] = [];
+        rows.forEach(r => {
+          if (r[a] != null && r[b] != null) { xs.push(r[a]!); ys.push(r[b]!); }
+        });
+        const r = pearson(xs, ys);
+        if (r != null) pairs.push({ a, b, r, n: xs.length });
+      }
+    }
+    return pairs.sort((x, y) => Math.abs(y.r) - Math.abs(x.r));
+  }, [mental, checkins]);
+
+  const topCorrelations = correlations.slice(0, 3);
+
   // Radar data for phase × wellbeing
   const radarData = useMemo(() => {
     if (!byPhase) return [];
