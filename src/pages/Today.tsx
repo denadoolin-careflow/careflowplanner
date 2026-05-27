@@ -61,6 +61,7 @@ function TodayInner() {
   const { state, updateTask, updateAppointment } = useStore();
   const { paneOpen, togglePane, setOrderedIds, clear } = useTaskSelection();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [day, setDay] = useState<Date>(() => {
     const d = searchParams.get("date");
     if (d) {
