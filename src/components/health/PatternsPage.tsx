@@ -30,6 +30,7 @@ type MentalLog = {
   emotions: string[] | null;
   gratitude: string | null;
   support_needed: string | null;
+  intention: string | null;
 };
 
 type CheckIn = {
@@ -38,6 +39,7 @@ type CheckIn = {
   stress: string | null;
   sleep_hours: number | null;
   mindfulness_minutes: number | null;
+  intention: string | null;
 };
 
 const STRESS_VAL: Record<string, number> = { calm: 1, mild: 2, tense: 3, high: 4 };
