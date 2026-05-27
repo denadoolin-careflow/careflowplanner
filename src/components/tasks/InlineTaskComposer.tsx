@@ -159,7 +159,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
                     date ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
@@ -218,7 +218,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
                     project ? "text-foreground" : "text-muted-foreground",
                   )}
                   style={project?.color ? { color: project.color } : undefined}
@@ -257,7 +257,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
                     area ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
@@ -297,7 +297,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   onClick={() => setEnergy(active ? undefined : e)}
                   title={`Energy: ${e}  (or type @${label})`}
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
                     active
                       ? e === "low"  ? "border-transparent bg-secondary-soft text-secondary-foreground"
                       : e === "high" ? "border-transparent bg-warm-soft text-warm-foreground"
@@ -317,7 +317,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
                     tags.length ? "text-foreground" : "text-muted-foreground",
                   )}
                   title="Tags"
@@ -354,7 +354,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
                     estMinutes ? "text-foreground" : "text-muted-foreground",
                   )}
                   title="Time estimate"
@@ -405,15 +405,17 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
 
             {/* NLP chips */}
             {parsed && parsed.chips.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
+              <div className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
                 <Sparkles className="h-3 w-3" />
                 {parsed.chips.map((c, i) => (
-                  <span key={i} className="rounded-full bg-primary/10 px-1.5 py-0.5 text-primary">{c.label}</span>
+                  <span key={i} className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-primary">{c.label}</span>
                 ))}
               </div>
             )}
+          </div>
 
-            <div className="ml-auto flex items-center gap-1">
+          {/* Actions row — pinned (not scrolled) */}
+          <div className="mt-1 flex items-center justify-end gap-1">
               <TemplatePickerDialog
                 defaults={{
                   area: area ?? defaults.area,
@@ -437,7 +439,6 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
               <Button size="sm" className="h-7 px-3 text-xs" onClick={submit} disabled={!text.trim()}>
                 Add
               </Button>
-            </div>
           </div>
         </div>
       </div>
