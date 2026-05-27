@@ -43,6 +43,68 @@ type CheckIn = {
 const STRESS_VAL: Record<string, number> = { calm: 1, mild: 2, tense: 3, high: 4 };
 const MOOD_VAL: Record<string, number> = { rough: 1, low: 2, ok: 3, good: 4, great: 5 };
 
+const METRIC_META: Record<string, { label: string; color: string; high: string; low: string }> = {
+  mood:    { label: "Mood",    color: "hsl(145 50% 50%)", high: "brighter", low: "lower" },
+  anxiety: { label: "Anxiety", color: "hsl(20 70% 60%)",  high: "higher",  low: "calmer" },
+  focus:   { label: "Focus",   color: "hsl(220 60% 60%)", high: "sharper", low: "fuzzier" },
+  sleep:   { label: "Sleep",   color: "hsl(265 50% 65%)", high: "longer",  low: "shorter" },
+  stress:  { label: "Stress",  color: "hsl(0 60% 60%)",   high: "tenser",  low: "calmer" },
+};
+
+function strengthLabel(r: number) {
+  const a = Math.abs(r);
+  if (a >= 0.7) return "strong";
+  if (a >= 0.4) return "moderate";
+  if (a >= 0.2) return "gentle";
+  return "faint";
+}
+
+function CorrelationCard({ a, b, r, n, rank }: { a: string; b: string; r: number; n: number; rank: number }) {
+  const ma = METRIC_META[a], mb = METRIC_META[b];
+  const positive = r >= 0;
+  const pct = Math.round(Math.abs(r) * 100);
+  const phrase = positive
+    ? `When ${ma.label.toLowerCase()} is ${ma.high}, ${mb.label.toLowerCase()} tends to be ${mb.high}.`
+    : `When ${ma.label.toLowerCase()} is ${ma.high}, ${mb.label.toLowerCase()} tends to be ${mb.low}.`;
+  return (
+    <div
+      className="rounded-2xl border border-border/50 bg-card/70 p-4"
+      style={{ borderLeft: `3px solid ${positive ? ma.color : mb.color}` }}
+    >
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+        <span>#{rank} · {strengthLabel(r)}</span>
+        <span>{n} days</span>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <Pill label={ma.label} color={ma.color} />
+        <span className="text-xs text-muted-foreground">{positive ? "↗ moves with" : "↘ moves opposite"}</span>
+        <Pill label={mb.label} color={mb.color} />
+      </div>
+      <p className="mt-2 text-sm leading-snug">{phrase}</p>
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, background: positive ? ma.color : mb.color }}
+        />
+      </div>
+      <p className="mt-1 text-[10px] text-muted-foreground/80">
+        r = {r >= 0 ? "+" : ""}{r.toFixed(2)}
+      </p>
+    </div>
+  );
+}
+
+function Pill({ label, color }: { label: string; color: string }) {
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 text-xs font-medium"
+      style={{ background: `${color}22`, color }}
+    >
+      {label}
+    </span>
+  );
+}
+
 export default function PatternsPage({ uid }: { uid: string }) {
   const { periods, settings } = useCycle();
   const [range, setRange] = useState<14 | 30 | 90>(30);
