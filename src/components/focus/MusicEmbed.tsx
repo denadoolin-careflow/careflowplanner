@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Music, Link2, X } from "lucide-react";
+import { Music, Link2, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMusicPresets } from "@/lib/music-presets";
 
 const URL_KEY = "careflow:focus:music:url";
 
@@ -46,12 +47,19 @@ export function MusicEmbed({ autoplay }: { autoplay: boolean }) {
   });
   const [input, setInput] = useState(url);
   const [editing, setEditing] = useState(!url);
+  const [presets, presetActions] = useMusicPresets();
+  const [savingName, setSavingName] = useState<string | null>(null);
 
   useEffect(() => {
     try { localStorage.setItem(URL_KEY, url); } catch { /* noop */ }
   }, [url]);
 
   const { provider, embed } = useMemo(() => detect(url), [url]);
+  const activePresetId = useMemo(
+    () => presets.find(p => p.url === url)?.id ?? null,
+    [presets, url],
+  );
+  const canSaveCurrent = !!url && !activePresetId;
 
   // Add autoplay param when focus is running.
   const src = useMemo(() => {
@@ -87,6 +95,74 @@ export function MusicEmbed({ autoplay }: { autoplay: boolean }) {
           </button>
         )}
       </div>
+
+      {(presets.length > 0 || canSaveCurrent) && (
+        <div className="mb-2 flex flex-wrap items-center gap-1">
+          {presets.map(p => {
+            const isActive = p.id === activePresetId;
+            return (
+              <span key={p.id} className="group/preset relative inline-flex">
+                <button
+                  type="button"
+                  onClick={() => { setUrl(p.url); setInput(p.url); setEditing(false); }}
+                  title={p.url}
+                  className={cn(
+                    "max-w-[140px] truncate rounded-full border px-2 py-0.5 pr-5 text-[10px] transition-colors",
+                    isActive
+                      ? "border-primary/50 bg-primary text-primary-foreground"
+                      : "border-border/60 bg-background/60 text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {p.name}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => presetActions.remove(p.id)}
+                  aria-label={`Delete ${p.name}`}
+                  className={cn(
+                    "absolute right-0.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 opacity-0 transition-opacity group-hover/preset:opacity-100",
+                    isActive ? "text-primary-foreground/80 hover:bg-primary-foreground/15" : "text-muted-foreground hover:bg-muted/50",
+                  )}
+                >
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              </span>
+            );
+          })}
+          {canSaveCurrent && savingName === null && (
+            <button
+              type="button"
+              onClick={() => setSavingName("")}
+              className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-border/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary/40 hover:text-foreground"
+            >
+              <Plus className="h-2.5 w-2.5" /> Save current
+            </button>
+          )}
+          {savingName !== null && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!url) return;
+                presetActions.add(savingName || (provider ?? "Playlist"), url);
+                setSavingName(null);
+              }}
+              className="inline-flex items-center gap-1"
+            >
+              <input
+                autoFocus
+                value={savingName}
+                onChange={(e) => setSavingName(e.target.value)}
+                onBlur={() => { if (!savingName) setSavingName(null); }}
+                placeholder="Name…"
+                className="w-20 rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] outline-none focus:border-primary/50"
+              />
+              <button type="submit" className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground hover:bg-primary/90">
+                Save
+              </button>
+            </form>
+          )}
+        </div>
+      )}
 
       {editing && (
         <form
