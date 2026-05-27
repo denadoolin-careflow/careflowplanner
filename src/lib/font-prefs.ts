@@ -23,6 +23,29 @@ export const FONT_OPTIONS: FontOption[] = [
 
 const K_DISPLAY = "careflow:font:display";
 const K_BODY    = "careflow:font:body";
+const K_ATMO    = "careflow:font:atmo-overrides";
+
+type AtmoFontOverrides = Record<string, { display?: string | null; body?: string | null }>;
+
+function readAtmoOverrides(): AtmoFontOverrides {
+  try { return JSON.parse(localStorage.getItem(K_ATMO) ?? "{}"); } catch { return {}; }
+}
+function writeAtmoOverrides(o: AtmoFontOverrides) {
+  try { localStorage.setItem(K_ATMO, JSON.stringify(o)); } catch { /* */ }
+}
+
+export function getAtmoFontPref(atmoId: string, slot: "display" | "body"): string | null {
+  const o = readAtmoOverrides()[atmoId];
+  return (o?.[slot] ?? null) as string | null;
+}
+export function setAtmoFontPref(atmoId: string, slot: "display" | "body", id: string | null) {
+  const all = readAtmoOverrides();
+  const cur = all[atmoId] ?? {};
+  if (id === null) delete (cur as any)[slot]; else (cur as any)[slot] = id;
+  if (!cur.display && !cur.body) delete all[atmoId]; else all[atmoId] = cur;
+  writeAtmoOverrides(all);
+  applyFontPrefs();
+}
 
 export function getFontPref(slot: "display" | "body"): string | null {
   try { return localStorage.getItem(slot === "display" ? K_DISPLAY : K_BODY); } catch { return null; }
@@ -39,8 +62,10 @@ export function setFontPref(slot: "display" | "body", id: string | null) {
 export function applyFontPrefs() {
   if (typeof document === "undefined") return;
   const html = document.documentElement;
-  const d = getFontPref("display");
-  const b = getFontPref("body");
+  const atmoId = html.getAttribute("data-atmosphere") ?? "";
+  const atmoOv = readAtmoOverrides()[atmoId] ?? {};
+  const d = (atmoOv.display ?? getFontPref("display")) || null;
+  const b = (atmoOv.body ?? getFontPref("body")) || null;
   const dOpt = d ? FONT_OPTIONS.find(o => o.id === d) : null;
   const bOpt = b ? FONT_OPTIONS.find(o => o.id === b) : null;
   if (dOpt) html.style.setProperty("--atmo-font-display", dOpt.family);
