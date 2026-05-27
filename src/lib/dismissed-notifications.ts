@@ -22,6 +22,9 @@ export function clearAllDismissed() { writeSet(new Set()); }
 export function dismissMany(ids: string[]) {
   const s = readSet(); ids.forEach(i => s.add(i)); writeSet(s);
 }
+export function undismissMany(ids: string[]) {
+  const s = readSet(); ids.forEach(i => s.delete(i)); writeSet(s);
+}
 
 export function onDismissedChange(cb: () => void) {
   const h = () => cb();
