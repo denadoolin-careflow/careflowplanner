@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Heart, Pin, Trash2, X } from "lucide-react";
+import { Heart, Pin, Trash2, X, Lock, Home as HomeIcon, Users } from "lucide-react";
 import { toast } from "sonner";
 import { AttachmentsField } from "@/components/attachments/AttachmentsField";
-import { MEMORY_TYPES, type Memory, type MemoryType, createMemory, updateMemory, deleteMemory, seasonOf } from "@/lib/memories";
+import { MEMORY_TYPES, MEMORY_PRIVACY_META, type Memory, type MemoryType, type MemoryPrivacy, createMemory, updateMemory, deleteMemory, seasonOf } from "@/lib/memories";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { useStore } from "@/lib/store";
 import type { LovedOne } from "@/lib/loved-ones";
@@ -50,6 +50,8 @@ export function MemoryEditor({ open, onOpenChange, memory, lovedOnes, onSaved, o
         moonPhase: MOON_INFO[phase]?.label,
         season: seasonOf(today),
         coverIndex: 0,
+        privacy: "private",
+        sharedLovedOneIds: [],
         ...defaults,
       });
     }
@@ -91,6 +93,10 @@ export function MemoryEditor({ open, onOpenChange, memory, lovedOnes, onSaved, o
   const toggleLovedOne = (id: string) => {
     const cur = draft.lovedOneIds ?? [];
     setDraft({ ...draft, lovedOneIds: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] });
+  };
+  const toggleShared = (id: string) => {
+    const cur = draft.sharedLovedOneIds ?? [];
+    setDraft({ ...draft, sharedLovedOneIds: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] });
   };
 
   const addTag = (raw: string) => {
@@ -272,6 +278,55 @@ export function MemoryEditor({ open, onOpenChange, memory, lovedOnes, onSaved, o
               {draft.moonPhase && <span>🌙 {draft.moonPhase}</span>}
               {draft.season && <span className="ml-2 capitalize">· {draft.season}</span>}
             </div>
+          </div>
+
+          <div className="space-y-3 rounded-2xl border border-[hsl(350_45%_85%/0.5)] bg-[hsl(350_45%_97%/0.5)] p-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs uppercase tracking-wider text-[hsl(350_45%_45%)]">Privacy</Label>
+              <span className="text-[11px] text-muted-foreground">{MEMORY_PRIVACY_META[(draft.privacy ?? "private") as MemoryPrivacy].description}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {(["private","family","shared"] as MemoryPrivacy[]).map((p) => {
+                const on = (draft.privacy ?? "private") === p;
+                const meta = MEMORY_PRIVACY_META[p];
+                const Icon = p === "private" ? Lock : p === "family" ? HomeIcon : Users;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setDraft({ ...draft, privacy: p })}
+                    className={`flex flex-col items-start gap-1 rounded-xl border p-3 text-left text-xs transition ${on ? "border-[hsl(350_55%_60%)] bg-[hsl(350_45%_94%)]" : "border-border/60 bg-card hover:bg-muted/40"}`}
+                  >
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <Icon className="h-3.5 w-3.5" /> {meta.label}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{meta.description}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {draft.privacy === "shared" && (
+              <div>
+                <div className="mb-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">Share with</div>
+                {lovedOnes.length === 0 ? (
+                  <div className="text-xs text-muted-foreground">Add loved ones to share specific memories with them.</div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {lovedOnes.map((l) => {
+                      const on = draft.sharedLovedOneIds?.includes(l.id);
+                      return (
+                        <button
+                          key={l.id}
+                          onClick={() => toggleShared(l.id)}
+                          className={`rounded-full border px-3 py-1 text-xs transition ${on ? "border-[hsl(350_55%_60%)] bg-[hsl(350_55%_60%/0.15)]" : "border-border/60 bg-card hover:bg-muted/60"}`}
+                        >
+                          {l.avatarEmoji ?? "💛"} {l.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
