@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
-import { Inbox as InboxIcon, Sparkles, Check, X, RefreshCw, PanelRightOpen, PanelRightClose, Eye, EyeOff, CheckSquare } from "lucide-react";
+import { Inbox as InboxIcon, Sparkles, Check, X, RefreshCw, PanelRightOpen, PanelRightClose, Eye, EyeOff, CheckSquare, SlidersHorizontal } from "lucide-react";
 import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,6 +96,16 @@ function InboxInner() {
 
   const { tags } = useTags();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [controlsVisible, setControlsVisible] = useState<boolean>(() => {
+    try { return localStorage.getItem("inbox:controls") !== "0"; } catch { return true; }
+  });
+  const toggleControls = () => {
+    setControlsVisible(v => {
+      const next = !v;
+      try { localStorage.setItem("inbox:controls", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
   const [tagLibraryVisible, setTagLibraryVisible] = useState<boolean>(() => {
     try { return localStorage.getItem("inbox:tagLibrary") !== "0"; } catch { return true; }
   });
@@ -147,7 +157,18 @@ function InboxInner() {
             {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
             Smart triage
           </Button>
-          <TaskListControls prefs={prefs} onChange={setPrefs} />
+          <Button
+            variant={controlsVisible ? "default" : "outline"}
+            size="sm"
+            onClick={toggleControls}
+            className="gap-1.5"
+            title={controlsVisible ? "Hide group / filter / sort" : "Show group / filter / sort"}
+            aria-pressed={controlsVisible}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Options</span>
+          </Button>
+          {controlsVisible && <TaskListControls prefs={prefs} onChange={setPrefs} />}
           <Button
             variant="ghost"
             size="icon"
