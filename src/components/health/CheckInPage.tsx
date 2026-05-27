@@ -229,6 +229,18 @@ export default function CheckInPage({ uid }: { uid: string }) {
               <Moon className="mx-auto h-8 w-8 text-primary/60" />
               <h3 className="mt-4 font-display text-3xl">Anything else you want to remember?</h3>
             </div>
+            <div>
+              <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                Today's intention
+              </p>
+              <input
+                type="text"
+                placeholder="A word or phrase to anchor the day…"
+                value={row.intention ?? ""}
+                onChange={e => setRow({ ...row, intention: e.target.value })}
+                className="w-full rounded-2xl border border-border/40 bg-card/70 px-4 py-3 text-base outline-none transition focus:border-primary"
+              />
+            </div>
             <Textarea
               rows={6}
               placeholder="A thought, a small win, a worry, a noticing…"
