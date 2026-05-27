@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/lib/store";
 import { openTaskEditor } from "@/lib/open-task-editor";
-import { clearAllDismissed, dismiss, dismissMany, getDismissed, onDismissedChange } from "@/lib/dismissed-notifications";
+import { clearAllDismissed, dismiss, dismissMany, getDismissed, onDismissedChange, undismiss, undismissMany } from "@/lib/dismissed-notifications";
 import { toast } from "sonner";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { listMemories, memoryTypeMeta, type Memory } from "@/lib/memories";
@@ -78,6 +78,21 @@ export function NotificationCenter() {
     toast(`Moved “${title}” to ${label}`);
   };
 
+  const handleDismiss = (id: string, label?: string) => {
+    dismiss(id);
+    toast(label ? `Dismissed “${label}”` : "Dismissed", {
+      action: { label: "Undo", onClick: () => undismiss(id) },
+    });
+  };
+
+  const handleDismissMany = (ids: string[], label: string) => {
+    if (ids.length === 0) return;
+    dismissMany(ids);
+    toast(`Cleared ${ids.length} · ${label}`, {
+      action: { label: "Undo", onClick: () => undismissMany(ids) },
+    });
+  };
+
   const TaskRow = ({ t }: { t: any }) => (
     <div className="rounded-md px-1 py-0.5">
       <div className="group flex items-start gap-2 rounded-md px-1 py-1 hover:bg-muted">
@@ -110,7 +125,7 @@ export function NotificationCenter() {
         <Button
           variant="ghost" size="icon" className="h-6 w-6"
           title="Dismiss notification"
-          onClick={(e) => { e.stopPropagation(); dismiss(t.id); }}
+          onClick={(e) => { e.stopPropagation(); handleDismiss(t.id, t.title); }}
         >
           <X className="h-3 w-3" />
         </Button>
@@ -134,7 +149,7 @@ export function NotificationCenter() {
       <Button
         variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
         title="Dismiss"
-        onClick={() => dismiss(a.id)}
+        onClick={() => handleDismiss(a.id, a.title)}
       >
         <X className="h-3 w-3" />
       </Button>
@@ -149,7 +164,7 @@ export function NotificationCenter() {
           {icon} {label} <span className="ml-auto opacity-60">{items.length}</span>
           <button
             className="ml-1 text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-            onClick={() => dismissMany(items.map((x: any) => x.id))}
+            onClick={() => handleDismissMany(items.map((x: any) => x.id), label)}
             title="Clear section"
           >clear</button>
         </div>
@@ -182,10 +197,10 @@ export function NotificationCenter() {
             {totalShown > 0 && (
               <button
                 className="text-[10px] text-muted-foreground hover:text-foreground"
-                onClick={() => dismissMany([
+                onClick={() => handleDismissMany([
                   ...buckets.overdue, ...buckets.dueToday, ...buckets.dueTomorrow,
                   ...buckets.upcoming, ...buckets.todayAppts,
-                ].map(x => x.id))}
+                ].map(x => x.id), "all")}
               >Clear all</button>
             )}
             {dismissed.size > 0 && (
@@ -204,7 +219,7 @@ export function NotificationCenter() {
                 <Sparkles className="h-3 w-3" /> On this day <span className="ml-auto opacity-60">{onThisDay.length}</span>
                 <button
                   className="ml-1 text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                  onClick={() => dismissMany(onThisDay.map(m => m.id))}
+                  onClick={() => handleDismissMany(onThisDay.map(m => m.id), "On this day")}
                   title="Clear section"
                 >clear</button>
               </div>
@@ -227,7 +242,7 @@ export function NotificationCenter() {
                       <Button
                         variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
                         title="Dismiss"
-                        onClick={(e) => { e.stopPropagation(); dismiss(m.id); }}
+                        onClick={(e) => { e.stopPropagation(); handleDismiss(m.id, m.title); }}
                       >
                         <X className="h-3 w-3" />
                       </Button>
