@@ -4,7 +4,9 @@ import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Search, LayoutGrid, Clock, List, Heart, Pin, BookOpen, Users, Flower2 } from "lucide-react";
+import { Plus, Search, LayoutGrid, Clock, List, Heart, Pin, BookOpen, Users, Flower2, SlidersHorizontal, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { listMemories, MEMORY_TYPES, type Memory, type MemoryType, seasonOf } from "@/lib/memories";
@@ -30,6 +32,11 @@ export default function MemoriesPage() {
   const [typeFilter, setTypeFilter] = useState<MemoryType | "all">("all");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [personKey, setPersonKey] = useState<string | null>(params.get("person"));
+  const [tagFilters, setTagFilters] = useState<string[]>([]);
+  const [moodFilters, setMoodFilters] = useState<string[]>([]);
+  const [personFilters, setPersonFilters] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Memory | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -60,6 +67,44 @@ export default function MemoriesPage() {
     setParams(next, { replace: true });
   };
 
+  // Available filter options derived from data
+  const allTags = useMemo(() => {
+    const s = new Set<string>();
+    memories.forEach((m) => m.tags.forEach((t) => t && s.add(t)));
+    return [...s].sort((a, b) => a.localeCompare(b));
+  }, [memories]);
+  const allMoods = useMemo(() => {
+    const s = new Set<string>();
+    memories.forEach((m) => { if (m.mood) s.add(m.mood); });
+    return [...s].sort((a, b) => a.localeCompare(b));
+  }, [memories]);
+  const allPeople = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Array<{ key: string; label: string; emoji?: string }> = [];
+    (state.recipients ?? []).forEach((r) => {
+      const key = `recipient:${r.id}`;
+      if (!seen.has(key)) { seen.add(key); out.push({ key, label: r.name }); }
+    });
+    lovedOnes.forEach((l) => {
+      const key = `loved:${l.id}`;
+      if (!seen.has(key)) { seen.add(key); out.push({ key, label: l.name, emoji: l.emoji }); }
+    });
+    return out;
+  }, [state.recipients, lovedOnes]);
+
+  const toggleIn = (arr: string[], v: string) =>
+    arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+
+  const clearAllFilters = () => {
+    setTagFilters([]); setMoodFilters([]); setPersonFilters([]);
+    setDateFrom(""); setDateTo(""); setFavoritesOnly(false);
+    setTypeFilter("all"); setSearch("");
+  };
+
+  const activeFilterCount =
+    tagFilters.length + moodFilters.length + personFilters.length +
+    (dateFrom ? 1 : 0) + (dateTo ? 1 : 0);
+
   // Filter
   const filtered = useMemo(() => {
     let out = memories;
@@ -71,17 +116,43 @@ export default function MemoriesPage() {
     }
     if (typeFilter !== "all") out = out.filter((m) => m.memoryType === typeFilter);
     if (favoritesOnly) out = out.filter((m) => m.isFavorite);
+    if (tagFilters.length) {
+      out = out.filter((m) => tagFilters.every((t) => m.tags.includes(t)));
+    }
+    if (moodFilters.length) {
+      out = out.filter((m) => m.mood && moodFilters.includes(m.mood));
+    }
+    if (personFilters.length) {
+      out = out.filter((m) => personFilters.some((k) => {
+        const [src, id] = k.split(":");
+        return src === "recipient" ? m.recipientIds.includes(id) : m.lovedOneIds.includes(id);
+      }));
+    }
+    if (dateFrom) out = out.filter((m) => m.date >= dateFrom);
+    if (dateTo) out = out.filter((m) => m.date <= dateTo);
     if (search.trim()) {
       const q = search.toLowerCase();
+      const personLookup = (ids: string[], kind: "recipient" | "loved") =>
+        ids.some((id) => {
+          const name = kind === "recipient"
+            ? state.recipients?.find((r) => r.id === id)?.name
+            : lovedOnes.find((l) => l.id === id)?.name;
+          return name?.toLowerCase().includes(q);
+        });
       out = out.filter((m) =>
         m.title.toLowerCase().includes(q) ||
         m.description?.toLowerCase().includes(q) ||
         m.tags.some((t) => t.toLowerCase().includes(q)) ||
-        m.location?.toLowerCase().includes(q)
+        m.location?.toLowerCase().includes(q) ||
+        m.mood?.toLowerCase().includes(q) ||
+        personLookup(m.recipientIds, "recipient") ||
+        personLookup(m.lovedOneIds, "loved")
       );
     }
     return out;
-  }, [memories, personKey, typeFilter, favoritesOnly, search]);
+  }, [memories, personKey, typeFilter, favoritesOnly, search,
+      tagFilters, moodFilters, personFilters, dateFrom, dateTo,
+      state.recipients, lovedOnes]);
 
   const pinned = useMemo(() => filtered.filter((m) => m.isPinned), [filtered]);
 
@@ -180,8 +251,93 @@ export default function MemoriesPage() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative max-w-xs flex-1">
               <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search memories…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+              <Input placeholder="Search title, tag, mood, person…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
             </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <SlidersHorizontal className="h-3.5 w-3.5" /> Filters
+                  {activeFilterCount > 0 && (
+                    <Badge className="ml-1 h-4 min-w-[16px] rounded-full bg-[hsl(350_55%_60%)] px-1 text-[10px] text-white">{activeFilterCount}</Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 max-h-[70vh] overflow-y-auto p-3 space-y-4">
+                <FilterSection title="Tags" empty={allTags.length === 0 ? "No tags yet" : undefined}>
+                  <div className="flex flex-wrap gap-1.5">
+                    {allTags.map((t) => {
+                      const on = tagFilters.includes(t);
+                      return (
+                        <button key={t} onClick={() => setTagFilters((a) => toggleIn(a, t))}
+                          className={`rounded-full border px-2 py-0.5 text-xs transition ${on ? "border-[hsl(350_55%_60%)] bg-[hsl(350_45%_94%)] text-[hsl(350_45%_30%)]" : "border-border/60 hover:bg-muted/40"}`}>
+                          #{t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FilterSection>
+                <FilterSection title="Mood" empty={allMoods.length === 0 ? "No moods logged yet" : undefined}>
+                  <div className="flex flex-wrap gap-1.5">
+                    {allMoods.map((m) => {
+                      const on = moodFilters.includes(m);
+                      return (
+                        <button key={m} onClick={() => setMoodFilters((a) => toggleIn(a, m))}
+                          className={`rounded-full border px-2 py-0.5 text-xs transition ${on ? "border-[hsl(350_55%_60%)] bg-[hsl(350_45%_94%)] text-[hsl(350_45%_30%)]" : "border-border/60 hover:bg-muted/40"}`}>
+                          {m}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FilterSection>
+                <FilterSection title="People" empty={allPeople.length === 0 ? "No people yet" : undefined}>
+                  <div className="flex flex-wrap gap-1.5">
+                    {allPeople.map((p) => {
+                      const on = personFilters.includes(p.key);
+                      return (
+                        <button key={p.key} onClick={() => setPersonFilters((a) => toggleIn(a, p.key))}
+                          className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${on ? "border-[hsl(350_55%_60%)] bg-[hsl(350_45%_94%)] text-[hsl(350_45%_30%)]" : "border-border/60 hover:bg-muted/40"}`}>
+                          {p.emoji && <span>{p.emoji}</span>}{p.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FilterSection>
+                <FilterSection title="Date range">
+                  <div className="flex items-center gap-2">
+                    <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-8 text-xs" />
+                    <span className="text-xs text-muted-foreground">to</span>
+                    <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {[
+                      { label: "Last 7 days", days: 7 },
+                      { label: "Last 30 days", days: 30 },
+                      { label: "This year", days: 0 },
+                    ].map((p) => (
+                      <button key={p.label}
+                        className="rounded-full border border-border/60 px-2 py-0.5 text-[11px] hover:bg-muted/40"
+                        onClick={() => {
+                          const today = new Date();
+                          const to = format(today, "yyyy-MM-dd");
+                          let from = to;
+                          if (p.days > 0) {
+                            const d = new Date(today); d.setDate(d.getDate() - p.days);
+                            from = format(d, "yyyy-MM-dd");
+                          } else {
+                            from = `${today.getFullYear()}-01-01`;
+                          }
+                          setDateFrom(from); setDateTo(to);
+                        }}>{p.label}</button>
+                    ))}
+                  </div>
+                </FilterSection>
+                {activeFilterCount > 0 && (
+                  <Button variant="ghost" size="sm" className="w-full text-xs" onClick={clearAllFilters}>
+                    Clear all filters
+                  </Button>
+                )}
+              </PopoverContent>
+            </Popover>
             <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)} className="ml-auto">
               <TabsList className="bg-[hsl(20_60%_96%)]">
                 <TabsTrigger value="gallery"><LayoutGrid className="mr-1 h-3.5 w-3.5" />Gallery</TabsTrigger>
@@ -191,6 +347,24 @@ export default function MemoriesPage() {
               </TabsList>
             </Tabs>
           </div>
+
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {tagFilters.map((t) => (
+                <ActiveChip key={"t-"+t} label={`#${t}`} onClear={() => setTagFilters((a) => a.filter((x) => x !== t))} />
+              ))}
+              {moodFilters.map((m) => (
+                <ActiveChip key={"m-"+m} label={m} onClear={() => setMoodFilters((a) => a.filter((x) => x !== m))} />
+              ))}
+              {personFilters.map((k) => {
+                const p = allPeople.find((pp) => pp.key === k);
+                return <ActiveChip key={"p-"+k} label={p?.label ?? k} onClear={() => setPersonFilters((a) => a.filter((x) => x !== k))} />;
+              })}
+              {dateFrom && <ActiveChip label={`from ${dateFrom}`} onClear={() => setDateFrom("")} />}
+              {dateTo && <ActiveChip label={`to ${dateTo}`} onClear={() => setDateTo("")} />}
+              <button onClick={clearAllFilters} className="text-[11px] text-muted-foreground hover:text-foreground">clear all</button>
+            </div>
+          )}
 
           {pinned.length > 0 && (
             <div>
@@ -256,6 +430,26 @@ export default function MemoriesPage() {
         lovedOnes={lovedOnes}
       />
     </div>
+  );
+}
+
+function FilterSection({ title, children, empty }: { title: string; children: React.ReactNode; empty?: string }) {
+  return (
+    <div>
+      <div className="mb-1.5 text-[11px] uppercase tracking-wider text-[hsl(350_45%_45%)]">{title}</div>
+      {empty ? <div className="text-xs text-muted-foreground">{empty}</div> : children}
+    </div>
+  );
+}
+
+function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-[hsl(350_45%_85%)] bg-[hsl(350_45%_96%)] px-2 py-0.5 text-[11px] text-[hsl(350_45%_30%)]">
+      {label}
+      <button onClick={onClear} className="rounded-full hover:bg-[hsl(350_45%_90%)]" aria-label={`Remove ${label}`}>
+        <X className="h-3 w-3" />
+      </button>
+    </span>
   );
 }
 
