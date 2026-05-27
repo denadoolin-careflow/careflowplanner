@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import { seedState, newUserSeed } from "./seed";
 import { AREAS } from "./types";
+import { toast } from "sonner";
 
 /* Fire-and-forget push of one CareFlow appointment to Google Calendar.
    Failures are silent — the local DB is the source of truth and the cron
@@ -405,6 +406,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setState(s => ({ ...s, tasks: s.tasks.map(t => t.id === id ? { ...t, done: next } : t) })); // optimistic
       await supabase.from("tasks").update({ done: next, last_completed_at: next ? new Date().toISOString() : null }).eq("id", id);
       // recurrence: if task was just completed and recurs, generate next occurrence
+      let recurringNextId: string | null = null;
       if (next && cur.recurrenceType && cur.recurrenceType !== "none" && cur.dueDate) {
         const base = new Date(cur.dueDate);
         const interval = cur.recurrenceInterval ?? 1;
@@ -413,8 +415,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     cur.recurrenceType === "monthly" ? 30 * interval : 7;
         base.setDate(base.getDate() + add);
         const nextDate = base.toISOString().slice(0,10);
-        await supabase.from("tasks").insert({ user_id: uid, ...taskTo({ ...cur, done: false, dueDate: nextDate }) });
+        const { data: inserted } = await supabase.from("tasks").insert({ user_id: uid, ...taskTo({ ...cur, done: false, dueDate: nextDate }) }).select().single();
+        recurringNextId = inserted?.id ?? null;
         await refreshSlice("tasks", "tasks", taskFrom);
+      }
+      if (next) {
+        toast.success(`Completed "${cur.title}"`, {
+          duration: 6000,
+          action: {
+            label: "Undo",
+            onClick: async () => {
+              setState(s => ({ ...s, tasks: s.tasks.map(t => t.id === id ? { ...t, done: false } : t).filter(t => t.id !== recurringNextId) }));
+              await supabase.from("tasks").update({ done: false, last_completed_at: null }).eq("id", id);
+              if (recurringNextId) {
+                await supabase.from("tasks").delete().eq("id", recurringNextId);
+              }
+            },
+          },
+        });
       }
     },
     updateTask: async (id, patch) => {
