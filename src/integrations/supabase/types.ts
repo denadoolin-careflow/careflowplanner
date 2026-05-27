@@ -2430,6 +2430,60 @@ export type Database = {
         }
         Relationships: []
       }
+      moon_journal_entries: {
+        Row: {
+          body: string
+          created_at: string
+          cycle_phase: string | null
+          date: string
+          energy: string | null
+          gratitude: Json
+          id: string
+          intentions: Json
+          mood: string | null
+          moon_phase: string
+          prompts: Json
+          releases: Json
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          cycle_phase?: string | null
+          date?: string
+          energy?: string | null
+          gratitude?: Json
+          id?: string
+          intentions?: Json
+          mood?: string | null
+          moon_phase: string
+          prompts?: Json
+          releases?: Json
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          cycle_phase?: string | null
+          date?: string
+          energy?: string | null
+          gratitude?: Json
+          id?: string
+          intentions?: Json
+          mood?: string | null
+          moon_phase?: string
+          prompts?: Json
+          releases?: Json
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       movement_logs: {
         Row: {
           activity: string
