@@ -11,11 +11,13 @@ import { clearAllDismissed, dismiss, dismissMany, getDismissed, onDismissedChang
 import { toast } from "sonner";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { listMemories, memoryTypeMeta, type Memory } from "@/lib/memories";
+import { QuickTaskInlineEditor } from "@/components/tasks/QuickTaskInlineEditor";
 
 export function NotificationCenter() {
   const { state, toggleTask, updateTask } = useStore();
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(() => getDismissed());
+  const [editingId, setEditingId] = useState<string | null>(null);
   useEffect(() => onDismissedChange(() => setDismissed(getDismissed())), []);
   const navigate = useNavigate();
   const [memories, setMemories] = useState<Memory[]>([]);
@@ -77,7 +79,8 @@ export function NotificationCenter() {
   };
 
   const TaskRow = ({ t }: { t: any }) => (
-    <div className="group flex items-start gap-2 rounded-md px-2 py-1.5 hover:bg-muted">
+    <div className="rounded-md px-1 py-0.5">
+      <div className="group flex items-start gap-2 rounded-md px-1 py-1 hover:bg-muted">
       <button
         className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border border-border text-transparent hover:border-primary hover:text-primary"
         title="Mark complete"
@@ -87,7 +90,7 @@ export function NotificationCenter() {
       </button>
       <button
         className="min-w-0 flex-1 text-left"
-        onClick={() => { openTaskEditor(t.id); setOpen(false); }}
+        onClick={() => setEditingId(editingId === t.id ? null : t.id)}
       >
         <div className="truncate text-xs font-medium">{t.title}</div>
         <div className="truncate text-[10px] text-muted-foreground">
@@ -99,8 +102,8 @@ export function NotificationCenter() {
         <ReschedulePopover task={t} onPick={handleReschedule} />
         <Button
           variant="ghost" size="icon" className="h-6 w-6"
-          title="Edit task"
-          onClick={(e) => { e.stopPropagation(); openTaskEditor(t.id); setOpen(false); }}
+          title="Quick edit"
+          onClick={(e) => { e.stopPropagation(); setEditingId(editingId === t.id ? null : t.id); }}
         >
           <Pencil className="h-3 w-3" />
         </Button>
@@ -112,6 +115,12 @@ export function NotificationCenter() {
           <X className="h-3 w-3" />
         </Button>
       </div>
+      </div>
+      {editingId === t.id && (
+        <div className="mt-1 px-1 pb-1">
+          <QuickTaskInlineEditor taskId={t.id} onClose={() => setEditingId(null)} />
+        </div>
+      )}
     </div>
   );
 
