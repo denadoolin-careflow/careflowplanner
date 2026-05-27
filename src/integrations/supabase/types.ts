@@ -3516,6 +3516,51 @@ export type Database = {
         }
         Relationships: []
       }
+      sleep_logs: {
+        Row: {
+          bedtime: string | null
+          created_at: string
+          date: string
+          dreams: string | null
+          hours_slept: number | null
+          id: string
+          notes: string | null
+          quality: number | null
+          updated_at: string
+          user_id: string
+          wake_time: string | null
+          wind_down: string[] | null
+        }
+        Insert: {
+          bedtime?: string | null
+          created_at?: string
+          date?: string
+          dreams?: string | null
+          hours_slept?: number | null
+          id?: string
+          notes?: string | null
+          quality?: number | null
+          updated_at?: string
+          user_id: string
+          wake_time?: string | null
+          wind_down?: string[] | null
+        }
+        Update: {
+          bedtime?: string | null
+          created_at?: string
+          date?: string
+          dreams?: string | null
+          hours_slept?: number | null
+          id?: string
+          notes?: string | null
+          quality?: number | null
+          updated_at?: string
+          user_id?: string
+          wake_time?: string | null
+          wind_down?: string[] | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           amount: number
@@ -4080,6 +4125,39 @@ export type Database = {
           notes?: string | null
           user_id?: string
           weight_lb?: number
+        }
+        Relationships: []
+      }
+      wellness_rituals: {
+        Row: {
+          amount: number | null
+          created_at: string
+          date: string
+          duration_minutes: number | null
+          id: string
+          notes: string | null
+          ritual_type: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          date?: string
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          ritual_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          date?: string
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          ritual_type?: string
+          user_id?: string
         }
         Relationships: []
       }
