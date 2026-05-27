@@ -49,7 +49,7 @@ export default function TimelinePage({ uid }: { uid: string }) {
       since.setDate(since.getDate() - days);
       const sinceStr = since.toISOString().slice(0, 10);
 
-      const [ci, mh, mv, sl, wr, cy, dr] = await Promise.all([
+      const [ci, mh, mv, sl, wr, cy, dr, di] = await Promise.all([
         supabase.from("health_checkins").select("*").eq("user_id", uid).gte("date", sinceStr),
         supabase.from("mental_health_logs").select("*").eq("user_id", uid).gte("date", sinceStr),
         supabase.from("movement_logs").select("*").eq("user_id", uid).gte("date", sinceStr),
@@ -57,6 +57,7 @@ export default function TimelinePage({ uid }: { uid: string }) {
         supabase.from("wellness_rituals").select("*").eq("user_id", uid).gte("date", sinceStr),
         supabase.from("cycle_day_logs").select("*").eq("user_id", uid).gte("date", sinceStr),
         supabase.from("daily_reviews").select("*").eq("user_id", uid).gte("date", sinceStr),
+        supabase.from("daily_intentions").select("*").eq("user_id", uid).gte("date", sinceStr),
       ]);
 
       const evs: Event[] = [];
@@ -76,14 +77,14 @@ export default function TimelinePage({ uid }: { uid: string }) {
 
       (mh.data ?? []).forEach((r: any) => evs.push({
         id: "mh-" + r.id, date: r.date, kind: "mental",
-        title: r.intention ? `Intention: ${r.intention}` : "Mental health log",
-        emotions: Array.isArray(r.emotions) ? r.emotions : (r.emotions ? Object.values(r.emotions) : []),
-        intention: r.intention,
-        outcome: r.gratitude || r.support_needed,
+        title: r.mood_word ? `Feeling ${r.mood_word}` : "Mental health log",
+        emotions: Array.isArray(r.emotions) ? r.emotions : [],
+        outcome: r.gratitude,
         meta: [
-          r.mood != null && { label: "Mood", value: String(r.mood) },
+          r.mood_score != null && { label: "Mood", value: `${r.mood_score}/10` },
           r.anxiety != null && { label: "Anxiety", value: String(r.anxiety) },
           r.focus != null && { label: "Focus", value: String(r.focus) },
+          r.support_needed && { label: "Needs", value: r.support_needed },
         ].filter(Boolean) as any,
         notes: r.notes,
       }));
@@ -136,6 +137,23 @@ export default function TimelinePage({ uid }: { uid: string }) {
         ].filter(Boolean) as any,
         notes: [r.gratitude, r.lessons, r.challenges].filter(Boolean).join(" · "),
       }));
+
+      (di.data ?? []).forEach((r: any) => {
+        const grat = Array.isArray(r.gratitude) ? r.gratitude.filter(Boolean) : [];
+        const top = Array.isArray(r.top_three) ? r.top_three.filter(Boolean) : [];
+        evs.push({
+          id: "di-" + r.id, date: r.date, kind: "review",
+          title: r.word ? `Word: ${r.word}` : "Daily intention",
+          intention: r.intention || (top.length ? top.join(" · ") : undefined),
+          outcome: grat.length ? grat.join(" · ") : undefined,
+          meta: [
+            r.mood && { label: "Mood", value: r.mood },
+            r.energy && { label: "Energy", value: r.energy },
+            r.theme && { label: "Theme", value: r.theme },
+          ].filter(Boolean) as any,
+          notes: r.notes,
+        });
+      });
 
       evs.sort((a, b) => b.date.localeCompare(a.date));
       if (mounted) { setEvents(evs); setLoading(false); }
