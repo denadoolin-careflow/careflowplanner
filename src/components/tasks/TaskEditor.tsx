@@ -353,6 +353,35 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                     </PopoverContent>
                   </Popover>
                 </Field>
+                <Field icon={CalendarIcon} label="Start date">
+                  <Input
+                    type="date"
+                    value={draft.startDate ?? ""}
+                    onChange={(e) => set("startDate", e.target.value || undefined)}
+                  />
+                </Field>
+                <Field icon={Clock} label="Start time">
+                  <Input
+                    type="time"
+                    value={draft.startTime ?? ""}
+                    onChange={(e) => set("startTime", e.target.value || undefined)}
+                  />
+                </Field>
+                <Field icon={CalendarIcon} label="End date">
+                  <Input
+                    type="date"
+                    value={draft.endDate ?? ""}
+                    min={draft.startDate || undefined}
+                    onChange={(e) => set("endDate", e.target.value || undefined)}
+                  />
+                </Field>
+                <Field icon={Clock} label="End time">
+                  <Input
+                    type="time"
+                    value={draft.endTime ?? ""}
+                    onChange={(e) => set("endTime", e.target.value || undefined)}
+                  />
+                </Field>
                 <Field icon={Repeat} label="Repeats">
                   <Select value={draft.recurrenceType ?? "none"} onValueChange={v => set("recurrenceType", v as RecurrenceType)}>
                     <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>

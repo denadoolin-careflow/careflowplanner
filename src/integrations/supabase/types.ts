@@ -3535,6 +3535,8 @@ export type Database = {
           day_part: string | null
           done: boolean
           due_date: string | null
+          end_date: string | null
+          end_time: string | null
           energy: string | null
           est_minutes: number | null
           goal_id: string | null
@@ -3556,6 +3558,8 @@ export type Database = {
           section_id: string | null
           snoozed_until: string | null
           sort_order: number
+          start_date: string | null
+          start_time: string | null
           status: string
           tags: string[]
           title: string
@@ -3571,6 +3575,8 @@ export type Database = {
           day_part?: string | null
           done?: boolean
           due_date?: string | null
+          end_date?: string | null
+          end_time?: string | null
           energy?: string | null
           est_minutes?: number | null
           goal_id?: string | null
@@ -3592,6 +3598,8 @@ export type Database = {
           section_id?: string | null
           snoozed_until?: string | null
           sort_order?: number
+          start_date?: string | null
+          start_time?: string | null
           status?: string
           tags?: string[]
           title: string
@@ -3607,6 +3615,8 @@ export type Database = {
           day_part?: string | null
           done?: boolean
           due_date?: string | null
+          end_date?: string | null
+          end_time?: string | null
           energy?: string | null
           est_minutes?: number | null
           goal_id?: string | null
@@ -3628,6 +3638,8 @@ export type Database = {
           section_id?: string | null
           snoozed_until?: string | null
           sort_order?: number
+          start_date?: string | null
+          start_time?: string | null
           status?: string
           tags?: string[]
           title?: string
