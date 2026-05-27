@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { format, parseISO, addDays } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getMoonPhase,
   MOON_INFO,
   type MoonPhase,
-  daysUntilFull,
-  daysUntilNew,
-  getIllumination,
 } from "@/lib/moon";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo } from "@/lib/cycle";
@@ -18,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { MoonGlyph } from "@/components/widgets/MoonGlyph";
 import { MoonCalendar } from "./MoonCalendar";
 import { toast } from "sonner";
-import { Save, Sparkles, Trash2 } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import { LunarPhaseWidget } from "@/components/lunar/LunarPhaseWidget";
 import { PhasePlanningCard } from "@/components/lunar/PhasePlanningCard";
 
