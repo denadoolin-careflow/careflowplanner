@@ -35,7 +35,7 @@ import { Wand2 } from "lucide-react";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
