@@ -1,48 +1,59 @@
-# Mobile optimization: Week & Month
+# Unified Lunar Living + Calendar
 
-Current state at 411px wide is broken: headers wrap into a tall pill stack, the side `UnscheduledTasksRail` eats horizontal space, the 7-day TimeGrid forces horizontal scroll, and Month's 7×6 grid squeezes day cells too small to be useful.
+Bring richer moon data from the Lunar Life project into CareFlow and tie it into a single planning surface across the Lunar Living tab and the Month/Calendar views.
 
-## Scope
+## 1. Port data from Lunar Life
 
-UI-only refactor of `src/pages/Week.tsx`, `src/pages/Month.tsx`, plus minor tweaks to a few calendar subcomponents. No business-logic, data, or routing changes.
+Create three new helpers in `src/lib/`:
 
-## Week view (`src/pages/Week.tsx`)
+- `moon-days.ts` — 30-day lunar-day meanings (`MOON_DAYS`, `getMoonDayNumber`, `getMoonDayMeaning`).
+- `zodiac.ts` — `ZodiacSign`, `getZodiac` (sun sign), `getMoonSign` (Meeus moon-in-sign approximation), `MOON_IN_SIGN_GUIDE` (per-sign vibe + 3 actions + body cue + what to avoid), element/symbol maps.
+- `lunar-phases.ts` — a new "4 key phase" model that wraps the existing 8-phase `MoonPhase`:
+  - `sow` ← new moon
+  - `grow` ← first quarter (also waxing crescent/gibbous map to "growing")
+  - `glow` ← full moon
+  - `let-go` ← last quarter (also waning gibbous/crescent map to "releasing")
+  - Each entry carries: label, verb, color token, short invitation, 3 plan-with hints (tasks/intentions/journal), and a longer planning paragraph.
 
-1. **Header**: collapse the action pills on mobile.
-   - Stack vertically with tighter padding (`p-4` instead of `p-6`, `text-2xl` heading).
-   - Put `ScopeNavToggle`, "Reset & reflect", and Schedule/Plan toggle on a single horizontally-scrollable row (`overflow-x-auto -mx-4 px-4 no-scrollbar`).
-   - Hide the helper subtext on `< sm`.
+Keep existing `src/lib/moon.ts` untouched — the new key-phase model layers on top.
 
-2. **Body layout**: hide `UnscheduledTasksRail` on mobile; add a "Unscheduled tasks" disclosure (`<details>` or collapsible) above `CalendarTasksPanel` that reuses the same rail content. Keep current desktop layout intact via `hidden lg:block` / `lg:hidden`.
+## 2. New widget: `LunarPhaseWidget`
 
-3. **Schedule view on mobile**:
-   - Default to showing one day at a time when viewport `< md`. Add a left/right day swiper using the existing `WeekRhythmRow` as the day picker (tap a day → set `selectedDate`, render `TimeGrid days={[selectedDate]}`).
-   - Keep the 7-day grid for `md+`.
-   - For "parts" view: already iterates per day, just ensure each card is full-width with reduced padding on mobile.
+`src/components/lunar/LunarPhaseWidget.tsx` — replaces the current hero in `LunarLivingPage.tsx` and is also embeddable on Dashboard.
 
-## Month view (`src/pages/Month.tsx`)
+Contents:
+- Big `MoonGlyph` + tonight's full label (e.g. "Waxing Gibbous · Grow"), illumination %, days to full / new.
+- **Key-phase badge** — pill in the phase's color: 🌑 Sow / 🌓 Grow / 🌕 Glow / 🌗 Let Go, with the verb-driven invitation underneath.
+- **Moon in sign** row — sign glyph + name + 1-line vibe from `MOON_IN_SIGN_GUIDE`.
+- **Lunar day** chip — "Day 14 · Brink" with one-line meaning.
+- Strip of next 4 key phases with date + verb label.
 
-1. **Header**: same treatment — compact padding, scrollable action row, smaller title. Move "Monthly overview" and "Reset & reflect" links into the scroll row.
+## 3. Planning insights panel
 
-2. **Grid cells**: 
-   - Reduce `min-h-24` to `min-h-14 sm:min-h-24`.
-   - On mobile, render at most 1 event chip and a `+N` counter instead of 3 chips with labels (use small colored dots row when >1).
-   - Drop the moon glyph + sign glyph pair down to just the moon glyph on `< sm`.
-   - Make day-number font slightly smaller; trim cell padding to `p-1`.
+`src/components/lunar/PhasePlanningCard.tsx` shown below the widget on the Lunar Living tab.
 
-3. **Tap-to-expand**: tapping a day on mobile opens a bottom sheet (reuse existing shadcn `Sheet`) listing that day's events with the same click handlers (edit task, edit appt, open block in week). This replaces drag interactions which are impractical on touch anyway.
+Sections:
+- **How to plan today** — 3 actionable hints from the key-phase model (Sow → set 1 intention, capture seeds in Inbox; Grow → schedule focused work blocks; Glow → review/celebrate, run Weekly Review; Let Go → archive, decline, clean reset).
+- **Moon-in-sign actions** — 3 micro-actions from `MOON_IN_SIGN_GUIDE` with a one-tap "Add to Today" button that creates a task via the existing task store.
+- **Plan with this phase** button — opens the existing `PlanWithEnergyDialog` (or a thin new `PlanWithPhaseDialog`) pre-seeded with the phase's planning paragraph and suggested area.
 
-4. **Hide `UnscheduledTasksRail`** on mobile, same pattern as Week.
+## 4. Calendar / Month integration
 
-5. **Overlay legend** (`showMoon`): wrap in `flex-wrap` already present; reduce gap on mobile.
+Connect the same data to the existing calendar surfaces:
 
-## Shared helpers
+- `src/pages/Month.tsx` — the existing Moon overlay row already shows phase/sign/element. Augment its caption to also show the key-phase verb (Sow/Grow/Glow/Let Go) and color the day-cell ring on the four key-phase days using the phase's token color.
+- `src/pages/CalendarPage.tsx` — extend the existing emoji-only badge (`moonPhaseFor`) so that on the four key days it shows the verb label too, and clicking the day opens a small popover with the planning hints from `lunar-phases.ts`.
+- `src/components/rhythm/MoonPhaseBadge.tsx` — gain an optional `showKeyPhase` prop so the day-header chip can read "🌕 Glow" instead of "Full moon" on key days, keeping vocabulary consistent across surfaces.
 
-- Add a tiny `no-scrollbar` utility to `src/index.css` if not present (for the action pill rows).
-- Use the existing `useIsMobile()` hook in both pages to gate the single-day Week schedule and the Month bottom sheet.
+## 5. Wiring
 
-## Out of scope
+- Mount `LunarPhaseWidget` at the top of `LunarLivingPage.tsx`, replacing the existing inline hero. Keep the rest (calendar + journal + recent entries) as-is.
+- Add `LunarPhaseWidget` as an optional dashboard widget via the existing widget system (so users can pin it to their home).
+- All new vocabulary (Sow/Grow/Glow/Let Go) lives in one constant in `lunar-phases.ts` so labels stay consistent everywhere.
 
-- No changes to `TimeGrid`, `DayPartsView`, `AgendaView` internals beyond what's needed to render in a narrow container.
-- No changes to data, tasks store, or Supabase.
-- Tablet (`md`) stays close to current desktop behavior.
+## Technical notes
+
+- Pure presentation/data work; no migrations or edge functions needed.
+- Phase colors use existing semantic tokens (or add 4 new ones: `--phase-sow`, `--phase-grow`, `--phase-glow`, `--phase-letgo`) in `index.css` so they theme correctly in light/dark.
+- Moon-sign math is deterministic (Meeus simplified) — no network calls.
+- "Add to Today" reuses the existing tasks store; no new schema.
