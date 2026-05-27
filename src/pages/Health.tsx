@@ -20,6 +20,7 @@ import MentalHealthPage from "@/components/health/MentalHealthPage";
 import WellnessPage from "@/components/health/WellnessPage";
 import SleepPage from "@/components/health/SleepPage";
 import NourishmentPage from "@/components/health/NourishmentPage";
+import HealthCalendarPage from "@/components/health/HealthCalendarPage";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -211,7 +212,7 @@ export default function Health() {
         <TabsContent value="sleep" className="mt-5"><SleepPage uid={uid} /></TabsContent>
         <TabsContent value="mental" className="mt-5"><MentalHealthPage uid={uid} /></TabsContent>
         <TabsContent value="goals" className="mt-5"><GoalsPanel uid={uid} /></TabsContent>
-        <TabsContent value="calendar" className="mt-5"><ComingSoonPanel title="Health Calendar" blurb="Appointments, symptoms, cycle and moon phases — all in one calming view." /></TabsContent>
+        <TabsContent value="calendar" className="mt-5"><HealthCalendarPage uid={uid} /></TabsContent>
         <TabsContent value="reflections" className="mt-5"><ComingSoonPanel title="Reflections" blurb="Wellness, moon, symptom, and emotional journaling — beautifully threaded together." /></TabsContent>
       </Tabs>
     </div>
