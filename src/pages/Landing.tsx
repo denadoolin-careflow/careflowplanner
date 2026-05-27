@@ -32,7 +32,7 @@ function GlassCard({
 }: { className?: string; children: React.ReactNode }) {
   return (
     <div
-      className={`rounded-3xl border border-border/50 bg-card/70 p-6 shadow-[0_8px_30px_-12px_hsl(258_30%_50%/0.18)] backdrop-blur-md ${className}`}
+      className={`rounded-2xl border border-border/50 bg-card/70 p-5 shadow-[0_8px_30px_-12px_hsl(258_30%_50%/0.18)] backdrop-blur-md sm:rounded-3xl sm:p-6 ${className}`}
     >
       {children}
     </div>
@@ -323,14 +323,14 @@ export default function Landing() {
 
       {/* Nav */}
       <header className="sticky top-0 z-30 border-b border-border/30 bg-[hsl(36_50%_97%)]/70 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3.5">
-          <Link to="/" className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[hsl(145_30%_28%)] text-[hsl(36_50%_96%)] shadow-sm">
-              <Leaf className="h-4 w-4" />
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
+          <Link to="/" className="flex items-center gap-2 sm:gap-2.5">
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-[hsl(145_30%_28%)] text-[hsl(36_50%_96%)] shadow-sm sm:h-9 sm:w-9">
+              <Leaf className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </span>
             <span className="leading-tight">
-              <span className="font-display text-lg font-semibold text-foreground">CareFlow</span>
-              <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">plan, care, grow</span>
+              <span className="font-display text-base font-semibold text-foreground sm:text-lg">CareFlow</span>
+              <span className="hidden text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:block">plan, care, grow</span>
             </span>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-foreground/80 md:flex">
@@ -347,24 +347,35 @@ export default function Landing() {
             >
               Log in
             </Link>
-            <PrimaryCTA to="/waitlist"><Sparkles className="h-4 w-4" /> Join the Waitlist</PrimaryCTA>
+            <Link
+              to="/waitlist"
+              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium shadow-cozy transition-all duration-700 hover:scale-[1.02] hover:brightness-110 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
+              style={{
+                background: "var(--atmos-cta-bg, hsl(145 30% 28%))",
+                color: "var(--atmos-cta-fg, hsl(36 50% 96%))",
+              }}
+            >
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="sm:hidden">Waitlist</span>
+              <span className="hidden sm:inline">Join the Waitlist</span>
+            </Link>
           </div>
         </div>
       </header>
 
       {/* HERO */}
-      <section className="relative mx-auto grid w-full max-w-6xl gap-12 px-5 pb-24 pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-24">
+      <section className="relative mx-auto grid w-full max-w-6xl gap-10 px-4 pb-16 pt-10 sm:px-5 sm:pb-24 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-24">
         <div className="relative text-center lg:text-left">
           <Pill><Heart className="h-3 w-3" /> Built for real-life caregivers</Pill>
-          <h1 className="mt-5 font-display text-4xl leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-[58px]">
+          <h1 className="mt-5 font-display text-[34px] leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[58px]">
             Turn your daily workload into a{" "}
             <em className="not-italic text-[hsl(28_70%_45%)]">gentle loop</em>{" "}
             you can repeat.
           </h1>
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-muted-foreground mx-auto lg:mx-0">
+          <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground mx-auto sm:mt-5 sm:text-base lg:mx-0">
             CareFlow is the emotionally intelligent planning system for caregivers, overwhelmed minds, neurodivergent users, and busy households — without pressure, guilt, or perfectionism.
           </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+          <div className="mt-6 flex flex-col items-stretch gap-2.5 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 lg:justify-start">
             <PrimaryCTA><Leaf className="h-4 w-4" /> Start Your CareFlow</PrimaryCTA>
             <SecondaryCTA><Sparkles className="h-4 w-4" /> Find Your Archetype</SecondaryCTA>
           </div>
@@ -377,21 +388,21 @@ export default function Landing() {
             No pressure. No perfectionism. Just support.
           </p>
         </div>
-        <div className="relative lg:pt-4">
+        <div className="relative hidden sm:block lg:pt-4">
           <HeroMockup />
         </div>
       </section>
 
       {/* CARE LOOP */}
       <section className="border-t border-border/40 bg-[hsl(36_50%_97%)]/60">
-        <div className="mx-auto w-full max-w-6xl px-5 py-20">
+        <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-5 sm:py-20">
           <div className="text-center">
             <Pill>The Care Loop™</Pill>
-            <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl tracking-tight text-foreground sm:text-4xl">
+            <h2 className="mx-auto mt-4 max-w-2xl font-display text-2xl tracking-tight text-foreground sm:text-4xl">
               A planning system built for real life.
             </h2>
           </div>
-          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-4 sm:mt-12 sm:gap-5 md:grid-cols-2 lg:grid-cols-4">
             {careLoop.map(({ k, title, lead, bullets, icon: Icon, glow, ink }) => (
               <GlassCard key={k} className="relative overflow-hidden">
                 <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${glow} blur-2xl`} aria-hidden />
@@ -415,19 +426,19 @@ export default function Landing() {
       </section>
 
       {/* ARCHETYPES */}
-      <section id="archetypes" className="mx-auto w-full max-w-6xl px-5 py-20">
+      <section id="archetypes" className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-5 sm:py-20">
         <div className="max-w-2xl text-center sm:text-left mx-auto sm:mx-0">
           <Pill><Heart className="h-3 w-3" /> Who CareFlow is for</Pill>
-          <h2 className="mt-4 font-display text-3xl tracking-tight text-foreground sm:text-4xl">
+          <h2 className="mt-4 font-display text-2xl tracking-tight text-foreground sm:text-4xl">
             Built for the people carrying the invisible load.
           </h2>
           <p className="mt-3 text-muted-foreground">
             Find the archetype that matches your season. Each path comes with its own rhythm, atmosphere, and gentle support.
           </p>
         </div>
-        <div className="mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mt-8 -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mt-10 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {archetypes.map(a => (
-            <GlassCard key={a.name} className="min-w-[280px] snap-start sm:min-w-[320px]">
+            <GlassCard key={a.name} className="min-w-[260px] snap-start sm:min-w-[320px]">
               <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
                 <Sparkles className="h-3.5 w-3.5" /> {a.atmosphere}
               </div>
@@ -444,11 +455,11 @@ export default function Landing() {
 
       {/* FEATURES */}
       <section id="features" className="border-y border-border/40 bg-[hsl(36_55%_97%)]/70">
-        <div className="mx-auto w-full max-w-6xl px-5 py-20">
+        <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-5 sm:py-20">
           <div className="flex flex-col items-center justify-between gap-6 text-center sm:flex-row sm:items-end sm:text-left">
             <div className="max-w-xl">
               <Pill><Leaf className="h-3 w-3" /> App features</Pill>
-              <h2 className="mt-4 font-display text-3xl tracking-tight text-foreground sm:text-4xl">
+              <h2 className="mt-4 font-display text-2xl tracking-tight text-foreground sm:text-4xl">
                 Everything you need. All in one beautiful space.
               </h2>
             </div>
@@ -456,24 +467,24 @@ export default function Landing() {
               Modular tools designed to flex with your real energy — from the foggy mornings to the slow Sundays.
             </p>
           </div>
-          <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 sm:grid-cols-3 lg:grid-cols-3">
             {features.map((f) => {
               const Icon = f.icon;
               return (
                 <div
                   key={f.title}
-                  className="relative flex h-[240px] flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl border border-border/50 p-6 text-center shadow-[0_8px_30px_-12px_hsl(258_30%_50%/0.18)] backdrop-blur-md"
+                  className="relative flex h-[180px] flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-border/50 p-4 text-center shadow-[0_8px_30px_-12px_hsl(258_30%_50%/0.18)] backdrop-blur-md sm:h-[240px] sm:gap-4 sm:rounded-3xl sm:p-6"
                   style={{
                     background:
                       "radial-gradient(120% 90% at 0% 0%, hsl(145 40% 92% / 0.95) 0%, hsl(36 55% 97% / 0.85) 45%, hsl(350 55% 94% / 0.75) 100%)",
                   }}
                 >
-                  <span className="grid h-16 w-16 place-items-center rounded-2xl bg-[hsl(145_30%_28%)]/10 text-[hsl(145_30%_28%)]">
-                    <Icon className="h-8 w-8" />
+                  <span className="grid h-12 w-12 place-items-center rounded-xl bg-[hsl(145_30%_28%)]/10 text-[hsl(145_30%_28%)] sm:h-16 sm:w-16 sm:rounded-2xl">
+                    <Icon className="h-6 w-6 sm:h-8 sm:w-8" />
                   </span>
                   <div>
-                    <div className="font-display text-lg text-foreground">{f.title}</div>
-                    <p className="mt-1 text-sm text-muted-foreground">{f.body}</p>
+                    <div className="font-display text-sm text-foreground sm:text-lg">{f.title}</div>
+                    <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{f.body}</p>
                   </div>
                 </div>
               );
@@ -483,17 +494,17 @@ export default function Landing() {
       </section>
 
       {/* ATMOSPHERES */}
-      <section id="atmospheres" className="mx-auto w-full max-w-6xl px-5 py-20">
+      <section id="atmospheres" className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-5 sm:py-20">
         <div className="text-center">
           <Pill><Moon className="h-3 w-3" /> Atmospheres</Pill>
-          <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl tracking-tight text-foreground sm:text-4xl">
+          <h2 className="mx-auto mt-4 max-w-2xl font-display text-2xl tracking-tight text-foreground sm:text-4xl">
             Choose the atmosphere that matches your energy.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
             Twelve immersive themes — each with its own palette, type, and emotional tone.
           </p>
         </div>
-        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {atmospheres.map(a => {
             const Icon = a.icon;
             const selected = activeAtmos?.name === a.name;
@@ -503,15 +514,15 @@ export default function Landing() {
                 type="button"
                 onClick={() => setActiveAtmos(selected ? null : a)}
                 aria-pressed={selected}
-                className={`group relative overflow-hidden rounded-3xl border p-4 text-left shadow-soft transition-all hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(36_50%_96%)] ${
+                className={`group relative overflow-hidden rounded-2xl border p-3 text-left shadow-soft transition-all hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(36_50%_96%)] sm:rounded-3xl sm:p-4 ${
                   selected ? "border-white/80 ring-2 ring-white/70 scale-[1.02]" : "border-border/40"
                 } ${a.dark ? "text-[hsl(36_50%_96%)]" : "text-[hsl(145_30%_18%)]"}`}
-                style={{ background: a.bg, minHeight: 150 }}
+                style={{ background: a.bg, minHeight: 120 }}
               >
                 <Icon className="h-5 w-5 opacity-80" />
-                <div className="mt-12">
-                  <div className="font-display text-sm">{a.name}</div>
-                  <div className="text-[11px] uppercase tracking-widest opacity-70">{a.tone}</div>
+                <div className="mt-8 sm:mt-12">
+                  <div className="font-display text-xs sm:text-sm">{a.name}</div>
+                  <div className="text-[10px] uppercase tracking-widest opacity-70 sm:text-[11px]">{a.tone}</div>
                 </div>
               </button>
             );
@@ -536,13 +547,13 @@ export default function Landing() {
 
       {/* STORY */}
       <section id="story" className="bg-[hsl(36_50%_97%)]/60">
-        <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-14 sm:px-5 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div className="overflow-hidden rounded-3xl border border-border/40 shadow-cozy">
             <img src={storyImg} alt="A cozy candlelit reading nook with a journal and herbal tea" loading="lazy" width={1408} height={896} className="h-full w-full object-cover" />
           </div>
           <div className="text-center lg:text-left">
             <Pill><Heart className="h-3 w-3" /> Our story</Pill>
-            <h2 className="mt-4 font-display text-3xl tracking-tight text-foreground sm:text-4xl">
+            <h2 className="mt-4 font-display text-2xl tracking-tight text-foreground sm:text-4xl">
               CareFlow was born from real caregiving.
             </h2>
             <p className="mt-4 text-foreground/85">
@@ -559,17 +570,17 @@ export default function Landing() {
       </section>
 
       {/* STATS */}
-      <section className="mx-auto w-full max-w-6xl px-5 py-20">
+      <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-5 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <Pill>The invisible load</Pill>
-          <h2 className="mt-4 font-display text-3xl tracking-tight text-foreground sm:text-4xl">
+          <h2 className="mt-4 font-display text-2xl tracking-tight text-foreground sm:text-4xl">
             You were never meant to carry all of this alone.
           </h2>
         </div>
-        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 sm:grid-cols-4">
           {stats.map(s => (
             <GlassCard key={s.label} className="text-center">
-              <div className="font-display text-3xl text-foreground sm:text-4xl">{s.n}</div>
+              <div className="font-display text-2xl text-foreground sm:text-4xl">{s.n}</div>
               <div className="mt-2 text-xs text-muted-foreground">{s.label}</div>
             </GlassCard>
           ))}
@@ -577,10 +588,10 @@ export default function Landing() {
       </section>
 
       {/* QUIZ (embedded) */}
-      <section id="quiz" className="mx-auto w-full max-w-5xl px-5 pb-20">
+      <section id="quiz" className="mx-auto w-full max-w-5xl px-4 pb-14 sm:px-5 sm:pb-20">
         <div className="text-center">
           <Pill><Sparkles className="h-3 w-3" /> The Quiz</Pill>
-          <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl tracking-tight text-foreground sm:text-4xl">
+          <h2 className="mx-auto mt-4 max-w-2xl font-display text-2xl tracking-tight text-foreground sm:text-4xl">
             Find your caregiver archetype.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
@@ -588,14 +599,14 @@ export default function Landing() {
           </p>
         </div>
         <div
-          className="mt-10 overflow-hidden rounded-[2rem] border border-border/40 bg-[hsl(36_55%_97%)]/85 shadow-cozy backdrop-blur"
+          className="mt-8 overflow-hidden rounded-2xl border border-border/40 bg-[hsl(36_55%_97%)]/85 shadow-cozy backdrop-blur sm:mt-10 sm:rounded-[2rem]"
         >
           <CaregiverArchetypeQuiz embedded />
         </div>
         <div className="mt-6 flex justify-center">
           <Link
             to="/waitlist"
-            className="inline-flex items-center gap-2 rounded-full bg-[hsl(145_30%_28%)] px-6 py-3 text-sm font-medium text-[hsl(36_50%_96%)] shadow-cozy transition-transform hover:scale-[1.02]"
+            className="inline-flex items-center gap-2 rounded-full bg-[hsl(145_30%_28%)] px-5 py-3 text-center text-sm font-medium text-[hsl(36_50%_96%)] shadow-cozy transition-transform hover:scale-[1.02]"
           >
             <Heart className="h-4 w-4" /> Join the waitlist with your result
           </Link>
@@ -604,9 +615,9 @@ export default function Landing() {
 
       {/* TESTIMONIALS */}
       <section className="border-t border-border/40 bg-[hsl(36_50%_97%)]/60">
-        <div className="mx-auto w-full max-w-6xl px-5 py-20">
+        <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-5 sm:py-20">
           <div className="text-center text-xs uppercase tracking-widest text-muted-foreground">Loved by caregivers like you</div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 lg:grid-cols-5">
             {testimonials.map(t => (
               <GlassCard key={t.name} className="flex flex-col">
                 <div className="text-amber-500/80">★★★★★</div>
@@ -622,18 +633,18 @@ export default function Landing() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="mx-auto w-full max-w-6xl px-5 py-16">
-        <div className="relative overflow-hidden rounded-[2.5rem] p-10 text-[hsl(36_50%_96%)] shadow-cozy sm:p-14"
+      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-5 sm:py-16">
+        <div className="relative overflow-hidden rounded-3xl p-6 text-[hsl(36_50%_96%)] shadow-cozy sm:rounded-[2.5rem] sm:p-14"
           style={{ background: "linear-gradient(120deg, hsl(150 28% 22%), hsl(150 32% 16%))" }}>
           <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-center">
             <div className="text-center lg:text-left">
-              <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
+              <h2 className="font-display text-2xl tracking-tight sm:text-4xl">
                 Care for your day. Care for yourself.
               </h2>
               <p className="mt-3 max-w-md text-[hsl(36_45%_88%)]/85 mx-auto lg:mx-0">
                 CareFlow helps you create structure that feels supportive instead of overwhelming.
               </p>
-              <div className="mt-6 flex flex-wrap justify-center gap-3 lg:justify-start">
+              <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3 lg:justify-start">
                 <Link
                   to="/auth"
                   className="inline-flex items-center gap-2 rounded-full bg-[hsl(36_50%_96%)] px-6 py-3 text-sm font-medium text-[hsl(150_30%_18%)] transition-transform hover:scale-[1.02]"
@@ -660,7 +671,7 @@ export default function Landing() {
 
       {/* FOOTER */}
       <footer className="border-t border-border/40 bg-[hsl(36_50%_97%)]/60">
-        <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-12 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 sm:gap-10 sm:px-5 sm:py-12 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2.5">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-[hsl(145_30%_28%)] text-[hsl(36_50%_96%)]">
