@@ -1363,7 +1363,7 @@ html[data-atmosphere="blossom"] .cozy-card {
 */
 :root { --atmo-anim-scale: 1; }
 
-body[data-anim="off"] .atmo-ambient,
+body[data-anim="off"] .atmo-ambient { animation: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .atmo-ambient { animation: none !important; }
 }
