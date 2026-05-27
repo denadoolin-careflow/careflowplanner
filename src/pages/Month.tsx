@@ -207,10 +207,15 @@ export default function Month() {
               <span className="sm:hidden italic opacity-80">Tap any day's moon for guidance</span>
             </div>
           )}
-          <div className="grid grid-cols-7 gap-1 text-xs uppercase tracking-wider text-muted-foreground">
-            {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => <div key={d} className="px-2 py-1 text-center">{d}</div>)}
+          <div className="grid grid-cols-7 gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground sm:gap-1 sm:text-xs">
+            {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
+              <div key={d} className="px-1 py-1 text-center sm:px-2">
+                <span className="sm:hidden">{d[0]}</span>
+                <span className="hidden sm:inline">{d}</span>
+              </div>
+            ))}
           </div>
-          <div className="mt-1 grid grid-cols-7 gap-1">
+          <div className="mt-1 grid grid-cols-7 gap-0.5 sm:gap-1">
             {days.map(d => {
               const k = d.toISOString().slice(0,10);
               const inMonth = isSameMonth(d, cursor);
@@ -305,9 +310,9 @@ export default function Month() {
                     ) : <span />}
                     <div className={cn("text-right text-[10px] font-medium sm:text-[11px]", today && "text-primary")}>{format(d, "d")}</div>
                   </div>
-                  {/* Mobile: dot row indicator, max 4 dots */}
-                  {isMobile && inMonth && ev.length > 0 && (
-                    <div className="mt-0.5 flex flex-wrap gap-0.5">
+                  {/* Mobile (<md): dot row indicator, max 4 dots */}
+                  {inMonth && ev.length > 0 && (
+                    <div className="mt-0.5 flex flex-wrap gap-0.5 md:hidden">
                       {ev.slice(0, 4).map((it, i) => (
                         <span
                           key={i}
@@ -325,7 +330,7 @@ export default function Month() {
                       {ev.length > 4 && <span className="text-[8px] leading-none text-muted-foreground">+{ev.length - 4}</span>}
                     </div>
                   )}
-                  <div className="mt-0.5 hidden space-y-0.5 sm:block">
+                  <div className="mt-0.5 hidden space-y-0.5 md:block">
                     {ev.slice(0,3).map((it, i) => {
                       const isTask = it.kind === "task" && !!it.taskId;
                       const isAppt = it.kind === "appt" && !!it.apptId;
