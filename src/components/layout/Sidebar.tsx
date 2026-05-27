@@ -601,7 +601,7 @@ export function Sidebar() {
   }, [width]);
   return (
     <aside
-      className="hidden lg:flex relative shrink-0 border-r border-sidebar-border"
+      className="hidden lg:flex sticky top-0 self-start h-screen max-h-screen relative shrink-0 border-r border-sidebar-border"
       style={collapsed ? undefined : { width }}
     >
       <SidebarBody />
