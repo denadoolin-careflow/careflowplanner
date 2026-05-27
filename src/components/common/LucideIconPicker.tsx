@@ -56,9 +56,11 @@ interface Props {
   onChange: (v: string | undefined) => void;
   label?: string;
   className?: string;
+  /** Icon to display in the trigger when no explicit value is set. */
+  fallbackIcon?: LucideIcon;
 }
 
-export function LucideIconPicker({ value, onChange, label = "Icon", className }: Props) {
+export function LucideIconPicker({ value, onChange, label = "Icon", className, fallbackIcon }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
@@ -68,6 +70,7 @@ export function LucideIconPicker({ value, onChange, label = "Icon", className }:
   }, [query]);
 
   const Current = value?.startsWith("lc:") ? LUCIDE_MAP[value.slice(3)] : undefined;
+  const Display = Current ?? fallbackIcon;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -80,7 +83,7 @@ export function LucideIconPicker({ value, onChange, label = "Icon", className }:
           title={label}
           className={cn("h-9 w-9 shrink-0", className)}
         >
-          {Current ? <Current className="h-4 w-4" /> : <Shapes className="h-4 w-4 opacity-60" />}
+          {Display ? <Display className={cn("h-4 w-4", !Current && "opacity-70")} /> : <Shapes className="h-4 w-4 opacity-60" />}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="z-[70] w-72 p-3" align="start" collisionPadding={12}>
