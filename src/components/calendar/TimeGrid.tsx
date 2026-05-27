@@ -493,7 +493,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                                   />
                                 ) : (
                                   <span
-                                    className={cn("flex-1 truncate cursor-text", t.done && "line-through text-muted-foreground")}
+                                    className={cn("flex-1 min-w-0 whitespace-normal break-words cursor-text", t.done && "line-through text-muted-foreground")}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setInlineEditValue(t.label);

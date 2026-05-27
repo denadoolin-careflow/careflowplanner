@@ -112,7 +112,7 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick }: 
                       ? <ic.Icon className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
                       : <span className="shrink-0 text-sm leading-none" aria-hidden>{ic.char}</span>;
                   })()}
-                  <span className={cn("min-w-0 flex-1 truncate", isTask && r.done && "line-through text-muted-foreground")}>{r.label}</span>
+                  <span className={cn("min-w-0 flex-1 whitespace-normal break-words", isTask && r.done && "line-through text-muted-foreground")}>{r.label}</span>
                 </li>
                 );
               })}
