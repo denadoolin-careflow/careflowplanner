@@ -29,6 +29,7 @@ import { Link } from "react-router-dom";
 import { Flower2 } from "lucide-react";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
@@ -50,6 +51,7 @@ export default function Week() {
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const [lunarDate, setLunarDate] = useState<Date | null>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
@@ -146,13 +148,22 @@ export default function Week() {
             <SectionCard title="This week" accent="warm" action={
               <div className="flex items-center gap-2">
                 <QuickAddCalendarPopover days={days} />
-                <CalendarViewToggle value={view} onChange={setView} />
+                <div className="hidden sm:inline-flex">
+                  <CalendarViewToggle value={view} onChange={setView} />
+                </div>
               </div>
             }>
+              {/* Mobile: full-width view toggle right under Quick Add */}
+              <div className="-mx-1 mb-3 overflow-x-auto sm:hidden">
+                <div className="flex justify-center">
+                  <CalendarViewToggle value={view} onChange={setView} />
+                </div>
+              </div>
               <WeekRhythmRow
                 weekStart={start}
                 selectedDate={selectedDate}
                 onSelectDay={setSelectedDate}
+                onLunarOpen={setLunarDate}
                 className="mb-2"
               />
               {view === "schedule" && (
@@ -160,7 +171,7 @@ export default function Week() {
               )}
               {view === "parts" && (
                 <div className="space-y-4">
-                  {days.map(d => (
+                  {(isMobile ? [selectedDate] : days).map(d => (
                     <div key={d.toISOString()} className="space-y-2">
                       <div className="flex items-baseline justify-between">
                         <h3 className={cn(
@@ -182,7 +193,7 @@ export default function Week() {
                 </div>
               )}
               {view === "agenda" && (
-                <AgendaView days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
+                <AgendaView days={isMobile ? [selectedDate] : days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
               )}
             </SectionCard>
 
@@ -193,6 +204,7 @@ export default function Week() {
       {layout === "grid" && <UnscheduledTasksRail onTaskClick={setEditTaskId} />}
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
+      <DayLunarSheet date={lunarDate} open={!!lunarDate} onOpenChange={(o) => !o && setLunarDate(null)} />
     </div>
   );
 }
