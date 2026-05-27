@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Sparkles, X } from "lucide-react";
+import { Plus, Sparkles, X, Zap } from "lucide-react";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -41,21 +41,40 @@ export function CombinedFab() {
       className={cn("fixed z-40 flex flex-col items-end gap-2")}
       style={drag.style}
     >
-      {/* AI action — slides up when expanded */}
-      <button
-        type="button"
-        onClick={openAI}
-        aria-label="AI planning assistant"
+      {/* Expanded actions row: Quick add + AI */}
+      <div
         className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-full text-primary-foreground shadow-[var(--shadow-glow)]",
-          "bg-gradient-to-br from-primary to-accent transition-all duration-200 ease-out",
+          "flex items-center gap-2 transition-all duration-200 ease-out",
           expanded
             ? "translate-y-0 scale-100 opacity-100"
             : "pointer-events-none translate-y-3 scale-75 opacity-0",
         )}
       >
-        <Sparkles className="h-5 w-5" />
-      </button>
+        <button
+          type="button"
+          onClick={openQuickAdd}
+          aria-label="Quick add"
+          className={cn(
+            "flex h-12 w-12 items-center justify-center rounded-full text-primary-foreground shadow-cozy",
+            "bg-gradient-to-br from-secondary-foreground to-primary",
+            "transition-transform hover:scale-105 active:scale-95",
+          )}
+        >
+          <Zap className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={openAI}
+          aria-label="AI planning assistant"
+          className={cn(
+            "flex h-12 w-12 items-center justify-center rounded-full text-primary-foreground shadow-[var(--shadow-glow)]",
+            "bg-gradient-to-br from-primary to-accent",
+            "transition-transform hover:scale-105 active:scale-95",
+          )}
+        >
+          <Sparkles className="h-5 w-5" />
+        </button>
+      </div>
 
       {/* Main FAB */}
       <button
