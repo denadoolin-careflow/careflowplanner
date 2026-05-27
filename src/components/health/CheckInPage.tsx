@@ -39,6 +39,7 @@ export default function CheckInPage({ uid }: { uid: string }) {
     meds_taken: false,
     mindfulness_minutes: "",
     notes: "",
+    intention: "",
   });
   const [needs, setNeeds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +58,7 @@ export default function CheckInPage({ uid }: { uid: string }) {
             sleep_hours: data.sleep_hours ?? "",
             water_cups: data.water_cups ?? "",
             mindfulness_minutes: data.mindfulness_minutes ?? "",
+            intention: data.intention ?? "",
           });
         }
         setLoading(false);
@@ -77,6 +79,7 @@ export default function CheckInPage({ uid }: { uid: string }) {
       meds_taken: !!row.meds_taken,
       mindfulness_minutes: row.mindfulness_minutes === "" ? null : Number(row.mindfulness_minutes),
       notes: notesWithNeeds || null,
+      intention: row.intention?.trim() ? row.intention.trim() : null,
     };
     const { error } = await supabase.from("health_checkins").upsert(payload, { onConflict: "user_id,date" });
     if (error) toast.error(error.message);
