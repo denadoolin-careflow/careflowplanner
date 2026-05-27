@@ -4,7 +4,7 @@ import { BottomNav } from "./BottomNav";
 import { ThemeToggle } from "./ThemeToggle";
 import { AtmospherePicker } from "@/components/atmospheres/AtmospherePicker";
 import { AtmosphereAmbient } from "@/components/atmospheres/AtmosphereAmbient";
-import { useAutoAtmosphereResolver } from "@/lib/atmospheres";
+import { useAutoAtmosphereResolver, useAtmosphere } from "@/lib/atmospheres";
 import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
 import { AIAssistantFab } from "@/components/ai/AIAssistantFab";
 import { CombinedFab } from "@/components/quick-add/CombinedFab";
@@ -28,7 +28,9 @@ export function AppLayout() {
   const { pathname } = useLocation();
   const current = NAV.find(n => n.to === pathname) ?? NAV[0];
   useAutoAtmosphereResolver({ lowEnergy: state.settings.lowEnergyMode });
+  const { current: atmoId } = useAtmosphere();
   useEffect(() => { applyAnimIntensity(readAnimIntensity()); applyFontPrefs(); }, []);
+  useEffect(() => { applyFontPrefs(); }, [atmoId]);
 
   return (
     <div className="min-h-screen w-full gradient-dawn">
