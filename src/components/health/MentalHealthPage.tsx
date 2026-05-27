@@ -31,11 +31,12 @@ type Log = {
   gratitude: string | null;
   support_needed: string | null;
   notes: string | null;
+  intention: string | null;
 };
 
 const empty = {
   mood_score: 3, anxiety: 3, focus: 3, sensory_load: 3,
-  emotions: [] as string[], gratitude: "", support_needed: "", notes: "",
+  emotions: [] as string[], gratitude: "", support_needed: "", notes: "", intention: "",
 };
 
 export default function MentalHealthPage({ uid }: { uid: string }) {
@@ -62,6 +63,7 @@ export default function MentalHealthPage({ uid }: { uid: string }) {
         gratitude: todays.gratitude ?? "",
         support_needed: todays.support_needed ?? "",
         notes: todays.notes ?? "",
+        intention: todays.intention ?? "",
       });
     }
     setLoaded(true);
@@ -80,6 +82,7 @@ export default function MentalHealthPage({ uid }: { uid: string }) {
       gratitude: form.gratitude || null,
       support_needed: form.support_needed || null,
       notes: form.notes || null,
+      intention: form.intention?.trim() ? form.intention.trim() : null,
     }, { onConflict: "user_id,date" });
     if (error) return toast.error(error.message);
     toast.success("Felt and honored 💚");
