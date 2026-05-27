@@ -1,15 +1,16 @@
-import { Star, Check } from "lucide-react";
+import { Star, Check, Settings2 } from "lucide-react";
 import { Atmosphere, AtmosphereId } from "@/lib/atmospheres";
 import { cn } from "@/lib/utils";
 
 export function AtmosphereCard({
-  atmosphere, isActive, isFavorite, onApply, onToggleFavorite,
+  atmosphere, isActive, isFavorite, onApply, onToggleFavorite, onOpenSettings,
 }: {
   atmosphere: Atmosphere;
   isActive: boolean;
   isFavorite: boolean;
   onApply: (id: AtmosphereId) => void;
   onToggleFavorite: (id: AtmosphereId) => void;
+  onOpenSettings?: (id: AtmosphereId) => void;
 }) {
   const [c1, c2, c3, c4, c5, c6] = [...atmosphere.palette, atmosphere.palette[0]];
   const gradient = `linear-gradient(140deg, ${c3 ?? c1} 0%, ${c1} 45%, ${c4 ?? c2} 100%)`;
@@ -36,6 +37,16 @@ export function AtmosphereCard({
             <span key={i} className="h-3.5 w-3.5 rounded-full ring-2 ring-white/40" style={{ background: c }} />
           ))}
         </div>
+        {onOpenSettings && (
+          <button
+            type="button"
+            aria-label={`Customize ${atmosphere.name}`}
+            onClick={(e) => { e.stopPropagation(); onOpenSettings(atmosphere.id); }}
+            className="absolute right-9 top-2 rounded-full bg-black/20 p-1.5 text-white backdrop-blur-md transition hover:bg-black/30"
+          >
+            <Settings2 className="h-3.5 w-3.5" />
+          </button>
+        )}
         <button
           type="button"
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
