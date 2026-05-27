@@ -467,6 +467,14 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                                 >
                                   <Check className={cn("h-2.5 w-2.5 transition-opacity", t.done ? "opacity-100" : "opacity-0 group-hover/cb:opacity-100")} />
                                 </button>
+                                {(() => {
+                                  const taskRow = state.tasks.find(x => x.id === t.id);
+                                  if (!taskRow) return null;
+                                  const ic = resolveTaskIcon(taskRow);
+                                  return ic.kind === "lucide"
+                                    ? <ic.Icon className="h-3 w-3 shrink-0 text-muted-foreground/80" aria-hidden />
+                                    : <span className="shrink-0 text-[12px] leading-none" aria-hidden>{ic.char}</span>;
+                                })()}
                                 {inlineEditTaskId === t.id ? (
                                   <input
                                     autoFocus
