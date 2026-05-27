@@ -1369,3 +1369,21 @@ html[data-atmosphere="moonlit-plum"].dark .cozy-card {
   backdrop-filter: blur(14px) saturate(115%);
   -webkit-backdrop-filter: blur(14px) saturate(115%);
 }
+
+/* Remove focus outline on search/input fields rendered inside popovers,
+   dropdowns, dialogs, and command menus so the field blends with the
+   surrounding rounded container. */
+[data-radix-popper-content-wrapper] input:focus,
+[data-radix-popper-content-wrapper] input:focus-visible,
+[cmdk-input]:focus,
+[cmdk-input]:focus-visible,
+[role="listbox"] input:focus,
+[role="listbox"] input:focus-visible,
+[role="dialog"] [cmdk-input]:focus,
+[role="dialog"] [cmdk-input]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
