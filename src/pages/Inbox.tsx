@@ -167,6 +167,41 @@ function InboxInner() {
         placeholder="Capture anything — try “Call vet tomorrow at 3pm p2 #pet”"
       />
 
+      {tags.length > 0 && (
+        <div
+          data-no-swipe
+          className="sticky top-0 z-20 -mx-4 border-b border-border/60 bg-background/85 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:hidden"
+        >
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setTagFilter(null)}
+              className={cn(
+                "shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
+                !tagFilter ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+              )}
+              aria-pressed={!tagFilter}
+            >
+              All <span className="opacity-70">· {items.length}</span>
+            </button>
+            {tags.map(t => {
+              const active = tagFilter?.toLowerCase() === t.name.toLowerCase();
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTagFilter(active ? null : t.name)}
+                  className="shrink-0"
+                  aria-pressed={active}
+                >
+                  <TagChip name={t.name} subtle={!active} size="sm" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {tags.length > 0 && tagLibraryVisible && (
         <div className="rounded-2xl border border-border/60 bg-card/40 p-2.5">
           <div className="mb-1.5 flex items-center justify-between">
