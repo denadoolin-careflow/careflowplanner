@@ -793,7 +793,7 @@ export function BlockEditor({
           )}
         </BubbleMenu>
       )}
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="pl-3 sm:pl-4" />
     </div>
   );
 }
