@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
-  Loader2, MapPin, Moon, MoonStar, Search, Sun, Wind, Zap, ChevronDown, Clock,
+  Loader2, MapPin, Moon, MoonStar, Search, Sun, Zap, ChevronDown, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
