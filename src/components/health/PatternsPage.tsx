@@ -215,7 +215,7 @@ export default function PatternsPage({ uid }: { uid: string }) {
                     <BarChart data={emotionCounts} layout="vertical" margin={{ left: 16 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
                       <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
-                      <YAxis type="category" dataKey="emotion" tick={{ fontSize: 11, textTransform: "capitalize" }} width={80} />
+                      <YAxis type="category" dataKey="emotion" tick={{ fontSize: 11 }} width={80} />
                       <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", fontSize: 12 }} />
                       <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
                     </BarChart>
