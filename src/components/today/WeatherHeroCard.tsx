@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
-  Loader2, MapPin, Moon, MoonStar, Search, Sun, Wind, Zap, ChevronDown,
+  Loader2, MapPin, Moon, MoonStar, Search, Sun, Wind, Zap, ChevronDown, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import {
   fetchWeather, geocodeCity, loadSavedPlace, reverseLabel, savePlace,
-  type DayPartForecast, type GeoPlace, type WeatherCondition, type WeatherSnapshot,
+  type DayPartForecast, type GeoPlace, type HourlyForecast, type WeatherCondition, type WeatherSnapshot,
 } from "@/lib/weather";
 import { dayPartSuggestion, setWeatherSnapshot, useTempUnit, cToF, type TempUnit } from "@/lib/weather-store";
 
 const fmtTemp = (c: number, u: TempUnit) => `${u === "F" ? cToF(c) : Math.round(c)}°`;
+const fmtHour = (h: number) => {
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12} ${period}`;
+};
 
 function ConditionIcon({ condition, isNight, className }: { condition: WeatherCondition; isNight?: boolean; className?: string }) {
   const cls = cn("h-5 w-5", className);
