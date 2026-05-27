@@ -78,6 +78,32 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
   const longPressTimer = useRef<number | null>(null);
   const longPressed = useRef(false);
   const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null);
+  const savedScrollY = useRef<number | null>(null);
+
+  // Preserve window scroll position when the task editor dialog opens/closes.
+  // Radix Dialog locks body scroll which can jump the page on mobile; this
+  // restores the user's place after closing.
+  useEffect(() => {
+    if (open) {
+      savedScrollY.current = window.scrollY;
+      return;
+    }
+    const y = savedScrollY.current;
+    if (y == null) return;
+    savedScrollY.current = null;
+    // Wait for Radix to release scroll lock before restoring.
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(() => {
+        window.scrollTo({ top: y, left: 0, behavior: "auto" });
+      });
+      (window as any).__taskRowRestoreRaf = raf2;
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      const r = (window as any).__taskRowRestoreRaf;
+      if (r) cancelAnimationFrame(r);
+    };
+  }, [open]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
