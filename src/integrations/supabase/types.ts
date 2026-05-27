@@ -1800,6 +1800,54 @@ export type Database = {
         }
         Relationships: []
       }
+      loved_ones: {
+        Row: {
+          avatar_emoji: string | null
+          avatar_url: string | null
+          birth_date: string | null
+          color: string | null
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          notes: string | null
+          relation: string | null
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_emoji?: string | null
+          avatar_url?: string | null
+          birth_date?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          notes?: string | null
+          relation?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_emoji?: string | null
+          avatar_url?: string | null
+          birth_date?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          notes?: string | null
+          relation?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_preferences: {
         Row: {
           allergies: string[]
@@ -2052,6 +2100,111 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      memories: {
+        Row: {
+          atmosphere: string | null
+          attachments: Json
+          beautiful_note: string | null
+          calendar_event_id: string | null
+          challenging_note: string | null
+          chapter: string | null
+          cover_index: number
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          is_favorite: boolean
+          is_pinned: boolean
+          journal_entry_id: string | null
+          location: string | null
+          loved_one_ids: string[]
+          meaningful_note: string | null
+          memory_type: string
+          mood: string | null
+          moon_phase: string | null
+          project_id: string | null
+          recipient_ids: string[]
+          reflection: string | null
+          remember_note: string | null
+          routine_id: string | null
+          season: string | null
+          tags: string[]
+          time: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          voice_note_path: string | null
+        }
+        Insert: {
+          atmosphere?: string | null
+          attachments?: Json
+          beautiful_note?: string | null
+          calendar_event_id?: string | null
+          challenging_note?: string | null
+          chapter?: string | null
+          cover_index?: number
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          is_favorite?: boolean
+          is_pinned?: boolean
+          journal_entry_id?: string | null
+          location?: string | null
+          loved_one_ids?: string[]
+          meaningful_note?: string | null
+          memory_type?: string
+          mood?: string | null
+          moon_phase?: string | null
+          project_id?: string | null
+          recipient_ids?: string[]
+          reflection?: string | null
+          remember_note?: string | null
+          routine_id?: string | null
+          season?: string | null
+          tags?: string[]
+          time?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          voice_note_path?: string | null
+        }
+        Update: {
+          atmosphere?: string | null
+          attachments?: Json
+          beautiful_note?: string | null
+          calendar_event_id?: string | null
+          challenging_note?: string | null
+          chapter?: string | null
+          cover_index?: number
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          is_favorite?: boolean
+          is_pinned?: boolean
+          journal_entry_id?: string | null
+          location?: string | null
+          loved_one_ids?: string[]
+          meaningful_note?: string | null
+          memory_type?: string
+          mood?: string | null
+          moon_phase?: string | null
+          project_id?: string | null
+          recipient_ids?: string[]
+          reflection?: string | null
+          remember_note?: string | null
+          routine_id?: string | null
+          season?: string | null
+          tags?: string[]
+          time?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          voice_note_path?: string | null
         }
         Relationships: []
       }
