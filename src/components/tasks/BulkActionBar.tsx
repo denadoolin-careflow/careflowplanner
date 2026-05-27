@@ -83,17 +83,17 @@ export function BulkActionBar() {
     <div className={cn(
       "fixed inset-x-0 bottom-20 z-40 flex justify-center px-4 sm:bottom-6 pointer-events-none",
     )}>
-      <div className="pointer-events-auto flex flex-wrap items-center gap-1 rounded-full border border-border/60 bg-card/95 px-2 py-1.5 shadow-[var(--shadow-cozy)] backdrop-blur-md">
-        <span className="px-2 text-xs font-medium tabular-nums text-muted-foreground">
+      <div className="pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border/60 bg-card/95 px-2 py-1.5 shadow-[var(--shadow-cozy)] backdrop-blur-md scrollbar-none sm:flex-wrap sm:overflow-visible">
+        <span className="shrink-0 px-2 text-xs font-medium tabular-nums text-muted-foreground">
           {count} selected
         </span>
-        <div className="h-5 w-px bg-border/60" />
-        <Button size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full" onClick={complete}>
+        <div className="h-5 w-px shrink-0 bg-border/60" />
+        <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1.5 rounded-full" onClick={complete}>
           <Check className="h-3.5 w-3.5" /> Complete
         </Button>
         <Popover open={datePopOpen} onOpenChange={setDatePopOpen}>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full">
+            <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1.5 rounded-full">
               <CalendarDays className="h-3.5 w-3.5" /> Schedule
             </Button>
           </PopoverTrigger>
@@ -108,7 +108,7 @@ export function BulkActionBar() {
         </Popover>
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full">
+            <Button size="sm" variant="ghost" className="hidden h-8 shrink-0 gap-1.5 rounded-full sm:inline-flex">
               <FolderKanban className="h-3.5 w-3.5" /> Project
             </Button>
           </PopoverTrigger>
@@ -138,7 +138,7 @@ export function BulkActionBar() {
         </Popover>
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full">
+            <Button size="sm" variant="ghost" className="hidden h-8 shrink-0 gap-1.5 rounded-full sm:inline-flex">
               <Tag className="h-3.5 w-3.5" /> Area
             </Button>
           </PopoverTrigger>
@@ -154,13 +154,13 @@ export function BulkActionBar() {
             ))}
           </PopoverContent>
         </Popover>
-        <Button size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full text-destructive hover:text-destructive" onClick={remove}>
+        <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1.5 rounded-full text-destructive hover:text-destructive" onClick={remove}>
           <Trash2 className="h-3.5 w-3.5" /> Delete
         </Button>
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="ghost" className="h-8 gap-1.5 rounded-full">
-              <Coffee className="h-3.5 w-3.5" /> Not today
+            <Button size="sm" variant="ghost" className="h-8 shrink-0 gap-1.5 rounded-full">
+              <Coffee className="h-3.5 w-3.5" /> Snooze
             </Button>
           </PopoverTrigger>
           <PopoverContent align="center" className="w-48 p-1">
@@ -172,8 +172,8 @@ export function BulkActionBar() {
             <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted" onClick={() => parkUntil(null)}>Indefinitely</button>
           </PopoverContent>
         </Popover>
-        <div className="h-5 w-px bg-border/60" />
-        <Button size="sm" variant="ghost" className="h-8 w-8 rounded-full p-0" onClick={clear} aria-label="Clear selection">
+        <div className="h-5 w-px shrink-0 bg-border/60" />
+        <Button size="sm" variant="ghost" className="h-8 w-8 shrink-0 rounded-full p-0" onClick={clear} aria-label="Clear selection">
           <X className="h-3.5 w-3.5" />
         </Button>
       </div>
