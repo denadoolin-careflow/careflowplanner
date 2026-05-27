@@ -272,6 +272,24 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
             {task.title}
           </button>
         )}
+        {!editing && hasSubs && (
+          <div className="mt-1 flex items-center gap-1.5">
+            <Progress
+              value={pct}
+              className={cn(
+                "h-1 flex-1 transition-all",
+                allDone && "[&>div]:bg-primary [&>div]:shadow-[0_0_8px_hsl(var(--primary)/0.55)]",
+              )}
+            />
+            <span className={cn(
+              "flex items-center gap-0.5 text-[9px] tabular-nums leading-none",
+              allDone ? "font-semibold text-primary" : "text-muted-foreground",
+            )}>
+              {allDone && <Check className="h-2 w-2" />}
+              {doneSubs}/{subtasks.length}
+            </span>
+          </div>
+        )}
         {!editing && (showArea || task.dueDate || task.dayPart || task.priority === "high" || task.resetItemId || (task.tags?.length ?? 0) > 0) && (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {showArea && (
@@ -362,24 +380,6 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       )}
     </RowShell>
     <QuickEditPopover task={task} open={quickEditOpen} onOpenChange={setQuickEditOpen} />
-    {hasSubs && (
-      <div className="ml-8 mr-2 mt-0.5 mb-1 flex items-center gap-2">
-        <Progress
-          value={pct}
-          className={cn(
-            "h-1.5 flex-1 transition-all",
-            allDone && "[&>div]:bg-primary [&>div]:shadow-[0_0_10px_hsl(var(--primary)/0.6)]",
-          )}
-        />
-        <span className={cn(
-          "flex items-center gap-0.5 text-[10px] tabular-nums",
-          allDone ? "font-semibold text-primary" : "text-muted-foreground",
-        )}>
-          {allDone && <Check className="h-2.5 w-2.5" />}
-          {doneSubs}/{subtasks.length}
-        </span>
-      </div>
-    )}
     {expanded && (
       <div className="ml-8 space-y-1 border-l border-border/40 pl-2">
         {subtasks.map(s => <TaskRow key={s.id} task={s} dense showArea={false} />)}
