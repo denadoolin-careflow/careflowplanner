@@ -195,6 +195,29 @@ function TodayInner() {
                       <Sparkles className="mr-1 h-3.5 w-3.5" /> Plan
                     </Button>
                   </div>
+                  <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1">
+                    <Button
+                      size="sm" variant="ghost"
+                      className={cn("h-7 rounded-full px-3 text-xs bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
+                      aria-current="page"
+                    >
+                      Today
+                    </Button>
+                    <Button
+                      size="sm" variant="ghost"
+                      className="h-7 rounded-full px-3 text-xs"
+                      onClick={() => navigate("/week")}
+                    >
+                      Week
+                    </Button>
+                    <Button
+                      size="sm" variant="ghost"
+                      className="h-7 rounded-full px-3 text-xs"
+                      onClick={() => navigate("/month")}
+                    >
+                      Month
+                    </Button>
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
