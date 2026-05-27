@@ -340,6 +340,72 @@ export default function MemoriesPage() {
                 )}
               </PopoverContent>
             </Popover>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5" disabled={filtered.length === 0}>
+                  <Download className="h-3.5 w-3.5" /> Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-xs">
+                  {filtered.length} memor{filtered.length === 1 ? "y" : "ies"} in current view
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    exportMemoriesPDF(filtered, {
+                      scopeLabel: personName ? `With ${personName}` : (typeFilter !== "all" ? `${MEMORY_TYPES.find((t) => t.value === typeFilter)?.label}` : favoritesOnly ? "Favorite moments" : "All memories"),
+                      favoritesOnly,
+                      recipients: state.recipients,
+                      lovedOnes,
+                    });
+                    toast.success("PDF timeline downloaded");
+                  }}
+                >
+                  <FileText className="mr-2 h-4 w-4" /> Timeline PDF (current view)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    exportMemoriesPDF(filtered.filter((m) => m.isFavorite), {
+                      scopeLabel: "Favorite moments",
+                      favoritesOnly: true,
+                      recipients: state.recipients,
+                      lovedOnes,
+                    });
+                    toast.success("Favorites PDF downloaded");
+                  }}
+                  disabled={filtered.filter((m) => m.isFavorite).length === 0}
+                >
+                  <Heart className="mr-2 h-4 w-4" /> Favorites only PDF
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    exportMemoriesJSON(filtered, {
+                      scopeLabel: personName ? `With ${personName}` : "Current view",
+                      favoritesOnly,
+                      recipients: state.recipients,
+                      lovedOnes,
+                    });
+                    toast.success("JSON downloaded");
+                  }}
+                >
+                  <FileJson className="mr-2 h-4 w-4" /> JSON (current view)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    exportMemoriesJSON(memories, {
+                      scopeLabel: "Full archive",
+                      recipients: state.recipients,
+                      lovedOnes,
+                    });
+                    toast.success("Full archive JSON downloaded");
+                  }}
+                >
+                  <FileJson className="mr-2 h-4 w-4" /> JSON (full archive)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)} className="ml-auto">
               <TabsList className="bg-[hsl(20_60%_96%)]">
                 <TabsTrigger value="gallery"><LayoutGrid className="mr-1 h-3.5 w-3.5" />Gallery</TabsTrigger>
