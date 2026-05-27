@@ -250,6 +250,53 @@ export default function PatternsPage({ uid }: { uid: string }) {
 
   const topCorrelations = correlations.slice(0, 3);
 
+  // ------ Intention patterns over time ------
+  const intentionTimeline = useMemo(() => {
+    const map = new Map<string, { date: string; checkin?: string; mental?: string }>();
+    checkins.forEach(c => {
+      if (!c.intention) return;
+      const row = map.get(c.date) ?? { date: c.date };
+      row.checkin = c.intention;
+      map.set(c.date, row);
+    });
+    mental.forEach(m => {
+      if (!m.intention) return;
+      const row = map.get(m.date) ?? { date: m.date };
+      row.mental = m.intention;
+      map.set(m.date, row);
+    });
+    return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
+  }, [mental, checkins]);
+
+  const intentionWords = useMemo(() => {
+    const stop = new Set(["the","a","an","to","of","and","with","in","on","for","my","be","is","i","am","this","that","at","it","as","by","from","but","or","so","do","not"]);
+    const counts: Record<string, number> = {};
+    intentionTimeline.forEach(r => {
+      const txt = [r.checkin, r.mental].filter(Boolean).join(" ").toLowerCase();
+      txt.replace(/[^\p{L}\s']/gu, " ").split(/\s+/).forEach(w => {
+        const word = w.trim();
+        if (word.length < 3 || stop.has(word)) return;
+        counts[word] = (counts[word] || 0) + 1;
+      });
+    });
+    return Object.entries(counts)
+      .map(([word, count]) => ({ word, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+  }, [intentionTimeline]);
+
+  const intentionFlow = useMemo(() => {
+    const days: { date: string; count: number; label: string; intentions: string[] }[] = [];
+    for (let i = range - 1; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const iso = d.toISOString().slice(0, 10);
+      const row = intentionTimeline.find(r => r.date === iso);
+      const arr = [row?.checkin, row?.mental].filter(Boolean) as string[];
+      days.push({ date: iso, label: iso.slice(5), count: arr.length, intentions: arr });
+    }
+    return days;
+  }, [intentionTimeline, range]);
+
   // Radar data for phase × wellbeing
   const radarData = useMemo(() => {
     if (!byPhase) return [];
