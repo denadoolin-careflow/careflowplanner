@@ -220,23 +220,6 @@ export default function LunarLivingPage() {
     reload();
   }
 
-  const next3Phases = useMemo(() => {
-    const out: { date: Date; phase: MoonPhase }[] = [];
-    let last: MoonPhase | null = null;
-    for (let i = 0; i < 32 && out.length < 4; i++) {
-      const d = addDays(new Date(), i);
-      const p = getMoonPhase(d);
-      if (
-        (p === "new" || p === "first-quarter" || p === "full" || p === "last-quarter") &&
-        p !== last
-      ) {
-        out.push({ date: d, phase: p });
-        last = p;
-      }
-    }
-    return out;
-  }, []);
-
   return (
     <div className="space-y-6">
       <LunarPhaseWidget date={selected} />
