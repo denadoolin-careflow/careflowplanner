@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { routines as routinesApi, useRoutines, ROUTINE_SLOTS, SLOT_LABEL, type RoutineSlot } from "@/lib/routines";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
 
 const SLOT_LABELS = SLOT_LABEL;
 
@@ -28,7 +29,10 @@ export function RoutinesStrip() {
   const { state } = useStore();
   const { routines, loaded } = useRoutines();
   const [prefs, setPrefs] = useState(readPrefs);
-  const { open, person, slot } = prefs;
+  const location = useLocation();
+  const forceClosed = location.pathname.startsWith("/week");
+  const { person, slot } = prefs;
+  const open = forceClosed ? false : prefs.open;
   const update = (patch: Partial<typeof prefs>) => {
     setPrefs(prev => { const next = { ...prev, ...patch }; writePrefs(next); return next; });
   };
