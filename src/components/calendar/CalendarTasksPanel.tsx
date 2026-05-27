@@ -4,6 +4,11 @@ import { TaskRow } from "@/components/cards/TaskRow";
 import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { ListTodo } from "lucide-react";
 import { format } from "date-fns";
+import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
+import { useLongPressDrag } from "@/lib/long-press-drag";
+import { GripVertical } from "lucide-react";
+import type { Task } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface Props {
   days: Date[];
@@ -37,8 +42,44 @@ export function CalendarTasksPanel({ days, title }: Props) {
           <div className="rounded-lg border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground">
             No tasks scheduled for this {days.length === 1 ? "day" : "range"}.
           </div>
-        ) : tasks.map(t => <TaskRow key={t.id} task={t} dense />)}
+        ) : tasks.map(t => <SchedulableTaskRow key={t.id} task={t} />)}
       </div>
+      {tasks.length > 0 && (
+        <p className="mt-2 px-1 text-[10px] text-muted-foreground">
+          Drag (or long-press on mobile) a task onto a time slot to schedule it.
+        </p>
+      )}
     </section>
+  );
+}
+
+/** Wraps a TaskRow so it can be dragged onto TimeGrid / DayParts / Agenda views.
+ *  Uses HTML5 drag on desktop and long-press-drag (with haptics) on touch. */
+function SchedulableTaskRow({ task }: { task: Task }) {
+  const drag = useLongPressDrag(
+    () => ({ type: "task", id: task.id, label: task.title }),
+  );
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(TASK_DRAG_MIME, task.id);
+        e.dataTransfer.setData("text/plain", task.title);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onPointerDown={drag.onPointerDown}
+      className={cn(
+        "group relative flex items-stretch gap-0 rounded-xl",
+        "touch-none cursor-grab active:cursor-grabbing",
+      )}
+      title="Drag onto a time slot to schedule"
+    >
+      <div className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-60">
+        <GripVertical className="h-3 w-3 text-muted-foreground" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <TaskRow task={task} dense />
+      </div>
+    </div>
   );
 }
