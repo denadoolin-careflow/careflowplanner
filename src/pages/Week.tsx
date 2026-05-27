@@ -27,6 +27,7 @@ import { WeekRhythmRow } from "@/components/rhythm/WeekRhythmRow";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 import { Link } from "react-router-dom";
 import { Flower2 } from "lucide-react";
+import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
@@ -103,6 +104,7 @@ export default function Week() {
             <div className="mt-3"><WeekNavigator weekStart={start} onChange={setStart} /></div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+          <ScopeNavToggle active="week" />
           <Link
             to="/reset/week"
             className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
