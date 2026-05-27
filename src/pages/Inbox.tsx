@@ -17,6 +17,7 @@ import { useTags } from "@/hooks/use-tags";
 import { TagChip } from "@/components/tags/TagChip";
 import { Link } from "react-router-dom";
 import { Tags as TagsIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Suggestion {
   task_id: string;
