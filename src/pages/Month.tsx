@@ -34,6 +34,7 @@ import { prefetchMoonMonth } from "@/lib/moon-providers";
 import { useTimeBlocks, colorClasses } from "@/lib/time-blocks";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
@@ -53,6 +54,7 @@ export default function Month() {
   const [view, setView] = useState<CalView>("schedule");
   const [showMoon, setShowMoon] = useState(false);
   const [sheetISO, setSheetISO] = useState<string | null>(null);
+  const [lunarDate, setLunarDate] = useState<Date | null>(null);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
   useEffect(() => { void prefetchMoonMonth(cursor, { neighbors: true }); }, [cursor]);
 
@@ -173,9 +175,15 @@ export default function Month() {
             >
               <Moon className="h-3.5 w-3.5" /> Moon
             </button>
-            <CalendarViewToggle value={view} onChange={setView} />
+            <div className="hidden sm:inline-flex">
+              <CalendarViewToggle value={view} onChange={setView} />
+            </div>
           </div>
         }>
+          {/* Mobile: full-width view toggle under Quick Add */}
+          <div className="-mx-1 mb-3 flex justify-center overflow-x-auto sm:hidden">
+            <CalendarViewToggle value={view} onChange={setView} />
+          </div>
           {view === "agenda" ? (
             <AgendaView
               days={monthDays}
@@ -194,6 +202,7 @@ export default function Month() {
                   {ELEMENT_STYLE[el].label}
                 </span>
               ))}
+              <span className="sm:hidden italic opacity-80">Tap any day's moon for guidance</span>
             </div>
           )}
           <div className="grid grid-cols-7 gap-1 text-xs uppercase tracking-wider text-muted-foreground">
