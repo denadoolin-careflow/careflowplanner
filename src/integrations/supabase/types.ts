@@ -2125,12 +2125,14 @@ export type Database = {
           memory_type: string
           mood: string | null
           moon_phase: string | null
+          privacy: string
           project_id: string | null
           recipient_ids: string[]
           reflection: string | null
           remember_note: string | null
           routine_id: string | null
           season: string | null
+          shared_loved_one_ids: string[]
           tags: string[]
           time: string | null
           title: string
@@ -2159,12 +2161,14 @@ export type Database = {
           memory_type?: string
           mood?: string | null
           moon_phase?: string | null
+          privacy?: string
           project_id?: string | null
           recipient_ids?: string[]
           reflection?: string | null
           remember_note?: string | null
           routine_id?: string | null
           season?: string | null
+          shared_loved_one_ids?: string[]
           tags?: string[]
           time?: string | null
           title: string
@@ -2193,12 +2197,14 @@ export type Database = {
           memory_type?: string
           mood?: string | null
           moon_phase?: string | null
+          privacy?: string
           project_id?: string | null
           recipient_ids?: string[]
           reflection?: string | null
           remember_note?: string | null
           routine_id?: string | null
           season?: string | null
+          shared_loved_one_ids?: string[]
           tags?: string[]
           time?: string | null
           title?: string
