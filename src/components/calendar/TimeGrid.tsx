@@ -19,6 +19,7 @@ import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { AREAS } from "@/lib/types";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { IconPicker } from "@/components/common/IconPicker";
+import { resolveTaskIcon } from "@/lib/task-icons";
 
 const CLEANING_ZONES = ["Kitchen","Bathroom","Bedrooms","Living","Laundry","Entryway","Outdoor","Whole home"] as const;
 
