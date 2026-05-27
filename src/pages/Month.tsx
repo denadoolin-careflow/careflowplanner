@@ -30,6 +30,8 @@ import { useCycle } from "@/lib/cycle-store";
 import { phaseForDate, PHASE_META } from "@/lib/cycle";
 import { prefetchMoonMonth } from "@/lib/moon-providers";
 import { useTimeBlocks, colorClasses } from "@/lib/time-blocks";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
@@ -38,6 +40,7 @@ const BLOCK_DRAG_MIME = "application/x-careflow-block";
 export default function Month() {
   const { state, updateTask, updateAppointment, toggleTask } = useStore();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { settings: cycleSettings, periods: cyclePeriods } = useCycle();
   const [cursor, setCursor] = useState(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
@@ -47,6 +50,7 @@ export default function Month() {
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [view, setView] = useState<CalView>("schedule");
   const [showMoon, setShowMoon] = useState(false);
+  const [sheetISO, setSheetISO] = useState<string | null>(null);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
   useEffect(() => { void prefetchMoonMonth(cursor, { neighbors: true }); }, [cursor]);
 
@@ -123,28 +127,28 @@ export default function Month() {
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-6">
-        <div className="cozy-card gradient-warm flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="cozy-card gradient-warm flex flex-col gap-3 p-4 sm:p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
               {personalGreeting(state.settings.name)} <span className="opacity-60">· Month of</span>
             </p>
-            <h2 className="font-display text-3xl font-semibold sm:text-4xl">{format(cursor, "MMMM yyyy")}</h2>
+            <h2 className="font-display text-2xl font-semibold sm:text-4xl">{format(cursor, "MMMM yyyy")}</h2>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="no-scrollbar -mx-4 flex items-center gap-1 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
             <ScopeNavToggle active="month" className="mr-1" />
-            <Button variant="ghost" size="icon" onClick={() => setCursor(subMonths(cursor, 1))} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setCursor(subMonths(cursor, 1))} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
             <DayPickerButton date={cursor} onChange={setCursor} label={format(cursor, "MMM yyyy")} />
-            <Button variant="ghost" size="sm" className="h-8 px-3 text-xs" onClick={() => setCursor(new Date())}>Today</Button>
-            <Button variant="ghost" size="icon" onClick={() => setCursor(addMonths(cursor, 1))} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="sm" className="h-8 shrink-0 px-3 text-xs" onClick={() => setCursor(new Date())}>Today</Button>
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setCursor(addMonths(cursor, 1))} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
             <Link
               to="/reset/month"
-              className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
+              className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
             >
               <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
             </Link>
             <Link
               to="/month/overview"
-              className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-primary/15"
+              className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-primary/15"
             >
               <Moon className="h-3.5 w-3.5" /> Monthly overview
             </Link>
