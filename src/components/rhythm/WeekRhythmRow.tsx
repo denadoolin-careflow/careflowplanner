@@ -10,6 +10,7 @@ interface Props {
   weekStart: Date;
   selectedDate?: Date;
   onSelectDay?: (d: Date) => void;
+  onLunarOpen?: (d: Date) => void;
   className?: string;
 }
 
@@ -19,7 +20,7 @@ interface Props {
  * label, zodiac sign, and element tint per day. The moon glyph + date are
  * clickable links to the Today page; tapping the cell selects that day.
  */
-export function WeekRhythmRow({ weekStart, selectedDate, onSelectDay, className }: Props) {
+export function WeekRhythmRow({ weekStart, selectedDate, onSelectDay, onLunarOpen, className }: Props) {
   const [on] = useRhythmForecastEnabled();
   useMoonDataVersion();
   const navigate = useNavigate();
@@ -44,9 +45,10 @@ export function WeekRhythmRow({ weekStart, selectedDate, onSelectDay, className 
             const isToday = isSameDay(d, today);
             const isSelected = selectedDate ? isSameDay(d, selectedDate) : false;
             const iso = format(d, "yyyy-MM-dd");
-            const goToday = (e: React.MouseEvent | React.KeyboardEvent) => {
+            const openLunar = (e: React.MouseEvent | React.KeyboardEvent) => {
               e.stopPropagation();
-              navigate(`/today?date=${iso}`);
+              if (onLunarOpen) onLunarOpen(d);
+              else navigate(`/today?date=${iso}`);
             };
             return (
               <button
@@ -65,20 +67,20 @@ export function WeekRhythmRow({ weekStart, selectedDate, onSelectDay, className 
                 <span
                   role="link"
                   tabIndex={0}
-                  onClick={goToday}
-                  onKeyDown={(e) => { if (e.key === "Enter") goToday(e); }}
+                  onClick={openLunar}
+                  onKeyDown={(e) => { if (e.key === "Enter") openLunar(e); }}
                   className="cursor-pointer rounded px-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-primary hover:underline"
-                  title={`Open Today — ${format(d, "EEE MMM d")}`}
+                  title={`Plan with ${format(d, "EEE MMM d")}`}
                 >
                   {format(d, "EEE d")}
                 </span>
                 <span
                   role="link"
                   tabIndex={0}
-                  onClick={goToday}
-                  onKeyDown={(e) => { if (e.key === "Enter") goToday(e); }}
+                  onClick={openLunar}
+                  onKeyDown={(e) => { if (e.key === "Enter") openLunar(e); }}
                   className="cursor-pointer rounded transition-transform hover:scale-110"
-                  title={`${f.phaseLabel} in ${f.sign.sign} — open Today`}
+                  title={`${f.phaseLabel} in ${f.sign.sign} — plan with this day`}
                 >
                   <MoonGlyph date={d} size={22} />
                 </span>
