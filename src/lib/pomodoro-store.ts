@@ -200,6 +200,17 @@ export const pomodoro = {
     }
     emit();
   },
+  /** Update focus/break durations live. Clamps remaining to the new total for the active mode. */
+  setDurations(opts: { focusSeconds?: number; breakSeconds?: number }) {
+    const focusSeconds = Math.max(60, Math.min(180 * 60, opts.focusSeconds ?? state.focusSeconds));
+    const breakSeconds = Math.max(30, Math.min(60 * 60, opts.breakSeconds ?? state.breakSeconds));
+    const total = state.mode === "focus" ? focusSeconds : breakSeconds;
+    const prevTotal = state.mode === "focus" ? state.focusSeconds : state.breakSeconds;
+    // If session idle (full bar) or shorter than previous, snap remaining to new total.
+    const idleAtFull = state.remaining === prevTotal;
+    const remaining = idleAtFull ? total : Math.min(state.remaining, total);
+    set({ focusSeconds, breakSeconds, remaining, templateId: null, templateLabel: null });
+  },
   setOnSessionEnd(fn: ((mode: PomodoroMode) => void) | null) { onTickEvent = fn; },
 };
 

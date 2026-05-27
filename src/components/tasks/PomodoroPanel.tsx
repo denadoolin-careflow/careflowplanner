@@ -1,5 +1,9 @@
-import { BookOpen, Brain, Coffee, Heart, Home, Pause, Play, RotateCcw, Sparkles, Square, Timer } from "lucide-react";
+import { BookOpen, Brain, Coffee, Heart, Home, Pause, Pencil, Play, RotateCcw, Sparkles, Square, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   formatPomoTime,
@@ -42,11 +46,17 @@ export function PomodoroPanel({ className, compact = false }: PomodoroPanelProps
             </span>
           )}
         </div>
-        {s.taskId && (
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-[11px]" onClick={() => pomodoro.stop()}>
-            <Square className="mr-1 h-3 w-3" /> end
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          <DurationEditor
+            focusSeconds={s.focusSeconds}
+            breakSeconds={s.breakSeconds}
+          />
+          {s.taskId && (
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-[11px]" onClick={() => pomodoro.stop()}>
+              <Square className="mr-1 h-3 w-3" /> end
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
@@ -170,5 +180,112 @@ function TemplateChip({ template }: { template: PomodoroTemplate }) {
       <span className="font-medium">{template.label}</span>
       <span className="text-[10px] text-muted-foreground">· {template.description}</span>
     </button>
+  );
+}
+
+function DurationEditor({ focusSeconds, breakSeconds }: { focusSeconds: number; breakSeconds: number }) {
+  const [open, setOpen] = useState(false);
+  const [focusMin, setFocusMin] = useState(Math.round(focusSeconds / 60));
+  const [breakMin, setBreakMin] = useState(Math.round(breakSeconds / 60));
+
+  // Sync local fields when store values change (e.g. switching templates).
+  useEffect(() => { setFocusMin(Math.round(focusSeconds / 60)); }, [focusSeconds]);
+  useEffect(() => { setBreakMin(Math.round(breakSeconds / 60)); }, [breakSeconds]);
+
+  const clamp = (n: number, min: number, max: number) =>
+    Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : min;
+
+  const apply = () => {
+    const f = clamp(focusMin, 1, 180);
+    const b = clamp(breakMin, 1, 60);
+    setFocusMin(f); setBreakMin(b);
+    pomodoro.setDurations({ focusSeconds: f * 60, breakSeconds: b * 60 });
+    setOpen(false);
+  };
+
+  const PRESETS: Array<{ f: number; b: number; label: string }> = [
+    { f: 15, b: 5, label: "15 / 5" },
+    { f: 25, b: 5, label: "25 / 5" },
+    { f: 50, b: 10, label: "50 / 10" },
+    { f: 90, b: 20, label: "90 / 20" },
+  ];
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-[11px]"
+          aria-label="Customize timer durations"
+        >
+          <Pencil className="mr-1 h-3 w-3" /> edit
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 space-y-3">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Custom durations
+          </div>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Tune focus & break to fit your energy.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label htmlFor="pomo-focus" className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Focus (min)
+            </Label>
+            <Input
+              id="pomo-focus"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={180}
+              value={focusMin}
+              onChange={(e) => setFocusMin(Number(e.target.value))}
+              onKeyDown={(e) => { if (e.key === "Enter") apply(); }}
+              className="h-8"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="pomo-break" className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Break (min)
+            </Label>
+            <Input
+              id="pomo-break"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={60}
+              value={breakMin}
+              onChange={(e) => setBreakMin(Number(e.target.value))}
+              onKeyDown={(e) => { if (e.key === "Enter") apply(); }}
+              className="h-8"
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {PRESETS.map((p) => (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => { setFocusMin(p.f); setBreakMin(p.b); }}
+              className="rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-end gap-1.5">
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button size="sm" className="h-7 px-3 text-xs" onClick={apply}>
+            Apply
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
