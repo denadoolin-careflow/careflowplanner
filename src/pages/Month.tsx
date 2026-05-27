@@ -30,6 +30,8 @@ import { useCycle } from "@/lib/cycle-store";
 import { phaseForDate, PHASE_META } from "@/lib/cycle";
 import { prefetchMoonMonth } from "@/lib/moon-providers";
 import { useTimeBlocks, colorClasses } from "@/lib/time-blocks";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
@@ -38,6 +40,7 @@ const BLOCK_DRAG_MIME = "application/x-careflow-block";
 export default function Month() {
   const { state, updateTask, updateAppointment, toggleTask } = useStore();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { settings: cycleSettings, periods: cyclePeriods } = useCycle();
   const [cursor, setCursor] = useState(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
@@ -47,6 +50,7 @@ export default function Month() {
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [view, setView] = useState<CalView>("schedule");
   const [showMoon, setShowMoon] = useState(false);
+  const [sheetISO, setSheetISO] = useState<string | null>(null);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
   useEffect(() => { void prefetchMoonMonth(cursor, { neighbors: true }); }, [cursor]);
 
@@ -123,28 +127,28 @@ export default function Month() {
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-6">
-        <div className="cozy-card gradient-warm flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="cozy-card gradient-warm flex flex-col gap-3 p-4 sm:p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
               {personalGreeting(state.settings.name)} <span className="opacity-60">· Month of</span>
             </p>
-            <h2 className="font-display text-3xl font-semibold sm:text-4xl">{format(cursor, "MMMM yyyy")}</h2>
+            <h2 className="font-display text-2xl font-semibold sm:text-4xl">{format(cursor, "MMMM yyyy")}</h2>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="no-scrollbar -mx-4 flex items-center gap-1 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
             <ScopeNavToggle active="month" className="mr-1" />
-            <Button variant="ghost" size="icon" onClick={() => setCursor(subMonths(cursor, 1))} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setCursor(subMonths(cursor, 1))} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
             <DayPickerButton date={cursor} onChange={setCursor} label={format(cursor, "MMM yyyy")} />
-            <Button variant="ghost" size="sm" className="h-8 px-3 text-xs" onClick={() => setCursor(new Date())}>Today</Button>
-            <Button variant="ghost" size="icon" onClick={() => setCursor(addMonths(cursor, 1))} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="sm" className="h-8 shrink-0 px-3 text-xs" onClick={() => setCursor(new Date())}>Today</Button>
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setCursor(addMonths(cursor, 1))} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
             <Link
               to="/reset/month"
-              className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
+              className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
             >
               <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
             </Link>
             <Link
               to="/month/overview"
-              className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-primary/15"
+              className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-primary/15"
             >
               <Moon className="h-3.5 w-3.5" /> Monthly overview
             </Link>
@@ -229,8 +233,9 @@ export default function Month() {
                     setHoverISO(null);
                     setDraggingTaskId(null);
                   }}
+                  onClick={isMobile && inMonth ? () => setSheetISO(k) : undefined}
                   className={cn(
-                    "group/day relative min-h-24 rounded-lg border p-1.5 text-xs transition-all duration-200 ease-out",
+                    "group/day relative min-h-14 rounded-lg border p-1 text-xs transition-all duration-200 ease-out sm:min-h-24 sm:p-1.5",
                     inMonth
                       ? cn("border-border/60", moonStyle ? cn(moonStyle.tint, "ring-1 ring-inset", moonStyle.ring) : "bg-card")
                       : "border-transparent bg-transparent text-muted-foreground/50",
@@ -244,10 +249,10 @@ export default function Month() {
                       <span
                         title={`${moon.phaseLabel} · Moon in ${moon.sign.sign} (${moonStyle!.label})`}
                         aria-label={`${moon.phaseLabel}, moon in ${moon.sign.sign}`}
-                        className="inline-flex items-center gap-1 text-[11px] leading-none"
+                        className="inline-flex items-center gap-1 text-[10px] leading-none sm:text-[11px]"
                       >
                         <span aria-hidden>{moon.glyph}</span>
-                        <span className="text-[10px] text-muted-foreground" aria-hidden>{moon.sign.glyph}</span>
+                        <span className="hidden text-[10px] text-muted-foreground sm:inline" aria-hidden>{moon.sign.glyph}</span>
                       </span>
                     ) : phaseVar ? (
                       <span
@@ -257,9 +262,29 @@ export default function Month() {
                         style={{ background: `hsl(var(${phaseVar}))`, boxShadow: `0 0 0 2px hsl(var(${phaseVar}) / 0.18)` }}
                       />
                     ) : <span />}
-                    <div className={cn("text-right text-[11px] font-medium", today && "text-primary")}>{format(d, "d")}</div>
+                    <div className={cn("text-right text-[10px] font-medium sm:text-[11px]", today && "text-primary")}>{format(d, "d")}</div>
                   </div>
-                  <div className="mt-0.5 space-y-0.5">
+                  {/* Mobile: dot row indicator, max 4 dots */}
+                  {isMobile && inMonth && ev.length > 0 && (
+                    <div className="mt-0.5 flex flex-wrap gap-0.5">
+                      {ev.slice(0, 4).map((it, i) => (
+                        <span
+                          key={i}
+                          className={cn(
+                            "h-1.5 w-1.5 rounded-full",
+                            it.kind === "task" ? "bg-warm-foreground/70"
+                            : it.kind === "appt" ? "bg-primary"
+                            : it.kind === "block" ? "bg-accent"
+                            : it.kind === "bday" ? "bg-accent-foreground"
+                            : it.kind === "hol" ? "bg-secondary-foreground"
+                            : "bg-muted-foreground"
+                          )}
+                        />
+                      ))}
+                      {ev.length > 4 && <span className="text-[8px] leading-none text-muted-foreground">+{ev.length - 4}</span>}
+                    </div>
+                  )}
+                  <div className="mt-0.5 hidden space-y-0.5 sm:block">
                     {ev.slice(0,3).map((it, i) => {
                       const isTask = it.kind === "task" && !!it.taskId;
                       const isAppt = it.kind === "appt" && !!it.apptId;
@@ -345,6 +370,53 @@ export default function Month() {
         <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditingTask(null)} />
       )}
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
+
+      <Sheet open={!!sheetISO} onOpenChange={(o) => !o && setSheetISO(null)}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle>
+              {sheetISO ? format(new Date(sheetISO + "T00:00:00"), "EEEE, MMM d") : ""}
+            </SheetTitle>
+          </SheetHeader>
+          {sheetISO && (() => {
+            const items = eventsOn(sheetISO);
+            if (items.length === 0) {
+              return <p className="mt-4 text-sm text-muted-foreground">Nothing on this day.</p>;
+            }
+            return (
+              <ul className="mt-4 space-y-2">
+                {items.map((it, i) => {
+                  const blockCls = it.kind === "block" && it.blockColor ? colorClasses(it.blockColor) : null;
+                  return (
+                    <li
+                      key={i}
+                      onClick={() => {
+                        if (it.kind === "task" && it.taskId) {
+                          const t = state.tasks.find(x => x.id === it.taskId);
+                          if (t) { setEditingTask(t); setSheetISO(null); }
+                        } else if (it.kind === "appt" && it.apptId) {
+                          setEditApptId(it.apptId); setSheetISO(null);
+                        } else if (it.kind === "block") {
+                          openBlockInWeek(sheetISO!); setSheetISO(null);
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+                        blockCls ? cn(blockCls.bg, blockCls.text, "ring-1 ring-inset", blockCls.ring) : colorOf(it.kind as any),
+                        (it.kind === "task" || it.kind === "appt" || it.kind === "block") && "cursor-pointer",
+                      )}
+                      style={blockCls?.style}
+                    >
+                      {it.time && <span className="font-mono text-xs opacity-70">{it.time.slice(0, 5)}</span>}
+                      <span className="min-w-0 flex-1">{it.label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

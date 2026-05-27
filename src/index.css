@@ -1387,3 +1387,7 @@ html[data-atmosphere="moonlit-plum"].dark .cozy-card {
   --tw-ring-shadow: 0 0 #0000 !important;
   --tw-ring-offset-shadow: 0 0 #0000 !important;
 }
+
+/* Horizontal scroll rows without a visible scrollbar (mobile action pills). */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
