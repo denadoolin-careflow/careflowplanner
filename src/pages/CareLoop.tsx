@@ -48,6 +48,7 @@ const PHASES = [
       { to: "/habits", label: "Habits" },
       { to: "/focus", label: "Focus timer" },
       { to: "/calendar", label: "Calendar" },
+      { to: "/health", label: "Health Hub" },
     ],
   },
   {
@@ -58,6 +59,8 @@ const PHASES = [
       { to: "/journal", label: "Journal" },
       { to: "/review", label: "Daily review" },
       { to: "/reset/week", label: "Weekly reset" },
+      { to: "/health?tab=reflections", label: "Health patterns" },
+      { to: "/health?tab=timeline", label: "Health timeline" },
     ],
   },
 ];
