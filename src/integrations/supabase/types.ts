@@ -1409,6 +1409,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          intention: string | null
           meds_taken: boolean
           mindfulness_minutes: number | null
           mood: string | null
@@ -1423,6 +1424,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          intention?: string | null
           meds_taken?: boolean
           mindfulness_minutes?: number | null
           mood?: string | null
@@ -1437,6 +1439,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          intention?: string | null
           meds_taken?: boolean
           mindfulness_minutes?: number | null
           mood?: string | null
@@ -2223,6 +2226,7 @@ export type Database = {
           focus: number | null
           gratitude: string | null
           id: string
+          intention: string | null
           mood_score: number | null
           mood_word: string | null
           notes: string | null
@@ -2239,6 +2243,7 @@ export type Database = {
           focus?: number | null
           gratitude?: string | null
           id?: string
+          intention?: string | null
           mood_score?: number | null
           mood_word?: string | null
           notes?: string | null
@@ -2255,6 +2260,7 @@ export type Database = {
           focus?: number | null
           gratitude?: string | null
           id?: string
+          intention?: string | null
           mood_score?: number | null
           mood_word?: string | null
           notes?: string | null
