@@ -22,6 +22,7 @@ import SleepPage from "@/components/health/SleepPage";
 import NourishmentPage from "@/components/health/NourishmentPage";
 import HealthCalendarPage from "@/components/health/HealthCalendarPage";
 import PatternsPage from "@/components/health/PatternsPage";
+import TimelinePage from "@/components/health/TimelinePage";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -200,6 +201,7 @@ export default function Health() {
           <TabsTrigger value="mental">🧠 Mental Health</TabsTrigger>
           <TabsTrigger value="goals">📈 Goals & Trends</TabsTrigger>
           <TabsTrigger value="calendar">📅 Calendar</TabsTrigger>
+          <TabsTrigger value="timeline">🕰️ Timeline</TabsTrigger>
           <TabsTrigger value="reflections">📝 Reflections</TabsTrigger>
         </TabsList>
 
@@ -214,6 +216,7 @@ export default function Health() {
         <TabsContent value="mental" className="mt-5"><MentalHealthPage uid={uid} /></TabsContent>
         <TabsContent value="goals" className="mt-5"><GoalsPanel uid={uid} /></TabsContent>
         <TabsContent value="calendar" className="mt-5"><HealthCalendarPage uid={uid} /></TabsContent>
+        <TabsContent value="timeline" className="mt-5"><TimelinePage uid={uid} /></TabsContent>
         <TabsContent value="reflections" className="mt-5"><PatternsPage uid={uid} /></TabsContent>
       </Tabs>
     </div>
