@@ -253,6 +253,30 @@ export default function PatternsPage({ uid }: { uid: string }) {
             </div>
           </div>
 
+          {/* Correlation insights */}
+          <div className="cozy-card p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary/70" />
+              <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                Strongest relationships · last {range} days
+              </p>
+            </div>
+            {topCorrelations.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Log a few more paired check-ins and reflections to surface patterns.
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {topCorrelations.map((c, i) => (
+                  <CorrelationCard key={`${c.a}-${c.b}`} rank={i + 1} {...c} />
+                ))}
+              </div>
+            )}
+            <p className="mt-3 text-[11px] italic text-muted-foreground/80">
+              Soft observations, not diagnoses. Patterns need {`>`}4 paired days to appear.
+            </p>
+          </div>
+
           <div className="grid gap-5 lg:grid-cols-2">
             {/* Emotion frequency */}
             <div className="cozy-card p-5">
