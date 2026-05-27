@@ -208,7 +208,7 @@ export function NotificationCenter() {
                       <span className="mt-0.5 text-sm leading-none">{meta.emoji}</span>
                       <button
                         className="min-w-0 flex-1 text-left"
-                        onClick={() => { navigate(`/memories?id=${m.id}`); setOpen(false); }}
+                        onClick={() => { navigate(`/memories`); setOpen(false); }}
                       >
                         <div className="truncate text-xs font-medium">{m.title}</div>
                         <div className="truncate text-[10px] text-muted-foreground">
