@@ -1,10 +1,21 @@
 import { Link } from "react-router-dom";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
-import { Inbox, Sun, Compass, Wind, Sparkles, Leaf, Settings as Cog } from "lucide-react";
+import { Inbox, Compass, Wind, Sparkles, Leaf, Settings as Cog, Home, HeartPulse, Users, Heart, Wallet, Brain, Clock, type LucideIcon } from "lucide-react";
 import {
   useCareProfile, careHeaderForSeason, PILLAR_META, SEASON_META,
+  type Pillar,
 } from "@/lib/care-methodology";
+
+const PILLAR_ICONS: Record<Pillar, LucideIcon> = {
+  home: Home,
+  health: HeartPulse,
+  care: Users,
+  heart: Heart,
+  wealth: Wallet,
+  mind: Brain,
+  time: Clock,
+};
 
 const PHASES = [
   {
@@ -132,14 +143,22 @@ export default function CareLoop() {
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {profile.pillars_enabled.map((p) => {
               const meta = PILLAR_META[p];
+              const Icon = PILLAR_ICONS[p];
               return (
                 <Link
                   key={p}
                   to={meta.route}
                   className="group rounded-2xl border border-border/60 bg-card/60 p-4 transition-all hover:border-primary/40 hover:bg-card"
                 >
-                  <p className="font-display text-base font-semibold group-hover:text-primary">{meta.label}</p>
-                  <p className="text-xs text-muted-foreground">{meta.blurb}</p>
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                      <Icon className="h-4.5 w-4.5" strokeWidth={1.75} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-display text-base font-semibold group-hover:text-primary">{meta.label}</p>
+                      <p className="truncate text-xs text-muted-foreground">{meta.blurb}</p>
+                    </div>
+                  </div>
                 </Link>
               );
             })}
