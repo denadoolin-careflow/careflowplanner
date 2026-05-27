@@ -380,6 +380,20 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
 
             {/* Attributes */}
             <Section title="Attributes">
+              <div className="-mt-2 flex justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={runAutoDetect}
+                  disabled={autoBusy || !draft.title.trim()}
+                  className="h-7 gap-1 px-2 text-[11px] text-primary hover:bg-primary/10 hover:text-primary"
+                  title="Auto-detect area and project from the title and notes"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  Auto-detect area & project
+                </Button>
+              </div>
               <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
                 <Field icon={Tag} label="Area">
                   <Select value={draft.area} onValueChange={v => set("area", v as any)}>
