@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -108,11 +108,10 @@ function LovedOneDialog({ open, loved, onOpenChange, onSaved, onDeleted }: {
   onDeleted: (id: string) => void;
 }) {
   const [draft, setDraft] = useState<Partial<LovedOne>>({});
-  useState(() => { setDraft(loved ?? { name: "", avatarEmoji: "💛" }); });
-  // sync when loved changes
-  if ((loved?.id ?? null) !== ((draft as any)?._k ?? null) && open) {
-    setTimeout(() => setDraft({ ...(loved ?? { name: "", avatarEmoji: "💛" }), _k: loved?.id } as any), 0);
-  }
+  useEffect(() => {
+    if (!open) return;
+    setDraft(loved ?? { name: "", avatarEmoji: "💛" });
+  }, [open, loved]);
   const save = async () => {
     if (!draft.name?.trim()) { toast.error("Add a name"); return; }
     try {
