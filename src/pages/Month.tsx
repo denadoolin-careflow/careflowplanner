@@ -370,6 +370,53 @@ export default function Month() {
         <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditingTask(null)} />
       )}
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
+
+      <Sheet open={!!sheetISO} onOpenChange={(o) => !o && setSheetISO(null)}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle>
+              {sheetISO ? format(new Date(sheetISO + "T00:00:00"), "EEEE, MMM d") : ""}
+            </SheetTitle>
+          </SheetHeader>
+          {sheetISO && (() => {
+            const items = eventsOn(sheetISO);
+            if (items.length === 0) {
+              return <p className="mt-4 text-sm text-muted-foreground">Nothing on this day.</p>;
+            }
+            return (
+              <ul className="mt-4 space-y-2">
+                {items.map((it, i) => {
+                  const blockCls = it.kind === "block" && it.blockColor ? colorClasses(it.blockColor) : null;
+                  return (
+                    <li
+                      key={i}
+                      onClick={() => {
+                        if (it.kind === "task" && it.taskId) {
+                          const t = state.tasks.find(x => x.id === it.taskId);
+                          if (t) { setEditingTask(t); setSheetISO(null); }
+                        } else if (it.kind === "appt" && it.apptId) {
+                          setEditApptId(it.apptId); setSheetISO(null);
+                        } else if (it.kind === "block") {
+                          openBlockInWeek(sheetISO!); setSheetISO(null);
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+                        blockCls ? cn(blockCls.bg, blockCls.text, "ring-1 ring-inset", blockCls.ring) : colorOf(it.kind as any),
+                        (it.kind === "task" || it.kind === "appt" || it.kind === "block") && "cursor-pointer",
+                      )}
+                      style={blockCls?.style}
+                    >
+                      {it.time && <span className="font-mono text-xs opacity-70">{it.time.slice(0, 5)}</span>}
+                      <span className="min-w-0 flex-1">{it.label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
