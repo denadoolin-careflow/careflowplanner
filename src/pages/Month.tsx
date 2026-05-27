@@ -417,6 +417,20 @@ export default function Month() {
               {sheetISO ? format(new Date(sheetISO + "T00:00:00"), "EEEE, MMM d") : ""}
             </SheetTitle>
           </SheetHeader>
+          {sheetISO && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 w-full"
+              onClick={() => {
+                const d = new Date(sheetISO + "T00:00:00");
+                setSheetISO(null);
+                setLunarDate(d);
+              }}
+            >
+              <Moon className="mr-1.5 h-3.5 w-3.5" /> Lunar guidance for this day
+            </Button>
+          )}
           {sheetISO && (() => {
             const items = eventsOn(sheetISO);
             if (items.length === 0) {
@@ -456,6 +470,7 @@ export default function Month() {
           })()}
         </SheetContent>
       </Sheet>
+      <DayLunarSheet date={lunarDate} open={!!lunarDate} onOpenChange={(o) => !o && setLunarDate(null)} />
     </div>
   );
 }
