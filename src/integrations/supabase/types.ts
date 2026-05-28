@@ -1466,6 +1466,7 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          meta: Json
           streak: number
           title: string
           updated_at: string
@@ -1476,6 +1477,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          meta?: Json
           streak?: number
           title: string
           updated_at?: string
@@ -1486,6 +1488,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          meta?: Json
           streak?: number
           title?: string
           updated_at?: string

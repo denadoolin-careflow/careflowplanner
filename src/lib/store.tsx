@@ -89,7 +89,26 @@ const taskTo = (t: Partial<Task>) => ({
   attachments: (t.attachments ?? []) as any,
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
-const habitFrom = (r: any): Habit => ({ id: r.id, title: r.title, cadence: r.cadence, category: r.category, streak: r.streak, log: {} });
+const habitFrom = (r: any): Habit => {
+  const meta = (r.meta && typeof r.meta === "object") ? r.meta : {};
+  return {
+    id: r.id,
+    title: r.title,
+    cadence: r.cadence,
+    category: r.category,
+    streak: r.streak,
+    log: {},
+    timesOfDay: Array.isArray(meta.timesOfDay) ? meta.timesOfDay : undefined,
+    daysOfWeek: Array.isArray(meta.daysOfWeek) ? meta.daysOfWeek : undefined,
+    reminderTime: typeof meta.reminderTime === "string" ? meta.reminderTime : undefined,
+    linkedProjectIds: Array.isArray(meta.linkedProjectIds) ? meta.linkedProjectIds : undefined,
+    linkedRoutineIds: Array.isArray(meta.linkedRoutineIds) ? meta.linkedRoutineIds : undefined,
+    linkedTaskIds: Array.isArray(meta.linkedTaskIds) ? meta.linkedTaskIds : undefined,
+    linkedGoalIds: Array.isArray(meta.linkedGoalIds) ? meta.linkedGoalIds : undefined,
+  };
+};
+
+const META_KEYS = ["timesOfDay","daysOfWeek","reminderTime","linkedProjectIds","linkedRoutineIds","linkedTaskIds","linkedGoalIds"] as const;
 const journalFrom = (r: any): JournalEntry => ({
   id: r.id, date: r.date, type: r.type, title: r.title ?? undefined, body: r.body, mood: r.mood ?? undefined,
   template: r.template ?? undefined,
@@ -628,6 +647,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.title !== undefined) dbPatch.title = patch.title;
       if (patch.cadence !== undefined) dbPatch.cadence = patch.cadence;
       if (patch.category !== undefined) dbPatch.category = patch.category;
+      const metaTouched = META_KEYS.some(k => (patch as any)[k] !== undefined);
+      if (metaTouched) {
+        const current = state.habits.find(h => h.id === id);
+        const merged: any = {};
+        for (const k of META_KEYS) {
+          const v = (patch as any)[k] !== undefined ? (patch as any)[k] : (current as any)?.[k];
+          if (v !== undefined) merged[k] = v;
+        }
+        dbPatch.meta = merged;
+      }
       if (Object.keys(dbPatch).length) await supabase.from("habits").update(dbPatch).eq("id", id);
     },
 
