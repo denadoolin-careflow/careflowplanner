@@ -5,6 +5,7 @@ import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
+  PanelLeft, PanelRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, type MouseEvent } from "react";
@@ -28,9 +29,29 @@ const STORAGE_KEY = "careflow:sidebar:open-groups";
 const COLLAPSED_KEY = "careflow:sidebar:collapsed";
 const GROUP_ORDER_KEY = "careflow:sidebar:group-order";
 const WIDTH_KEY = "careflow:sidebar:width";
+const SIDE_KEY = "careflow:sidebar:side";          // "left" | "right"
+const THEME_KEY = "careflow:sidebar:theme";        // "auto" | "light" | "dark"
+const PREFS_EVENT = "careflow:sidebar:prefs";
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 420;
 const DEFAULT_WIDTH = 256;
+
+type SidebarSide = "left" | "right";
+type SidebarTheme = "auto" | "light" | "dark";
+
+function readSide(): SidebarSide {
+  if (typeof window === "undefined") return "left";
+  return window.localStorage.getItem(SIDE_KEY) === "right" ? "right" : "left";
+}
+function readTheme(): SidebarTheme {
+  if (typeof window === "undefined") return "auto";
+  const v = window.localStorage.getItem(THEME_KEY);
+  return v === "light" || v === "dark" ? v : "auto";
+}
+function writePrefs(key: string, value: string) {
+  try { window.localStorage.setItem(key, value); } catch {}
+  try { window.dispatchEvent(new Event(PREFS_EVENT)); } catch {}
+}
 
 function loadGroupOrder(): string[] {
   if (typeof window === "undefined") return NAV_GROUPS.map(g => g.id);
