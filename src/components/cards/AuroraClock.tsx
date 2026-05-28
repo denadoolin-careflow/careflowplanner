@@ -7,6 +7,11 @@ import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Moon, Su
 import type { WeatherCondition } from "@/lib/weather";
 import { getMoonPhase, MOON_INFO, getIllumination } from "@/lib/moon";
 import { PhaseBadge } from "@/components/cycle/PhaseBadge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useNavigate } from "react-router-dom";
+import { useCycle } from "@/lib/cycle-store";
+import { getPhaseInfo } from "@/lib/cycle";
+import { ArrowRight } from "lucide-react";
 
 function ConditionIcon({ condition, isNight, className }: { condition: WeatherCondition; isNight?: boolean; className?: string }) {
   if (condition === "clear") return isNight ? <Moon className={className} /> : <Sun className={className} />;
@@ -81,6 +86,12 @@ export const AuroraClock = memo(function AuroraClock({
   const today = new Date();
   const moon = MOON_INFO[getMoonPhase(today)];
   const illum = getIllumination(today);
+  const navigate = useNavigate();
+  const { settings: cycleSettings, periods } = useCycle();
+  const cycleInfo = useMemo(
+    () => getPhaseInfo(today, periods, cycleSettings),
+    [today, periods, cycleSettings],
+  );
 
   if (compact) {
     return (
@@ -98,15 +109,81 @@ export const AuroraClock = memo(function AuroraClock({
     <div className={cn("flex flex-col items-center gap-2 sm:items-end", className)}>
       <DigitalReadout />
       <div className="flex flex-col items-center gap-1.5 sm:items-end">
-        <MoonGlyph size={moonSize} />
-        <div className="flex flex-col items-center leading-tight sm:items-end">
-          <span className="font-display text-sm text-foreground/85">{moon.label}</span>
-          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
-            {illum}% lit
-          </span>
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={`${moon.label}, ${illum}% lit — open lunar living`}
+              className="flex flex-col items-center gap-1 rounded-2xl px-2 py-1 transition-colors hover:bg-foreground/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:items-end"
+            >
+              <MoonGlyph size={moonSize} />
+              <span className="font-display text-sm text-foreground/85">{moon.label}</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
+                {illum}% lit
+              </span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-72 space-y-2">
+            <div className="flex items-center gap-2">
+              <span aria-hidden className="text-2xl">{moon.glyph}</span>
+              <div>
+                <p className="font-display text-sm font-semibold">{moon.label}</p>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground tabular-nums">
+                  {illum}% lit
+                </p>
+              </div>
+            </div>
+            <p className="text-xs italic text-muted-foreground">{moon.invitation}</p>
+            <p className="text-xs text-foreground/80">{moon.affirmation}</p>
+            <button
+              type="button"
+              onClick={() => navigate("/health?tab=lunar")}
+              className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              Open Lunar Living <ArrowRight className="h-3 w-3" />
+            </button>
+          </PopoverContent>
+        </Popover>
         <WeatherLine />
-        <PhaseBadge date={today} />
+        {cycleSettings.enabled && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <div role="button" tabIndex={0} className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+                <PhaseBadge date={today} />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 space-y-2">
+              {cycleInfo ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span aria-hidden className="text-2xl">{cycleInfo.glyph}</span>
+                    <div>
+                      <p className="font-display text-sm font-semibold">
+                        {cycleInfo.label} · Day {cycleInfo.cycleDay}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">{cycleInfo.archetype}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs italic text-muted-foreground">{cycleInfo.invitation}</p>
+                  <p className="text-[11px] text-foreground/75">
+                    {cycleInfo.daysUntilNextPeriod === 0
+                      ? "Period expected today"
+                      : `~${cycleInfo.daysUntilNextPeriod} days until next period`}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Log your first period to see cycle insights.</p>
+              )}
+              <button
+                type="button"
+                onClick={() => navigate("/health?tab=cycle")}
+                className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              >
+                Open Cyclical Living <ArrowRight className="h-3 w-3" />
+              </button>
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
     </div>
   );
