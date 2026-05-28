@@ -263,10 +263,10 @@ export default function Month() {
                     setSheetISO(k);
                   } : undefined}
                   className={cn(
-                    "group/day relative min-h-14 rounded-lg border p-1 text-xs transition-all duration-200 ease-out sm:min-h-24 sm:p-1.5",
+                    "group/day relative min-h-16 rounded-lg border p-1.5 text-xs transition-all duration-200 ease-out sm:min-h-28 sm:p-2 cursor-pointer",
                     inMonth
                       ? cn("border-border/60", moonStyle ? cn(moonStyle.tint, "ring-1 ring-inset", moonStyle.ring) : "bg-card")
-                      : "border-transparent bg-transparent text-muted-foreground/50",
+                      : "border-transparent bg-transparent text-muted-foreground/50 cursor-default",
                     today && "ring-2 ring-primary",
                     inMonth && elementChanged && "ring-2 ring-offset-1 ring-offset-background ring-foreground/40",
                     hoverISO === k && "scale-[1.03] bg-primary/10 ring-2 ring-primary shadow-md",
