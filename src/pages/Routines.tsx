@@ -68,7 +68,7 @@ export default function Routines() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-5 p-4 md:p-6">
+    <div className="mx-auto w-full max-w-5xl space-y-5 overflow-x-hidden p-4 md:p-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight">Routines</h1>
@@ -283,7 +283,7 @@ export function RoutineCard({
   };
 
   return (
-    <div className="rounded-3xl border border-border/60 bg-card/70 p-3 shadow-sm sm:p-3.5">
+    <div className="min-w-0 overflow-hidden rounded-3xl border border-border/60 bg-card/70 p-3 shadow-sm sm:p-3.5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
