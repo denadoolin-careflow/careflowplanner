@@ -767,6 +767,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const appt = apptFrom(data);
       setState(s => ({ ...s, appointments: [appt, ...s.appointments] }));
       if (appt.syncToGoogle) void pushAppointmentToGoogle(appt.id);
+      emitScheduleEvent({ kind: "appointment", id: appt.id, title: appt.title, date: appt.date });
       return appt;
     },
     deleteAppointment: async (id) => {
@@ -779,6 +780,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await supabase.from("appointments").delete().eq("id", id);
     },
     updateAppointment: async (id, patch) => {
+      const prevAppt = state.appointments.find(a => a.id === id);
       const dbPatch: any = {};
       if (patch.title !== undefined) dbPatch.title = patch.title;
       if (patch.date !== undefined) dbPatch.date = patch.date;
@@ -800,6 +802,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await supabase.from("appointments").update(dbPatch).eq("id", id);
       const next = { ...(state.appointments.find(a => a.id === id) ?? {}), ...patch } as Appointment;
       if (next.syncToGoogle) void pushAppointmentToGoogle(id);
+      if (patch.date !== undefined && patch.date && patch.date !== prevAppt?.date) {
+        emitScheduleEvent({ kind: "appointment", id, title: next.title ?? prevAppt?.title ?? "", date: patch.date });
+      }
     },
 
     addBirthday: async (b) => {
