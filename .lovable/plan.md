@@ -1,81 +1,80 @@
-# Build plan — three phases
+# Habits: detail view, linking, surfacing & analytics
 
-Research-backed (BJ Fogg B=MAP, Atomic Habits, SDT, Finch/Way of Life patterns). Per your choices: notes/journal first → habit garden → analytics graph w/ insights engine.
+## 1. Habit detail sheet (open a habit)
 
----
+Add `HabitDetailSheet.tsx` (Radix Sheet, right-side) opened by clicking the plant tile in the Garden or a row in List view.
 
-## Phase 1 — Notes & Journal: TOC sidebar + word count + goals
+Sections inside the sheet:
+- **Header**: plant illustration, title (editable), category, cadence, streak/forgiving streak.
+- **Time of day**: chips for Morning / Midday / Afternoon / Evening / Anytime (multi-select).
+- **Schedule**: days-of-week chips (for weekly cadence) + optional reminder time.
+- **Linked items**: pickers for Projects, Routines, Tasks, Goals — pulled from `state.projects / routines / tasks / goals`. Renders as chips; click to open that entity.
+- **Notes**: reuse existing `LinkedNotesPanel entityType="habit"`.
+- **14-day strip + actions** (Tend today / Delete).
 
-**Sidebar Table of Contents**
-- New `src/components/notes/NoteTOC.tsx` — parses BlockEditor headings (H1/H2/H3), renders a sticky right-rail list with click-to-scroll + active-section highlight via IntersectionObserver.
-- Wire into `NoteDetail.tsx` and `JournalFlow.tsx`. Collapsible on mobile (sheet), pinned on ≥lg.
+## 2. Data model
 
-**Word count + goals**
-- New `src/lib/writing-goals.ts` — localStorage-backed daily goal (default 250 words), per-note targets stored on note row (`word_goal` column).
-- Footer chip in `BlockEditor.tsx`: live word count, reading time, target progress ring.
-- New `src/components/notes/DailyWritingGoal.tsx` widget — progress ring + streak (today's total across journal entries). Dashboard widget + top of `Journal.tsx`.
-- Migration: add `word_goal int` to `notes` table (nullable).
+Extend `Habit` in `src/lib/types.ts`:
+```ts
+timesOfDay?: ("morning"|"midday"|"afternoon"|"evening"|"anytime")[];
+daysOfWeek?: number[];      // 0=Sun..6=Sat, for weekly cadence
+reminderTime?: string;      // "HH:mm"
+linkedProjectIds?: string[];
+linkedRoutineIds?: string[];
+linkedTaskIds?: string[];
+linkedGoalIds?: string[];
+```
 
----
+Migration: add a single `meta jsonb default '{}'` column on `public.habits` and serialize the new fields into it (keeps migration minimal, avoids many nullable columns). Update `habitFrom` / `addHabit` / `updateHabit` in `src/lib/store.tsx` to read/write `meta`.
 
-## Phase 2 — Garden habit & routine system
+## 3. Today page surfacing
 
-**Garden visualization**
-- New `src/components/habits/HabitGarden.tsx` — each habit = a plant that grows through 5 stages (seed → sprout → bud → bloom → tree) based on a forgiving 14-day rolling completion ratio (not raw streak). Sage/clay palette per your pick.
-- SVG plants in `src/assets/plants/` (generate via imagegen, transparent PNGs).
-- Tap plant → quick log; long-press → details.
+New `TodayHabitsCard.tsx` in `src/components/today/`, inserted into `Today.tsx` near the morning/focus area:
+- Groups today's due habits by `timesOfDay` (Morning → Evening → Anytime).
+- Each row: mini plant glyph, title, linked-project/routine chip, Tend button with haptic.
+- Header progress bar (reuses `HabitProgressBar` logic) + "X of Y tended".
+- Filters habits where: cadence=daily, OR weekly with today in `daysOfWeek`, OR linked to a task/routine scheduled today.
 
-**Behavior-change patterns baked in**
-- **Tiny-habit framing**: habit creation flow asks "After I ___, I will ___" (habit stacking) + tiny version field.
-- **Forgiving streaks**: replace raw streak with "consistency %" + grace days (2/week free, "rest day" log option). Never resets to 0.
-- **Identity badges**: auto-assigned titles (e.g., "Mindful mover · 21 reps") shown on garden plot.
-- **Focus Mode for routines**: `RoutineFocusMode.tsx` — full-screen sequential runner, per-step timer, cumulative time, swipe-next, haptics on each completion (reuses existing haptics + completion-visual systems).
-- **Drag-to-reorder** routine items (dnd-kit, already in deps).
-- **Self-compassion prompt** on miss: "Was today a rest day?" toggle instead of "missed".
-- **Emergency / low-energy mode**: existing `lowEnergyMode` filters garden to top 3 "essential" habits (new `essential` flag).
+## 4. Week page surfacing
 
-**Files**
-- New: `HabitGarden.tsx`, `PlantSprite.tsx`, `RoutineFocusMode.tsx`, `HabitCreateDialog.tsx`, `src/lib/habit-consistency.ts`.
-- Edit: `Habits.tsx`, `Routines.tsx`, `RoutinesStrip.tsx`, store schema (`essential`, `grace_days`, `tiny_version`, `stack_anchor` fields on habit; migration).
+In `Week.tsx`, add a compact `WeekHabitsStrip` to the `WeekRhythmRow` area:
+- 7-day grid: one row per habit, dots per day showing logged completions.
+- Click a dot to toggle that day.
+- Only shows habits relevant to the week (cadence ≥ weekly).
 
----
+## 5. Weekly habit review analytics (under Garden)
 
-## Phase 3 — Dashboard graph + focus/cycle insights engine
+Replace the current "Weekly habit review" `SectionCard` body in `Habits.tsx` with `HabitWeeklyAnalytics.tsx`:
+- **Stacked bar / area chart** (Recharts) — last 7 days, % completion per day across all habits.
+- **Per-habit sparkline list** — 28-day completion ratio with growth stage label.
+- **Stat tiles**: total tends, best day, most consistent habit, growing vs wilting counts.
+- **Time-of-day breakdown** donut.
 
-**Dashboard graph view**
-- New `src/components/dashboard/DashboardGraph.tsx` — toggle on Dashboard between current grid and a "graph view" (recharts radial + sparkline grid of: tasks done, focus minutes, habits %, mood, sleep, cycle phase).
+## 6. AI overview
 
-**End-of-day time analytics**
-- New `src/pages/Insights.tsx` (route `/insights`) with three views:
-  1. **Today** — donut of where time went (tasks by area + pomodoro sessions by tag) + current moon/cycle badge.
-  2. **28-day trends** — stacked area: focus minutes per day, overlaid with lunar phase ribbon and menstrual cycle phase band (uses existing `lib/moon-phase.ts`, `lib/cycle.ts`).
-  3. **Insights** — AI-generated correlations via new edge function `ai-rhythm-insights` (Lovable AI Gateway, `google/gemini-3-flash-preview`). Pulls last 28 days of pomodoros, completed tasks, mood check-ins, cycle phase, moon phase; returns ranked observations (e.g., "Focus peaks in follicular + waxing moon: +34%") + 3 gentle recommendations.
+New edge function `supabase/functions/ai-habit-overview/index.ts`:
+- Uses Lovable AI Gateway, `google/gemini-3-flash-preview`, via `streamText` returning a short structured summary (3 gentle observations + 1 suggestion).
+- Inputs: 28 days of habit logs, growth stages, linked projects/routines, time-of-day data.
+- Client trigger button at the top of `HabitWeeklyAnalytics` with manual refresh + 24h localStorage cache.
 
-**Data plumbing**
-- Reuse existing `pomodoro-history`, `tasks`, `cycle-store`, `moon-phase`. No new tables required for Phase 3 reads.
-- New edge function: `supabase/functions/ai-rhythm-insights/index.ts`.
+## Files
 
-**Wiring**
-- Add "Insights" to bottom nav / sidebar.
-- Dashboard graph view added as togglable mode on Dashboard.
-- End-of-day card on Today links to Insights/Today view.
+**Create**
+- `src/components/habits/HabitDetailSheet.tsx`
+- `src/components/habits/HabitWeeklyAnalytics.tsx`
+- `src/components/today/TodayHabitsCard.tsx`
+- `src/components/week/WeekHabitsStrip.tsx`
+- `supabase/functions/ai-habit-overview/index.ts`
+- Migration: add `meta jsonb` to `public.habits`
 
----
+**Edit**
+- `src/lib/types.ts` — extend `Habit`
+- `src/lib/store.tsx` — `habitFrom`, `addHabit`, `updateHabit` round-trip `meta`
+- `src/components/habits/HabitGarden.tsx` — click tile opens detail sheet
+- `src/pages/Habits.tsx` — wire list/garden onClick, swap weekly review for analytics
+- `src/pages/Today.tsx` — mount `TodayHabitsCard`
+- `src/pages/Week.tsx` — mount `WeekHabitsStrip`
 
-## Technical notes
-
-- All UI uses semantic tokens from `index.css`; sage palette aligns with existing warm theme.
-- Recharts already in deps (used in `MaintenanceTab` analytics).
-- IntersectionObserver for TOC scroll-spy is React-friendly via custom hook.
-- Edge function follows Lovable AI Gateway pattern (no user API key).
-- Migrations: 1 for `notes.word_goal`, 1 for habit fields (`essential`, `grace_days`, `tiny_version`, `stack_anchor`).
-
----
-
-## Ship order
-
-1. Phase 1 (notes TOC + word goals) — this turn after approval.
-2. Phase 2 (garden habits) — next turn.
-3. Phase 3 (graph + insights) — turn after that.
-
-Approve to start Phase 1.
+## Out of scope
+- Cycle/lunar correlation for habits (covered by Insights page).
+- Reminders/push notifications (only stored; delivery later).
