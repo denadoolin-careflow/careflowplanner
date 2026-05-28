@@ -221,14 +221,16 @@ function CommandPalette({
       }}
     >
       <div className="border-b border-border/60 px-3 py-2">
-        <div className="flex items-center gap-1">
-          <CommandInput
-            autoFocus
-            placeholder="Type or speak — e.g. Doctor tomorrow 3pm #health p2 for 30m"
-            value={value}
-            onValueChange={onChange}
-            className="flex-1"
-          />
+        <div className="flex w-full items-center gap-1">
+          <div className="min-w-0 flex-1 [&>div]:border-b-0 [&>div]:px-0">
+            <CommandInput
+              autoFocus
+              placeholder="Type or speak — e.g. Doctor tomorrow 3pm #health p2 for 30m"
+              value={value}
+              onValueChange={onChange}
+              className="w-full"
+            />
+          </div>
           {dictation.supported && (
             <button
               type="button"
