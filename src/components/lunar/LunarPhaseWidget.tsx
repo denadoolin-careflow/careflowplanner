@@ -137,21 +137,31 @@ export function LunarPhaseWidget({ date = new Date(), compact = false }: Props) 
                 type="button"
                 key={n.date.toISOString()}
                 onClick={() => setSheetDate(n.date)}
-                className="group flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-left backdrop-blur-sm transition-all hover:bg-white/10 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-white/30"
+                className="group flex items-center gap-2 rounded-xl bg-white/5 px-2.5 py-2 text-left backdrop-blur-sm transition-all hover:bg-white/10 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-white/30"
                 style={{ borderLeft: `2px solid hsl(${k.hsl} / 0.6)` }}
                 aria-label={`${k.verb} — ${k.label} on ${format(n.date, "MMM d")} — Moon in ${s.name}`}
               >
-                <MoonGlyph date={n.date} size={26} />
-                <div className="min-w-0 flex-1 text-[11px] leading-tight">
-                  <p className="font-medium" style={{ color: `hsl(${k.hsl})` }}>
-                    {k.glyph} {k.verb}
+                <MoonGlyph date={n.date} size={24} className="shrink-0" />
+                <div className="min-w-0 flex-1 space-y-0.5 text-[11px] leading-tight">
+                  <p
+                    className="truncate font-medium"
+                    style={{ color: `hsl(${k.hsl})` }}
+                    title={`${k.verb}`}
+                  >
+                    <span className="mr-1">{k.glyph}</span>
+                    {k.verb}
                   </p>
-                  <p className="truncate opacity-80">{k.label.split(" · ")[1]}</p>
-                  <p className="opacity-70">{format(n.date, "MMM d")}</p>
-                  <p className="mt-0.5 truncate opacity-80">
+                  <p className="truncate opacity-80" title={k.label.split(" · ")[1]}>
+                    {k.label.split(" · ")[1]}
+                  </p>
+                  <p
+                    className="truncate opacity-80"
+                    title={`Moon in ${s.name} · ${s.element}`}
+                  >
                     <span className="mr-0.5">{SIGN_EMOJI[s.name]}</span>
                     {s.name}
                   </p>
+                  <p className="truncate opacity-60">{format(n.date, "MMM d")}</p>
                 </div>
               </button>
             );
