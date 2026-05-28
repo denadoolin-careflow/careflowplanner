@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { PomodoroPanel } from "@/components/tasks/PomodoroPanel";
+import { NoteTOC } from "@/components/notes/NoteTOC";
 import { useStore } from "@/lib/store";
 import { usePomodoro, formatPomoTime, pomoTotal } from "@/lib/pomodoro-store";
 import { cn } from "@/lib/utils";
