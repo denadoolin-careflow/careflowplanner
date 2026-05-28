@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Clock, Plus, Repeat, Sparkles, Tag, Timer, Trash2, UserPlus, Users, X } from "lucide-react";
+import { ChevronRight, Clock, Play, Plus, Repeat, Sparkles, Tag, Timer, Trash2, UserPlus, Users, Wand2, X } from "lucide-react";
 import {
   routines as routinesApi,
   useRoutines,
@@ -9,6 +9,7 @@ import {
   CADENCE_LABEL,
   SLOT_DEFAULT_TIME,
   formatTime12,
+  routineTotalMinutes,
   type Routine,
   type RoutineSlot,
   type RoutineCadence,
@@ -16,7 +17,6 @@ import {
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -25,6 +25,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { PomodoroDialog } from "@/components/routines/PomodoroDialog";
+import { NowNextBanner } from "@/components/routines/NowNextBanner";
+import { RoutineItemRow } from "@/components/routines/RoutineItemRow";
+import { RoutineFocusMode } from "@/components/routines/RoutineFocusMode";
+import { AIBreakdownDialog } from "@/components/routines/AIBreakdownDialog";
 
 type GroupBy = "person" | "timeframe" | "cadence" | "tag";
 
@@ -35,6 +39,7 @@ export default function Routines() {
   const [filterPerson, setFilterPerson] = useState<string>("all");
   const [filterTag, setFilterTag] = useState<string>("all");
   const [newPerson, setNewPerson] = useState("");
+  const [focus, setFocus] = useState<{ routine: Routine; itemId?: string } | null>(null);
 
   const people = useMemo(() => {
     const fromRoutines = routinesApi.people();
@@ -91,6 +96,11 @@ export default function Routines() {
           </PopoverContent>
         </Popover>
       </header>
+
+      <NowNextBanner
+        routines={filterPerson === "all" ? filtered : filtered.filter(r => r.person_name === filterPerson)}
+        onFocus={(r, itemId) => setFocus({ routine: r, itemId })}
+      />
 
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/40 p-2">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -149,9 +159,19 @@ export default function Routines() {
             subtitle={g.subtitle}
             routines={g.items}
             recipients={state.recipients}
+            onFocus={(r, itemId) => setFocus({ routine: r, itemId })}
           />
         ))}
       </div>
+
+      {focus && (
+        <RoutineFocusMode
+          open={!!focus}
+          onOpenChange={(o) => { if (!o) setFocus(null); }}
+          routine={list.find(r => r.id === focus.routine.id) ?? focus.routine}
+          startItemId={focus.itemId}
+        />
+      )}
     </div>
   );
 }
@@ -193,9 +213,10 @@ function groupRoutines(items: Routine[], by: GroupBy) {
 }
 
 function RoutineGroup({
-  title, subtitle, routines: items, recipients,
+  title, subtitle, routines: items, recipients, onFocus,
 }: {
   title: string; subtitle?: string; routines: Routine[]; recipients: { id: string; name: string }[];
+  onFocus?: (r: Routine, itemId?: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   return (
@@ -212,7 +233,7 @@ function RoutineGroup({
       </button>
       {!collapsed && (
         <div className="grid gap-3 md:grid-cols-2">
-          {items.map(r => <RoutineCard key={r.id} routine={r} recipients={recipients} />)}
+          {items.map(r => <RoutineCard key={r.id} routine={r} recipients={recipients} onFocus={onFocus} />)}
         </div>
       )}
     </section>
@@ -220,17 +241,21 @@ function RoutineGroup({
 }
 
 export function RoutineCard({
-  routine: r, recipients,
+  routine: r, recipients, onFocus,
 }: {
   routine: Routine;
   recipients: { id: string; name: string }[];
+  onFocus?: (r: Routine, itemId?: string) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [newTag, setNewTag] = useState("");
   const [generating, setGenerating] = useState(false);
   const [pomo, setPomo] = useState<{ open: boolean; title: string }>({ open: false, title: "" });
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
   const doneCount = r.items.filter(i => i.done).length;
   const timeValue = r.time_of_day ?? SLOT_DEFAULT_TIME[r.slot];
+  const totalMin = routineTotalMinutes(r);
+  const prepNotice = r.meta?.prepNoticeMin ?? 0;
 
   const generate = async () => {
     setGenerating(true);
@@ -258,7 +283,7 @@ export function RoutineCard({
   };
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/60 p-3 shadow-sm">
+    <div className="rounded-3xl border border-border/60 bg-card/70 p-3.5 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -270,12 +295,26 @@ export function RoutineCard({
             <Badge variant="secondary" className="rounded-full px-1.5 py-0 text-[10px]">
               <Repeat className="mr-0.5 inline h-2.5 w-2.5" />{CADENCE_LABEL[r.cadence]}
             </Badge>
+            {totalMin > 0 && (
+              <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[10px]">~{totalMin}m</Badge>
+            )}
           </div>
           <div className="mt-0.5 text-[11px] text-muted-foreground">
             {doneCount}/{r.items.length} done
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {r.items.length > 0 && (
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => onFocus?.(r)}
+              className="h-7 rounded-full px-2 text-[11px]"
+              aria-label="Start focus mode"
+            >
+              <Play className="mr-1 h-3 w-3" /> Focus
+            </Button>
+          )}
           <Input
             type="time"
             value={timeValue}
@@ -298,6 +337,15 @@ export function RoutineCard({
           </Button>
           <Button
             size="sm" variant="ghost"
+            onClick={() => setBreakdownOpen(true)}
+            className="h-7 px-2 text-[11px]"
+            aria-label="Break down a goal"
+            title="Break down a goal into steps"
+          >
+            <Wand2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="sm" variant="ghost"
             onClick={() => setPomo({ open: true, title: `${r.person_name} · ${SLOT_LABEL[r.slot]}` })}
             className="h-7 px-2 text-[11px]"
             aria-label="Start pomodoro for routine"
@@ -309,7 +357,7 @@ export function RoutineCard({
 
       {/* Linked recipient */}
       {recipients.length > 0 && (
-        <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
           <span>Linked to</span>
           <Select
             value={r.recipient_id ?? "__none__"}
@@ -321,27 +369,32 @@ export function RoutineCard({
               {recipients.map(rec => <SelectItem key={rec.id} value={rec.id}>{rec.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          <span className="ml-1">· Prep</span>
+          <Select
+            value={String(prepNotice)}
+            onValueChange={(v) => routinesApi.upsert(r.person_name, r.slot, { meta: { prepNoticeMin: parseInt(v, 10) } })}
+          >
+            <SelectTrigger className="h-6 w-20 text-[11px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Off</SelectItem>
+              <SelectItem value="2">2 min</SelectItem>
+              <SelectItem value="5">5 min</SelectItem>
+              <SelectItem value="10">10 min</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       )}
 
       {/* Items */}
       <div className="mt-2 space-y-1">
         {r.items.map(it => (
-          <div key={it.id} className="group flex items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-xs">
-            <Checkbox checked={it.done} onCheckedChange={() => routinesApi.toggleItem(r.person_name, r.slot, it.id)} />
-            <span className={cn("flex-1 truncate", it.done && "line-through text-muted-foreground")}>{it.text}</span>
-            <button
-              onClick={() => setPomo({ open: true, title: it.text })}
-              className="opacity-0 group-hover:opacity-60 hover:opacity-100"
-              aria-label="Start pomodoro for step"
-              title="Start pomodoro"
-            ><Timer className="h-3 w-3" /></button>
-            <button
-              onClick={() => routinesApi.removeItem(r.person_name, r.slot, it.id)}
-              className="opacity-0 group-hover:opacity-60 hover:opacity-100"
-              aria-label="Remove"
-            ><X className="h-3 w-3" /></button>
-          </div>
+          <RoutineItemRow
+            key={it.id}
+            item={it}
+            person={r.person_name}
+            slot={r.slot}
+            onFocus={() => onFocus?.(r, it.id)}
+          />
         ))}
         <form
           onSubmit={(e) => { e.preventDefault(); if (!draft.trim()) return; void routinesApi.addItem(r.person_name, r.slot, draft.trim()); setDraft(""); }}
@@ -362,6 +415,12 @@ export function RoutineCard({
         onOpenChange={(o) => setPomo(s => ({ ...s, open: o }))}
         title={pomo.title}
         subtitle={`${SLOT_LABEL[r.slot]} · ${formatTime12(timeValue)}`}
+      />
+
+      <AIBreakdownDialog
+        open={breakdownOpen}
+        onOpenChange={setBreakdownOpen}
+        routine={r}
       />
 
       {/* Tags */}

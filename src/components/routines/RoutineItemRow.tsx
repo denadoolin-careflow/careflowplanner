@@ -1,0 +1,102 @@
+import { useState } from "react";
+import { Play, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { routines as routinesApi, type RoutineItem, type RoutineSlot } from "@/lib/routines";
+import { IconPickerPopover } from "./IconPickerPopover";
+
+export function RoutineItemRow({
+  item, person, slot, compact, onFocus,
+}: {
+  item: RoutineItem;
+  person: string;
+  slot: RoutineSlot;
+  compact?: boolean;
+  onFocus?: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(item.text);
+  const [dur, setDur] = useState(String(item.durationMin ?? 5));
+
+  return (
+    <div className={cn(
+      "group flex items-center gap-2 rounded-xl bg-muted/30 px-2 py-1.5 text-xs transition-colors hover:bg-muted/50",
+      compact && "py-1",
+    )}>
+      <Checkbox
+        checked={item.done}
+        onCheckedChange={() => routinesApi.toggleItem(person, slot, item.id)}
+      />
+      <IconPickerPopover
+        value={item.icon}
+        onChange={(icon) => routinesApi.updateItem(person, slot, item.id, { icon })}
+      />
+      {editing ? (
+        <Input
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={() => {
+            const t = text.trim();
+            if (t && t !== item.text) void routinesApi.updateItem(person, slot, item.id, { text: t });
+            setEditing(false);
+          }}
+          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") { setText(item.text); setEditing(false); } }}
+          className="h-6 flex-1 text-xs"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className={cn("flex-1 truncate text-left", item.done && "text-muted-foreground line-through")}
+        >
+          {item.text}
+        </button>
+      )}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="rounded-full bg-card px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted/60"
+            aria-label="Step duration"
+          >
+            {item.durationMin ?? 5}m
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-32 p-2" align="end">
+          <label className="text-[10px] text-muted-foreground">Minutes</label>
+          <Input
+            type="number" min={1} max={240}
+            value={dur}
+            onChange={(e) => setDur(e.target.value)}
+            onBlur={() => {
+              const n = Math.max(1, Math.min(240, parseInt(dur, 10) || 5));
+              void routinesApi.updateItem(person, slot, item.id, { durationMin: n });
+              setDur(String(n));
+            }}
+            className="h-7 text-xs"
+          />
+        </PopoverContent>
+      </Popover>
+      {onFocus && (
+        <button
+          onClick={onFocus}
+          className="rounded-full p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-primary/15 hover:text-primary group-hover:opacity-100"
+          aria-label="Focus on step"
+          title="Focus"
+        >
+          <Play className="h-3 w-3" />
+        </button>
+      )}
+      <button
+        onClick={() => routinesApi.removeItem(person, slot, item.id)}
+        className="opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100"
+        aria-label="Remove"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
