@@ -62,6 +62,7 @@ import CareLoop from "./pages/CareLoop";
 import Automations from "./pages/Automations";
 import Trips from "./pages/Trips";
 import TripDetail from "./pages/TripDetail";
+import RhythmOverview from "./pages/RhythmOverview";
 import Quiz from "./pages/Quiz";
 import Pricing from "./pages/Pricing";
 import Waitlist from "./pages/Waitlist";
@@ -121,6 +122,7 @@ const App = () => (
                 <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/areas/:name" element={<AreaPage />} />
                 <Route path="/today" element={<Today />} />
+                <Route path="/rhythm" element={<RhythmOverview />} />
                 <Route path="/plan" element={<PlanTimeline />} />
                 <Route path="/plan/:date" element={<PlanDay />} />
                 <Route path="/week" element={<Week />} />
