@@ -35,24 +35,24 @@ export function useCalView(): [CalView, (v: CalView) => void] {
 
 export function CalendarViewToggle({ value, onChange }: { value: CalView; onChange: (v: CalView) => void }) {
   return (
-    <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-xs">
+    <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-xs">
       <button
         onClick={() => onChange("schedule")}
-        className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
+        className={cn("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 transition-colors",
           value === "schedule" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground")}
       >
         <CalendarDays className="h-3.5 w-3.5" /> Schedule
       </button>
       <button
         onClick={() => onChange("parts")}
-        className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
+        className={cn("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 transition-colors",
           value === "parts" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground")}
       >
         <Sunrise className="h-3.5 w-3.5" /> Time of day
       </button>
       <button
         onClick={() => onChange("agenda")}
-        className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 transition-colors",
+        className={cn("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 transition-colors",
           value === "agenda" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground")}
       >
         <ListChecks className="h-3.5 w-3.5" /> Agenda
