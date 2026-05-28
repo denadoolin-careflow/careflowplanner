@@ -349,6 +349,7 @@ export default function Month() {
                       return (
                         <div
                           key={i}
+                          data-day-item
                           draggable={isTask || isAppt || isBlock}
                           onDragStart={(isTask || isAppt || isBlock) ? (e) => {
                             e.stopPropagation();
