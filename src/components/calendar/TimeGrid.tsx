@@ -142,6 +142,50 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const [editingTaskBlockId, setEditingTaskBlockId] = useState<string | null>(null);
   const editingTask = editingTaskId ? state.tasks.find(t => t.id === editingTaskId) ?? null : null;
   const [draft, setDraft] = useState<{ date: string; start: string; end: string } | null>(null);
+  const [quickAdd, setQuickAdd] = useState<{ iso: string; hour: number; durMin: number; value: string } | null>(null);
+  const quickAddRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => { if (quickAdd) setTimeout(() => quickAddRef.current?.focus(), 0); }, [quickAdd?.iso, quickAdd?.hour]);
+
+  const commitQuickAdd = useCallback(async (openFullEditor = false) => {
+    if (!quickAdd) return;
+    const title = quickAdd.value.trim();
+    const { iso, hour, durMin } = quickAdd;
+    const startH = hour;
+    const endH = Math.min(HOUR_END, hour + durMin / 60);
+    setQuickAdd(null);
+    if (openFullEditor) {
+      setDraft({ date: iso, start: hoursToHM(startH), end: hoursToHM(endH) });
+      return;
+    }
+    if (!title) return;
+    await add({
+      date: iso,
+      startTime: hoursToHM(startH),
+      endTime: hoursToHM(endH),
+      title,
+      color: "warm",
+      allDay: false,
+    });
+    haptics.tap();
+    toast(`Added "${title}"`, { description: `${fmtTime(hoursToHM(startH))} – ${fmtTime(hoursToHM(endH))}` });
+  }, [quickAdd, add]);
+
+  // Dismiss quick add on outside click / escape
+  useEffect(() => {
+    if (!quickAdd) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setQuickAdd(null); };
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("[data-quick-add]")) return;
+      void commitQuickAdd(false);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onDown);
+    };
+  }, [quickAdd, commitQuickAdd]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 15000); return () => clearInterval(id); }, []);
@@ -208,8 +252,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     const rect = el.getBoundingClientRect();
     const y = ev.clientY - rect.top;
     const startH = HOUR_START + snap(y / PX_PER_HOUR, snapStepFromEvent(ev));
-    const endH = Math.min(HOUR_END, startH + 1);
-    setDraft({ date: date.toISOString().slice(0,10), start: hoursToHM(startH), end: hoursToHM(endH) });
+    const iso = date.toISOString().slice(0, 10);
+    setQuickAdd({ iso, hour: startH, durMin: 30, value: "" });
   };
 
   const blocksFor = (iso: string) => blocks.filter(b => b.date === iso && !b.allDay);
@@ -630,11 +674,65 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       );
                     })()}
                     {/* Hover slot highlight */}
-                    {!drag && !dropHover && hoverSlot?.iso === iso && (
+                    {!drag && !dropHover && !quickAdd && hoverSlot?.iso === iso && (
                       <div
                         className="pointer-events-none absolute inset-x-1 z-0 rounded-md bg-primary/5 ring-1 ring-inset ring-primary/15 transition-[top] duration-100"
                         style={{ top: (hoverSlot.hour - HOUR_START) * PX_PER_HOUR, height: (SNAP_DEFAULT_MIN / 60) * PX_PER_HOUR }}
                       />
+                    )}
+                    {/* Inline quick-add */}
+                    {quickAdd?.iso === iso && (
+                      <div
+                        data-quick-add
+                        className="absolute inset-x-1 z-40 rounded-md border-2 border-primary/70 bg-card/95 shadow-lg backdrop-blur"
+                        style={{
+                          top: (quickAdd.hour - HOUR_START) * PX_PER_HOUR,
+                          height: Math.max(48, (quickAdd.durMin / 60) * PX_PER_HOUR),
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          ref={quickAddRef}
+                          value={quickAdd.value}
+                          onChange={(e) => setQuickAdd(q => q && { ...q, value: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") { e.preventDefault(); void commitQuickAdd(e.shiftKey); }
+                            else if (e.key === "Escape") { e.preventDefault(); setQuickAdd(null); }
+                          }}
+                          placeholder="New task — Enter to add"
+                          className="block w-full bg-transparent px-2 py-1 text-[12px] font-medium leading-tight outline-none placeholder:text-muted-foreground"
+                        />
+                        <div className="flex items-center justify-between gap-1 px-2 pb-1 text-[10px] text-muted-foreground">
+                          <div className="flex items-center gap-0.5">
+                            {[15, 30, 60].map(m => (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => setQuickAdd(q => q && { ...q, durMin: m })}
+                                className={cn(
+                                  "rounded px-1.5 py-0.5 transition-colors",
+                                  quickAdd.durMin === m
+                                    ? "bg-primary/15 text-primary"
+                                    : "hover:bg-muted hover:text-foreground"
+                                )}
+                              >
+                                {m}m
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="tabular-nums">{fmtTime(hoursToHM(quickAdd.hour))}</span>
+                            <button
+                              type="button"
+                              onClick={() => void commitQuickAdd(true)}
+                              className="rounded px-1.5 py-0.5 hover:bg-muted hover:text-foreground"
+                              title="More options"
+                            >
+                              More…
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     )}
                     {/* Snap-to-grid indicator while dragging an existing block */}
                     {drag && drag.moved && drag.curDate === iso && (() => {
