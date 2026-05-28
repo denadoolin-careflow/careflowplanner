@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Flag, Plus, Trash2, CalendarIcon, Check } from "lucide-react";
+import { Flag, Plus, Trash2, CalendarIcon } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
