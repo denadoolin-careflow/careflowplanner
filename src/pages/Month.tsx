@@ -86,6 +86,9 @@ export default function Month() {
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks, update: updateBlock } = useTimeBlocks(fromISO, toISO);
+  const { days: wxDays } = useWeekForecast();
+  const [tempUnit] = useTempUnit();
+  const wxFmt = (c: number) => `${tempUnit === "F" ? cToF(c) : c}°`;
 
   const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task") =>
     k === "appt" ? "bg-primary-soft text-foreground"
