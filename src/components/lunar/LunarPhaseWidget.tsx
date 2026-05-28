@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { addDays, format } from "date-fns";
 import { Sparkles } from "lucide-react";
 import { MoonGlyph } from "@/components/widgets/MoonGlyph";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/lunar-phases";
 import { getMoonSign, SIGN_EMOJI, MOON_IN_SIGN_GUIDE } from "@/lib/zodiac";
 import { getMoonDayMeaning } from "@/lib/moon-days";
+import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 
 interface Props {
   date?: Date;
@@ -36,6 +37,7 @@ export function LunarPhaseWidget({ date = new Date(), compact = false }: Props) 
   const sign = getMoonSign(date);
   const signGuide = MOON_IN_SIGN_GUIDE[sign.name];
   const lunarDay = getMoonDayMeaning(date);
+  const [sheetDate, setSheetDate] = useState<Date | null>(null);
 
   const next4 = useMemo(() => {
     const out: { date: Date; phase: MoonPhase }[] = [];
@@ -125,24 +127,38 @@ export function LunarPhaseWidget({ date = new Date(), compact = false }: Props) 
         <div className="relative mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {next4.map((n) => {
             const k = KEY_PHASES[toKeyPhase(n.phase)];
+            const s = getMoonSign(n.date);
             return (
-              <div
+              <button
+                type="button"
                 key={n.date.toISOString()}
-                className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 backdrop-blur-sm"
+                onClick={() => setSheetDate(n.date)}
+                className="group flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-left backdrop-blur-sm transition-all hover:bg-white/10 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-white/30"
                 style={{ borderLeft: `2px solid hsl(${k.hsl} / 0.6)` }}
+                aria-label={`${k.verb} on ${format(n.date, "MMM d")} — Moon in ${s.name}`}
               >
                 <MoonGlyph date={n.date} size={26} />
-                <div className="text-[11px] leading-tight">
+                <div className="min-w-0 flex-1 text-[11px] leading-tight">
                   <p className="font-medium" style={{ color: `hsl(${k.hsl})` }}>
-                    {k.verb}
+                    {k.glyph} {k.verb}
                   </p>
                   <p className="opacity-70">{format(n.date, "MMM d")}</p>
+                  <p className="mt-0.5 truncate opacity-80">
+                    <span className="mr-0.5">{SIGN_EMOJI[s.name]}</span>
+                    {s.name}
+                  </p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
       )}
+
+      <DayLunarSheet
+        date={sheetDate}
+        open={sheetDate !== null}
+        onOpenChange={(o) => !o && setSheetDate(null)}
+      />
     </div>
   );
 }
