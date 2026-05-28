@@ -2715,6 +2715,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          word_goal: number | null
         }
         Insert: {
           archived?: boolean
@@ -2729,6 +2730,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id: string
+          word_goal?: number | null
         }
         Update: {
           archived?: boolean
@@ -2743,6 +2745,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          word_goal?: number | null
         }
         Relationships: []
       }
