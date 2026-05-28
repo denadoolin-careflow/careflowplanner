@@ -22,8 +22,8 @@ export function RoutineItemRow({
 
   return (
     <div className={cn(
-      "group flex items-center gap-2 rounded-xl bg-muted/30 px-2 py-1.5 text-xs transition-colors hover:bg-muted/50",
-      compact && "py-1",
+      "group flex items-center gap-2 rounded-xl bg-muted/30 px-2 py-2 text-xs transition-colors hover:bg-muted/50",
+      compact && "py-1.5",
     )}>
       <Checkbox
         checked={item.done}
@@ -83,19 +83,19 @@ export function RoutineItemRow({
       {onFocus && (
         <button
           onClick={onFocus}
-          className="rounded-full p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-primary/15 hover:text-primary group-hover:opacity-100"
+          className="rounded-full p-2 text-muted-foreground transition-opacity hover:bg-primary/15 hover:text-primary md:opacity-0 md:group-hover:opacity-100"
           aria-label="Focus on step"
           title="Focus"
         >
-          <Play className="h-3 w-3" />
+          <Play className="h-3.5 w-3.5" />
         </button>
       )}
       <button
         onClick={() => routinesApi.removeItem(person, slot, item.id)}
-        className="opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100"
+        className="p-1.5 opacity-60 transition-opacity hover:opacity-100 md:opacity-0 md:group-hover:opacity-60"
         aria-label="Remove"
       >
-        <X className="h-3 w-3" />
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );
