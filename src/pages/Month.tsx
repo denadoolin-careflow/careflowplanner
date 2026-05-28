@@ -428,30 +428,83 @@ export default function Month() {
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
 
       <Sheet open={!!sheetISO} onOpenChange={(o) => !o && setSheetISO(null)}>
-        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
-          <SheetHeader>
-            <SheetTitle>
-              {sheetISO ? format(new Date(sheetISO + "T00:00:00"), "EEEE, MMM d") : ""}
-            </SheetTitle>
-          </SheetHeader>
-          {sheetISO && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 w-full"
-              onClick={() => {
-                const d = new Date(sheetISO + "T00:00:00");
-                setSheetISO(null);
-                setLunarDate(d);
-              }}
-            >
-              <Moon className="mr-1.5 h-3.5 w-3.5" /> Lunar guidance for this day
-            </Button>
-          )}
+        <SheetContent side={isMobile ? "bottom" : "right"} className={cn("overflow-y-auto", isMobile ? "max-h-[85vh] rounded-t-2xl" : "w-full sm:max-w-md")}>
+          {sheetISO && (() => {
+            const d = new Date(sheetISO + "T00:00:00");
+            const moon = getRhythmForecast(d);
+            const dayPhaseRaw = getMoonPhase(d);
+            const keyPhase = isKeyPhaseDay(dayPhaseRaw) ? getKeyPhaseInfo(dayPhaseRaw) : null;
+            const cyclePhase = cycleSettings.enabled ? phaseForDate(d, cyclePeriods, cycleSettings) : null;
+            const cycleMeta = cyclePhase ? PHASE_META[cyclePhase] : null;
+            return (
+              <>
+                <SheetHeader className="text-left">
+                  <SheetTitle className="flex items-center gap-3">
+                    <MoonGlyph date={d} size={36} />
+                    <span className="flex flex-col">
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                        {format(d, "EEEE, MMM d")}
+                      </span>
+                      <span className="font-display text-lg">{moon.phaseLabel}</span>
+                    </span>
+                  </SheetTitle>
+                </SheetHeader>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-xl border border-border/50 bg-card/60 p-2.5">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Moon in</div>
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <span aria-hidden>{moon.sign.glyph}</span>
+                      <span className="font-medium">{moon.sign.sign}</span>
+                    </div>
+                  </div>
+                  {cycleMeta ? (
+                    <div
+                      className="rounded-xl border border-border/50 p-2.5"
+                      style={{ background: `hsl(var(${cycleMeta.tokenVar}) / 0.12)` }}
+                    >
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Cycle</div>
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ background: `hsl(var(${cycleMeta.tokenVar}))` }}
+                        />
+                        <span className="font-medium">{cycleMeta.label}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-border/50 bg-card/60 p-2.5">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Key phase</div>
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        {keyPhase ? (
+                          <>
+                            <span aria-hidden>{keyPhase.glyph}</span>
+                            <span className="font-medium">{keyPhase.verb}</span>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">{moon.phaseLabel}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={() => { setSheetISO(null); setLunarDate(d); }}
+                >
+                  <Moon className="mr-1.5 h-3.5 w-3.5" /> Lunar guidance for this day
+                </Button>
+              </>
+            );
+          })()}
+
           {sheetISO && (() => {
             const items = eventsOn(sheetISO);
             if (items.length === 0) {
-              return <p className="mt-4 text-sm text-muted-foreground">Nothing on this day.</p>;
+              return <p className="mt-6 text-sm text-muted-foreground">Nothing on this day.</p>;
             }
             const partOf = (hm?: string | null): "morning" | "afternoon" | "evening" | "allday" => {
               if (!hm || !/^\d{2}:\d{2}/.test(hm)) return "allday";
@@ -484,7 +537,7 @@ export default function Month() {
               }
             };
             return (
-              <div className="mt-4 space-y-4">
+              <div className="mt-5 space-y-4">
                 {PARTS.map(p => {
                   const list = groups[p.key];
                   if (list.length === 0) return null;
@@ -501,6 +554,9 @@ export default function Month() {
                       <ul className="space-y-1.5">
                         {list.map((it, i) => {
                           const blockCls = it.kind === "block" && it.blockColor ? colorClasses(it.blockColor) : null;
+                          const task = it.kind === "task" && it.taskId
+                            ? state.tasks.find(x => x.id === it.taskId) ?? null
+                            : null;
                           return (
                             <li
                               key={i}
@@ -509,11 +565,21 @@ export default function Month() {
                                 "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
                                 blockCls ? cn(blockCls.bg, blockCls.text, "ring-1 ring-inset", blockCls.ring) : colorOf(it.kind as any),
                                 (it.kind === "task" || it.kind === "appt" || it.kind === "block") && "cursor-pointer",
+                                task?.done && "opacity-60",
                               )}
                               style={blockCls?.style}
                             >
+                              {task && (
+                                <Checkbox
+                                  checked={!!task.done}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onCheckedChange={() => { haptics.tap(); void toggleTask(task.id); }}
+                                  aria-label={task.done ? "Mark not done" : "Mark done"}
+                                  className="shrink-0"
+                                />
+                              )}
                               {it.time && <span className="shrink-0 font-mono text-xs opacity-70">{formatTime12(it.time.slice(0, 5))}</span>}
-                              <span className="min-w-0 flex-1">{it.label}</span>
+                              <span className={cn("min-w-0 flex-1", task?.done && "line-through")}>{it.label}</span>
                             </li>
                           );
                         })}
