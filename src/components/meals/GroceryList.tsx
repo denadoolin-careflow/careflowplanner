@@ -381,3 +381,44 @@ export function GroceryList() {
     </div>
   );
 }
+
+function DraggableRow({
+  id, enabled, dim, children,
+}: { id: string; enabled: boolean; dim: boolean; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `gl-${id}`, disabled: !enabled });
+  return (
+    <li
+      ref={setNodeRef}
+      {...(enabled ? attributes : {})}
+      {...(enabled ? listeners : {})}
+      className={cn(
+        "group flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-muted/40",
+        enabled && "cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-40",
+        dim && "opacity-30",
+      )}
+    >
+      {children}
+    </li>
+  );
+}
+
+function CategoryDropZone({
+  cat, count, children,
+}: { cat: string; count: number; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `cat-${cat}` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-lg border border-transparent p-1 transition",
+        isOver && "border-primary/40 bg-primary/5"
+      )}
+    >
+      <div className="mb-1 flex items-center gap-1 px-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        {cat} <span className="text-muted-foreground/60">({count})</span>
+      </div>
+      <ul className="space-y-0.5">{children}</ul>
+    </div>
+  );
+}
