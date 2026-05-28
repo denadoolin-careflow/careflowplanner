@@ -14,6 +14,7 @@ import { RecipeDrawer } from "@/components/meals/RecipeDrawer";
 import { PantryPanel } from "@/components/meals/PantryPanel";
 import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
 import { GroceryKanban } from "@/components/meals/GroceryKanban";
+import { GroceryList } from "@/components/meals/GroceryList";
 import { MealCell } from "@/components/meals/MealCell";
 import { LibrarySidebar } from "@/components/meals/LibrarySidebar";
 import { calendarPanelOptions } from "@/components/meals/CalendarDropPanel";
@@ -34,6 +35,8 @@ import {
 type ViewMode = "week" | "two" | "day";
 const VIEW_KEY = "meals.viewMode";
 const FOCUS_KEY = "meals.focusedDate";
+type GroceryView = "kanban" | "list";
+const GROCERY_VIEW_KEY = "meals.groceryView";
 
 export default function Meals() {
   const { state, user, addMeal, updateMeal, reloadAll } = useStore();
@@ -57,6 +60,10 @@ export default function Meals() {
   const [resetOpen, setResetOpen] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem(VIEW_KEY) as ViewMode) || "week");
+  const [groceryView, setGroceryView] = useState<GroceryView>(
+    () => (localStorage.getItem(GROCERY_VIEW_KEY) as GroceryView) || "kanban"
+  );
+  useEffect(() => { localStorage.setItem(GROCERY_VIEW_KEY, groceryView); }, [groceryView]);
   const [focusedDate, setFocusedDate] = useState<Date>(() => {
     const s = localStorage.getItem(FOCUS_KEY);
     return s ? parseISO(s) : new Date();
