@@ -1,80 +1,65 @@
-# Habits: detail view, linking, surfacing & analytics
+# Tiimo-Inspired Routines Upgrade
 
-## 1. Habit detail sheet (open a habit)
+Bring the most loved patterns from Tiimo (a visual planner for ADHD/autism) into the existing Routines feature. The focus is **visualizing time**, **reducing reading load**, and **easing transitions** — not rebuilding from scratch. Existing data (`routines` table, `RoutineItem`) stays compatible; new fields are stored in a `meta jsonb` column.
 
-Add `HabitDetailSheet.tsx` (Radix Sheet, right-side) opened by clicking the plant tile in the Garden or a row in List view.
+## What the user will see
 
-Sections inside the sheet:
-- **Header**: plant illustration, title (editable), category, cadence, streak/forgiving streak.
-- **Time of day**: chips for Morning / Midday / Afternoon / Evening / Anytime (multi-select).
-- **Schedule**: days-of-week chips (for weekly cadence) + optional reminder time.
-- **Linked items**: pickers for Projects, Routines, Tasks, Goals — pulled from `state.projects / routines / tasks / goals`. Renders as chips; click to open that entity.
-- **Notes**: reuse existing `LinkedNotesPanel entityType="habit"`.
-- **14-day strip + actions** (Tend today / Delete).
+1. **Icon-first routine items** — each step gets a big emoji/icon picker. The timeline becomes scannable without reading.
+2. **Per-step durations** — every step has a duration in minutes (default 5). Total routine time shows in the header.
+3. **Pie timer Focus Mode** — full-screen view of the current step with a depleting circular timer, large icon, sub-text, and **Next →** preview of the following step. Skip / Done / Pause.
+4. **Now / Next banner** — at the top of `Routines.tsx` and `RoutinesStrip`, a compact card showing the current step and what's next, calculated from `time_of_day` + cumulative durations.
+5. **AI "Break it down"** — on any routine, a button that takes a vague goal ("get ready for school") and returns a list of sub-steps with icons + durations, appended to the routine.
+6. **Get-Ready nudges** — store `prepNoticeMin` per routine (0/2/5/10). Surfaced in the Now/Next banner as "Starts in 5 min · get ready" pre-rolls.
+7. **Calmer visual language on routines surfaces** — bigger rounded cards, soft chips, icon-anchored rows (Tiimo-style), reduced text density. Scoped only to the Routines page/strip/focus mode; no global theme change.
 
-## 2. Data model
+Out of scope: community template library, lockscreen widgets, OpenDyslexic font, cross-app push notifications.
 
-Extend `Habit` in `src/lib/types.ts`:
-```ts
-timesOfDay?: ("morning"|"midday"|"afternoon"|"evening"|"anytime")[];
-daysOfWeek?: number[];      // 0=Sun..6=Sat, for weekly cadence
-reminderTime?: string;      // "HH:mm"
-linkedProjectIds?: string[];
-linkedRoutineIds?: string[];
-linkedTaskIds?: string[];
-linkedGoalIds?: string[];
-```
+## Technical plan
 
-Migration: add a single `meta jsonb default '{}'` column on `public.habits` and serialize the new fields into it (keeps migration minimal, avoids many nullable columns). Update `habitFrom` / `addHabit` / `updateHabit` in `src/lib/store.tsx` to read/write `meta`.
+### Data
+- Migration: `ALTER TABLE public.routines ADD COLUMN meta jsonb NOT NULL DEFAULT '{}'::jsonb;`
+- Extend `RoutineItem` in `src/lib/routines.ts`:
+  ```ts
+  interface RoutineItem {
+    id: string; text: string; done: boolean;
+    icon?: string;        // emoji or lucide name
+    durationMin?: number; // default 5
+    note?: string;
+  }
+  ```
+- Extend `Routine` with derived getters from `meta`: `prepNoticeMin?: number`, `color?: string`.
+- Update `mapRow` / `upsert` to round-trip `meta` and per-item fields (already JSON, so just type-safe accessors).
 
-## 3. Today page surfacing
+### Components (new, under `src/components/routines/`)
+- `IconPickerPopover.tsx` — small emoji + curated lucide set; reuses existing `LucideIconPicker` patterns.
+- `RoutineItemRow.tsx` — replaces the inline item row in `RoutineCard` and `RoutinesStrip`: icon button, text, duration chip (click to edit), checkbox, focus button.
+- `NowNextBanner.tsx` — pure presentation, takes a `Routine[]` for one person, computes current/next step from clock + durations.
+- `RoutineFocusMode.tsx` — `Dialog`-based full-screen. Pie timer (SVG circle `stroke-dasharray` animation, no extra dep), big icon, step text, Next preview, controls (Pause/Skip/Done). Drives off local `setInterval`; calls `routinesApi.toggleItem` on Done.
+- `AIBreakdownDialog.tsx` — input + result list with icons/durations, "Add all" / "Add selected".
 
-New `TodayHabitsCard.tsx` in `src/components/today/`, inserted into `Today.tsx` near the morning/focus area:
-- Groups today's due habits by `timesOfDay` (Morning → Evening → Anytime).
-- Each row: mini plant glyph, title, linked-project/routine chip, Tend button with haptic.
-- Header progress bar (reuses `HabitProgressBar` logic) + "X of Y tended".
-- Filters habits where: cadence=daily, OR weekly with today in `daysOfWeek`, OR linked to a task/routine scheduled today.
+### Wiring
+- `src/pages/Routines.tsx` — mount `NowNextBanner` above filters; swap item rendering inside `RoutineCard` to `RoutineItemRow`; add **Focus** button per routine (opens `RoutineFocusMode`); add **Break it down** button next to the existing AI button.
+- `src/components/routines/RoutinesStrip.tsx` — same `RoutineItemRow`, compact mode; add small Focus icon.
+- `src/lib/routines.ts` — add `updateItem(person, slot, itemId, patch)` for partial item updates (icon/duration/note) on top of existing helpers. Add `routineTotalMinutes(r)` and `computeNowNext(routines, now)` pure helpers.
 
-## 4. Week page surfacing
+### AI
+- New edge function `supabase/functions/ai-routine-breakdown/index.ts` using Lovable AI Gateway (`google/gemini-2.5-flash`, tool-call output) returning `{ steps: [{ text, icon, durationMin }] }`. Mirrors `ai-routine-ideas` structure.
 
-In `Week.tsx`, add a compact `WeekHabitsStrip` to the `WeekRhythmRow` area:
-- 7-day grid: one row per habit, dots per day showing logged completions.
-- Click a dot to toggle that day.
-- Only shows habits relevant to the week (cadence ≥ weekly).
+### Styling
+- Add a `routine-card` variant using existing tokens — larger radius (`rounded-3xl`), `bg-card/70`, subtle shadow. No new colors; reuse semantic tokens from `index.css`.
 
-## 5. Weekly habit review analytics (under Garden)
+## File map
 
-Replace the current "Weekly habit review" `SectionCard` body in `Habits.tsx` with `HabitWeeklyAnalytics.tsx`:
-- **Stacked bar / area chart** (Recharts) — last 7 days, % completion per day across all habits.
-- **Per-habit sparkline list** — 28-day completion ratio with growth stage label.
-- **Stat tiles**: total tends, best day, most consistent habit, growing vs wilting counts.
-- **Time-of-day breakdown** donut.
+Create:
+- `supabase/migrations/<ts>_routines_meta_and_items.sql`
+- `supabase/functions/ai-routine-breakdown/index.ts`
+- `src/components/routines/IconPickerPopover.tsx`
+- `src/components/routines/RoutineItemRow.tsx`
+- `src/components/routines/NowNextBanner.tsx`
+- `src/components/routines/RoutineFocusMode.tsx`
+- `src/components/routines/AIBreakdownDialog.tsx`
 
-## 6. AI overview
-
-New edge function `supabase/functions/ai-habit-overview/index.ts`:
-- Uses Lovable AI Gateway, `google/gemini-3-flash-preview`, via `streamText` returning a short structured summary (3 gentle observations + 1 suggestion).
-- Inputs: 28 days of habit logs, growth stages, linked projects/routines, time-of-day data.
-- Client trigger button at the top of `HabitWeeklyAnalytics` with manual refresh + 24h localStorage cache.
-
-## Files
-
-**Create**
-- `src/components/habits/HabitDetailSheet.tsx`
-- `src/components/habits/HabitWeeklyAnalytics.tsx`
-- `src/components/today/TodayHabitsCard.tsx`
-- `src/components/week/WeekHabitsStrip.tsx`
-- `supabase/functions/ai-habit-overview/index.ts`
-- Migration: add `meta jsonb` to `public.habits`
-
-**Edit**
-- `src/lib/types.ts` — extend `Habit`
-- `src/lib/store.tsx` — `habitFrom`, `addHabit`, `updateHabit` round-trip `meta`
-- `src/components/habits/HabitGarden.tsx` — click tile opens detail sheet
-- `src/pages/Habits.tsx` — wire list/garden onClick, swap weekly review for analytics
-- `src/pages/Today.tsx` — mount `TodayHabitsCard`
-- `src/pages/Week.tsx` — mount `WeekHabitsStrip`
-
-## Out of scope
-- Cycle/lunar correlation for habits (covered by Insights page).
-- Reminders/push notifications (only stored; delivery later).
+Edit:
+- `src/lib/routines.ts` (types, helpers, meta round-trip)
+- `src/pages/Routines.tsx` (banner, focus button, AI breakdown, new row)
+- `src/components/routines/RoutinesStrip.tsx` (new row, focus shortcut)

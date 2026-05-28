@@ -3536,6 +3536,7 @@ export type Database = {
           created_at: string
           id: string
           items: Json
+          meta: Json
           notes: string | null
           person_name: string
           recipient_id: string | null
@@ -3550,6 +3551,7 @@ export type Database = {
           created_at?: string
           id?: string
           items?: Json
+          meta?: Json
           notes?: string | null
           person_name: string
           recipient_id?: string | null
@@ -3564,6 +3566,7 @@ export type Database = {
           created_at?: string
           id?: string
           items?: Json
+          meta?: Json
           notes?: string | null
           person_name?: string
           recipient_id?: string | null
