@@ -4,6 +4,7 @@ import { format, isBefore, isAfter, addDays, parseISO, startOfDay, startOfWeek, 
 import { useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/lib/store";
 import { openTaskEditor } from "@/lib/open-task-editor";
@@ -179,23 +180,30 @@ export function NotificationCenter() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative h-9 w-9 text-primary hover:bg-primary/10 hover:text-primary"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-          {count > 0 && (
-            <Badge
-              className="absolute -right-1 -top-1 h-4 min-w-[16px] rounded-full border border-background bg-primary px-1 text-[9px] text-primary-foreground shadow-soft hover:bg-primary"
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative h-9 w-9 rounded-full text-primary hover:bg-primary/10 hover:text-primary"
+              aria-label="Notifications"
             >
-              {count > 9 ? "9+" : count}
-            </Badge>
-          )}
-        </Button>
-      </PopoverTrigger>
+              <Bell className="h-4 w-4" />
+              {count > 0 && (
+                <Badge
+                  className="absolute -right-1 -top-1 h-4 min-w-[16px] rounded-full border border-background bg-primary px-1 text-[9px] text-primary-foreground shadow-soft hover:bg-primary"
+                >
+                  {count > 9 ? "9+" : count}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          Notifications{count > 0 ? ` · ${count} new` : ""}
+        </TooltipContent>
+      </Tooltip>
       <PopoverContent className="w-96 p-2" align="end">
         <div className="mb-1 flex items-center justify-between gap-2 px-1">
           <div className="font-display text-sm font-semibold">Notifications</div>
