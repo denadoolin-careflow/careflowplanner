@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   fetchWeather, geocodeCity, loadSavedPlace, reverseLabel, savePlace,
@@ -56,7 +57,7 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
   const [status, setStatus] = useState<"idle" | "loading" | "needs-location" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [expandedPart, setExpandedPart] = useState<string | null>(null);
+  const [detailPart, setDetailPart] = useState<DayPartForecast | null>(null);
   const [showHourly, setShowHourly] = useState(false);
   const triedRef = useRef(false);
   const [mobileNowOnly, setMobileNowOnly] = useState(true);
@@ -220,17 +221,15 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
           {(() => {
             const renderTile = (p: DayPartForecast) => {
               const Icon = PART_ICON[p.part] ?? Sun;
-              const expanded = expandedPart === p.part;
               return (
                 <li key={p.part}>
                   <button
                     type="button"
-                    onClick={() => setExpandedPart(expanded ? null : p.part)}
-                    aria-expanded={expanded}
+                    onClick={() => setDetailPart(p)}
+                    aria-haspopup="dialog"
                     className={cn(
                       "group relative w-full rounded-2xl border border-border/60 p-3 text-left transition-all",
                       "hover:shadow-[var(--shadow-cozy)] hover:-translate-y-0.5",
-                      expanded && "ring-2 ring-primary/40",
                     )}
                     style={{ background: PART_GRADIENT[p.part] }}
                   >
@@ -247,17 +246,7 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
                     <p className="mt-0.5 truncate text-[12px] text-foreground/80">{p.conditionLabel}</p>
                     <div className="mt-1 flex items-center gap-3 text-[11px] text-foreground/70">
                       {p.precipChance >= 10 && <span className="inline-flex items-center gap-1">💧 {p.precipChance}%</span>}
-                      <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} />
-                    </div>
-                    <div
-                      className={cn(
-                        "grid overflow-hidden transition-[grid-template-rows] duration-300",
-                        expanded ? "grid-rows-[1fr] mt-2" : "grid-rows-[0fr]",
-                      )}
-                    >
-                      <div className="min-h-0">
-                        <DayPartDetails dp={p} unit={unit} hours={snap?.todayHourly ?? []} />
-                      </div>
+                      <span className="ml-auto text-[10px] uppercase tracking-wider text-foreground/60">Tap for details</span>
                     </div>
                   </button>
                 </li>
@@ -308,6 +297,12 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
           </div>
         )}
       </div>
+      <DayPartDetailDialog
+        part={detailPart}
+        unit={unit}
+        hours={snap?.todayHourly ?? []}
+        onClose={() => setDetailPart(null)}
+      />
     </section>
   );
 }
@@ -320,18 +315,51 @@ function hoursForPart(part: string, hours: HourlyForecast[]): HourlyForecast[] {
   return hours;
 }
 
-function DayPartDetails({ dp, unit, hours }: { dp: DayPartForecast; unit: TempUnit; hours: HourlyForecast[] }) {
-  const tip = dayPartSuggestion(dp);
-  const partHours = hoursForPart(dp.part, hours);
+function DayPartDetailDialog({
+  part, unit, hours, onClose,
+}: { part: DayPartForecast | null; unit: TempUnit; hours: HourlyForecast[]; onClose: () => void }) {
+  const open = !!part;
+  const partHours = part ? hoursForPart(part.part, hours) : [];
+  const tip = part ? dayPartSuggestion(part) : null;
+  const Icon = part ? (PART_ICON[part.part] ?? Sun) : Sun;
+  const maxPrecip = partHours.reduce((m, h) => Math.max(m, h.precipChance), 0);
   return (
-    <div className="border-t border-border/60 pt-2 text-[12px] text-foreground/80">
-      {partHours.length > 0 ? (
-        <HourlyList hours={partHours} unit={unit} compact />
-      ) : (
-        <p className="text-foreground/70">No hourly data.</p>
-      )}
-      {tip && <p className="mt-1.5 italic text-foreground/75">{tip}.</p>}
-    </div>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md p-0 overflow-hidden">
+        {part && (
+          <>
+            <div className="p-5" style={{ background: PART_GRADIENT[part.part] }}>
+              <DialogHeader>
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-foreground/70">
+                  <Icon className="h-3.5 w-3.5" /> {part.part}
+                </div>
+                <DialogTitle className="mt-1 flex items-baseline gap-2 font-display">
+                  <span className="text-3xl tabular-nums">{fmtTemp(part.avgTempC, unit)}</span>
+                  <span className="text-sm font-normal text-foreground/80">{part.conditionLabel}</span>
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-[12px] text-foreground/80 tabular-nums">
+                <span>H {fmtTemp(part.highC, unit)} · L {fmtTemp(part.lowC, unit)}</span>
+                <span className="inline-flex items-center gap-1">💧 Peak {maxPrecip}%</span>
+              </div>
+            </div>
+            <div className="p-5 pt-3 space-y-3">
+              <div>
+                <h4 className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Hourly forecast</h4>
+                {partHours.length > 0 ? (
+                  <HourlyList hours={partHours} unit={unit} />
+                ) : (
+                  <p className="text-[12px] text-muted-foreground">No hourly data available.</p>
+                )}
+              </div>
+              {tip && (
+                <p className="rounded-xl bg-muted/50 px-3 py-2 text-[12px] italic text-foreground/80">{tip}.</p>
+              )}
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
