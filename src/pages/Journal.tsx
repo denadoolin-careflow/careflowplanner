@@ -27,6 +27,7 @@ import { AttachmentsField } from "@/components/attachments/AttachmentsField";
 import type { Attachment } from "@/lib/types";
 import { startOfWeek, endOfWeek, startOfYear, getYear } from "date-fns";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
+import { DailyWritingGoal } from "@/components/notes/DailyWritingGoal";
 
 type TemplateKey =
   | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
@@ -352,6 +353,8 @@ export default function Journal() {
       </div>
 
       <RhythmJournalPrompt scope="daily" />
+
+      <DailyWritingGoal />
 
       <SectionCard title="Choose a template" accent="sage">
         <div className="flex flex-wrap gap-2">
