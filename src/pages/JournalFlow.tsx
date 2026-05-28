@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { PomodoroPanel } from "@/components/tasks/PomodoroPanel";
+import { NoteTOC } from "@/components/notes/NoteTOC";
 import { useStore } from "@/lib/store";
 import { usePomodoro, formatPomoTime, pomoTotal } from "@/lib/pomodoro-store";
 import { cn } from "@/lib/utils";
@@ -165,6 +166,12 @@ export default function JournalFlow() {
           </p>
         </div>
       </section>
+
+      <aside className="hidden xl:flex w-[220px] shrink-0 flex-col border-l border-border/40 px-5 py-6">
+        <div className="sticky top-6">
+          <NoteTOC body={body} title="Outline" />
+        </div>
+      </aside>
 
       {fullscreen && <FullscreenTimer onClose={() => setFullscreen(false)} />}
     </div>

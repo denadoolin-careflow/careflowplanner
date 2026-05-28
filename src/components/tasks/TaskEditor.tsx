@@ -232,6 +232,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                   body={draft.notes ?? ""}
                   onChange={(markdown) => set("notes", markdown)}
                   placeholder="Anything to remember… press / for blocks"
+                  showFooter={false}
                 />
               </div>
             </div>

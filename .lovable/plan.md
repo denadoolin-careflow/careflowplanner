@@ -1,47 +1,81 @@
-## Goal
+# Build plan — three phases
 
-Show the user's current menstrual phase alongside today's energy on Today, and make the whole card a tap-through into a new combined Rhythm Overview that surfaces both lunar and menstrual phases and deep-links into the existing Lunar Living and Cyclical Living tabs.
+Research-backed (BJ Fogg B=MAP, Atomic Habits, SDT, Finch/Way of Life patterns). Per your choices: notes/journal first → habit garden → analytics graph w/ insights engine.
 
-## Behavior
+---
 
-### 1. Today's energy card (enhanced)
-In `EnergyCheckIn` (rendered on `/today`):
-- After the three energy buttons, append two compact "phase chips":
-  - **Moon chip** — `{glyph} {phase label}` (e.g. 🌒 Waxing crescent), uses `getMoonPhase(new Date())`.
-  - **Cycle chip** — `{glyph} {phase label} · day {cycleDay}` from `getPhaseInfo(today, periods, settings)`. Only shown when `settings.enabled` and history exists; otherwise a muted "Log cycle" chip.
-- The whole row becomes wrapped in a clickable container that navigates to `/rhythm`. Energy buttons keep their own click handlers (stopPropagation) so picking energy doesn't navigate. A small chevron + "Open rhythm" affordance appears on hover/right side.
+## Phase 1 — Notes & Journal: TOC sidebar + word count + goals
 
-### 2. New page: Rhythm Overview (`/rhythm`)
-A single, calm page with two side-by-side cards (stack on mobile):
-- **Moon today** card — large glyph, phase name, illumination %, next major phase + date, one-line invitation from existing lunar copy. CTA button **"Open Lunar Living"** → `/health?tab=lunar`.
-- **Cycle today** card — large glyph, phase name, cycle day / cycle length, days until next period, archetype + affirmation + invitation from `PHASE_META`. CTA button **"Open Cyclical Living"** → `/health?tab=cycle`. If cycle disabled or no periods logged: show a gentle empty state with a CTA to enable in Settings or log a period.
-- Below: a "How they align today" strip showing `getMoonAlignment(...)` label (White/Red/Pink/Purple Moon) when both data sets exist.
+**Sidebar Table of Contents**
+- New `src/components/notes/NoteTOC.tsx` — parses BlockEditor headings (H1/H2/H3), renders a sticky right-rail list with click-to-scroll + active-section highlight via IntersectionObserver.
+- Wire into `NoteDetail.tsx` and `JournalFlow.tsx`. Collapsible on mobile (sheet), pinned on ≥lg.
 
-Page header: "Your rhythm today · {today's date}" with a back button to `/today`.
+**Word count + goals**
+- New `src/lib/writing-goals.ts` — localStorage-backed daily goal (default 250 words), per-note targets stored on note row (`word_goal` column).
+- Footer chip in `BlockEditor.tsx`: live word count, reading time, target progress ring.
+- New `src/components/notes/DailyWritingGoal.tsx` widget — progress ring + streak (today's total across journal entries). Dashboard widget + top of `Journal.tsx`.
+- Migration: add `word_goal int` to `notes` table (nullable).
 
-### 3. Routing
-Add `/rhythm` route in `App.tsx` (inside `RequireAuth`/`AppLayout` block, same pattern as `/today`).
+---
 
-## Technical Notes
+## Phase 2 — Garden habit & routine system
 
-**New files**
-- `src/pages/RhythmOverview.tsx` — composes data from `useCycle`, `getPhaseInfo`, `getMoonPhase` (from `src/lib/moon.ts`), `getMoonAlignment`, `PHASE_META`. Uses `SectionCard` + `Button` + existing `MoonGlyph` if useful. Two `<Link>` CTAs to `/health?tab=lunar` and `/health?tab=cycle`.
+**Garden visualization**
+- New `src/components/habits/HabitGarden.tsx` — each habit = a plant that grows through 5 stages (seed → sprout → bud → bloom → tree) based on a forgiving 14-day rolling completion ratio (not raw streak). Sage/clay palette per your pick.
+- SVG plants in `src/assets/plants/` (generate via imagegen, transparent PNGs).
+- Tap plant → quick log; long-press → details.
 
-**Edits**
-- `src/components/cards/EnergyCheckIn.tsx` — import `useCycle`, `getPhaseInfo`, `getMoonPhase`, `MOON_PHASE_META` (or inline glyph), `useNavigate`. Wrap the existing row in a clickable container; render two chips after the buttons. Keep energy buttons working via `stopPropagation`. Add a small "Open rhythm →" affordance.
-- `src/App.tsx` — add `<Route path="/rhythm" element={<RhythmOverview />} />` and the import.
+**Behavior-change patterns baked in**
+- **Tiny-habit framing**: habit creation flow asks "After I ___, I will ___" (habit stacking) + tiny version field.
+- **Forgiving streaks**: replace raw streak with "consistency %" + grace days (2/week free, "rest day" log option). Never resets to 0.
+- **Identity badges**: auto-assigned titles (e.g., "Mindful mover · 21 reps") shown on garden plot.
+- **Focus Mode for routines**: `RoutineFocusMode.tsx` — full-screen sequential runner, per-step timer, cumulative time, swipe-next, haptics on each completion (reuses existing haptics + completion-visual systems).
+- **Drag-to-reorder** routine items (dnd-kit, already in deps).
+- **Self-compassion prompt** on miss: "Was today a rest day?" toggle instead of "missed".
+- **Emergency / low-energy mode**: existing `lowEnergyMode` filters garden to top 3 "essential" habits (new `essential` flag).
 
-**Reuse**
-- `getPhaseInfo`, `PHASE_META`, `getMoonAlignment`, `MOON_ALIGNMENT_LABEL` from `src/lib/cycle.ts`.
-- Moon helpers from `src/lib/moon.ts` (phase + label + illumination + next phase date).
-- `useCycle` from `src/lib/cycle-store`.
+**Files**
+- New: `HabitGarden.tsx`, `PlantSprite.tsx`, `RoutineFocusMode.tsx`, `HabitCreateDialog.tsx`, `src/lib/habit-consistency.ts`.
+- Edit: `Habits.tsx`, `Routines.tsx`, `RoutinesStrip.tsx`, store schema (`essential`, `grace_days`, `tiny_version`, `stack_anchor` fields on habit; migration).
 
-**Edge cases**
-- Cycle tracking disabled → chip renders as "Cycle off" muted; Rhythm page shows enable hint.
-- No period history → chip shows "Log period"; Rhythm page shows log-period CTA.
-- No moon provider data → fall back to `getMoonPhase()` astronomical calc (already used elsewhere).
+---
 
-## Out of scope
-- No changes to the existing Lunar Living or Cyclical Living tab contents.
-- No new DB/schema changes.
-- No animation/visual redesign of Today beyond appending the two chips and making the card clickable.
+## Phase 3 — Dashboard graph + focus/cycle insights engine
+
+**Dashboard graph view**
+- New `src/components/dashboard/DashboardGraph.tsx` — toggle on Dashboard between current grid and a "graph view" (recharts radial + sparkline grid of: tasks done, focus minutes, habits %, mood, sleep, cycle phase).
+
+**End-of-day time analytics**
+- New `src/pages/Insights.tsx` (route `/insights`) with three views:
+  1. **Today** — donut of where time went (tasks by area + pomodoro sessions by tag) + current moon/cycle badge.
+  2. **28-day trends** — stacked area: focus minutes per day, overlaid with lunar phase ribbon and menstrual cycle phase band (uses existing `lib/moon-phase.ts`, `lib/cycle.ts`).
+  3. **Insights** — AI-generated correlations via new edge function `ai-rhythm-insights` (Lovable AI Gateway, `google/gemini-3-flash-preview`). Pulls last 28 days of pomodoros, completed tasks, mood check-ins, cycle phase, moon phase; returns ranked observations (e.g., "Focus peaks in follicular + waxing moon: +34%") + 3 gentle recommendations.
+
+**Data plumbing**
+- Reuse existing `pomodoro-history`, `tasks`, `cycle-store`, `moon-phase`. No new tables required for Phase 3 reads.
+- New edge function: `supabase/functions/ai-rhythm-insights/index.ts`.
+
+**Wiring**
+- Add "Insights" to bottom nav / sidebar.
+- Dashboard graph view added as togglable mode on Dashboard.
+- End-of-day card on Today links to Insights/Today view.
+
+---
+
+## Technical notes
+
+- All UI uses semantic tokens from `index.css`; sage palette aligns with existing warm theme.
+- Recharts already in deps (used in `MaintenanceTab` analytics).
+- IntersectionObserver for TOC scroll-spy is React-friendly via custom hook.
+- Edge function follows Lovable AI Gateway pattern (no user API key).
+- Migrations: 1 for `notes.word_goal`, 1 for habit fields (`essential`, `grace_days`, `tiny_version`, `stack_anchor`).
+
+---
+
+## Ship order
+
+1. Phase 1 (notes TOC + word goals) — this turn after approval.
+2. Phase 2 (garden habits) — next turn.
+3. Phase 3 (graph + insights) — turn after that.
+
+Approve to start Phase 1.

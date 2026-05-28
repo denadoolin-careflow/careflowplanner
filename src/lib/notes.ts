@@ -13,6 +13,7 @@ export interface Note {
   pinned: boolean;
   archived: boolean;
   tags?: string[];
+  wordGoal?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -22,6 +23,7 @@ const fromRow = (r: any): Note => ({
   kind: r.kind, date: r.date ?? null, projectId: r.project_id ?? null,
   pinned: !!r.pinned, archived: !!r.archived,
   tags: Array.isArray(r.tags) ? r.tags : [],
+  wordGoal: r.word_goal ?? null,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -63,6 +65,7 @@ export async function updateNote(id: string, patch: Partial<Note>): Promise<void
     title?: string; body?: string; pinned?: boolean; archived?: boolean;
     project_id?: string | null;
     tags?: string[];
+    word_goal?: number | null;
   } = {};
   if (patch.title !== undefined) row.title = patch.title;
   if (patch.body !== undefined) row.body = patch.body;
@@ -70,6 +73,7 @@ export async function updateNote(id: string, patch: Partial<Note>): Promise<void
   if (patch.archived !== undefined) row.archived = patch.archived;
   if (patch.projectId !== undefined) row.project_id = patch.projectId;
   if (patch.tags !== undefined) row.tags = patch.tags;
+  if (patch.wordGoal !== undefined) row.word_goal = patch.wordGoal;
   const { error } = await supabase.from("notes").update(row).eq("id", id);
   if (error) throw error;
 }

@@ -43,6 +43,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { linkNote, type EntityType } from "@/lib/note-links";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
+import { WordCountFooter } from "@/components/notes/WordCountFooter";
 
 /* ------------------------------------------------------------------ */
 /*  Markdown <-> HTML helpers (storage compat with existing notes)    */
@@ -408,11 +409,17 @@ export function BlockEditor({
   onChange,
   noteId,
   placeholder = "Press / for blocks · @ to mention · [[ to link",
+  goal,
+  onGoalChange,
+  showFooter = true,
 }: {
   body: string;
   onChange: (markdown: string, html: string) => void;
   noteId?: string;
   placeholder?: string;
+  goal?: number | null;
+  onGoalChange?: (next: number | null) => void;
+  showFooter?: boolean;
 }) {
   const { state, addTask } = useStore();
   const navigate = useNavigate();
@@ -794,6 +801,9 @@ export function BlockEditor({
         </BubbleMenu>
       )}
       <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      {showFooter && (
+        <WordCountFooter body={body} goal={goal ?? null} onGoalChange={onGoalChange} />
+      )}
     </div>
   );
 }
