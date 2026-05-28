@@ -6,6 +6,7 @@ import { CalendarClock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
 import { resolveTaskIcon } from "@/lib/task-icons";
+import { formatTime12 } from "@/lib/routines";
 
 type ApptLike = { label: string; time?: string | null; id?: string; kind?: "appt" | "gcal" | "task" | "bday" | "hol"; done?: boolean };
 
@@ -103,7 +104,7 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick }: 
                       <Check className={cn("h-3 w-3 transition-opacity", r.done ? "opacity-100" : "opacity-0 group-hover/cb:opacity-100")} />
                     </button>
                   )}
-                  <span className="w-16 shrink-0 font-mono text-[11px] opacity-70">{r.time ? r.time : "All day"}</span>
+                  <span className="w-16 shrink-0 font-mono text-[11px] opacity-70">{r.time ? formatTime12(r.time.slice(0,5)) : "All day"}</span>
                   {isTask && (() => {
                     const t = state.tasks.find(x => x.id === r.apptId);
                     if (!t) return null;
