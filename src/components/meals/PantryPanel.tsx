@@ -56,7 +56,7 @@ const KEYWORDS: Record<string, PantryCategory> = {
   dressing: "Condiments & Sauces", oil: "Condiments & Sauces", vinegar: "Condiments & Sauces",
   // Spices
   salt: "Spices & Baking", sugar: "Spices & Baking", spice: "Spices & Baking",
-  pepper: "Spices & Baking" as PantryCategory, baking: "Spices & Baking",
+  baking: "Spices & Baking", cinnamon: "Spices & Baking",
   // Beverages
   coffee: "Beverages", tea: "Beverages", juice: "Beverages",
   soda: "Beverages", water: "Beverages", wine: "Beverages", beer: "Beverages",
