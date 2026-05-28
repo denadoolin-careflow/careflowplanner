@@ -73,6 +73,7 @@ import { FullScreenFocus } from "@/components/tasks/FullScreenFocus";
 import { MoonPrefetcher } from "@/components/rhythm/MoonPrefetcher";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { SwipeNav } from "@/components/layout/SwipeNav";
+import { CyclePlanningListener } from "@/components/cycle/CyclePlanningListener";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,7 @@ const App = () => (
             <PomodoroBoundaryFlash />
             <FullScreenFocus />
             <MoonPrefetcher />
+            <CyclePlanningListener />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/quiz" element={<Quiz />} />
