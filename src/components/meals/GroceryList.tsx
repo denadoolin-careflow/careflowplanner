@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SavedListsDialog } from "./SavedListsDialog";
 import { PANTRY_TAG } from "@/lib/automations/engine";
 import type { GroceryItem } from "@/lib/types";
+import { DndContext, useDraggable, useDroppable, type DragEndEvent } from "@dnd-kit/core";
+import { cn } from "@/lib/utils";
 
 const CAT_ORDER = ["Produce", "Protein", "Dairy", "Bakery", "Frozen", "Pantry", "Other"];
 
@@ -164,8 +166,9 @@ export function GroceryList() {
         ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
         : "text-muted-foreground hover:bg-muted";
     const dim = highlightMealId && highlightMealId !== item.sourceMealId;
+    const draggable = groupBy === "category" && !isEditing;
     return (
-      <li key={item.id} className={`group flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-muted/40 ${dim ? "opacity-30" : ""}`}>
+      <DraggableRow key={item.id} id={item.id} enabled={draggable} dim={!!dim}>
         <Checkbox checked={item.bought} onCheckedChange={() => toggleGrocery(item.id)} />
         {isEditing ? (
           <div className="flex flex-1 items-center gap-1.5">
@@ -178,7 +181,7 @@ export function GroceryList() {
           <>
             <span className={item.bought ? "text-muted-foreground line-through" : ""}>{item.name}</span>
             {item.qty && <span className="text-[11px] text-muted-foreground">· {item.qty}</span>}
-            <button onClick={() => setGroceryStock(item.id, next)} title={`Mark ${next}`}>
+            <button onPointerDown={(e) => e.stopPropagation()} onClick={() => setGroceryStock(item.id, next)} title={`Mark ${next}`}>
               <Badge variant={status === "out" ? "outline" : "secondary"}
                 className={`ml-1 cursor-pointer rounded-full text-[10px] ${stockClass}`}>
                 {stockLabel}
@@ -188,6 +191,7 @@ export function GroceryList() {
               <button
                 onMouseEnter={() => setHighlightMealId(item.sourceMealId ?? null)}
                 onMouseLeave={() => setHighlightMealId(null)}
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => { setGroupBy("meal"); setHighlightMealId(item.sourceMealId ?? null); }}
                 title={`From ${item.sourceMealName}${item.sourceSlot ? " · " + item.sourceSlot : ""}${item.sourceDate ? " · " + item.sourceDate : ""}`}
                 className="ml-1"
@@ -198,12 +202,12 @@ export function GroceryList() {
               </button>
             )}
             <div className="ml-auto flex items-center gap-1 opacity-0 transition group-hover:opacity-70">
-              <button onClick={() => startEdit(item.id, item.name, item.qty)} title="Edit"><Pencil className="h-3 w-3" /></button>
-              <button onClick={() => deleteGrocery(item.id)} title="Delete"><Trash2 className="h-3 w-3" /></button>
+              <button onPointerDown={(e) => e.stopPropagation()} onClick={() => startEdit(item.id, item.name, item.qty)} title="Edit"><Pencil className="h-3 w-3" /></button>
+              <button onPointerDown={(e) => e.stopPropagation()} onClick={() => deleteGrocery(item.id)} title="Delete"><Trash2 className="h-3 w-3" /></button>
             </div>
           </>
         )}
-      </li>
+      </DraggableRow>
     );
   };
 
