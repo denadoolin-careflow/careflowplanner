@@ -21,6 +21,7 @@ import { AREAS } from "@/lib/types";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { IconPicker } from "@/components/common/IconPicker";
 import { resolveTaskIcon } from "@/lib/task-icons";
+import { DayContextStrip } from "@/components/calendar/DayContextStrip";
 
 const CLEANING_ZONES = ["Kitchen","Bathroom","Bedrooms","Living","Laundry","Entryway","Outdoor","Whole home"] as const;
 
@@ -394,6 +395,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
           {/* Time axis */}
           <div className="w-14 shrink-0 border-r border-border/50">
             <div className="h-8" />
+            <div className="h-7 border-b border-border/50" />
             {anyDayHasTasks && <div className="h-7 border-b border-border/50" />}
             {Array.from({ length: TOTAL_HOURS }, (_, i) => HOUR_START + i).map(h => (
               <div key={h} className="relative text-[10px] text-muted-foreground" style={{ height: PX_PER_HOUR }}>
@@ -419,6 +421,9 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                   <div className={cn("flex h-8 items-baseline justify-center gap-1 border-b border-border/50 text-xs", isToday && "bg-primary/5")}>
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(d, "EEE")}</span>
                     <span className="font-semibold">{format(d, "d")}</span>
+                  </div>
+                  <div className={cn("flex h-7 items-center justify-center border-b border-border/50 px-1", isToday && "bg-primary/5")}>
+                    <DayContextStrip date={d} compact />
                   </div>
                   {dayTasks.length > 0 && (
                     <div className="flex h-7 items-center justify-center border-b border-border/50 bg-muted/20 px-1">

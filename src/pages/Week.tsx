@@ -30,6 +30,7 @@ import { Flower2 } from "lucide-react";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
+import { DayContextStrip } from "@/components/calendar/DayContextStrip";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
@@ -181,6 +182,7 @@ export default function Week() {
                           {fmtDate(d, "EEEE")} <span className="text-muted-foreground font-normal">{fmtDate(d, "MMM d")}</span>
                         </h3>
                       </div>
+                      <DayContextStrip date={d} onLunar={setLunarDate} />
                       <DayPartsView
                         days={[d]}
                         appointmentsOn={eventsOn}
@@ -193,7 +195,7 @@ export default function Week() {
                 </div>
               )}
               {view === "agenda" && (
-                <AgendaView days={isMobile ? [selectedDate] : days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} />
+                <AgendaView days={isMobile ? [selectedDate] : days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} onLunarOpen={setLunarDate} />
               )}
             </SectionCard>
 

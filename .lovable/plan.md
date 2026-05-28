@@ -1,85 +1,43 @@
-# Project Dashboard Upgrade
+Add a per-day context strip (lunar phase + zodiac sign, menstrual phase, weather) to every day shown in the Week views, and ensure tasks group into Morning / Afternoon / Evening. Extend the Kanban board with a new "By day" mode that lays the same per-day cards out as columns.
 
-Turn the existing project detail page into a dashboard with milestones, a budget panel that links to your wealth-hub records, start/end dates, and an animated sidebar for scheduling project tasks onto the calendar.
+## New shared component
 
-## 1. Data model
+`src/components/calendar/DayContextStrip.tsx`
+- Props: `date: Date`, `compact?: boolean`.
+- Renders a single horizontal strip with four glyph + label chips:
+  - **Moon**: `MoonGlyph` + phase label (uses `getMoonPhase`).
+  - **Sign**: zodiac glyph + sign name (from `getRhythmForecast(date).sign`).
+  - **Cycle**: dot + phase name (uses `useCycle` + `phaseForDate` / `PHASE_META`, hidden when cycle tracking disabled).
+  - **Weather**: condition icon + high/low and precip % (uses `useWeekForecast` for any day in the visible week; falls back to "—" when out of forecast range).
+- Click on moon/sign opens the existing `DayLunarSheet` via an `onLunar?: (d: Date) => void` callback.
 
-Extend `Project` (in `src/lib/types.ts` + store):
+## Week view changes (`src/pages/Week.tsx` + sub-views)
 
-- `startDate?: string` (ISO date)
-- `endDate?: string` (ISO date; replaces/augments existing `deadline`)
-- `budgetCents?: number` (optional planned budget)
-- `milestones?: ProjectMilestone[]`
-- `linkedTransactionIds?: string[]` (wealth-hub transactions tagged to this project)
-- `linkedWealthGoalIds?: string[]` (savings goals tied to this project)
+1. **Schedule (TimeGrid)** — add `DayContextStrip` above each day's column header in `src/components/calendar/TimeGrid.tsx` (compact mode, hides labels under ~sm so it stays readable).
+2. **Day parts** — `DayPartsView` already groups by Morning / Afternoon / Evening; insert `DayContextStrip` just below the day title that is rendered in `Week.tsx` around the `<DayPartsView>` map.
+3. **Agenda (`AgendaView`)** — two changes:
+   - Add `DayContextStrip` inside each day's group header (right under the date row).
+   - Replace the flat `<ul>` with three labeled sub-sections (Morning / Afternoon / Evening / All day) using the same `partOf` logic already in `Month.tsx`'s day sheet.
 
-New type:
-```ts
-ProjectMilestone {
-  id: string;
-  title: string;
-  date?: string;
-  done: boolean;
-  notes?: string;
-}
-```
+## Kanban changes (`src/components/tasks/KanbanBoard.tsx` + consumers)
 
-All persisted client-side in the existing store (no Supabase migration — matches current Project storage pattern).
+1. Add a new `groupBy` option: `"status" | "day"`.
+   - `"status"` is the current 5-column layout (no behavior change).
+   - `"day"` renders 7 columns for the current week. Each column:
+     - **Header**: `EEE M/d` plus `DayContextStrip` (compact).
+     - **Body**: three stacked groups labeled Morning / Afternoon / Evening, with a fourth "All day" group when present.
+     - Cards = existing `KanbanCard`; bucket by `task.dueDate === iso` and the existing `dayPart` field, or by `partOf(time)` if scheduled via a time block.
+     - Drop on a group sets `dueDate` to that ISO and `dayPart` to the matching part.
+2. `TaskListPage.tsx` gets a small "Group by · Status / Day" toggle next to the view switcher when `view === "kanban"`. Default stays `status`.
 
-## 2. Dashboard layout
+## Files touched
 
-Refactor `src/pages/ProjectDetail.tsx` into a responsive grid of cards (top stats row + 2-column body on desktop, stacked on mobile):
+- New: `src/components/calendar/DayContextStrip.tsx`
+- Edited: `src/pages/Week.tsx`, `src/components/calendar/TimeGrid.tsx`, `src/components/calendar/AgendaView.tsx`, `src/components/tasks/KanbanBoard.tsx`, `src/pages/TaskListPage.tsx`
 
-```text
-+----------------------------------------+
-| Header: name, status, dates, progress  |
-+----------------------------------------+
-| Overview / Notes  |  Milestones        |
-|                   |                    |
-+-------------------+--------------------+
-| Tasks             |  Resources & Budget|
-|                   |  (linked tx, goals)|
-+----------------------------------------+
-```
+## Notes / out of scope
 
-Cards:
-- **Timeline card**: shadcn DatePickers for Start and Finish, computed duration, progress bar from milestones + tasks done.
-- **Notes / Overview**: existing notes editor.
-- **Milestones**: list with add/edit/toggle-done, optional date, sorted by date.
-- **Tasks**: existing task list, plus a "Schedule" button that opens the scheduling sidebar (see §4).
-- **Resources & Budget**: planned budget input, totals pulled from linked wealth-hub transactions (spent vs remaining), list of linked savings goals with progress, "Link transaction" / "Link goal" pickers that read from the wealth-hub store.
-
-## 3. Budget integration
-
-New helper `src/lib/project-finance.ts`:
-- `getProjectSpend(projectId, transactions)` — sums linked transactions.
-- `getProjectGoals(projectId, wealthGoals)` — returns linked savings goals + progress.
-
-Resources card uses these to show: **Budget · Spent · Remaining** and a stacked bar. Buttons open small popovers to select existing transactions/goals (no new entities created in the wealth-hub).
-
-## 4. Scheduler sidebar
-
-New component `src/components/projects/ProjectScheduleSidebar.tsx`:
-- shadcn `Sheet` from the right, animated via existing slide-in classes.
-- Lists project tasks without a `dueDate` on top, scheduled tasks below.
-- For each task: date picker + optional time → sets `dueDate` / `startAt` so it appears on the Today/Week/Calendar views (uses existing task store mutations).
-- "Send to calendar" action reuses the existing Google Calendar push if connected; otherwise just sets the in-app due date.
-
-Trigger: a "Schedule tasks" button in the Tasks card and a floating chip in the page header.
-
-## 5. Small touches
-
-- Replace the old single "deadline" field everywhere it's read with `endDate ?? deadline` for backward compat.
-- Animate card mount with `animate-fade-in`; sidebar uses `slide-in-right` / `slide-out-right`.
-- Mobile: cards stack, sidebar becomes full-width sheet.
-
-## Technical notes
-
-- Files added: `src/components/projects/ProjectDashboard.tsx`, `MilestonesCard.tsx`, `ResourcesCard.tsx`, `TimelineCard.tsx`, `ProjectScheduleSidebar.tsx`, `src/lib/project-finance.ts`.
-- Files changed: `src/lib/types.ts`, `src/lib/store.tsx` (new mutations: `updateProject` already exists; add `addMilestone/updateMilestone/removeMilestone`, `linkTransactionToProject`, etc.), `src/pages/ProjectDetail.tsx` (rewritten to compose dashboard cards).
-- No DB migration — projects persist in the existing local/store layer used today.
-
-## Open questions
-
-1. Should linking a transaction to a project also tag it in the wealth-hub UI, or only show inside the project page? (Default: tag both sides.)
-2. Should the scheduler sidebar create calendar events automatically when Google Calendar is connected, or only on explicit "Push to Google"? (Default: explicit push.)
+- Weather coverage: limited to whatever `useWeekForecast` returns (typically the current 7-day window). Out-of-range days show "—" rather than a fake value.
+- Menstrual phase chip only renders when cycle tracking is enabled in settings — same rule already used in `Month.tsx`.
+- No DB or schema changes.
+- The existing `WeekRhythmRow` above the week stays as-is; the new strip lives per-day inside the view itself.

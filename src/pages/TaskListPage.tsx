@@ -8,7 +8,7 @@ import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
 import { applyFilters, sortTasks, groupTasks } from "@/lib/task-grouping";
-import { KanbanBoard } from "@/components/tasks/KanbanBoard";
+import { KanbanBoard, type KanbanGroupBy } from "@/components/tasks/KanbanBoard";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { TaskSelectionProvider, useTaskSelection } from "@/lib/task-selection";
@@ -88,8 +88,10 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
   const [prefs, setPrefs] = useTaskListPrefs(`tlp:${variant}`);
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem(`careflow:view:${variant}`) as ViewMode) || "list");
   const [timeframe, setTimeframe] = useState<Timeframe>(() => (localStorage.getItem(`careflow:tf:${variant}`) as Timeframe) || "all");
+  const [kanbanGroup, setKanbanGroup] = useState<KanbanGroupBy>(() => (localStorage.getItem(`careflow:kanban-group:${variant}`) as KanbanGroupBy) || "status");
   useEffect(() => { localStorage.setItem(`careflow:view:${variant}`, view); }, [view, variant]);
   useEffect(() => { localStorage.setItem(`careflow:tf:${variant}`, timeframe); }, [timeframe, variant]);
+  useEffect(() => { localStorage.setItem(`careflow:kanban-group:${variant}`, kanbanGroup); }, [kanbanGroup, variant]);
   const showTimeframe = variant === "upcoming";
 
   const filteredFlat = useMemo(() => {
@@ -166,7 +168,22 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
       )}
 
       {view === "kanban" ? (
-        <KanbanBoard tasks={filteredFlat} />
+        <>
+          <div className="flex items-center gap-1 rounded-full bg-muted/50 p-1 w-fit text-xs">
+            <span className="px-2 text-muted-foreground">Group by</span>
+            {(["status", "day"] as KanbanGroupBy[]).map(g => (
+              <button
+                key={g}
+                onClick={() => setKanbanGroup(g)}
+                className={cn(
+                  "rounded-full px-3 py-1 font-medium capitalize transition-colors",
+                  kanbanGroup === g ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+              >{g}</button>
+            ))}
+          </div>
+          <KanbanBoard tasks={filteredFlat} groupBy={kanbanGroup} />
+        </>
       ) : (
       <div className="rounded-2xl border border-border/60 bg-card/60 p-2">
         {total === 0 ? (

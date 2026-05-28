@@ -3,9 +3,9 @@ import { useStore, todayISO } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { addDays, format } from "date-fns";
+import { addDays, format, startOfWeek, isSameDay } from "date-fns";
 import { haptics } from "@/lib/haptics";
-import { Plus, CalendarDays, ImagePlus } from "lucide-react";
+import { Plus, CalendarDays, ImagePlus, Sunrise, Sun, Moon } from "lucide-react";
 import { toast } from "sonner";
 import { inferTaskIcon } from "@/lib/task-icons";
 import { CoverImagePicker } from "@/components/common/CoverImagePicker";
@@ -16,6 +16,9 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { useViewPrefs } from "@/hooks/useViewPrefs";
 import { getCachedTags } from "@/hooks/use-tags";
 import { fallbackColorFor } from "@/lib/tags";
+import { DayContextStrip } from "@/components/calendar/DayContextStrip";
+import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
+import { hmToHours } from "@/lib/time-blocks";
 
 export type KanbanColorBy = "none" | "tag" | "project" | "area";
 
@@ -51,10 +54,16 @@ const COLUMNS: Column[] = [
     onDrop: () => ({ done: true, lastCompletedAt: new Date().toISOString() }) },
 ];
 
-export function KanbanBoard({ tasks, scope = "all", colorBy = "area" }: { tasks: Task[]; scope?: "all" | "project"; colorBy?: KanbanColorBy }) {
+export type KanbanGroupBy = "status" | "day";
+
+export function KanbanBoard({ tasks, scope = "all", colorBy = "area", groupBy = "status" }: { tasks: Task[]; scope?: "all" | "project"; colorBy?: KanbanColorBy; groupBy?: KanbanGroupBy }) {
   const { updateTask, addTask } = useStore();
   const today = todayISO();
   const [hover, setHover] = useState<ColumnKey | null>(null);
+
+  if (groupBy === "day") {
+    return <KanbanByDay tasks={tasks} colorBy={colorBy} />;
+  }
 
   const columns = useMemo(() => {
     const visible = scope === "project" ? COLUMNS.filter(c => c.key !== "inbox") : COLUMNS;
@@ -102,6 +111,135 @@ export function KanbanBoard({ tasks, scope = "all", colorBy = "area" }: { tasks:
           }} />
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ---------------- By-day variant ---------------- */
+
+type DayPart = "morning" | "afternoon" | "evening" | "allday";
+const DAY_PARTS: { key: DayPart; label: string; icon: typeof Sunrise; dropHour: number }[] = [
+  { key: "morning",   label: "Morning",   icon: Sunrise, dropHour: 8 },
+  { key: "afternoon", label: "Afternoon", icon: Sun,     dropHour: 13 },
+  { key: "evening",   label: "Evening",   icon: Moon,    dropHour: 19 },
+  { key: "allday",    label: "All day",   icon: CalendarDays, dropHour: 9 },
+];
+
+function partFromTask(t: Task): DayPart {
+  const dp = (t.dayPart ?? "").toLowerCase();
+  if (dp === "morning" || dp === "afternoon" || dp === "evening") return dp as DayPart;
+  return "allday";
+}
+
+function KanbanByDay({ tasks, colorBy }: { tasks: Task[]; colorBy: KanbanColorBy }) {
+  const { updateTask, addTask } = useStore();
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [hover, setHover] = useState<string | null>(null);
+  const [lunarDate, setLunarDate] = useState<Date | null>(null);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  const onDropTo = async (e: React.DragEvent, iso: string, part: DayPart) => {
+    e.preventDefault();
+    setHover(null);
+    const id = e.dataTransfer.getData("application/x-careflow-task");
+    if (!id) return;
+    haptics.snap?.();
+    const patch: Partial<Task> = {
+      dueDate: iso,
+      inbox: false,
+      done: false,
+      status: "active" as any,
+    };
+    if (part !== "allday") (patch as any).dayPart = part[0].toUpperCase() + part.slice(1);
+    await updateTask(id, patch);
+    toast(`Moved to ${format(parseISO(iso), "EEE MMM d")} · ${part}`);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2 px-1">
+        <div className="text-xs font-medium text-muted-foreground">
+          Week of {format(weekStart, "MMM d")}
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setWeekStart(addDays(weekStart, -7))}
+            className="rounded-md border border-border/60 px-2 py-1 text-xs hover:bg-muted/60"
+          >‹ Prev</button>
+          <button
+            type="button"
+            onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+            className="rounded-md border border-border/60 px-2 py-1 text-xs hover:bg-muted/60"
+          >This week</button>
+          <button
+            type="button"
+            onClick={() => setWeekStart(addDays(weekStart, 7))}
+            className="rounded-md border border-border/60 px-2 py-1 text-xs hover:bg-muted/60"
+          >Next ›</button>
+        </div>
+      </div>
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
+        {days.map(d => {
+          const iso = d.toISOString().slice(0, 10);
+          const dayTasks = tasks.filter(t => t.dueDate === iso && !t.parentTaskId);
+          const isToday = isSameDay(d, new Date());
+          return (
+            <div
+              key={iso}
+              className={cn(
+                "flex w-72 shrink-0 flex-col rounded-2xl border border-border/60 bg-card/60 p-2 snap-start",
+                isToday && "ring-1 ring-primary/40",
+              )}
+            >
+              <div className="mb-2 space-y-1.5">
+                <div className="flex items-baseline justify-between px-1">
+                  <span className={cn("text-xs font-semibold uppercase tracking-wider", isToday && "text-primary")}>
+                    {format(d, "EEE")} <span className="opacity-60">{format(d, "MMM d")}</span>
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{dayTasks.length}</span>
+                </div>
+                <DayContextStrip date={d} compact onLunar={setLunarDate} className="px-1" />
+              </div>
+              <div className="flex-1 space-y-2">
+                {DAY_PARTS.map(p => {
+                  const items = dayTasks.filter(t => partFromTask(t) === p.key);
+                  const hoverKey = `${iso}-${p.key}`;
+                  return (
+                    <div
+                      key={p.key}
+                      onDragOver={(e) => {
+                        if (!Array.from(e.dataTransfer.types).includes("application/x-careflow-task")) return;
+                        e.preventDefault(); e.dataTransfer.dropEffect = "move"; setHover(hoverKey);
+                      }}
+                      onDragLeave={() => setHover(prev => prev === hoverKey ? null : prev)}
+                      onDrop={(e) => onDropTo(e, iso, p.key)}
+                      className={cn(
+                        "rounded-lg border border-dashed border-border/50 p-1.5 transition-colors min-h-[2.5rem]",
+                        hover === hoverKey && "border-primary bg-primary/5",
+                      )}
+                    >
+                      <div className="mb-1 flex items-center gap-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <p.icon className="h-3 w-3" />
+                        {p.label}
+                        {items.length > 0 && <span className="opacity-60">· {items.length}</span>}
+                      </div>
+                      <div className="space-y-1">
+                        {items.map(t => <KanbanCard key={t.id} task={t} colorBy={colorBy} />)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <QuickAdd
+                col={{ key: "today", label: format(d, "EEE"), accent: "", match: () => true, onDrop: () => ({ dueDate: iso, inbox: false, done: false, status: "active" }) } as any}
+                onAdd={async (title) => { await addTask({ title, area: "Personal", dueDate: iso, inbox: false } as any); }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <DayLunarSheet date={lunarDate} open={!!lunarDate} onOpenChange={(o) => !o && setLunarDate(null)} />
     </div>
   );
 }
