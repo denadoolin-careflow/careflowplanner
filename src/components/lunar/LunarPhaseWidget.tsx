@@ -15,6 +15,7 @@ import {
   getKeyPhaseInfo,
   isKeyPhaseDay,
   toKeyPhase,
+  type KeyPhase,
 } from "@/lib/lunar-phases";
 import { getMoonSign, SIGN_EMOJI, MOON_IN_SIGN_GUIDE } from "@/lib/zodiac";
 import { getMoonDayMeaning } from "@/lib/moon-days";
@@ -39,18 +40,21 @@ export function LunarPhaseWidget({ date = new Date(), compact = false }: Props) 
   const lunarDay = getMoonDayMeaning(date);
   const [sheetDate, setSheetDate] = useState<Date | null>(null);
 
+  // Canonical cycle order: Sow → Grow → Glow → Let go.
   const next4 = useMemo(() => {
-    const out: { date: Date; phase: MoonPhase }[] = [];
-    let last: MoonPhase | null = null;
-    for (let i = 0; i < 32 && out.length < 4; i++) {
+    const order: KeyPhase[] = ["sow", "grow", "glow", "let-go"];
+    const found: Partial<Record<KeyPhase, { date: Date; phase: MoonPhase }>> = {};
+    for (let i = 0; i < 35; i++) {
       const d = addDays(date, i);
       const p = getMoonPhase(d);
-      if (isKeyPhaseDay(p) && p !== last) {
-        out.push({ date: d, phase: p });
-        last = p;
-      }
+      if (!isKeyPhaseDay(p)) continue;
+      const k = toKeyPhase(p);
+      if (!found[k]) found[k] = { date: d, phase: p };
+      if (order.every((o) => found[o])) break;
     }
-    return out;
+    return order
+      .filter((k) => found[k])
+      .map((k) => ({ key: k, ...(found[k] as { date: Date; phase: MoonPhase }) }));
   }, [date]);
 
   return (
@@ -126,7 +130,7 @@ export function LunarPhaseWidget({ date = new Date(), compact = false }: Props) 
       {!compact && (
         <div className="relative mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {next4.map((n) => {
-            const k = KEY_PHASES[toKeyPhase(n.phase)];
+            const k = KEY_PHASES[n.key];
             const s = getMoonSign(n.date);
             return (
               <button
@@ -135,13 +139,14 @@ export function LunarPhaseWidget({ date = new Date(), compact = false }: Props) 
                 onClick={() => setSheetDate(n.date)}
                 className="group flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-left backdrop-blur-sm transition-all hover:bg-white/10 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-white/30"
                 style={{ borderLeft: `2px solid hsl(${k.hsl} / 0.6)` }}
-                aria-label={`${k.verb} on ${format(n.date, "MMM d")} — Moon in ${s.name}`}
+                aria-label={`${k.verb} — ${k.label} on ${format(n.date, "MMM d")} — Moon in ${s.name}`}
               >
                 <MoonGlyph date={n.date} size={26} />
                 <div className="min-w-0 flex-1 text-[11px] leading-tight">
                   <p className="font-medium" style={{ color: `hsl(${k.hsl})` }}>
                     {k.glyph} {k.verb}
                   </p>
+                  <p className="truncate opacity-80">{k.label.split(" · ")[1]}</p>
                   <p className="opacity-70">{format(n.date, "MMM d")}</p>
                   <p className="mt-0.5 truncate opacity-80">
                     <span className="mr-0.5">{SIGN_EMOJI[s.name]}</span>
