@@ -59,6 +59,15 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
   const [expandedPart, setExpandedPart] = useState<string | null>(null);
   const [showHourly, setShowHourly] = useState(false);
   const triedRef = useRef(false);
+  const [mobileNowOnly, setMobileNowOnly] = useState(true);
+
+  const currentPart = useMemo(() => {
+    const h = new Date().getHours();
+    if (h >= 6 && h < 12) return "Morning";
+    if (h >= 12 && h < 17) return "Afternoon";
+    if (h >= 17 && h < 21) return "Evening";
+    return "Late Night";
+  }, []);
 
   useEffect(() => { onSnapshot?.(snap); }, [snap, onSnapshot]);
 
@@ -100,6 +109,12 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
     () => (snap?.dayParts ?? []).filter(p => p.part !== "Late Night" && p.conditionLabel !== "—"),
     [snap],
   );
+
+  const mobileParts = useMemo(() => {
+    if (!mobileNowOnly) return heroParts;
+    const match = heroParts.filter(p => p.part === currentPart);
+    return match.length > 0 ? match : heroParts;
+  }, [heroParts, mobileNowOnly, currentPart]);
 
   return (
     <section
@@ -174,8 +189,39 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
 
         {/* Day-part tiles */}
         {heroParts.length > 0 && (
-          <ul className="mt-4 grid gap-2 sm:grid-cols-3">
-            {heroParts.map(p => {
+          <>
+          <div className="mt-4 flex items-center justify-between gap-2 sm:hidden">
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              {mobileNowOnly ? `Right now · ${currentPart}` : "All day parts"}
+            </span>
+            <div role="group" aria-label="Day part filter" className="inline-flex rounded-full border border-border/60 bg-card/60 backdrop-blur p-0.5">
+              {([
+                { id: "now", label: "Now" },
+                { id: "all", label: "All" },
+              ] as const).map(opt => {
+                const active = (opt.id === "now") === mobileNowOnly;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setMobileNowOnly(opt.id === "now")}
+                    aria-pressed={active}
+                    className={cn(
+                      "h-7 min-w-[40px] px-2.5 rounded-full text-[11px] font-semibold transition-colors",
+                      active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <ul className="mt-2 grid gap-2 sm:mt-4 sm:grid-cols-3">
+            {/* On mobile, render filtered list; on sm+ show all three. */}
+            {(typeof window !== "undefined" ? null : null)}
+            <MobileDesktopParts allParts={heroParts} mobileParts={mobileParts}>
+              {p => {
               const Icon = PART_ICON[p.part] ?? Sun;
               const expanded = expandedPart === p.part;
               return (
@@ -219,8 +265,10 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
                   </button>
                 </li>
               );
-            })}
+              }}
+            </MobileDesktopParts>
           </ul>
+          </>
         )}
 
         {/* Hourly forecast disclosure */}
