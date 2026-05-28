@@ -1,74 +1,47 @@
 ## Goal
 
-Add a smart, cycle-aware notification layer that helps the user plan in rhythm with her menstrual cycle — gently warning when she schedules heavy commitments during low-energy phases (especially menstrual), and surfacing phase-aligned planning hints throughout the week.
+Show the user's current menstrual phase alongside today's energy on Today, and make the whole card a tap-through into a new combined Rhythm Overview that surfaces both lunar and menstrual phases and deep-links into the existing Lunar Living and Cyclical Living tabs.
 
 ## Behavior
 
-### 1. Inline "phase guard" when scheduling
-When the user creates or reschedules a task/appointment whose `dueDate` falls in a non-ideal phase for its type, show a soft toast (sonner) with a one-tap **"Pick a better day"** action:
+### 1. Today's energy card (enhanced)
+In `EnergyCheckIn` (rendered on `/today`):
+- After the three energy buttons, append two compact "phase chips":
+  - **Moon chip** — `{glyph} {phase label}` (e.g. 🌒 Waxing crescent), uses `getMoonPhase(new Date())`.
+  - **Cycle chip** — `{glyph} {phase label} · day {cycleDay}` from `getPhaseInfo(today, periods, settings)`. Only shown when `settings.enabled` and history exists; otherwise a muted "Log cycle" chip.
+- The whole row becomes wrapped in a clickable container that navigates to `/rhythm`. Energy buttons keep their own click handlers (stopPropagation) so picking energy doesn't navigate. A small chevron + "Open rhythm" affordance appears on hover/right side.
 
-- Menstrual phase + commitment-style task (meeting, appointment, deadline, "high-effort" tag, or `energyRequired: high`) → 
-  > 🌑 Menstrual phase on Tue Jun 2 — your body is asking for rest. Consider Fri (follicular) instead.
-  Actions: **Move to suggested day** · **Keep anyway** · **Don't warn again today**
-- Luteal + brand-new/creative-launch task → suggest follicular/ovulatory.
-- Ovulatory + admin/solo-deep-work → gentle nudge that this is a "connect & ship" window.
+### 2. New page: Rhythm Overview (`/rhythm`)
+A single, calm page with two side-by-side cards (stack on mobile):
+- **Moon today** card — large glyph, phase name, illumination %, next major phase + date, one-line invitation from existing lunar copy. CTA button **"Open Lunar Living"** → `/health?tab=lunar`.
+- **Cycle today** card — large glyph, phase name, cycle day / cycle length, days until next period, archetype + affirmation + invitation from `PHASE_META`. CTA button **"Open Cyclical Living"** → `/health?tab=cycle`. If cycle disabled or no periods logged: show a gentle empty state with a CTA to enable in Settings or log a period.
+- Below: a "How they align today" strip showing `getMoonAlignment(...)` label (White/Red/Pink/Purple Moon) when both data sets exist.
 
-The warning is advisory only — never blocks the save. Dismissals are remembered per-day via the existing `dismissed-notifications` store.
+Page header: "Your rhythm today · {today's date}" with a back button to `/today`.
 
-### 2. Phase-stage notifications (NotificationCenter section)
-Add a new **"Cyclical rhythm"** section to `NotificationCenter.tsx`, above "Today":
-
-- **Phase entry** (first day of a new phase): one card with glyph, archetype, invitation, affirmation from `PHASE_META`, and 2–3 planning hints pulled from `phase.planningHints`.
-- **Mid-phase check-in** (day 3 of menstrual, ovulation peak day, day 3 of luteal): contextual nudge ("You're on cycle day 2 — protect your energy. 3 commitments scheduled today — review?").
-- **Phase preview** (day before phase change): "Tomorrow you enter follicular — good window to start that project you parked."
-- **Burnout guard**: if ≥ N commitments are scheduled in the menstrual window for the upcoming cycle, one summary card: "5 commitments land in your next menstrual window (Jun 1–5). Want to reshuffle?" → opens a small reshuffle dialog.
-
-Each card is dismissible and stored in the existing dismissed store; cards re-appear next cycle.
-
-### 3. Settings
-New section in Settings → Cycle:
-- Toggle: **Phase-aware planning warnings** (default on if cycle tracking enabled)
-- Toggle: **Notify on phase changes**
-- Slider: **Burnout threshold** (commitments per menstrual day, default 2)
-- Toggle: **Warn for appointments only** vs **all tasks tagged high-effort**
-
-All gated by `CycleSettings.enabled`.
+### 3. Routing
+Add `/rhythm` route in `App.tsx` (inside `RequireAuth`/`AppLayout` block, same pattern as `/today`).
 
 ## Technical Notes
 
 **New files**
-- `src/lib/cycle-planning.ts` — pure helpers:
-  - `classifyTaskWeight(task)` → `"commitment" | "creative" | "admin" | "rest"` (uses tags, area, `energyRequired`, presence of `time`/appointment link)
-  - `phaseFit(phase, weight)` → `"ideal" | "ok" | "discouraged"` mapping
-  - `suggestBetterDate(currentISO, weight, history, settings)` → next date with `"ideal"` fit within 14 days
-  - `commitmentsInWindow(tasks, appts, startISO, endISO)` count
-- `src/lib/cycle-notifications.ts` — derives notification cards from `(today, history, settings, tasks, appts, dismissed)`. Pure selector, memoizable.
-- `src/components/cycle/PhaseGuardToast.tsx` — toast renderer + "Move" handler.
-- `src/components/cycle/CycleNotificationsSection.tsx` — section block reused inside `NotificationCenter`.
-- `src/components/cycle/BurnoutReshuffleDialog.tsx` — small list of conflicting tasks with per-row reschedule buttons.
+- `src/pages/RhythmOverview.tsx` — composes data from `useCycle`, `getPhaseInfo`, `getMoonPhase` (from `src/lib/moon.ts`), `getMoonAlignment`, `PHASE_META`. Uses `SectionCard` + `Button` + existing `MoonGlyph` if useful. Two `<Link>` CTAs to `/health?tab=lunar` and `/health?tab=cycle`.
 
 **Edits**
-- `NotificationCenter.tsx` — render `<CycleNotificationsSection />` at top of the scroll area; include its count in the badge.
-- `store.tsx` (or wherever `addTask`/`updateTask`/`addAppointment` live) — after a save where `dueDate` or `date` changed, call `evaluatePhaseFit(...)` and trigger `PhaseGuardToast` via sonner. No business-logic refactor — just a thin call site hook.
-- `CycleSettings` type in `src/lib/cycle.ts` — add `warnOnCommitments`, `notifyOnPhaseChange`, `burnoutThreshold`, `warnScope` with sensible defaults; extend `DEFAULT_CYCLE_SETTINGS`.
-- `src/components/settings/...` (Cycle settings panel) — add the new toggles.
+- `src/components/cards/EnergyCheckIn.tsx` — import `useCycle`, `getPhaseInfo`, `getMoonPhase`, `MOON_PHASE_META` (or inline glyph), `useNavigate`. Wrap the existing row in a clickable container; render two chips after the buttons. Keep energy buttons working via `stopPropagation`. Add a small "Open rhythm →" affordance.
+- `src/App.tsx` — add `<Route path="/rhythm" element={<RhythmOverview />} />` and the import.
 
 **Reuse**
-- `getPhaseInfo`, `phaseForDate`, `PHASE_META`, `predictNextPeriod` from `src/lib/cycle.ts`.
-- `dismiss`/`getDismissed` from `src/lib/dismissed-notifications.ts` for per-card dismissal (keyed e.g. `cycle:phase-entry:2026-05-28`).
-- `sonner` `toast(...)` with action button for the inline guard.
-- Existing `useCycle` hook for state access.
-
-**Data**
-- No schema changes. Everything derives from existing `period_logs`, `tasks`, `appointments`, and local `CycleSettings`.
+- `getPhaseInfo`, `PHASE_META`, `getMoonAlignment`, `MOON_ALIGNMENT_LABEL` from `src/lib/cycle.ts`.
+- Moon helpers from `src/lib/moon.ts` (phase + label + illumination + next phase date).
+- `useCycle` from `src/lib/cycle-store`.
 
 **Edge cases**
-- Cycle tracking disabled → all behavior no-ops.
-- No period history yet → skip phase warnings; show single onboarding card "Log your last period to unlock cyclical planning."
-- Tasks without `dueDate` → ignored.
-- Recurring tasks → evaluate per occurrence at scheduling time only.
+- Cycle tracking disabled → chip renders as "Cycle off" muted; Rhythm page shows enable hint.
+- No period history → chip shows "Log period"; Rhythm page shows log-period CTA.
+- No moon provider data → fall back to `getMoonPhase()` astronomical calc (already used elsewhere).
 
 ## Out of scope
-- Push/OS notifications (in-app only for now).
-- Editing cycle data from the notification.
-- Auto-rescheduling without confirmation.
+- No changes to the existing Lunar Living or Cyclical Living tab contents.
+- No new DB/schema changes.
+- No animation/visual redesign of Today beyond appending the two chips and making the card clickable.
