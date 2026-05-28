@@ -10,6 +10,8 @@ import { Habit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { HabitGarden } from "@/components/habits/HabitGarden";
+import { HabitDetailSheet } from "@/components/habits/HabitDetailSheet";
+import { HabitWeeklyAnalytics } from "@/components/habits/HabitWeeklyAnalytics";
 
 const CATS: Habit["category"][] = ["self-care","home","family","caregiving","health","creative","spiritual"];
 
@@ -18,6 +20,7 @@ export default function Habits() {
   const [title, setTitle] = useState(""); const [cat, setCat] = useState<Habit["category"]>("self-care");
   const [openNotes, setOpenNotes] = useState<string | null>(null);
   const [view, setView] = useState<"garden" | "list">("garden");
+  const [openHabitId, setOpenHabitId] = useState<string | null>(null);
   const days = Array.from({ length: 7 }, (_, i) => subDays(new Date(), 6 - i));
 
   return (
@@ -63,17 +66,17 @@ export default function Habits() {
       </SectionCard>
 
       {view === "garden" ? (
-        <HabitGarden />
+        <HabitGarden onOpen={setOpenHabitId} />
       ) : (
       <SectionCard title="This week" subtitle="Tap a day to log it." accent="warm">
         <div className="space-y-2">
           {state.habits.map(h => (
             <div key={h.id} className="rounded-xl border border-border/60 p-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <div className="min-w-0 flex-1">
+                <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setOpenHabitId(h.id)}>
                   <div className="font-medium">{h.title}</div>
                   <div className="text-xs text-muted-foreground capitalize">{h.cadence} · {h.category}</div>
-                </div>
+                </button>
                 <div className="flex items-center gap-1">
                   {days.map(d => {
                     const k = d.toISOString().slice(0,10);
@@ -105,9 +108,11 @@ export default function Habits() {
       </SectionCard>
       )}
 
-      <SectionCard title="Weekly habit review" accent="sage">
-        <p className="text-sm text-muted-foreground">{state.habits.filter(h => h.log[todayISO()]).length} of {state.habits.length} done today. That's enough.</p>
+      <SectionCard title="Weekly habit review" subtitle="Patterns, plant stages, and a gentle AI read." accent="sage">
+        <HabitWeeklyAnalytics />
       </SectionCard>
+
+      <HabitDetailSheet habitId={openHabitId} open={!!openHabitId} onOpenChange={(o) => !o && setOpenHabitId(null)} />
     </div>
   );
 }

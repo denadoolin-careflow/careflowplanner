@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
 import { format, subDays } from "date-fns";
 
-export function HabitGarden() {
+export function HabitGarden({ onOpen }: { onOpen?: (id: string) => void } = {}) {
   const { state, toggleHabit } = useStore();
   const today = todayISO();
   const [celebrating, setCelebrating] = useState<string | null>(null);
@@ -71,20 +71,23 @@ export function HabitGarden() {
                 <div className="pointer-events-none absolute inset-0 animate-ping rounded-2xl bg-primary/10" />
               )}
               <div
+                onClick={() => onOpen?.(habit.id)}
+                role={onOpen ? "button" : undefined}
                 className={cn(
                   "relative flex h-24 w-full items-end justify-center rounded-xl bg-gradient-to-b from-transparent to-muted/40 transition-transform",
+                  onOpen && "cursor-pointer",
                   isCelebrating && "scale-110",
                 )}
               >
                 <HabitPlant stage={growth.stage} size={88} />
               </div>
 
-              <div className="w-full text-center">
+              <button type="button" onClick={() => onOpen?.(habit.id)} className="w-full text-center hover:text-primary">
                 <div className="truncate text-sm font-medium" title={habit.title}>{habit.title}</div>
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   {STAGE_LABEL[growth.stage]}
                 </div>
-              </div>
+              </button>
 
               {/* 14-day strip */}
               <div className="flex w-full items-center justify-center gap-0.5">

@@ -31,6 +31,7 @@ import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 import { DayContextStrip } from "@/components/calendar/DayContextStrip";
+import { WeekHabitsStrip } from "@/components/week/WeekHabitsStrip";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
@@ -200,6 +201,7 @@ export default function Week() {
             </SectionCard>
 
             <CalendarTasksPanel days={days} />
+            <WeekHabitsStrip weekStart={start} />
           </>
         )}
       </div>

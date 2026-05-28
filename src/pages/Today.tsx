@@ -46,6 +46,7 @@ import { WeatherHeroCard } from "@/components/today/WeatherHeroCard";
 import { CarePriorities } from "@/components/today/CarePriorities";
 import { AffirmationHeader } from "@/components/today/AffirmationHeader";
 import { TopThreeStrip } from "@/components/today/TopThreeStrip";
+import { TodayHabitsCard } from "@/components/today/TodayHabitsCard";
 import { personalGreeting } from "@/lib/greeting";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 
@@ -241,6 +242,8 @@ function TodayInner() {
         )}
 
         <CarePriorities date={today} onTaskClick={setEditTaskId} />
+
+        <TodayHabitsCard date={today} />
 
         {layout === "plan" ? (
           <DailyPlanningDashboard day={today} />
