@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { addDays, format } from "date-fns";
+import { addDays, format, startOfDay } from "date-fns";
 import { Sparkles } from "lucide-react";
 import { MoonGlyph } from "@/components/widgets/MoonGlyph";
 import {
@@ -8,13 +8,12 @@ import {
   daysUntilNew,
   getIllumination,
   getMoonPhase,
+  getMoonAgeDays,
   type MoonPhase,
 } from "@/lib/moon";
 import {
   KEY_PHASES,
   getKeyPhaseInfo,
-  isKeyPhaseDay,
-  toKeyPhase,
   type KeyPhase,
 } from "@/lib/lunar-phases";
 import { getMoonSign, SIGN_EMOJI, MOON_IN_SIGN_GUIDE } from "@/lib/zodiac";
@@ -41,20 +40,49 @@ export function LunarPhaseWidget({ date = new Date(), compact = false }: Props) 
   const [sheetDate, setSheetDate] = useState<Date | null>(null);
 
   // Canonical cycle order: Sow → Grow → Glow → Let go.
+  // We compute by closest-day-to-canonical-age rather than relying on
+  // getMoonPhase()'s narrow ~0.3-day exact-phase band, which otherwise
+  // intermittently drops phases (most often Let go / last quarter).
   const next4 = useMemo(() => {
+    const SYNODIC = 29.53058867;
     const order: KeyPhase[] = ["sow", "grow", "glow", "let-go"];
-    const found: Partial<Record<KeyPhase, { date: Date; phase: MoonPhase }>> = {};
-    for (let i = 0; i < 35; i++) {
-      const d = addDays(date, i);
-      const p = getMoonPhase(d);
-      if (!isKeyPhaseDay(p)) continue;
-      const k = toKeyPhase(p);
-      if (!found[k]) found[k] = { date: d, phase: p };
-      if (order.every((o) => found[o])) break;
+    const targetAge: Record<KeyPhase, number> = {
+      sow: 0,
+      grow: SYNODIC * 0.25,
+      glow: SYNODIC * 0.5,
+      "let-go": SYNODIC * 0.75,
+    };
+    const phaseFor: Record<KeyPhase, MoonPhase> = {
+      sow: "new",
+      grow: "first-quarter",
+      glow: "full",
+      "let-go": "last-quarter",
+    };
+    // Sample noon of each day across a full cycle + buffer so every phase
+    // is guaranteed to appear at least once.
+    const start = startOfDay(date);
+    const samples: { date: Date; age: number }[] = [];
+    for (let i = 0; i < 32; i++) {
+      const d = addDays(start, i);
+      const noon = new Date(d);
+      noon.setHours(12, 0, 0, 0);
+      samples.push({ date: noon, age: getMoonAgeDays(noon) });
     }
-    return order
-      .filter((k) => found[k])
-      .map((k) => ({ key: k, ...(found[k] as { date: Date; phase: MoonPhase }) }));
+    return order.map((k) => {
+      const target = targetAge[k];
+      let best = samples[0];
+      let bestDist = Infinity;
+      for (const s of samples) {
+        // Circular distance on the synodic month.
+        const raw = Math.abs(s.age - target);
+        const dist = Math.min(raw, SYNODIC - raw);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = s;
+        }
+      }
+      return { key: k, date: best.date, phase: phaseFor[k] };
+    });
   }, [date]);
 
   return (
