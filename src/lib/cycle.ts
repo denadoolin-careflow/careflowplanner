@@ -72,7 +72,7 @@ export const PHASE_META: Record<CyclePhase, PhaseStatic> = {
   menstrual: {
     archetype: "crone",
     label: "Menstrual",
-    glyph: "🌑",
+    glyph: "🥀",
     invitation: "Rest is the work. Cancel one thing without guilt.",
     affirmation: "Slowing down is sacred.",
     tokenVar: "--phase-menstrual",
@@ -82,7 +82,7 @@ export const PHASE_META: Record<CyclePhase, PhaseStatic> = {
   follicular: {
     archetype: "maiden",
     label: "Follicular",
-    glyph: "🌒",
+    glyph: "🌷",
     invitation: "Begin. Sketch something rough — it doesn't have to be perfect.",
     affirmation: "Curiosity is a kind of energy.",
     tokenVar: "--phase-follicular",
@@ -92,7 +92,7 @@ export const PHASE_META: Record<CyclePhase, PhaseStatic> = {
   ovulatory: {
     archetype: "mother",
     label: "Ovulatory",
-    glyph: "🌕",
+    glyph: "🌻",
     invitation: "Connect, ship, speak. You're radiant — use it kindly.",
     affirmation: "I trust my voice today.",
     tokenVar: "--phase-ovulatory",
@@ -102,7 +102,7 @@ export const PHASE_META: Record<CyclePhase, PhaseStatic> = {
   luteal: {
     archetype: "maga",
     label: "Luteal",
-    glyph: "🌘",
+    glyph: "🍂",
     invitation: "Wrap, organize, prepare. Say no to the new.",
     affirmation: "Finishing is its own magic.",
     tokenVar: "--phase-luteal",
