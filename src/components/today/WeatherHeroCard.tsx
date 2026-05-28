@@ -315,21 +315,6 @@ function hoursForPart(part: string, hours: HourlyForecast[]): HourlyForecast[] {
   return hours;
 }
 
-function DayPartDetails({ dp, unit, hours }: { dp: DayPartForecast; unit: TempUnit; hours: HourlyForecast[] }) {
-  const tip = dayPartSuggestion(dp);
-  const partHours = hoursForPart(dp.part, hours);
-  return (
-    <div className="border-t border-border/60 pt-2 text-[12px] text-foreground/80">
-      {partHours.length > 0 ? (
-        <HourlyList hours={partHours} unit={unit} compact />
-      ) : (
-        <p className="text-foreground/70">No hourly data.</p>
-      )}
-      {tip && <p className="mt-1.5 italic text-foreground/75">{tip}.</p>}
-    </div>
-  );
-}
-
 function DayPartDetailDialog({
   part, unit, hours, onClose,
 }: { part: DayPartForecast | null; unit: TempUnit; hours: HourlyForecast[]; onClose: () => void }) {
