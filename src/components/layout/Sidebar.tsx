@@ -676,8 +676,8 @@ export function Sidebar() {
       className={cn(
         "hidden lg:flex sticky top-0 self-start h-screen max-h-screen relative shrink-0",
         side === "right" ? "order-last border-l border-sidebar-border" : "border-r border-sidebar-border",
-        themePref === "dark" && "dark",
-        themePref === "light" && "light",
+        themePref === "dark" && "sidebar-force-dark",
+        themePref === "light" && "sidebar-force-light",
       )}
       style={collapsed ? undefined : { width }}
     >
