@@ -1,18 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Trash2, Copy, Download, Pencil, Check, X, BookmarkPlus, Utensils, ListTree, ArrowDownAZ } from "lucide-react";
+import { Trash2, Copy, Download, Pencil, Check, X, BookmarkPlus, Utensils, ListTree, ArrowDownAZ, Package, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { SavedListsDialog } from "./SavedListsDialog";
+import { PANTRY_TAG } from "@/lib/automations/engine";
 import type { GroceryItem } from "@/lib/types";
 
 const CAT_ORDER = ["Produce", "Protein", "Dairy", "Bakery", "Frozen", "Pantry", "Other"];
+
+type FilterMode = "all" | "in" | "low" | "out";
+type SortMode = "default" | "low_first" | "out_first" | "az";
+type GroupMode = "category" | "meal" | "pantry";
+
+const LS = {
+  filter: "meals.groceryList.filter",
+  sort: "meals.groceryList.sort",
+  group: "meals.groceryList.group",
+  hideBought: "meals.groceryList.hideBought",
+};
+
+function usePersistedState<T extends string>(key: string, initial: T): [T, (v: T) => void] {
+  const [v, setV] = useState<T>(() => (localStorage.getItem(key) as T) || initial);
+  useEffect(() => { localStorage.setItem(key, v); }, [key, v]);
+  return [v, setV];
+}
 
 export function GroceryList() {
   const { state, user, addGrocery, toggleGrocery, deleteGrocery, setGroceryStock, updateGroceryItem, reloadAll } = useStore();
@@ -21,13 +39,17 @@ export function GroceryList() {
   const [editName, setEditName] = useState("");
   const [editQty, setEditQty] = useState("");
   const [savedOpen, setSavedOpen] = useState(false);
-  const [groupBy, setGroupBy] = useState<"category" | "meal">("category");
+  const [groupBy, setGroupBy] = usePersistedState<GroupMode>(LS.group, "category");
   const [highlightMealId, setHighlightMealId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "in" | "low" | "out">("all");
-  const [sortMode, setSortMode] = useState<"default" | "low_first" | "out_first" | "az">("default");
+  const [filter, setFilter] = usePersistedState<FilterMode>(LS.filter, "all");
+  const [sortMode, setSortMode] = usePersistedState<SortMode>(LS.sort, "default");
+  const [hideBought, setHideBought] = useState<boolean>(() => localStorage.getItem(LS.hideBought) === "1");
+  useEffect(() => { localStorage.setItem(LS.hideBought, hideBought ? "1" : "0"); }, [hideBought]);
 
   const stockRank = (s: GroceryItem["stockStatus"]) => (s === "low" ? 0 : s === "out" ? 1 : 2);
-  const filteredAll = state.grocery.filter(i => filter === "all" || i.stockStatus === filter);
+  const filteredAll = state.grocery.filter(i =>
+    (filter === "all" || i.stockStatus === filter) && (!hideBought || !i.bought)
+  );
   const sorted = [...filteredAll].sort((a, b) => {
     if (sortMode === "az") return a.name.localeCompare(b.name);
     if (sortMode === "low_first") {
@@ -64,6 +86,14 @@ export function GroceryList() {
     const db = mealGroups[b][0]?.sourceDate ?? "";
     return da.localeCompare(db);
   });
+
+  const pantryGroups = sorted.reduce<Record<string, GroceryItem[]>>((acc, item) => {
+    const isPantry = (item.tags ?? []).includes(PANTRY_TAG) || item.stockStatus === "in";
+    const k = isPantry ? "Pantry / In stock" : "To buy";
+    (acc[k] = acc[k] ?? []).push(item);
+    return acc;
+  }, {});
+  const pantryGroupKeys = ["To buy", "Pantry / In stock"].filter(k => pantryGroups[k]?.length);
 
   const buildText = () => {
     const lines: string[] = [];
@@ -177,6 +207,19 @@ export function GroceryList() {
     );
   };
 
+  const sortLabel: Record<SortMode, string> = {
+    default: "default",
+    low_first: "low first",
+    out_first: "out first",
+    az: "A–Z",
+  };
+  const groupLabel: Record<GroupMode, string> = {
+    category: "category",
+    meal: "meal",
+    pantry: "pantry",
+  };
+  const summary = `Showing ${sorted.length} of ${state.grocery.length} · sorted ${sortLabel[sortMode]} · grouped by ${groupLabel[groupBy]}${hideBought ? " · bought hidden" : ""}`;
+
   return (
     <div>
       <form className="mb-3 flex gap-2" onSubmit={e => { e.preventDefault(); if (!g.trim()) return; addGrocery(g); setG(""); }}>
@@ -184,69 +227,82 @@ export function GroceryList() {
         <Button type="submit">Add</Button>
       </form>
 
-      <div className="mb-3 flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" className="rounded-full" onClick={() => setSavedOpen(true)}>
-          <BookmarkPlus className="mr-1.5 h-3.5 w-3.5" />Saved lists
-        </Button>
-        {state.grocery.length > 0 && <>
-          <Button size="sm" variant="outline" className="rounded-full" onClick={onCopy}>
-            <Copy className="mr-1.5 h-3.5 w-3.5" />Copy
-          </Button>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button size="sm" variant="outline" className="rounded-full">
-                <Download className="mr-1.5 h-3.5 w-3.5" />Export
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-40 p-1">
-              <Button size="sm" variant="ghost" className="w-full justify-start" onClick={onExportTxt}>Plain text (.txt)</Button>
-              <Button size="sm" variant="ghost" className="w-full justify-start" onClick={onExportCsv}>Spreadsheet (.csv)</Button>
-            </PopoverContent>
-          </Popover>
-        </>}
-      </div>
-
       <SavedListsDialog open={savedOpen} onOpenChange={setSavedOpen} />
 
       {state.grocery.length > 0 && (
-        <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-muted-foreground">Show:</span>
-          {([
-            { v: "all",  label: `All (${state.grocery.length})` },
-            { v: "out",  label: `Out (${state.grocery.filter(i => i.stockStatus === "out").length})` },
-            { v: "low",  label: `Low (${state.grocery.filter(i => i.stockStatus === "low").length})` },
-            { v: "in",   label: `In stock (${state.grocery.filter(i => i.stockStatus === "in").length})` },
-          ] as const).map(opt => (
-            <button key={opt.v} onClick={() => setFilter(opt.v)}
-              className={`rounded-full border px-2.5 py-0.5 transition ${filter === opt.v ? "border-primary/40 bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted/40"}`}>
-              {opt.label}
+        <div className="mb-3 space-y-2 rounded-xl border border-border/50 bg-muted/20 p-3 text-xs">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="w-14 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Filter</span>
+            {([
+              { v: "all",  label: `All (${state.grocery.length})` },
+              { v: "out",  label: `Out (${state.grocery.filter(i => i.stockStatus === "out").length})` },
+              { v: "low",  label: `Low (${state.grocery.filter(i => i.stockStatus === "low").length})` },
+              { v: "in",   label: `In stock (${state.grocery.filter(i => i.stockStatus === "in").length})` },
+            ] as const).map(opt => (
+              <button key={opt.v} onClick={() => setFilter(opt.v)}
+                className={`rounded-full border px-2.5 py-0.5 transition ${filter === opt.v ? "border-primary/40 bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+            <button onClick={() => setHideBought(!hideBought)}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 transition ${hideBought ? "border-primary/40 bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted/40"}`}>
+              <EyeOff className="h-3 w-3" />Hide bought
             </button>
-          ))}
-          <span className="ml-2 text-muted-foreground"><ArrowDownAZ className="inline h-3 w-3" /> Sort:</span>
-          {([
-            { v: "default",   label: "Default" },
-            { v: "low_first", label: "Low first" },
-            { v: "out_first", label: "Out first" },
-            { v: "az",        label: "A–Z" },
-          ] as const).map(opt => (
-            <button key={opt.v} onClick={() => setSortMode(opt.v)}
-              className={`rounded-full border px-2.5 py-0.5 transition ${sortMode === opt.v ? "border-primary/40 bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted/40"}`}>
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      )}
+          </div>
 
-      {state.grocery.length > 0 && (
-        <div className="mb-3 inline-flex rounded-full border border-border/60 p-0.5 text-xs">
-          <button onClick={() => setGroupBy("category")}
-            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 transition ${groupBy === "category" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}>
-            <ListTree className="h-3 w-3" />By category
-          </button>
-          <button onClick={() => setGroupBy("meal")}
-            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 transition ${groupBy === "meal" ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}>
-            <Utensils className="h-3 w-3" />By meal
-          </button>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="w-14 text-[10px] uppercase tracking-[0.18em] text-muted-foreground"><ArrowDownAZ className="mr-1 inline h-3 w-3" />Sort</span>
+            {([
+              { v: "default",   label: "Default" },
+              { v: "low_first", label: "Low first" },
+              { v: "out_first", label: "Out first" },
+              { v: "az",        label: "A–Z" },
+            ] as const).map(opt => (
+              <button key={opt.v} onClick={() => setSortMode(opt.v)}
+                className={`rounded-full border px-2.5 py-0.5 transition ${sortMode === opt.v ? "border-primary/40 bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted/40"}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="w-14 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Group</span>
+            {([
+              { v: "category", label: "Category", icon: ListTree },
+              { v: "meal",     label: "Meal",     icon: Utensils },
+              { v: "pantry",   label: "Pantry",   icon: Package },
+            ] as const).map(opt => {
+              const Icon = opt.icon;
+              return (
+                <button key={opt.v} onClick={() => setGroupBy(opt.v)}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 transition ${groupBy === opt.v ? "border-primary/40 bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted/40"}`}>
+                  <Icon className="h-3 w-3" />{opt.label}
+                </button>
+              );
+            })}
+
+            <div className="ml-auto flex flex-wrap items-center gap-1.5">
+              <Button size="sm" variant="outline" className="h-7 rounded-full text-xs" onClick={() => setSavedOpen(true)}>
+                <BookmarkPlus className="mr-1 h-3.5 w-3.5" />Saved
+              </Button>
+              <Button size="sm" variant="outline" className="h-7 rounded-full text-xs" onClick={onCopy}>
+                <Copy className="mr-1 h-3.5 w-3.5" />Copy
+              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 rounded-full text-xs">
+                    <Download className="mr-1 h-3.5 w-3.5" />Export
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-40 p-1">
+                  <Button size="sm" variant="ghost" className="w-full justify-start" onClick={onExportTxt}>Plain text (.txt)</Button>
+                  <Button size="sm" variant="ghost" className="w-full justify-start" onClick={onExportCsv}>Spreadsheet (.csv)</Button>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          <p className="pt-0.5 text-[10px] text-muted-foreground">{summary}</p>
         </div>
       )}
 
@@ -263,7 +319,7 @@ export function GroceryList() {
             </div>
           ))}
         </div>
-      ) : (
+      ) : groupBy === "meal" ? (
         <div className="space-y-3">
           {mealGroupKeys.map(key => {
             const items = mealGroups[key];
@@ -291,6 +347,18 @@ export function GroceryList() {
               </div>
             );
           })}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {pantryGroupKeys.map(key => (
+            <div key={key}>
+              <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                {key === "Pantry / In stock" ? <Package className="h-3 w-3" /> : null}
+                {key} <span className="text-muted-foreground/60">({pantryGroups[key].length})</span>
+              </div>
+              <ul className="space-y-0.5">{pantryGroups[key].map(renderItem)}</ul>
+            </div>
+          ))}
         </div>
       )}
     </div>
