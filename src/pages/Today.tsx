@@ -161,11 +161,14 @@ function TodayInner() {
             <div className="relative flex flex-col items-center gap-5 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
               <div className="flex min-w-0 flex-col items-center sm:items-start">
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground dark:text-foreground/80">
-                  {personalGreeting(state.settings.name)} <span className="opacity-60">· {format(today, "EEEE")}</span>
+                  {personalGreeting(state.settings.name)}
                 </p>
                 <h2 className="text-gradient-glow font-display text-3xl font-semibold sm:text-4xl">
                   {format(today, "MMMM d, yyyy")}
                 </h2>
+                <p className="mt-1 text-xs uppercase tracking-[0.2em] text-muted-foreground dark:text-foreground/75">
+                  {format(today, "EEEE")}
+                </p>
                 <div className="mt-3">
                   <AffirmationHeader date={today} />
                 </div>
