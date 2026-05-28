@@ -1,0 +1,137 @@
+import { useMemo, useState } from "react";
+import { useStore, todayISO } from "@/lib/store";
+import { computeHabitGrowth, STAGE_LABEL, STAGE_AFFIRMATION } from "@/lib/habit-consistency";
+import { HabitPlant } from "./HabitPlant";
+import { Button } from "@/components/ui/button";
+import { Sparkles, Check, Flame, Leaf } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { hapticPulse } from "@/lib/haptics";
+import { format, subDays } from "date-fns";
+
+export function HabitGarden() {
+  const { state, toggleHabit } = useStore();
+  const today = todayISO();
+  const [celebrating, setCelebrating] = useState<string | null>(null);
+
+  const tiles = useMemo(
+    () => state.habits.map(h => ({ habit: h, growth: computeHabitGrowth(h) })),
+    [state.habits]
+  );
+
+  if (tiles.length === 0) {
+    return (
+      <div className="cozy-card gradient-calm flex flex-col items-center justify-center gap-3 p-10 text-center">
+        <Leaf className="h-8 w-8 text-primary/60" />
+        <p className="text-sm text-muted-foreground">Your garden is waiting for its first seed.</p>
+      </div>
+    );
+  }
+
+  const doneToday = tiles.filter(t => t.habit.log[today]).length;
+  const blooming = tiles.filter(t => t.growth.stageIndex >= 3).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="cozy-card gradient-sage flex flex-wrap items-center justify-between gap-3 p-4">
+        <div>
+          <div className="font-display text-lg">Your garden today</div>
+          <p className="text-xs text-muted-foreground">
+            {doneToday} of {tiles.length} tended · {blooming} blooming
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>Plants grow over a rolling 14 days.</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {tiles.map(({ habit, growth }) => {
+          const tendedToday = !!habit.log[today];
+          const isCelebrating = celebrating === habit.id;
+          const handleTend = async () => {
+            await toggleHabit(habit.id, today);
+            if (!tendedToday) {
+              hapticPulse("success");
+              setCelebrating(habit.id);
+              setTimeout(() => setCelebrating(null), 900);
+            } else {
+              hapticPulse("light");
+            }
+          };
+          return (
+            <div
+              key={habit.id}
+              className={cn(
+                "cozy-card group relative flex flex-col items-center gap-2 p-3 transition-all",
+                tendedToday && "ring-1 ring-primary/40",
+              )}
+            >
+              {isCelebrating && (
+                <div className="pointer-events-none absolute inset-0 animate-ping rounded-2xl bg-primary/10" />
+              )}
+              <div
+                className={cn(
+                  "relative flex h-24 w-full items-end justify-center rounded-xl bg-gradient-to-b from-transparent to-muted/40 transition-transform",
+                  isCelebrating && "scale-110",
+                )}
+              >
+                <HabitPlant stage={growth.stage} size={88} />
+              </div>
+
+              <div className="w-full text-center">
+                <div className="truncate text-sm font-medium" title={habit.title}>{habit.title}</div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {STAGE_LABEL[growth.stage]}
+                </div>
+              </div>
+
+              {/* 14-day strip */}
+              <div className="flex w-full items-center justify-center gap-0.5">
+                {Array.from({ length: 14 }, (_, i) => {
+                  const d = subDays(new Date(), 13 - i);
+                  const k = d.toISOString().slice(0, 10);
+                  const done = !!habit.log[k];
+                  return (
+                    <span
+                      key={k}
+                      title={`${format(d, "MMM d")}${done ? " ✓" : ""}`}
+                      className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        done ? "bg-primary" : "bg-muted-foreground/25",
+                      )}
+                    />
+                  );
+                })}
+              </div>
+
+              <div className="flex w-full items-center justify-between text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-0.5">
+                  <Flame className="h-2.5 w-2.5" />{growth.forgivingStreak}d
+                </span>
+                <span>{growth.doneDays}/{growth.windowDays}</span>
+              </div>
+
+              <Button
+                size="sm"
+                variant={tendedToday ? "secondary" : "default"}
+                onClick={handleTend}
+                className="h-7 w-full rounded-full text-[11px]"
+              >
+                {tendedToday ? (
+                  <><Check className="mr-1 h-3 w-3" /> Tended</>
+                ) : (
+                  <>Tend today</>
+                )}
+              </Button>
+
+              <p className="text-center text-[10px] italic text-muted-foreground/80">
+                {STAGE_AFFIRMATION[growth.stage]}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
