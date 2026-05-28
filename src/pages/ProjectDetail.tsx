@@ -12,6 +12,11 @@ import { toast } from "sonner";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { ProjectJournalPanel } from "@/components/journal/ProjectJournalPanel";
 import { ProjectProgressTimeline } from "@/components/projects/ProjectProgressTimeline";
+import { TimelineCard } from "@/components/projects/TimelineCard";
+import { MilestonesCard } from "@/components/projects/MilestonesCard";
+import { ResourcesCard } from "@/components/projects/ResourcesCard";
+import { ProjectScheduleSidebar } from "@/components/projects/ProjectScheduleSidebar";
+import { CalendarPlus } from "lucide-react";
 import { listWhiteboardsForProject, createWhiteboard, type Whiteboard } from "@/lib/whiteboards";
 import { PenLine } from "lucide-react";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
@@ -95,6 +100,7 @@ export default function ProjectDetail() {
   );
 
   const [newTitle, setNewTitle] = useState("");
+  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   if (!project) {
     return (
@@ -164,6 +170,11 @@ export default function ProjectDetail() {
       </header>
 
       <GoalsHabitsStrip project={project} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <TimelineCard project={project} doneCount={done} totalCount={total} />
+        <MilestonesCard project={project} />
+      </div>
+      <ResourcesCard project={project} />
       <AIOverviewCard project={project} />
       <NotesGallery project={project} />
 
@@ -185,6 +196,14 @@ export default function ProjectDetail() {
           </ToggleGroupItem>
         </ToggleGroup>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setScheduleOpen(true)}
+            className="h-8 gap-1.5 rounded-lg text-xs"
+          >
+            <CalendarPlus className="h-3.5 w-3.5" /> Schedule
+          </Button>
           <ToggleGroup
             type="single"
             value={taskFilter}
@@ -268,6 +287,13 @@ export default function ProjectDetail() {
       <ProjectProgressTimeline projectId={project.id} />
       <ProjectJournalPanel projectId={project.id} projectName={project.name} />
       <WhiteboardsPanel projectId={project.id} projectName={project.name} />
+
+      <ProjectScheduleSidebar
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        tasks={allTasks}
+        projectName={project.name}
+      />
     </div>
   );
 }

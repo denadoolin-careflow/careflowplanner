@@ -169,6 +169,12 @@ const projectFrom = (r: any): Project => ({
   linkedHabitIds: Array.isArray(r.linked_habit_ids) ? r.linked_habit_ids : [],
   isFavorite: !!r.is_favorite,
   coverUrl: r.cover_url ?? undefined,
+  startDate: r.start_date ?? undefined,
+  endDate: r.end_date ?? undefined,
+  budgetCents: r.budget_cents == null ? undefined : Number(r.budget_cents),
+  milestones: Array.isArray(r.milestones) ? r.milestones : [],
+  linkedTransactionIds: Array.isArray(r.linked_transaction_ids) ? r.linked_transaction_ids : [],
+  linkedSavingsGoalIds: Array.isArray(r.linked_savings_goal_ids) ? r.linked_savings_goal_ids : [],
 });
 const sectionFrom = (r: any): ProjectSection => ({
   id: r.id, projectId: r.project_id, name: r.name,
@@ -496,6 +502,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.linkedHabitIds !== undefined) dbPatch.linked_habit_ids = patch.linkedHabitIds ?? [];
       if (patch.isFavorite !== undefined) dbPatch.is_favorite = !!patch.isFavorite;
       if (patch.coverUrl !== undefined) dbPatch.cover_url = patch.coverUrl ?? null;
+      if (patch.startDate !== undefined) dbPatch.start_date = patch.startDate ?? null;
+      if (patch.endDate !== undefined) dbPatch.end_date = patch.endDate ?? null;
+      if (patch.budgetCents !== undefined) dbPatch.budget_cents = patch.budgetCents ?? null;
+      if (patch.milestones !== undefined) dbPatch.milestones = patch.milestones ?? [];
+      if (patch.linkedTransactionIds !== undefined) dbPatch.linked_transaction_ids = patch.linkedTransactionIds ?? [];
+      if (patch.linkedSavingsGoalIds !== undefined) dbPatch.linked_savings_goal_ids = patch.linkedSavingsGoalIds ?? [];
       await supabase.from("projects").update(dbPatch).eq("id", id);
     },
     deleteProject: async (id) => {

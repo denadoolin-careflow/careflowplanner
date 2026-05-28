@@ -3152,19 +3152,25 @@ export type Database = {
           archived_at: string | null
           area_id: string | null
           area_name: string | null
+          budget_cents: number | null
           color: string | null
           cover_url: string | null
           created_at: string
           deadline: string | null
+          end_date: string | null
           icon: string | null
           id: string
           is_favorite: boolean
           linked_goal_ids: string[]
           linked_habit_ids: string[]
+          linked_savings_goal_ids: string[]
+          linked_transaction_ids: string[]
+          milestones: Json
           name: string
           notes: string | null
           parent_project_id: string | null
           sort_order: number
+          start_date: string | null
           status: string
           updated_at: string
           user_id: string
@@ -3175,19 +3181,25 @@ export type Database = {
           archived_at?: string | null
           area_id?: string | null
           area_name?: string | null
+          budget_cents?: number | null
           color?: string | null
           cover_url?: string | null
           created_at?: string
           deadline?: string | null
+          end_date?: string | null
           icon?: string | null
           id?: string
           is_favorite?: boolean
           linked_goal_ids?: string[]
           linked_habit_ids?: string[]
+          linked_savings_goal_ids?: string[]
+          linked_transaction_ids?: string[]
+          milestones?: Json
           name: string
           notes?: string | null
           parent_project_id?: string | null
           sort_order?: number
+          start_date?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -3198,19 +3210,25 @@ export type Database = {
           archived_at?: string | null
           area_id?: string | null
           area_name?: string | null
+          budget_cents?: number | null
           color?: string | null
           cover_url?: string | null
           created_at?: string
           deadline?: string | null
+          end_date?: string | null
           icon?: string | null
           id?: string
           is_favorite?: boolean
           linked_goal_ids?: string[]
           linked_habit_ids?: string[]
+          linked_savings_goal_ids?: string[]
+          linked_transaction_ids?: string[]
+          milestones?: Json
           name?: string
           notes?: string | null
           parent_project_id?: string | null
           sort_order?: number
+          start_date?: string | null
           status?: string
           updated_at?: string
           user_id?: string

@@ -1,43 +1,85 @@
-## Today Hero Widget — Mobile + Atmosphere + Dark-Mode Fixes
+# Project Dashboard Upgrade
 
-The "widget" is the top hero card on the Today page (greeting, date, affirmation, day navigator, Schedule/Plan toggle, energy chips, clock/moon block).
+Turn the existing project detail page into a dashboard with milestones, a budget panel that links to your wealth-hub records, start/end dates, and an animated sidebar for scheduling project tasks onto the calendar.
 
-### 1. Center-align on mobile
+## 1. Data model
 
-In `src/pages/Today.tsx`:
-- Change the inner flex column from `flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between` to also center children on mobile: add `items-center text-center sm:items-start sm:text-left`.
-- On the inner `<div className="min-w-0">` wrapper, add `flex flex-col items-center sm:items-start` so the greeting line, date `<h2>`, affirmation, day-pickers row, layout toggle row, and energy row all sit centered under each other on mobile.
-- Add `justify-center sm:justify-start` to the day-nav row, the Schedule/Plan/Today/Week/Month toggle row, and the energy chips + "Plan with this energy" row so the chip groups don't pin left.
-- `AuroraClock` already centers on mobile (`items-center sm:items-end`) — no change.
+Extend `Project` (in `src/lib/types.ts` + store):
 
-### 2. Background tints with the active atmosphere
+- `startDate?: string` (ISO date)
+- `endDate?: string` (ISO date; replaces/augments existing `deadline`)
+- `budgetCents?: number` (optional planned budget)
+- `milestones?: ProjectMilestone[]`
+- `linkedTransactionIds?: string[]` (wealth-hub transactions tagged to this project)
+- `linkedWealthGoalIds?: string[]` (savings goals tied to this project)
 
-The hero uses `.gradient-calm`. In light mode it's hard-coded purple/blue and ignores the chosen atmosphere; in dark mode it's already primary-tinted.
-
-In `src/index.css`, replace the light-mode `--gradient-calm` definition (~line 75) with the same primary/moon formula used in `.dark`, so every atmosphere recolors the hero:
-```
---gradient-calm: linear-gradient(135deg, hsl(var(--primary) / 0.14), hsl(var(--moon) / 0.12)), hsl(var(--card));
-```
-This pulls from each atmosphere's `--primary` / `--moon` tokens, so Blossom reads pink, Sage reads green, Moonlit Plum reads plum, etc., in both light and dark themes. Keep the existing `.dark` override (already correct).
-
-### 3. Dark-mode text legibility
-
-Two issues visible in the dark screenshot: the gradient date "May 27, 2026" almost disappears, and the "10:58 PM" digits dim out.
-
-In `src/index.css`:
-- Scope a brighter variant of `.text-gradient-glow` under `.dark` — bump the lightness of the gradient stops and the drop-shadow so it reads against the dark card:
-```
-.dark .text-gradient-glow {
-  background-image: linear-gradient(120deg,
-    hsl(var(--primary-foreground)) 0%,
-    hsl(var(--foreground)) 50%,
-    hsl(var(--primary-foreground)) 100%);
-  filter: drop-shadow(0 0 14px hsl(var(--primary) / 0.55));
+New type:
+```ts
+ProjectMilestone {
+  id: string;
+  title: string;
+  date?: string;
+  done: boolean;
+  notes?: string;
 }
 ```
-- In `Today.tsx`, the greeting "SOFT NIGHT, DENA · WEDNESDAY" uses `text-muted-foreground` which is also faint in dark. Change that single line to `text-muted-foreground dark:text-foreground/80` so it stays subtle in light mode but readable in dark.
 
-### Out of scope
+All persisted client-side in the existing store (no Supabase migration — matches current Project storage pattern).
 
-- No layout or logic changes to the day grid below the hero.
-- No new settings/toggles; this just makes the existing widget respect the already-selected atmosphere and theme.
+## 2. Dashboard layout
+
+Refactor `src/pages/ProjectDetail.tsx` into a responsive grid of cards (top stats row + 2-column body on desktop, stacked on mobile):
+
+```text
++----------------------------------------+
+| Header: name, status, dates, progress  |
++----------------------------------------+
+| Overview / Notes  |  Milestones        |
+|                   |                    |
++-------------------+--------------------+
+| Tasks             |  Resources & Budget|
+|                   |  (linked tx, goals)|
++----------------------------------------+
+```
+
+Cards:
+- **Timeline card**: shadcn DatePickers for Start and Finish, computed duration, progress bar from milestones + tasks done.
+- **Notes / Overview**: existing notes editor.
+- **Milestones**: list with add/edit/toggle-done, optional date, sorted by date.
+- **Tasks**: existing task list, plus a "Schedule" button that opens the scheduling sidebar (see §4).
+- **Resources & Budget**: planned budget input, totals pulled from linked wealth-hub transactions (spent vs remaining), list of linked savings goals with progress, "Link transaction" / "Link goal" pickers that read from the wealth-hub store.
+
+## 3. Budget integration
+
+New helper `src/lib/project-finance.ts`:
+- `getProjectSpend(projectId, transactions)` — sums linked transactions.
+- `getProjectGoals(projectId, wealthGoals)` — returns linked savings goals + progress.
+
+Resources card uses these to show: **Budget · Spent · Remaining** and a stacked bar. Buttons open small popovers to select existing transactions/goals (no new entities created in the wealth-hub).
+
+## 4. Scheduler sidebar
+
+New component `src/components/projects/ProjectScheduleSidebar.tsx`:
+- shadcn `Sheet` from the right, animated via existing slide-in classes.
+- Lists project tasks without a `dueDate` on top, scheduled tasks below.
+- For each task: date picker + optional time → sets `dueDate` / `startAt` so it appears on the Today/Week/Calendar views (uses existing task store mutations).
+- "Send to calendar" action reuses the existing Google Calendar push if connected; otherwise just sets the in-app due date.
+
+Trigger: a "Schedule tasks" button in the Tasks card and a floating chip in the page header.
+
+## 5. Small touches
+
+- Replace the old single "deadline" field everywhere it's read with `endDate ?? deadline` for backward compat.
+- Animate card mount with `animate-fade-in`; sidebar uses `slide-in-right` / `slide-out-right`.
+- Mobile: cards stack, sidebar becomes full-width sheet.
+
+## Technical notes
+
+- Files added: `src/components/projects/ProjectDashboard.tsx`, `MilestonesCard.tsx`, `ResourcesCard.tsx`, `TimelineCard.tsx`, `ProjectScheduleSidebar.tsx`, `src/lib/project-finance.ts`.
+- Files changed: `src/lib/types.ts`, `src/lib/store.tsx` (new mutations: `updateProject` already exists; add `addMilestone/updateMilestone/removeMilestone`, `linkTransactionToProject`, etc.), `src/pages/ProjectDetail.tsx` (rewritten to compose dashboard cards).
+- No DB migration — projects persist in the existing local/store layer used today.
+
+## Open questions
+
+1. Should linking a transaction to a project also tag it in the wealth-hub UI, or only show inside the project page? (Default: tag both sides.)
+2. Should the scheduler sidebar create calendar events automatically when Google Calendar is connected, or only on explicit "Push to Google"? (Default: explicit push.)
