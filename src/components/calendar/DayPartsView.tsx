@@ -12,6 +12,7 @@ import { Pencil, Check, X } from "lucide-react";
 import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store";
 import type { WeatherCondition } from "@/lib/weather";
 import { DayExtras } from "@/components/today/DayExtras";
+import { formatTime12 } from "@/lib/routines";
 
 function WxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-3.5 w-3.5", className);
@@ -536,7 +537,7 @@ function DayPartItem({
           {it.done ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4" />}
         </button>
       ) : !hideTime ? (
-        <span className="w-12 shrink-0 font-mono text-[10px] text-muted-foreground">{it.time?.slice(0, 5) ?? ""}</span>
+        <span className="w-14 shrink-0 font-mono text-[10px] text-muted-foreground">{it.time ? formatTime12(it.time.slice(0,5)) : ""}</span>
       ) : null}
       {icon && (
         icon.kind === "lucide"
