@@ -10,6 +10,7 @@ import { getPhaseInfo } from "@/lib/cycle";
 import { RitualSession, totalMinutes, type RitualTemplate } from "./RitualSession";
 import { RITUAL_TEMPLATES } from "./ritualTemplates";
 import { Play } from "lucide-react";
+import { ExerciseVisual } from "./ExerciseVisual";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -134,9 +135,10 @@ export default function MovementPage({ uid }: { uid: string }) {
             <button
               key={q.activity}
               onClick={() => add(q)}
-              className="rounded-full border border-border/50 bg-card/60 px-3 py-1.5 text-sm hover:border-primary/40 hover:bg-card transition-all"
+              className="flex items-center gap-2 rounded-full border border-border/50 bg-card/60 py-1 pl-1 pr-3 text-sm hover:border-primary/40 hover:bg-card transition-all"
             >
-              + {q.activity} <span className="text-muted-foreground">· {q.minutes}m</span>
+              <ExerciseVisual hints={[q.activity, q.intent]} size="xs" tint="hsl(40 45% 96%)" />
+              <span>{q.activity} <span className="text-muted-foreground">· {q.minutes}m</span></span>
             </button>
           ))}
         </div>
@@ -172,7 +174,13 @@ export default function MovementPage({ uid }: { uid: string }) {
               style={{ borderLeft: `3px solid ${t.color}` }}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
+                <ExerciseVisual
+                  visualKey={t.visualKey}
+                  hints={[t.name, t.description, t.intent]}
+                  size="sm"
+                  tint={`${t.color}1a`}
+                />
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
                     <span>{t.emoji}</span>
                     <span>{t.intent} · {totalMinutes(t)}m · {t.steps.length} steps</span>
@@ -251,6 +259,7 @@ export default function MovementPage({ uid }: { uid: string }) {
             {logs.slice(0, 12).map(l => (
               <li key={l.id} className="flex items-center gap-3 rounded-xl bg-muted/40 px-3 py-2 text-sm">
                 <span className="w-20 text-xs text-muted-foreground">{l.date.slice(5)}</span>
+                <ExerciseVisual hints={[l.activity, l.notes]} size="xs" tint="hsl(40 45% 96%)" />
                 <span className="flex-1">{l.activity}</span>
                 <span className="text-xs text-muted-foreground">{l.minutes}m · {l.intensity}</span>
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => del(l.id)}>

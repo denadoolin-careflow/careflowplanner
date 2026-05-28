@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pause, Play, SkipForward, X, Check } from "lucide-react";
 import { toast } from "sonner";
+import { ExerciseVisual } from "./ExerciseVisual";
+import type { MovementVisualKey } from "@/lib/movement-visuals";
 
 export type RitualStep = {
   title: string;
   seconds: number;
   cue?: string;
+  visualKey?: MovementVisualKey;
 };
 
 export type RitualTemplate = {
@@ -19,6 +22,7 @@ export type RitualTemplate = {
   description: string;
   emoji: string;
   color: string;
+  visualKey?: MovementVisualKey;
   steps: RitualStep[];
 };
 
@@ -136,7 +140,15 @@ export function RitualSession({
               <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
                 Step {stepIdx + 1} of {template.steps.length}
               </p>
-              <p className="mt-2 font-display text-2xl">{step.title}</p>
+              <ExerciseVisual
+                key={stepIdx}
+                visualKey={step.visualKey}
+                hints={[step.title, step.cue, template.name]}
+                size="lg"
+                tint={`${template.color}1f`}
+                className="mx-auto mt-3 animate-in fade-in zoom-in-95 duration-500"
+              />
+              <p className="mt-3 font-display text-2xl">{step.title}</p>
               {step.cue && <p className="mt-1 text-sm text-muted-foreground">{step.cue}</p>}
               <p className="mt-4 font-display text-5xl tabular-nums" style={{ color: template.color }}>
                 {fmt(remaining)}
