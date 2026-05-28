@@ -137,6 +137,18 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const { updateProject, addProject } = useStore();
   const { openPanel } = useWorkspaceLayout();
   const [groupOrder, setGroupOrder] = useState<string[]>(() => loadGroupOrder());
+  const [side, setSide] = useState<SidebarSide>(() => readSide());
+  const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
+  const cycleTheme = () => {
+    const next: SidebarTheme = themePref === "auto" ? "light" : themePref === "light" ? "dark" : "auto";
+    setThemePref(next);
+    writePrefs(THEME_KEY, next);
+  };
+  const toggleSide = () => {
+    const next: SidebarSide = side === "left" ? "right" : "left";
+    setSide(next);
+    writePrefs(SIDE_KEY, next);
+  };
   useEffect(() => {
     try { window.localStorage.setItem(GROUP_ORDER_KEY, JSON.stringify(groupOrder)); } catch {}
   }, [groupOrder]);
@@ -317,6 +329,36 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             <div className="font-display text-lg font-semibold leading-none">CareFlow</div>
             <div className="text-xs text-muted-foreground truncate">a gentle planner</div>
           </div>
+        )}
+        {!forceExpanded && !collapsed && (
+          <>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={cycleTheme}
+                  aria-label={`Sidebar theme: ${themePref}`}
+                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  {themePref === "dark" ? <Moon className="h-4 w-4" /> : themePref === "light" ? <Sun className="h-4 w-4" /> : <Sun className="h-4 w-4 opacity-60" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Sidebar theme: {themePref}</TooltipContent>
+            </Tooltip>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={toggleSide}
+                  aria-label={side === "left" ? "Move sidebar to right" : "Move sidebar to left"}
+                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  {side === "left" ? <PanelRight className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Move to {side === "left" ? "right" : "left"}</TooltipContent>
+            </Tooltip>
+          </>
         )}
         {!forceExpanded && <button
           type="button"
