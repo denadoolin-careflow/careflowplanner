@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SavedListsDialog } from "./SavedListsDialog";
 import { PANTRY_TAG } from "@/lib/automations/engine";
 import type { GroceryItem } from "@/lib/types";
+import { DndContext, useDraggable, useDroppable, type DragEndEvent } from "@dnd-kit/core";
+import { cn } from "@/lib/utils";
 
 const CAT_ORDER = ["Produce", "Protein", "Dairy", "Bakery", "Frozen", "Pantry", "Other"];
 
@@ -164,8 +166,9 @@ export function GroceryList() {
         ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
         : "text-muted-foreground hover:bg-muted";
     const dim = highlightMealId && highlightMealId !== item.sourceMealId;
+    const draggable = groupBy === "category" && !isEditing;
     return (
-      <li key={item.id} className={`group flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-muted/40 ${dim ? "opacity-30" : ""}`}>
+      <DraggableRow key={item.id} id={item.id} enabled={draggable} dim={!!dim}>
         <Checkbox checked={item.bought} onCheckedChange={() => toggleGrocery(item.id)} />
         {isEditing ? (
           <div className="flex flex-1 items-center gap-1.5">
@@ -178,7 +181,7 @@ export function GroceryList() {
           <>
             <span className={item.bought ? "text-muted-foreground line-through" : ""}>{item.name}</span>
             {item.qty && <span className="text-[11px] text-muted-foreground">· {item.qty}</span>}
-            <button onClick={() => setGroceryStock(item.id, next)} title={`Mark ${next}`}>
+            <button onPointerDown={(e) => e.stopPropagation()} onClick={() => setGroceryStock(item.id, next)} title={`Mark ${next}`}>
               <Badge variant={status === "out" ? "outline" : "secondary"}
                 className={`ml-1 cursor-pointer rounded-full text-[10px] ${stockClass}`}>
                 {stockLabel}
@@ -188,6 +191,7 @@ export function GroceryList() {
               <button
                 onMouseEnter={() => setHighlightMealId(item.sourceMealId ?? null)}
                 onMouseLeave={() => setHighlightMealId(null)}
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => { setGroupBy("meal"); setHighlightMealId(item.sourceMealId ?? null); }}
                 title={`From ${item.sourceMealName}${item.sourceSlot ? " · " + item.sourceSlot : ""}${item.sourceDate ? " · " + item.sourceDate : ""}`}
                 className="ml-1"
@@ -198,12 +202,12 @@ export function GroceryList() {
               </button>
             )}
             <div className="ml-auto flex items-center gap-1 opacity-0 transition group-hover:opacity-70">
-              <button onClick={() => startEdit(item.id, item.name, item.qty)} title="Edit"><Pencil className="h-3 w-3" /></button>
-              <button onClick={() => deleteGrocery(item.id)} title="Delete"><Trash2 className="h-3 w-3" /></button>
+              <button onPointerDown={(e) => e.stopPropagation()} onClick={() => startEdit(item.id, item.name, item.qty)} title="Edit"><Pencil className="h-3 w-3" /></button>
+              <button onPointerDown={(e) => e.stopPropagation()} onClick={() => deleteGrocery(item.id)} title="Delete"><Trash2 className="h-3 w-3" /></button>
             </div>
           </>
         )}
-      </li>
+      </DraggableRow>
     );
   };
 
@@ -311,14 +315,27 @@ export function GroceryList() {
       ) : sorted.length === 0 ? (
         <p className="text-xs text-muted-foreground">No items match this filter.</p>
       ) : groupBy === "category" ? (
-        <div className="space-y-3">
-          {sortedCats.map(cat => (
-            <div key={cat}>
-              <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{cat}</div>
-              <ul className="space-y-0.5">{groceryByCat[cat].map(renderItem)}</ul>
-            </div>
-          ))}
-        </div>
+        <DndContext
+          onDragEnd={async (e: DragEndEvent) => {
+            const fromId = String(e.active.id);
+            const overId = e.over?.id ? String(e.over.id) : null;
+            if (!overId || !fromId.startsWith("gl-") || !overId.startsWith("cat-")) return;
+            const itemId = fromId.slice(3);
+            const newCat = overId.slice(4);
+            const item = state.grocery.find(i => i.id === itemId);
+            if (!item || item.category === newCat) return;
+            await updateGroceryItem(itemId, { category: newCat });
+            toast.success(`Moved to ${newCat}`);
+          }}
+        >
+          <div className="space-y-3">
+            {sortedCats.map(cat => (
+              <CategoryDropZone key={cat} cat={cat} count={groceryByCat[cat].length}>
+                {groceryByCat[cat].map(renderItem)}
+              </CategoryDropZone>
+            ))}
+          </div>
+        </DndContext>
       ) : groupBy === "meal" ? (
         <div className="space-y-3">
           {mealGroupKeys.map(key => {
@@ -361,6 +378,47 @@ export function GroceryList() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function DraggableRow({
+  id, enabled, dim, children,
+}: { id: string; enabled: boolean; dim: boolean; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `gl-${id}`, disabled: !enabled });
+  return (
+    <li
+      ref={setNodeRef}
+      {...(enabled ? attributes : {})}
+      {...(enabled ? listeners : {})}
+      className={cn(
+        "group flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-muted/40",
+        enabled && "cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-40",
+        dim && "opacity-30",
+      )}
+    >
+      {children}
+    </li>
+  );
+}
+
+function CategoryDropZone({
+  cat, count, children,
+}: { cat: string; count: number; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `cat-${cat}` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-lg border border-transparent p-1 transition",
+        isOver && "border-primary/40 bg-primary/5"
+      )}
+    >
+      <div className="mb-1 flex items-center gap-1 px-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        {cat} <span className="text-muted-foreground/60">({count})</span>
+      </div>
+      <ul className="space-y-0.5">{children}</ul>
     </div>
   );
 }
