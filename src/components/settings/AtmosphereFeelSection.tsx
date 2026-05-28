@@ -23,7 +23,6 @@ import {
   type CompletionVisualKey,
 } from "@/lib/completion-visual";
 import { CompletionBurst } from "@/components/cards/CompletionBurst";
-import { useState as useStateReact } from "react";
 
 type Intensity = "off" | "subtle" | "full";
 const ANIM_KEY = "careflow:atmo-anim";
@@ -47,7 +46,7 @@ export function AtmosphereFeelSection() {
   const [volume, setVolume] = useState(Math.round(getChimeVolume() * 100));
   const [intensity, setIntensity] = useState<Intensity>(readAnimIntensity());
   const [visual, setVisual] = useState<CompletionVisualKey>(getCompletionVisual());
-  const [previewKey, setPreviewKey] = useStateReact(0);
+  const [previewKey, setPreviewKey] = useState(0);
   const [overrides, setOverrides] = useState<Record<string, ChimePresetKey | "">>(() => {
     const o: Record<string, ChimePresetKey | ""> = {};
     for (const a of ATMOSPHERES) o[a.id] = getChimeOverride(a.id) ?? "";
