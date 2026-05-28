@@ -315,14 +315,27 @@ export function GroceryList() {
       ) : sorted.length === 0 ? (
         <p className="text-xs text-muted-foreground">No items match this filter.</p>
       ) : groupBy === "category" ? (
-        <div className="space-y-3">
-          {sortedCats.map(cat => (
-            <div key={cat}>
-              <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{cat}</div>
-              <ul className="space-y-0.5">{groceryByCat[cat].map(renderItem)}</ul>
-            </div>
-          ))}
-        </div>
+        <DndContext
+          onDragEnd={async (e: DragEndEvent) => {
+            const fromId = String(e.active.id);
+            const overId = e.over?.id ? String(e.over.id) : null;
+            if (!overId || !fromId.startsWith("gl-") || !overId.startsWith("cat-")) return;
+            const itemId = fromId.slice(3);
+            const newCat = overId.slice(4);
+            const item = state.grocery.find(i => i.id === itemId);
+            if (!item || item.category === newCat) return;
+            await updateGroceryItem(itemId, { category: newCat });
+            toast.success(`Moved to ${newCat}`);
+          }}
+        >
+          <div className="space-y-3">
+            {sortedCats.map(cat => (
+              <CategoryDropZone key={cat} cat={cat} count={groceryByCat[cat].length}>
+                {groceryByCat[cat].map(renderItem)}
+              </CategoryDropZone>
+            ))}
+          </div>
+        </DndContext>
       ) : groupBy === "meal" ? (
         <div className="space-y-3">
           {mealGroupKeys.map(key => {
