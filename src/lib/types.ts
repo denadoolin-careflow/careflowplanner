@@ -135,6 +135,14 @@ export interface Habit {
   category: "self-care" | "home" | "family" | "caregiving" | "health" | "creative" | "spiritual";
   streak: number;
   log: Record<string, boolean>; // date -> done
+  // Scheduling + linking metadata (persisted in habits.meta jsonb).
+  timesOfDay?: ("morning" | "midday" | "afternoon" | "evening" | "anytime")[];
+  daysOfWeek?: number[]; // 0=Sun..6=Sat
+  reminderTime?: string; // "HH:mm"
+  linkedProjectIds?: string[];
+  linkedRoutineIds?: string[];
+  linkedTaskIds?: string[];
+  linkedGoalIds?: string[];
 }
 
 export interface JournalEntry {
