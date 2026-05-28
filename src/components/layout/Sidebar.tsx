@@ -635,13 +635,22 @@ export function Sidebar() {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(COLLAPSED_KEY) === "1";
   });
+  const [side, setSide] = useState<SidebarSide>(() => readSide());
+  const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
   useEffect(() => {
     const onStorage = () => {
       setCollapsed(window.localStorage.getItem(COLLAPSED_KEY) === "1");
+      setSide(readSide());
+      setThemePref(readTheme());
     };
     window.addEventListener("storage", onStorage);
+    window.addEventListener(PREFS_EVENT, onStorage);
     const id = window.setInterval(onStorage, 600);
-    return () => { window.removeEventListener("storage", onStorage); window.clearInterval(id); };
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(PREFS_EVENT, onStorage);
+      window.clearInterval(id);
+    };
   }, []);
   const startDrag = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -664,7 +673,12 @@ export function Sidebar() {
   }, [width]);
   return (
     <aside
-      className="hidden lg:flex sticky top-0 self-start h-screen max-h-screen relative shrink-0 border-r border-sidebar-border"
+      className={cn(
+        "hidden lg:flex sticky top-0 self-start h-screen max-h-screen relative shrink-0",
+        side === "right" ? "order-last border-l border-sidebar-border" : "border-r border-sidebar-border",
+        themePref === "dark" && "dark",
+        themePref === "light" && "light",
+      )}
       style={collapsed ? undefined : { width }}
     >
       <SidebarBody />
@@ -675,7 +689,10 @@ export function Sidebar() {
           aria-label="Resize sidebar"
           onMouseDown={startDrag}
           onDoubleClick={() => setWidth(DEFAULT_WIDTH)}
-          className="absolute right-0 top-0 z-10 h-full w-1.5 -translate-x-1/2 cursor-col-resize bg-transparent hover:bg-primary/30 transition-colors"
+          className={cn(
+            "absolute top-0 z-10 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-primary/30 transition-colors",
+            side === "right" ? "left-0 translate-x-1/2" : "right-0 -translate-x-1/2",
+          )}
         />
       )}
     </aside>
