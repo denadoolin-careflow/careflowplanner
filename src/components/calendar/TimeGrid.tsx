@@ -252,8 +252,8 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
     const rect = el.getBoundingClientRect();
     const y = ev.clientY - rect.top;
     const startH = HOUR_START + snap(y / PX_PER_HOUR, snapStepFromEvent(ev));
-    const endH = Math.min(HOUR_END, startH + 1);
-    setDraft({ date: date.toISOString().slice(0,10), start: hoursToHM(startH), end: hoursToHM(endH) });
+    const iso = date.toISOString().slice(0, 10);
+    setQuickAdd({ iso, hour: startH, durMin: 30, value: "" });
   };
 
   const blocksFor = (iso: string) => blocks.filter(b => b.date === iso && !b.allDay);
