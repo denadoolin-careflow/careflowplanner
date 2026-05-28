@@ -167,6 +167,12 @@ export default function JournalFlow() {
         </div>
       </section>
 
+      <aside className="hidden xl:flex w-[220px] shrink-0 flex-col border-l border-border/40 px-5 py-6">
+        <div className="sticky top-6">
+          <NoteTOC body={body} title="Outline" />
+        </div>
+      </aside>
+
       {fullscreen && <FullscreenTimer onClose={() => setFullscreen(false)} />}
     </div>
   );
