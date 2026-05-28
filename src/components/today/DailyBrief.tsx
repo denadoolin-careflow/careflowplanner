@@ -199,10 +199,16 @@ function BriefDialog({
               <div key={t.id} className="min-w-0 rounded-md border border-border/50">
                 <div className="group flex min-w-0 items-center gap-2 p-2 hover:bg-muted/40">
                   <button
-                    className="grid h-4 w-4 shrink-0 place-items-center rounded-full border border-border text-transparent hover:border-primary hover:text-primary"
+                    className="group/check relative h-4 w-4 shrink-0 rounded-full border border-border transition-all hover:border-transparent hover:shadow-[0_0_0_2px_hsl(var(--primary)/0.15)]"
                     title="Mark complete"
                     onClick={() => onComplete(t.id, t.title)}
-                  >✓</button>
+                    aria-label={`Complete ${t.title}`}
+                  >
+                    <span
+                      className="absolute inset-0 rounded-full opacity-0 transition-opacity group-hover/check:opacity-100"
+                      style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))" }}
+                    />
+                  </button>
                   <button
                     className="min-w-0 flex-1 text-left"
                     onClick={() => setEditingId(editingId === t.id ? null : t.id)}
