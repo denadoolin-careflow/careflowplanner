@@ -76,6 +76,15 @@ export interface AreaRecord {
 
 export type ProjectStatus = "active" | "paused" | "done" | "someday";
 
+export interface ProjectMilestone {
+  id: string;
+  title: string;
+  /** ISO yyyy-mm-dd */
+  date?: string;
+  done: boolean;
+  notes?: string;
+}
+
 export interface Project {
   id: string;
   areaId?: string;
@@ -96,6 +105,17 @@ export interface Project {
   linkedHabitIds?: string[];
   isFavorite?: boolean;
   coverUrl?: string;
+  /** ISO yyyy-mm-dd — when the project work begins. */
+  startDate?: string;
+  /** ISO yyyy-mm-dd — target finish date (preferred over `deadline`). */
+  endDate?: string;
+  /** Planned budget in cents. */
+  budgetCents?: number;
+  milestones?: ProjectMilestone[];
+  /** IDs of wealth-hub transactions tagged to this project. */
+  linkedTransactionIds?: string[];
+  /** IDs of wealth-hub savings goals tied to this project. */
+  linkedSavingsGoalIds?: string[];
 }
 
 export interface Goal {
