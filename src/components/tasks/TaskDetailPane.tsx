@@ -100,6 +100,7 @@ export function TaskDetailPane() {
                 body={task.notes ?? ""}
                 onChange={(markdown) => updateTask(task.id, { notes: markdown })}
                 placeholder="Add notes… press / for blocks"
+                showFooter={false}
               />
             </div>
           </div>
