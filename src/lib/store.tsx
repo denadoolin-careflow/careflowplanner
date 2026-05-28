@@ -391,6 +391,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // identity-stable refreshes happen silently in the background so the
     // UI doesn't blink between routes / on tab focus.
     reload(user.id).finally(() => setLoading(false));
+    // Best-effort: seed the default grocery → pantry automation on first run.
+    void ensureDefaultAutomations(user.id).catch(() => {});
   }, [user, reload]);
 
   /* helpers */
