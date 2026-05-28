@@ -221,6 +221,8 @@ export function resolveChimeFor(id: AtmosphereId): ChimePreset {
 
 function playNote(n: Note) {
   const ac = getCtx(); if (!ac || !master) return;
+  // Resume if suspended (mobile background / autoplay gating).
+  if (ac.state === "suspended") { try { void ac.resume(); } catch { /* */ } }
   const osc = ac.createOscillator();
   const g = ac.createGain();
   osc.type = n.type ?? "sine";
