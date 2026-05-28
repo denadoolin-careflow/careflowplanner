@@ -141,7 +141,10 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const [side, setSide] = useState<SidebarSide>(() => readSide());
   const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
   const cycleTheme = () => {
-    const next: SidebarTheme = themePref === "auto" ? "light" : themePref === "light" ? "dark" : "auto";
+    const next: SidebarTheme =
+      themePref === "auto" ? "light" :
+      themePref === "light" ? "dark" :
+      themePref === "dark" ? "atmosphere" : "auto";
     setThemePref(next);
     writePrefs(THEME_KEY, next);
   };
@@ -341,7 +344,10 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   aria-label={`Sidebar theme: ${themePref}`}
                   className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
-                  {themePref === "dark" ? <Moon className="h-4 w-4" /> : themePref === "light" ? <Sun className="h-4 w-4" /> : <Sun className="h-4 w-4 opacity-60" />}
+                  {themePref === "dark" ? <Moon className="h-4 w-4" /> :
+                   themePref === "light" ? <Sun className="h-4 w-4" /> :
+                   themePref === "atmosphere" ? <Palette className="h-4 w-4" /> :
+                   <Sun className="h-4 w-4 opacity-60" />}
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom">Sidebar theme: {themePref}</TooltipContent>
