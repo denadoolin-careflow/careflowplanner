@@ -256,7 +256,12 @@ export default function Month() {
                     setHoverISO(null);
                     setDraggingTaskId(null);
                   }}
-                  onClick={isMobile && inMonth ? () => setSheetISO(k) : undefined}
+                  onClick={inMonth ? (e) => {
+                    // Only open the day sheet when clicking the cell background,
+                    // not when an inner item (task/appt/block/moon) handled it.
+                    if ((e.target as HTMLElement).closest("[data-day-item]")) return;
+                    setSheetISO(k);
+                  } : undefined}
                   className={cn(
                     "group/day relative min-h-14 rounded-lg border p-1 text-xs transition-all duration-200 ease-out sm:min-h-24 sm:p-1.5",
                     inMonth
