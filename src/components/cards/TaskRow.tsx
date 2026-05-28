@@ -28,7 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveTaskIcon } from "@/lib/task-icons";
 import { TagChip } from "@/components/tags/TagChip";
 import { playCompletionChime } from "@/lib/completion-sound";
-import { PriorityHoverButton } from "@/components/tasks/PriorityHoverButton";
+
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
@@ -290,7 +290,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
             </span>
           </div>
         )}
-        {!editing && (showArea || task.dueDate || task.dayPart || task.priority === "high" || task.resetItemId || (task.tags?.length ?? 0) > 0) && (
+        {!editing && (showArea || task.dueDate || task.dayPart || task.resetItemId || (task.tags?.length ?? 0) > 0) && (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {showArea && (
               <Badge
@@ -326,8 +326,6 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
               );
             })()}
             {task.dayPart && <Badge variant="outline" className="rounded-full text-[10px] font-normal">{task.dayPart}</Badge>}
-            {task.priority === "high" && <Badge className="rounded-full bg-accent text-accent-foreground text-[10px] font-normal hover:bg-accent">priority</Badge>}
-            {task.energy && <Badge variant="outline" className="rounded-full text-[10px] font-normal capitalize">{task.energy} energy</Badge>}
             {hasSubs && <Badge variant="outline" className="rounded-full text-[10px] font-normal">{subtasks.filter(s=>s.done).length}/{subtasks.length}</Badge>}
             {task.resetItemId && (
               <a href="/home-reset" className="inline-flex">
@@ -345,7 +343,6 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       <div className="hidden sm:contents">
         <QuickScheduleButton task={task} />
         <QuickDayPartButton task={task} />
-        <PriorityHoverButton task={task} />
       </div>
       {!isSubtask && (
         <div className="hidden opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 sm:block">
