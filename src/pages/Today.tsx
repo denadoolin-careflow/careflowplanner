@@ -249,13 +249,11 @@ function TodayInner() {
           title="Today"
           subtitle={view === "schedule" ? "Click a slot to add a time block, or drag a task in." : "Chronological view of everything on your day."}
           accent="warm"
-          action={
-            <div className="flex items-center gap-2">
-              <QuickAddCalendarPopover days={[today]} />
-              <CalendarViewToggle value={view} onChange={setView} />
-            </div>
-          }
+          action={<QuickAddCalendarPopover days={[today]} />}
         >
+          <div className="mb-3 flex justify-center sm:justify-end">
+            <CalendarViewToggle value={view} onChange={setView} />
+          </div>
           <TopThreeStrip date={today} onTaskClick={setEditTaskId} />
           {view === "schedule" && (
             <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />

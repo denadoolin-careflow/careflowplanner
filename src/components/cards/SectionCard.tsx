@@ -22,12 +22,12 @@ export function SectionCard({
         )} />
       )}
       {(title || action) && (
-        <header className="flex flex-col gap-3 px-5 pt-5 sm:flex-row sm:items-start sm:justify-between">
+        <header className="flex items-start justify-between gap-3 px-5 pt-5">
           <div className="min-w-0">
             {title && <h2 className="font-display text-lg font-semibold leading-tight">{title}</h2>}
             {subtitle && <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>}
           </div>
-          {action && <div className="-mx-1 flex max-w-full items-center gap-2 overflow-x-auto px-1 sm:mx-0 sm:px-0">{action}</div>}
+          {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}
         </header>
       )}
       <div className="px-5 pb-5 pt-3">{children}</div>
