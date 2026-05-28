@@ -4,6 +4,7 @@ import { Search, ShoppingBasket, Plus } from "lucide-react";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator,
 } from "@/components/ui/command";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -67,22 +68,21 @@ export function UniversalSearchBar() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="hidden items-center gap-2 rounded-full border border-border/60 bg-card/70 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-card transition-colors md:flex"
-        aria-label="Search everything"
-      >
-        <Search className="h-3.5 w-3.5" />
-        <span>Search…</span>
-        <kbd className="ml-2 rounded border border-border/60 bg-muted/50 px-1.5 text-[10px] font-mono">⌘K</kbd>
-      </button>
-      <button
-        onClick={() => setOpen(true)}
-        className="grid h-8 w-8 place-items-center rounded-full border border-border/60 bg-card text-muted-foreground hover:text-foreground md:hidden"
-        aria-label="Search"
-      >
-        <Search className="h-3.5 w-3.5" />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => setOpen(true)}
+            className="grid h-9 w-9 place-items-center rounded-full border border-border/60 bg-card/70 text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+            aria-label="Search everything"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="flex items-center gap-2">
+          Search tasks, notes, projects…
+          <kbd className="rounded border border-border/60 bg-muted/50 px-1.5 text-[10px] font-mono">⌘K</kbd>
+        </TooltipContent>
+      </Tooltip>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Search tasks, notes, projects, events, meals…" value={q} onValueChange={setQ} />
