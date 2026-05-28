@@ -7,6 +7,7 @@ import { MoonGlyph } from "@/components/widgets/MoonGlyph";
 import { getRhythmForecast, ELEMENT_META } from "@/lib/rhythm-forecast";
 import { getMoonPhase } from "@/lib/moon";
 import { toKeyPhase, KEY_PHASES } from "@/lib/lunar-phases";
+import type { KeyPhase } from "@/lib/lunar-phases";
 import { getSignInfo, SIGN_EMOJI, ELEMENT_EMOJI, type ZodiacSign } from "@/lib/zodiac";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ export function DayLunarSheet({ date, open, onOpenChange }: Props) {
           const forecast = getRhythmForecast(date);
           const phase = getMoonPhase(date);
           const key = KEY_PHASES[toKeyPhase(phase)];
+          const cycleOrder: KeyPhase[] = ["sow", "grow", "glow", "let-go"];
           const elMeta = ELEMENT_META[forecast.element];
           const signName = forecast.sign.sign as ZodiacSign;
           const sign = getSignInfo(signName);
@@ -61,6 +63,47 @@ export function DayLunarSheet({ date, open, onOpenChange }: Props) {
                   <span aria-hidden>{key.glyph}</span> {key.label}
                 </div>
                 <p className="mt-2 text-sm italic text-foreground/85">{key.invitation}</p>
+              </div>
+
+              {/* Canonical cycle order */}
+              <div className="mt-3 rounded-2xl border border-border/50 bg-card/60 p-3">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Cycle order
+                </div>
+                <ol className="mt-2 grid grid-cols-4 gap-1.5">
+                  {cycleOrder.map((k, i) => {
+                    const kp = KEY_PHASES[k];
+                    const active = k === key.key;
+                    return (
+                      <li
+                        key={k}
+                        className={cn(
+                          "flex flex-col items-center gap-0.5 rounded-xl px-1.5 py-2 text-center text-[11px] leading-tight transition",
+                          active ? "ring-1" : "opacity-70",
+                        )}
+                        style={
+                          active
+                            ? {
+                                background: `hsl(${kp.hsl} / 0.18)`,
+                                color: `hsl(${kp.hsl})`,
+                                boxShadow: `inset 0 0 0 1px hsl(${kp.hsl} / 0.45)`,
+                              }
+                            : undefined
+                        }
+                        aria-current={active ? "step" : undefined}
+                      >
+                        <span className="text-[10px] opacity-60">{i + 1}</span>
+                        <span className="text-base leading-none" aria-hidden>
+                          {kp.glyph}
+                        </span>
+                        <span className="font-medium">{kp.verb}</span>
+                        <span className="truncate opacity-75">
+                          {kp.label.split(" · ")[1]}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
               </div>
 
               {/* Zodiac + element row */}
