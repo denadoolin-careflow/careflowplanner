@@ -28,6 +28,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveTaskIcon } from "@/lib/task-icons";
 import { TagChip } from "@/components/tags/TagChip";
 import { playCompletionChime } from "@/lib/completion-sound";
+import { CompletionBurst } from "@/components/cards/CompletionBurst";
+import { useCompletionVisual } from "@/lib/completion-visual";
 
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
