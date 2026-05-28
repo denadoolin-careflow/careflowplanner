@@ -114,6 +114,7 @@ const groceryFrom = (r: any): GroceryItem => ({
   sourceMealName: r.source_meal_name ?? null,
   sourceSlot: r.source_slot ?? null,
   sourceDate: r.source_date ?? null,
+  tags: Array.isArray(r.tags) ? r.tags : [],
 });
 const apptFrom = (r: any): Appointment => ({
   id: r.id, date: r.date, time: r.time ?? undefined,
