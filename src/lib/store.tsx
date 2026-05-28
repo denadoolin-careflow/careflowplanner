@@ -169,6 +169,12 @@ const projectFrom = (r: any): Project => ({
   linkedHabitIds: Array.isArray(r.linked_habit_ids) ? r.linked_habit_ids : [],
   isFavorite: !!r.is_favorite,
   coverUrl: r.cover_url ?? undefined,
+  startDate: r.start_date ?? undefined,
+  endDate: r.end_date ?? undefined,
+  budgetCents: r.budget_cents == null ? undefined : Number(r.budget_cents),
+  milestones: Array.isArray(r.milestones) ? r.milestones : [],
+  linkedTransactionIds: Array.isArray(r.linked_transaction_ids) ? r.linked_transaction_ids : [],
+  linkedSavingsGoalIds: Array.isArray(r.linked_savings_goal_ids) ? r.linked_savings_goal_ids : [],
 });
 const sectionFrom = (r: any): ProjectSection => ({
   id: r.id, projectId: r.project_id, name: r.name,
