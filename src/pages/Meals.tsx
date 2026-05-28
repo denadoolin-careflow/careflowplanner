@@ -486,8 +486,25 @@ export default function Meals() {
         </DndContext>
       </SectionCard>
 
-      <SectionCard title="Grocery list" subtitle="Kanban — drag between categories" accent="sage">
-        <GroceryKanban />
+      <SectionCard
+        title="Grocery list"
+        subtitle={groceryView === "kanban" ? "Kanban — drag between categories" : "List — filter, sort & group"}
+        accent="sage"
+        action={
+          <div className="inline-flex rounded-full border border-border/60 p-0.5 text-xs">
+            {(["kanban", "list"] as const).map(v => (
+              <button
+                key={v}
+                onClick={() => setGroceryView(v)}
+                className={`rounded-full px-3 py-1 capitalize transition ${groceryView === v ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        }
+      >
+        {groceryView === "kanban" ? <GroceryKanban /> : <GroceryList />}
       </SectionCard>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
