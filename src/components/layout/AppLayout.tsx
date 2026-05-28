@@ -9,8 +9,9 @@ import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
 import { AIAssistantFab } from "@/components/ai/AIAssistantFab";
 import { CombinedFab } from "@/components/quick-add/CombinedFab";
 import { useStore } from "@/lib/store";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { BatteryLow, BatteryMedium } from "lucide-react";
 import { NAV } from "@/lib/nav";
 import { RoutinesStrip } from "@/components/routines/RoutinesStrip";
 import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
@@ -50,10 +51,23 @@ export function AppLayout() {
               <UniversalSearchBar />
               <NotificationCenter />
               <PanelPicker />
-              <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 sm:flex">
-                <Label htmlFor="low-energy" className="text-xs text-muted-foreground">Low-energy mode</Label>
-                <Switch id="low-energy" checked={state.settings.lowEnergyMode} onCheckedChange={setLowEnergyMode} />
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Toggle low-energy mode"
+                    aria-pressed={state.settings.lowEnergyMode}
+                    onClick={() => setLowEnergyMode(!state.settings.lowEnergyMode)}
+                    className={`hidden h-9 w-9 rounded-full sm:inline-flex ${state.settings.lowEnergyMode ? "text-primary bg-primary/10" : ""}`}
+                  >
+                    {state.settings.lowEnergyMode ? <BatteryLow className="h-4 w-4" /> : <BatteryMedium className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Low-energy mode {state.settings.lowEnergyMode ? "on" : "off"}
+                </TooltipContent>
+              </Tooltip>
               <AtmospherePicker />
               <ThemeToggle />
             </div>

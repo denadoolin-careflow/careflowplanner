@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Sparkles, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ATMOSPHERES, AtmosphereId, useAtmosphere, getAtmosphere } from "@/lib/atmospheres";
 import { AtmosphereCard } from "./AtmosphereCard";
 import { AutoSwitchConfig } from "./AutoSwitchConfig";
@@ -30,18 +31,21 @@ export function AtmospherePicker() {
   return (
     <>
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          aria-label="Choose atmosphere"
-          className="gap-1.5 rounded-full px-2 text-xs sm:px-3"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          <span className="hidden md:inline">Atmosphere:</span>
-          <span className="hidden font-medium sm:inline">{active.name}</span>
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Choose atmosphere"
+              className="h-9 w-9 rounded-full"
+            >
+              <Sparkles className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Atmosphere · {active.name}</TooltipContent>
+      </Tooltip>
 
       <DialogContent className="max-h-[88vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
