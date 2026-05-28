@@ -80,6 +80,7 @@ export const NAV_GROUPS = [
       { to: "/meals/library", label: "Meals Library", icon: BookOpen },
       { to: "/home-areas", label: "Home", icon: Home },
       { to: "/home-reset", label: "Home Hub", icon: Sparkle },
+      { to: "/trips", label: "Trips", icon: Plane },
     ],
   },
   {
