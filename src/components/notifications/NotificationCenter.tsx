@@ -13,12 +13,14 @@ import { toast } from "sonner";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { listMemories, memoryTypeMeta, type Memory } from "@/lib/memories";
 import { QuickTaskInlineEditor } from "@/components/tasks/QuickTaskInlineEditor";
+import { CycleNotificationsSection } from "@/components/cycle/CycleNotificationsSection";
 
 export function NotificationCenter() {
   const { state, toggleTask, updateTask } = useStore();
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(() => getDismissed());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [cycleCount, setCycleCount] = useState(0);
   useEffect(() => onDismissedChange(() => setDismissed(getDismissed())), []);
   const navigate = useNavigate();
   const [memories, setMemories] = useState<Memory[]>([]);
@@ -63,7 +65,7 @@ export function NotificationCenter() {
     return { overdue, dueToday, dueTomorrow, upcoming, todayAppts };
   }, [state.tasks, state.appointments, todayISO, tomorrowISO, today, weekEnd, dismissed]);
 
-  const count = buckets.overdue.length + buckets.dueToday.length + buckets.todayAppts.length + onThisDay.length;
+  const count = buckets.overdue.length + buckets.dueToday.length + buckets.todayAppts.length + onThisDay.length + cycleCount;
   const totalShown =
     buckets.overdue.length + buckets.dueToday.length + buckets.dueTomorrow.length +
     buckets.upcoming.length + buckets.todayAppts.length + onThisDay.length;
@@ -228,6 +230,7 @@ export function NotificationCenter() {
           </div>
         </div>
         <div className="max-h-[60vh] overflow-y-auto">
+          <CycleNotificationsSection onCount={setCycleCount} />
           {onThisDay.length > 0 && (
             <div>
               <div className="flex items-center gap-1.5 px-2 pb-1 pt-2 text-[10px] uppercase tracking-[0.15em] text-[hsl(350_55%_55%)]">
