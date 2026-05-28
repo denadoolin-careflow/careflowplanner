@@ -365,19 +365,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       <Button variant="ghost" size="icon" className="hidden h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 sm:inline-flex" onClick={() => deleteTask(task.id)} aria-label="Delete">
         <Trash2 className="h-3.5 w-3.5" />
       </Button>
-      {celebrate && (
-        <>
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl"
-          >
-            <span className="absolute inset-y-0 -left-1/3 w-1/2 animate-[task-sweep_900ms_ease-out_forwards] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-          </span>
-          <span aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center">
-            <span className="animate-ping rounded-full bg-primary/20 px-3 py-1 text-base">✨</span>
-          </span>
-        </>
-      )}
+      {celebrate && <CompletionBurst variant={completionVisual} />}
     </RowShell>
     <QuickEditPopover task={task} open={quickEditOpen} onOpenChange={setQuickEditOpen} />
     {expanded && (
