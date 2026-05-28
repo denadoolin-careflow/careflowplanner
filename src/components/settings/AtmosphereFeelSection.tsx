@@ -23,6 +23,7 @@ import {
   type CompletionVisualKey,
 } from "@/lib/completion-visual";
 import { CompletionBurst } from "@/components/cards/CompletionBurst";
+import { isHapticsEnabled, setHapticsEnabled, haptics } from "@/lib/haptics";
 
 type Intensity = "off" | "subtle" | "full";
 const ANIM_KEY = "careflow:atmo-anim";
@@ -47,6 +48,7 @@ export function AtmosphereFeelSection() {
   const [intensity, setIntensity] = useState<Intensity>(readAnimIntensity());
   const [visual, setVisual] = useState<CompletionVisualKey>(getCompletionVisual());
   const [previewKey, setPreviewKey] = useState(0);
+  const [haptic, setHaptic] = useState(isHapticsEnabled());
   const [overrides, setOverrides] = useState<Record<string, ChimePresetKey | "">>(() => {
     const o: Record<string, ChimePresetKey | ""> = {};
     for (const a of ATMOSPHERES) o[a.id] = getChimeOverride(a.id) ?? "";
@@ -85,6 +87,26 @@ export function AtmosphereFeelSection() {
             disabled={!enabled}
           >
             <Play className="h-3.5 w-3.5" /> Preview current atmosphere
+          </Button>
+        </div>
+
+        {/* Haptics */}
+        <div className="space-y-3 rounded-xl border border-border/60 bg-card/40 p-3">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <Label className="text-sm">Haptic feedback</Label>
+              <p className="text-[11px] text-muted-foreground">
+                Subtle vibration on taps, drags, and task completion. Mobile only.
+              </p>
+            </div>
+            <Switch checked={haptic} onCheckedChange={(c) => { setHaptic(c); setHapticsEnabled(c); if (c) haptics.success(); }} />
+          </div>
+          <Button
+            variant="outline" size="sm" className="gap-2"
+            onClick={() => haptics.success()}
+            disabled={!haptic}
+          >
+            Test haptic
           </Button>
         </div>
 

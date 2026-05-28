@@ -177,6 +177,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
       setCelebrate(true);
       window.setTimeout(() => setCelebrate(false), 1100);
       playCompletionChime();
+      haptics.success();
       toast.success("Done — softly.", { description: pickAffirmation() });
     }
   };
