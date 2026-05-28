@@ -153,6 +153,7 @@ export interface GroceryItem {
   sourceMealName?: string | null;
   sourceSlot?: string | null;
   sourceDate?: string | null;
+  tags?: string[];
 }
 
 export interface Appointment {
