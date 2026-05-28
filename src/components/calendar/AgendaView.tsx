@@ -81,11 +81,6 @@ export function AgendaView({ days, appointmentsOn, onTaskDropAt, onApptClick, on
 
   return (
     <div className="space-y-4">
-      {grouped.length === 0 && (
-        <div className="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
-          Nothing scheduled. Drop a task from the right to add it.
-        </div>
-      )}
       {grouped.map(([iso, rows]) => {
         const d = parseISO(iso);
         const today = isSameDay(d, new Date());
