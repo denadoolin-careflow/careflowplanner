@@ -702,6 +702,7 @@ export function Sidebar() {
   });
   const [side, setSide] = useState<SidebarSide>(() => readSide());
   const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
+  const { atmosphere } = useAtmosphere();
   useEffect(() => {
     const onStorage = () => {
       setCollapsed(window.localStorage.getItem(COLLAPSED_KEY) === "1");
@@ -744,8 +745,12 @@ export function Sidebar() {
         side === "right" ? "order-last border-l border-sidebar-border" : "border-r border-sidebar-border",
         themePref === "dark" && "sidebar-force-dark",
         themePref === "light" && "sidebar-force-light",
+        themePref === "atmosphere" && "sidebar-force-dark",
       )}
-      style={collapsed ? undefined : { width }}
+      style={{
+        ...(collapsed ? {} : { width }),
+        ...(themePref === "atmosphere" ? buildAtmosphereSidebarStyle(atmosphere.palette) : {}),
+      }}
     >
       <SidebarBody />
       {!collapsed && (
