@@ -172,13 +172,17 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
 
   const handleToggle = () => {
     const wasDone = task.done;
-    toggleTask(task.id);
     if (!wasDone) {
       setCelebrate(true);
-      window.setTimeout(() => setCelebrate(false), 1100);
       playCompletionChime();
       haptics.success();
       toast.success("Done — softly.", { description: pickAffirmation() });
+      window.setTimeout(() => {
+        toggleTask(task.id);
+        setCelebrate(false);
+      }, 900);
+    } else {
+      toggleTask(task.id);
     }
   };
 
