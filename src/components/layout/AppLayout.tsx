@@ -23,6 +23,7 @@ import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
 import { useEffect } from "react";
 import { applyAnimIntensity, readAnimIntensity } from "@/components/settings/AtmosphereFeelSection";
 import { applyFontPrefs } from "@/lib/font-prefs";
+import { installGlobalHaptics } from "@/lib/haptics";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
@@ -30,7 +31,7 @@ export function AppLayout() {
   const current = NAV.find(n => n.to === pathname) ?? NAV[0];
   useAutoAtmosphereResolver({ lowEnergy: state.settings.lowEnergyMode });
   const { current: atmoId } = useAtmosphere();
-  useEffect(() => { applyAnimIntensity(readAnimIntensity()); applyFontPrefs(); }, []);
+  useEffect(() => { applyAnimIntensity(readAnimIntensity()); applyFontPrefs(); installGlobalHaptics(); }, []);
   useEffect(() => { applyFontPrefs(); }, [atmoId]);
 
   return (
