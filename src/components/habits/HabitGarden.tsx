@@ -5,7 +5,7 @@ import { HabitPlant } from "./HabitPlant";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Check, Flame, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { hapticPulse } from "@/lib/haptics";
+import { haptics } from "@/lib/haptics";
 import { format, subDays } from "date-fns";
 
 export function HabitGarden() {
@@ -52,11 +52,11 @@ export function HabitGarden() {
           const handleTend = async () => {
             await toggleHabit(habit.id, today);
             if (!tendedToday) {
-              hapticPulse("success");
+              haptics.success();
               setCelebrating(habit.id);
               setTimeout(() => setCelebrating(null), 900);
             } else {
-              hapticPulse("light");
+              haptics.tap();
             }
           };
           return (
