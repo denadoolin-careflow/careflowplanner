@@ -58,7 +58,7 @@ export function TopThreeStrip({
             <li
               key={t.id}
               className={cn(
-                "flex items-center gap-2 rounded-lg border border-border/40 bg-card/70 px-2 py-1.5 transition",
+                "flex min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border/40 bg-card/70 px-2 py-1.5 transition",
                 "hover:border-primary/30 hover:bg-card",
                 t.done && "opacity-60",
               )}
