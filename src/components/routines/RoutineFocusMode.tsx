@@ -73,14 +73,6 @@ export function RoutineFocusMode({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md border-0 bg-gradient-to-br from-primary/15 via-background to-background p-0 sm:rounded-3xl">
         <div className="relative flex flex-col items-center gap-4 p-6 pb-4">
-          <button
-            onClick={() => onOpenChange(false)}
-            className="absolute right-3 top-3 rounded-full p-1.5 text-muted-foreground hover:bg-muted/60"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
-
           <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
             {routine.person_name} · Focus
           </div>
