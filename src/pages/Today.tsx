@@ -158,9 +158,9 @@ function TodayInner() {
                   "radial-gradient(60% 80% at 85% 30%, hsl(var(--primary)/0.18), transparent 70%), radial-gradient(50% 70% at 15% 90%, hsl(var(--moon, var(--primary))/0.15), transparent 70%)",
               }}
             />
-            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            <div className="relative flex flex-col items-center gap-5 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
+              <div className="flex min-w-0 flex-col items-center sm:items-start">
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground dark:text-foreground/80">
                   {personalGreeting(state.settings.name)} <span className="opacity-60">· {format(today, "EEEE")}</span>
                 </p>
                 <h2 className="text-gradient-glow font-display text-3xl font-semibold sm:text-4xl">
@@ -169,7 +169,7 @@ function TodayInner() {
                 <div className="mt-3">
                   <AffirmationHeader date={today} />
                 </div>
-                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
                   <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => setDayAndUrl(addDays(day, -1))} aria-label="Previous day">
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -208,7 +208,7 @@ function TodayInner() {
                     {paneOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
                   </Button>
                 </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                   <EnergyCheckIn />
                   <Button
                     size="sm"
