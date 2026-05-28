@@ -41,7 +41,19 @@ export function formatTime12(t: string | null | undefined): string {
   return m ? `${h12}:${String(m).padStart(2, "0")} ${period}` : `${h12} ${period}`;
 }
 
-export interface RoutineItem { id: string; text: string; done: boolean; }
+export interface RoutineItem {
+  id: string;
+  text: string;
+  done: boolean;
+  icon?: string;        // emoji or short label
+  durationMin?: number; // estimated minutes for this step
+  note?: string;
+}
+
+export interface RoutineMeta {
+  prepNoticeMin?: number; // 0/2/5/10
+  color?: string;
+}
 export interface Routine {
   id: string;
   person_name: string;
@@ -52,6 +64,7 @@ export interface Routine {
   tags: string[];
   recipient_id: string | null;
   time_of_day: string | null;
+  meta: RoutineMeta;
 }
 
 let cache: Routine[] = [];
@@ -84,6 +97,7 @@ function mapRow(r: any): Routine {
     tags: Array.isArray(r.tags) ? r.tags : [],
     recipient_id: r.recipient_id ?? null,
     time_of_day: r.time_of_day ?? null,
+    meta: (r.meta && typeof r.meta === "object") ? r.meta as RoutineMeta : {},
   };
 }
 
@@ -117,7 +131,7 @@ export const routines = {
   async upsert(
     person: string,
     slot: RoutineSlot,
-    patch: Partial<Pick<Routine, "items" | "notes" | "cadence" | "tags" | "recipient_id" | "time_of_day">>,
+    patch: Partial<Pick<Routine, "items" | "notes" | "cadence" | "tags" | "recipient_id" | "time_of_day" | "meta">>,
   ) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -128,7 +142,8 @@ export const routines = {
     const tags = patch.tags ?? existing?.tags ?? [];
     const recipient_id = patch.recipient_id !== undefined ? patch.recipient_id : (existing?.recipient_id ?? null);
     const time_of_day = patch.time_of_day !== undefined ? patch.time_of_day : (existing?.time_of_day ?? null);
-    const row = { user_id: user.id, person_name: person, slot, items, notes, cadence, tags, recipient_id, time_of_day };
+    const meta = patch.meta !== undefined ? { ...(existing?.meta ?? {}), ...patch.meta } : (existing?.meta ?? {});
+    const row = { user_id: user.id, person_name: person, slot, items, notes, cadence, tags, recipient_id, time_of_day, meta };
     const { data } = await supabase
       .from("routines" as any)
       .upsert(row as any, { onConflict: "user_id,person_name,slot" })
@@ -144,7 +159,13 @@ export const routines = {
   },
   async addItem(person: string, slot: RoutineSlot, text: string) {
     const r = routines.find(person, slot);
-    const items = [...(r?.items ?? []), { id: uid(), text, done: false }];
+    const items = [...(r?.items ?? []), { id: uid(), text, done: false, durationMin: 5 }];
+    await routines.upsert(person, slot, { items });
+  },
+  async updateItem(person: string, slot: RoutineSlot, itemId: string, patch: Partial<RoutineItem>) {
+    const r = routines.find(person, slot);
+    if (!r) return;
+    const items = r.items.map(i => i.id === itemId ? { ...i, ...patch } : i);
     await routines.upsert(person, slot, { items });
   },
   async toggleItem(person: string, slot: RoutineSlot, itemId: string) {
@@ -185,8 +206,71 @@ export const routines = {
     if (error) throw error;
     return (data?.ideas ?? []) as string[];
   },
+  async breakdown(goal: string, opts?: { person?: string; slot?: RoutineSlot }): Promise<Array<{ text: string; icon?: string; durationMin?: number }>> {
+    const { data, error } = await supabase.functions.invoke("ai-routine-breakdown", {
+      body: { goal, person: opts?.person, slot: opts?.slot },
+    });
+    if (error) throw error;
+    return (data?.steps ?? []) as Array<{ text: string; icon?: string; durationMin?: number }>;
+  },
   reload: loadAll,
 };
+
+// ---------- Pure helpers ----------
+
+export function routineTotalMinutes(r: Routine): number {
+  return r.items.reduce((sum, it) => sum + (it.durationMin ?? 5), 0);
+}
+
+/** Compute current/next step for one person's routines based on clock time + cumulative item durations. */
+export function computeNowNext(rs: Routine[], now: Date = new Date()): {
+  current?: { routine: Routine; item: RoutineItem; endsAt: Date; startsAt: Date };
+  next?: { routine: Routine; item: RoutineItem; startsAt: Date };
+  upcoming?: { routine: Routine; startsAt: Date; prepInMin: number };
+} {
+  type Block = { routine: Routine; item: RoutineItem; startsAt: Date; endsAt: Date };
+  const blocks: Block[] = [];
+  const today = new Date(now); today.setSeconds(0, 0);
+  for (const r of rs) {
+    const t = r.time_of_day ?? SLOT_DEFAULT_TIME[r.slot];
+    if (!t) continue;
+    const [hh, mm] = t.split(":").map(n => parseInt(n, 10));
+    if (Number.isNaN(hh)) continue;
+    let cursor = new Date(today); cursor.setHours(hh, mm || 0, 0, 0);
+    for (const it of r.items) {
+      const dur = it.durationMin ?? 5;
+      const startsAt = new Date(cursor);
+      const endsAt = new Date(cursor.getTime() + dur * 60_000);
+      blocks.push({ routine: r, item: it, startsAt, endsAt });
+      cursor = endsAt;
+    }
+  }
+  blocks.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+  const current = blocks.find(b => now >= b.startsAt && now < b.endsAt && !b.item.done);
+  const future = blocks.filter(b => b.startsAt > now);
+  const next = future[0];
+  // Find soonest routine starting within prep window
+  let upcoming: { routine: Routine; startsAt: Date; prepInMin: number } | undefined;
+  for (const r of rs) {
+    const prep = r.meta?.prepNoticeMin ?? 0;
+    if (!prep) continue;
+    const t = r.time_of_day ?? SLOT_DEFAULT_TIME[r.slot];
+    if (!t) continue;
+    const [hh, mm] = t.split(":").map(n => parseInt(n, 10));
+    const startsAt = new Date(today); startsAt.setHours(hh, mm || 0, 0, 0);
+    const diffMin = (startsAt.getTime() - now.getTime()) / 60_000;
+    if (diffMin > 0 && diffMin <= prep) {
+      if (!upcoming || startsAt < upcoming.startsAt) {
+        upcoming = { routine: r, startsAt, prepInMin: Math.ceil(diffMin) };
+      }
+    }
+  }
+  return {
+    current: current ? { routine: current.routine, item: current.item, endsAt: current.endsAt, startsAt: current.startsAt } : undefined,
+    next: next ? { routine: next.routine, item: next.item, startsAt: next.startsAt } : undefined,
+    upcoming,
+  };
+}
 
 export function useRoutines() {
   const [list, setList] = useState<Routine[]>(cache);
