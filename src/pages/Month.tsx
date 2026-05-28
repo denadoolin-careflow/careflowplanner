@@ -39,8 +39,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MoonGlyph } from "@/components/widgets/MoonGlyph";
-import { getRhythmForecast as getRF } from "@/lib/rhythm-forecast";
-import { SIGN_EMOJI, type ZodiacSign } from "@/lib/zodiac";
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
