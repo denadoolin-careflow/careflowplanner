@@ -39,6 +39,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
   const [open, setOpen] = useState(false);
   const [pomOpen, setPomOpen] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const completionVisual = useCompletionVisual();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
   const [expanded, setExpanded] = useState(false);
