@@ -5,7 +5,7 @@ import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
-  PanelLeft, PanelRight,
+  PanelLeft, PanelRight, Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, type MouseEvent } from "react";
@@ -15,6 +15,7 @@ import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconCol
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import { useAtmosphere } from "@/lib/atmospheres";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon },
@@ -37,7 +38,7 @@ const MAX_WIDTH = 420;
 const DEFAULT_WIDTH = 256;
 
 type SidebarSide = "left" | "right";
-type SidebarTheme = "auto" | "light" | "dark";
+type SidebarTheme = "auto" | "light" | "dark" | "atmosphere";
 
 function readSide(): SidebarSide {
   if (typeof window === "undefined") return "left";
@@ -46,7 +47,7 @@ function readSide(): SidebarSide {
 function readTheme(): SidebarTheme {
   if (typeof window === "undefined") return "auto";
   const v = window.localStorage.getItem(THEME_KEY);
-  return v === "light" || v === "dark" ? v : "auto";
+  return v === "light" || v === "dark" || v === "atmosphere" ? v : "auto";
 }
 function writePrefs(key: string, value: string) {
   try { window.localStorage.setItem(key, value); } catch {}
