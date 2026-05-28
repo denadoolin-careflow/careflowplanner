@@ -137,7 +137,7 @@ export function LunarPhaseWidget({ date = new Date(), compact = false }: Props) 
                 type="button"
                 key={n.date.toISOString()}
                 onClick={() => setSheetDate(n.date)}
-                className="group flex items-center gap-2 rounded-xl bg-white/5 px-2.5 py-2 text-left backdrop-blur-sm transition-all hover:bg-white/10 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-white/30"
+                className="group flex items-center gap-2 rounded-xl bg-white/5 px-2.5 py-2 text-left backdrop-blur-sm transition-all hover:bg-white/10 hover:scale-[1.02] focus:outline-none focus-visible:bg-white/10 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:ring-[hsl(36_60%_92%)]"
                 style={{ borderLeft: `2px solid hsl(${k.hsl} / 0.6)` }}
                 aria-label={`${k.verb} — ${k.label} on ${format(n.date, "MMM d")} — Moon in ${s.name}`}
               >
