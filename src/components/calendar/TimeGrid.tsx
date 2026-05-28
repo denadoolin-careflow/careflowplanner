@@ -674,11 +674,65 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                       );
                     })()}
                     {/* Hover slot highlight */}
-                    {!drag && !dropHover && hoverSlot?.iso === iso && (
+                    {!drag && !dropHover && !quickAdd && hoverSlot?.iso === iso && (
                       <div
                         className="pointer-events-none absolute inset-x-1 z-0 rounded-md bg-primary/5 ring-1 ring-inset ring-primary/15 transition-[top] duration-100"
                         style={{ top: (hoverSlot.hour - HOUR_START) * PX_PER_HOUR, height: (SNAP_DEFAULT_MIN / 60) * PX_PER_HOUR }}
                       />
+                    )}
+                    {/* Inline quick-add */}
+                    {quickAdd?.iso === iso && (
+                      <div
+                        data-quick-add
+                        className="absolute inset-x-1 z-40 rounded-md border-2 border-primary/70 bg-card/95 shadow-lg backdrop-blur"
+                        style={{
+                          top: (quickAdd.hour - HOUR_START) * PX_PER_HOUR,
+                          height: Math.max(48, (quickAdd.durMin / 60) * PX_PER_HOUR),
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          ref={quickAddRef}
+                          value={quickAdd.value}
+                          onChange={(e) => setQuickAdd(q => q && { ...q, value: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") { e.preventDefault(); void commitQuickAdd(e.shiftKey); }
+                            else if (e.key === "Escape") { e.preventDefault(); setQuickAdd(null); }
+                          }}
+                          placeholder="New task — Enter to add"
+                          className="block w-full bg-transparent px-2 py-1 text-[12px] font-medium leading-tight outline-none placeholder:text-muted-foreground"
+                        />
+                        <div className="flex items-center justify-between gap-1 px-2 pb-1 text-[10px] text-muted-foreground">
+                          <div className="flex items-center gap-0.5">
+                            {[15, 30, 60].map(m => (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => setQuickAdd(q => q && { ...q, durMin: m })}
+                                className={cn(
+                                  "rounded px-1.5 py-0.5 transition-colors",
+                                  quickAdd.durMin === m
+                                    ? "bg-primary/15 text-primary"
+                                    : "hover:bg-muted hover:text-foreground"
+                                )}
+                              >
+                                {m}m
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="tabular-nums">{fmtTime(hoursToHM(quickAdd.hour))}</span>
+                            <button
+                              type="button"
+                              onClick={() => void commitQuickAdd(true)}
+                              className="rounded px-1.5 py-0.5 hover:bg-muted hover:text-foreground"
+                              title="More options"
+                            >
+                              More…
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     )}
                     {/* Snap-to-grid indicator while dragging an existing block */}
                     {drag && drag.moved && drag.curDate === iso && (() => {
