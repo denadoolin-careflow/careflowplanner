@@ -209,7 +209,7 @@ export default function Month() {
               <span className="sm:hidden italic opacity-80">Tap any day's moon for guidance</span>
             </div>
           )}
-          <div className="grid grid-cols-7 gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground sm:gap-1 sm:text-xs">
+          <div className="grid grid-cols-7 gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground sm:text-xs">
             {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
               <div key={d} className="px-1 py-1 text-center sm:px-2">
                 <span className="sm:hidden">{d[0]}</span>
@@ -217,7 +217,7 @@ export default function Month() {
               </div>
             ))}
           </div>
-          <div className="mt-1 grid grid-cols-7 gap-0.5 sm:gap-1">
+          <div className="mt-1.5 grid grid-cols-7 gap-1.5">
             {days.map(d => {
               const k = d.toISOString().slice(0,10);
               const inMonth = isSameMonth(d, cursor);
