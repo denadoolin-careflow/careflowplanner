@@ -184,6 +184,92 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_runs: {
+        Row: {
+          automation_id: string
+          created_at: string
+          error: string | null
+          id: string
+          payload: Json
+          status: string
+          triggered_by: string | null
+          user_id: string
+        }
+        Insert: {
+          automation_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          status?: string
+          triggered_by?: string | null
+          user_id: string
+        }
+        Update: {
+          automation_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          status?: string
+          triggered_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_runs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automations: {
+        Row: {
+          action_config: Json
+          action_type: string
+          created_at: string
+          enabled: boolean
+          id: string
+          last_run_at: string | null
+          name: string
+          sort_order: number
+          trigger_config: Json
+          trigger_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_config?: Json
+          action_type: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          name: string
+          sort_order?: number
+          trigger_config?: Json
+          trigger_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          name?: string
+          sort_order?: number
+          trigger_config?: Json
+          trigger_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       birthdays: {
         Row: {
           created_at: string
@@ -1264,6 +1350,7 @@ export type Database = {
           source_meal_name: string | null
           source_slot: string | null
           stock_status: string
+          tags: string[]
           updated_at: string
           user_id: string
         }
@@ -1281,6 +1368,7 @@ export type Database = {
           source_meal_name?: string | null
           source_slot?: string | null
           stock_status?: string
+          tags?: string[]
           updated_at?: string
           user_id: string
         }
@@ -1298,6 +1386,7 @@ export type Database = {
           source_meal_name?: string | null
           source_slot?: string | null
           stock_status?: string
+          tags?: string[]
           updated_at?: string
           user_id?: string
         }

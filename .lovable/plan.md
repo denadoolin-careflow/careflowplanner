@@ -1,90 +1,77 @@
-## Goal
+# Automations Engine + Grocery → Pantry rule
 
-Make each of the 9 atmospheres feel distinct by giving it:
-1. A unique **completion chime** (different note pattern, timbre, and feel).
-2. A unique **ambient gradient animation** (different motion curve, speed, and scale).
+A reusable "When X → Do Y" system, plus the first rule wired up: checking off a grocery item marks it in‑stock, tags it, and moves it to a Pantry section.
 
-Add a new **Settings** section so users can preview both, override the chime per atmosphere, change overall volume, pick an animation intensity, and disable sounds/animations.
+## 1. Data model
 
----
+New tables:
 
-## 1. Atmosphere-tailored chimes (`src/lib/completion-sound.ts`)
+- `automations` — user-owned rules
+  - `name`, `enabled`, `trigger_type`, `trigger_config jsonb`, `action_type`, `action_config jsonb`, `sort_order`, `last_run_at`
+- `automation_runs` — lightweight audit (last 50 per rule), `automation_id`, `triggered_by`, `payload jsonb`, `status`, `error`
 
-Refactor the chime engine so it can play different "presets" keyed by atmosphere. Each preset is a short note sequence with type (sine / triangle), gain, and optional detune for character.
+Grocery additions:
+- `grocery_items.tags text[] default '{}'` — to store the "in stock" tag (and any future tags)
+- Reuse existing `stock_status` ('in' | 'low' | 'out') and `bought` boolean
 
-Presets (sketch):
-- `sage-sanctuary` — warm wood bell (C5 → G5, triangle, slow bloom)
-- `moonlit-plum` — dreamy 5th (A4 → E5 → A5, sine, long tail, slight detune)
-- `soft-linen` — single soft pad note (F5, sine, very gentle)
-- `coastal-calm` — water-drop pair (D5 → A5, sine, quick bloom)
-- `golden-hearth` — cozy major third (E5 → G#5 → B5, triangle, warm)
-- `dark-sage-glass` — cinematic low chime (C4 → G4, sine + sub, longer)
-- `dawn` — bright rising (G5 → B5 → D6, sine)
-- `mist` — single whispered note (E5, sine, ultra-quiet)
-- `blossom` — playful arpeggio (F5 → A5 → C6, triangle)
+Standard RLS (`auth.uid() = user_id`) + GRANTs for `authenticated` / `service_role`.
 
-Public API additions:
-- `playCompletionChime()` — keep current signature; internally resolves the active atmosphere (via `getCurrentAtmosphere()`) and any user override.
-- `playChimeFor(atmosphereId)` — used by the Settings preview button.
-- `getChimeVolume()` / `setChimeVolume(n)` — 0..1, persisted in `localStorage`.
-- `getChimeOverride(atmosphereId)` / `setChimeOverride(atmosphereId, presetKey | null)` — lets a user assign a different preset to an atmosphere.
+## 2. Automations runtime
 
-All preferences stored under `careflow:completion-sound:*` keys. No backend changes.
+`src/lib/automations/` 
 
----
+- `types.ts` — `TriggerType`, `ActionType` enums + config shapes
+- `registry.ts` — declarative catalog of available triggers/actions with labels, icons, and config schemas (so the UI is data-driven)
+- `engine.ts` — `runAutomations(trigger, context)` loads enabled rules for the current user matching `trigger_type`, checks `trigger_config` filters, executes each action, logs to `automation_runs`
+- `actions/` — one file per action handler (`setStockStatus`, `addTag`, `moveToPantry`, etc.)
 
-## 2. Atmosphere-tailored gradient animations (`src/index.css`)
+First trigger registered: `grocery.item.completed` (fires when `bought` flips false→true).
+First actions registered: `grocery.setStockStatus`, `grocery.addTag`, `grocery.moveToPantry` (composite that does all three).
 
-Replace the single `atmo-drift` animation with **per-atmosphere keyframes** scoped via `html[data-atmosphere="…"] .atmo-ambient`. Each gets its own duration, easing, and transform pattern. Examples:
+Hook point: `src/lib/store.tsx` `toggleGrocery` — after the supabase update succeeds and `bought` became true, call `runAutomations("grocery.item.completed", { item })`.
 
-- `sage-sanctuary` — gentle breath (scale 1 ↔ 1.03, 22s)
-- `moonlit-plum` — slow drift + hue rotate 8°, 32s
-- `soft-linen` — almost still, micro-fade only, 40s
-- `coastal-calm` — horizontal tide sway, 26s
-- `golden-hearth` — warm pulse (opacity 0.8 ↔ 1.0), 18s
-- `dark-sage-glass` — cinematic slow zoom + drift, 36s
-- `dawn` — rising glow (translateY 2% → -2%), 20s
-- `mist` — barely-perceptible fade, 45s
-- `blossom` — playful figure-8 drift, 24s
+## 3. UI
 
-Also add a CSS variable `--atmo-anim-intensity` (set on `:root`, overridable to `0`, `0.5`, `1`) that scales the keyframe transforms via `calc()`. Users can pick **Off / Subtle / Full** in Settings.
+New route `/automations` + sidebar entry under settings:
 
-Add a `body[data-anim="off"]` rule that disables `.atmo-ambient` animation entirely (and respects `prefers-reduced-motion`).
+- List of rules with toggle, edit, delete, reorder
+- "New automation" dialog: pick trigger → pick action(s) → name → save
+- Trigger/action pickers render from the registry, so adding new ones later requires no UI changes
+- Empty state seeds the "Grocery checkoff → In stock" rule with one click
 
----
+## 4. Grocery UX changes
 
-## 3. New Settings section (`src/components/settings/AtmosphereFeelSection.tsx`)
+`GroceryKanban.tsx`:
+- New "Pantry" section at the bottom showing items where `stock_status='in'`, collapsed by default, with item count
+- Items with `bought=true` AND `stock_status='in'` are removed from their normal category column and shown only in Pantry
+- Pantry item row: shows the "In stock" tag chip, has "Move back to list" action (clears bought, sets stock_status='out', removes tag)
 
-A new `SectionCard` titled **"Atmosphere feel"** inserted in `src/pages/Settings.tsx` near the existing `ArchetypeThemeSection`.
+`GroceryList.tsx`: same Pantry group at the bottom in list mode.
 
-Contents:
-- **Completion sound** toggle (existing `isCompletionSoundEnabled`) + **volume slider**.
-- **Per-atmosphere chime** list: one row per atmosphere with name, the chime preset name, a `Play` button (calls `playChimeFor`), and a small `Select` to override to another preset or "Default".
-- **Ambient animation intensity**: segmented control with `Off / Subtle / Full`, writes `--atmo-anim-intensity` and `body[data-anim]`.
-- **Preview current atmosphere** button that plays the chime for the currently active atmosphere.
+Tag chip styling uses existing semantic tokens (`bg-primary-soft text-primary`).
 
-Persistence: `localStorage` only.
+## 5. Seeding the default rule
 
----
+On first visit to `/automations` (or first grocery checkoff after this ships) with zero rules, auto-insert the Grocery → Pantry automation enabled by default, so the behavior the user asked for works immediately without configuration.
 
-## 4. Wire-up
+## Technical details
 
-- `src/components/layout/AppLayout.tsx` — on mount, read animation intensity pref and apply `data-anim` on `<body>` and the CSS variable on `<html>`.
-- No changes needed at call sites of `playCompletionChime()` (still works; now atmosphere-aware).
-
----
-
-## Technical notes
-
-- Single audio context reused; volume applied via a master `GainNode` created lazily.
-- `prefers-reduced-motion: reduce` → forces animation intensity to 0 regardless of user setting.
-- Override storage shape: `careflow:completion-sound:overrides` → `{ [atmosphereId]: presetKey }`.
-- No DB / edge function changes. Pure frontend + CSS.
+- Engine runs client-side inside the existing store — no edge function needed for this trigger since the mutation originates in the browser. Future server-side triggers (cron, webhooks) can plug into the same registry via an edge function later.
+- `automation_runs` writes are fire-and-forget; failures don't block the user action.
+- Trigger config for grocery rule is empty (fires for all items); leaves room for filters like "only in category Produce" later.
+- Action config for `moveToPantry` stores `{ tag: "in stock", stockStatus: "in" }` so the same action can be reused with different tag names by other rules.
 
 ## Files touched
 
-- `src/lib/completion-sound.ts` — rewrite with presets, volume, overrides, atmosphere lookup.
-- `src/index.css` — per-atmosphere keyframes, intensity variable, reduced-motion guard.
-- `src/components/settings/AtmosphereFeelSection.tsx` — new.
-- `src/pages/Settings.tsx` — mount the new section.
-- `src/components/layout/AppLayout.tsx` — apply animation intensity pref at boot.
+New:
+- `supabase/migrations/<timestamp>_automations.sql`
+- `src/lib/automations/{types,registry,engine}.ts`
+- `src/lib/automations/actions/{setStockStatus,addTag,moveToPantry}.ts`
+- `src/pages/Automations.tsx`
+- `src/components/automations/{AutomationCard,AutomationDialog,TriggerPicker,ActionPicker}.tsx`
+
+Edited:
+- `src/lib/store.tsx` — fire trigger from `toggleGrocery`, expose `tags` on grocery items
+- `src/components/meals/GroceryKanban.tsx` + `GroceryList.tsx` — Pantry section, tag chip, move-back action
+- `src/App.tsx` — route
+- `src/components/layout/Sidebar.tsx` — nav link

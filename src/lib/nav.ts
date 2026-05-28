@@ -4,6 +4,7 @@ import {
   Timer, Settings as SettingsIcon, BookOpen, HeartPulse, Wallet, Home,
   ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
   Wind, PenLine, Coffee, Share2,
+  Zap,
 } from "lucide-react";
 
 export const NAV = [
@@ -117,6 +118,7 @@ export const NAV_GROUPS = [
     label: "Settings",
     icon: SettingsIcon,
     items: [
+      { to: "/automations", label: "Automations", icon: Zap },
       { to: "/settings", label: "Settings", icon: SettingsIcon },
     ],
   },

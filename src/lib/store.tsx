@@ -9,6 +9,7 @@ import type {
 import { seedState, newUserSeed } from "./seed";
 import { AREAS } from "./types";
 import { toast } from "sonner";
+import { runAutomations, ensureDefaultAutomations, PANTRY_TAG } from "./automations/engine";
 
 /* Fire-and-forget push of one CareFlow appointment to Google Calendar.
    Failures are silent — the local DB is the source of truth and the cron
@@ -114,6 +115,7 @@ const groceryFrom = (r: any): GroceryItem => ({
   sourceMealName: r.source_meal_name ?? null,
   sourceSlot: r.source_slot ?? null,
   sourceDate: r.source_date ?? null,
+  tags: Array.isArray(r.tags) ? r.tags : [],
 });
 const apptFrom = (r: any): Appointment => ({
   id: r.id, date: r.date, time: r.time ?? undefined,
@@ -389,6 +391,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // identity-stable refreshes happen silently in the background so the
     // UI doesn't blink between routes / on tab focus.
     reload(user.id).finally(() => setLoading(false));
+    // Best-effort: seed the default grocery → pantry automation on first run.
+    void ensureDefaultAutomations(user.id).catch(() => {});
   }, [user, reload]);
 
   /* helpers */
@@ -671,8 +675,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     toggleGrocery: async (id) => {
       const cur = state.grocery.find(g => g.id === id); if (!cur) return;
-      setState(s => ({ ...s, grocery: s.grocery.map(g => g.id === id ? { ...g, bought: !g.bought } : g) }));
-      await supabase.from("grocery_items").update({ bought: !cur.bought }).eq("id", id);
+      const newBought = !cur.bought;
+      setState(s => ({ ...s, grocery: s.grocery.map(g => g.id === id ? { ...g, bought: newBought } : g) }));
+      await supabase.from("grocery_items").update({ bought: newBought }).eq("id", id);
+
+      // Fire automations on completion (false -> true). On un-check, remove the
+      // pantry tag and reset stock so it returns to the shopping list.
+      if (uid) {
+        if (newBought) {
+          await runAutomations("grocery.item.completed", {
+            userId: uid,
+            payload: { item: { ...cur, bought: true } },
+          });
+          // Re-pull the row to pick up changes the automations made.
+          const { data } = await supabase.from("grocery_items").select("*").eq("id", id).maybeSingle();
+          if (data) setState(s => ({ ...s, grocery: s.grocery.map(g => g.id === id ? groceryFrom(data) : g) }));
+        } else {
+          const nextTags = (cur.tags ?? []).filter(t => t !== PANTRY_TAG);
+          await supabase.from("grocery_items").update({ tags: nextTags, stock_status: "out" } as any).eq("id", id);
+          setState(s => ({ ...s, grocery: s.grocery.map(g => g.id === id ? { ...g, tags: nextTags, stockStatus: "out" } : g) }));
+        }
+      }
     },
     deleteGrocery: async (id) => {
       setState(s => ({ ...s, grocery: s.grocery.filter(g => g.id !== id) }));
