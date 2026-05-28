@@ -39,6 +39,23 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MoonGlyph } from "@/components/widgets/MoonGlyph";
+import { useWeekForecast } from "@/lib/use-week-forecast";
+import { useTempUnit, cToF } from "@/lib/weather-store";
+import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap } from "lucide-react";
+import type { WeatherCondition } from "@/lib/weather";
+
+function MonthWxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
+  const cls = cn("h-2.5 w-2.5 sm:h-3 sm:w-3", className);
+  if (c === "clear") return <Sun className={cls} />;
+  if (c === "partly-cloudy") return <CloudSun className={cls} />;
+  if (c === "cloudy") return <Cloud className={cls} />;
+  if (c === "fog") return <CloudFog className={cls} />;
+  if (c === "drizzle") return <CloudDrizzle className={cls} />;
+  if (c === "rain") return <CloudRain className={cls} />;
+  if (c === "snow") return <CloudSnow className={cls} />;
+  if (c === "thunderstorm") return <Zap className={cls} />;
+  return <Cloud className={cls} />;
+}
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
@@ -69,6 +86,9 @@ export default function Month() {
   const fromISO = days[0].toISOString().slice(0, 10);
   const toISO = days[days.length - 1].toISOString().slice(0, 10);
   const { blocks, update: updateBlock } = useTimeBlocks(fromISO, toISO);
+  const { days: wxDays } = useWeekForecast();
+  const [tempUnit] = useTempUnit();
+  const wxFmt = (c: number) => `${tempUnit === "F" ? cToF(c) : c}°`;
 
   const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task") =>
     k === "appt" ? "bg-primary-soft text-foreground"
@@ -233,6 +253,7 @@ export default function Month() {
               // Key lunar phase (Sow/Grow/Glow/Let go) — only on the 4 exact days.
               const dayPhase = getMoonPhase(d);
               const keyPhase = isKeyPhaseDay(dayPhase) ? getKeyPhaseInfo(dayPhase) : null;
+              const wx = wxDays?.find(w => w.date === k) ?? null;
               return (
                 <div
                   key={k}
@@ -309,16 +330,34 @@ export default function Month() {
                         <span aria-hidden>{keyPhase.glyph}</span>
                         <span className="hidden sm:inline">{keyPhase.verb}</span>
                       </button>
-                    ) : phaseVar ? (
-                      <span
-                        title={`${PHASE_META[phase!].label} phase`}
-                        aria-label={`${PHASE_META[phase!].label} phase`}
-                        className="h-2 w-2 rounded-full"
-                        style={{ background: `hsl(var(${phaseVar}))`, boxShadow: `0 0 0 2px hsl(var(${phaseVar}) / 0.18)` }}
-                      />
                     ) : <span />}
                     <div className={cn("text-right text-[10px] font-medium sm:text-[11px]", today && "text-primary")}>{format(d, "d")}</div>
                   </div>
+                  {inMonth && (phaseVar || wx) && (
+                    <div className="mt-0.5 flex items-center gap-1 text-[9px] leading-none text-muted-foreground sm:text-[10px]">
+                      {phaseVar && (
+                        <span
+                          title={`${PHASE_META[phase!].label} phase`}
+                          aria-label={`${PHASE_META[phase!].label} phase`}
+                          className="inline-flex items-center"
+                          style={{ color: `hsl(var(${phaseVar}))` }}
+                        >
+                          <span aria-hidden className="text-[11px] leading-none sm:text-xs">{PHASE_META[phase!].glyph}</span>
+                        </span>
+                      )}
+                      {wx && (
+                        <span
+                          className="inline-flex items-center gap-0.5"
+                          title={`${wx.label} · ${wxFmt(wx.highC)}/${wxFmt(wx.lowC)}${wx.precip >= 25 ? ` · ${wx.precip}%` : ""}`}
+                          aria-label={wx.label}
+                        >
+                          <MonthWxIcon c={wx.condition} />
+                          <span className="hidden tabular-nums sm:inline">{wxFmt(wx.highC)}</span>
+                          {wx.precip >= 40 && <span className="hidden text-primary tabular-nums sm:inline">{wx.precip}%</span>}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {/* Mobile (<md): dot row indicator, max 4 dots */}
                   {inMonth && ev.length > 0 && (
                     <div className="mt-0.5 flex flex-wrap gap-0.5 md:hidden">
