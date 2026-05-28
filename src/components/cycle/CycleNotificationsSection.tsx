@@ -110,7 +110,7 @@ export function CycleNotificationsSection({ onCount }: { onCount?: (n: number) =
           kind: "burnout",
           title: `${items.length} commitments land in your next menstrual window`,
           body: `${format(parseISO(win.startISO), "MMM d")} – ${format(parseISO(win.endISO), "MMM d")}. Consider reshuffling to protect rest.`,
-          glyph: "🌑",
+          glyph: "🥀",
           tone: "destructive",
           items,
           suggestISO: suggestion?.iso,
