@@ -279,6 +279,7 @@ export default function Month() {
                     {moon ? (
                       <button
                         type="button"
+                        data-day-item
                         onClick={(e) => { e.stopPropagation(); setLunarDate(d); }}
                         title={`${moon.phaseLabel} · Moon in ${moon.sign.sign} (${moonStyle!.label})${keyPhase ? ` · ${keyPhase.verb}` : ""}`}
                         aria-label={`${moon.phaseLabel}, moon in ${moon.sign.sign}`}
@@ -298,6 +299,7 @@ export default function Month() {
                     ) : keyPhase ? (
                       <button
                         type="button"
+                        data-day-item
                         onClick={(e) => { e.stopPropagation(); setLunarDate(d); }}
                         title={`${keyPhase.label} · ${keyPhase.invitation}`}
                         aria-label={keyPhase.label}
