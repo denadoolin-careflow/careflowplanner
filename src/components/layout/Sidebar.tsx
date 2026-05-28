@@ -5,6 +5,7 @@ import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
+  PanelLeft, PanelRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, type MouseEvent } from "react";
@@ -28,9 +29,29 @@ const STORAGE_KEY = "careflow:sidebar:open-groups";
 const COLLAPSED_KEY = "careflow:sidebar:collapsed";
 const GROUP_ORDER_KEY = "careflow:sidebar:group-order";
 const WIDTH_KEY = "careflow:sidebar:width";
+const SIDE_KEY = "careflow:sidebar:side";          // "left" | "right"
+const THEME_KEY = "careflow:sidebar:theme";        // "auto" | "light" | "dark"
+const PREFS_EVENT = "careflow:sidebar:prefs";
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 420;
 const DEFAULT_WIDTH = 256;
+
+type SidebarSide = "left" | "right";
+type SidebarTheme = "auto" | "light" | "dark";
+
+function readSide(): SidebarSide {
+  if (typeof window === "undefined") return "left";
+  return window.localStorage.getItem(SIDE_KEY) === "right" ? "right" : "left";
+}
+function readTheme(): SidebarTheme {
+  if (typeof window === "undefined") return "auto";
+  const v = window.localStorage.getItem(THEME_KEY);
+  return v === "light" || v === "dark" ? v : "auto";
+}
+function writePrefs(key: string, value: string) {
+  try { window.localStorage.setItem(key, value); } catch {}
+  try { window.dispatchEvent(new Event(PREFS_EVENT)); } catch {}
+}
 
 function loadGroupOrder(): string[] {
   if (typeof window === "undefined") return NAV_GROUPS.map(g => g.id);
@@ -116,6 +137,18 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const { updateProject, addProject } = useStore();
   const { openPanel } = useWorkspaceLayout();
   const [groupOrder, setGroupOrder] = useState<string[]>(() => loadGroupOrder());
+  const [side, setSide] = useState<SidebarSide>(() => readSide());
+  const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
+  const cycleTheme = () => {
+    const next: SidebarTheme = themePref === "auto" ? "light" : themePref === "light" ? "dark" : "auto";
+    setThemePref(next);
+    writePrefs(THEME_KEY, next);
+  };
+  const toggleSide = () => {
+    const next: SidebarSide = side === "left" ? "right" : "left";
+    setSide(next);
+    writePrefs(SIDE_KEY, next);
+  };
   useEffect(() => {
     try { window.localStorage.setItem(GROUP_ORDER_KEY, JSON.stringify(groupOrder)); } catch {}
   }, [groupOrder]);
@@ -296,6 +329,36 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             <div className="font-display text-lg font-semibold leading-none">CareFlow</div>
             <div className="text-xs text-muted-foreground truncate">a gentle planner</div>
           </div>
+        )}
+        {!forceExpanded && !collapsed && (
+          <>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={cycleTheme}
+                  aria-label={`Sidebar theme: ${themePref}`}
+                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  {themePref === "dark" ? <Moon className="h-4 w-4" /> : themePref === "light" ? <Sun className="h-4 w-4" /> : <Sun className="h-4 w-4 opacity-60" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Sidebar theme: {themePref}</TooltipContent>
+            </Tooltip>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={toggleSide}
+                  aria-label={side === "left" ? "Move sidebar to right" : "Move sidebar to left"}
+                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  {side === "left" ? <PanelRight className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Move to {side === "left" ? "right" : "left"}</TooltipContent>
+            </Tooltip>
+          </>
         )}
         {!forceExpanded && <button
           type="button"
@@ -572,20 +635,30 @@ export function Sidebar() {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(COLLAPSED_KEY) === "1";
   });
+  const [side, setSide] = useState<SidebarSide>(() => readSide());
+  const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
   useEffect(() => {
     const onStorage = () => {
       setCollapsed(window.localStorage.getItem(COLLAPSED_KEY) === "1");
+      setSide(readSide());
+      setThemePref(readTheme());
     };
     window.addEventListener("storage", onStorage);
+    window.addEventListener(PREFS_EVENT, onStorage);
     const id = window.setInterval(onStorage, 600);
-    return () => { window.removeEventListener("storage", onStorage); window.clearInterval(id); };
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(PREFS_EVENT, onStorage);
+      window.clearInterval(id);
+    };
   }, []);
   const startDrag = (e: React.MouseEvent) => {
     e.preventDefault();
     const startX = e.clientX;
     const startW = width;
+    const sign = side === "right" ? -1 : 1;
     const move = (ev: globalThis.MouseEvent) => {
-      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (ev.clientX - startX)));
+      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + sign * (ev.clientX - startX)));
       setWidth(next);
     };
     const up = () => {
@@ -601,7 +674,12 @@ export function Sidebar() {
   }, [width]);
   return (
     <aside
-      className="hidden lg:flex sticky top-0 self-start h-screen max-h-screen relative shrink-0 border-r border-sidebar-border"
+      className={cn(
+        "hidden lg:flex sticky top-0 self-start h-screen max-h-screen relative shrink-0",
+        side === "right" ? "order-last border-l border-sidebar-border" : "border-r border-sidebar-border",
+        themePref === "dark" && "sidebar-force-dark",
+        themePref === "light" && "sidebar-force-light",
+      )}
       style={collapsed ? undefined : { width }}
     >
       <SidebarBody />
@@ -612,7 +690,10 @@ export function Sidebar() {
           aria-label="Resize sidebar"
           onMouseDown={startDrag}
           onDoubleClick={() => setWidth(DEFAULT_WIDTH)}
-          className="absolute right-0 top-0 z-10 h-full w-1.5 -translate-x-1/2 cursor-col-resize bg-transparent hover:bg-primary/30 transition-colors"
+          className={cn(
+            "absolute top-0 z-10 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-primary/30 transition-colors",
+            side === "right" ? "left-0 translate-x-1/2" : "right-0 -translate-x-1/2",
+          )}
         />
       )}
     </aside>
