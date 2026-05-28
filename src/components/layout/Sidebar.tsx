@@ -656,8 +656,9 @@ export function Sidebar() {
     e.preventDefault();
     const startX = e.clientX;
     const startW = width;
+    const sign = side === "right" ? -1 : 1;
     const move = (ev: globalThis.MouseEvent) => {
-      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (ev.clientX - startX)));
+      const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + sign * (ev.clientX - startX)));
       setWidth(next);
     };
     const up = () => {
