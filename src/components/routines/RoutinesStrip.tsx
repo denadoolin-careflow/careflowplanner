@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Plus, Sparkles, Trash2, UserPlus, Users, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Play, Plus, Sparkles, Trash2, UserPlus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,6 +8,8 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { routines as routinesApi, useRoutines, ROUTINE_SLOTS, SLOT_LABEL, type RoutineSlot } from "@/lib/routines";
+import { RoutineItemRow } from "@/components/routines/RoutineItemRow";
+import { RoutineFocusMode } from "@/components/routines/RoutineFocusMode";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
@@ -77,8 +78,7 @@ export function RoutinesStrip() {
   const [draftText, setDraftText] = useState("");
   const [generating, setGenerating] = useState(false);
   const [newPerson, setNewPerson] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState("");
+  const [focusOpen, setFocusOpen] = useState(false);
 
   const generate = async () => {
     if (!person) { toast("Add a person first."); return; }
@@ -194,6 +194,15 @@ export function RoutinesStrip() {
             </div>
 
             <div className="ml-auto flex items-center gap-2">
+              {current && items.length > 0 && (
+                <Button
+                  size="sm" variant="default"
+                  onClick={() => setFocusOpen(true)}
+                  className="h-7 rounded-full px-2 text-[11px]"
+                >
+                  <Play className="mr-1 h-3 w-3" /> Focus
+                </Button>
+              )}
               <Button
                 size="sm" variant="outline"
                 disabled={!person || generating}
@@ -215,45 +224,14 @@ export function RoutinesStrip() {
                 </p>
               )}
               {items.map(it => (
-                <div key={it.id} className="group flex items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-xs">
-                  <Checkbox
-                    checked={it.done}
-                    onCheckedChange={() => routinesApi.toggleItem(person, slot, it.id)}
-                  />
-                  {editingId === it.id ? (
-                    <Input
-                      autoFocus
-                      value={editingText}
-                      onChange={(e) => setEditingText(e.target.value)}
-                      onBlur={async () => {
-                        if (editingText.trim() && editingText !== it.text) {
-                          await routinesApi.editItem(person, slot, it.id, editingText.trim());
-                        }
-                        setEditingId(null);
-                      }}
-                      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditingId(null); }}
-                      className="h-6 flex-1 text-xs"
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => { setEditingId(it.id); setEditingText(it.text); }}
-                      className={cn(
-                        "flex-1 truncate text-left",
-                        it.done && "text-muted-foreground line-through"
-                      )}
-                    >
-                      {it.text}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => routinesApi.removeItem(person, slot, it.id)}
-                    className="opacity-0 transition-opacity group-hover:opacity-60 hover:opacity-100"
-                    aria-label="Remove"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
+                <RoutineItemRow
+                  key={it.id}
+                  item={it}
+                  person={person}
+                  slot={slot}
+                  compact
+                  onFocus={() => setFocusOpen(true)}
+                />
               ))}
               <form
                 onSubmit={(e) => {
@@ -276,6 +254,14 @@ export function RoutinesStrip() {
             </div>
           ) : null}
         </div>
+      )}
+
+      {current && (
+        <RoutineFocusMode
+          open={focusOpen}
+          onOpenChange={setFocusOpen}
+          routine={current}
+        />
       )}
     </div>
   );
