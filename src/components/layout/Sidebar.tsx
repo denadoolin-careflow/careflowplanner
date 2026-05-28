@@ -5,7 +5,7 @@ import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
-  PanelLeft, PanelRight,
+  PanelLeft, PanelRight, Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, type MouseEvent } from "react";
@@ -15,6 +15,7 @@ import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconCol
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import { useAtmosphere } from "@/lib/atmospheres";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon },
@@ -37,7 +38,65 @@ const MAX_WIDTH = 420;
 const DEFAULT_WIDTH = 256;
 
 type SidebarSide = "left" | "right";
-type SidebarTheme = "auto" | "light" | "dark";
+type SidebarTheme = "auto" | "light" | "dark" | "atmosphere";
+
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const m = hex.replace("#", "");
+  const v = m.length === 3 ? m.split("").map(c => c + c).join("") : m;
+  const r = parseInt(v.slice(0, 2), 16) / 255;
+  const g = parseInt(v.slice(2, 4), 16) / 255;
+  const b = parseInt(v.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0; const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h *= 60;
+  }
+  return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+function buildAtmosphereSidebarStyle(palette: string[]): React.CSSProperties {
+  const hsls = palette.map(hexToHsl);
+  // pick darkest swatch as the hue/sat anchor
+  const dark = [...hsls].sort((a, b) => a.l - b.l)[0];
+  const h = dark.h;
+  const s = Math.min(dark.s, 30);
+  const bg = `${h} ${s}% 12%`;
+  const surf = `${h} ${s}% 16%`;
+  const border = `${h} ${Math.max(s - 5, 8)}% 22%`;
+  const fg = `${h} 18% 94%`;
+  const muted = `${h} 12% 65%`;
+  return {
+    ["--sidebar-background" as any]: bg,
+    ["--sidebar-foreground" as any]: fg,
+    ["--sidebar-accent" as any]: surf,
+    ["--sidebar-accent-foreground" as any]: fg,
+    ["--sidebar-border" as any]: border,
+    ["--background" as any]: bg,
+    ["--foreground" as any]: fg,
+    ["--card" as any]: surf,
+    ["--card-foreground" as any]: fg,
+    ["--popover" as any]: surf,
+    ["--popover-foreground" as any]: fg,
+    ["--muted" as any]: surf,
+    ["--muted-foreground" as any]: muted,
+    ["--accent" as any]: `${h} ${s}% 22%`,
+    ["--accent-foreground" as any]: fg,
+    ["--primary" as any]: `${h} ${Math.min(s + 20, 55)}% 70%`,
+    ["--primary-foreground" as any]: bg,
+    ["--primary-soft" as any]: `${h} ${s}% 22%`,
+    ["--border" as any]: border,
+    ["--input" as any]: border,
+    colorScheme: "dark",
+    color: `hsl(${fg})`,
+  };
+}
 
 function readSide(): SidebarSide {
   if (typeof window === "undefined") return "left";
@@ -46,7 +105,7 @@ function readSide(): SidebarSide {
 function readTheme(): SidebarTheme {
   if (typeof window === "undefined") return "auto";
   const v = window.localStorage.getItem(THEME_KEY);
-  return v === "light" || v === "dark" ? v : "auto";
+  return v === "light" || v === "dark" || v === "atmosphere" ? v : "auto";
 }
 function writePrefs(key: string, value: string) {
   try { window.localStorage.setItem(key, value); } catch {}
@@ -140,7 +199,10 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const [side, setSide] = useState<SidebarSide>(() => readSide());
   const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
   const cycleTheme = () => {
-    const next: SidebarTheme = themePref === "auto" ? "light" : themePref === "light" ? "dark" : "auto";
+    const next: SidebarTheme =
+      themePref === "auto" ? "light" :
+      themePref === "light" ? "dark" :
+      themePref === "dark" ? "atmosphere" : "auto";
     setThemePref(next);
     writePrefs(THEME_KEY, next);
   };
@@ -340,7 +402,10 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   aria-label={`Sidebar theme: ${themePref}`}
                   className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
-                  {themePref === "dark" ? <Moon className="h-4 w-4" /> : themePref === "light" ? <Sun className="h-4 w-4" /> : <Sun className="h-4 w-4 opacity-60" />}
+                  {themePref === "dark" ? <Moon className="h-4 w-4" /> :
+                   themePref === "light" ? <Sun className="h-4 w-4" /> :
+                   themePref === "atmosphere" ? <Palette className="h-4 w-4" /> :
+                   <Sun className="h-4 w-4 opacity-60" />}
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom">Sidebar theme: {themePref}</TooltipContent>
@@ -637,6 +702,7 @@ export function Sidebar() {
   });
   const [side, setSide] = useState<SidebarSide>(() => readSide());
   const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
+  const { atmosphere } = useAtmosphere();
   useEffect(() => {
     const onStorage = () => {
       setCollapsed(window.localStorage.getItem(COLLAPSED_KEY) === "1");
@@ -679,8 +745,12 @@ export function Sidebar() {
         side === "right" ? "order-last border-l border-sidebar-border" : "border-r border-sidebar-border",
         themePref === "dark" && "sidebar-force-dark",
         themePref === "light" && "sidebar-force-light",
+        themePref === "atmosphere" && "sidebar-force-dark",
       )}
-      style={collapsed ? undefined : { width }}
+      style={{
+        ...(collapsed ? {} : { width }),
+        ...(themePref === "atmosphere" ? buildAtmosphereSidebarStyle(atmosphere.palette) : {}),
+      }}
     >
       <SidebarBody />
       {!collapsed && (
