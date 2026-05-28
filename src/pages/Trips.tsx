@@ -73,19 +73,18 @@ export default function Trips() {
           <p className="py-6 text-center text-sm text-muted-foreground">Loading trips…</p>
         ) : filtered.length === 0 ? (
           <EmptyState
-            icon={Plane}
+            icon={<Plane className="h-6 w-6 text-muted-foreground" />}
             title={trips.length === 0 ? "No trips yet" : "Nothing here"}
-            description={
+            hint={
               trips.length === 0
                 ? "Start planning your next adventure — destinations, itinerary, places to see, and a packing list."
                 : "Try another tab or create a new trip."
             }
-            action={
-              <Button onClick={() => setOpenNew(true)}>
-                <Plus className="mr-1.5 h-4 w-4" />New trip
-              </Button>
-            }
-          />
+          >
+            <Button className="mt-2" onClick={() => setOpenNew(true)}>
+              <Plus className="mr-1.5 h-4 w-4" />New trip
+            </Button>
+          </EmptyState>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map(trip => (
