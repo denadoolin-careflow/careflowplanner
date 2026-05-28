@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PanelLeft, PanelRight, PanelLeftOpen, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ORDER: PanelId[] = ["inbox", "agenda", "calendar", "projects", "goals", "areas", "notes", "journal", "routines", "meals"];
 
@@ -18,16 +19,20 @@ export function PanelPicker() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label="Open side panel"
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-border/60 bg-card px-2.5 text-foreground/80 hover:bg-muted"
-        >
-          <PanelLeftOpen className="h-4 w-4" />
-          <span className="hidden text-xs font-medium sm:inline">Panels</span>
-        </button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="Open side panel"
+              className="grid h-9 w-9 place-items-center rounded-full border border-border/60 bg-card text-foreground/80 hover:bg-muted"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Side panels</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Open panel</span>
