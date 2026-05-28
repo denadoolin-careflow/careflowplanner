@@ -105,13 +105,7 @@ export function GroceryKanban() {
                 />)}
               </AnimatePresence>
             </ul>
-            <AddItemRow onAdd={(name) => addGrocery(name, name === "" ? undefined : name)
-              .then(async () => {
-                // assign category to the just-added latest manual item
-                const { data } = await supabase.from("grocery_items").select("id").order("created_at", { ascending: false }).limit(1);
-                if (data?.[0]) await supabase.from("grocery_items").update({ category: name === "" ? null : name }).eq("id", data[0].id);
-                await reloadAll();
-              })} categoryName={name} />
+            <AddItemRow onAdd={(itemName) => addGrocery(itemName, name).then(() => reloadAll())} categoryName={name} />
           </>
         )}
       </div>
