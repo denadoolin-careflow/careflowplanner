@@ -80,6 +80,10 @@ export async function removePantry(id: string) {
   await supabase.from("pantry_items").delete().eq("id", id);
 }
 
+export async function updatePantryCategory(id: string, category: string | null) {
+  await supabase.from("pantry_items").update({ category }).eq("id", id);
+}
+
 export interface FavoriteMeal {
   id: string;
   name: string;
