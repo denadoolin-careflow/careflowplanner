@@ -142,6 +142,50 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
   const [editingTaskBlockId, setEditingTaskBlockId] = useState<string | null>(null);
   const editingTask = editingTaskId ? state.tasks.find(t => t.id === editingTaskId) ?? null : null;
   const [draft, setDraft] = useState<{ date: string; start: string; end: string } | null>(null);
+  const [quickAdd, setQuickAdd] = useState<{ iso: string; hour: number; durMin: number; value: string } | null>(null);
+  const quickAddRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => { if (quickAdd) setTimeout(() => quickAddRef.current?.focus(), 0); }, [quickAdd?.iso, quickAdd?.hour]);
+
+  const commitQuickAdd = useCallback(async (openFullEditor = false) => {
+    if (!quickAdd) return;
+    const title = quickAdd.value.trim();
+    const { iso, hour, durMin } = quickAdd;
+    const startH = hour;
+    const endH = Math.min(HOUR_END, hour + durMin / 60);
+    setQuickAdd(null);
+    if (openFullEditor) {
+      setDraft({ date: iso, start: hoursToHM(startH), end: hoursToHM(endH) });
+      return;
+    }
+    if (!title) return;
+    await add({
+      date: iso,
+      startTime: hoursToHM(startH),
+      endTime: hoursToHM(endH),
+      title,
+      color: "warm",
+      allDay: false,
+    });
+    haptics.tap();
+    toast(`Added "${title}"`, { description: `${fmtTime(hoursToHM(startH))} – ${fmtTime(hoursToHM(endH))}` });
+  }, [quickAdd, add]);
+
+  // Dismiss quick add on outside click / escape
+  useEffect(() => {
+    if (!quickAdd) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setQuickAdd(null); };
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("[data-quick-add]")) return;
+      void commitQuickAdd(false);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onDown);
+    };
+  }, [quickAdd, commitQuickAdd]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 15000); return () => clearInterval(id); }, []);
