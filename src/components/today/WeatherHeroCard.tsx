@@ -217,11 +217,8 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
               })}
             </div>
           </div>
-          <ul className="mt-2 grid gap-2 sm:mt-4 sm:grid-cols-3">
-            {/* On mobile, render filtered list; on sm+ show all three. */}
-            {(typeof window !== "undefined" ? null : null)}
-            <MobileDesktopParts allParts={heroParts} mobileParts={mobileParts}>
-              {p => {
+          {(() => {
+            const renderTile = (p: DayPartForecast) => {
               const Icon = PART_ICON[p.part] ?? Sun;
               const expanded = expandedPart === p.part;
               return (
@@ -265,9 +262,18 @@ export function WeatherHeroCard({ onSnapshot }: Props) {
                   </button>
                 </li>
               );
-              }}
-            </MobileDesktopParts>
-          </ul>
+            };
+            return (
+              <>
+                <ul className="mt-2 grid gap-2 sm:hidden">
+                  {mobileParts.map(renderTile)}
+                </ul>
+                <ul className="mt-4 hidden gap-2 sm:grid sm:grid-cols-3">
+                  {heroParts.map(renderTile)}
+                </ul>
+              </>
+            );
+          })()}
           </>
         )}
 
