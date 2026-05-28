@@ -283,9 +283,9 @@ export function RoutineCard({
   };
 
   return (
-    <div className="rounded-3xl border border-border/60 bg-card/70 p-3.5 shadow-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+    <div className="rounded-3xl border border-border/60 bg-card/70 p-3 shadow-sm sm:p-3.5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="font-medium text-sm">{r.person_name}</span>
             <Badge variant="outline" className="rounded-full px-1.5 py-0 text-[10px]">{SLOT_LABEL[r.slot]}</Badge>
@@ -303,42 +303,42 @@ export function RoutineCard({
             {doneCount}/{r.items.length} done
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {r.items.length > 0 && (
             <Button
               size="sm"
               variant="default"
               onClick={() => onFocus?.(r)}
-              className="h-7 rounded-full px-2 text-[11px]"
+              className="h-8 rounded-full px-3 text-[11px]"
               aria-label="Start focus mode"
             >
-              <Play className="mr-1 h-3 w-3" /> Focus
+              <Play className="mr-1 h-3.5 w-3.5" /> Focus
             </Button>
           )}
           <Input
             type="time"
             value={timeValue}
             onChange={(e) => routinesApi.upsert(r.person_name, r.slot, { time_of_day: e.target.value || null })}
-            className="h-7 w-[88px] px-1.5 text-[11px]"
+            className="h-8 w-[92px] px-1.5 text-[11px]"
             aria-label="Time of day"
           />
           <Select
             value={r.cadence}
             onValueChange={(v) => routinesApi.upsert(r.person_name, r.slot, { cadence: v as RoutineCadence })}
           >
-            <SelectTrigger className="h-7 w-24 text-[11px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-24 text-[11px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {ROUTINE_CADENCES.map(c => <SelectItem key={c} value={c}>{CADENCE_LABEL[c]}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button size="sm" variant="ghost" onClick={generate} disabled={generating} className="h-7 px-2 text-[11px]">
-            <Sparkles className={cn("mr-1 h-3 w-3", generating && "animate-pulse")} />
+          <Button size="sm" variant="ghost" onClick={generate} disabled={generating} className="h-8 px-2 text-[11px]">
+            <Sparkles className={cn("mr-1 h-3.5 w-3.5", generating && "animate-pulse")} />
             AI
           </Button>
           <Button
             size="sm" variant="ghost"
             onClick={() => setBreakdownOpen(true)}
-            className="h-7 px-2 text-[11px]"
+            className="h-8 px-2 text-[11px]"
             aria-label="Break down a goal"
             title="Break down a goal into steps"
           >
@@ -347,7 +347,7 @@ export function RoutineCard({
           <Button
             size="sm" variant="ghost"
             onClick={() => setPomo({ open: true, title: `${r.person_name} · ${SLOT_LABEL[r.slot]}` })}
-            className="h-7 px-2 text-[11px]"
+            className="h-8 px-2 text-[11px]"
             aria-label="Start pomodoro for routine"
           >
             <Timer className="h-3.5 w-3.5" />

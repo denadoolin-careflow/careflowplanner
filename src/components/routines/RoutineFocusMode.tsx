@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, SkipForward, X, Check } from "lucide-react";
+import { Pause, Play, SkipForward, SkipBack, X, Check } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -55,6 +55,10 @@ export function RoutineFocusMode({
   const advance = () => {
     if (idx + 1 < items.length) setIdx(idx + 1);
     else onOpenChange(false);
+  };
+
+  const goBack = () => {
+    if (idx > 0) setIdx(idx - 1);
   };
 
   const markDone = async () => {
@@ -115,29 +119,40 @@ export function RoutineFocusMode({
 
           <div className="flex w-full items-center justify-center gap-2 pt-2">
             <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 rounded-full"
+              onClick={goBack}
+              disabled={idx === 0}
+              aria-label="Previous step"
+            >
+              <SkipBack className="h-5 w-5" />
+            </Button>
+            <Button
               variant="outline"
               size="sm"
-              className="h-10 rounded-full px-4"
+              className="h-11 rounded-full px-4"
               onClick={() => setPaused(p => !p)}
             >
               {paused ? <Play className="mr-1 h-4 w-4" /> : <Pause className="mr-1 h-4 w-4" />}
               {paused ? "Resume" : "Pause"}
             </Button>
             <Button
-              variant="ghost"
               size="sm"
-              className="h-10 rounded-full px-4"
-              onClick={advance}
-              disabled={idx + 1 >= items.length}
-            >
-              <SkipForward className="mr-1 h-4 w-4" /> Skip
-            </Button>
-            <Button
-              size="sm"
-              className="h-10 rounded-full px-4"
+              className="h-11 rounded-full px-4"
               onClick={markDone}
             >
               <Check className="mr-1 h-4 w-4" /> Done
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 rounded-full"
+              onClick={advance}
+              disabled={idx + 1 >= items.length}
+              aria-label="Next step"
+            >
+              <SkipForward className="h-5 w-5" />
             </Button>
           </div>
 
