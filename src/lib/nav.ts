@@ -4,7 +4,7 @@ import {
   Timer, Settings as SettingsIcon, BookOpen, HeartPulse, Wallet, Home,
   ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
   Wind, PenLine, Coffee, Share2,
-  Zap,
+  Zap, Plane,
 } from "lucide-react";
 
 export const NAV = [
@@ -21,6 +21,7 @@ export const NAV = [
   { to: "/meals", label: "Meals", icon: UtensilsCrossed },
   { to: "/meals/library", label: "Meals Library", icon: BookOpen },
   { to: "/caregiving", label: "Caregiving", icon: HeartHandshake },
+  { to: "/trips", label: "Trips", icon: Plane },
   { to: "/routines", label: "Routines", icon: Repeat },
   { to: "/health", label: "Health", icon: HeartPulse },
   { to: "/wealth", label: "Wealth", icon: Wallet },
@@ -79,6 +80,7 @@ export const NAV_GROUPS = [
       { to: "/meals/library", label: "Meals Library", icon: BookOpen },
       { to: "/home-areas", label: "Home", icon: Home },
       { to: "/home-reset", label: "Home Hub", icon: Sparkle },
+      { to: "/trips", label: "Trips", icon: Plane },
     ],
   },
   {

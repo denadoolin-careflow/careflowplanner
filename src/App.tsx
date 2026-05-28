@@ -60,6 +60,8 @@ import Onboarding from "./pages/Onboarding";
 import Memories from "./pages/Memories";
 import CareLoop from "./pages/CareLoop";
 import Automations from "./pages/Automations";
+import Trips from "./pages/Trips";
+import TripDetail from "./pages/TripDetail";
 import Quiz from "./pages/Quiz";
 import Pricing from "./pages/Pricing";
 import Waitlist from "./pages/Waitlist";
@@ -147,6 +149,8 @@ const App = () => (
                 <Route path="/memories" element={<Memories />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/automations" element={<Automations />} />
+                <Route path="/trips" element={<Trips />} />
+                <Route path="/trips/:id" element={<TripDetail />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
