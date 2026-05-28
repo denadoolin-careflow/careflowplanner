@@ -3,12 +3,13 @@ import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Flame, Trash2, ChevronDown } from "lucide-react";
+import { Flame, Trash2, ChevronDown, Leaf, ListChecks } from "lucide-react";
 import { useState } from "react";
 import { format, subDays } from "date-fns";
 import { Habit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
+import { HabitGarden } from "@/components/habits/HabitGarden";
 
 const CATS: Habit["category"][] = ["self-care","home","family","caregiving","health","creative","spiritual"];
 
@@ -16,13 +17,38 @@ export default function Habits() {
   const { state, addHabit, toggleHabit, deleteHabit } = useStore();
   const [title, setTitle] = useState(""); const [cat, setCat] = useState<Habit["category"]>("self-care");
   const [openNotes, setOpenNotes] = useState<string | null>(null);
+  const [view, setView] = useState<"garden" | "list">("garden");
   const days = Array.from({ length: 7 }, (_, i) => subDays(new Date(), 6 - i));
 
   return (
     <div className="space-y-6">
       <div className="cozy-card gradient-calm p-6">
-        <h2 className="font-display text-3xl font-semibold">Gentle habits</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Streaks here are kind. Missing a day doesn't erase you.</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-3xl font-semibold">Gentle habits</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Tend each plant. Streaks here are kind — missing a day doesn't erase you.</p>
+          </div>
+          <div className="inline-flex rounded-full border border-border/60 bg-card/60 p-0.5">
+            <button
+              onClick={() => setView("garden")}
+              className={cn(
+                "flex items-center gap-1 rounded-full px-3 py-1 text-xs transition",
+                view === "garden" ? "bg-primary text-primary-foreground shadow-soft" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Leaf className="h-3 w-3" /> Garden
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={cn(
+                "flex items-center gap-1 rounded-full px-3 py-1 text-xs transition",
+                view === "list" ? "bg-primary text-primary-foreground shadow-soft" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <ListChecks className="h-3 w-3" /> List
+            </button>
+          </div>
+        </div>
       </div>
 
       <SectionCard title="Add a habit" accent="calm">
@@ -36,6 +62,9 @@ export default function Habits() {
         </div>
       </SectionCard>
 
+      {view === "garden" ? (
+        <HabitGarden />
+      ) : (
       <SectionCard title="This week" subtitle="Tap a day to log it." accent="warm">
         <div className="space-y-2">
           {state.habits.map(h => (
@@ -74,6 +103,7 @@ export default function Habits() {
           ))}
         </div>
       </SectionCard>
+      )}
 
       <SectionCard title="Weekly habit review" accent="sage">
         <p className="text-sm text-muted-foreground">{state.habits.filter(h => h.log[todayISO()]).length} of {state.habits.length} done today. That's enough.</p>
