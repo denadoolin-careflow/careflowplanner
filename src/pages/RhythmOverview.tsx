@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Moon, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Moon, Sparkles, BarChart3 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/cards/SectionCard";
@@ -38,6 +38,11 @@ export default function RhythmOverview() {
         <div>
           <h1 className="font-display text-2xl font-semibold leading-tight">Your rhythm today</h1>
           <p className="text-xs text-muted-foreground">{format(today, "EEEE, MMMM d")}</p>
+        </div>
+        <div className="ml-auto">
+          <Button asChild variant="outline" size="sm" className="rounded-full">
+            <Link to="/insights"><BarChart3 className="mr-1 h-3.5 w-3.5" /> Insights</Link>
+          </Button>
         </div>
       </div>
 
