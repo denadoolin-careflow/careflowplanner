@@ -40,6 +40,64 @@ const DEFAULT_WIDTH = 256;
 type SidebarSide = "left" | "right";
 type SidebarTheme = "auto" | "light" | "dark" | "atmosphere";
 
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const m = hex.replace("#", "");
+  const v = m.length === 3 ? m.split("").map(c => c + c).join("") : m;
+  const r = parseInt(v.slice(0, 2), 16) / 255;
+  const g = parseInt(v.slice(2, 4), 16) / 255;
+  const b = parseInt(v.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0; const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h *= 60;
+  }
+  return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+function buildAtmosphereSidebarStyle(palette: string[]): React.CSSProperties {
+  const hsls = palette.map(hexToHsl);
+  // pick darkest swatch as the hue/sat anchor
+  const dark = [...hsls].sort((a, b) => a.l - b.l)[0];
+  const h = dark.h;
+  const s = Math.min(dark.s, 30);
+  const bg = `${h} ${s}% 12%`;
+  const surf = `${h} ${s}% 16%`;
+  const border = `${h} ${Math.max(s - 5, 8)}% 22%`;
+  const fg = `${h} 18% 94%`;
+  const muted = `${h} 12% 65%`;
+  return {
+    ["--sidebar-background" as any]: bg,
+    ["--sidebar-foreground" as any]: fg,
+    ["--sidebar-accent" as any]: surf,
+    ["--sidebar-accent-foreground" as any]: fg,
+    ["--sidebar-border" as any]: border,
+    ["--background" as any]: bg,
+    ["--foreground" as any]: fg,
+    ["--card" as any]: surf,
+    ["--card-foreground" as any]: fg,
+    ["--popover" as any]: surf,
+    ["--popover-foreground" as any]: fg,
+    ["--muted" as any]: surf,
+    ["--muted-foreground" as any]: muted,
+    ["--accent" as any]: `${h} ${s}% 22%`,
+    ["--accent-foreground" as any]: fg,
+    ["--primary" as any]: `${h} ${Math.min(s + 20, 55)}% 70%`,
+    ["--primary-foreground" as any]: bg,
+    ["--primary-soft" as any]: `${h} ${s}% 22%`,
+    ["--border" as any]: border,
+    ["--input" as any]: border,
+    colorScheme: "dark",
+    color: `hsl(${fg})`,
+  };
+}
+
 function readSide(): SidebarSide {
   if (typeof window === "undefined") return "left";
   return window.localStorage.getItem(SIDE_KEY) === "right" ? "right" : "left";
