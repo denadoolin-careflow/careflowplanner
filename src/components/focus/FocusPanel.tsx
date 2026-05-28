@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import {
   Pause, Play, RotateCcw, SkipForward, Sparkles, Volume2, VolumeX,
-  ChevronRight, ChevronLeft, Brain, Coffee, X, Music2,
+  ChevronRight, ChevronLeft, Brain, Coffee, X, Music2, Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -188,6 +191,7 @@ export function FocusPanel() {
               <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full" onClick={() => pomodoro.switchMode()} aria-label={isFocus ? "Skip to break" : "Skip to focus"}>
                 <SkipForward className="h-4 w-4" />
               </Button>
+              <FocusDurationEditor focusSeconds={s.focusSeconds} breakSeconds={s.breakSeconds} />
             </>
           )}
         </div>
@@ -415,5 +419,107 @@ function Waveform({ active }: { active: boolean }) {
         />
       ))}
     </div>
+  );
+}
+
+/* ── Custom duration editor ── */
+function FocusDurationEditor({ focusSeconds, breakSeconds }: { focusSeconds: number; breakSeconds: number }) {
+  const [open, setOpen] = useState(false);
+  const [focusMin, setFocusMin] = useState(Math.round(focusSeconds / 60));
+  const [breakMin, setBreakMin] = useState(Math.round(breakSeconds / 60));
+
+  useEffect(() => { setFocusMin(Math.round(focusSeconds / 60)); }, [focusSeconds]);
+  useEffect(() => { setBreakMin(Math.round(breakSeconds / 60)); }, [breakSeconds]);
+
+  const clamp = (n: number, min: number, max: number) =>
+    Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : min;
+
+  const apply = () => {
+    const f = clamp(focusMin, 1, 180);
+    const b = clamp(breakMin, 1, 60);
+    setFocusMin(f); setBreakMin(b);
+    pomodoro.setDurations({ focusSeconds: f * 60, breakSeconds: b * 60 });
+    setOpen(false);
+  };
+
+  const PRESETS: Array<{ f: number; b: number; label: string }> = [
+    { f: 15, b: 5, label: "15 / 5" },
+    { f: 25, b: 5, label: "25 / 5" },
+    { f: 50, b: 10, label: "50 / 10" },
+    { f: 90, b: 20, label: "90 / 20" },
+  ];
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full" aria-label="Customize timer durations">
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 space-y-3">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Custom durations
+          </div>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Tune focus & break to fit your energy.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label htmlFor="focus-pomo-focus" className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Focus (min)
+            </Label>
+            <Input
+              id="focus-pomo-focus"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={180}
+              value={focusMin}
+              onChange={(e) => setFocusMin(Number(e.target.value))}
+              onKeyDown={(e) => { if (e.key === "Enter") apply(); }}
+              className="h-8"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="focus-pomo-break" className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Break (min)
+            </Label>
+            <Input
+              id="focus-pomo-break"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={60}
+              value={breakMin}
+              onChange={(e) => setBreakMin(Number(e.target.value))}
+              onKeyDown={(e) => { if (e.key === "Enter") apply(); }}
+              className="h-8"
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {PRESETS.map((p) => (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => { setFocusMin(p.f); setBreakMin(p.b); }}
+              className="rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-end gap-1.5">
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button size="sm" className="h-7 px-3 text-xs" onClick={apply}>
+            Apply
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
