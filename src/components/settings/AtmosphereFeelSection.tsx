@@ -148,9 +148,6 @@ export function AtmosphereFeelSection() {
           </ul>
         </div>
 
-        {/* Animation intensity */}
-        <div className="space-y-2">
-
         {/* Completion visualization */}
         <div className="space-y-2">
           <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -190,7 +187,7 @@ export function AtmosphereFeelSection() {
           </div>
         </div>
 
-        {/* Animation intensity (continued) */}
+        {/* Animation intensity */}
         <div className="space-y-2">
           <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Ambient animation
