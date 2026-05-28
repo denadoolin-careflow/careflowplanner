@@ -23,7 +23,7 @@ const CATS: Habit["category"][] = ["self-care","home","family","caregiving","hea
 
 export function HabitDetailSheet({ habitId, open, onOpenChange }: { habitId: string | null; open: boolean; onOpenChange: (o: boolean) => void; }) {
   const { state, updateHabit, deleteHabit, toggleHabit } = useStore();
-  const routines = useRoutines();
+  const { routines } = useRoutines();
   const navigate = useNavigate();
   const habit = habitId ? state.habits.find(h => h.id === habitId) ?? null : null;
   const [title, setTitle] = useState(habit?.title ?? "");
