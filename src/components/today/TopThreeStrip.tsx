@@ -40,11 +40,11 @@ export function TopThreeStrip({
   return (
     <div className="mb-3 rounded-xl border border-primary/20 bg-primary/5 p-2.5">
       <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
-          <Sparkles className="h-3 w-3" />
-          Top 3 today
+        <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
+          <Sparkles className="h-3 w-3 shrink-0" />
+          <span className="truncate">Top 3 today</span>
         </div>
-        <span className="text-[10px] text-muted-foreground">
+        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
           {doneCount}/{Math.max(top.length, 1)} done
         </span>
       </div>
