@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formatTime12 } from "@/lib/routines";
 import { useStore } from "@/lib/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
@@ -713,7 +714,7 @@ export function TimeGrid({ days, appointmentsOn, onTaskDropAt, onApptDropAt, onA
                           style={{ top, height: PX_PER_HOUR - 6 }}
                           title={isConflict ? `Conflict: ${a.label}` : a.label}>
                           {isConflict && <AlertTriangle className="mr-1 inline h-3 w-3 text-destructive" />}
-                          <span className="font-medium">{a.time?.slice(0,5)}</span> <span className="truncate">{a.label}</span>
+                          <span className="font-medium">{a.time ? formatTime12(a.time.slice(0,5)) : ""}</span> <span className="truncate">{a.label}</span>
                         </div>
                       );
                     })}
