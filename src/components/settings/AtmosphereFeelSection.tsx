@@ -18,6 +18,11 @@ import {
   playChimeFor, playChimePreset,
   type ChimePresetKey,
 } from "@/lib/completion-sound";
+import {
+  COMPLETION_VISUALS, getCompletionVisual, setCompletionVisual,
+  type CompletionVisualKey,
+} from "@/lib/completion-visual";
+import { CompletionBurst } from "@/components/cards/CompletionBurst";
 
 type Intensity = "off" | "subtle" | "full";
 const ANIM_KEY = "careflow:atmo-anim";
@@ -40,6 +45,8 @@ export function AtmosphereFeelSection() {
   const [enabled, setEnabled] = useState(isCompletionSoundEnabled());
   const [volume, setVolume] = useState(Math.round(getChimeVolume() * 100));
   const [intensity, setIntensity] = useState<Intensity>(readAnimIntensity());
+  const [visual, setVisual] = useState<CompletionVisualKey>(getCompletionVisual());
+  const [previewKey, setPreviewKey] = useState(0);
   const [overrides, setOverrides] = useState<Record<string, ChimePresetKey | "">>(() => {
     const o: Record<string, ChimePresetKey | ""> = {};
     for (const a of ATMOSPHERES) o[a.id] = getChimeOverride(a.id) ?? "";
@@ -138,6 +145,45 @@ export function AtmosphereFeelSection() {
               );
             })}
           </ul>
+        </div>
+
+        {/* Completion visualization */}
+        <div className="space-y-2">
+          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Completion visualization
+          </Label>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {COMPLETION_VISUALS.map((v) => (
+              <button
+                key={v.key}
+                type="button"
+                onClick={() => {
+                  setVisual(v.key);
+                  setCompletionVisual(v.key);
+                  setPreviewKey((k) => k + 1);
+                }}
+                className={`flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left transition ${
+                  visual === v.key
+                    ? "border-primary/60 bg-primary/10"
+                    : "border-border/60 bg-card/40 hover:bg-muted/40"
+                }`}
+              >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <span>{v.emoji}</span> {v.label}
+                </span>
+                <span className="text-[11px] text-muted-foreground">{v.description}</span>
+              </button>
+            ))}
+          </div>
+          <div className="relative mt-2 h-14 overflow-hidden rounded-xl border border-border/60 bg-card/40">
+            <div className="grid h-full place-items-center text-xs text-muted-foreground">
+              Preview
+            </div>
+            {/* Re-mount with key to replay animation */}
+            <span key={previewKey} className="absolute inset-0">
+              <CompletionBurst variant={visual} />
+            </span>
+          </div>
         </div>
 
         {/* Animation intensity */}

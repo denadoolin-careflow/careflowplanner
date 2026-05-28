@@ -27,6 +27,38 @@ function getCtx(): AudioContext | null {
   }
 }
 
+/**
+ * Mobile browsers (iOS Safari especially) require a user-gesture to start
+ * the AudioContext, and may suspend it again when the tab is backgrounded
+ * or the device locks. We attach a one-time gesture listener that primes
+ * the context with a silent buffer so later programmatic plays work, and
+ * re-resume on visibility changes.
+ */
+let unlockBound = false;
+export function ensureAudioUnlocked() {
+  if (typeof window === "undefined" || unlockBound) return;
+  unlockBound = true;
+  const unlock = () => {
+    const ac = getCtx();
+    if (!ac) return;
+    try {
+      // Play an inaudible buffer to satisfy iOS gesture requirement.
+      const buf = ac.createBuffer(1, 1, 22050);
+      const src = ac.createBufferSource();
+      src.buffer = buf;
+      src.connect(ac.destination);
+      src.start(0);
+      void ac.resume();
+    } catch { /* noop */ }
+  };
+  const events = ["pointerdown", "touchstart", "click", "keydown"];
+  events.forEach(e => window.addEventListener(e, unlock, { once: true, passive: true, capture: true } as any));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && ctx?.state === "suspended") void ctx.resume();
+  });
+}
+if (typeof window !== "undefined") ensureAudioUnlocked();
+
 // ───────────── prefs ─────────────
 
 const PREF_ENABLED = "careflow:completion-sound";
@@ -189,6 +221,8 @@ export function resolveChimeFor(id: AtmosphereId): ChimePreset {
 
 function playNote(n: Note) {
   const ac = getCtx(); if (!ac || !master) return;
+  // Resume if suspended (mobile background / autoplay gating).
+  if (ac.state === "suspended") { try { void ac.resume(); } catch { /* */ } }
   const osc = ac.createOscillator();
   const g = ac.createGain();
   osc.type = n.type ?? "sine";
