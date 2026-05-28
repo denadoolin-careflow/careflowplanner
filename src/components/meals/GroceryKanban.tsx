@@ -12,6 +12,10 @@ import { IngredientPopover } from "./IngredientPopover";
 import { statusVar, statusLabel } from "@/lib/pantry-colors";
 import type { GroceryItem } from "@/lib/types";
 import { EmptyState } from "@/components/cards/EmptyState";
+import { Package, Undo2 } from "lucide-react";
+import { PANTRY_TAG } from "@/lib/automations/engine";
+import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 export function GroceryKanban() {
   const { state, toggleGrocery, deleteGrocery, setGroceryStock, updateGroceryItem, addGrocery, reloadAll } = useStore();
@@ -21,15 +25,19 @@ export function GroceryKanban() {
   const [showAdd, setShowAdd] = useState(false);
 
   const items = state.grocery;
+  const pantryItems = items.filter(i => i.stockStatus === "in" && (i.tags ?? []).includes(PANTRY_TAG));
+  const pantryIds = new Set(pantryItems.map(i => i.id));
+  const activeItems = items.filter(i => !pantryIds.has(i.id));
+  const [pantryOpen, setPantryOpen] = useState(false);
   const grouped = useMemo(() => {
     const out: Record<string, GroceryItem[]> = {};
     cats.forEach(c => { out[c.name] = []; });
-    items.forEach(i => {
+    activeItems.forEach(i => {
       const k = i.category && out[i.category] !== undefined ? i.category : (cats[0]?.name ?? "Pantry");
       (out[k] = out[k] ?? []).push(i);
     });
     return out;
-  }, [items, cats]);
+  }, [activeItems, cats]);
 
   const total = items.length;
   const bought = items.filter(i => i.bought).length;
@@ -149,6 +157,40 @@ export function GroceryKanban() {
             {cats.map(c => <Column key={c.id} id={c.id} name={c.name} color={c.color} collapsed={c.collapsed} />)}
           </div>
         </DndContext>
+      )}
+
+      {pantryItems.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-border/60 bg-card/30 p-3">
+          <button onClick={() => setPantryOpen(o => !o)} className="flex w-full items-center justify-between gap-2 text-sm">
+            <span className="flex items-center gap-1.5 font-medium">
+              {pantryOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+              <Package className="h-3.5 w-3.5" />
+              Pantry
+              <Badge variant="secondary" className="rounded-full text-[10px]">{pantryItems.length}</Badge>
+            </span>
+            <Link to="/automations" className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-primary">
+              Automations
+            </Link>
+          </button>
+          {pantryOpen && (
+            <ul className="mt-2 grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+              {pantryItems.map(i => (
+                <li key={i.id} className="group flex items-center gap-1.5 rounded-md bg-background/60 px-2 py-1 text-xs">
+                  <span className="flex-1 truncate text-muted-foreground line-through">{i.name}</span>
+                  <Badge variant="secondary" className="rounded-full bg-primary/15 px-1.5 text-[9px] uppercase tracking-wider text-primary">In stock</Badge>
+                  <button onClick={() => toggleGrocery(i.id)} title="Move back to list"
+                    className="opacity-0 transition hover:text-primary group-hover:opacity-70">
+                    <Undo2 className="h-3 w-3" />
+                  </button>
+                  <button onClick={() => deleteGrocery(i.id)} title="Delete"
+                    className="opacity-0 transition hover:text-destructive group-hover:opacity-70">
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </div>
   );
