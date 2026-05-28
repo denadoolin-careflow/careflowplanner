@@ -39,6 +39,23 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MoonGlyph } from "@/components/widgets/MoonGlyph";
+import { useWeekForecast } from "@/lib/use-week-forecast";
+import { useTempUnit, cToF } from "@/lib/weather-store";
+import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap } from "lucide-react";
+import type { WeatherCondition } from "@/lib/weather";
+
+function MonthWxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
+  const cls = cn("h-2.5 w-2.5 sm:h-3 sm:w-3", className);
+  if (c === "clear") return <Sun className={cls} />;
+  if (c === "partly-cloudy") return <CloudSun className={cls} />;
+  if (c === "cloudy") return <Cloud className={cls} />;
+  if (c === "fog") return <CloudFog className={cls} />;
+  if (c === "drizzle") return <CloudDrizzle className={cls} />;
+  if (c === "rain") return <CloudRain className={cls} />;
+  if (c === "snow") return <CloudSnow className={cls} />;
+  if (c === "thunderstorm") return <Zap className={cls} />;
+  return <Cloud className={cls} />;
+}
 
 const TASK_DRAG_MIME = "application/x-careflow-task";
 const APPT_DRAG_MIME = "application/x-careflow-appt";
