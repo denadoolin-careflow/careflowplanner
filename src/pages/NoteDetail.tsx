@@ -12,6 +12,7 @@ import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
+import { NoteTOC } from "@/components/notes/NoteTOC";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -69,7 +70,8 @@ export default function NoteDetail() {
   const headerTitle = note.kind === "daily" && note.date ? format(parseISO(note.date), "EEEE, MMMM d, yyyy") : null;
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 p-4 md:p-6 xl:grid-cols-[minmax(0,1fr)_220px]">
+      <div className="space-y-4 min-w-0">
       <header className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="sm" onClick={() => nav("/notes")} className="gap-1.5">
           <ArrowLeft className="h-4 w-4" /> Notes
@@ -120,6 +122,11 @@ export default function NoteDetail() {
             body={body}
             noteId={note.id}
             onChange={(markdown) => { setBody(markdown); save({ body: markdown }); }}
+            goal={note.wordGoal}
+            onGoalChange={(next) => {
+              setNote({ ...note, wordGoal: next });
+              if (id) void updateNote(id, { wordGoal: next }).catch(() => toast.error("Save failed"));
+            }}
           />
         </div>
       </div>
@@ -160,6 +167,12 @@ export default function NoteDetail() {
       )}
 
       <NoteLinksSidebar noteId={note.id} />
+      </div>
+      <div className="hidden xl:block">
+        <div className="sticky top-20">
+          <NoteTOC body={body} />
+        </div>
+      </div>
     </div>
   );
 }
