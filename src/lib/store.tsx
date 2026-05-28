@@ -10,6 +10,7 @@ import { seedState, newUserSeed } from "./seed";
 import { AREAS } from "./types";
 import { toast } from "sonner";
 import { runAutomations, ensureDefaultAutomations, PANTRY_TAG } from "./automations/engine";
+import { emitScheduleEvent } from "./cycle-prefs";
 
 /* Fire-and-forget push of one CareFlow appointment to Google Calendar.
    Failures are silent — the local DB is the source of truth and the cron
@@ -416,7 +417,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addTask: async (t) => {
       if (!uid) return;
       const { data } = await supabase.from("tasks").insert({ user_id: uid, ...taskTo({ done: false, priority: "medium", area: "Personal", ...t }) }).select().single();
-      if (data) setState(s => ({ ...s, tasks: [taskFrom(data), ...s.tasks] }));
+      if (data) {
+        const task = taskFrom(data);
+        setState(s => ({ ...s, tasks: [task, ...s.tasks] }));
+        if (task.dueDate) {
+          emitScheduleEvent({
+            kind: "task", id: task.id, title: task.title, date: task.dueDate,
+            tags: task.tags, area: task.area, energy: task.energy,
+            priority: task.priority, startTime: task.startTime, estMinutes: task.estMinutes,
+          });
+        }
+      }
     },
     toggleTask: async (id) => {
       const cur = state.tasks.find(t => t.id === id); if (!cur) return;
@@ -454,8 +465,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
     },
     updateTask: async (id, patch) => {
+      const prev = state.tasks.find(t => t.id === id);
       setState(s => ({ ...s, tasks: s.tasks.map(t => t.id === id ? { ...t, ...patch } : t) }));
       await supabase.from("tasks").update(taskTo(patch)).eq("id", id);
+      if (patch.dueDate !== undefined && patch.dueDate && patch.dueDate !== prev?.dueDate) {
+        const merged = { ...(prev ?? {}), ...patch } as Task;
+        emitScheduleEvent({
+          kind: "task", id, title: merged.title ?? prev?.title ?? "",
+          date: patch.dueDate,
+          tags: merged.tags, area: merged.area, energy: merged.energy,
+          priority: merged.priority, startTime: merged.startTime, estMinutes: merged.estMinutes,
+        });
+      }
     },
     deleteTask: async (id) => {
       setState(s => ({ ...s, tasks: s.tasks.filter(t => t.id !== id) }));
