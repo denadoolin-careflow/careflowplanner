@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Trash2, RotateCcw, Sparkles, Wand2, Loader2 } from "lucide-react";
+import { Plus, Trash2, RotateCcw, Sparkles, Wand2, Loader2, HeartHandshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { useCaregivingChores, caregivingChores } from "@/lib/caregiving-chores";
 
 const DEFAULT_ZONES = [
   "Kitchen", "Bathrooms", "Bedrooms", "Laundry",
