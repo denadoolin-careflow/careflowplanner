@@ -20,6 +20,9 @@ const DEFAULT_ZONES = [
 export function ZonesTab() {
   const { state, addCleaning, toggleCleaning, deleteCleaning, resetThisWeek } = useStore() as any;
   const cleaning: any[] = state.cleaning ?? [];
+  const chores = useCaregivingChores();
+  const recipients: { id: string; name: string }[] = state.recipients ?? [];
+  const recipientName = (id: string | null) => id ? (recipients.find(r => r.id === id)?.name ?? null) : null;
   const [newZone, setNewZone] = useState("");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [aiBusy, setAiBusy] = useState<string | null>(null);
