@@ -29,6 +29,9 @@ import { NowNextBanner } from "@/components/routines/NowNextBanner";
 import { RoutineItemRow } from "@/components/routines/RoutineItemRow";
 import { RoutineFocusMode } from "@/components/routines/RoutineFocusMode";
 import { AIBreakdownDialog } from "@/components/routines/AIBreakdownDialog";
+import { RitualStrip } from "@/components/routines/RitualStrip";
+import { peopleTags, PERSON_COLORS, fallbackPersonColor } from "@/lib/people-tags";
+import { SearchableIconPicker, IconView } from "@/components/common/SearchableIconPicker";
 
 type GroupBy = "person" | "timeframe" | "cadence" | "tag";
 
@@ -101,6 +104,8 @@ export default function Routines() {
         routines={filterPerson === "all" ? filtered : filtered.filter(r => r.person_name === filterPerson)}
         onFocus={(r, itemId) => setFocus({ routine: r, itemId })}
       />
+
+      <RitualStrip title="Rituals today" />
 
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/40 p-2">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -188,6 +193,8 @@ function PersonChip({ name }: { name: string }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
+  const color = peopleTags.colorFor(name) || fallbackPersonColor(name);
+  const icon = peopleTags.iconFor(name);
 
   const commit = async () => {
     const next = draft.trim();
@@ -210,13 +217,15 @@ function PersonChip({ name }: { name: string }) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="group inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-[11px] text-secondary-foreground hover:bg-secondary/80"
+          style={{ background: color, color: "#fff" }}
+          className="group inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:opacity-90"
         >
+          {icon && <IconView value={icon} className="h-3 w-3" />}
           {name}
-          <MoreHorizontal className="h-3 w-3 opacity-50 group-hover:opacity-100" />
+          <MoreHorizontal className="h-3 w-3 opacity-70 group-hover:opacity-100" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2" align="start">
+      <PopoverContent className="w-64 p-2" align="start">
         {editing ? (
           <form onSubmit={(e) => { e.preventDefault(); void commit(); }} className="flex gap-1">
             <Input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} className="h-8 text-xs" />
@@ -224,6 +233,22 @@ function PersonChip({ name }: { name: string }) {
           </form>
         ) : (
           <div className="flex flex-col gap-1">
+            <div className="px-1 pt-1">
+              <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Color</div>
+              <div className="flex flex-wrap gap-1">
+                {PERSON_COLORS.map(c => (
+                  <button key={c} type="button" onClick={() => void peopleTags.upsert(name, { color: c })}
+                    style={{ background: c }}
+                    className={cn("h-5 w-5 rounded-full border", color === c ? "ring-2 ring-foreground" : "border-border/60")}
+                    aria-label={`Set color ${c}`} />
+                ))}
+              </div>
+              <div className="mt-2 mb-1 flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Icon</span>
+                <SearchableIconPicker value={icon ?? undefined} onChange={(v) => void peopleTags.upsert(name, { icon: v || null })} />
+              </div>
+            </div>
+            <div className="my-1 h-px bg-border/60" />
             <Button variant="ghost" size="sm" className="h-8 justify-start text-xs" onClick={() => setEditing(true)}>
               <Pencil className="mr-2 h-3.5 w-3.5" /> Rename
             </Button>
