@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, User } from "lucide-react";
+import { Trash2, User, Users } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { Appointment } from "@/lib/types";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
@@ -12,6 +12,8 @@ import { IconPicker } from "@/components/common/IconPicker";
 import { gcalNotifyChange } from "@/lib/google-calendar";
 import { LocationAutocomplete } from "@/components/common/LocationAutocomplete";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useHousehold } from "@/lib/household";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   appointment: Appointment | null;
@@ -47,7 +49,9 @@ function minutesBetween(startDate: string, startTime: string, endDate: string, e
 }
 
 export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
-  const { state, updateAppointment, deleteAppointment } = useStore() as any;
+  const store = useStore() as any;
+  const { state, updateAppointment, deleteAppointment } = store;
+  const userId = store.user?.id as string | undefined;
   const projects = (state?.projects ?? []) as any[];
   const areas = (state?.areas ?? []) as any[];
   const recipients = (state?.recipients ?? []) as any[];
@@ -64,6 +68,8 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
   const [areaName, setAreaName] = useState<string | undefined>(undefined);
   const [color, setColor] = useState<string | undefined>(undefined);
   const [syncToGoogle, setSyncToGoogle] = useState(false);
+  const { current: currentHousehold } = useHousehold(userId);
+  const [shareWithFamily, setShareWithFamily] = useState(false);
 
   useEffect(() => {
     if (!appointment) return;
@@ -80,6 +86,15 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
     setAreaName(appointment.areaName);
     setColor(appointment.color);
     setSyncToGoogle(!!appointment.syncToGoogle);
+    // Hydrate share state from row
+    (async () => {
+      const { data } = await supabase
+        .from("appointments")
+        .select("household_id, visibility")
+        .eq("id", appointment.id)
+        .maybeSingle();
+      setShareWithFamily(!!(data as any)?.household_id && (data as any)?.visibility === "household");
+    })();
   }, [appointment]);
 
   // Auto-color when project changes
@@ -130,6 +145,14 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
       color: color,
       syncToGoogle,
     } as any);
+    // Persist sharing fields directly (not in store typings).
+    await supabase
+      .from("appointments")
+      .update({
+        household_id: shareWithFamily && currentHousehold ? currentHousehold.id : null,
+        visibility: shareWithFamily ? "household" : "private",
+      } as any)
+      .eq("id", appointment.id);
     if (syncToGoogle) gcalNotifyChange();
     onOpenChange(false);
   };
@@ -293,6 +316,15 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
             </div>
             <Switch checked={syncToGoogle} onCheckedChange={setSyncToGoogle} />
           </div>
+          {currentHousehold && (
+            <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-3 py-2">
+              <div className="min-w-0">
+                <Label className="text-sm flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Share with {currentHousehold.name}</Label>
+                <p className="text-xs text-muted-foreground">Family members will see this on the shared calendar.</p>
+              </div>
+              <Switch checked={shareWithFamily} onCheckedChange={setShareWithFamily} />
+            </div>
+          )}
           <LinkedNotesPanel entityType="appointment" entityId={appointment.id} contextTitle={appointment.title} compact />
         </div>
         <DialogFooter className="flex items-center justify-between sm:justify-between">
