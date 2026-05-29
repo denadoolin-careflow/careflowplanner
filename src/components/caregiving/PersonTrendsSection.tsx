@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart,
@@ -265,7 +264,7 @@ function bucketLabel(key: string, range: Range): string {
 
 function buildMoodEnergySeries(
   responses: CheckinResponse[],
-  entries: ReturnType<typeof useProgressEntries> extends Array<infer T> ? T[] : any[],
+  entries: any[],
   range: Range,
 ) {
   const buckets = new Map<string, { mood: number[]; energy: number[] }>();
