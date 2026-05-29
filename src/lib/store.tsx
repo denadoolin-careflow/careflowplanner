@@ -904,6 +904,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         schedule: r.schedule ?? {},
         ssn_last4: r.ssnLast4 ?? null,
         ssn_full: r.ssnFull ?? null,
+        diagnoses: r.diagnoses ?? [],
+        diagnosis_notes: r.diagnosisNotes ?? null,
+        sex: r.sex ?? null,
+        cycle: r.cycle ?? {},
       };
       const { data } = await supabase.from("care_recipients").insert(insertRow).select().single();
       if (data) setState(s => ({ ...s, recipients: [recipFrom(data), ...s.recipients] }));
@@ -926,6 +930,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.schedule !== undefined) dbPatch.schedule = patch.schedule ?? {};
       if (patch.ssnLast4 !== undefined) dbPatch.ssn_last4 = patch.ssnLast4 ?? null;
       if (patch.ssnFull !== undefined) dbPatch.ssn_full = patch.ssnFull ?? null;
+      if (patch.diagnoses !== undefined) dbPatch.diagnoses = patch.diagnoses ?? [];
+      if (patch.diagnosisNotes !== undefined) dbPatch.diagnosis_notes = patch.diagnosisNotes ?? null;
+      if (patch.sex !== undefined) dbPatch.sex = patch.sex ?? null;
+      if (patch.cycle !== undefined) dbPatch.cycle = patch.cycle ?? {};
       setState(s => ({ ...s, recipients: s.recipients.map(r => r.id === id ? { ...r, ...patch } : r) }));
       await supabase.from("care_recipients").update(dbPatch as any).eq("id", id);
     },
