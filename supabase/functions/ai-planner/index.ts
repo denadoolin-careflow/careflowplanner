@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { checkAndIncrementAi, quotaExceededResponse, WEIGHTS } from "../_shared/ai-meter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -79,6 +80,11 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const messages = Array.isArray(body.messages) ? body.messages : [];
     const action = typeof body.action === "string" ? body.action : "chat"; // chat | organize_day | organize_week
+
+    // Enforce monthly AI quota. organize_* are heavier (plan generation).
+    const weight = action === "chat" ? WEIGHTS.light : WEIGHTS.heavy;
+    const meter = await checkAndIncrementAi(u.user.id, weight);
+    if (!meter.ok) return quotaExceededResponse(meter, corsHeaders);
 
     const ctx = await loadContext(supabase, u.user.id);
 
