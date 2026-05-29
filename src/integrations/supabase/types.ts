@@ -3190,6 +3190,93 @@ export type Database = {
         }
         Relationships: []
       }
+      person_checkin_responses: {
+        Row: {
+          checkin_id: string
+          created_at: string
+          cycle_phase: string | null
+          energy: number | null
+          id: string
+          mood: number | null
+          notes: string | null
+          recipient_id: string
+          responded_at: string
+          tags: string[]
+          user_id: string
+        }
+        Insert: {
+          checkin_id: string
+          created_at?: string
+          cycle_phase?: string | null
+          energy?: number | null
+          id?: string
+          mood?: number | null
+          notes?: string | null
+          recipient_id: string
+          responded_at?: string
+          tags?: string[]
+          user_id: string
+        }
+        Update: {
+          checkin_id?: string
+          created_at?: string
+          cycle_phase?: string | null
+          energy?: number | null
+          id?: string
+          mood?: number | null
+          notes?: string | null
+          recipient_id?: string
+          responded_at?: string
+          tags?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      person_checkins: {
+        Row: {
+          active: boolean
+          cadence: string
+          cadence_config: Json
+          created_at: string
+          id: string
+          last_completed_at: string | null
+          next_due_at: string | null
+          prompt: string | null
+          recipient_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          cadence?: string
+          cadence_config?: Json
+          created_at?: string
+          id?: string
+          last_completed_at?: string | null
+          next_due_at?: string | null
+          prompt?: string | null
+          recipient_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          cadence?: string
+          cadence_config?: Json
+          created_at?: string
+          id?: string
+          last_completed_at?: string | null
+          next_due_at?: string | null
+          prompt?: string | null
+          recipient_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       person_overviews: {
         Row: {
           generated_at: string
@@ -3213,6 +3300,96 @@ export type Database = {
           payload?: Json
           recipient_id?: string
           signature?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      person_progress_entries: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          label: string
+          notes: string | null
+          recipient_id: string
+          recorded_at: string
+          updated_at: string
+          user_id: string
+          value_numeric: number | null
+          value_text: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          label: string
+          notes?: string | null
+          recipient_id: string
+          recorded_at?: string
+          updated_at?: string
+          user_id: string
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          label?: string
+          notes?: string | null
+          recipient_id?: string
+          recorded_at?: string
+          updated_at?: string
+          user_id?: string
+          value_numeric?: number | null
+          value_text?: string | null
+        }
+        Relationships: []
+      }
+      person_progress_goals: {
+        Row: {
+          category: string
+          created_at: string
+          current_value: number | null
+          id: string
+          notes: string | null
+          recipient_id: string
+          status: string
+          target_date: string | null
+          target_value: number | null
+          title: string
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          notes?: string | null
+          recipient_id: string
+          status?: string
+          target_date?: string | null
+          target_value?: number | null
+          title: string
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          notes?: string | null
+          recipient_id?: string
+          status?: string
+          target_date?: string | null
+          target_value?: number | null
+          title?: string
+          unit?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
