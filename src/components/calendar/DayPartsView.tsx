@@ -11,7 +11,7 @@ import { useDayPartLabels, DEFAULT_DAY_PART_LABELS } from "@/lib/day-part-labels
 import { Pencil, Check, X } from "lucide-react";
 import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store";
 import type { WeatherCondition } from "@/lib/weather";
-import { DayExtras } from "@/components/today/DayExtras";
+import { MealSlotCard } from "@/components/today/MealSlotCard";
 import { formatTime12 } from "@/lib/routines";
 
 function WxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
@@ -45,9 +45,9 @@ interface Props {
 }
 
 const PARTS = [
-  { key: "morning",   label: "Morning",   icon: Sunrise, range: [5, 12], dropHour: 8,  hint: "5 AM – 12 PM" },
-  { key: "afternoon", label: "Afternoon", icon: Sun,     range: [12, 17], dropHour: 13, hint: "12 – 5 PM" },
-  { key: "evening",   label: "Evening",   icon: Moon,    range: [17, 24], dropHour: 19, hint: "5 PM – late" },
+  { key: "morning",   label: "Morning",   icon: Sunrise, range: [5, 12], dropHour: 8,  hint: "5 AM – 12 PM", meal: "Breakfast" as const },
+  { key: "afternoon", label: "Afternoon", icon: Sun,     range: [12, 17], dropHour: 13, hint: "12 – 5 PM",  meal: "Lunch" as const },
+  { key: "evening",   label: "Evening",   icon: Moon,    range: [17, 24], dropHour: 19, hint: "5 PM – late", meal: "Dinner" as const },
 ] as const;
 
 const SEVERE_CONDITIONS: WeatherCondition[] = ["thunderstorm", "snow", "rain", "fog"];
