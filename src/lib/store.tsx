@@ -626,6 +626,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addHabit: async (h) => {
       if (!uid) return;
+      const { ensureWithinLimit } = await import("@/lib/limit-guard");
+      const ok = await ensureWithinLimit("habits", state.habits.length);
+      if (!ok) return;
       const { data } = await supabase.from("habits").insert({ user_id: uid, title: h.title, cadence: h.cadence ?? "daily", category: h.category ?? "self-care" }).select().single();
       if (data) setState(s => ({ ...s, habits: [{ ...habitFrom(data), log: {} }, ...s.habits] }));
     },
@@ -662,6 +665,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addJournal: async (j) => {
       if (!uid) return null;
+      const { ensureWithinLimit } = await import("@/lib/limit-guard");
+      const weekAgo = Date.now() - 7 * 86400 * 1000;
+      const weekCount = state.journal.filter(e => new Date(e.date).getTime() >= weekAgo).length;
+      const ok = await ensureWithinLimit("journalEntriesPerWeek", weekCount);
+      if (!ok) return null;
       const { gratitudeItems, linkedIds, prompts, tags, pinned, energy, template, mood, title, body, date, type, ...rest } = j as any;
       const row: any = {
         user_id: uid,
