@@ -5337,6 +5337,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_household_invite: { Args: { _token: string }; Returns: string }
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
