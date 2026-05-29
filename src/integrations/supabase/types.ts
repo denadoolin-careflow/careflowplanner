@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage: {
+        Row: {
+          id: string
+          updated_at: string
+          user_id: string
+          weighted_calls: number
+          year_month: string
+        }
+        Insert: {
+          id?: string
+          updated_at?: string
+          user_id: string
+          weighted_calls?: number
+          year_month: string
+        }
+        Update: {
+          id?: string
+          updated_at?: string
+          user_id?: string
+          weighted_calls?: number
+          year_month?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           all_day: boolean
@@ -4675,6 +4699,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_ai_usage: {
+        Args: { p_user_id: string; p_weight: number; p_year_month: string }
+        Returns: number
       }
     }
     Enums: {

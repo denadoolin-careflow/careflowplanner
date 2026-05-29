@@ -20,6 +20,7 @@ import { PanelPicker } from "@/components/workspace/PanelPicker";
 import { FocusPanel } from "@/components/focus/FocusPanel";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
+import { UpgradePromptHost } from "@/components/UpgradePromptHost";
 import { useEffect } from "react";
 import { applyAnimIntensity, readAnimIntensity } from "@/components/settings/AtmosphereFeelSection";
 import { applyFontPrefs } from "@/lib/font-prefs";
@@ -88,6 +89,7 @@ export function AppLayout() {
       <CommandPalette />
       <FocusPanel />
       <GlobalTaskEditor />
+      <UpgradePromptHost />
     </div>
   );
 }
