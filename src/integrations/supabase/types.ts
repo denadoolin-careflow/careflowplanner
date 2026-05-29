@@ -3136,6 +3136,33 @@ export type Database = {
         }
         Relationships: []
       }
+      person_overviews: {
+        Row: {
+          generated_at: string
+          id: string
+          payload: Json
+          recipient_id: string
+          signature: string
+          user_id: string
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          payload?: Json
+          recipient_id: string
+          signature: string
+          user_id: string
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          payload?: Json
+          recipient_id?: string
+          signature?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pomodoro_sessions: {
         Row: {
           completed_at: string
@@ -3634,6 +3661,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      routine_completions: {
+        Row: {
+          completed_on: string
+          created_at: string
+          id: string
+          item_id: string
+          routine_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_on?: string
+          created_at?: string
+          id?: string
+          item_id: string
+          routine_id: string
+          user_id: string
+        }
+        Update: {
+          completed_on?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          routine_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       routines: {
         Row: {
