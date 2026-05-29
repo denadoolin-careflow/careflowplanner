@@ -1,52 +1,69 @@
-# Person Intake Form
 
-Capture each profile's diagnosis, age, cycle, and zodiac in one focused step — both at "Add profile" time and when editing.
+# Family Sharing: Dinner Requests, Grocery Lists, Calendar
 
-## 1. Data model
+Introduce a lightweight "household" so multiple signed-in family members can collaborate on three things: a weekly dinner request form, grocery lists, and a shared calendar. All three reuse the same household + membership model so we only build sharing once.
 
-`care_recipients` already stores `birth_date`, `zodiac`. Add two new nullable columns in a single migration:
+## 1. Households & membership
 
-- `diagnoses text[] NOT NULL DEFAULT '{}'` — list of tags (e.g. "Autism", "ADHD", "Type 1 diabetes") plus an optional free-text per-tag detail held in a parallel jsonb.
-- `diagnosis_notes text` — long-form context (onset, providers, accommodations).
-- `cycle jsonb NOT NULL DEFAULT '{}'` — `{ tracks: boolean, avgLength?: number, periodLength?: number, lastPeriodStart?: string, notes?: string }`. Cycle block only shows for `kind in ("self","partner")` and when not flagged male in the form.
-- `sex text` — `"female" | "male" | "intersex" | "prefer_not" | null`, drives whether cycle UI shows.
+- New table `households` (name, created_by).
+- New table `household_members` (household_id, user_id, role: `owner` | `editor` | `viewer`, display_name, joined_at, invited_email).
+- New table `household_invites` (household_id, email, token, role, expires_at, accepted_at).
+- Owner creates a household from a new **Settings → Family** screen, invites by email. Invitee gets a link `/join/:token`; if signed-in (or after sign-up) they're added as a member.
+- A `useHousehold()` hook exposes `currentHousehold`, `members`, `switchHousehold`. Current household id is persisted to `localStorage` and to a `profiles.current_household_id` column so it follows the user across devices.
 
-`CareRecipient` type + store mappers (`recipFrom`, insert/update payloads in `store.tsx`) get matching fields. No business-logic changes outside this.
+## 2. Dinner request form (candidates + free requests)
 
-## 2. Intake form
+For each week, the planner picks 2–4 candidate meals per dinner slot from the existing `meals_library`. Family members open a shared link or in-app page and:
+- Vote (👍 / favorite) on each night's candidates.
+- Submit a free request — either picking any meal from the household's library OR typing a custom dish + optional notes (e.g. "Friday: tacos please").
 
-Rebuild `RecipientEditor` as a two-step wizard so the dialog stays calm:
+Schema:
+- `dinner_polls` (household_id, week_start, created_by, status: `open` | `closed`, notes).
+- `dinner_poll_candidates` (poll_id, day_date, slot='dinner', meal_id nullable, custom_title nullable, position).
+- `dinner_poll_responses` (poll_id, member_id or user_id, day_date, kind: `vote` | `request`, candidate_id nullable, meal_id nullable, custom_title nullable, note, created_at).
 
-```text
-[ Step 1 · Who they are ]      [ Step 2 · Body & being ]
- - Name                          - Diagnoses (chip input + notes)
- - Relationship (kind)           - Sex
- - Birth date  → auto Age        - Cycle (only when relevant):
- - Zodiac (auto from birth,        tracks toggle, avg cycle len,
-   overridable)                    avg period len, last period start,
- - Notes                           cycle notes
- - Sensory & prefs              - Contacts + Medications
-                                 (existing fieldsets retained here)
-```
+UI:
+- New **Meals → Family Requests** tab: planner builds the week's candidates from the library (drag from sidebar), publishes the poll.
+- Results panel shows tallies per night + a "Requests" feed; one-click "Add winner to week plan" pushes the meal into the existing weekly plan.
+- Family members see a clean voting screen; can also pick any library meal as a request.
 
-Implementation details:
+## 3. Collaborative grocery lists
 
-- New `DiagnosisChipInput` component: comma-or-enter to add, click-X to remove, preset suggestions (Autism, ADHD, Anxiety, Asthma, Diabetes, Sensory Processing, Dyslexia, PCOS, Endometriosis…).
-- Birth date uses the shadcn `Calendar` in a popover (matches `CareProfile.tsx` pattern). Below the picker show a live `Age N` chip and auto-derived `zodiac` chip from existing `zodiacFor(date)` helper.
-- Zodiac is a select that defaults to the auto value and can be overridden.
-- Cycle section auto-hides for `kind === "pet"` or `sex === "male"`. When visible, shows a Calendar for `lastPeriodStart` plus numeric inputs (default 28 / 5).
-- Validation with zod (per security guidance): name 1–80 chars, diagnoses ≤ 20 entries each ≤ 60 chars, cycle lengths 14–60 / 1–14.
+Upgrade existing `grocery_lists` so a list belongs to a household instead of a single user:
+- Add nullable `household_id` and keep `user_id` as creator.
+- New policy: any member of the household can read/edit/delete lists where `household_id` matches a household they belong to.
+- Add `grocery_list_activity` (list_id, user_id, action, item_name, at) for a lightweight "Jane checked off milk · 2m ago" feed.
+- Enable Supabase Realtime on `grocery_lists` so checkboxes update live across members.
+- UI: in the existing grocery list screen add a "Shared with family" toggle (only visible when a household exists), member avatars, and a recent-activity sidebar.
 
-## 3. Surface the new data
+## 4. Shared family calendar
 
-- `CareProfile.tsx` — add a "Health & cycle" section that renders diagnoses as chips, diagnosis notes, and the cycle summary. Birth date / zodiac already render there.
-- `PersonDashboard` — already passes `recipient` to `useAIPersonOverview`; extend the hook's `extras` so diagnoses + cycle inputs flow into the AI prompt (no edge-function change needed; the function already receives `recipient` JSON, just ensure new fields are included in the payload signature).
-- `PersonCheckinsSection` — the "cycle phase" cadence option becomes available whenever `recipient.cycle.tracks === true` and `lastPeriodStart` is set, even if the app-level cycle tracker isn't enabled. Add a small `recipientPeriodsAdapter` that converts a recipient's `cycle` block into the `PeriodLog[]` shape `phaseForDate` expects.
+Same pattern for `appointments`:
+- Add nullable `household_id` and `visibility` (`private` | `household`).
+- New policy: members can read household-visibility events; only the creator or household owner can edit/delete.
+- New "Family" calendar layer toggle in Week, Month, and Day views — color-codes events by member, with a legend.
+- Inline "Share with family" checkbox in the appointment editor.
+- Dinner-poll winners can optionally be auto-added as household appointments (off by default).
+
+## 5. Auth & invite flow
+
+- Email + Google sign-in (Google added in same pass since multi-user requires real accounts).
+- `/auth` already exists; add `/join/:token` route that resolves an invite, requires sign-in, then inserts into `household_members` and redirects to the household home.
+- Profile auto-create trigger already exists; extend it to also create a personal household so single users keep working unchanged.
 
 ## Technical notes
 
-- Migration only adds columns; existing rows get safe defaults (`{}`, `null`).
-- Store mappers (`recipFrom`, `addRecipient`, `updateRecipient` payload assembly) and `CareRecipient` type get the new fields.
-- Editor stays a single dialog with `Tabs` (`Who` / `Body & being` / `Contacts & meds`) rather than a multi-step wizard so users can jump.
-- No new connectors, secrets, or AI calls. AI weight unchanged.
-- Build order: migration → type + store updates → DiagnosisChipInput → RecipientEditor rebuild → CareProfile surface → cycle-aware checkin adapter.
+- RLS for every new table uses a `is_household_member(_uid, _household_id)` SECURITY DEFINER helper to avoid recursive policies.
+- All new public tables get explicit `GRANT` statements for `authenticated` and `service_role`.
+- Realtime: enable on `grocery_lists`, `grocery_list_activity`, `dinner_poll_responses`, and `appointments` for live collaboration.
+- One edge function `send-household-invite` uses Lovable's built-in transactional email to email the invite link.
+- Client state: extend `src/lib/store.tsx` to scope queries by `currentHouseholdId` when set; legacy queries by `user_id` still work for personal data.
+- No removal of existing personal flows — sharing is additive.
+
+## Out of scope (this round)
+
+- Per-night meal AI suggestions inside the poll (can use existing AI generator manually).
+- SMS invites / push notifications — email only.
+- Recipe attachments to calendar events.
+
+Confirm and I'll build it.
