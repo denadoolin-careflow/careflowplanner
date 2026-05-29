@@ -253,7 +253,10 @@ export default function Auth() {
             Continue with Google
           </Button>
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            By continuing you agree to our gentle, no-spam approach to your data.
+            By continuing you agree to our{" "}
+            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">Terms</Link>
+            {" "}and{" "}
+            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</Link>.
           </p>
         </div>
 

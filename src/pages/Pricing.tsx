@@ -88,6 +88,15 @@ export default function Pricing() {
           </div>
         </div>
       </section>
+
+      <footer className="mx-auto w-full max-w-6xl px-5 pb-10">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+          <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+          <Link to="/terms" className="hover:text-foreground">Terms</Link>
+          <a href="mailto:hello@careflowplanner.app" className="hover:text-foreground">Contact</a>
+          <span>© {new Date().getFullYear()} CareFlow Planner</span>
+        </div>
+      </footer>
     </div>
   );
 }
