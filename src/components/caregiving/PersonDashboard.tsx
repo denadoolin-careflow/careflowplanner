@@ -5,8 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw, Heart, Leaf, Utensils, Brain, Compass, CalendarClock, Moon } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useCycle } from "@/lib/cycle-store";
-import { routinesStore } from "@/lib/routines";
-import { getCurrentPhase } from "@/lib/cycle";
+import { useRoutines, routines as routinesStore } from "@/lib/routines";
+import { phaseForDate } from "@/lib/cycle";
 import { useAIPersonOverview } from "@/hooks/useAIPersonOverview";
 import type { CareRecipient } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
@@ -20,16 +20,21 @@ function ageFrom(birth?: string): number | null {
 
 export function PersonDashboard({ recipient }: { recipient: CareRecipient }) {
   const { state } = useStore();
-  const { history, settings } = useCycle();
+  const { periods, settings } = useCycle();
+  useRoutines(); // subscribe so byPerson cache stays fresh
 
   const cyclePhase = useMemo(() => {
     if (recipient.kind === "pet") return null;
-    try { return getCurrentPhase(new Date(), history, settings); } catch { return null; }
-  }, [recipient.kind, history, settings]);
+    try { return phaseForDate(new Date(), periods, settings); } catch { return null; }
+  }, [recipient.kind, periods, settings]);
 
   const routineTitles = useMemo(
-    () => routinesStore.byPerson(recipient.name).map(r => `${r.title} (${r.slot ?? "any"})`),
-    [recipient.name, state.routines as any]
+    () =>
+      (recipient.id
+        ? routinesStore.byRecipient(recipient.id)
+        : routinesStore.byPerson(recipient.name)
+      ).map(r => `${r.title} (${r.slot ?? "any"})`),
+    [recipient.id, recipient.name]
   );
   const habitTitles = useMemo(
     () => state.habits.map(h => h.title),
