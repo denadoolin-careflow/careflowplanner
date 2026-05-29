@@ -12,6 +12,7 @@ import type { CareRecipient } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { PersonProgressSection } from "@/components/caregiving/PersonProgressSection";
 import { PersonCheckinsSection } from "@/components/caregiving/PersonCheckinsSection";
+import { PersonTrendsSection } from "@/components/caregiving/PersonTrendsSection";
 
 function ageFrom(birth?: string): number | null {
   if (!birth) return null;
@@ -81,6 +82,8 @@ export function PersonDashboard({ recipient }: { recipient: CareRecipient }) {
         <PersonProgressSection recipient={recipient} />
         <PersonCheckinsSection recipient={recipient} />
       </div>
+
+      <PersonTrendsSection recipient={recipient} />
 
       {loading ? (
         <div className="grid gap-4 lg:grid-cols-2">

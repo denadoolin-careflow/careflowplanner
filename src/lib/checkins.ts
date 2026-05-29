@@ -209,6 +209,19 @@ export const checkinsStore = {
       tags: r.tags ?? [], cycle_phase: r.cycle_phase, responded_at: r.responded_at,
     }));
   },
+  async listResponsesByRecipient(recipientId: string, limit = 500): Promise<CheckinResponse[]> {
+    const { data } = await supabase
+      .from("person_checkin_responses" as any)
+      .select("*")
+      .eq("recipient_id", recipientId)
+      .order("responded_at", { ascending: true })
+      .limit(limit);
+    return ((data ?? []) as any[]).map(r => ({
+      id: r.id, checkin_id: r.checkin_id, recipient_id: r.recipient_id,
+      mood: r.mood, energy: r.energy, notes: r.notes,
+      tags: r.tags ?? [], cycle_phase: r.cycle_phase, responded_at: r.responded_at,
+    }));
+  },
   reload: loadAll,
 };
 
