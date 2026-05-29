@@ -47,6 +47,7 @@ import { CarePriorities } from "@/components/today/CarePriorities";
 import { AffirmationHeader } from "@/components/today/AffirmationHeader";
 import { TopThreeStrip } from "@/components/today/TopThreeStrip";
 import { TodayHabitsCard } from "@/components/today/TodayHabitsCard";
+import { RoutinesPanel } from "@/components/today/RoutinesPanel";
 import { personalGreeting } from "@/lib/greeting";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 
@@ -258,6 +259,9 @@ function TodayInner() {
             <CalendarViewToggle value={view} onChange={setView} />
           </div>
           <TopThreeStrip date={today} onTaskClick={setEditTaskId} />
+          <div className="mt-3">
+            <RoutinesPanel />
+          </div>
           {view === "schedule" && (
             <TimeGrid days={days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptDropAt={handleApptDrop} onApptClick={setEditApptId} />
           )}
