@@ -239,16 +239,18 @@ export const routines = {
     emit();
   },
   async generateIdeas(person: string, slot: RoutineSlot, style?: string): Promise<string[]> {
-    const { data, error } = await aiInvoke("ai-routine-ideas", {
+    const { data, error, quotaExceeded } = await aiInvoke("ai-routine-ideas", {
       body: { person, slot, style },
     });
+    if (quotaExceeded) return [];
     if (error) throw error;
     return (data?.ideas ?? []) as string[];
   },
   async breakdown(goal: string, opts?: { person?: string; slot?: RoutineSlot }): Promise<Array<{ text: string; icon?: string; durationMin?: number }>> {
-    const { data, error } = await aiInvoke("ai-routine-breakdown", {
+    const { data, error, quotaExceeded } = await aiInvoke("ai-routine-breakdown", {
       body: { goal, person: opts?.person, slot: opts?.slot },
     });
+    if (quotaExceeded) return [];
     if (error) throw error;
     return (data?.steps ?? []) as Array<{ text: string; icon?: string; durationMin?: number }>;
   },
