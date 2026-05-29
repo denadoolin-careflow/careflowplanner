@@ -3,19 +3,18 @@ import { useStore, todayISO } from "@/lib/store";
 import { computeHabitGrowth, STAGE_LABEL, STAGE_AFFIRMATION } from "@/lib/habit-consistency";
 import { HabitPlant } from "./HabitPlant";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Check, Flame, Leaf, Play } from "lucide-react";
+import { Sparkles, Check, Flame, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
 import { format, subDays } from "date-fns";
-import { useRoutines, SLOT_LABEL, type Routine } from "@/lib/routines";
-import { RoutineFocusMode } from "@/components/routines/RoutineFocusMode";
+import { useRoutines } from "@/lib/routines";
+import { RitualStrip, getRitualTiles } from "@/components/routines/RitualStrip";
 
 export function HabitGarden({ onOpen }: { onOpen?: (id: string) => void } = {}) {
   const { state, toggleHabit } = useStore();
   const today = todayISO();
   const [celebrating, setCelebrating] = useState<string | null>(null);
   const { routines: routineList } = useRoutines();
-  const [focusRoutine, setFocusRoutine] = useState<Routine | null>(null);
 
   const tiles = useMemo(
     () => state.habits.map(h => ({ habit: h, growth: computeHabitGrowth(h) })),
@@ -33,16 +32,7 @@ export function HabitGarden({ onOpen }: { onOpen?: (id: string) => void } = {}) 
 
   const doneToday = tiles.filter(t => t.habit.log[today]).length;
   const blooming = tiles.filter(t => t.growth.stageIndex >= 3).length;
-
-  const ritualTiles = routineList
-    .filter(r => r.items.length > 0)
-    .map(r => {
-      const total = r.items.length;
-      const done = r.items.filter(i => i.done).length;
-      const ratio = total > 0 ? done / total : 0;
-      const stage = ratio >= 1 ? "bloom" : ratio >= 0.66 ? "growing" : ratio >= 0.33 ? "sprout" : "seed";
-      return { routine: r, total, done, ratio, stage };
-    });
+  const ritualTiles = getRitualTiles(routineList);
   const ritualsTended = ritualTiles.filter(r => r.ratio >= 1).length;
 
   return (
@@ -151,52 +141,7 @@ export function HabitGarden({ onOpen }: { onOpen?: (id: string) => void } = {}) 
         })}
       </div>
 
-      {ritualTiles.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="font-display text-base">Rituals growing</h3>
-            <span className="text-[11px] text-muted-foreground">{ritualsTended}/{ritualTiles.length} blooming today</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {ritualTiles.map(({ routine, total, done, ratio, stage }) => (
-              <div key={routine.id} className={cn(
-                "cozy-card group relative flex flex-col items-center gap-2 p-3 transition-all",
-                ratio >= 1 && "ring-1 ring-primary/40",
-              )}>
-                <div className="relative flex h-24 w-full items-end justify-center rounded-xl bg-gradient-to-b from-transparent to-muted/40">
-                  <div className="text-4xl" aria-hidden>
-                    {stage === "bloom" ? "🌸" : stage === "growing" ? "🌿" : stage === "sprout" ? "🌱" : "🫧"}
-                  </div>
-                </div>
-                <div className="w-full text-center">
-                  <div className="truncate text-sm font-medium">{routine.person_name}</div>
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{SLOT_LABEL[routine.slot]}</div>
-                </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div className="h-full bg-primary transition-all" style={{ width: `${Math.round(ratio * 100)}%` }} />
-                </div>
-                <div className="text-[10px] text-muted-foreground">{done}/{total} steps</div>
-                <Button
-                  size="sm"
-                  variant={ratio >= 1 ? "secondary" : "default"}
-                  onClick={() => setFocusRoutine(routine)}
-                  className="h-7 w-full rounded-full text-[11px]"
-                >
-                  {ratio >= 1 ? <><Check className="mr-1 h-3 w-3" /> Tended</> : <><Play className="mr-1 h-3 w-3" /> Tend</>}
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {focusRoutine && (
-        <RoutineFocusMode
-          open={!!focusRoutine}
-          onOpenChange={(o) => { if (!o) setFocusRoutine(null); }}
-          routine={focusRoutine}
-        />
-      )}
+      <RitualStrip />
     </div>
   );
 }
