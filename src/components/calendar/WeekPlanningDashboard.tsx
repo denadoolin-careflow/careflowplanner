@@ -9,6 +9,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { useWeeklyPlan } from "@/hooks/useWeeklyPlan";
+import { useCheckins } from "@/lib/checkins";
+import { buildCheckinAppointments } from "@/lib/checkin-calendar";
 import { InboxCapture } from "@/components/calendar/InboxCapture";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -124,8 +126,16 @@ export function WeekPlanningDashboard({
   const completed = weekTasks.filter(t => t.done).length;
   const completionPct = weekTasks.length ? Math.round((completed / weekTasks.length) * 100) : 0;
 
-  const weekAppointments = state.appointments.filter(a =>
-    isWithinInterval(parseISO(a.date), { start: monday, end: sunday })
+  const checkins = useCheckins();
+  const checkinEvents = useMemo(
+    () => buildCheckinAppointments(checkins, state.recipients ?? [], monday, 14),
+    [checkins, state.recipients, monday],
+  );
+  const weekAppointments = useMemo(
+    () => [...state.appointments, ...checkinEvents].filter(a =>
+      isWithinInterval(parseISO(a.date), { start: monday, end: sunday })
+    ),
+    [state.appointments, checkinEvents, monday, sunday],
   );
   const weekBirthdays = state.birthdays.filter(b => recurringFallsThisWeek(b.date, monday, sunday));
   const weekHolidays = state.holidays.filter(h => recurringFallsThisWeek(h.date, monday, sunday));
