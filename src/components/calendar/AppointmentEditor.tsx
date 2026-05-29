@@ -49,7 +49,9 @@ function minutesBetween(startDate: string, startTime: string, endDate: string, e
 }
 
 export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
-  const { state, updateAppointment, deleteAppointment } = useStore() as any;
+  const store = useStore() as any;
+  const { state, updateAppointment, deleteAppointment } = store;
+  const userId = store.user?.id as string | undefined;
   const projects = (state?.projects ?? []) as any[];
   const areas = (state?.areas ?? []) as any[];
   const recipients = (state?.recipients ?? []) as any[];
@@ -66,7 +68,6 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
   const [areaName, setAreaName] = useState<string | undefined>(undefined);
   const [color, setColor] = useState<string | undefined>(undefined);
   const [syncToGoogle, setSyncToGoogle] = useState(false);
-  const userId = (useStore() as any).user?.id as string | undefined;
   const { current: currentHousehold } = useHousehold(userId);
   const [shareWithFamily, setShareWithFamily] = useState(false);
 
