@@ -3,7 +3,8 @@ import { Pause, Play, SkipForward, SkipBack, X, Check } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { routines as routinesApi, type Routine } from "@/lib/routines";
+import { routines as routinesApi, SLOT_LABEL, type Routine } from "@/lib/routines";
+import { pomodoro } from "@/lib/pomodoro-store";
 
 export function RoutineFocusMode({
   open, onOpenChange, routine, startItemId,
@@ -37,6 +38,21 @@ export function RoutineFocusMode({
     setRemaining(totalSec);
     setPaused(false);
   }, [idx, totalSec]);
+
+  // Sync the active step into the global Pomodoro (side-panel) so it shows
+  // what we're focusing on.
+  useEffect(() => {
+    if (!open || !current) return;
+    pomodoro.startTemplate({
+      label: `${routine.person_name} · ${SLOT_LABEL[routine.slot]} · ${current.text}`,
+      focusSeconds: totalSec,
+      breakSeconds: 60,
+      templateId: "routine",
+      routineId: routine.id,
+      routineItemId: current.id,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, idx, current?.id]);
 
   useEffect(() => {
     if (!open || paused) return;
