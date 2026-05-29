@@ -12,6 +12,7 @@ import { PersonRoutinesPanel } from "@/pages/Routines";
 import { CareProfile } from "@/components/caregiving/CareProfile";
 import { CareTasksPanel } from "@/components/caregiving/CareTasksPanel";
 import { PersonDashboard } from "@/components/caregiving/PersonDashboard";
+import { CareChoresPanel } from "@/components/caregiving/CareChoresPanel";
 
 export default function Caregiving() {
   const { state, addCareNote, deleteCareNote } = useStore();
@@ -71,6 +72,7 @@ export default function Caregiving() {
             <TabsTrigger value="dashboard" className="rounded-full px-4 text-xs">Dashboard</TabsTrigger>
             <TabsTrigger value="profile" className="rounded-full px-4 text-xs">Profile</TabsTrigger>
             <TabsTrigger value="routines" className="rounded-full px-4 text-xs">Routines</TabsTrigger>
+            <TabsTrigger value="chores" className="rounded-full px-4 text-xs">Chores</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -181,6 +183,10 @@ export default function Caregiving() {
               recipientId={recipient.id}
               recipients={state.recipients.map(r => ({ id: r.id, name: r.name }))}
             />
+          </TabsContent>
+
+          <TabsContent value="chores">
+            <CareChoresPanel recipient={recipient} />
           </TabsContent>
         </Tabs>
       )}
