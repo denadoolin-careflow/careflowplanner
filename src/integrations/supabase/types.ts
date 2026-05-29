@@ -674,6 +674,60 @@ export type Database = {
         }
         Relationships: []
       }
+      caregiving_chores: {
+        Row: {
+          area: string | null
+          assigned_to: string | null
+          cadence: string | null
+          created_at: string
+          done: boolean
+          est_minutes: number | null
+          id: string
+          last_done_at: string | null
+          linked_task_id: string | null
+          notes: string | null
+          recipient_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          zone: string | null
+        }
+        Insert: {
+          area?: string | null
+          assigned_to?: string | null
+          cadence?: string | null
+          created_at?: string
+          done?: boolean
+          est_minutes?: number | null
+          id?: string
+          last_done_at?: string | null
+          linked_task_id?: string | null
+          notes?: string | null
+          recipient_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          zone?: string | null
+        }
+        Update: {
+          area?: string | null
+          assigned_to?: string | null
+          cadence?: string | null
+          created_at?: string
+          done?: boolean
+          est_minutes?: number | null
+          id?: string
+          last_done_at?: string | null
+          linked_task_id?: string | null
+          notes?: string | null
+          recipient_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          zone?: string | null
+        }
+        Relationships: []
+      }
       chore_assignments: {
         Row: {
           created_at: string
@@ -3689,6 +3743,36 @@ export type Database = {
         }
         Relationships: []
       }
+      routine_people: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       routines: {
         Row: {
           cadence: string
@@ -3979,6 +4063,7 @@ export type Database = {
           next_due_date: string | null
           notes: string | null
           parent_task_id: string | null
+          person_tag: string | null
           priority: string
           project_id: string | null
           recipient_id: string | null
@@ -4019,6 +4104,7 @@ export type Database = {
           next_due_date?: string | null
           notes?: string | null
           parent_task_id?: string | null
+          person_tag?: string | null
           priority?: string
           project_id?: string | null
           recipient_id?: string | null
@@ -4059,6 +4145,7 @@ export type Database = {
           next_due_date?: string | null
           notes?: string | null
           parent_task_id?: string | null
+          person_tag?: string | null
           priority?: string
           project_id?: string | null
           recipient_id?: string | null
