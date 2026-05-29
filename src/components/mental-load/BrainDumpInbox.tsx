@@ -8,6 +8,7 @@ import { Mic, MicOff, Sparkles, Trash2, ListTodo, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { BrainDump, categoryLabel, categoryTone } from "@/lib/mental-load";
 import { cn } from "@/lib/utils";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 export function BrainDumpInbox({ uid }: { uid: string }) {
   const [draft, setDraft] = useState("");
@@ -68,7 +69,7 @@ export function BrainDumpInbox({ uid }: { uid: string }) {
     if (inbox.length === 0) { toast.message("Nothing new to sort."); return; }
     setSorting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-mental-load", {
+      const { data, error } = await aiInvoke("ai-mental-load", {
         body: { action: "categorize_dump", items: inbox.map((i) => ({ id: i.id, content: i.content })) },
       });
       if (error) throw error;

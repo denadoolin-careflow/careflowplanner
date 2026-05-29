@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sparkles, Lightbulb, Wand2, FileText, ListPlus, ArrowDownToLine, PencilLine, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type Action = "ideas" | "prompts" | "summarize" | "expand" | "polish" | "continue" | "custom";
 
@@ -47,7 +48,7 @@ export function NoteAIButton({ title, body, onApply }: Props) {
   async function run(action: Action, mode: "replace" | "append", instruction?: string) {
     setBusy(action);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-notes", {
+      const { data, error } = await aiInvoke("ai-notes", {
         body: { action, title, body, instruction },
       });
       if (error) throw error;

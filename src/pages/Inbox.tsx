@@ -18,6 +18,7 @@ import { TagChip } from "@/components/tags/TagChip";
 import { Link } from "react-router-dom";
 import { Tags as TagsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 interface Suggestion {
   task_id: string;
@@ -62,7 +63,7 @@ function InboxInner() {
     if (items.length === 0) return;
     setTriaging(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-inbox-triage", { body: {} });
+      const { data, error } = await aiInvoke("ai-inbox-triage", { body: {} });
       if (error) throw error;
       const map: Record<string, Suggestion> = {};
       for (const s of (data as any)?.suggestions ?? []) {

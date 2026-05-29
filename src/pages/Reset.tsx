@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type Period = "week" | "month";
 type ChecklistItem = { id: string; label: string; done: boolean };
@@ -155,7 +156,7 @@ export default function Reset() {
   async function generateAi() {
     setAiLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-weekly-review", { body: { period } });
+      const { data, error } = await aiInvoke("ai-weekly-review", { body: { period } });
       if (error) throw error;
       const review = (data as any)?.review;
       setAiSummary(review?.summary ?? null);

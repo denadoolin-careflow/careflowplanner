@@ -28,6 +28,7 @@ import type { Attachment } from "@/lib/types";
 import { startOfWeek, endOfWeek, startOfYear, getYear } from "date-fns";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyWritingGoal } from "@/components/notes/DailyWritingGoal";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type TemplateKey =
   | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
@@ -199,7 +200,7 @@ export default function Journal() {
   const generatePrompts = async () => {
     setAiLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-journal", {
+      const { data, error } = await aiInvoke("ai-journal", {
         body: { template, mood, energy, context: title || body.slice(0, 200) },
       });
       if (error) throw error;

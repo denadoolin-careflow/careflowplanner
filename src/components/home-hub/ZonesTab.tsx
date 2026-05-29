@@ -9,6 +9,7 @@ import { useStore } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 const DEFAULT_ZONES = [
   "Kitchen", "Bathrooms", "Bedrooms", "Laundry",
@@ -53,7 +54,7 @@ export function ZonesTab() {
     setAiBusy(zone);
     try {
       const existing = (byZone[zone] ?? []).map((c) => c.title);
-      const { data, error } = await supabase.functions.invoke("ai-home-assistant", {
+      const { data, error } = await aiInvoke("ai-home-assistant", {
         body: { mode: "zone_checklist", context: { zone, energy, existing } },
       });
       if (error) throw error;

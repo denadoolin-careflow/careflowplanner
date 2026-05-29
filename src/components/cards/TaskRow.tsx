@@ -30,6 +30,7 @@ import { TagChip } from "@/components/tags/TagChip";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { CompletionBurst } from "@/components/cards/CompletionBurst";
 import { useCompletionVisual } from "@/lib/completion-visual";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 
 export function TaskRow({ task, dense = false, showArea = true, draggable = false }: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
@@ -60,7 +61,7 @@ export function TaskRow({ task, dense = false, showArea = true, draggable = fals
     if (aiLoading) return;
     setAiLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-subtasks", {
+      const { data, error } = await aiInvoke("ai-subtasks", {
         body: { title: task.title, notes: task.notes, area: task.area, count: 5 },
       });
       if (error) throw error;

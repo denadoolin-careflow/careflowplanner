@@ -29,6 +29,7 @@ import { TagPicker } from "@/components/tags/TagPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { Sparkles } from "lucide-react";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type Props = {
   open: boolean;
@@ -159,7 +160,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     if (subAiLoading) return;
     setSubAiLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-subtasks", {
+      const { data, error } = await aiInvoke("ai-subtasks", {
         body: { title: draft.title, notes: draft.notes, area: draft.area, count: 5 },
       });
       if (error) throw error;

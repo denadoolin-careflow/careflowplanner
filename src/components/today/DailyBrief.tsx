@@ -11,6 +11,7 @@ import { openTaskEditor } from "@/lib/open-task-editor";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { toast } from "sonner";
 import { QuickTaskInlineEditor } from "@/components/tasks/QuickTaskInlineEditor";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 const cacheKey = (iso: string) => `careflow:daily-brief:${iso}`;
 
@@ -51,7 +52,7 @@ export function DailyBrief({ date }: { date: Date }) {
     setLoading(true); setError(null);
     try {
       const lite = (t: any) => ({ title: t.title, dueDate: t.dueDate, isTopThree: t.isTopThree, area: t.area });
-      const { data, error: fnErr } = await supabase.functions.invoke("ai-daily-update", {
+      const { data, error: fnErr } = await aiInvoke("ai-daily-update", {
         body: {
           date: iso,
           overdue: buckets.overdue.map(lite),
