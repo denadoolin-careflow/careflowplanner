@@ -235,6 +235,16 @@ export interface CareRecipient {
   schedule?: Record<string, string>; // weekday name -> description
   ssnLast4?: string;
   ssnFull?: string;
+  diagnoses?: string[];
+  diagnosisNotes?: string;
+  sex?: "female" | "male" | "intersex" | "prefer_not";
+  cycle?: {
+    tracks?: boolean;
+    avgLength?: number;
+    periodLength?: number;
+    lastPeriodStart?: string;
+    notes?: string;
+  };
 }
 
 export interface CareNote { id: string; recipientId: string; date: string; body: string; tag?: string; }
