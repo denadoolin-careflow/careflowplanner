@@ -67,6 +67,8 @@ import Insights from "./pages/Insights";
 import Quiz from "./pages/Quiz";
 import Pricing from "./pages/Pricing";
 import Waitlist from "./pages/Waitlist";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -102,6 +104,8 @@ const App = () => (
               <Route path="/quiz" element={<Quiz />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/waitlist" element={<Waitlist />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
               <Route path="/" element={<IndexRedirect />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
