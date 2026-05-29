@@ -20,6 +20,8 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { BirthdayHolidayEditor } from "@/components/calendar/BirthdayHolidayEditor";
 import { InboxCapture } from "@/components/calendar/InboxCapture";
 import { MonthPlanningDashboard } from "@/components/calendar/MonthPlanningDashboard";
+import { useCheckins } from "@/lib/checkins";
+import { buildCheckinAppointments } from "@/lib/checkin-calendar";
 import { moonPhaseFor } from "@/lib/moon-phase";
 import { getMoonPhase } from "@/lib/moon";
 import { getKeyPhaseInfo, isKeyPhaseDay } from "@/lib/lunar-phases";
