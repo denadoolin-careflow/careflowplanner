@@ -9,6 +9,7 @@ import { SectionCard } from "@/components/cards/SectionCard";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 interface ReviewData {
   summary?: string;
@@ -54,7 +55,7 @@ export default function Review() {
   const generate = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-weekly-review", {
+      const { data, error } = await aiInvoke("ai-weekly-review", {
         body: { period: tab },
       });
       if (error) throw error;

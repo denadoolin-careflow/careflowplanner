@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -82,6 +83,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const __gate = await meterRequest(req, WEIGHTS.heavy, corsHeaders);
+    if ("response" in __gate) return __gate.response;
     const auth = req.headers.get("Authorization") ?? "";
     if (!auth.startsWith("Bearer ")) {
       return json({ error: "Missing auth" }, 401);

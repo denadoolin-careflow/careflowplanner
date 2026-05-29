@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 const COUNTS = [1, 3, 5, 10];
 const SLOTS = ["Any", "Breakfast", "Lunch", "Dinner", "Snack"];
@@ -28,7 +29,7 @@ export function AIGenerateMealsDialog({
   const generate = async () => {
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-library-meals", {
+      const { data, error } = await aiInvoke("ai-library-meals", {
         body: { count, slot, vibe, tags, with_images: withImages },
       });
       if (error) {

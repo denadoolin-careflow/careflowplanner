@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 const PROMPTS = [
   "What matters most today?",
@@ -21,7 +22,7 @@ export function DecisionSupport({ uid: _uid }: { uid: string }) {
   async function ask(prompt: string) {
     setBusy(prompt); setAnswer(null);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-mental-load", {
+      const { data, error } = await aiInvoke("ai-mental-load", {
         body: { action: "decision_support", prompt },
       });
       if (error) throw error;

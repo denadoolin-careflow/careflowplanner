@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, TrendingUp, TrendingDown, Award, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 const CACHE_KEY = "habit_overview_cache_v1";
 
@@ -91,7 +92,7 @@ export function HabitWeeklyAnalytics() {
           };
         }),
       };
-      const { data, error } = await supabase.functions.invoke("ai-habit-overview", { body: payload });
+      const { data, error } = await aiInvoke("ai-habit-overview", { body: payload });
       if (error) throw error;
       setOverview(data as Overview);
       try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), data })); } catch { /* ignore */ }

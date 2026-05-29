@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/lib/store";
 import { AREAS, type Area, type Priority, type TaskStatus } from "@/lib/types";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type ProposedTask = {
   title: string;
@@ -83,7 +84,7 @@ export function VoiceCaptureDialog({
         setPhase("intro");
         return;
       }
-      const { data, error } = await supabase.functions.invoke("ai-voice-capture", { body: payload });
+      const { data, error } = await aiInvoke("ai-voice-capture", { body: payload });
       if (error) throw error;
       const tx = (data as any)?.transcript ?? transcript;
       const sm = (data as any)?.summary ?? "";
@@ -126,7 +127,7 @@ export function VoiceCaptureDialog({
     if (!transcript.trim()) return;
     setPhase("processing");
     try {
-      const { data, error } = await supabase.functions.invoke("ai-voice-capture", {
+      const { data, error } = await aiInvoke("ai-voice-capture", {
         body: { transcript: transcript.trim() },
       });
       if (error) throw error;

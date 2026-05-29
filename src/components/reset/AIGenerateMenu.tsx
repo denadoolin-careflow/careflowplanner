@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Sparkles, Wand2, Zap, Heart, Bath } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type Kind = "weekly" | "deep" | "quick" | "low_energy";
 
@@ -30,7 +31,7 @@ export function AIGenerateMenu({ onGenerated, weekStart }: { onGenerated: () => 
   const generate = async () => {
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-cleaning-checklist", {
+      const { data, error } = await aiInvoke("ai-cleaning-checklist", {
         body: { kind, homeSize, familySize, energy, minutes, caregiving, weekStart: weekStart ?? null },
       });
       if (error) throw error;

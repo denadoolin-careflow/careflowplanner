@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 export interface MaintenanceSuggestion {
   title: string;
@@ -32,7 +33,7 @@ export function useAiSuggest<T>() {
   const run = async (mode: "maintenance" | "rhythm", context: Record<string, unknown>) => {
     setLoading(true);
     try {
-      const { data: res, error } = await supabase.functions.invoke("ai-home-assistant", {
+      const { data: res, error } = await aiInvoke("ai-home-assistant", {
         body: { mode, context },
       });
       if (error) throw error;

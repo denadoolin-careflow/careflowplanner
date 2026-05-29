@@ -1,4 +1,5 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -25,6 +26,8 @@ interface CareContext {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+    const __gate = await meterRequest(req, WEIGHTS.light, corsHeaders);
+    if ("response" in __gate) return __gate.response;
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "Missing LOVABLE_API_KEY" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 export type RoutineSlot = "morning" | "afternoon" | "evening" | "night" | "nap" | "anytime";
 export const ROUTINE_SLOTS: RoutineSlot[] = ["morning", "afternoon", "evening", "night", "nap", "anytime"];
@@ -190,6 +191,11 @@ export const routines = {
     const trimmed = name.trim();
     if (!trimmed) return;
     if (cache.some(r => r.person_name.toLowerCase() === trimmed.toLowerCase())) return;
+    const { ensureWithinLimit } = await import("@/lib/limit-guard");
+    // Count distinct people as routines
+    const peopleCount = new Set(cache.map(r => r.person_name.toLowerCase())).size;
+    const ok = await ensureWithinLimit("routines", peopleCount);
+    if (!ok) return;
     await routines.upsert(trimmed, "morning", { items: [] });
   },
   async removePerson(name: string) {
@@ -200,14 +206,14 @@ export const routines = {
     emit();
   },
   async generateIdeas(person: string, slot: RoutineSlot, style?: string): Promise<string[]> {
-    const { data, error } = await supabase.functions.invoke("ai-routine-ideas", {
+    const { data, error } = await aiInvoke("ai-routine-ideas", {
       body: { person, slot, style },
     });
     if (error) throw error;
     return (data?.ideas ?? []) as string[];
   },
   async breakdown(goal: string, opts?: { person?: string; slot?: RoutineSlot }): Promise<Array<{ text: string; icon?: string; durationMin?: number }>> {
-    const { data, error } = await supabase.functions.invoke("ai-routine-breakdown", {
+    const { data, error } = await aiInvoke("ai-routine-breakdown", {
       body: { goal, person: opts?.person, slot: opts?.slot },
     });
     if (error) throw error;

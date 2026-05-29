@@ -8,6 +8,7 @@ import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type Msg = { role: "user" | "assistant"; content: string; plan?: any };
 
@@ -54,7 +55,7 @@ export function AIAssistantFab({ hideButton = false }: { hideButton?: boolean } 
     setInput("");
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-planner", {
+      const { data, error } = await aiInvoke("ai-planner", {
         body: {
           action,
           messages: next.map((m) => ({ role: m.role, content: m.content })),

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 export interface PriorityItem { id: string; title: string; done: boolean; linked_task_id?: string | null; }
 export interface OutingItem { id: string; title: string; date?: string | null; notes?: string | null; linked_appt_id?: string | null; }
@@ -121,7 +122,7 @@ export const monthlyPlans = {
   },
 
   async generate(month: string, context?: string) {
-    const { data, error } = await supabase.functions.invoke("ai-month-plan", {
+    const { data, error } = await aiInvoke("ai-month-plan", {
       body: { month, context },
     });
     if (error) throw error;

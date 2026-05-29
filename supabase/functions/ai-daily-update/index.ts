@@ -1,4 +1,5 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 
 const LOVABLE_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -17,6 +18,8 @@ interface Body {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+    const __gate = await meterRequest(req, WEIGHTS.light, corsHeaders);
+    if ("response" in __gate) return __gate.response;
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {

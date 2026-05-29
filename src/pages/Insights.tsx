@@ -14,6 +14,7 @@ import { phaseForDate } from "@/lib/cycle";
 import { moonPhaseFor } from "@/lib/moon-phase";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 interface DayDatum {
   date: string;
@@ -89,7 +90,7 @@ export default function Insights() {
     try {
       const topTemplates = stats.byTemplate.slice(0, 5).map(t => ({ label: t.label, minutes: Math.round(t.totalSeconds / 60) }));
       const topTasks = stats.byTask.slice(0, 5).map(t => ({ label: t.label, minutes: Math.round(t.totalSeconds / 60) }));
-      const { data, error } = await supabase.functions.invoke("ai-rhythm-insights", {
+      const { data, error } = await aiInvoke("ai-rhythm-insights", {
         body: { days, topTemplates, topTasks },
       });
       if (error) throw error;

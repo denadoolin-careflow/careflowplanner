@@ -5,6 +5,7 @@ import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 const CACHE_KEY = "projects.ai-summary.v1";
 type Cached = { overview: string; updatedAt: string };
@@ -24,7 +25,7 @@ export function ProjectsAISummary({ projectCount }: { projectCount: number }) {
   const generate = async () => {
     setLoading(true);
     try {
-      const { data: res, error } = await supabase.functions.invoke("ai-projects-summary", { body: {} });
+      const { data: res, error } = await aiInvoke("ai-projects-summary", { body: {} });
       if (error) throw error;
       if ((res as any)?.error) throw new Error((res as any).error);
       const next: Cached = { overview: (res as any).overview, updatedAt: (res as any).updated_at };

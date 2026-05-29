@@ -95,3 +95,56 @@ export function quotaExceededResponse(meter: Extract<MeterResult, { ok: false }>
     { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }
+
+/**
+ * One-call helper for AI edge functions: validates JWT, runs the meter,
+ * and on failure returns a ready-to-send Response. On success returns the
+ * user's id so the caller can proceed.
+ *
+ * Usage:
+ *   const gate = await meterRequest(req, WEIGHTS.light, corsHeaders);
+ *   if ("response" in gate) return gate.response;
+ *   // proceed; gate.userId is available
+ */
+export async function meterRequest(
+  req: Request,
+  weight: number,
+  corsHeaders: Record<string, string>
+): Promise<{ userId: string } | { response: Response }> {
+  const auth = req.headers.get("Authorization") ?? "";
+  if (!auth.toLowerCase().startsWith("bearer ")) {
+    return {
+      response: new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
+    };
+  }
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return {
+      response: new Response(JSON.stringify({ error: "Server not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
+    };
+  }
+  const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: auth } },
+  });
+  const { data: u, error: uerr } = await client.auth.getUser();
+  if (uerr || !u?.user) {
+    return {
+      response: new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
+    };
+  }
+  const meter = await checkAndIncrementAi(u.user.id, weight);
+  if (!meter.ok) {
+    return { response: quotaExceededResponse(meter, corsHeaders) };
+  }
+  return { userId: u.user.id };
+}

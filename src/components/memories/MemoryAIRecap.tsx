@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Memory } from "@/lib/memories";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 export function MemoryAIRecap({ memories, scopeLabel }: { memories: Memory[]; scopeLabel: string }) {
   const [recap, setRecap] = useState<string | null>(null);
@@ -21,7 +22,7 @@ export function MemoryAIRecap({ memories, scopeLabel }: { memories: Memory[]; sc
         challenging: m.challengingNote?.slice(0, 100),
         tags: m.tags?.slice(0, 5),
       }));
-      const { data, error } = await supabase.functions.invoke("ai-memory-recap", {
+      const { data, error } = await aiInvoke("ai-memory-recap", {
         body: { scope: scopeLabel, memories: compact },
       });
       if (error) throw error;

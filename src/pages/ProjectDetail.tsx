@@ -46,6 +46,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { haptics } from "@/lib/haptics";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type ViewMode = "list" | "kanban" | "schedule";
 const NO_SECTION = "__no_section__";
@@ -465,7 +466,7 @@ function AIOverviewCard({ project }: { project: any }) {
   const run = async (mode: "overview" | "update") => {
     setBusy(mode);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-project-overview", {
+      const { data, error } = await aiInvoke("ai-project-overview", {
         body: { project_id: project.id, mode },
       });
       if (error) throw error;

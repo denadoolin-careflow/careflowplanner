@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { CareRecipient } from "@/lib/types";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 const SLOTS = ["breakfast", "lunch", "dinner", "snacks"] as const;
 type Slot = typeof SLOTS[number];
@@ -622,7 +623,7 @@ function AINotesTab({
         medicalHistory: history.slice(0, 20).map(h => ({ date: h.date, title: h.title, category: h.category, notes: h.notes })),
         recentNotes: careNotes.map(n => ({ date: n.date, body: n.body })),
       };
-      const { data, error } = await supabase.functions.invoke("ai-care-note", {
+      const { data, error } = await aiInvoke("ai-care-note", {
         body: { focus, prompt, context },
       });
       if (error) throw error;

@@ -31,6 +31,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type ViewMode = "week" | "two" | "day";
 const VIEW_KEY = "meals.viewMode";
@@ -87,7 +88,7 @@ export default function Meals() {
     setPlanning(true);
     try {
       const startISO = start.toISOString().slice(0, 10);
-      const { data, error } = await supabase.functions.invoke("ai-meal-plan", {
+      const { data, error } = await aiInvoke("ai-meal-plan", {
         body: { action: "plan_week", start_date: startISO, replace: true, mode: mode ?? null },
       });
       if (error) throw error;

@@ -1,9 +1,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
+    const __gate = await meterRequest(req, WEIGHTS.medium, corsHeaders);
+    if ("response" in __gate) return __gate.response;
     const { scope, memories } = await req.json();
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");

@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { AttachmentsField } from "@/components/attachments/AttachmentsField";
 import type { Attachment } from "@/lib/types";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 const today = () => new Date().toISOString().slice(0, 10);
 function weekStart(d = new Date()) { const x = new Date(d); const day = (x.getDay() + 6) % 7; x.setDate(x.getDate() - day); return x.toISOString().slice(0, 10); }
@@ -86,7 +87,7 @@ function ZonesPanel({ uid }: { uid: string }) {
   async function aiGenerate(zone: string) {
     setAiBusy(zone);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-cleaning-checklist-zone", {
+      const { data, error } = await aiInvoke("ai-cleaning-checklist-zone", {
         body: { zone, focus: aiFocus[zone] ?? "", energy: "medium", minutes: 30 },
       });
       if (error) throw error;

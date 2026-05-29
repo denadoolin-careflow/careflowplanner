@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/lib/store";
 import { getRhythmForecast } from "@/lib/rhythm-forecast";
 import type { WeatherSnapshot } from "@/lib/weather";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 interface Props {
   date: Date;
@@ -50,7 +51,7 @@ export function AIDailyGuidance({ date, snap, onPlanWithEnergy }: Props) {
         moon: { phase: f.phaseLabel, sign: f.sign.sign, element: f.element, illumination: f.illumination },
         taskLoad: { total: todaysTasks.length, topThree },
       };
-      const { data, error: fnErr } = await supabase.functions.invoke("ai-today-guidance", { body: payload });
+      const { data, error: fnErr } = await aiInvoke("ai-today-guidance", { body: payload });
       if (fnErr) throw fnErr;
       if (data?.error) throw new Error(data.error);
       const next = (data?.guidance as string) ?? "";

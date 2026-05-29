@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Star, Clock, Users, Leaf } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type Item = { id: string; title: string; reason?: string };
 type Result = {
@@ -31,7 +32,7 @@ export function PriorityAssistant({ uid: _uid, refreshKey }: { uid: string; refr
   async function run() {
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-mental-load", {
+      const { data, error } = await aiInvoke("ai-mental-load", {
         body: { action: "prioritize" },
       });
       if (error) throw error;

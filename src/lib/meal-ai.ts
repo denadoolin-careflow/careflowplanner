@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 export interface MealPreferences {
   family_size: number;
@@ -45,7 +46,7 @@ export async function savePrefs(userId: string, prefs: MealPreferences) {
 }
 
 export async function planWeek(startDate: string) {
-  const { data, error } = await supabase.functions.invoke("ai-meal-plan", {
+  const { data, error } = await aiInvoke("ai-meal-plan", {
     body: { action: "plan_week", start_date: startDate, replace: true },
   });
   if (error) throw error;
@@ -53,7 +54,7 @@ export async function planWeek(startDate: string) {
 }
 
 export async function regenerateMeal(date: string, slot: string, avoid?: string) {
-  const { data, error } = await supabase.functions.invoke("ai-meal-plan", {
+  const { data, error } = await aiInvoke("ai-meal-plan", {
     body: { action: "regenerate_meal", date, slot, avoid },
   });
   if (error) throw error;

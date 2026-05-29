@@ -1,4 +1,5 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 
 interface ReqBody {
   days: { date: string; done: number; total: number }[];
@@ -19,6 +20,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const __gate = await meterRequest(req, WEIGHTS.medium, corsHeaders);
+    if ("response" in __gate) return __gate.response;
     const body = (await req.json()) as ReqBody;
     if (!body?.habits?.length) {
       return new Response(JSON.stringify({ error: "habits[] required" }), {

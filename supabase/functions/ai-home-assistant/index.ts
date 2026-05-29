@@ -1,4 +1,5 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -99,6 +100,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const __gate = await meterRequest(req, WEIGHTS.medium, corsHeaders);
+    if ("response" in __gate) return __gate.response;
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
     const { mode, context = {} } = (await req.json()) as Body;
     if (mode !== "maintenance" && mode !== "rhythm" && mode !== "zone_checklist") {
