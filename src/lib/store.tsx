@@ -171,6 +171,10 @@ const recipFrom = (r: any): CareRecipient => ({
   schedule: r.schedule ?? {},
   ssnLast4: r.ssn_last4 ?? undefined,
   ssnFull: r.ssn_full ?? undefined,
+  diagnoses: r.diagnoses ?? [],
+  diagnosisNotes: r.diagnosis_notes ?? undefined,
+  sex: r.sex ?? undefined,
+  cycle: r.cycle ?? {},
 });
 const careNoteFrom = (r: any): CareNote => ({ id: r.id, recipientId: r.recipient_id, date: r.date, body: r.body, tag: r.tag ?? undefined });
 const cleanFrom = (r: any): CleaningTask => ({ id: r.id, title: r.title, zone: r.zone, cadence: r.cadence, done: r.done, lastDone: r.last_done ?? undefined, weekday: r.weekday ?? undefined, recurrenceType: r.recurrence_type, recurrenceDays: r.recurrence_days ?? [], nextDueDate: r.next_due_date ?? undefined, autoReset: r.auto_reset, sortOrder: r.sort_order });
