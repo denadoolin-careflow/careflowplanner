@@ -13,6 +13,7 @@ import { CareProfile } from "@/components/caregiving/CareProfile";
 import { CareTasksPanel } from "@/components/caregiving/CareTasksPanel";
 import { PersonDashboard } from "@/components/caregiving/PersonDashboard";
 import { CareChoresPanel } from "@/components/caregiving/CareChoresPanel";
+import { PersonMonthlyReport } from "@/components/caregiving/PersonMonthlyReport";
 
 export default function Caregiving() {
   const { state, addCareNote, deleteCareNote } = useStore();
@@ -73,6 +74,7 @@ export default function Caregiving() {
             <TabsTrigger value="profile" className="rounded-full px-4 text-xs">Profile</TabsTrigger>
             <TabsTrigger value="routines" className="rounded-full px-4 text-xs">Routines</TabsTrigger>
             <TabsTrigger value="chores" className="rounded-full px-4 text-xs">Chores</TabsTrigger>
+            <TabsTrigger value="report" className="rounded-full px-4 text-xs">Monthly report</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -187,6 +189,10 @@ export default function Caregiving() {
 
           <TabsContent value="chores">
             <CareChoresPanel recipient={recipient} />
+          </TabsContent>
+
+          <TabsContent value="report">
+            <PersonMonthlyReport recipient={recipient} />
           </TabsContent>
         </Tabs>
       )}
