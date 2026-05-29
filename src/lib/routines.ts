@@ -49,6 +49,9 @@ export interface RoutineItem {
   icon?: string;        // emoji or short label
   durationMin?: number; // estimated minutes for this step
   note?: string;
+  /** Optional fixed clock time (HH:mm). When set, the step anchors to this time
+   *  in computeNowNext instead of chaining from the previous step's duration. */
+  startTime?: string;
 }
 
 export interface RoutineMeta {
@@ -172,8 +175,26 @@ export const routines = {
   async toggleItem(person: string, slot: RoutineSlot, itemId: string) {
     const r = routines.find(person, slot);
     if (!r) return;
-    const items = r.items.map(i => i.id === itemId ? { ...i, done: !i.done } : i);
+    const target = r.items.find(i => i.id === itemId);
+    const nextDone = !target?.done;
+    const items = r.items.map(i => i.id === itemId ? { ...i, done: nextDone } : i);
     await routines.upsert(person, slot, { items });
+    // Log completion for garden / consistency tracking.
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const today = new Date().toISOString().slice(0, 10);
+        if (nextDone) {
+          await supabase.from("routine_completions" as any).upsert({
+            user_id: user.id, routine_id: r.id, item_id: itemId, completed_on: today,
+          } as any, { onConflict: "user_id,routine_id,item_id,completed_on" } as any);
+        } else {
+          await supabase.from("routine_completions" as any).delete()
+            .eq("user_id", user.id).eq("routine_id", r.id)
+            .eq("item_id", itemId).eq("completed_on", today);
+        }
+      }
+    } catch { /* non-fatal */ }
   },
   async editItem(person: string, slot: RoutineSlot, itemId: string, text: string) {
     const r = routines.find(person, slot);
@@ -203,6 +224,18 @@ export const routines = {
     if (!user) return;
     await supabase.from("routines" as any).delete().eq("user_id", user.id).eq("person_name", name);
     cache = cache.filter(r => r.person_name !== name);
+    emit();
+  },
+  async renamePerson(oldName: string, newName: string) {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === oldName) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("routines" as any)
+      .update({ person_name: trimmed } as any)
+      .eq("user_id", user.id)
+      .eq("person_name", oldName);
+    cache = cache.map(r => r.person_name === oldName ? { ...r, person_name: trimmed } : r);
     emit();
   },
   async generateIdeas(person: string, slot: RoutineSlot, style?: string): Promise<string[]> {
@@ -245,8 +278,14 @@ export function computeNowNext(rs: Routine[], now: Date = new Date()): {
     let cursor = new Date(today); cursor.setHours(hh, mm || 0, 0, 0);
     for (const it of r.items) {
       const dur = it.durationMin ?? 5;
-      const startsAt = new Date(cursor);
-      const endsAt = new Date(cursor.getTime() + dur * 60_000);
+      let startsAt = new Date(cursor);
+      if (it.startTime) {
+        const [ih, im] = it.startTime.split(":").map(n => parseInt(n, 10));
+        if (!Number.isNaN(ih)) {
+          startsAt = new Date(today); startsAt.setHours(ih, im || 0, 0, 0);
+        }
+      }
+      const endsAt = new Date(startsAt.getTime() + dur * 60_000);
       blocks.push({ routine: r, item: it, startsAt, endsAt });
       cursor = endsAt;
     }
