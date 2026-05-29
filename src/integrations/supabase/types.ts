@@ -50,6 +50,7 @@ export type Database = {
           google_calendar_id: string | null
           google_event_id: string | null
           google_last_synced_at: string | null
+          household_id: string | null
           icon: string | null
           id: string
           location: string | null
@@ -62,6 +63,7 @@ export type Database = {
           type: string | null
           updated_at: string
           user_id: string
+          visibility: string
           with_name: string | null
         }
         Insert: {
@@ -75,6 +77,7 @@ export type Database = {
           google_calendar_id?: string | null
           google_event_id?: string | null
           google_last_synced_at?: string | null
+          household_id?: string | null
           icon?: string | null
           id?: string
           location?: string | null
@@ -87,6 +90,7 @@ export type Database = {
           type?: string | null
           updated_at?: string
           user_id: string
+          visibility?: string
           with_name?: string | null
         }
         Update: {
@@ -100,6 +104,7 @@ export type Database = {
           google_calendar_id?: string | null
           google_event_id?: string | null
           google_last_synced_at?: string | null
+          household_id?: string | null
           icon?: string | null
           id?: string
           location?: string | null
@@ -112,9 +117,17 @@ export type Database = {
           type?: string | null
           updated_at?: string
           user_id?: string
+          visibility?: string
           with_name?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "appointments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "appointments_project_id_fkey"
             columns: ["project_id"]
@@ -1213,6 +1226,148 @@ export type Database = {
         }
         Relationships: []
       }
+      dinner_poll_candidates: {
+        Row: {
+          created_at: string
+          custom_title: string | null
+          day_date: string
+          id: string
+          meal_id: string | null
+          notes: string | null
+          poll_id: string
+          position: number
+          slot: string
+        }
+        Insert: {
+          created_at?: string
+          custom_title?: string | null
+          day_date: string
+          id?: string
+          meal_id?: string | null
+          notes?: string | null
+          poll_id: string
+          position?: number
+          slot?: string
+        }
+        Update: {
+          created_at?: string
+          custom_title?: string | null
+          day_date?: string
+          id?: string
+          meal_id?: string | null
+          notes?: string | null
+          poll_id?: string
+          position?: number
+          slot?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dinner_poll_candidates_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "dinner_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dinner_poll_responses: {
+        Row: {
+          candidate_id: string | null
+          created_at: string
+          custom_title: string | null
+          day_date: string
+          id: string
+          kind: string
+          meal_id: string | null
+          note: string | null
+          poll_id: string
+          user_id: string
+        }
+        Insert: {
+          candidate_id?: string | null
+          created_at?: string
+          custom_title?: string | null
+          day_date: string
+          id?: string
+          kind?: string
+          meal_id?: string | null
+          note?: string | null
+          poll_id: string
+          user_id: string
+        }
+        Update: {
+          candidate_id?: string | null
+          created_at?: string
+          custom_title?: string | null
+          day_date?: string
+          id?: string
+          kind?: string
+          meal_id?: string | null
+          note?: string | null
+          poll_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dinner_poll_responses_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "dinner_poll_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dinner_poll_responses_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "dinner_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dinner_polls: {
+        Row: {
+          created_at: string
+          created_by: string
+          household_id: string
+          id: string
+          notes: string | null
+          status: string
+          title: string | null
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          household_id: string
+          id?: string
+          notes?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          household_id?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dinner_polls_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorite_meals: {
         Row: {
           created_at: string
@@ -1530,9 +1685,45 @@ export type Database = {
         }
         Relationships: []
       }
+      grocery_list_activity: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          item_name: string | null
+          list_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          item_name?: string | null
+          list_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          item_name?: string | null
+          list_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grocery_list_activity_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "grocery_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grocery_lists: {
         Row: {
           created_at: string
+          household_id: string | null
           id: string
           items: Json
           name: string
@@ -1542,6 +1733,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          household_id?: string | null
           id?: string
           items?: Json
           name: string
@@ -1551,6 +1743,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          household_id?: string | null
           id?: string
           items?: Json
           name?: string
@@ -1558,7 +1751,15 @@ export type Database = {
           user_id?: string
           week_start?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "grocery_lists_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       habit_logs: {
         Row: {
@@ -1910,6 +2111,50 @@ export type Database = {
         }
         Relationships: []
       }
+      household_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          household_id: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["household_role"]
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          household_id: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["household_role"]
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          household_id?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["household_role"]
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_invites_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_members: {
         Row: {
           avatar_emoji: string | null
@@ -1940,6 +2185,68 @@ export type Database = {
           sort_order?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      household_users: {
+        Row: {
+          color: string | null
+          display_name: string | null
+          household_id: string
+          id: string
+          joined_at: string
+          role: Database["public"]["Enums"]["household_role"]
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          display_name?: string | null
+          household_id: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["household_role"]
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          display_name?: string | null
+          household_id?: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["household_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_users_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      households: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3448,6 +3755,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          current_household_id: string | null
           default_route: string
           email: string | null
           energy_date: string | null
@@ -3463,6 +3771,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_household_id?: string | null
           default_route?: string
           email?: string | null
           energy_date?: string | null
@@ -3478,6 +3787,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_household_id?: string | null
           default_route?: string
           email?: string | null
           energy_date?: string | null
@@ -3491,7 +3801,15 @@ export type Database = {
           time_zone?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_current_household_id_fkey"
+            columns: ["current_household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_sections: {
         Row: {
@@ -5034,9 +5352,18 @@ export type Database = {
         Args: { p_user_id: string; p_weight: number; p_year_month: string }
         Returns: number
       }
+      is_household_member: {
+        Args: { _household_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_household_owner: {
+        Args: { _household_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      household_role: "owner" | "editor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5165,6 +5492,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      household_role: ["owner", "editor", "viewer"],
     },
   },
 } as const
