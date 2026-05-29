@@ -32,6 +32,9 @@ function getServiceClient() {
 
 async function resolvePlan(userId: string): Promise<Plan> {
   const svc = getServiceClient();
+  // Admin users get lifetime-level access for free.
+  const { data: isAdmin } = await svc.rpc("has_role", { _user_id: userId, _role: "admin" });
+  if (isAdmin) return "lifetime";
   // Lifetime first
   const [{ data: lifetime }, { data: sub }] = await Promise.all([
     svc.from("lifetime_purchases").select("price_id").eq("user_id", userId).limit(1).maybeSingle(),
