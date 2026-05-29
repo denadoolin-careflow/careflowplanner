@@ -69,6 +69,8 @@ import Pricing from "./pages/Pricing";
 import Waitlist from "./pages/Waitlist";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import FamilySettings from "./pages/FamilySettings";
+import JoinHousehold from "./pages/JoinHousehold";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -101,6 +103,7 @@ const App = () => (
             <CyclePlanningListener />
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/join/:token" element={<JoinHousehold />} />
               <Route path="/quiz" element={<Quiz />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/waitlist" element={<Waitlist />} />
@@ -161,6 +164,7 @@ const App = () => (
                 <Route path="/automations" element={<Automations />} />
                 <Route path="/trips" element={<Trips />} />
                 <Route path="/trips/:id" element={<TripDetail />} />
+                <Route path="/family" element={<FamilySettings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
