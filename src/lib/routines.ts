@@ -191,6 +191,11 @@ export const routines = {
     const trimmed = name.trim();
     if (!trimmed) return;
     if (cache.some(r => r.person_name.toLowerCase() === trimmed.toLowerCase())) return;
+    const { ensureWithinLimit } = await import("@/lib/limit-guard");
+    // Count distinct people as routines
+    const peopleCount = new Set(cache.map(r => r.person_name.toLowerCase())).size;
+    const ok = await ensureWithinLimit("routines", peopleCount);
+    if (!ok) return;
     await routines.upsert(trimmed, "morning", { items: [] });
   },
   async removePerson(name: string) {
