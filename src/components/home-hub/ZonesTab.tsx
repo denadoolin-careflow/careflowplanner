@@ -183,6 +183,34 @@ export function ZonesTab() {
                 ))}
               </ul>
 
+              {(() => {
+                const zoneChores = chores.filter(ch => (ch.zone ?? "").toLowerCase() === z.toLowerCase());
+                if (zoneChores.length === 0) return null;
+                return (
+                  <div className="rounded-xl border border-border/40 bg-muted/30 p-2">
+                    <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <HeartHandshake className="h-3 w-3" /> Caregiving chores
+                    </div>
+                    <ul className="flex flex-col gap-1">
+                      {zoneChores.map(ch => (
+                        <li key={ch.id} className={cn(
+                          "group flex items-center gap-2 rounded-lg bg-background/60 px-2 py-1 text-xs",
+                          ch.done && "opacity-60",
+                        )}>
+                          <Checkbox checked={ch.done} onCheckedChange={() => caregivingChores.toggle(ch.id)} />
+                          <span className={cn("flex-1 truncate", ch.done && "line-through")}>
+                            {ch.title}
+                            {recipientName(ch.recipient_id) && (
+                              <span className="ml-1 text-muted-foreground">· {recipientName(ch.recipient_id)}</span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
+
               <div className="flex gap-1.5">
                 <Input
                   value={drafts[z] ?? ""}
