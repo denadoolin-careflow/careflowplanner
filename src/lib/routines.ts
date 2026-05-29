@@ -166,6 +166,16 @@ export const routines = {
     const items = [...(r?.items ?? []), { id: uid(), text, done: false, durationMin: 5 }];
     await routines.upsert(person, slot, { items });
   },
+  async reorderItems(person: string, slot: RoutineSlot, fromIdx: number, toIdx: number) {
+    const r = routines.find(person, slot);
+    if (!r) return;
+    if (fromIdx === toIdx || fromIdx < 0 || fromIdx >= r.items.length) return;
+    const items = r.items.slice();
+    const [moved] = items.splice(fromIdx, 1);
+    const clampedTo = Math.max(0, Math.min(items.length, toIdx));
+    items.splice(clampedTo, 0, moved);
+    await routines.upsert(person, slot, { items });
+  },
   async updateItem(person: string, slot: RoutineSlot, itemId: string, patch: Partial<RoutineItem>) {
     const r = routines.find(person, slot);
     if (!r) return;
