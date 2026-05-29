@@ -610,6 +610,9 @@ export type Database = {
           birth_date: string | null
           contacts: Json
           created_at: string
+          cycle: Json
+          diagnoses: string[]
+          diagnosis_notes: string | null
           education_level: string | null
           food_preferences: Json
           id: string
@@ -622,6 +625,7 @@ export type Database = {
           schedule: Json
           school: string | null
           sensory: string | null
+          sex: string | null
           ssn_full: string | null
           ssn_last4: string | null
           updated_at: string
@@ -632,6 +636,9 @@ export type Database = {
           birth_date?: string | null
           contacts?: Json
           created_at?: string
+          cycle?: Json
+          diagnoses?: string[]
+          diagnosis_notes?: string | null
           education_level?: string | null
           food_preferences?: Json
           id?: string
@@ -644,6 +651,7 @@ export type Database = {
           schedule?: Json
           school?: string | null
           sensory?: string | null
+          sex?: string | null
           ssn_full?: string | null
           ssn_last4?: string | null
           updated_at?: string
@@ -654,6 +662,9 @@ export type Database = {
           birth_date?: string | null
           contacts?: Json
           created_at?: string
+          cycle?: Json
+          diagnoses?: string[]
+          diagnosis_notes?: string | null
           education_level?: string | null
           food_preferences?: Json
           id?: string
@@ -666,6 +677,7 @@ export type Database = {
           schedule?: Json
           school?: string | null
           sensory?: string | null
+          sex?: string | null
           ssn_full?: string | null
           ssn_last4?: string | null
           updated_at?: string

@@ -1,52 +1,52 @@
-# Per-Person Progress & Cycle Check-Ins
+# Person Intake Form
 
-Add lightweight progress tracking and recurring, cycle-aware check-in reminders for each person in the caregiving space, surfaced on their dashboard. Be mindful of those that are male and don't include cycle data for men, focus on developmental and well being check ins.
+Capture each profile's diagnosis, age, cycle, and zodiac in one focused step — both at "Add profile" time and when editing.
 
 ## 1. Data model
 
-New tables (RLS scoped to `auth.uid() = user_id`):
+`care_recipients` already stores `birth_date`, `zodiac`. Add two new nullable columns in a single migration:
 
-- `**person_progress_entries**` — timeline of measurable progress per recipient.
-  - `recipient_id`, `user_id`, `category` (`milestone | skill | mood | health | behavior | custom`), `label`, `value_numeric` (nullable, e.g. 1–10 scale), `value_text`, `notes`, `recorded_at`.
-- `**person_progress_goals**` — optional targets a recipient is working toward.
-  - `recipient_id`, `user_id`, `title`, `category`, `target_value`, `current_value`, `unit`, `status` (`active | achieved | paused`), `target_date`.
-- `**person_checkins**` — scheduled check-in templates per recipient.
-  - `recipient_id`, `user_id`, `title`, `prompt`, `cadence` (`daily | weekly | cycle_phase | custom_days`), `cadence_config` jsonb (e.g. `{ phase: "luteal" }` or `{ days: ["mon","thu"] }`), `last_completed_at`, `next_due_at`, `active`.
-- `**person_checkin_responses**` — answers logged against a check-in.
-  - `checkin_id`, `recipient_id`, `user_id`, `mood` (1–5), `energy` (1–5), `notes`, `tags text[]`, `cycle_phase`, `responded_at`.
+- `diagnoses text[] NOT NULL DEFAULT '{}'` — list of tags (e.g. "Autism", "ADHD", "Type 1 diabetes") plus an optional free-text per-tag detail held in a parallel jsonb.
+- `diagnosis_notes text` — long-form context (onset, providers, accommodations).
+- `cycle jsonb NOT NULL DEFAULT '{}'` — `{ tracks: boolean, avgLength?: number, periodLength?: number, lastPeriodStart?: string, notes?: string }`. Cycle block only shows for `kind in ("self","partner")` and when not flagged male in the form.
+- `sex text` — `"female" | "male" | "intersex" | "prefer_not" | null`, drives whether cycle UI shows.
 
-All four tables get standard `GRANT`s for `authenticated` + `service_role`, RLS enabled, and `auth.uid() = user_id` policies for SELECT/INSERT/UPDATE/DELETE. `updated_at` trigger reuses `public.set_updated_at()`.
+`CareRecipient` type + store mappers (`recipFrom`, insert/update payloads in `store.tsx`) get matching fields. No business-logic changes outside this.
 
-## 2. Cycle-aware scheduler
+## 2. Intake form
 
-Reuse the existing `phaseForDate` helper that already powers `PersonDashboard`.
+Rebuild `RecipientEditor` as a two-step wizard so the dialog stays calm:
 
-- A small `src/lib/checkins.ts` module computes `nextDueAt(checkin, recipient, today)`:
-  - `daily` → tomorrow 9am local.
-  - `weekly` → next matching weekday.
-  - `custom_days` → next day in `cadence_config.days`.
-  - `cycle_phase` → next date whose `phaseForDate(date, recipient.cycle)` equals the configured phase; if recipient has no cycle data, fall back to weekly and flag it in the UI.
-- `next_due_at` is recomputed on the client after each response is saved (no cron needed). A nightly recompute happens lazily on app load for any check-ins where `next_due_at < now()`.
+```text
+[ Step 1 · Who they are ]      [ Step 2 · Body & being ]
+ - Name                          - Diagnoses (chip input + notes)
+ - Relationship (kind)           - Sex
+ - Birth date  → auto Age        - Cycle (only when relevant):
+ - Zodiac (auto from birth,        tracks toggle, avg cycle len,
+   overridable)                    avg period len, last period start,
+ - Notes                           cycle notes
+ - Sensory & prefs              - Contacts + Medications
+                                 (existing fieldsets retained here)
+```
 
-## 3. UI surfaces
+Implementation details:
 
-All additions live in caregiving / dashboard surfaces; no business-logic changes elsewhere.
+- New `DiagnosisChipInput` component: comma-or-enter to add, click-X to remove, preset suggestions (Autism, ADHD, Anxiety, Asthma, Diabetes, Sensory Processing, Dyslexia, PCOS, Endometriosis…).
+- Birth date uses the shadcn `Calendar` in a popover (matches `CareProfile.tsx` pattern). Below the picker show a live `Age N` chip and auto-derived `zodiac` chip from existing `zodiacFor(date)` helper.
+- Zodiac is a select that defaults to the auto value and can be overridden.
+- Cycle section auto-hides for `kind === "pet"` or `sex === "male"`. When visible, shows a Calendar for `lastPeriodStart` plus numeric inputs (default 28 / 5).
+- Validation with zod (per security guidance): name 1–80 chars, diagnoses ≤ 20 entries each ≤ 60 chars, cycle lengths 14–60 / 1–14.
 
-- `**PersonDashboard.tsx**` gets two new `SectionCard`s:
-  - **Progress** — sparkline of recent `person_progress_entries` per category, list of active goals with progress bars, "Log progress" button → `LogProgressDialog`.
-  - **Check-ins** — list of active check-ins with `next_due_at`, "Respond now" button → `CheckinResponseDialog`, and "Manage check-ins" → `CheckinManager`.
-- `**LogProgressDialog.tsx**` (new) — category picker, label, optional numeric value + unit, notes, date.
-- `**CheckinManager.tsx**` (new) — CRUD list of check-ins with cadence picker. When `cadence = cycle_phase`, show a phase dropdown (menstrual / follicular / ovulatory / luteal) and a hint when the recipient has no cycle data.
-- `**CheckinResponseDialog.tsx**` (new) — mood + energy sliders, notes, tag chips; auto-stamps `cycle_phase` from `phaseForDate`.
-- **Home / Today surface** — extend the existing "today" feed (wherever `RoutineFocusMode` and Reset items already appear) to include due check-ins as cards with a one-tap "Respond" action. Person color/icon chip from the existing family-tag system identifies whose check-in it is.
+## 3. Surface the new data
 
-## 4. AI integration (light touch)
-
-Pass the last ~14 days of `person_progress_entries` + recent check-in mood/energy averages into the existing `ai-person-overview` payload so the developmental plan reflects observed trends. No new edge function; just extend the prompt + the `useAIPersonOverview` signature. Stays at AI weight 5.
+- `CareProfile.tsx` — add a "Health & cycle" section that renders diagnoses as chips, diagnosis notes, and the cycle summary. Birth date / zodiac already render there.
+- `PersonDashboard` — already passes `recipient` to `useAIPersonOverview`; extend the hook's `extras` so diagnoses + cycle inputs flow into the AI prompt (no edge-function change needed; the function already receives `recipient` JSON, just ensure new fields are included in the payload signature).
+- `PersonCheckinsSection` — the "cycle phase" cadence option becomes available whenever `recipient.cycle.tracks === true` and `lastPeriodStart` is set, even if the app-level cycle tracker isn't enabled. Add a small `recipientPeriodsAdapter` that converts a recipient's `cycle` block into the `PeriodLog[]` shape `phaseForDate` expects.
 
 ## Technical notes
 
-- Frontend stores: add `progressStore` and `checkinsStore` next to `routinesStore` in `src/lib/`, mirroring existing zustand patterns and `byRecipient` selectors.
-- Realtime: enable `supabase_realtime` on the four new tables so multiple devices stay in sync (matches existing pattern for routines).
-- No new secrets, no new connectors.
-- Build order: migration → stores → dialogs → dashboard sections → today-feed integration → AI prompt extension.
+- Migration only adds columns; existing rows get safe defaults (`{}`, `null`).
+- Store mappers (`recipFrom`, `addRecipient`, `updateRecipient` payload assembly) and `CareRecipient` type get the new fields.
+- Editor stays a single dialog with `Tabs` (`Who` / `Body & being` / `Contacts & meds`) rather than a multi-step wizard so users can jump.
+- No new connectors, secrets, or AI calls. AI weight unchanged.
+- Build order: migration → type + store updates → DiagnosisChipInput → RecipientEditor rebuild → CareProfile surface → cycle-aware checkin adapter.
