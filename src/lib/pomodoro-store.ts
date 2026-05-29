@@ -21,6 +21,9 @@ export interface PomodoroSession {
   templateId?: string | null;
   /** Friendly template label shown in UI. */
   templateLabel?: string | null;
+  /** Optional routine context — when set, side panel shows step controls. */
+  routineId?: string | null;
+  routineItemId?: string | null;
 }
 
 const initial: PomodoroSession = {
@@ -35,6 +38,8 @@ const initial: PomodoroSession = {
   breakSeconds: BREAK_SECONDS,
   templateId: null,
   templateLabel: null,
+  routineId: null,
+  routineItemId: null,
 };
 
 const STORAGE_KEY = "careflow:pomodoro:v1";
@@ -138,7 +143,7 @@ export const pomodoro = {
   get(): PomodoroSession { return state; },
   startForTask(
     task: Pick<Task, "id" | "title">,
-    opts?: { focusSeconds?: number; breakSeconds?: number; templateId?: string; templateLabel?: string },
+    opts?: { focusSeconds?: number; breakSeconds?: number; templateId?: string; templateLabel?: string; routineId?: string | null; routineItemId?: string | null },
   ) {
     ensureLoop();
     const focusSeconds = opts?.focusSeconds ?? FOCUS_SECONDS;
@@ -155,9 +160,13 @@ export const pomodoro = {
           breakSeconds,
           templateId: opts.templateId ?? null,
           templateLabel: opts.templateLabel ?? null,
+          routineId: opts?.routineId ?? null,
+          routineItemId: opts?.routineItemId ?? null,
         });
       } else {
-        set({ running: true, startedAt: Date.now() });
+        set({ running: true, startedAt: Date.now(),
+          routineId: opts?.routineId ?? state.routineId ?? null,
+          routineItemId: opts?.routineItemId ?? state.routineItemId ?? null });
       }
     } else {
       set({
@@ -172,15 +181,26 @@ export const pomodoro = {
         breakSeconds,
         templateId: opts?.templateId ?? null,
         templateLabel: opts?.templateLabel ?? null,
+        routineId: opts?.routineId ?? null,
+        routineItemId: opts?.routineItemId ?? null,
       });
     }
   },
   /** Quick-start a generic session (no task) with a template. */
-  startTemplate(opts: { label: string; focusSeconds: number; breakSeconds: number; templateId: string }) {
+  startTemplate(opts: { label: string; focusSeconds: number; breakSeconds: number; templateId: string; routineId?: string | null; routineItemId?: string | null }) {
     pomodoro.startForTask(
       { id: `tpl:${opts.templateId}:${Date.now()}`, title: opts.label },
-      { focusSeconds: opts.focusSeconds, breakSeconds: opts.breakSeconds, templateId: opts.templateId, templateLabel: opts.label },
+      { focusSeconds: opts.focusSeconds, breakSeconds: opts.breakSeconds, templateId: opts.templateId, templateLabel: opts.label,
+        routineId: opts.routineId ?? null, routineItemId: opts.routineItemId ?? null },
     );
+  },
+  /** Update the routine context on the live session (e.g. when advancing steps). */
+  setRoutineContext(opts: { routineId?: string | null; routineItemId?: string | null; label?: string }) {
+    set({
+      routineId: opts.routineId ?? null,
+      routineItemId: opts.routineItemId ?? null,
+      ...(opts.label ? { taskTitle: opts.label } : {}),
+    });
   },
   pause() { set({ running: false }); },
   resume() { ensureLoop(); set({ running: true }); },
