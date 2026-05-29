@@ -33,7 +33,7 @@ export function PersonProgressSection({ recipient }: { recipient: CareRecipient 
       title="Progress"
       subtitle="Track milestones, skills & growth"
       accent="calm"
-      actions={
+      action={
         <div className="flex gap-1.5">
           <Button size="sm" variant="ghost" className="rounded-full" onClick={() => setGoalOpen(true)}>
             <Target className="mr-1 h-3.5 w-3.5" /> Goal
