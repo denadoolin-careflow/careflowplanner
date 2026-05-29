@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Trash2, RotateCcw, Sparkles, Wand2, Loader2 } from "lucide-react";
+import { Plus, Trash2, RotateCcw, Sparkles, Wand2, Loader2, HeartHandshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { useCaregivingChores, caregivingChores } from "@/lib/caregiving-chores";
 
 const DEFAULT_ZONES = [
   "Kitchen", "Bathrooms", "Bedrooms", "Laundry",
@@ -19,6 +20,9 @@ const DEFAULT_ZONES = [
 export function ZonesTab() {
   const { state, addCleaning, toggleCleaning, deleteCleaning, resetThisWeek } = useStore() as any;
   const cleaning: any[] = state.cleaning ?? [];
+  const chores = useCaregivingChores();
+  const recipients: { id: string; name: string }[] = state.recipients ?? [];
+  const recipientName = (id: string | null) => id ? (recipients.find(r => r.id === id)?.name ?? null) : null;
   const [newZone, setNewZone] = useState("");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [aiBusy, setAiBusy] = useState<string | null>(null);
@@ -178,6 +182,34 @@ export function ZonesTab() {
                   </li>
                 ))}
               </ul>
+
+              {(() => {
+                const zoneChores = chores.filter(ch => (ch.zone ?? "").toLowerCase() === z.toLowerCase());
+                if (zoneChores.length === 0) return null;
+                return (
+                  <div className="rounded-xl border border-border/40 bg-muted/30 p-2">
+                    <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <HeartHandshake className="h-3 w-3" /> Caregiving chores
+                    </div>
+                    <ul className="flex flex-col gap-1">
+                      {zoneChores.map(ch => (
+                        <li key={ch.id} className={cn(
+                          "group flex items-center gap-2 rounded-lg bg-background/60 px-2 py-1 text-xs",
+                          ch.done && "opacity-60",
+                        )}>
+                          <Checkbox checked={ch.done} onCheckedChange={() => caregivingChores.toggle(ch.id)} />
+                          <span className={cn("flex-1 truncate", ch.done && "line-through")}>
+                            {ch.title}
+                            {recipientName(ch.recipient_id) && (
+                              <span className="ml-1 text-muted-foreground">· {recipientName(ch.recipient_id)}</span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
 
               <div className="flex gap-1.5">
                 <Input
