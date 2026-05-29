@@ -132,8 +132,16 @@ export function MonthPlanningDashboard({ cursor, onJumpToDate }: { cursor: Date;
   const completedThisMonth = monthTasks.filter(t => t.done).length;
   const completionPct = monthTasks.length ? Math.round((completedThisMonth / monthTasks.length) * 100) : 0;
 
-  const monthAppointments = state.appointments.filter(a =>
-    isWithinInterval(parseISO(a.date), { start: monthStart, end: monthEnd })
+  const checkins = useCheckins();
+  const checkinEvents = useMemo(
+    () => buildCheckinAppointments(checkins, state.recipients ?? [], monthStart, 35),
+    [checkins, state.recipients, monthStart],
+  );
+  const monthAppointments = useMemo(
+    () => [...state.appointments, ...checkinEvents].filter(a =>
+      isWithinInterval(parseISO(a.date), { start: monthStart, end: monthEnd })
+    ),
+    [state.appointments, checkinEvents, monthStart, monthEnd],
   );
   const monthBirthdays = state.birthdays.filter(b => recurrenceFalls(b.date, monthStart, monthEnd));
   const monthHolidays = state.holidays.filter(h => recurrenceFalls(h.date, monthStart, monthEnd));
