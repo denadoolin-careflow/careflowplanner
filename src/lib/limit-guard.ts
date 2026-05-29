@@ -15,6 +15,9 @@ const PRICE_TO_PLAN: Record<string, Plan> = {
 export async function resolvePlan(): Promise<Plan> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return "free";
+  // Admins get full access for free.
+  const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+  if (isAdmin) return "lifetime";
   const env = getPaddleEnvironment();
   const [{ data: lifetime }, { data: sub }] = await Promise.all([
     supabase.from("lifetime_purchases").select("id")

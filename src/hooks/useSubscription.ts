@@ -34,15 +34,16 @@ export function useSubscription(userId: string | null | undefined): Subscription
     const env = getPaddleEnvironment();
 
     async function load() {
-      const [{ data: sub }, { data: lifetime }] = await Promise.all([
+      const [{ data: sub }, { data: lifetime }, { data: isAdmin }] = await Promise.all([
         supabase.from("billing_subscriptions").select("*")
           .eq("user_id", userId!).eq("environment", env)
           .order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("lifetime_purchases").select("*")
           .eq("user_id", userId!).eq("environment", env).limit(1).maybeSingle(),
+        supabase.rpc("has_role", { _user_id: userId!, _role: "admin" }),
       ]);
 
-      if (lifetime) {
+      if (isAdmin || lifetime) {
         setInfo({ plan: "lifetime", isActive: true, status: "active", cancelAtPeriodEnd: false, currentPeriodEnd: null, loading: false });
         return;
       }
