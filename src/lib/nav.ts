@@ -4,7 +4,7 @@ import {
   Timer, Settings as SettingsIcon, BookOpen, HeartPulse, Wallet, Home,
   ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
   Wind, PenLine, Coffee, Share2,
-  Zap, Plane,
+  Zap, Plane, Users,
 } from "lucide-react";
 
 export const NAV = [
@@ -94,6 +94,7 @@ export const NAV_GROUPS = [
       { to: "/habits", label: "Habits", icon: Sparkles },
       { to: "/goals", label: "Goals", icon: Target },
       { to: "/mental-load", label: "Mental Load", icon: Leaf },
+      { to: "/family", label: "Family & sharing", icon: Users },
     ],
   },
   {
