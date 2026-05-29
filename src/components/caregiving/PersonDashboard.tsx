@@ -33,7 +33,11 @@ export function PersonDashboard({ recipient }: { recipient: CareRecipient }) {
       (recipient.id
         ? routinesStore.byRecipient(recipient.id)
         : routinesStore.byPerson(recipient.name)
-      ).map(r => `${r.title} (${r.slot ?? "any"})`),
+      ).map(r => {
+        const head = `${r.person_name} · ${r.slot}`;
+        const steps = r.items.slice(0, 4).map(i => i.title).filter(Boolean).join(", ");
+        return steps ? `${head}: ${steps}` : head;
+      }),
     [recipient.id, recipient.name]
   );
   const habitTitles = useMemo(
