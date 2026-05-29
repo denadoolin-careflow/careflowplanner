@@ -29,9 +29,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-import { aiInvoke } from "@/lib/ai-invoke";
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { aiInvoke } from "@/lib/ai-invoke";
 
 type ViewMode = "week" | "two" | "day";
 const VIEW_KEY = "meals.viewMode";
