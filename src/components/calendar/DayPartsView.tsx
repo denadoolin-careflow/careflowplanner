@@ -407,6 +407,7 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
                 );
               })}
             </ul>
+            {showExtras && <MealSlotCard date={day} slot={p.meal} />}
           </div>
         );
       })}
@@ -460,7 +461,6 @@ export function DayPartsView({ days, appointmentsOn, onTaskDropAt, onApptClick, 
         </div>
       )}
     </div>
-    {showExtras && <DayExtras date={day} />}
     </div>
   );
 }
