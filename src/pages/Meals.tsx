@@ -3,7 +3,7 @@ import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { startOfWeek, addDays, format, parseISO, isSameDay } from "date-fns";
-import { Sparkles, Settings2, RotateCcw, BookOpen, Wand2, ChevronDown, ChevronLeft, ChevronRight, Library as LibraryIcon, CalendarIcon } from "lucide-react";
+import { Sparkles, Settings2, RotateCcw, BookOpen, Wand2, ChevronDown, ChevronLeft, ChevronRight, Library as LibraryIcon, CalendarIcon, Users } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -291,6 +291,9 @@ export default function Meals() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="rounded-full" asChild>
             <Link to="/meals/library"><BookOpen className="mr-2 h-4 w-4" />Library</Link>
+          </Button>
+          <Button variant="outline" className="rounded-full" asChild>
+            <Link to="/family/requests"><Users className="mr-2 h-4 w-4" />Family requests</Link>
           </Button>
           <Button variant="outline" className="rounded-full" onClick={() => setPrefsOpen(true)}>
             <Settings2 className="mr-2 h-4 w-4" />Preferences
