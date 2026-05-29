@@ -526,3 +526,63 @@ function FocusDurationEditor({ focusSeconds, breakSeconds }: { focusSeconds: num
     </Popover>
   );
 }
+
+/* ── Routine step widget (shown when the active session is a routine) ── */
+function RoutineStepWidget({ routineId, itemId }: { routineId: string; itemId: string | null }) {
+  const { routines: list } = useRoutines();
+  const routine = list.find(r => r.id === routineId);
+  if (!routine) return null;
+  const idx = itemId ? routine.items.findIndex(i => i.id === itemId) : 0;
+  const current = idx >= 0 ? routine.items[idx] : routine.items[0];
+  if (!current) return null;
+  const nextItem = routine.items[idx + 1];
+
+  const advance = async () => {
+    if (!current.done) {
+      await routinesApi.toggleItem(routine.person_name, routine.slot, current.id);
+    }
+    if (nextItem) {
+      pomodoro.setRoutineContext({
+        routineId: routine.id,
+        routineItemId: nextItem.id,
+        label: `${routine.person_name} · ${SLOT_LABEL[routine.slot]} · ${nextItem.text}`,
+      });
+    }
+  };
+
+  return (
+    <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/5 p-2.5">
+      <div className="mb-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <span>{routine.person_name} · {SLOT_LABEL[routine.slot]}</span>
+        <span>Step {Math.max(0, idx) + 1}/{routine.items.length}</span>
+      </div>
+      <div className="flex items-start gap-2">
+        <div className="text-lg leading-none">{current.icon ?? "✨"}</div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">{current.text}</div>
+          {nextItem && (
+            <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
+              Next: {nextItem.text}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="mt-2 flex justify-end gap-1">
+        {nextItem && (
+          <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-[11px]" onClick={() => {
+            pomodoro.setRoutineContext({
+              routineId: routine.id,
+              routineItemId: nextItem.id,
+              label: `${routine.person_name} · ${SLOT_LABEL[routine.slot]} · ${nextItem.text}`,
+            });
+          }}>
+            <ArrowRight className="mr-1 h-3 w-3" /> Skip
+          </Button>
+        )}
+        <Button size="sm" className="h-7 rounded-full px-2 text-[11px]" onClick={advance}>
+          <Check className="mr-1 h-3 w-3" /> Done
+        </Button>
+      </div>
+    </div>
+  );
+}
