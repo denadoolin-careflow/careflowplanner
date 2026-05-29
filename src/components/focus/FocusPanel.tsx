@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Pause, Play, RotateCcw, SkipForward, Sparkles, Volume2, VolumeX,
-  ChevronRight, ChevronLeft, Brain, Coffee, X, Music2, Pencil,
+  ChevronRight, ChevronLeft, Brain, Coffee, X, Music2, Pencil, Check, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import {
 } from "@/lib/soundscape";
 import { useAtmosphere } from "@/lib/atmospheres";
 import { MusicEmbed } from "./MusicEmbed";
+import { routines as routinesApi, useRoutines, SLOT_LABEL } from "@/lib/routines";
 
 const DOCK_KEY = "careflow:focus:dock";
 const OPEN_KEY = "careflow:focus:open";
@@ -165,6 +166,8 @@ export function FocusPanel() {
             {s.taskTitle || "Pick a soft session to begin."}
           </p>
         )}
+
+        {open && s.routineId && <RoutineStepWidget routineId={s.routineId} itemId={s.routineItemId ?? null} />}
 
         {/* controls */}
         <div className={cn("mt-2 flex items-center justify-center gap-1.5", !open && "flex-col")}>
