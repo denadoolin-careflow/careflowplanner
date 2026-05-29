@@ -10,6 +10,8 @@ import { phaseForDate } from "@/lib/cycle";
 import { useAIPersonOverview } from "@/hooks/useAIPersonOverview";
 import type { CareRecipient } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
+import { PersonProgressSection } from "@/components/caregiving/PersonProgressSection";
+import { PersonCheckinsSection } from "@/components/caregiving/PersonCheckinsSection";
 
 function ageFrom(birth?: string): number | null {
   if (!birth) return null;
@@ -73,6 +75,11 @@ export function PersonDashboard({ recipient }: { recipient: CareRecipient }) {
         </div>
         {stamp && <p className="mt-3 text-[11px] text-muted-foreground">Last generated {stamp}</p>}
         {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <PersonProgressSection recipient={recipient} />
+        <PersonCheckinsSection recipient={recipient} />
       </div>
 
       {loading ? (
