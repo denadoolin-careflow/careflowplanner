@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Clock, Play, Plus, Repeat, Sparkles, Tag, Timer, Trash2, UserPlus, Users, Wand2, X } from "lucide-react";
+import { ChevronRight, Clock, MoreHorizontal, Pencil, Play, Plus, Repeat, Sparkles, Tag, Timer, Trash2, UserPlus, Users, Wand2, X } from "lucide-react";
 import {
   routines as routinesApi,
   useRoutines,
@@ -179,10 +179,61 @@ export default function Routines() {
 function PersonQuickAdd({ people }: { people: string[] }) {
   return (
     <div className="flex flex-wrap gap-1.5 px-1">
-      {people.map(p => (
-        <Badge key={p} variant="secondary" className="rounded-full text-[11px]">{p}</Badge>
-      ))}
+      {people.map(p => <PersonChip key={p} name={p} />)}
     </div>
+  );
+}
+
+function PersonChip({ name }: { name: string }) {
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+
+  const commit = async () => {
+    const next = draft.trim();
+    if (!next || next === name) { setEditing(false); setDraft(name); return; }
+    await routinesApi.renamePerson(name, next);
+    toast.success(`Renamed to ${next}`);
+    setEditing(false);
+    setOpen(false);
+  };
+
+  const remove = async () => {
+    if (!confirm(`Remove all routines for ${name}?`)) return;
+    await routinesApi.removePerson(name);
+    toast.success(`${name} removed.`);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(false); setDraft(name); } }}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="group inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-[11px] text-secondary-foreground hover:bg-secondary/80"
+        >
+          {name}
+          <MoreHorizontal className="h-3 w-3 opacity-50 group-hover:opacity-100" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-2" align="start">
+        {editing ? (
+          <form onSubmit={(e) => { e.preventDefault(); void commit(); }} className="flex gap-1">
+            <Input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} className="h-8 text-xs" />
+            <Button type="submit" size="sm" className="h-8 px-2 text-xs">Save</Button>
+          </form>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <Button variant="ghost" size="sm" className="h-8 justify-start text-xs" onClick={() => setEditing(true)}>
+              <Pencil className="mr-2 h-3.5 w-3.5" /> Rename
+            </Button>
+            <Button variant="ghost" size="sm" className="h-8 justify-start text-xs text-destructive hover:text-destructive" onClick={remove}>
+              <Trash2 className="mr-2 h-3.5 w-3.5" /> Remove
+            </Button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 
