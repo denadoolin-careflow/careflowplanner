@@ -50,7 +50,7 @@ export async function listHouseholdsForUser(userId: string): Promise<Household[]
     .select("*")
     .in("id", ids)
     .order("created_at", { ascending: true });
-  return (data ?? []) as Household[];
+  return (data ?? []) as unknown as Household[];
 }
 
 export async function listMembers(householdId: string): Promise<HouseholdMember[]> {
@@ -59,7 +59,7 @@ export async function listMembers(householdId: string): Promise<HouseholdMember[
     .select("*")
     .eq("household_id", householdId)
     .order("joined_at", { ascending: true });
-  return (data ?? []) as HouseholdMember[];
+  return (data ?? []) as unknown as HouseholdMember[];
 }
 
 export async function listInvites(householdId: string): Promise<HouseholdInvite[]> {
@@ -68,7 +68,7 @@ export async function listInvites(householdId: string): Promise<HouseholdInvite[
     .select("*")
     .eq("household_id", householdId)
     .order("created_at", { ascending: false });
-  return (data ?? []) as HouseholdInvite[];
+  return (data ?? []) as unknown as HouseholdInvite[];
 }
 
 export async function createHousehold(name: string, userId: string): Promise<Household | null> {
@@ -83,7 +83,7 @@ export async function createHousehold(name: string, userId: string): Promise<Hou
     user_id: userId,
     role: "owner",
   });
-  return data as Household;
+  return data as unknown as Household;
 }
 
 export async function renameHousehold(id: string, name: string) {
@@ -111,7 +111,7 @@ export async function createInvite(householdId: string, email: string, role: Hou
     .select()
     .single();
   if (error) throw error;
-  return data as HouseholdInvite;
+  return data as unknown as HouseholdInvite;
 }
 
 export async function cancelInvite(id: string) {
