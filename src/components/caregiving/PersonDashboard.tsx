@@ -35,7 +35,7 @@ export function PersonDashboard({ recipient }: { recipient: CareRecipient }) {
         : routinesStore.byPerson(recipient.name)
       ).map(r => {
         const head = `${r.person_name} · ${r.slot}`;
-        const steps = r.items.slice(0, 4).map(i => i.title).filter(Boolean).join(", ");
+        const steps = r.items.slice(0, 4).map(i => i.text).filter(Boolean).join(", ");
         return steps ? `${head}: ${steps}` : head;
       }),
     [recipient.id, recipient.name]
