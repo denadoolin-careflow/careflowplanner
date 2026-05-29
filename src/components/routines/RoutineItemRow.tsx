@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Play, X } from "lucide-react";
+import { Clock, Play, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { routines as routinesApi, type RoutineItem, type RoutineSlot } from "@/lib/routines";
+import { formatTime12, routines as routinesApi, type RoutineItem, type RoutineSlot } from "@/lib/routines";
 import { IconPickerPopover } from "./IconPickerPopover";
 
 export function RoutineItemRow({
@@ -55,6 +55,44 @@ export function RoutineItemRow({
           {item.text}
         </button>
       )}
+      {item.startTime && (
+        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+          {formatTime12(item.startTime)}
+        </span>
+      )}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="rounded-full p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            aria-label="Set step time"
+            title="Set start time"
+          >
+            <Clock className="h-3 w-3" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-44 p-2" align="end">
+          <label className="text-[10px] text-muted-foreground">Start at</label>
+          <div className="mt-1 flex items-center gap-1">
+            <Input
+              type="time"
+              value={item.startTime ?? ""}
+              onChange={(e) => void routinesApi.updateItem(person, slot, item.id, { startTime: e.target.value || undefined })}
+              className="h-7 flex-1 text-xs"
+            />
+            {item.startTime && (
+              <button
+                type="button"
+                onClick={() => void routinesApi.updateItem(person, slot, item.id, { startTime: undefined })}
+                className="rounded p-1 text-[10px] text-muted-foreground hover:bg-muted"
+                aria-label="Clear time"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
       <Popover>
         <PopoverTrigger asChild>
           <button
