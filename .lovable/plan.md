@@ -1,69 +1,50 @@
+# Offline + Installable App Plan
 
-# Family Sharing: Dinner Requests, Grocery Lists, Calendar
+Add Progressive Web App (PWA) support so CareFlow can be installed to a phone/desktop home screen and the UI loads without an internet connection. Data (tasks, meals, etc.) still requires connectivity since it lives in Lovable Cloud — only the app shell and static assets are cached.
 
-Introduce a lightweight "household" so multiple signed-in family members can collaborate on three things: a weekly dinner request form, grocery lists, and a shared calendar. All three reuse the same household + membership model so we only build sharing once.
+## Important caveats (please read)
 
-## 1. Households & membership
+- Offline features only work in the **published** app (careflowplanner.app), not in the Lovable editor preview. The service worker is deliberately disabled inside the preview iframe to avoid serving stale builds.
+- Writes made while offline will fail; we won't queue them. When the connection returns, the app simply works again.
+- Already-loaded pages remain usable; uncached data fetches will show normal loading/error states.
 
-- New table `households` (name, created_by).
-- New table `household_members` (household_id, user_id, role: `owner` | `editor` | `viewer`, display_name, joined_at, invited_email).
-- New table `household_invites` (household_id, email, token, role, expires_at, accepted_at).
-- Owner creates a household from a new **Settings → Family** screen, invites by email. Invitee gets a link `/join/:token`; if signed-in (or after sign-up) they're added as a member.
-- A `useHousehold()` hook exposes `currentHousehold`, `members`, `switchHousehold`. Current household id is persisted to `localStorage` and to a `profiles.current_household_id` column so it follows the user across devices.
+## What gets built
 
-## 2. Dinner request form (candidates + free requests)
+1. **PWA plumbing**
+   - Add `vite-plugin-pwa` and configure it in `vite.config.ts` with `registerType: "autoUpdate"` and `devOptions.enabled: false`.
+   - Workbox config: `NetworkFirst` for HTML navigations (so new deploys take over quickly), `navigateFallbackDenylist` for `/~oauth` and Supabase auth callbacks, cache static assets + Google Fonts.
 
-For each week, the planner picks 2–4 candidate meals per dinner slot from the existing `meals_library`. Family members open a shared link or in-app page and:
-- Vote (👍 / favorite) on each night's candidates.
-- Submit a free request — either picking any meal from the household's library OR typing a custom dish + optional notes (e.g. "Friday: tacos please").
+2. **Web app manifest**
+   - Name: "CareFlow", short name: "CareFlow", `display: "standalone"`, themed to the app's primary color, `start_url: "/today"`.
+   - Generate icon set (192, 512, maskable, Apple touch icon) from existing branding.
+   - Add iOS-specific meta tags in `index.html` (apple-mobile-web-app-capable, status bar style, touch icon).
 
-Schema:
-- `dinner_polls` (household_id, week_start, created_by, status: `open` | `closed`, notes).
-- `dinner_poll_candidates` (poll_id, day_date, slot='dinner', meal_id nullable, custom_title nullable, position).
-- `dinner_poll_responses` (poll_id, member_id or user_id, day_date, kind: `vote` | `request`, candidate_id nullable, meal_id nullable, custom_title nullable, note, created_at).
+3. **Registration guard** (`src/main.tsx`)
+   - Skip SW registration when running inside an iframe or on `lovableproject.com` / `id-preview--` hostnames.
+   - Proactively `unregister()` any existing SW in those contexts so the preview never serves a stale shell.
 
-UI:
-- New **Meals → Family Requests** tab: planner builds the week's candidates from the library (drag from sidebar), publishes the poll.
-- Results panel shows tallies per night + a "Requests" feed; one-click "Add winner to week plan" pushes the meal into the existing weekly plan.
-- Family members see a clean voting screen; can also pick any library meal as a request.
+4. **Install prompt UX**
+   - Lightweight hook that captures the `beforeinstallprompt` event.
+   - Small "Install app" button surfaced in Settings (and dismissible toast on `/today` the first time it's available on mobile).
+   - iOS fallback: short instructions (Share → Add to Home Screen) since iOS doesn't fire the prompt event.
 
-## 3. Collaborative grocery lists
-
-Upgrade existing `grocery_lists` so a list belongs to a household instead of a single user:
-- Add nullable `household_id` and keep `user_id` as creator.
-- New policy: any member of the household can read/edit/delete lists where `household_id` matches a household they belong to.
-- Add `grocery_list_activity` (list_id, user_id, action, item_name, at) for a lightweight "Jane checked off milk · 2m ago" feed.
-- Enable Supabase Realtime on `grocery_lists` so checkboxes update live across members.
-- UI: in the existing grocery list screen add a "Shared with family" toggle (only visible when a household exists), member avatars, and a recent-activity sidebar.
-
-## 4. Shared family calendar
-
-Same pattern for `appointments`:
-- Add nullable `household_id` and `visibility` (`private` | `household`).
-- New policy: members can read household-visibility events; only the creator or household owner can edit/delete.
-- New "Family" calendar layer toggle in Week, Month, and Day views — color-codes events by member, with a legend.
-- Inline "Share with family" checkbox in the appointment editor.
-- Dinner-poll winners can optionally be auto-added as household appointments (off by default).
-
-## 5. Auth & invite flow
-
-- Email + Google sign-in (Google added in same pass since multi-user requires real accounts).
-- `/auth` already exists; add `/join/:token` route that resolves an invite, requires sign-in, then inserts into `household_members` and redirects to the household home.
-- Profile auto-create trigger already exists; extend it to also create a personal household so single users keep working unchanged.
+5. **Update flow**
+   - On `autoUpdate`, when a new SW activates, show a Sonner toast: "New version available — refresh" with a reload action.
 
 ## Technical notes
 
-- RLS for every new table uses a `is_household_member(_uid, _household_id)` SECURITY DEFINER helper to avoid recursive policies.
-- All new public tables get explicit `GRANT` statements for `authenticated` and `service_role`.
-- Realtime: enable on `grocery_lists`, `grocery_list_activity`, `dinner_poll_responses`, and `appointments` for live collaboration.
-- One edge function `send-household-invite` uses Lovable's built-in transactional email to email the invite link.
-- Client state: extend `src/lib/store.tsx` to scope queries by `currentHouseholdId` when set; legacy queries by `user_id` still work for personal data.
-- No removal of existing personal flows — sharing is additive.
+- `base: "/"` stays as-is (served over HTTPS, not `file://`).
+- No changes to Supabase client, auth, or data layer.
+- No `selfDestroying` flag; we use the standard updateable SW pattern.
+- Icons generated as PNG assets under `public/icons/`.
 
-## Out of scope (this round)
+## Files touched
 
-- Per-night meal AI suggestions inside the poll (can use existing AI generator manually).
-- SMS invites / push notifications — email only.
-- Recipe attachments to calendar events.
-
-Confirm and I'll build it.
+- `vite.config.ts` — add VitePWA plugin
+- `index.html` — manifest link, theme-color, apple meta tags
+- `public/icons/*` — new icon assets + `manifest.webmanifest` (generated)
+- `src/main.tsx` — guarded SW registration + update listener
+- `src/hooks/useInstallPrompt.ts` (new) — capture install event
+- `src/components/pwa/InstallAppButton.tsx` (new) — install button + iOS hint
+- `src/pages/Settings.tsx` — surface the install button
+- `package.json` — `vite-plugin-pwa` dependency
