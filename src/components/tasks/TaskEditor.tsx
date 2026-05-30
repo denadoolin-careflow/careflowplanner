@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import {
   CalendarIcon, X, Tag, Flag, Zap, Clock, Repeat, FolderKanban, Target,
-  Star, Trash2, FileText, Link2, AlignLeft, Paperclip, ListTree, User,
+  Star, Trash2, FileText, Link2, AlignLeft, Paperclip, ListTree, User, FolderTree,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -264,22 +264,63 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                   aiLoading={subAiLoading}
                 />
               </div>
+              <div className="mb-1 flex items-center justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                  onClick={async () => {
+                    const name = window.prompt("Section name (e.g. Prep, Cook, Cleanup)");
+                    const trimmed = name?.trim();
+                    if (!trimmed) return;
+                    await addTask({ title: `## ${trimmed}`, area: draft.area, parentTaskId: draft.id, projectId: draft.projectId });
+                  }}
+                >
+                  <FolderTree className="h-3 w-3" /> Add section
+                </Button>
+              </div>
               <div className="space-y-1">
-                {subtasks.map(s => (
-                  <div key={s.id} className="group flex items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2 py-1.5">
-                    <Checkbox checked={s.done} onCheckedChange={() => toggleTask(s.id)} />
-                    <span className={cn("flex-1 truncate text-sm", s.done && "text-muted-foreground line-through")}>{s.title}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => deleteTask(s.id)}
-                      aria-label="Delete subtask"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                ))}
+                {subtasks.map(s => {
+                  const sectionMatch = s.title.match(/^##\s+(.+)$/);
+                  if (sectionMatch) {
+                    return (
+                      <div
+                        key={s.id}
+                        className="group mt-2 flex items-center gap-2 border-b border-border/50 pb-1 pl-1 pt-1 first:mt-0"
+                      >
+                        <FolderTree className="h-3 w-3 shrink-0 text-primary/70" />
+                        <span className="flex-1 truncate text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/70">
+                          {sectionMatch[1]}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                          onClick={() => deleteTask(s.id)}
+                          aria-label="Delete section"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={s.id} className="group ml-1 flex items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2 py-1.5">
+                      <Checkbox checked={s.done} onCheckedChange={() => toggleTask(s.id)} />
+                      <span className={cn("flex-1 truncate text-sm", s.done && "text-muted-foreground line-through")}>{s.title}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                        onClick={() => deleteTask(s.id)}
+                        aria-label="Delete subtask"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  );
+                })}
                 {addingSub && (
                   <div className="flex items-center gap-2">
                     <Input
