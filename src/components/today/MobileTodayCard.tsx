@@ -120,7 +120,7 @@ export function MobileTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
 
         {/* Energy + cycle */}
         <p className="mt-3 text-center text-[12px] text-foreground/85">
-          <span className="capitalize">{forecast.guidance.energyLevel ?? forecast.element} energy</span>
+            <span className="capitalize">{forecast.element} energy</span>
           {phaseInfo && (
             <>
               <span className="mx-1.5 text-muted-foreground/70">•</span>
