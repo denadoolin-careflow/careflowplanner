@@ -541,6 +541,8 @@ export default function Month() {
             );
           })()}
 
+          {sheetISO && <DayDetailExtras iso={sheetISO} />}
+
           {sheetISO && (() => {
             const items = eventsOn(sheetISO);
             const partOf = (hm?: string | null): "morning" | "afternoon" | "evening" | "allday" => {
