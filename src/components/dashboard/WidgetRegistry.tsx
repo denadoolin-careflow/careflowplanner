@@ -4,6 +4,7 @@ import {
   Sparkle, Cake, Sparkles, Target, Lightbulb, NotebookPen, Heart,
   StickyNote, CheckSquare, CloudSun, Moon, Timer, BarChart3,
   HeartPulse, Scale, Activity, Wallet, CalendarClock, TrendingDown, Users, Wrench,
+  Brain, Utensils, HeartHandshake as Hand, Sun,
 } from "lucide-react";
 import type { WidgetType } from "@/lib/dashboard-layouts";
 import { NoteWidget } from "./widgets/NoteWidget";
@@ -26,6 +27,14 @@ import {
   BudgetSummaryWidget, UpcomingBillsWidget, DebtProgressWidget,
   ChoreTodayWidget, HomeOverdueWidget,
 } from "./widgets/HealthWealthHomeWidgets";
+import { MoonGuidanceHero } from "./widgets/caregiver/MoonGuidanceHero";
+import { WhoNeedsMeWidget } from "./widgets/caregiver/WhoNeedsMeWidget";
+import { TodaysFocusWidget } from "./widgets/caregiver/TodaysFocusWidget";
+import { WhatsForDinnerWidget } from "./widgets/caregiver/WhatsForDinnerWidget";
+import { MentalLoadDumpWidget } from "./widgets/caregiver/MentalLoadDumpWidget";
+import { MomCheckinWidget } from "./widgets/caregiver/MomCheckinWidget";
+import { UpcomingSnapshotWidget } from "./widgets/caregiver/UpcomingSnapshotWidget";
+import { HomeResetQuickWidget } from "./widgets/caregiver/HomeResetQuickWidget";
 
 export interface WidgetSpec {
   type: WidgetType;
@@ -93,6 +102,14 @@ export const WIDGET_REGISTRY: Record<WidgetType, WidgetSpec> = {
   "home-overdue": { type: "home-overdue", title: "Overdue maintenance", icon: Wrench, defaultSize: { w: 4, h: 5 }, Component: HomeOverdueWidget, pageHref: "/home-areas" },
   cycle: { type: "cycle", title: "Cyclical living", icon: Heart, defaultSize: { w: 4, h: 5 }, Component: CycleWidget, bare: true, pageHref: "/settings" },
   "rhythm-forecast": { type: "rhythm-forecast", title: "Rhythm forecast", icon: Moon, defaultSize: { w: 4, h: 5 }, Component: RhythmForecastWidget, bare: true, pageHref: "/today" },
+  "moon-guidance-hero": { type: "moon-guidance-hero", title: "Moon guidance", icon: Moon, defaultSize: { w: 12, h: 6 }, Component: MoonGuidanceHero, bare: true },
+  "who-needs-me": { type: "who-needs-me", title: "Who needs me today", icon: Hand, defaultSize: { w: 6, h: 6 }, Component: WhoNeedsMeWidget, quickAddEvent: "task" },
+  "todays-focus": { type: "todays-focus", title: "Today's focus", icon: Target, defaultSize: { w: 6, h: 6 }, Component: TodaysFocusWidget, pageHref: "/today", quickAddEvent: "task" },
+  "whats-for-dinner": { type: "whats-for-dinner", title: "What's for dinner", icon: Utensils, defaultSize: { w: 6, h: 6 }, Component: WhatsForDinnerWidget, pageHref: "/meals", quickAddEvent: "meal" },
+  "mental-load-dump": { type: "mental-load-dump", title: "Mental load dump", icon: Brain, defaultSize: { w: 6, h: 5 }, Component: MentalLoadDumpWidget },
+  "mom-checkin": { type: "mom-checkin", title: "Mom check-in", icon: Sun, defaultSize: { w: 6, h: 6 }, Component: MomCheckinWidget },
+  "upcoming-snapshot": { type: "upcoming-snapshot", title: "Upcoming", icon: CalendarClock, defaultSize: { w: 6, h: 5 }, Component: UpcomingSnapshotWidget, pageHref: "/calendar", quickAddEvent: "appointment" },
+  "home-reset-quick": { type: "home-reset-quick", title: "Home reset", icon: Sparkle, defaultSize: { w: 6, h: 5 }, Component: HomeResetQuickWidget, pageHref: "/home-reset", quickAddEvent: "cleaning" },
 };
 
 export const ALL_WIDGET_TYPES = Object.keys(WIDGET_REGISTRY) as WidgetType[];
