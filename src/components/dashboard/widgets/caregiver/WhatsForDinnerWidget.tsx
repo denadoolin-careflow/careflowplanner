@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStore, todayISO } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Soup, Refresh, Sparkles, ShoppingBasket, Plus, Loader2, Heart } from "lucide-react";
+import { Soup, RefreshCw, Sparkles, ShoppingBasket, Plus, Loader2, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { suggestDinners, type DinnerSuggestion, type DinnerFilter } from "@/lib/dinner-suggester";
 import { listPantry, type PantryItem, saveFavorite, applyFavoriteToSlot } from "@/lib/meal-ai";
@@ -12,8 +12,7 @@ import { loadCheckin } from "@/lib/caregiver-checkins";
 import { energyBanner } from "@/lib/caregiver-checkin-copy";
 import { toast } from "sonner";
 
-// lucide doesn't export Refresh on all versions — use a tiny shim if needed
-const RefreshIcon = (Refresh as any) ?? Sparkles;
+const RefreshIcon = RefreshCw;
 
 const FILTERS: { id: DinnerFilter; label: string; emoji: string }[] = [
   { id: "toddler",    label: "Toddler",    emoji: "👶" },
