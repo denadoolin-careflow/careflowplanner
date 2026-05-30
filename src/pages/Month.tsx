@@ -543,9 +543,6 @@ export default function Month() {
 
           {sheetISO && (() => {
             const items = eventsOn(sheetISO);
-            if (items.length === 0) {
-              return <p className="mt-6 text-sm text-muted-foreground">Nothing on this day.</p>;
-            }
             const partOf = (hm?: string | null): "morning" | "afternoon" | "evening" | "allday" => {
               if (!hm || !/^\d{2}:\d{2}/.test(hm)) return "allday";
               const h = parseInt(hm.slice(0, 2), 10);
