@@ -252,9 +252,9 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               <div className="flex items-center justify-between gap-2 pb-1">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
                   <ListTree className="h-3 w-3" /> Subtasks
-                  {subtasks.length > 0 && (
+                  {realSubtasks.length > 0 && (
                     <span className="ml-1 rounded-full bg-muted px-1.5 py-px text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
-                      {subtasks.filter(s => s.done).length}/{subtasks.length}
+                      {realSubtasks.filter(s => s.done).length}/{realSubtasks.length}
                     </span>
                   )}
                 </div>
