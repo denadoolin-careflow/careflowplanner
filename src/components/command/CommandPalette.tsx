@@ -62,7 +62,7 @@ export function CommandPalette() {
                 <CommandItem
                   key={a.id}
                   value={`area ${a.name}`}
-                  onSelect={() => run(() => navigate(`/areas/${a.id}`))}
+                  onSelect={() => run(() => navigate(`/areas/${encodeURIComponent(a.name)}`))}
                 >
                   <LayoutGrid className="mr-2 h-4 w-4 text-muted-foreground" />
                   {a.name}
