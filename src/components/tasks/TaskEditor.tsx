@@ -148,6 +148,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   };
 
   const subtasks = (state.tasks ?? []).filter(t => t.parentTaskId === draft.id);
+  const realSubtasks = subtasks.filter(s => !/^##\s+/.test(s.title));
 
   const addSubtaskNow = async (title: string) => {
     const t = title.trim();
