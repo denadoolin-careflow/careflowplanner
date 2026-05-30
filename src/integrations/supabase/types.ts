@@ -699,6 +699,54 @@ export type Database = {
         }
         Relationships: []
       }
+      caregiver_checkins: {
+        Row: {
+          created_at: string
+          date: string
+          energy: number | null
+          food: boolean
+          id: string
+          meds: boolean
+          mood: string | null
+          movement: boolean
+          outside: boolean
+          sleep_hours: number | null
+          updated_at: string
+          user_id: string
+          water: boolean
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          energy?: number | null
+          food?: boolean
+          id?: string
+          meds?: boolean
+          mood?: string | null
+          movement?: boolean
+          outside?: boolean
+          sleep_hours?: number | null
+          updated_at?: string
+          user_id: string
+          water?: boolean
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          energy?: number | null
+          food?: boolean
+          id?: string
+          meds?: boolean
+          mood?: string | null
+          movement?: boolean
+          outside?: boolean
+          sleep_hours?: number | null
+          updated_at?: string
+          user_id?: string
+          water?: boolean
+        }
+        Relationships: []
+      }
       caregiving_chores: {
         Row: {
           area: string | null
