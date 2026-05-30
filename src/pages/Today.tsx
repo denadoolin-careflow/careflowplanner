@@ -41,6 +41,7 @@ import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashb
 import { cn } from "@/lib/utils";
 import { TodayEnergy } from "@/components/today/TodayEnergy";
 import { DailyBrief } from "@/components/today/DailyBrief";
+import { MobileTodayCard } from "@/components/today/MobileTodayCard";
 import { EndOfDaySummary } from "@/components/today/EndOfDaySummary";
 import { WeatherHeroCard } from "@/components/today/WeatherHeroCard";
 import { CarePriorities } from "@/components/today/CarePriorities";
@@ -150,7 +151,10 @@ function TodayInner() {
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-6">
         <CareLoopIndicator active="anchor" />
-        <div className="cozy-card overflow-hidden">
+        <div className="md:hidden">
+          <MobileTodayCard date={today} onTaskClick={setEditTaskId} />
+        </div>
+        <div className="cozy-card hidden overflow-hidden md:block">
           <div className="relative gradient-calm p-6">
             <div
               aria-hidden
