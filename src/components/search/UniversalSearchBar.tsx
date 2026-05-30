@@ -81,8 +81,10 @@ export function UniversalSearchBar() {
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="flex items-center gap-2">
-          Search tasks, notes, projects…
+          Search & brain dump
           <kbd className="rounded border border-border/60 bg-muted/50 px-1.5 text-[10px] font-mono">⌘K</kbd>
+          <span className="text-muted-foreground">·</span>
+          <span className="text-muted-foreground">⌘J jump</span>
         </TooltipContent>
       </Tooltip>
 
