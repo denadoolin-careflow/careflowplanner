@@ -288,12 +288,34 @@ export function useDashboardLayout(page: PageKey) {
         const lc = readLayoutCol((row as any).layout);
         const widgets: WidgetInstance[] = (row as any).widgets;
         const layout = lc.items;
-        // Auto-add the Home reset checklist widget for existing users on the home page.
+        // Auto-add new caregiver widgets + Home reset checklist for existing users.
+        const autoAdd: { type: WidgetType; w: number; h: number }[] = [];
         if (page === "home" && !widgets.some((w) => w.type === "home-reset-checklist")) {
-          const id = uid();
-          widgets.push({ id, type: "home-reset-checklist" });
-          const maxY = layout.reduce((m, l) => Math.max(m, l.y + l.h), 0);
-          layout.push({ i: id, x: 0, y: maxY, w: 8, h: 6, minW: 3, minH: 3 });
+          autoAdd.push({ type: "home-reset-checklist", w: 8, h: 6 });
+        }
+        if (page === "home" || page === "today") {
+          const caregiver: { type: WidgetType; w: number; h: number }[] = [
+            { type: "moon-guidance-hero", w: 12, h: 6 },
+            { type: "mom-checkin", w: 6, h: 6 },
+            { type: "who-needs-me", w: 6, h: 6 },
+            { type: "todays-focus", w: 6, h: 6 },
+            { type: "whats-for-dinner", w: 6, h: 6 },
+            { type: "upcoming-snapshot", w: 6, h: 5 },
+            { type: "home-reset-quick", w: 6, h: 5 },
+            { type: "mental-load-dump", w: 12, h: 5 },
+          ];
+          for (const c of caregiver) {
+            if (!widgets.some((w) => w.type === c.type)) autoAdd.push(c);
+          }
+        }
+        if (autoAdd.length) {
+          let maxY = layout.reduce((m, l) => Math.max(m, l.y + l.h), 0);
+          for (const a of autoAdd) {
+            const id = uid();
+            widgets.push({ id, type: a.type });
+            layout.push({ i: id, x: 0, y: maxY, w: a.w, h: a.h, minW: 3, minH: 3 });
+            maxY += a.h;
+          }
           const next = { widgets, layout, pageTheme: lc.pageTheme };
           setData(next);
           upsertRow(page, preset, next).catch(() => {});
