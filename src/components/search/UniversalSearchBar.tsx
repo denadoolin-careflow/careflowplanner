@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ShoppingBasket, Plus } from "lucide-react";
+import { Search, ShoppingBasket, Plus, Mic } from "lucide-react";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator,
 } from "@/components/ui/command";
@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useStore } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
 
 type NoteHit = { id: string; title: string; body: string };
 
@@ -15,6 +16,7 @@ export function UniversalSearchBar() {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [notes, setNotes] = useState<NoteHit[]>([]);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const { state, addGrocery } = useStore();
   const navigate = useNavigate();
 
@@ -79,8 +81,10 @@ export function UniversalSearchBar() {
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="flex items-center gap-2">
-          Search tasks, notes, projects…
+          Search & brain dump
           <kbd className="rounded border border-border/60 bg-muted/50 px-1.5 text-[10px] font-mono">⌘K</kbd>
+          <span className="text-muted-foreground">·</span>
+          <span className="text-muted-foreground">⌘J jump</span>
         </TooltipContent>
       </Tooltip>
 
@@ -88,6 +92,17 @@ export function UniversalSearchBar() {
         <CommandInput placeholder="Search tasks, notes, projects, events, meals…" value={q} onValueChange={setQ} />
         <CommandList>
           <CommandEmpty>{term ? "Nothing found." : "Type to search across everything."}</CommandEmpty>
+
+          <CommandGroup heading="Capture">
+            <CommandItem
+              value="__brain-dump"
+              onSelect={() => { setOpen(false); setVoiceOpen(true); }}
+            >
+              <Mic className="mr-2 h-4 w-4 text-primary" />
+              <span>Brain dump (voice capture)</span>
+              <kbd className="ml-auto rounded border border-border/60 bg-muted/50 px-1.5 text-[10px] font-mono">⌘K</kbd>
+            </CommandItem>
+          </CommandGroup>
 
           {term && (
             <CommandGroup heading="Quick add">
@@ -193,6 +208,7 @@ export function UniversalSearchBar() {
           )}
         </CommandList>
       </CommandDialog>
+      <VoiceCaptureDialog open={voiceOpen} onOpenChange={setVoiceOpen} />
     </>
   );
 }

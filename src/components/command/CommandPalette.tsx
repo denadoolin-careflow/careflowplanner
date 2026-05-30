@@ -5,23 +5,23 @@ import {
 } from "@/components/ui/command";
 import { NAV } from "@/lib/nav";
 import { useStore } from "@/lib/store";
-import { Plus, Inbox, Search } from "lucide-react";
-import { toast } from "sonner";
+import { Inbox, Search, LayoutGrid } from "lucide-react";
 
 /**
- * Global Cmd-K / Ctrl-K command palette.
- * Navigate anywhere, quick-add a task to the Inbox, or jump to a project.
+ * Global Cmd-J / Ctrl-J jump palette.
+ * Jump straight to any page, area, or project.
+ * (Cmd-K is reserved for Universal Search + Brain Dump.)
  */
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const navigate = useNavigate();
-  const { state, addTask } = useStore();
+  const { state } = useStore();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
-      if (mod && (e.key === "k" || e.key === "K")) {
+      if (mod && (e.key === "j" || e.key === "J")) {
         e.preventDefault();
         setOpen((v) => !v);
       }
@@ -32,30 +32,14 @@ export function CommandPalette() {
 
   const run = (fn: () => void) => { setOpen(false); setQ(""); fn(); };
 
-  const quickAdd = async () => {
-    const title = q.trim();
-    if (!title) return;
-    await addTask({ title, inbox: true });
-    toast.success(`Added to Inbox: ${title}`);
-    run(() => navigate("/inbox"));
-  };
-
   const projects = (state.projects ?? []).filter((p: any) => !p.archivedAt).slice(0, 8);
+  const areas = (state.areas ?? []).filter((a: any) => !a.isArchived).slice(0, 12);
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput value={q} onValueChange={setQ} placeholder="Search, jump, or add a task…" />
+      <CommandInput value={q} onValueChange={setQ} placeholder="Jump to a page, area, or project…" />
       <CommandList>
         <CommandEmpty>No matches.</CommandEmpty>
-
-        {q.trim() && (
-          <CommandGroup heading="Quick add">
-            <CommandItem value={`__add__ ${q}`} onSelect={quickAdd}>
-              <Plus className="mr-2 h-4 w-4 text-primary" />
-              Add task to Inbox: <span className="ml-1 font-medium">"{q.trim()}"</span>
-            </CommandItem>
-          </CommandGroup>
-        )}
 
         <CommandGroup heading="Go to">
           {NAV.map((n) => (
@@ -69,6 +53,24 @@ export function CommandPalette() {
             </CommandItem>
           ))}
         </CommandGroup>
+
+        {areas.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Areas">
+              {areas.map((a: any) => (
+                <CommandItem
+                  key={a.id}
+                  value={`area ${a.name}`}
+                  onSelect={() => run(() => navigate(`/areas/${encodeURIComponent(a.name)}`))}
+                >
+                  <LayoutGrid className="mr-2 h-4 w-4 text-muted-foreground" />
+                  {a.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
 
         {projects.length > 0 && (
           <>
@@ -92,7 +94,7 @@ export function CommandPalette() {
         <CommandGroup heading="Tips">
           <CommandItem disabled value="__tip__">
             <Search className="mr-2 h-4 w-4" />
-            Press ⌘K / Ctrl-K anywhere to open this palette
+            ⌘J jumps · ⌘K opens search + brain dump
           </CommandItem>
         </CommandGroup>
       </CommandList>

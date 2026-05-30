@@ -11,6 +11,7 @@ import { personalGreeting } from "@/lib/greeting";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import type { WeatherCondition } from "@/lib/weather";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 function WxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-4 w-4", className);
@@ -41,6 +42,7 @@ export function MobileTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
   const [unit] = useTempUnit();
   const navigate = useNavigate();
   const now = useNow();
+  const [wxOpen, setWxOpen] = useState(false);
 
   const iso = format(date, "yyyy-MM-dd");
   const forecast = useMemo(() => getRhythmForecast(date), [date]);
@@ -131,11 +133,17 @@ export function MobileTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
 
         {/* Weather */}
         {wx && (
-          <p className="mt-1.5 flex items-center justify-center gap-1.5 text-[12px] text-foreground/80">
+          <button
+            type="button"
+            onClick={() => setWxOpen(true)}
+            className="mx-auto mt-1.5 flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[12px] text-foreground/80 transition hover:bg-muted/50"
+            aria-label="Open weather forecast"
+          >
             <WxIcon c={wx.condition} />
             <span className="tabular-nums">{fmtT(wx.highC)}</span>
             <span className="text-muted-foreground">{wx.label}</span>
-          </p>
+            <ChevronRight className="h-3 w-3 opacity-60" />
+          </button>
         )}
 
         <Divider />
@@ -227,7 +235,7 @@ export function MobileTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
           </button>
           <button
             type="button"
-            onClick={() => navigate("/today?view=weather")}
+            onClick={() => setWxOpen(true)}
             className="rounded-full border border-border/60 bg-card/70 px-3 py-1.5 text-[12px] text-foreground/85 transition hover:bg-card"
           >
             🌤 Weather
@@ -241,6 +249,31 @@ export function MobileTodayCard({ date, onTaskClick }: { date: Date; onTaskClick
           </button>
         </div>
       </div>
+      <Sheet open={wxOpen} onOpenChange={setWxOpen}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
+          <SheetHeader className="text-left">
+            <SheetTitle>This week's weather</SheetTitle>
+          </SheetHeader>
+          <ul className="mt-4 divide-y divide-border/50">
+            {(days ?? []).map(d => (
+              <li key={d.date} className="flex items-center gap-3 py-2.5 text-sm">
+                <WxIcon c={d.condition} className="h-5 w-5 text-foreground/80" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium">{format(new Date(d.date + "T00:00:00"), "EEE, MMM d")}</div>
+                  <div className="truncate text-xs text-muted-foreground">{d.label}</div>
+                </div>
+                <div className="shrink-0 text-right tabular-nums">
+                  <div className="font-medium">{fmtT(d.highC)}</div>
+                  <div className="text-xs text-muted-foreground">{fmtT(d.lowC)}</div>
+                </div>
+              </li>
+            ))}
+            {(!days || days.length === 0) && (
+              <li className="py-6 text-center text-sm text-muted-foreground">No forecast available.</li>
+            )}
+          </ul>
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }

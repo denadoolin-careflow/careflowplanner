@@ -43,6 +43,7 @@ import { useWeekForecast } from "@/lib/use-week-forecast";
 import { useTempUnit, cToF } from "@/lib/weather-store";
 import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap } from "lucide-react";
 import type { WeatherCondition } from "@/lib/weather";
+import { DayDetailExtras } from "@/components/calendar/DayDetailExtras";
 
 function MonthWxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-2.5 w-2.5 sm:h-3 sm:w-3", className);
@@ -540,11 +541,10 @@ export default function Month() {
             );
           })()}
 
+          {sheetISO && <DayDetailExtras iso={sheetISO} />}
+
           {sheetISO && (() => {
             const items = eventsOn(sheetISO);
-            if (items.length === 0) {
-              return <p className="mt-6 text-sm text-muted-foreground">Nothing on this day.</p>;
-            }
             const partOf = (hm?: string | null): "morning" | "afternoon" | "evening" | "allday" => {
               if (!hm || !/^\d{2}:\d{2}/.test(hm)) return "allday";
               const h = parseInt(hm.slice(0, 2), 10);
