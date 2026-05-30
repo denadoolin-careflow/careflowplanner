@@ -43,6 +43,7 @@ import { useWeekForecast } from "@/lib/use-week-forecast";
 import { useTempUnit, cToF } from "@/lib/weather-store";
 import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap } from "lucide-react";
 import type { WeatherCondition } from "@/lib/weather";
+import { DayDetailExtras } from "@/components/calendar/DayDetailExtras";
 
 function MonthWxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-2.5 w-2.5 sm:h-3 sm:w-3", className);
