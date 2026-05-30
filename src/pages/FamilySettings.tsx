@@ -39,6 +39,8 @@ export default function FamilySettings() {
         await refresh();
         await switchHousehold(h.id);
       }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not create household");
     } finally { setBusy(false); }
   };
 
