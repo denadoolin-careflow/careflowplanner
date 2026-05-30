@@ -93,18 +93,21 @@ function parseRowName(name: string): { page: string; preset: string } {
 export function defaultLayout(page: PageKey): DashboardLayoutData {
   if (page === "home") {
     const items: { type: WidgetType; w: number; h: number }[] = [
-      { type: "task-progress", w: 6, h: 4 },
-      { type: "pomodoro", w: 6, h: 4 },
+      { type: "moon-guidance-hero", w: 12, h: 6 },
+      { type: "mom-checkin", w: 6, h: 6 },
+      { type: "who-needs-me", w: 6, h: 6 },
+      { type: "todays-focus", w: 6, h: 6 },
+      { type: "whats-for-dinner", w: 6, h: 6 },
+      { type: "upcoming-snapshot", w: 6, h: 5 },
+      { type: "home-reset-quick", w: 6, h: 5 },
+      { type: "mental-load-dump", w: 12, h: 5 },
       { type: "weather", w: 8, h: 5 },
-      { type: "moon", w: 4, h: 5 },
-      { type: "top3", w: 4, h: 5 },
+      { type: "task-progress", w: 4, h: 5 },
       { type: "rhythm", w: 4, h: 5 },
       { type: "rhythm-forecast", w: 4, h: 5 },
       { type: "appointments-today", w: 4, h: 5 },
       { type: "meals-today", w: 4, h: 5 },
       { type: "habits-today", w: 4, h: 5 },
-      { type: "home-reset", w: 4, h: 5 },
-      { type: "home-reset-checklist", w: 8, h: 6 },
       { type: "family-tasks", w: 4, h: 5 },
       { type: "care-checkins", w: 4, h: 5 },
       { type: "birthdays", w: 4, h: 5 },
@@ -148,15 +151,18 @@ export function defaultLayout(page: PageKey): DashboardLayoutData {
   }
   if (page === "today") {
     return packLayout([
+      { type: "moon-guidance-hero", w: 12, h: 6 },
+      { type: "mom-checkin", w: 6, h: 6 },
+      { type: "who-needs-me", w: 6, h: 6 },
+      { type: "todays-focus", w: 6, h: 6 },
+      { type: "whats-for-dinner", w: 6, h: 6 },
+      { type: "upcoming-snapshot", w: 6, h: 5 },
+      { type: "home-reset-quick", w: 6, h: 5 },
+      { type: "mental-load-dump", w: 12, h: 5 },
       { type: "task-progress", w: 6, h: 4 },
       { type: "pomodoro", w: 6, h: 4 },
-      { type: "moon", w: 6, h: 5 },
-      { type: "top3", w: 6, h: 5 },
-      { type: "appointments-today", w: 6, h: 5 },
-      { type: "meals-today", w: 6, h: 5 },
       { type: "habits-today", w: 6, h: 5 },
-      { type: "note", w: 6, h: 5, props: { title: "Today's notes", body: "" } } as any,
-      { type: "mini-tasks", w: 6, h: 5, props: { title: "Quick list", items: [] } } as any,
+      { type: "appointments-today", w: 6, h: 5 },
     ]);
   }
   // week
