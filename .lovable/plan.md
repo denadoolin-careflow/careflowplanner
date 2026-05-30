@@ -1,50 +1,86 @@
-# Offline + Installable App Plan
 
-Add Progressive Web App (PWA) support so CareFlow can be installed to a phone/desktop home screen and the UI loads without an internet connection. Data (tasks, meals, etc.) still requires connectivity since it lives in Lovable Cloud — only the app shell and static assets are cached.
+## Scope
 
-## Important caveats (please read)
+Seven related improvements across Tasks, Calendar, Today, and global shortcuts. All UI / presentation work — no schema changes.
 
-- Offline features only work in the **published** app (careflowplanner.app), not in the Lovable editor preview. The service worker is deliberately disabled inside the preview iframe to avoid serving stale builds.
-- Writes made while offline will fail; we won't queue them. When the connection returns, the app simply works again.
-- Already-loaded pages remain usable; uncached data fetches will show normal loading/error states.
+---
 
-## What gets built
+## 1. Sections inside subtasks
 
-1. **PWA plumbing**
-   - Add `vite-plugin-pwa` and configure it in `vite.config.ts` with `registerType: "autoUpdate"` and `devOptions.enabled: false`.
-   - Workbox config: `NetworkFirst` for HTML navigations (so new deploys take over quickly), `navigateFallbackDenylist` for `/~oauth` and Supabase auth callbacks, cache static assets + Google Fonts.
+In the task editor (`src/components/tasks/TaskEditor*` / subtask list):
+- Allow grouping subtasks under user-named **sections** (e.g. "Prep", "Cook", "Cleanup").
+- Reuse the existing `parentTaskId` model; store the section label on the subtask itself in a new optional `sectionLabel` field on `Task` (client-side only — stored in `notes` JSON tail or a dedicated column if already present; verify during build).
+- UI: a "＋ Add section" button above the subtask composer; sections render as collapsible headers with their subtasks beneath. Drag-to-reorder optional v2.
 
-2. **Web app manifest**
-   - Name: "CareFlow", short name: "CareFlow", `display: "standalone"`, themed to the app's primary color, `start_url: "/today"`.
-   - Generate icon set (192, 512, maskable, Apple touch icon) from existing branding.
-   - Add iOS-specific meta tags in `index.html` (apple-mobile-web-app-capable, status bar style, touch icon).
+## 2. Weather chip → opens weather
 
-3. **Registration guard** (`src/main.tsx`)
-   - Skip SW registration when running inside an iframe or on `lovableproject.com` / `id-preview--` hostnames.
-   - Proactively `unregister()` any existing SW in those contexts so the preview never serves a stale shell.
+On the mobile `MobileTodayCard` and any "55° Mostly Clear" chip:
+- Make the weather row a button. On click, scroll to / open the existing weather widget (`LunarPhaseWidget` neighborhood / `useWeekForecast`). If no on-page weather card exists in current view, open a `Sheet` with the week forecast.
 
-4. **Install prompt UX**
-   - Lightweight hook that captures the `beforeinstallprompt` event.
-   - Small "Install app" button surfaced in Settings (and dismissible toast on `/today` the first time it's available on mobile).
-   - iOS fallback: short instructions (Share → Add to Home Screen) since iOS doesn't fire the prompt event.
+## 3. Calendar day detail — richer day sheet
 
-5. **Update flow**
-   - On `autoUpdate`, when a new SW activates, show a Sonner toast: "New version available — refresh" with a reload action.
+When tapping a date in `CalendarPage` (or `Month`), open a `DayDetailSheet` that contains:
 
-## Technical notes
+```text
+┌─ Tue, Jun 3 ───────────────────────────┐
+│ 🌔 Waxing Gibbous 99% · Day 8 Follicular│
+│ 55° Mostly Clear                        │
+├─ Top 3 for the day ─────────────────────┤
+│ 1. [ placeholder — tap to write ]       │
+│ 2. [ placeholder — tap to write ]       │
+│ 3. [ placeholder — tap to write ]       │
+├─ Morning ───────────────────  + add ────┤
+│   • task / appt rows                    │
+├─ Afternoon ─────────────────  + add ────┤
+├─ Evening ───────────────────  + add ────┤
+├─ Meals ─────────────────────  + add ────┤
+│   breakfast / lunch / dinner slots      │
+├─ Routines & Habits ─────────────────────┤
+│   ▓▓▓▓▓░░░░  4 / 9 complete             │
+└─────────────────────────────────────────┘
+```
 
-- `base: "/"` stays as-is (served over HTTPS, not `file://`).
-- No changes to Supabase client, auth, or data layer.
-- No `selfDestroying` flag; we use the standard updateable SW pattern.
-- Icons generated as PNG assets under `public/icons/`.
+- **Per-section + button / inline composer** reusing `InlineTaskComposer` with `defaults={{ dueDate, dayPart }}`.
+- **Day parts** derived from `time` (morning <12, afternoon 12–17, evening ≥17, untimed → "Anytime").
+- **Meals section** pulls from `state.meals` filtered to that ISO date; "+ add" opens meal quick-add.
+- **Moon + cycle line** uses `getMoonPhase(date)` and `useCycle` for that date.
+- **Weather line** uses `useWeekForecast` lookup by date; hidden if out of forecast range.
+- **Top 3 tasks**: three tap-to-edit slots persisted via a small `daily_top3` key in `view_prefs` (localStorage-backed already in `useViewPrefs`); flag/star the underlying task when promoted.
+- **Routines & Habits progress**: count `habits` due that day vs `log[iso]`; same for active routines' steps. Render `Progress` bar + `N / M complete`.
 
-## Files touched
+## 4. ⌘K shortcut cleanup
 
-- `vite.config.ts` — add VitePWA plugin
-- `index.html` — manifest link, theme-color, apple meta tags
-- `public/icons/*` — new icon assets + `manifest.webmanifest` (generated)
-- `src/main.tsx` — guarded SW registration + update listener
-- `src/hooks/useInstallPrompt.ts` (new) — capture install event
-- `src/components/pwa/InstallAppButton.tsx` (new) — install button + iOS hint
-- `src/pages/Settings.tsx` — surface the install button
-- `package.json` — `vite-plugin-pwa` dependency
+Today two palettes mount (`CommandPalette` and `UniversalSearchBar`) — both bind `Cmd/Ctrl+K`, hence the "two options pop up".
+
+- Keep **⌘K = Universal Search + Voice / Brain Dump** (merge a "🎙 Brain dump" item at top of `UniversalSearchBar` that opens `VoiceCaptureDialog`).
+- Remove the `Cmd+K` listener from `CommandPalette` and rebind it to **⌘J = Jump to Area / Page** (NAV + projects + areas).
+- Update tooltips and the in-palette "Tips" footer to reflect the new bindings.
+
+## 5. Mobile + desktop text overflow audit
+
+- `MobileTodayCard`, `DayDetailSheet`, calendar cells: apply `truncate` / `line-clamp-2` and responsive type scales.
+- Ensure section headings stay on one line at 360 px; tighten paddings; verify the greeting "GOOD MORNING, {NAME}" wraps cleanly when name is long.
+
+---
+
+## Files
+
+**New**
+- `src/components/calendar/DayDetailSheet.tsx`
+- `src/components/calendar/DaySectionList.tsx` (Morning/Afternoon/Evening/Meals blocks)
+- `src/components/calendar/DayTop3.tsx`
+- `src/components/calendar/DayRoutinesProgress.tsx`
+- `src/components/tasks/SubtaskSections.tsx`
+
+**Edited**
+- `src/components/today/MobileTodayCard.tsx` (clickable weather chip)
+- `src/components/command/CommandPalette.tsx` (rebind to ⌘J, drop ⌘K, scope to nav/areas/projects only)
+- `src/components/search/UniversalSearchBar.tsx` (add Brain dump entry, keep ⌘K)
+- `src/pages/CalendarPage.tsx` / `src/pages/Month.tsx` (wire day click → DayDetailSheet)
+- `src/components/tasks/TaskEditor*.tsx` (sections in subtask list)
+- `src/lib/types.ts` (optional `sectionLabel?: string` on Task; `dayPart?: 'morning'|'afternoon'|'evening'|'anytime'`)
+- Tailwind/typography passes on the above
+
+## Out of scope
+- No DB migrations (top-3 + sections stored client-side via existing prefs / notes).
+- No changes to billing, auth, or sync.
