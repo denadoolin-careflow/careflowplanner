@@ -34,7 +34,15 @@ export type WidgetType =
   | "chore-today"
   | "home-overdue"
   | "cycle"
-  | "rhythm-forecast";
+  | "rhythm-forecast"
+  | "moon-guidance-hero"
+  | "who-needs-me"
+  | "todays-focus"
+  | "whats-for-dinner"
+  | "mental-load-dump"
+  | "mom-checkin"
+  | "upcoming-snapshot"
+  | "home-reset-quick";
 
 export interface WidgetInstance {
   id: string;
