@@ -72,18 +72,12 @@ export async function listInvites(householdId: string): Promise<HouseholdInvite[
 }
 
 export async function createHousehold(name: string, userId: string): Promise<Household | null> {
-  const { data, error } = await supabase
-    .from("households" as any)
-    .insert({ name, created_by: userId })
-    .select()
-    .single();
-  if (error || !data) return null;
-  await supabase.from("household_users" as any).insert({
-    household_id: (data as any).id,
-    user_id: userId,
-    role: "owner",
-  });
-  return data as unknown as Household;
+  const { data, error } = await supabase.rpc("create_household_with_owner" as any, { _name: name });
+  if (error) {
+    console.error("createHousehold failed", error);
+    throw error;
+  }
+  return (data as unknown as Household) ?? null;
 }
 
 export async function renameHousehold(id: string, name: string) {

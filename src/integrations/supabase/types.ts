@@ -5338,6 +5338,22 @@ export type Database = {
     }
     Functions: {
       accept_household_invite: { Args: { _token: string }; Returns: string }
+      create_household_with_owner: {
+        Args: { _name: string }
+        Returns: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "households"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
