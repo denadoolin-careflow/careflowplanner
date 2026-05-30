@@ -22,6 +22,7 @@ import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/Time
 import { ArchetypeThemeSection } from "@/components/settings/ArchetypeThemeSection";
 import { AtmosphereFeelSection } from "@/components/settings/AtmosphereFeelSection";
 import { FontSection } from "@/components/settings/FontSection";
+import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import { useRhythmForecastEnabled, useRecommendationTone } from "@/lib/rhythm-forecast";
 import { MOON_PROVIDERS, useMoonProvider } from "@/lib/moon-providers";
 import { useEffect } from "react";
@@ -129,6 +130,14 @@ export default function Settings() {
           <Switch checked={state.settings.lowEnergyMode} onCheckedChange={setLowEnergyMode} />
           <Label className="text-sm">{state.settings.lowEnergyMode ? "On — only essentials shown" : "Off"}</Label>
         </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Install app"
+        subtitle="Add CareFlow to your home screen for offline access and a full-screen experience."
+        accent="warm"
+      >
+        <InstallAppButton />
       </SectionCard>
 
       <SectionCard
