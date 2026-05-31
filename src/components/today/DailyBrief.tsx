@@ -12,6 +12,7 @@ import { playCompletionChime } from "@/lib/completion-sound";
 import { toast } from "sonner";
 import { QuickTaskInlineEditor } from "@/components/tasks/QuickTaskInlineEditor";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { apptOccursOn } from "@/lib/appointment-range";
 
 const cacheKey = (iso: string) => `careflow:daily-brief:${iso}`;
 
@@ -40,7 +41,7 @@ export function DailyBrief({ date }: { date: Date }) {
     return { overdue, todays, tomorrow, upcoming };
   }, [state.tasks, iso, today]);
 
-  const appts = state.appointments.filter(a => a.date === iso);
+  const appts = state.appointments.filter(a => apptOccursOn(a, iso));
   const topThree = buckets.todays.filter(t => t.isTopThree).slice(0, 3);
 
   useEffect(() => {

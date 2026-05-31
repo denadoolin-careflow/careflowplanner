@@ -51,6 +51,7 @@ import { TodayHabitsCard } from "@/components/today/TodayHabitsCard";
 import { RoutinesPanel } from "@/components/today/RoutinesPanel";
 import { personalGreeting } from "@/lib/greeting";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
+import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 
 export default function Today() {
   return (
@@ -112,7 +113,11 @@ function TodayInner() {
   }, [clear]);
 
   const eventsOn = useCallback((k: string) => [
-    ...state.appointments.filter(a => a.date === k).map(a => ({ label: a.title, time: a.time, id: a.id, kind: "appt" as const })),
+    ...state.appointments.filter(a => apptOccursOn(a, k)).map(a => {
+      const m = apptRangeMeta(a, k);
+      const prefix = m.isMulti && !m.isStart ? (m.isEnd ? "↦ " : "· ") : "";
+      return { label: `${prefix}${a.title}`, time: m.isStart ? a.time : undefined, id: a.id, kind: "appt" as const };
+    }),
     ...state.tasks.filter(t => t.dueDate === k && !t.parentTaskId).map(t => ({
       label: t.title, time: undefined as string | undefined, id: t.id, kind: "task" as const, done: t.done,
     })),

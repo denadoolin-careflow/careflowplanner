@@ -14,6 +14,7 @@ import { playCompletionChime } from "@/lib/completion-sound";
 import { listMemories, memoryTypeMeta, type Memory } from "@/lib/memories";
 import { QuickTaskInlineEditor } from "@/components/tasks/QuickTaskInlineEditor";
 import { CycleNotificationsSection } from "@/components/cycle/CycleNotificationsSection";
+import { apptOccursOn } from "@/lib/appointment-range";
 
 export function NotificationCenter() {
   const { state, toggleTask, updateTask } = useStore();
@@ -61,7 +62,7 @@ export function NotificationCenter() {
       else if (isBefore(d, today)) overdue.push(t);
       else if (isAfter(d, today) && isBefore(d, weekEnd)) upcoming.push(t);
     }
-    const todayAppts = state.appointments.filter(a => a.date === todayISO && !dismissed.has(a.id));
+    const todayAppts = state.appointments.filter(a => apptOccursOn(a, todayISO) && !dismissed.has(a.id));
     return { overdue, dueToday, dueTomorrow, upcoming, todayAppts };
   }, [state.tasks, state.appointments, todayISO, tomorrowISO, today, weekEnd, dismissed]);
 
