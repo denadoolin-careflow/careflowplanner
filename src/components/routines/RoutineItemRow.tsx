@@ -3,6 +3,7 @@ import { Clock, Play, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger as TooltipTriggerBase } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { formatTime12, routines as routinesApi, type RoutineItem, type RoutineSlot } from "@/lib/routines";
 import { IconPickerPopover } from "./IconPickerPopover";
