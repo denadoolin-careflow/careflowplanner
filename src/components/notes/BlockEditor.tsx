@@ -35,7 +35,7 @@ import TurndownService from "turndown";
 import {
   Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
-  ChevronRight, Palette, ListPlus,
+  ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
@@ -44,6 +44,23 @@ import { cn } from "@/lib/utils";
 import { linkNote, type EntityType } from "@/lib/note-links";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
+import { useTags } from "@/hooks/use-tags";
+import { updateNote } from "@/lib/notes";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+
+/** Hashtag scan: matches #word (Unicode letters/numbers/_/-), bounded by start/whitespace. */
+const HASHTAG_RE = /(?:^|\s)#([\p{L}\p{N}_-]{1,40})/gu;
+export function extractHashtagsFromText(text: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const m of text.matchAll(HASHTAG_RE)) {
+    const n = m[1];
+    const k = n.toLowerCase();
+    if (!seen.has(k)) { seen.add(k); out.push(n); }
+  }
+  return out;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Markdown <-> HTML helpers (storage compat with existing notes)    */
@@ -329,6 +346,79 @@ const HIGHLIGHT_COLORS = [
 function ColorPickerPopover({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
   const active = editor.getAttributes("textStyle").color || editor.getAttributes("highlight").color;
+  return ColorPickerPopoverInner(editor, open, setOpen, active);
+}
+
+function BubbleTagPicker({ tagNames, onPick }: { tagNames: string[]; onPick: (name: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const filtered = q
+    ? tagNames.filter(n => n.toLowerCase().includes(q.toLowerCase())).slice(0, 8)
+    : tagNames.slice(0, 8);
+  const exact = !!q && tagNames.some(n => n.toLowerCase() === q.toLowerCase());
+  return (
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQ(""); }}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title="Insert #tag"
+          aria-label="Insert tag"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setOpen(o => !o)}
+          className={cn(
+            "h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-md transition",
+            open ? "bg-primary/15 text-primary" : "hover:bg-muted/60 text-muted-foreground",
+          )}
+        >
+          <TagIcon className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-64 p-2"
+        onMouseDown={(e) => e.preventDefault()}
+      >
+        <Input
+          autoFocus
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Find or create #tag"
+          className="h-8 text-xs"
+        />
+        <div className="mt-1 max-h-56 overflow-y-auto">
+          {q && !exact && (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { onPick(q); setOpen(false); setQ(""); }}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60"
+            >
+              <Plus className="h-3.5 w-3.5 text-primary" />
+              <span>Create <span className="font-medium">#{q.replace(/^#+/, "")}</span></span>
+            </button>
+          )}
+          {filtered.map(name => (
+            <button
+              key={name}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { onPick(name); setOpen(false); setQ(""); }}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60"
+            >
+              <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-medium">{name}</span>
+            </button>
+          ))}
+          {!q && filtered.length === 0 && (
+            <p className="px-2 py-2 text-[11px] text-muted-foreground">No tags yet. Start typing to create one.</p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ColorPickerPopoverInner(editor: Editor, open: boolean, setOpen: (b: boolean | ((o: boolean) => boolean)) => void, active: any) {
   return (
     <div className="relative">
       <button
@@ -424,12 +514,45 @@ export function BlockEditor({
   const { state, addTask } = useStore();
   const navigate = useNavigate();
   const [prefs] = useEditorPrefs();
+  const { tags: registeredTags } = useTags();
   const refsRef = useRef<RefItem[]>([]);
   refsRef.current = useMemo(() => buildReferences(state), [state]);
   const lastSyncedRef = useRef<string>(body);
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
   const promoteRef = useRef<() => void>(() => {});
+
+  // Union of registered tag names and orphan tag names across data,
+  // so the `#` autocomplete surfaces everything the user has ever used.
+  const tagNamesRef = useRef<string[]>([]);
+  tagNamesRef.current = useMemo(() => {
+    const set = new Set<string>();
+    registeredTags.forEach(t => set.add(t.name));
+    (state.tasks ?? []).forEach(t => (t.tags ?? []).forEach(n => set.add(n)));
+    (state.projects ?? []).forEach(p => ((p as any).tags ?? []).forEach((n: string) => set.add(n)));
+    (state.grocery ?? []).forEach(g => (g.tags ?? []).forEach(n => set.add(n)));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [registeredTags, state.tasks, state.projects, state.grocery]);
+
+  // Debounced sync of body-extracted #tags into note.tags.
+  const tagSyncTimer = useRef<number | null>(null);
+  const lastTagSetRef = useRef<string>("");
+  const syncBodyTags = useCallback((markdown: string) => {
+    if (!noteIdRef.current) return;
+    if (tagSyncTimer.current) window.clearTimeout(tagSyncTimer.current);
+    tagSyncTimer.current = window.setTimeout(async () => {
+      const found = extractHashtagsFromText(markdown);
+      if (!found.length) return;
+      const sig = found.map(s => s.toLowerCase()).sort().join(",");
+      if (sig === lastTagSetRef.current) return;
+      lastTagSetRef.current = sig;
+      // Merge with whatever tags are already on the note.
+      const existing = (state as any).notesTagsCache?.[noteIdRef.current!] ?? [];
+      const merged = Array.from(new Set([...existing, ...found].map(s => s)))
+        .filter((v, i, arr) => arr.findIndex(x => x.toLowerCase() === v.toLowerCase()) === i);
+      try { await updateNote(noteIdRef.current!, { tags: merged }); } catch {}
+    }, 800) as unknown as number;
+  }, [state]);
 
   const slashExtension = useMemo(() => Extension.create({
     name: "slashCommand",
@@ -616,6 +739,62 @@ export function BlockEditor({
     },
   }), []);
 
+  type HashItem = { name: string; create?: boolean };
+  const hashtagExtension = useMemo(() => Extension.create({
+    name: "hashtagMention",
+    addProseMirrorPlugins() {
+      return [makeSuggestion<HashItem>(this.editor as Editor, {
+        char: "#",
+        pluginKey: new PluginKey("hashtagSuggestion"),
+        getItems: (query) => {
+          const q = query.trim().toLowerCase();
+          const pool = tagNamesRef.current;
+          const matches = q
+            ? pool.filter(n => n.toLowerCase().includes(q)).slice(0, 8)
+            : pool.slice(0, 8);
+          const exact = !!q && pool.some(n => n.toLowerCase() === q);
+          const items: HashItem[] = matches.map(name => ({ name }));
+          if (q && !exact) items.unshift({ name: query, create: true });
+          return items;
+        },
+        onSelect: (item, range, editor) => {
+          const name = item.name.trim().replace(/^#+/, "");
+          if (!name) return;
+          const href = `/tags/${encodeURIComponent(name)}`;
+          editor.chain().focus().deleteRange(range)
+            .insertContent({
+              type: "text",
+              text: `#${name}`,
+              marks: [{ type: "link", attrs: { href, class: "tag-chip" } }],
+            })
+            .insertContent(" ")
+            .run();
+          // Persist on the note record so it appears on the tag hub immediately.
+          if (noteIdRef.current) {
+            const text = (editor.getText?.() ?? "") + ` #${name}`;
+            const all = extractHashtagsFromText(text);
+            updateNote(noteIdRef.current, { tags: all }).catch(() => {});
+          }
+        },
+        render: (item, active) => (
+          <span className="flex items-center gap-2">
+            <span className={cn("flex h-7 w-7 items-center justify-center rounded-md", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>
+              {item.create ? <Plus className="h-3.5 w-3.5" /> : <Hash className="h-3.5 w-3.5" />}
+            </span>
+            <span className="flex-1">
+              <span className="block font-medium leading-tight">
+                {item.create ? `Create #${item.name}` : `#${item.name}`}
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                {item.create ? "New tag" : "Tag"}
+              </span>
+            </span>
+          </span>
+        ),
+      })];
+    },
+  }), []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -638,6 +817,7 @@ export function BlockEditor({
       }),
       slashExtension,
       refExtension,
+      hashtagExtension,
       toggleKeymap,
     ],
     content: bodyToHtml(body),
@@ -661,6 +841,7 @@ export function BlockEditor({
       const md = htmlToMarkdown(html);
       lastSyncedRef.current = md;
       onChange(md, html);
+      syncBodyTags(md);
     },
   }, []);
 
@@ -744,6 +925,51 @@ export function BlockEditor({
   }, [editor, addTask]);
   promoteRef.current = promoteTaskItemToTask;
 
+  /** Turn the current selection into a real Task and tag the chip. */
+  const promoteSelectionToTask = useCallback(() => {
+    if (!editor) return;
+    const { from, to, empty } = editor.state.selection;
+    if (empty) { toast.message("Select some text first"); return; }
+    const text = editor.state.doc.textBetween(from, to, " ").trim();
+    if (!text) { toast.message("Select some text first"); return; }
+    const inlineTags = extractHashtagsFromText(text);
+    const cleanTitle = text.replace(HASHTAG_RE, " ").replace(/\s+/g, " ").trim();
+    void addTask({ title: cleanTitle || text, tags: inlineTags });
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from, to })
+      .setLink({ href: "/anytime", class: "task-chip" } as any)
+      .setTextSelection(to)
+      .unsetMark("link")
+      .run();
+    toast.success("Added to Tasks", { description: cleanTitle || text });
+  }, [editor, addTask]);
+
+  /** Insert a #tag chip at the end of the selection without overwriting it. */
+  const insertTagAtSelection = useCallback((name: string) => {
+    if (!editor || !name.trim()) return;
+    const cleaned = name.trim().replace(/^#+/, "");
+    const href = `/tags/${encodeURIComponent(cleaned)}`;
+    const { to } = editor.state.selection;
+    editor
+      .chain()
+      .focus()
+      .setTextSelection(to)
+      .insertContent(" ")
+      .insertContent({
+        type: "text",
+        text: `#${cleaned}`,
+        marks: [{ type: "link", attrs: { href, class: "tag-chip" } }],
+      })
+      .insertContent(" ")
+      .run();
+    if (noteIdRef.current) {
+      const text = (editor.getText?.() ?? "") + ` #${cleaned}`;
+      updateNote(noteIdRef.current, { tags: extractHashtagsFromText(text) }).catch(() => {});
+    }
+  }, [editor]);
+
   return (
     <div
       onClick={handleClick}
@@ -766,7 +992,7 @@ export function BlockEditor({
       {editor && (
         <BubbleMenu
           editor={editor}
-          className="flex items-center gap-0.5 rounded-xl border border-border/60 bg-popover/95 px-1 py-1 shadow-lg backdrop-blur-md"
+          className="bubble-toolbar flex items-center gap-0.5 rounded-2xl border border-border/40 bg-popover/95 px-1 py-1 shadow-xl backdrop-blur-xl"
         >
           <ToolbarButton active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} label="Bold"><Bold className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} label="Italic"><Italic className="h-3.5 w-3.5" /></ToolbarButton>
@@ -779,6 +1005,19 @@ export function BlockEditor({
           <ToolbarButton active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} label="H1"><Heading1 className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} label="H2"><Heading2 className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-3.5 w-3.5" /></ToolbarButton>
+          <span className="mx-1 h-4 w-px bg-border" />
+          <ToolbarButton
+            active={editor.isActive("taskList")}
+            onClick={() => editor.chain().focus().toggleTaskList().run()}
+            label="Convert to checklist"
+          ><CheckSquare className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton onClick={promoteSelectionToTask} label="Add selection to Tasks">
+            <ListPlus className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <BubbleTagPicker
+            tagNames={tagNamesRef.current}
+            onPick={insertTagAtSelection}
+          />
           <ToolbarButton
             active={editor.isActive("link")}
             onClick={() => {

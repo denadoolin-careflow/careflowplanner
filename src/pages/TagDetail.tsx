@@ -1,82 +1,206 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, FileText, Lightbulb } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, FileText, Folder, Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useStore } from "@/lib/store";
-import { listNotes, type Note } from "@/lib/notes";
+import { listNotes, createNote, type Note } from "@/lib/notes";
 import { TagChip } from "@/components/tags/TagChip";
+import { useTags } from "@/hooks/use-tags";
+import { fallbackColorFor } from "@/lib/tags";
 import { format, parseISO } from "date-fns";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function TagDetail() {
   const { name = "" } = useParams();
   const tagName = decodeURIComponent(name);
-  const { state } = useStore();
+  const { state, addTask, addGrocery, addProject } = useStore();
+  const { resolve } = useTags();
+  const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
 
-  useEffect(() => { void listNotes().then(setNotes).catch(() => {}); }, []);
+  const reloadNotes = () => { void listNotes().then(setNotes).catch(() => {}); };
+  useEffect(() => { reloadNotes(); }, []);
 
   const lc = tagName.toLowerCase();
+  const meta = resolve(tagName);
+  const accent = meta.color || fallbackColorFor(tagName);
 
   const tasks = useMemo(
     () => (state.tasks ?? []).filter(t => (t.tags ?? []).some(n => n.toLowerCase() === lc)),
     [state.tasks, lc],
   );
-  const ideas = tasks.filter(t => (t.tags ?? []).some(n => n.toLowerCase() === "idea"));
-  const regular = tasks.filter(t => !(t.tags ?? []).some(n => n.toLowerCase() === "idea"));
   const taggedNotes = useMemo(
     () => notes.filter(n => (n.tags ?? []).some(t => t.toLowerCase() === lc)),
     [notes, lc],
   );
+  const groceries = useMemo(
+    () => (state.grocery ?? []).filter(g => (g.tags ?? []).some(t => t.toLowerCase() === lc)),
+    [state.grocery, lc],
+  );
+  const hashtagToken = `#${tagName.toLowerCase()}`;
+  const projects = useMemo(
+    () => (state.projects ?? []).filter(p => (p.notes ?? "").toLowerCase().includes(hashtagToken)),
+    [state.projects, hashtagToken],
+  );
+
+  const totalCount = tasks.length + taggedNotes.length + groceries.length + projects.length;
+
+  const addEntity = async (kind: "task" | "note" | "grocery" | "project") => {
+    try {
+      if (kind === "task") {
+        await addTask({ title: `New ${tagName} task`, tags: [tagName] });
+        toast.success(`Task added to #${tagName}`);
+        navigate(`/anytime`);
+      } else if (kind === "note") {
+        const n = await createNote({ title: tagName, body: `#${tagName} `, tags: [tagName] });
+        toast.success(`Note added to #${tagName}`);
+        navigate(`/notes/${n.id}`);
+      } else if (kind === "grocery") {
+        await addGrocery(`#${tagName} item`);
+        toast.success(`Grocery item added — tag with #${tagName} on the list`);
+        navigate(`/pantry`);
+      } else if (kind === "project") {
+        const p = await addProject({ name: `New ${tagName} project`, notes: `#${tagName}` });
+        toast.success(`Project added to #${tagName}`);
+        if (p?.id) navigate(`/projects/${p.id}`);
+      }
+    } catch (e) {
+      console.warn(e);
+      toast.error("Could not add — try again");
+    }
+  };
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-5 p-4 md:p-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-6">
       <header className="flex flex-wrap items-center gap-3">
         <Button asChild variant="ghost" size="sm" className="gap-1.5">
           <Link to="/tags"><ArrowLeft className="h-4 w-4" /> Tags</Link>
         </Button>
         <TagChip name={tagName} size="md" />
         <span className="text-sm text-muted-foreground">
-          {regular.length + ideas.length} task{tasks.length === 1 ? "" : "s"} · {taggedNotes.length} note{taggedNotes.length === 1 ? "" : "s"}
+          {totalCount} item{totalCount === 1 ? "" : "s"}
         </span>
+        <div className="ml-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" className="gap-1.5 rounded-full">
+                <Plus className="h-4 w-4" /> Add to #{tagName}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem onClick={() => void addEntity("task")}>
+                <CheckCircle2 className="mr-2 h-4 w-4" /> Task
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void addEntity("note")}>
+                <FileText className="mr-2 h-4 w-4" /> Note
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void addEntity("grocery")}>
+                <ShoppingCart className="mr-2 h-4 w-4" /> Grocery item
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void addEntity("project")}>
+                <Folder className="mr-2 h-4 w-4" /> Project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
-      <Group title="Tasks" icon={CheckCircle2} items={regular.map(t => ({
-        key: t.id, title: t.title, to: `/anytime?taskId=${t.id}`, meta: t.dueDate ? format(parseISO(t.dueDate), "MMM d") : undefined,
-      }))} />
-      <Group title="Ideas" icon={Lightbulb} items={ideas.map(t => ({
-        key: t.id, title: t.title, to: `/ideas`, meta: undefined,
-      }))} />
-      <Group title="Notes" icon={FileText} items={taggedNotes.map(n => ({
-        key: n.id,
-        title: n.kind === "daily" && n.date ? format(parseISO(n.date), "EEEE, MMM d") : (n.title || "Untitled"),
-        to: `/notes/${n.id}`,
-        meta: format(parseISO(n.updatedAt), "MMM d"),
-      }))} />
+      <CardSection
+        title="Tasks" icon={CheckCircle2} accent={accent}
+        emptyLabel="No tasks tagged yet" emptyCta="Add task"
+        onEmptyAdd={() => void addEntity("task")}
+        cards={tasks.map(t => ({
+          key: t.id, title: t.title,
+          meta: t.dueDate ? format(parseISO(t.dueDate), "MMM d") : (t.done ? "Done" : "Anytime"),
+          to: `/anytime?taskId=${t.id}`,
+        }))}
+      />
+      <CardSection
+        title="Notes" icon={FileText} accent={accent}
+        emptyLabel="No notes tagged yet" emptyCta="Add note"
+        onEmptyAdd={() => void addEntity("note")}
+        cards={taggedNotes.map(n => ({
+          key: n.id,
+          title: n.kind === "daily" && n.date ? format(parseISO(n.date), "EEEE, MMM d") : (n.title || "Untitled"),
+          meta: format(parseISO(n.updatedAt), "MMM d"),
+          to: `/notes/${n.id}`,
+        }))}
+      />
+      <CardSection
+        title="Grocery" icon={ShoppingCart} accent={accent}
+        emptyLabel="No grocery items tagged yet" emptyCta="Add item"
+        onEmptyAdd={() => void addEntity("grocery")}
+        cards={groceries.map(g => ({
+          key: g.id, title: g.name,
+          meta: g.bought ? "Bought" : (g.category ?? "On list"),
+          to: `/pantry`,
+        }))}
+      />
+      <CardSection
+        title="Projects" icon={Folder} accent={accent}
+        emptyLabel="No projects tagged yet" emptyCta="Add project"
+        onEmptyAdd={() => void addEntity("project")}
+        cards={projects.map(p => ({
+          key: p.id, title: p.name,
+          meta: p.status ?? "Active",
+          to: `/projects/${p.id}`,
+        }))}
+      />
     </div>
   );
 }
 
-function Group({ title, icon: Icon, items }: {
+interface CardItem { key: string; title: string; meta?: string; to: string; }
+function CardSection({
+  title, icon: Icon, accent, cards, emptyLabel, emptyCta, onEmptyAdd,
+}: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
-  items: { key: string; title: string; to: string; meta?: string }[];
+  accent: string;
+  cards: CardItem[];
+  emptyLabel: string;
+  emptyCta: string;
+  onEmptyAdd: () => void;
 }) {
-  if (items.length === 0) return null;
   return (
-    <section>
-      <h2 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <section className="space-y-2">
+      <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         <Icon className="h-3.5 w-3.5" /> {title}
-        <span className="text-muted-foreground/60">· {items.length}</span>
+        <span className="text-muted-foreground/60">· {cards.length}</span>
       </h2>
-      <div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/60 bg-card/60">
-        {items.map(it => (
-          <Link key={it.key} to={it.to} className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-muted/40">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
-            <span className="flex-1 truncate text-sm">{it.title}</span>
-            {it.meta && <span className="text-[11px] text-muted-foreground">{it.meta}</span>}
-          </Link>
-        ))}
-      </div>
+      {cards.length === 0 ? (
+        <button
+          type="button"
+          onClick={onEmptyAdd}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-card/30 px-4 py-6 text-xs text-muted-foreground transition hover:border-primary/40 hover:bg-card/60 hover:text-foreground"
+        >
+          <Plus className="h-3.5 w-3.5" /> {emptyLabel} — {emptyCta}
+        </button>
+      ) : (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map(c => (
+            <Link
+              key={c.key}
+              to={c.to}
+              className={cn(
+                "group relative overflow-hidden rounded-2xl border border-border/60 bg-card/70 p-3 pl-4 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md",
+              )}
+            >
+              <span
+                aria-hidden
+                className="absolute inset-y-2 left-1 w-1 rounded-full"
+                style={{ background: accent }}
+              />
+              <div className="truncate text-sm font-medium">{c.title}</div>
+              {c.meta && <div className="mt-0.5 text-[11px] text-muted-foreground">{c.meta}</div>}
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
