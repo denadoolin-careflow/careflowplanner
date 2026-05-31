@@ -8,7 +8,7 @@ import type { Priority } from "@/lib/types";
 import { loadPrefs, savePrefs, type TaskListPrefs, type GroupMode, type SortMode, type FilterState } from "@/lib/task-grouping";
 
 const GROUP_LABEL: Record<GroupMode, string> = {
-  none: "None", project: "Project", area: "Area", priority: "Priority", date: "Date", energy: "Energy", status: "Status", tag: "Tag",
+  none: "None", project: "Project", area: "Area", priority: "Priority", date: "Date", energy: "Energy", status: "Status", tag: "Tag", dayPart: "Time of day",
 };
 const SORT_LABEL: Record<SortMode, string> = {
   manual: "Manual", date: "Date", priority: "Priority", title: "Title", created: "Created", updated: "Updated", energy: "Energy", estMinutes: "Time", project: "Project",
