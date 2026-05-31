@@ -20,6 +20,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Switch } from "@/components/ui/switch";
 import { listPinnedNotes, type Note } from "@/lib/notes";
 import { addMonths, addWeeks, format, startOfMonth, startOfWeek } from "date-fns";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { listPinnedTags, type Tag } from "@/lib/tags";
+import { tagIconFor } from "@/components/tags/tag-icon";
+import { fallbackColorFor } from "@/lib/tags";
+import { useNavigate } from "react-router-dom";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon },
@@ -45,8 +50,8 @@ const DEFAULT_WIDTH = 256;
 type SidebarSide = "left" | "right";
 type SidebarTheme = "auto" | "light" | "dark" | "atmosphere";
 
-type SectionPrefs = { pinnedNotes: boolean; quickWeeks: boolean; quickMonths: boolean };
-const DEFAULT_SECTIONS: SectionPrefs = { pinnedNotes: true, quickWeeks: true, quickMonths: true };
+type SectionPrefs = { pinnedNotes: boolean; pinnedTags: boolean; quickWeeks: boolean; quickMonths: boolean };
+const DEFAULT_SECTIONS: SectionPrefs = { pinnedNotes: true, pinnedTags: true, quickWeeks: true, quickMonths: true };
 
 function readSections(): SectionPrefs {
   if (typeof window === "undefined") return DEFAULT_SECTIONS;
