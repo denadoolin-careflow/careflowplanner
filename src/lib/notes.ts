@@ -96,6 +96,7 @@ export async function listPinnedNotes(): Promise<Note[]> {
 export async function deleteNote(id: string): Promise<void> {
   const { error } = await supabase.from("notes").delete().eq("id", id);
   if (error) throw error;
+  try { window.dispatchEvent(new Event("careflow:notes:pinned-changed")); } catch {}
 }
 
 /** Get-or-create today's daily note. */
