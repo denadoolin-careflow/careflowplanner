@@ -346,6 +346,79 @@ const HIGHLIGHT_COLORS = [
 function ColorPickerPopover({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
   const active = editor.getAttributes("textStyle").color || editor.getAttributes("highlight").color;
+  return ColorPickerPopoverInner(editor, open, setOpen, active);
+}
+
+function BubbleTagPicker({ tagNames, onPick }: { tagNames: string[]; onPick: (name: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const filtered = q
+    ? tagNames.filter(n => n.toLowerCase().includes(q.toLowerCase())).slice(0, 8)
+    : tagNames.slice(0, 8);
+  const exact = !!q && tagNames.some(n => n.toLowerCase() === q.toLowerCase());
+  return (
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQ(""); }}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title="Insert #tag"
+          aria-label="Insert tag"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setOpen(o => !o)}
+          className={cn(
+            "h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-md transition",
+            open ? "bg-primary/15 text-primary" : "hover:bg-muted/60 text-muted-foreground",
+          )}
+        >
+          <TagIcon className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-64 p-2"
+        onMouseDown={(e) => e.preventDefault()}
+      >
+        <Input
+          autoFocus
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Find or create #tag"
+          className="h-8 text-xs"
+        />
+        <div className="mt-1 max-h-56 overflow-y-auto">
+          {q && !exact && (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { onPick(q); setOpen(false); setQ(""); }}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60"
+            >
+              <Plus className="h-3.5 w-3.5 text-primary" />
+              <span>Create <span className="font-medium">#{q.replace(/^#+/, "")}</span></span>
+            </button>
+          )}
+          {filtered.map(name => (
+            <button
+              key={name}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { onPick(name); setOpen(false); setQ(""); }}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60"
+            >
+              <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-medium">{name}</span>
+            </button>
+          ))}
+          {!q && filtered.length === 0 && (
+            <p className="px-2 py-2 text-[11px] text-muted-foreground">No tags yet. Start typing to create one.</p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ColorPickerPopoverInner(editor: Editor, open: boolean, setOpen: (b: boolean | ((o: boolean) => boolean)) => void, active: any) {
   return (
     <div className="relative">
       <button
