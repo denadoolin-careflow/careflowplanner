@@ -698,7 +698,6 @@ export function BlockEditor({
             .run();
           // Persist on the note record so it appears on the tag hub immediately.
           if (noteIdRef.current) {
-            const md = editor.storage?.markdown ?? null;
             const text = (editor.getText?.() ?? "") + ` #${name}`;
             const all = extractHashtagsFromText(text);
             updateNote(noteIdRef.current, { tags: all }).catch(() => {});
