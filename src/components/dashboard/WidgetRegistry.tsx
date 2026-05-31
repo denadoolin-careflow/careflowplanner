@@ -35,6 +35,10 @@ import { MentalLoadDumpWidget } from "./widgets/caregiver/MentalLoadDumpWidget";
 import { MomCheckinWidget } from "./widgets/caregiver/MomCheckinWidget";
 import { UpcomingSnapshotWidget } from "./widgets/caregiver/UpcomingSnapshotWidget";
 import { HomeResetQuickWidget } from "./widgets/caregiver/HomeResetQuickWidget";
+import { PantryStatusWidget } from "./widgets/grocery/PantryStatusWidget";
+import { GroceryListMiniWidget } from "./widgets/grocery/GroceryListMiniWidget";
+import { LowStockWidget } from "./widgets/grocery/LowStockWidget";
+import { Package, ShoppingCart, AlertTriangle } from "lucide-react";
 
 export interface WidgetSpec {
   type: WidgetType;
@@ -110,6 +114,9 @@ export const WIDGET_REGISTRY: Record<WidgetType, WidgetSpec> = {
   "mom-checkin": { type: "mom-checkin", title: "Mom check-in", icon: Sun, defaultSize: { w: 6, h: 6 }, Component: MomCheckinWidget },
   "upcoming-snapshot": { type: "upcoming-snapshot", title: "Upcoming", icon: CalendarClock, defaultSize: { w: 6, h: 5 }, Component: UpcomingSnapshotWidget, pageHref: "/calendar", quickAddEvent: "appointment" },
   "home-reset-quick": { type: "home-reset-quick", title: "Home reset", icon: Sparkle, defaultSize: { w: 6, h: 5 }, Component: HomeResetQuickWidget, pageHref: "/home-reset", quickAddEvent: "cleaning" },
+  "pantry-status": { type: "pantry-status", title: "Pantry status", icon: Package, defaultSize: { w: 4, h: 4 }, Component: PantryStatusWidget, pageHref: "/pantry" },
+  "grocery-list-mini": { type: "grocery-list-mini", title: "Grocery list", icon: ShoppingCart, defaultSize: { w: 4, h: 5 }, Component: GroceryListMiniWidget, pageHref: "/meals" },
+  "low-stock": { type: "low-stock", title: "Running low", icon: AlertTriangle, defaultSize: { w: 4, h: 5 }, Component: LowStockWidget, pageHref: "/pantry" },
 };
 
 export const ALL_WIDGET_TYPES = Object.keys(WIDGET_REGISTRY) as WidgetType[];

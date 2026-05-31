@@ -42,7 +42,10 @@ export type WidgetType =
   | "mental-load-dump"
   | "mom-checkin"
   | "upcoming-snapshot"
-  | "home-reset-quick";
+  | "home-reset-quick"
+  | "pantry-status"
+  | "grocery-list-mini"
+  | "low-stock";
 
 export interface WidgetInstance {
   id: string;
