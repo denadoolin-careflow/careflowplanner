@@ -47,6 +47,8 @@ export default function Routines() {
   const [newPerson, setNewPerson] = useState("");
   const [focus, setFocus] = useState<{ routine: Routine; itemId?: string } | null>(null);
   const [stateFilter, setStateFilter] = useState<GardenState | "all">("all");
+  const [groupKey, setGroupKey] = useState<"state" | "person" | "time">("state");
+  const [sortKey, setSortKey] = useState<"smart" | "time" | "person">("smart");
   const [viewMode, setViewMode] = useState<"list" | "grid" | "kanban">(() => {
     if (typeof window === "undefined") return "list";
     return (window.localStorage.getItem("careflow:routines-view") as any) || "list";
@@ -76,15 +78,64 @@ export default function Routines() {
     [filtered, stateFilter],
   );
 
-  // Smart-sorted state sections — Needs Care first, then Growing, Blooming, Resting.
-  const stateSections = useMemo(() => {
-    const order: GardenState[] = ["seedling", "growing", "blooming", "resting"];
-    const bucket: Record<GardenState, Routine[]> = { seedling: [], growing: [], blooming: [], resting: [] };
-    visible.forEach(r => bucket[getRoutineState(r)].push(r));
-    return order
-      .filter(s => bucket[s].length > 0)
-      .map(s => ({ state: s, items: bucket[s], defaultCollapsed: s === "blooming" || s === "resting" }));
-  }, [visible]);
+  const sortRoutines = (arr: Routine[]) => {
+    const copy = [...arr];
+    if (sortKey === "time") {
+      copy.sort((a, b) => {
+        const ta = a.time_of_day ?? SLOT_DEFAULT_TIME[a.slot];
+        const tb = b.time_of_day ?? SLOT_DEFAULT_TIME[b.slot];
+        return ta.localeCompare(tb);
+      });
+    } else if (sortKey === "person") {
+      copy.sort((a, b) => a.person_name.localeCompare(b.person_name));
+    } else {
+      // smart: incomplete first, then by time
+      copy.sort((a, b) => {
+        const sa = getRoutineState(a) === "blooming" ? 1 : 0;
+        const sb = getRoutineState(b) === "blooming" ? 1 : 0;
+        if (sa !== sb) return sa - sb;
+        const ta = a.time_of_day ?? SLOT_DEFAULT_TIME[a.slot];
+        const tb = b.time_of_day ?? SLOT_DEFAULT_TIME[b.slot];
+        return ta.localeCompare(tb);
+      });
+    }
+    return copy;
+  };
+
+  const sortedVisible = useMemo(() => sortRoutines(visible), [visible, sortKey]);
+
+  type Section = { id: string; label: string; emoji?: string; items: Routine[]; defaultCollapsed?: boolean; state?: GardenState };
+
+  const sections: Section[] = useMemo(() => {
+    if (groupKey === "state") {
+      const order: GardenState[] = ["seedling", "growing", "blooming", "resting"];
+      const bucket: Record<GardenState, Routine[]> = { seedling: [], growing: [], blooming: [], resting: [] };
+      sortedVisible.forEach(r => bucket[getRoutineState(r)].push(r));
+      return order.filter(s => bucket[s].length > 0).map(s => ({
+        id: s, label: GARDEN_META[s].label, emoji: GARDEN_META[s].emoji,
+        items: bucket[s], defaultCollapsed: s === "blooming" || s === "resting", state: s,
+      }));
+    }
+    if (groupKey === "person") {
+      const map = new Map<string, Routine[]>();
+      sortedVisible.forEach(r => {
+        const arr = map.get(r.person_name) ?? [];
+        arr.push(r); map.set(r.person_name, arr);
+      });
+      return Array.from(map.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([name, items]) => ({ id: name, label: name, items }));
+    }
+    // time → group by slot
+    const map = new Map<RoutineSlot, Routine[]>();
+    sortedVisible.forEach(r => {
+      const arr = map.get(r.slot) ?? [];
+      arr.push(r); map.set(r.slot, arr);
+    });
+    return ROUTINE_SLOTS.filter(s => map.has(s)).map(s => ({
+      id: s, label: SLOT_LABEL[s], items: map.get(s)!,
+    }));
+  }, [sortedVisible, groupKey]);
 
   const addPersonInline = async () => {
     const n = newPerson.trim();
@@ -157,6 +208,22 @@ export default function Routines() {
         <div className="ml-auto text-xs text-muted-foreground">
           {visible.length} routine{visible.length === 1 ? "" : "s"}
         </div>
+        <Select value={groupKey} onValueChange={(v) => setGroupKey(v as any)}>
+          <SelectTrigger className="h-8 w-[110px] text-xs" aria-label="Group by"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="state">Group: State</SelectItem>
+            <SelectItem value="person">Group: Person</SelectItem>
+            <SelectItem value="time">Group: Time</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortKey} onValueChange={(v) => setSortKey(v as any)}>
+          <SelectTrigger className="h-8 w-[110px] text-xs" aria-label="Sort by"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="smart">Sort: Smart</SelectItem>
+            <SelectItem value="time">Sort: Time</SelectItem>
+            <SelectItem value="person">Sort: Person</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5" role="tablist" aria-label="Routine view">
           {([
             { id: "list", label: "List", icon: ListIcon },
@@ -200,13 +267,15 @@ export default function Routines() {
 
       {viewMode === "list" && (
         <div className="space-y-4">
-          {stateSections.map(sec => (
-            <StateSection
+          {sections.map(sec => (
+            <GroupSection
               key={sec.state}
-              state={sec.state}
+              id={sec.id}
+              label={sec.label}
+              emoji={sec.emoji}
               routines={sec.items}
               recipients={state.recipients}
-              defaultCollapsed={sec.defaultCollapsed}
+              defaultCollapsed={!!sec.defaultCollapsed}
               onFocus={(r, itemId) => setFocus({ routine: r, itemId })}
             />
           ))}
@@ -215,7 +284,7 @@ export default function Routines() {
 
       {viewMode === "grid" && (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {visible.map(r => (
+          {sortedVisible.map(r => (
             <CompactRoutineCard
               key={r.id}
               routine={r}
@@ -229,20 +298,20 @@ export default function Routines() {
       {viewMode === "kanban" && (
         <div className="-mx-4 overflow-x-auto px-4 pb-2">
           <div className="flex min-w-full snap-x snap-mandatory gap-3">
-            {(["seedling", "growing", "blooming", "resting"] as GardenState[]).map(s => {
-              const items = visible.filter(r => getRoutineState(r) === s);
-              const meta = GARDEN_META[s];
+            {sections.map(sec => {
+              const items = sec.items;
+              const meta = sec.state ? GARDEN_META[sec.state] : null;
               return (
                 <div
-                  key={s}
+                  key={sec.id}
                   className={cn(
                     "flex w-[78vw] max-w-[320px] shrink-0 snap-start flex-col rounded-2xl border bg-card/40 p-2",
-                    meta.borderClass,
+                    meta?.borderClass ?? "border-border/60",
                   )}
                 >
                   <div className="mb-2 flex items-center gap-1.5 px-1">
-                    <span className="text-sm leading-none">{meta.emoji}</span>
-                    <h3 className="text-xs font-semibold">{meta.label}</h3>
+                    {sec.emoji && <span className="text-sm leading-none">{sec.emoji}</span>}
+                    <h3 className="text-xs font-semibold">{sec.label}</h3>
                     <span className="ml-auto rounded-full bg-muted/60 px-1.5 text-[10.5px] font-medium tabular-nums text-muted-foreground">
                       {items.length}
                     </span>
@@ -286,27 +355,28 @@ export default function Routines() {
   );
 }
 
-function StateSection({
-  state, routines: items, recipients, defaultCollapsed, onFocus,
+function GroupSection({
+  id, label, emoji, routines: items, recipients, defaultCollapsed, onFocus,
 }: {
-  state: GardenState;
+  id: string;
+  label: string;
+  emoji?: string;
   routines: Routine[];
   recipients: { id: string; name: string }[];
   defaultCollapsed: boolean;
   onFocus?: (r: Routine, itemId?: string) => void;
 }) {
-  const meta = GARDEN_META[state];
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   return (
-    <section className="space-y-2">
+    <section key={id} className="space-y-2">
       <button
         type="button"
         onClick={() => setCollapsed(c => !c)}
         className="flex w-full items-center gap-2 rounded-lg px-1 text-left hover:bg-muted/30"
       >
         <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", !collapsed && "rotate-90")} />
-        <span className="text-base leading-none">{meta.emoji}</span>
-        <h2 className="text-sm font-semibold">{meta.label}</h2>
+        {emoji && <span className="text-base leading-none">{emoji}</span>}
+        <h2 className="text-sm font-semibold">{label}</h2>
         <span className="ml-auto rounded-full bg-muted/60 px-1.5 text-[10.5px] font-medium tabular-nums text-muted-foreground">{items.length}</span>
       </button>
       {!collapsed && (
