@@ -38,7 +38,7 @@ export function CombinedFab() {
   return (
     <div
       ref={wrapRef}
-      className={cn("fixed z-40 flex flex-col items-end gap-2")}
+      className={cn("fixed z-40 hidden flex-col items-end gap-2 lg:flex")}
       style={drag.style}
     >
       {/* Expanded actions row: Quick add + AI */}
