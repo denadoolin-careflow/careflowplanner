@@ -495,21 +495,24 @@ function QuickDateRows({
 }
 
 function QuickDatesSection({
-  kind, open, onToggle, onNavigate, pathname,
-}: { kind: "week" | "month"; open: boolean; onToggle: () => void; onNavigate?: () => void; pathname: string }) {
+  kind, open, onToggle, onNavigate, pathname, onPickDate,
+}: { kind: "week" | "month"; open: boolean; onToggle: () => void; onNavigate?: () => void; pathname: string; onPickDate: (d: Date) => void }) {
   const label = kind === "week" ? "Weeks" : "Months";
   const Icon = kind === "week" ? CalendarRange : CalendarDays;
   return (
     <div className="mb-1">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
-      >
-        <Icon className="h-3.5 w-3.5 opacity-70" />
-        <span className="flex-1 text-left">{label}</span>
-        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} />
-      </button>
+      <div className="flex w-full items-center gap-1 pr-1">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+        >
+          <Icon className="h-3.5 w-3.5 opacity-70" />
+          <span className="flex-1 text-left">{label}</span>
+          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} />
+        </button>
+        <MiniDatePickerButton onPick={onPickDate} label={`Jump to a day (${label.toLowerCase()})`} />
+      </div>
       <div className={cn("grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
         <div className="min-h-0 overflow-hidden">
           <QuickDateRows kind={kind} count={kind === "week" ? 5 : 6} onNavigate={onNavigate} pathname={pathname} />
