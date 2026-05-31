@@ -104,7 +104,11 @@ export default function CalendarPage() {
     }));
 
   const eventsOn = (k: string) => [
-    ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, id: a.id, label: `${a.icon ? a.icon + " " : ""}${a.title}`, time: a.time })),
+    ...state.appointments.filter(a => apptOccursOn(a, k)).map(a => {
+      const m = apptRangeMeta(a, k);
+      const prefix = m.isMulti && !m.isStart ? (m.isEnd ? "↦ " : "· ") : "";
+      return { kind: "appt" as const, id: a.id, label: `${prefix}${a.icon ? a.icon + " " : ""}${a.title}`, time: m.isStart ? a.time : undefined };
+    }),
     ...checkinAppts.filter(a => a.date === k).map(a => ({ kind: "appt" as const, id: a.id, label: `💜 ${a.title}`, time: a.time })),
     ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, id: b.id, label: `🎂 ${b.name}`, time: undefined })),
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, id: h.id, label: `✨ ${h.name}`, time: undefined })),
