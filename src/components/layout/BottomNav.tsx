@@ -1,9 +1,10 @@
 import { NavLink } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { MOBILE_NAV, NAV } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -65,8 +66,35 @@ export function BottomNav() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const isDark = (resolvedTheme ?? theme) === "dark";
   const { state, setLowEnergyMode } = useStore();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    swipeStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const s = swipeStart.current; swipeStart.current = null;
+    if (!s) return;
+    const end = e.changedTouches[0];
+    const dx = end.clientX - s.x;
+    const dy = end.clientY - s.y;
+    if (Date.now() - s.t > 600) return;
+    if (Math.abs(dx) < 60 || Math.abs(dy) > 50) return;
+    const order = navIds;
+    const idx = order.indexOf(pathname);
+    if (idx < 0) return;
+    const nextIdx = dx < 0 ? idx + 1 : idx - 1;
+    if (nextIdx < 0 || nextIdx >= order.length) return;
+    haptics.swipe();
+    navigate(order[nextIdx]);
+  };
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 px-2 pb-[env(safe-area-inset-bottom,0)] lg:hidden">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-30 px-2 pb-[env(safe-area-inset-bottom,0)] lg:hidden"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       <div className="mx-auto max-w-screen-md rounded-2xl border border-border/40 bg-background/85 px-1 pb-1 pt-1 shadow-sm backdrop-blur-xl">
         <ul className="grid grid-cols-7">
           {primary.map(({ to, label, icon: Icon }) => (
