@@ -404,6 +404,7 @@ export function TaskRow({
 type ShellHandlers = {
   onPointerDown?: (e: React.PointerEvent) => void;
   onPointerUp?: (e: React.PointerEvent) => void;
+  onPointerMove?: (e: React.PointerEvent) => void;
   onPointerLeave?: (e: React.PointerEvent) => void;
   onPointerCancel?: (e: React.PointerEvent) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
