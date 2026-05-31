@@ -48,13 +48,20 @@ export function RoutineItemRow({
           className="h-6 flex-1 text-xs"
         />
       ) : (
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className={cn("min-w-0 flex-1 truncate text-left", item.done && "text-muted-foreground line-through")}
-        >
-          {item.text}
-        </button>
+        <Tooltip>
+          <TooltipTriggerBase asChild>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className={cn("min-w-0 flex-1 truncate text-left", item.done && "text-muted-foreground line-through")}
+            >
+              {item.text}
+            </button>
+          </TooltipTriggerBase>
+          <TooltipContent side="top" className="max-w-xs">
+            <p className="text-xs">{item.text}</p>
+          </TooltipContent>
+        </Tooltip>
       )}
       {item.startTime && (
         <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
