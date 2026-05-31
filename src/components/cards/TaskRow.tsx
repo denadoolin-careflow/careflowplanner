@@ -58,6 +58,9 @@ export function TaskRow({
   const longPressTimer = useRef<number | null>(null);
   const longPressStart = useRef<{ x: number; y: number } | null>(null);
   const longPressMoved = useRef(false);
+  // Track which haptic "snap" thresholds we've already fired during a single
+  // swipe gesture so they only buzz once per crossing.
+  const swipeHapticState = useRef<{ peek: boolean; armed: boolean }>({ peek: false, armed: false });
 
   const subtasks = state.tasks.filter(t => t.parentTaskId === task.id);
   const hasSubs = subtasks.length > 0;
@@ -98,6 +101,9 @@ export function TaskRow({
       toggleTask(task.id);
     }
   };
+
+  const withHaptic = <T extends (...args: any[]) => any>(fn: T, variant: keyof typeof haptics = "tap") =>
+    ((...args: Parameters<T>) => { haptics[variant]?.(); return fn(...args); }) as T;
 
   const handleSnooze = () => {
     const next = format(addDays(new Date(), 1), "yyyy-MM-dd");
@@ -162,17 +168,17 @@ export function TaskRow({
 
   const leadingActions = (
     <LeadingActions>
-      <SwipeAction onClick={() => setEditing(true)}>
+      <SwipeAction onClick={withHaptic(() => setEditing(true))}>
         <div className="flex h-full items-center gap-2 bg-sky-500/90 px-4 text-sm font-medium text-white">
           <Pencil className="h-4 w-4" /> Edit
         </div>
       </SwipeAction>
-      <SwipeAction onClick={handleCyclePriority}>
+      <SwipeAction onClick={withHaptic(handleCyclePriority)}>
         <div className="flex h-full items-center gap-2 bg-amber-500/90 px-4 text-sm font-medium text-white">
           <Star className="h-4 w-4" /> Priority
         </div>
       </SwipeAction>
-      <SwipeAction onClick={handleMove}>
+      <SwipeAction onClick={withHaptic(handleMove)}>
         <div className="flex h-full items-center gap-2 bg-violet-500/90 px-4 text-sm font-medium text-white">
           <FolderInput className="h-4 w-4" /> Move
         </div>
@@ -182,17 +188,17 @@ export function TaskRow({
 
   const trailingActions = (
     <TrailingActions>
-      <SwipeAction onClick={handleToggle}>
+      <SwipeAction onClick={withHaptic(handleToggle, "success")}>
         <div className="flex h-full items-center gap-2 bg-emerald-500/90 px-4 text-sm font-medium text-white">
           ✓ Complete
         </div>
       </SwipeAction>
-      <SwipeAction onClick={handleSnooze}>
+      <SwipeAction onClick={withHaptic(handleSnooze)}>
         <div className="flex h-full items-center gap-2 bg-indigo-500/90 px-4 text-sm font-medium text-white">
           <Snowflake className="h-4 w-4" /> Snooze
         </div>
       </SwipeAction>
-      <SwipeAction onClick={() => deleteTask(task.id)}>
+      <SwipeAction onClick={withHaptic(() => deleteTask(task.id), "delete")}>
         <div className="flex h-full items-center gap-2 bg-rose-500/90 px-4 text-sm font-medium text-white">
           <Trash2 className="h-4 w-4" /> Delete
         </div>
@@ -342,11 +348,23 @@ export function TaskRow({
   return (
     <>
       <div data-no-swipe>
-        <SwipeableList type={SwipeType.IOS} fullSwipe={false} threshold={0.15} className="!bg-transparent">
+        <SwipeableList type={SwipeType.IOS} fullSwipe={false} threshold={10} className="!bg-transparent">
           <SwipeableListItem
             leadingActions={leadingActions}
             trailingActions={trailingActions}
             blockSwipe={editing || draggable || isSubtask}
+            onSwipeStart={() => {
+              swipeHapticState.current = { peek: false, armed: false };
+              haptics.swipe();
+            }}
+            onSwipeProgress={(p) => {
+              const s = swipeHapticState.current;
+              if (!s.peek && p >= 15) { s.peek = true; haptics.snap(); }
+              if (!s.armed && p >= 45) { s.armed = true; haptics.tap(); }
+            }}
+            onSwipeEnd={() => {
+              swipeHapticState.current = { peek: false, armed: false };
+            }}
           >
             <div className="flex w-full items-stretch">
               <div
