@@ -20,6 +20,7 @@ import {
 import { getRoutineState, GARDEN_META, nextStep } from "@/lib/routine-garden";
 import { PomodoroDialog } from "@/components/routines/PomodoroDialog";
 import { AIBreakdownDialog } from "@/components/routines/AIBreakdownDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   routine: Routine;
@@ -80,8 +81,13 @@ export function CompactRoutineCard({ routine: r, recipients, onFocus }: Props) {
 
   const remove = async () => {
     if (!confirm(`Delete ${r.person_name} · ${SLOT_LABEL[r.slot]} routine?`)) return;
-    await routinesApi.remove?.(r.person_name, r.slot);
-    toast.success("Routine removed.");
+    try {
+      await supabase.from("routines" as any).delete().eq("id", r.id);
+      await routinesApi.reload?.();
+      toast.success("Routine removed.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't delete routine");
+    }
   };
 
   return (
