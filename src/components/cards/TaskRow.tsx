@@ -145,17 +145,17 @@ export function TaskRow({
   const leadingActions = (
     <LeadingActions>
       <SwipeAction onClick={() => setEditing(true)}>
-        <div className="flex items-center gap-2 bg-sky-500/90 px-4 text-sm font-medium text-white">
+        <div className="flex h-full items-center gap-2 bg-sky-500/90 px-4 text-sm font-medium text-white">
           <Pencil className="h-4 w-4" /> Edit
         </div>
       </SwipeAction>
       <SwipeAction onClick={handleCyclePriority}>
-        <div className="flex items-center gap-2 bg-amber-500/90 px-4 text-sm font-medium text-white">
+        <div className="flex h-full items-center gap-2 bg-amber-500/90 px-4 text-sm font-medium text-white">
           <Star className="h-4 w-4" /> Priority
         </div>
       </SwipeAction>
       <SwipeAction onClick={handleMove}>
-        <div className="flex items-center gap-2 bg-violet-500/90 px-4 text-sm font-medium text-white">
+        <div className="flex h-full items-center gap-2 bg-violet-500/90 px-4 text-sm font-medium text-white">
           <FolderInput className="h-4 w-4" /> Move
         </div>
       </SwipeAction>
@@ -165,17 +165,17 @@ export function TaskRow({
   const trailingActions = (
     <TrailingActions>
       <SwipeAction onClick={handleToggle}>
-        <div className="flex items-center gap-2 bg-emerald-500/90 px-4 text-sm font-medium text-white">
+        <div className="flex h-full items-center gap-2 bg-emerald-500/90 px-4 text-sm font-medium text-white">
           ✓ Complete
         </div>
       </SwipeAction>
       <SwipeAction onClick={handleSnooze}>
-        <div className="flex items-center gap-2 bg-indigo-500/90 px-4 text-sm font-medium text-white">
+        <div className="flex h-full items-center gap-2 bg-indigo-500/90 px-4 text-sm font-medium text-white">
           <Snowflake className="h-4 w-4" /> Snooze
         </div>
       </SwipeAction>
-      <SwipeAction destructive onClick={() => deleteTask(task.id)}>
-        <div className="flex items-center gap-2 bg-rose-500/90 px-4 text-sm font-medium text-white">
+      <SwipeAction onClick={() => deleteTask(task.id)}>
+        <div className="flex h-full items-center gap-2 bg-rose-500/90 px-4 text-sm font-medium text-white">
           <Trash2 className="h-4 w-4" /> Delete
         </div>
       </SwipeAction>
@@ -322,7 +322,7 @@ export function TaskRow({
 
   return (
     <>
-      <SwipeableList type={SwipeType.IOS} fullSwipe={false} className="!bg-transparent">
+      <SwipeableList type={SwipeType.IOS} fullSwipe={false} threshold={0.3} className="!bg-transparent">
         <SwipeableListItem
           leadingActions={leadingActions}
           trailingActions={trailingActions}
