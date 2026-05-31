@@ -76,11 +76,27 @@ export async function updateNote(id: string, patch: Partial<Note>): Promise<void
   if (patch.wordGoal !== undefined) row.word_goal = patch.wordGoal;
   const { error } = await supabase.from("notes").update(row).eq("id", id);
   if (error) throw error;
+  if (patch.pinned !== undefined || patch.title !== undefined || patch.archived !== undefined) {
+    try { window.dispatchEvent(new Event("careflow:notes:pinned-changed")); } catch {}
+  }
+}
+
+export async function listPinnedNotes(): Promise<Note[]> {
+  const { data, error } = await supabase
+    .from("notes")
+    .select("*")
+    .eq("pinned", true)
+    .eq("archived", false)
+    .order("updated_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return (data ?? []).map(fromRow);
 }
 
 export async function deleteNote(id: string): Promise<void> {
   const { error } = await supabase.from("notes").delete().eq("id", id);
   if (error) throw error;
+  try { window.dispatchEvent(new Event("careflow:notes:pinned-changed")); } catch {}
 }
 
 /** Get-or-create today's daily note. */
