@@ -208,6 +208,187 @@ function useSidebarData(forceExpanded: boolean) {
   return { pathname, openMap, toggle, setOpenMap, collapsed: effectiveCollapsed, setCollapsed, areas, projects, updateArea };
 }
 
+function SectionToggleRow({
+  icon: Icon, label, checked, onChange,
+}: { icon: React.ComponentType<{ className?: string }>; label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50">
+      <Icon className="h-3.5 w-3.5 opacity-70" />
+      <span className="flex-1">{label}</span>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </label>
+  );
+}
+
+function usePinnedNotes(enabled: boolean) {
+  const [notes, setNotes] = useState<Note[]>([]);
+  useEffect(() => {
+    if (!enabled) { setNotes([]); return; }
+    let alive = true;
+    const load = () => { void listPinnedNotes().then(n => { if (alive) setNotes(n); }).catch(() => {}); };
+    load();
+    const onChange = () => load();
+    const onVis = () => { if (document.visibilityState === "visible") load(); };
+    window.addEventListener("careflow:notes:pinned-changed", onChange);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      alive = false;
+      window.removeEventListener("careflow:notes:pinned-changed", onChange);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [enabled]);
+  return notes;
+}
+
+function PinnedNotesSection({
+  collapsed, open, onToggle, onNavigate, pathname,
+}: { collapsed: boolean; open: boolean; onToggle: () => void; onNavigate?: () => void; pathname: string }) {
+  const notes = usePinnedNotes(true);
+  if (notes.length === 0) return null;
+
+  if (collapsed) {
+    return (
+      <div className="mb-1 flex flex-col items-center gap-0.5">
+        {notes.slice(0, 8).map(n => {
+          const title = n.kind === "daily" && n.date ? n.date : (n.title || "Untitled");
+          const active = pathname === `/notes/${n.id}`;
+          return (
+            <Tooltip key={n.id} delayDuration={150}>
+              <TooltipTrigger asChild>
+                <NavLink
+                  to={`/notes/${n.id}`}
+                  onClick={onNavigate}
+                  className={cn(
+                    "grid h-10 w-10 place-items-center rounded-xl transition-all",
+                    "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    active && "bg-primary-soft text-foreground shadow-soft",
+                  )}
+                >
+                  <Pin className="h-4 w-4" />
+                </NavLink>
+              </TooltipTrigger>
+              <TooltipContent side="right">{title}</TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-1">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+      >
+        <Pin className="h-3.5 w-3.5 opacity-70" />
+        <span className="flex-1 text-left">Pinned</span>
+        <span className="text-[10px] text-sidebar-foreground/50">{notes.length}</span>
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} />
+      </button>
+      <div className={cn("grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+        <div className="min-h-0 overflow-hidden">
+          <div className="mt-1 flex flex-col gap-0.5 pl-1">
+            {notes.map(n => {
+              const title = n.kind === "daily" && n.date ? `Daily · ${n.date}` : (n.title || "Untitled");
+              return (
+                <NavLink
+                  key={n.id}
+                  to={`/notes/${n.id}`}
+                  onClick={onNavigate}
+                  className={({ isActive }) => cn(
+                    "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                    "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    isActive && "bg-primary-soft text-foreground shadow-soft",
+                  )}
+                >
+                  <StickyNote className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                  <span className="flex-1 truncate">{title}</span>
+                </NavLink>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuickDateRows({
+  kind, count, onNavigate, pathname,
+}: { kind: "week" | "month"; count: number; onNavigate?: () => void; pathname: string }) {
+  const today = new Date();
+  const items = Array.from({ length: count }, (_, i) => {
+    if (kind === "week") {
+      const d = addWeeks(startOfWeek(today, { weekStartsOn: 1 }), i);
+      const iso = format(d, "yyyy-MM-dd");
+      return {
+        iso,
+        label: i === 0 ? "This week" : i === 1 ? "Next week" : `Week of ${format(d, "MMM d")}`,
+        sub: format(d, "MMM d"),
+      };
+    }
+    const d = addMonths(startOfMonth(today), i);
+    const iso = format(d, "yyyy-MM-dd");
+    return {
+      iso,
+      label: i === 0 ? "This month" : format(d, "MMMM yyyy"),
+      sub: format(d, "MMM yyyy"),
+    };
+  });
+  const path = kind === "week" ? "/week" : "/month";
+  return (
+    <div className="mt-1 flex flex-col gap-0.5 pl-1">
+      {items.map(it => {
+        const to = `${path}?date=${it.iso}`;
+        const active = pathname === path && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("date") === it.iso;
+        return (
+          <NavLink
+            key={it.iso}
+            to={to}
+            onClick={onNavigate}
+            className={cn(
+              "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+              "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              active && "bg-primary-soft text-foreground shadow-soft",
+            )}
+          >
+            {kind === "week" ? <CalendarRange className="h-3.5 w-3.5 shrink-0 opacity-70" /> : <CalendarDays className="h-3.5 w-3.5 shrink-0 opacity-70" />}
+            <span className="flex-1 truncate">{it.label}</span>
+            <span className="text-[10px] text-sidebar-foreground/50">{it.sub}</span>
+          </NavLink>
+        );
+      })}
+    </div>
+  );
+}
+
+function QuickDatesSection({
+  kind, open, onToggle, onNavigate, pathname,
+}: { kind: "week" | "month"; open: boolean; onToggle: () => void; onNavigate?: () => void; pathname: string }) {
+  const label = kind === "week" ? "Weeks" : "Months";
+  const Icon = kind === "week" ? CalendarRange : CalendarDays;
+  return (
+    <div className="mb-1">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+      >
+        <Icon className="h-3.5 w-3.5 opacity-70" />
+        <span className="flex-1 text-left">{label}</span>
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} />
+      </button>
+      <div className={cn("grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+        <div className="min-h-0 overflow-hidden">
+          <QuickDateRows kind={kind} count={kind === "week" ? 5 : 6} onNavigate={onNavigate} pathname={pathname} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: boolean; onNavigate?: () => void }) {
   const { pathname, openMap, toggle, setOpenMap, collapsed, setCollapsed, areas, projects, updateArea } = useSidebarData(forceExpanded);
   const { updateProject, addProject } = useStore();
