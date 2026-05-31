@@ -448,6 +448,45 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
               </TooltipTrigger>
               <TooltipContent side="bottom">Move to {side === "left" ? "right" : "left"}</TooltipContent>
             </Tooltip>
+            <Popover>
+              <Tooltip delayDuration={150}>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Sidebar sections"
+                      className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    >
+                      <SlidersHorizontal className="h-4 w-4" />
+                    </button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Sidebar sections</TooltipContent>
+              </Tooltip>
+              <PopoverContent side="bottom" align="end" className="w-60 p-2">
+                <div className="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Show in sidebar
+                </div>
+                <SectionToggleRow
+                  icon={Pin}
+                  label="Pinned notes"
+                  checked={sections.pinnedNotes}
+                  onChange={(v) => updateSections({ pinnedNotes: v })}
+                />
+                <SectionToggleRow
+                  icon={CalendarRange}
+                  label="Quick weeks"
+                  checked={sections.quickWeeks}
+                  onChange={(v) => updateSections({ quickWeeks: v })}
+                />
+                <SectionToggleRow
+                  icon={CalendarDays}
+                  label="Quick months"
+                  checked={sections.quickMonths}
+                  onChange={(v) => updateSections({ quickMonths: v })}
+                />
+              </PopoverContent>
+            </Popover>
           </>
         )}
         {!forceExpanded && <button
