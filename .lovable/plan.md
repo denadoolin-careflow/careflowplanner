@@ -1,50 +1,79 @@
 ## Goal
 
-1. Align the leading indicators on every task row (status dot, checkbox, area icon) so they sit on the same baseline as the title's first line, regardless of whether the title wraps.
-2. Make the horizontal scrollbar under the Inbox tag-filter chip rail thin and visually separated, so it no longer overlaps the chips.
+Clean up the Calendar page on mobile so the date header, view toggles, layout toggles, and filter chips all line up on their own rows without overlapping.
 
-## Why
+## Problems visible in the screenshot
 
-The mobile screenshot shows two issues:
-- On rows like "Pack Aerie's bag" the green status dot, checkbox, and area icon are at three slightly different vertical positions because each uses a different `mt-*` (currently `mt-2`, `mt-1.5`, `mt-1`).
-- The tag-filter row at the top uses a `scrollbar-none` class that isn't defined in the project, so the default 10px global scrollbar shows directly underneath the chips and visually touches them.
+1. The date label ("May 31 – Jun 6, 2026") wraps to four short lines and sits visually behind the Day/Week/Month/Year + Grid/Schedule toggles because `SectionCard`'s header is a single horizontal row.
+2. The view toggles and layout toggles squeeze into the right edge and clip "Schedule" off-screen.
+3. The filter-chips row wraps to two lines and pushes the "All" reset link to a lonely right-aligned spot on the second row.
 
 ## Changes
 
-### 1. `src/components/cards/TaskRow.tsx` — row indicator alignment
+### 1. `src/components/cards/SectionCard.tsx` — stack header on mobile
 
-Inside `rowBody`'s `<RowShell>` children:
+Switch the header layout so the action area drops under the title on narrow screens:
 
-- **Status dot** (currently `mt-2 h-2 w-2`) → `mt-[7px]` so its center sits at ~11px (matches first-line center for `text-[15px] leading-snug`).
-- **Checkbox** (currently `mt-1.5`) → `mt-[3px]` so the 16px control centers on ~11px.
-- **Area icon container** (currently `mt-1 h-6 w-6`) → shrink to `h-5 w-5` and use `mt-[1px]` so the box centers on ~11px without overhanging the title line. Inner icon stays `h-3.5 w-3.5`.
-- **Chevron** (when subtasks exist) — keep `mt-1.5` (already aligned with the new checkbox baseline since it's 20px tall ≈ line height).
-
-These tweaks keep the indicators visually centered on the first text line when the title wraps to multiple lines (RowShell stays `items-start`).
-
-### 2. `src/pages/Inbox.tsx` — slim tag-filter scrollbar
-
-Replace the non-existent `scrollbar-none` class on the chip rail (line 224) with a thin, separated scrollbar:
-
-```
-className="flex items-center gap-1.5 overflow-x-auto pb-1.5
-  [scrollbar-width:thin]
-  [&::-webkit-scrollbar]:h-1
-  [&::-webkit-scrollbar-track]:bg-transparent
-  [&::-webkit-scrollbar-thumb]:rounded-full
-  [&::-webkit-scrollbar-thumb]:bg-border/60"
+```diff
+- <header className="flex items-start justify-between gap-3 px-5 pt-5">
++ <header className="flex flex-col items-start gap-2 px-5 pt-5 sm:flex-row sm:justify-between sm:gap-3">
+    <div className="min-w-0">…title…</div>
+-   {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}
++   {action && <div className="flex w-full items-center gap-2 sm:w-auto sm:shrink-0">{action}</div>}
+  </header>
 ```
 
-This produces a 4px-tall thumb sitting in a 6px reserved track under the chips, so the chip outlines no longer touch the scrollbar. Firefox uses `scrollbar-width: thin` for the same effect.
+This gives every SectionCard headroom on mobile and unblocks the calendar title from competing with its action pills.
+
+### 2. `src/pages/CalendarPage.tsx` — title + toggles
+
+- Wrap the title row with `flex-wrap` and force the date label onto a single line with `whitespace-nowrap text-base sm:text-lg`:
+  ```diff
+  - <div className="flex items-center gap-2">
+  + <div className="flex flex-wrap items-center gap-2">
+      …chevrons…
+  -   <span>{headerLabel}</span>
+  +   <span className="whitespace-nowrap text-base sm:text-lg">{headerLabel}</span>
+      …Today…
+  ```
+- Make the toggle row a single horizontal scroller on mobile so Day/Week/Month/Year + Grid/Schedule/Kanban/Plan stay on one line and never clip:
+  ```diff
+  - <div className="flex flex-wrap items-center gap-2">
+  + <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:w-auto sm:flex-wrap sm:overflow-visible">
+  ```
+  Both inner pill groups already use `shrink-0` via their button widths; add `shrink-0` to each `<div className="flex gap-1 rounded-full…">` wrapper so the rounded groups don't squish during scroll.
+
+### 3. `src/pages/CalendarPage.tsx` — filter chips row
+
+Convert the chip row into a horizontal scroll rail on mobile and integrate "All" as the first chip so it never floats alone:
+
+```diff
+- <div className="mb-3 flex flex-wrap gap-1.5">
++ <div className="mb-3 -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1.5 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/60 sm:flex-wrap sm:overflow-visible sm:pb-0">
++   <button
++     type="button"
++     onClick={() => setKindFilter(new Set(ALL_KINDS))}
++     className="shrink-0 rounded-full border border-border/50 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
++   >
++     All
++   </button>
+    {([...]).map(...)}
+-   <button … className="ml-auto …">All</button>
+  </div>
+```
+
+Add `shrink-0` to each chip's className so they don't compress inside the scroller.
 
 ## Out of scope
 
-- No changes to swipe behavior, haptics, or chip styling/colors.
-- No global scrollbar restyle (the rest of the app keeps the existing 10px scrollbar).
+- The week-view grid only fitting two day columns (separate calendar-grid responsiveness issue).
+- Coloring/iconography of chips and toggles.
+- Today button, chevrons, Google refresh banner.
 
 ## Verification
 
-On the 411-wide mobile preview at `/inbox`:
-1. Each task row's green dot, checkbox, and area icon sit on the same horizontal line as the title's first character.
-2. Multi-line task titles (e.g. the "Make sure that the events…" row) keep the indicators aligned to the first line, not vertically centered on the wrapped block.
-3. The tag chip rail shows a thin scrollbar with a small gap beneath the chips; the chip borders no longer touch it.
+On the 411-wide mobile preview at `/calendar`:
+1. Date label "May 31 – Jun 6, 2026" renders on a single line, followed by Today, with no overlap.
+2. Day/Week/Month/Year and Grid/Schedule/Kanban toggles sit on their own row below the title; the row scrolls horizontally if it doesn't fit, with nothing clipped.
+3. Filter chips (Tasks, Appointments, …, Google, plus "All") all live on one horizontally-scrollable row with a thin scrollbar; no orphaned second row.
+4. Desktop layout (≥640px) is unchanged: title and actions still sit side-by-side and chips still wrap normally.
