@@ -34,7 +34,7 @@ export function HealthDashboard() {
             >
               {phase.label}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-foreground/70">
               Day {phase.cycleDay} · {phase.archetype}
             </p>
           </>
@@ -51,8 +51,8 @@ export function HealthDashboard() {
         <div className="flex items-center gap-3">
           <MoonGlyph size={44} />
           <div>
-            <p className="font-display text-lg">{moon.label}</p>
-            <p className="text-xs italic text-muted-foreground">
+            <p className="font-display text-lg text-foreground">{moon.label}</p>
+            <p className="text-xs italic text-foreground/70">
               {moon.affirmation}
             </p>
           </div>
@@ -64,10 +64,10 @@ export function HealthDashboard() {
         accent="secondary"
         icon={<Activity className="h-4 w-4" />}
       >
-        <p className="font-display text-2xl capitalize">
+        <p className="font-display text-2xl capitalize text-foreground">
           {today?.energyLevel ?? "—"}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-xs text-foreground/70">
           {today?.mood ? `Feeling ${today.mood}` : "Tap Cyclical Living to log"}
         </p>
       </Widget>
@@ -78,7 +78,7 @@ export function HealthDashboard() {
         icon={<Wind className="h-4 w-4" />}
         wide
       >
-        <p className="text-sm italic text-foreground/80">
+        <p className="text-sm italic text-foreground">
           "{phase?.invitation ?? moon.invitation}"
         </p>
       </Widget>
@@ -88,7 +88,7 @@ export function HealthDashboard() {
         accent="warm"
         icon={<Droplet className="h-4 w-4" />}
       >
-        <p className="text-sm text-foreground/80">
+        <p className="text-sm text-foreground">
           Sip water. Soften your shoulders. The day will hold you.
         </p>
       </Widget>
@@ -110,11 +110,13 @@ function Widget({
   wide?: boolean;
 }) {
   const bg: Record<typeof accent, string> = {
-    primary: "linear-gradient(160deg, hsl(258 60% 96%) 0%, hsl(var(--card)) 70%)",
-    secondary: "linear-gradient(160deg, hsl(145 35% 94%) 0%, hsl(var(--card)) 70%)",
-    accent: "linear-gradient(160deg, hsl(350 60% 96%) 0%, hsl(var(--card)) 70%)",
-    warm: "linear-gradient(160deg, hsl(32 60% 95%) 0%, hsl(var(--card)) 70%)",
-    moon: "linear-gradient(160deg, hsl(215 60% 94%) 0%, hsl(var(--card)) 70%)",
+    // Theme-aware tints: a soft accent wash sits *over* the card token,
+    // so the card stays legible in both light and dark mode.
+    primary:   "linear-gradient(160deg, hsl(258 60% 55% / 0.18) 0%, hsl(var(--card)) 75%)",
+    secondary: "linear-gradient(160deg, hsl(145 45% 50% / 0.16) 0%, hsl(var(--card)) 75%)",
+    accent:    "linear-gradient(160deg, hsl(350 65% 60% / 0.18) 0%, hsl(var(--card)) 75%)",
+    warm:      "linear-gradient(160deg, hsl(32 75% 55% / 0.18) 0%, hsl(var(--card)) 75%)",
+    moon:      "linear-gradient(160deg, hsl(215 60% 60% / 0.18) 0%, hsl(var(--card)) 75%)",
   };
   const fg: Record<typeof accent, string> = {
     primary: "hsl(var(--primary))",
@@ -130,12 +132,12 @@ function Widget({
     >
       <div className="flex items-center gap-2">
         <div
-          className="grid h-7 w-7 place-items-center rounded-full bg-card/70"
+          className="grid h-7 w-7 place-items-center rounded-full bg-background/80"
           style={{ color: fg[accent] }}
         >
           {icon}
         </div>
-        <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/80">
           {title}
         </p>
       </div>
