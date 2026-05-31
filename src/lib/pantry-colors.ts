@@ -55,12 +55,24 @@ export function usePantryColors() {
   return { colors, save, refresh };
 }
 
-export function statusVar(status: "in" | "low" | "out") {
-  return status === "in" ? "var(--pantry-in-stock)" :
-         status === "low" ? "var(--pantry-low)" :
-         "var(--pantry-out)";
+export type StockStatus = "in" | "low" | "out" | "need_soon";
+
+export function statusVar(status: StockStatus) {
+  switch (status) {
+    case "in": return "var(--pantry-in-stock)";
+    case "low": return "var(--pantry-low)";
+    case "need_soon": return "var(--pantry-low)";
+    case "out":
+    default: return "var(--pantry-out)";
+  }
 }
 
-export function statusLabel(status: "in" | "low" | "out") {
-  return status === "in" ? "In stock" : status === "low" ? "Low" : "Out";
+export function statusLabel(status: StockStatus) {
+  switch (status) {
+    case "in": return "In stock";
+    case "low": return "Low";
+    case "need_soon": return "Need soon";
+    case "out":
+    default: return "Out";
+  }
 }
