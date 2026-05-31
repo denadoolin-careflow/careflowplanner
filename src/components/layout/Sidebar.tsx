@@ -215,6 +215,14 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const [groupOrder, setGroupOrder] = useState<string[]>(() => loadGroupOrder());
   const [side, setSide] = useState<SidebarSide>(() => readSide());
   const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
+  const [sections, setSections] = useState<SectionPrefs>(() => readSections());
+  const updateSections = (patch: Partial<SectionPrefs>) => {
+    setSections(prev => {
+      const next = { ...prev, ...patch };
+      writePrefs(SECTIONS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
   const cycleTheme = () => {
     const next: SidebarTheme =
       themePref === "auto" ? "light" :
