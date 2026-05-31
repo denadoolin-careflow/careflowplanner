@@ -8,6 +8,7 @@ export type Retailer =
   | "instacart"
   | "walmart"
   | "kroger"
+  | "amazon"
   | "amazon_fresh"
   | "target"
   | "costco"
@@ -17,6 +18,7 @@ const URLS: Record<Retailer, (q: string) => string> = {
   instacart:    (q) => `https://www.instacart.com/store/s?k=${enc(q)}`,
   walmart:      (q) => `https://www.walmart.com/search?q=${enc(q)}`,
   kroger:       (q) => `https://www.kroger.com/search?query=${enc(q)}`,
+  amazon:       (q) => `https://www.amazon.com/s?k=${enc(q)}`,
   // Amazon Fresh: scope a normal product search to the Fresh storefront.
   amazon_fresh: (q) => `https://www.amazon.com/s?k=${enc(q)}&i=amazonfresh`,
   target:       (q) => `https://www.target.com/s?searchTerm=${enc(q)}`,
@@ -41,6 +43,7 @@ export const RETAILER_LABEL: Record<Retailer, string> = {
   instacart:    "Instacart",
   walmart:      "Walmart",
   kroger:       "Kroger",
+  amazon:       "Amazon",
   amazon_fresh: "Amazon Fresh",
   target:       "Target",
   costco:       "Costco",
@@ -48,7 +51,7 @@ export const RETAILER_LABEL: Record<Retailer, string> = {
 };
 
 export const RETAILERS: Retailer[] = [
-  "instacart", "walmart", "kroger", "amazon_fresh", "target", "costco", "sams_club",
+  "instacart", "walmart", "kroger", "amazon", "amazon_fresh", "target", "costco", "sams_club",
 ];
 
 /**
