@@ -1,61 +1,50 @@
 ## Goal
 
-Make the pantry drag-and-drop feel like a real kanban board (Things 3 / Linear class) and bring drag to the List view too. Four improvements: feel & polish, reorder within a column, multi-select drag, and category-drag in the List view.
+Add two new collapsible sections to the left sidebar:
 
-## 1. Feel & polish (Kanban)
+1. **Pinned Notes** — every note flagged `pinned` shows as a sidebar link to `/notes/:id`. Pin/unpin from the existing pin button on `NoteDetail`, plus a new hover-pin action on each row in the Notes list.
+2. **Quick Dates** — fast jumps into the calendar:
+   - **This Week** + 4 upcoming weeks → `/week?date=YYYY-MM-DD` (Monday of that week)
+   - **This Month** + next 5 months → `/month?date=YYYY-MM-01`
+   Each subsection (Weeks, Months) can be collapsed independently like other sidebar groups.
 
-`src/components/meals/PantryKanban.tsx`
+A new **Sidebar sections** toggle menu (gear popover at the top of the sidebar, next to the existing theme/side buttons) lets the user show/hide Pinned Notes, Quick Weeks, and Quick Months independently. Preferences persist in localStorage.
 
-- Add proper `@dnd-kit/core` **sensors** with activation constraints:
-  - PointerSensor: `activationConstraint: { distance: 6 }` so a 6px move starts the drag (clicks on trash/Shop pass through cleanly).
-  - TouchSensor: `activationConstraint: { delay: 200, tolerance: 8 }` — long-press to drag on mobile.
-  - KeyboardSensor with `sortableKeyboardCoordinates` for accessibility.
-- Add a **`DragOverlay`** that renders a floating, tilted clone of the dragged card (`rotate-2`, `shadow-2xl`, semi-transparent ring in the column's status color). The source card becomes a soft placeholder (`opacity-30`, dashed border) instead of disappearing.
-- **Column drop affordance**: when `isOver`, elevate with `ring-2 ring-[status-color]/40`, `bg-[status]/8`, and a pulsing dashed "Drop here" hint that replaces the static "Drag items here" text only while a drag is in progress.
-- **Card lift**: on `isDragging`, scale to 1.02 and apply a `cursor-grabbing` body class (via `useDndMonitor`) so the cursor reads correctly across the whole document.
-- **Drag handle vs. action buttons**: stop the whole row from being the drag handle. Add a small `GripVertical` handle on the left of each card (visible on hover / always on touch); only the handle gets `attributes`/`listeners`. Trash + ShopMenu become reliably clickable.
-- **Haptics**: call `navigator.vibrate?.(8)` on drag-start and `(12)` on a successful drop (mobile only).
-- **Optimistic + rollback**: keep the optimistic state update but on Supabase error, revert and `toast.error("Could not move — reverted")`.
-- Replace the green check toast with a subtle inline status-color toast (`toast.success` with the column's accent in the description), and debounce repeated drops within 600 ms so multi-drops don't spam.
+## Behavior
 
-## 2. Reorder within a column
+- Pinned Notes section is hidden when no notes are pinned (even if toggle is on), with a small "Pin a note to see it here" hint shown only when toggle on and list empty.
+- Active week/month route is highlighted using existing `NavLink` active styling — match against `?date=` query.
+- Collapsed sidebar: each pinned note and quick date renders as an icon-only row with tooltip (note title, or formatted date label like "Wk of Jun 2").
+- Section order: existing nav groups → Pinned Notes → Quick Dates (placed after the current groups, above no footer).
+- New sections respect the same `wrapItem` collapsed/tooltip pattern and `onNavigate` close-on-mobile behavior.
 
-- Schema: add a `sort_order integer` column to `pantry_items` (default `0`, indexed by `(user_id, stock_status, sort_order)`). Backfill existing rows with `row_number() over (partition by user_id, stock_status order by name)`.
-- Wrap each column's list in `SortableContext` (`verticalListSortingStrategy`) and swap `useDraggable` for `useSortable`.
-- On `onDragEnd`:
-  - Same-column drop → `arrayMove`, then bulk-update `sort_order` for the affected column (single RPC `update_pantry_order(ids uuid[])` or a batched `upsert`).
-  - Cross-column drop → set `stock_status` + append to the end of the target column (max `sort_order` + 1) and re-pack the source column's `sort_order`.
-- Load order now uses `.order('sort_order', { ascending: true }).order('name')` as a tiebreaker.
+## Technical Details
 
-## 3. Multi-select drag
+**Files touched (frontend only, no schema changes — `notes.pinned` already exists):**
 
-- Local state: `selectedIds: Set<string>`. Toggle with Cmd/Ctrl+click, range with Shift+click (within a column). Clicking elsewhere or pressing Esc clears the selection.
-- Visual: selected cards show a `ring-2 ring-primary/60` and a small count badge.
-- During drag, if the active id is in `selectedIds`, the `DragOverlay` renders a **stacked card preview** ("3 items") and `onDragEnd` moves the whole set in one Supabase `update ... in (ids)` call.
-- If the active id is not in the selection, the selection is ignored for that drag (no surprise multi-moves).
+- `src/components/layout/Sidebar.tsx`
+  - Add `usePinnedNotes()` hook: subscribes to `notes` via existing `listNotes()` + a realtime channel filter `pinned=eq.true` (or simple refetch on `visibilitychange` + on a custom `careflow:notes:pinned-changed` event dispatched from `updateNote`).
+  - Add `SidebarSectionsMenu` popover (Settings icon) with three switches: Pinned Notes / Quick Weeks / Quick Months. Persist under `careflow:sidebar:sections` key.
+  - Add `<PinnedNotesSection>` and `<QuickDatesSection>` components inside `SidebarBody`, rendered conditionally based on prefs.
+  - Use `date-fns` `startOfWeek({ weekStartsOn: 1 })`, `addWeeks`, `startOfMonth`, `addMonths`, `format`.
 
-## 4. DnD in List view (`PantryPanel`)
+- `src/lib/notes.ts`
+  - In `updateNote`, after a successful update that includes `pinned`, dispatch `window.dispatchEvent(new Event("careflow:notes:pinned-changed"))` so the sidebar refreshes immediately.
+  - Add `listPinnedNotes()` helper that selects `id, title, kind, date` where `pinned = true` ordered by `updated_at desc`.
 
-- Wrap the categories in a single `DndContext`. Each `<section>` becomes a droppable keyed by category; each `<li>` becomes a `useSortable` item.
-- Cross-section drop calls `updatePantryCategory(it.id, targetCategory)` (already exists). Same-section drop reorders — requires the same `sort_order` column from step 2 (scoped per category in this view, per status in the kanban view; both use the same column, sort context is just `(user_id, scope_field, sort_order)`).
-- Use the same sensors, handle, overlay, and haptics as kanban for consistency.
-- Show an inline "Drop to move to **{category}**" caption on the hovered section header during drag.
+- `src/pages/Notes.tsx` (small UX add)
+  - Add a pin button on each note row (hover-revealed) that toggles `pinned`. Uses existing `updateNote`. This is optional polish but keeps the feature discoverable.
 
-## Technical details
+**No database migration required** — `pinned boolean` column already exists on `notes`.
 
-```text
-Files
-├─ src/components/meals/PantryKanban.tsx     (rewrite DnD: sensors, sortable, overlay, handle, multi-select)
-├─ src/components/meals/PantryPanel.tsx      (add DndContext + sortable list, drag handle)
-├─ src/components/meals/DragOverlayCard.tsx  (new — shared floating card preview)
-├─ src/lib/meal-ai.ts                        (add reorderPantry(ids, scope) + bulkSetStatus)
-└─ supabase migration                        (add sort_order column + backfill + composite index)
-```
+**LocalStorage keys added:**
+- `careflow:sidebar:sections` → `{ pinnedNotes: boolean; quickWeeks: boolean; quickMonths: boolean }` (defaults: all true)
+- Reuses existing `STORAGE_KEY` (`careflow:sidebar:open-groups`) for open/closed state of the two new sections, with ids `pinned-notes`, `quick-weeks`, `quick-months`.
 
-Libraries already installed: `@dnd-kit/core`, plus `@dnd-kit/sortable` (will be added) and `@dnd-kit/utilities`.
+## Out of Scope
 
-## Out of scope
-
-- No realtime sync of kanban order across devices (still loads on mount).
-- No drag-to-grocery-list bridge (separate request).
-- No bulk delete or bulk status changes outside the multi-select drag flow.
+- Reordering pinned notes (uses note `updated_at` order)
+- Drag-pinning notes onto the sidebar
+- Pinning tasks/projects (projects already have a Favorite star)
+- Quick dates beyond the 5-week / 6-month horizon
+- A separate Day quick-jump (Today already exists in the top section)
