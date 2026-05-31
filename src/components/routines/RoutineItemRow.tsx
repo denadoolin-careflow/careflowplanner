@@ -22,7 +22,7 @@ export function RoutineItemRow({
 
   return (
     <div className={cn(
-      "group flex items-center gap-2 rounded-xl bg-muted/30 px-2 py-2 text-xs transition-colors hover:bg-muted/50",
+      "group flex min-w-0 items-center gap-2 overflow-hidden rounded-xl bg-muted/30 px-2 py-2 text-xs transition-colors hover:bg-muted/50",
       compact && "py-1.5",
     )}>
       <Checkbox
@@ -50,7 +50,7 @@ export function RoutineItemRow({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className={cn("flex-1 truncate text-left", item.done && "text-muted-foreground line-through")}
+          className={cn("min-w-0 flex-1 truncate text-left", item.done && "text-muted-foreground line-through")}
         >
           {item.text}
         </button>
