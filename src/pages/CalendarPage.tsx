@@ -223,16 +223,16 @@ export default function CalendarPage() {
 
       <SectionCard
         title={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => shift(-1)} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
-            <span>{headerLabel}</span>
+            <span className="whitespace-nowrap text-base sm:text-lg">{headerLabel}</span>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => shift(1)} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
             <Button variant="ghost" size="sm" className="ml-1 h-7 px-2 text-xs" onClick={() => setCursor(new Date())}>Today</Button>
           </div>
         }
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex gap-1 rounded-full bg-muted/60 p-0.5">
+          <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:w-auto sm:flex-wrap sm:overflow-visible sm:pb-0">
+            <div className="flex shrink-0 gap-1 rounded-full bg-muted/60 p-0.5">
               {(["day","week","month","year"] as View[]).map(v => (
                 <button
                   key={v}
@@ -246,7 +246,7 @@ export default function CalendarPage() {
                 </button>
               ))}
             </div>
-            <div className="flex gap-1 rounded-full bg-muted/60 p-0.5">
+            <div className="flex shrink-0 gap-1 rounded-full bg-muted/60 p-0.5">
               <button
                 onClick={() => setLayout("grid")}
                 className={cn(
