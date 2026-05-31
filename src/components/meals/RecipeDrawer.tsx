@@ -134,17 +134,18 @@ export function RecipeDrawer({ meal, onClose, onChanged }: { meal: Meal | null; 
                       return (
                         <li key={idx} className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-1.5">
                           <Checkbox checked={checked} onCheckedChange={() => onToggleIngredient(i)} />
-                          <span className={checked ? "text-muted-foreground line-through" : ""}>{i}</span>
+                          <span className={`flex-1 ${checked ? "text-muted-foreground line-through" : ""}`}>{i}</span>
+                          <ShopMenu items={i} size="xs" variant="ghost" compact className="h-6 px-1.5" />
                           {match ? (
                             inStock ? (
-                              <Badge variant="secondary" className="ml-auto rounded-full bg-primary/15 text-[10px] text-primary">In stock</Badge>
+                              <Badge variant="secondary" className="rounded-full bg-primary/15 text-[10px] text-primary">In stock</Badge>
                             ) : match.stockStatus === "low" ? (
-                              <Badge variant="secondary" className="ml-auto rounded-full bg-amber-500/20 text-[10px] text-amber-300">Low</Badge>
+                              <Badge variant="secondary" className="rounded-full bg-amber-500/20 text-[10px] text-amber-300">Low</Badge>
                             ) : (
-                              <Badge variant="outline" className="ml-auto rounded-full text-[10px] text-muted-foreground">On list</Badge>
+                              <Badge variant="outline" className="rounded-full text-[10px] text-muted-foreground">On list</Badge>
                             )
                           ) : (
-                            <Badge variant="outline" className="ml-auto rounded-full text-[10px] text-muted-foreground/60">Not on list</Badge>
+                            <Badge variant="outline" className="rounded-full text-[10px] text-muted-foreground/60">Not on list</Badge>
                           )}
                         </li>
                       );
