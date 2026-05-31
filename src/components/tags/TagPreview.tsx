@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Children, cloneElement, isValidElement, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, FileText, Folder, ShoppingCart, ArrowRight } from "lucide-react";
 import {
@@ -123,10 +123,20 @@ export function TagPreviewHover({
   const [open, setOpen] = useState(false);
 
   if (touch) {
+    // On touch, prevent the underlying Link from navigating on first tap so the
+    // preview can open. A second tap on the chip (while open) will navigate.
+    const child = Children.only(children);
+    const intercepted = isValidElement(child)
+      ? cloneElement(child as React.ReactElement<{ onClick?: (e: MouseEvent) => void }>, {
+          onClick: (e: MouseEvent) => {
+            if (!open) { e.preventDefault(); e.stopPropagation(); setOpen(true); }
+          },
+        })
+      : child;
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild={asChild} className={className}>
-          {children}
+          {intercepted}
         </PopoverTrigger>
         <PopoverContent side="top" align="center" className="w-72 rounded-2xl p-3">
           <TagPreviewContent name={name} onNavigate={() => setOpen(false)} />
