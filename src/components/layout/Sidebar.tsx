@@ -20,6 +20,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Switch } from "@/components/ui/switch";
 import { listPinnedNotes, type Note } from "@/lib/notes";
 import { addMonths, addWeeks, format, startOfMonth, startOfWeek } from "date-fns";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { listPinnedTags, type Tag } from "@/lib/tags";
+import { tagIconFor } from "@/components/tags/tag-icon";
+import { fallbackColorFor } from "@/lib/tags";
+import { useNavigate } from "react-router-dom";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon },
@@ -45,8 +50,8 @@ const DEFAULT_WIDTH = 256;
 type SidebarSide = "left" | "right";
 type SidebarTheme = "auto" | "light" | "dark" | "atmosphere";
 
-type SectionPrefs = { pinnedNotes: boolean; quickWeeks: boolean; quickMonths: boolean };
-const DEFAULT_SECTIONS: SectionPrefs = { pinnedNotes: true, quickWeeks: true, quickMonths: true };
+type SectionPrefs = { pinnedNotes: boolean; pinnedTags: boolean; quickWeeks: boolean; quickMonths: boolean };
+const DEFAULT_SECTIONS: SectionPrefs = { pinnedNotes: true, pinnedTags: true, quickWeeks: true, quickMonths: true };
 
 function readSections(): SectionPrefs {
   if (typeof window === "undefined") return DEFAULT_SECTIONS;
@@ -240,6 +245,131 @@ function usePinnedNotes(enabled: boolean) {
   return notes;
 }
 
+function usePinnedTags(enabled: boolean) {
+  const [tags, setTags] = useState<Tag[]>([]);
+  useEffect(() => {
+    if (!enabled) { setTags([]); return; }
+    let alive = true;
+    const load = () => { void listPinnedTags().then(t => { if (alive) setTags(t); }).catch(() => {}); };
+    load();
+    const onChange = () => load();
+    const onVis = () => { if (document.visibilityState === "visible") load(); };
+    window.addEventListener("careflow:tags:pinned-changed", onChange);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      alive = false;
+      window.removeEventListener("careflow:tags:pinned-changed", onChange);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [enabled]);
+  return tags;
+}
+
+function PinnedTagsSection({
+  collapsed, open, onToggle, onNavigate, pathname,
+}: { collapsed: boolean; open: boolean; onToggle: () => void; onNavigate?: () => void; pathname: string }) {
+  const tags = usePinnedTags(true);
+  if (tags.length === 0) return null;
+
+  if (collapsed) {
+    return (
+      <div className="mb-1 flex flex-col items-center gap-0.5">
+        {tags.slice(0, 8).map(t => {
+          const Icon = tagIconFor(t.icon);
+          const color = t.color || fallbackColorFor(t.name);
+          const to = `/tags/${encodeURIComponent(t.name)}`;
+          const active = pathname === to;
+          return (
+            <Tooltip key={t.id} delayDuration={150}>
+              <TooltipTrigger asChild>
+                <NavLink
+                  to={to}
+                  onClick={onNavigate}
+                  className={cn(
+                    "grid h-10 w-10 place-items-center rounded-xl transition-all",
+                    "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    active && "bg-primary-soft text-foreground shadow-soft",
+                  )}
+                >
+                  <Icon className="h-4 w-4" style={{ color }} />
+                </NavLink>
+              </TooltipTrigger>
+              <TooltipContent side="right">#{t.name}</TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-1">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+      >
+        <Pin className="h-3.5 w-3.5 opacity-70" />
+        <span className="flex-1 text-left">Pinned tags</span>
+        <span className="text-[10px] text-sidebar-foreground/50">{tags.length}</span>
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} />
+      </button>
+      <div className={cn("grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+        <div className="min-h-0 overflow-hidden">
+          <div className="mt-1 flex flex-col gap-0.5 pl-1">
+            {tags.map(t => {
+              const Icon = tagIconFor(t.icon);
+              const color = t.color || fallbackColorFor(t.name);
+              return (
+                <NavLink
+                  key={t.id}
+                  to={`/tags/${encodeURIComponent(t.name)}`}
+                  onClick={onNavigate}
+                  className={({ isActive }) => cn(
+                    "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                    "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    isActive && "bg-primary-soft text-foreground shadow-soft",
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" style={{ color }} />
+                  <span className="flex-1 truncate">#{t.name}</span>
+                </NavLink>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniDatePickerButton({ onPick, label }: { onPick: (d: Date) => void; label: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          onClick={(e) => e.stopPropagation()}
+          className="grid h-5 w-5 place-items-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+        >
+          <CalendarDays className="h-3 w-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="bottom" align="end" className="w-auto p-0">
+        <CalendarPicker
+          mode="single"
+          onSelect={(d) => { if (d) { onPick(d); setOpen(false); } }}
+          initialFocus
+          weekStartsOn={1}
+          className={cn("p-3 pointer-events-auto")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function PinnedNotesSection({
   collapsed, open, onToggle, onNavigate, pathname,
 }: { collapsed: boolean; open: boolean; onToggle: () => void; onNavigate?: () => void; pathname: string }) {
@@ -365,21 +495,24 @@ function QuickDateRows({
 }
 
 function QuickDatesSection({
-  kind, open, onToggle, onNavigate, pathname,
-}: { kind: "week" | "month"; open: boolean; onToggle: () => void; onNavigate?: () => void; pathname: string }) {
+  kind, open, onToggle, onNavigate, pathname, onPickDate,
+}: { kind: "week" | "month"; open: boolean; onToggle: () => void; onNavigate?: () => void; pathname: string; onPickDate: (d: Date) => void }) {
   const label = kind === "week" ? "Weeks" : "Months";
   const Icon = kind === "week" ? CalendarRange : CalendarDays;
   return (
     <div className="mb-1">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
-      >
-        <Icon className="h-3.5 w-3.5 opacity-70" />
-        <span className="flex-1 text-left">{label}</span>
-        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} />
-      </button>
+      <div className="flex w-full items-center gap-1 pr-1">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+        >
+          <Icon className="h-3.5 w-3.5 opacity-70" />
+          <span className="flex-1 text-left">{label}</span>
+          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} />
+        </button>
+        <MiniDatePickerButton onPick={onPickDate} label={`Jump to a day (${label.toLowerCase()})`} />
+      </div>
       <div className={cn("grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
         <div className="min-h-0 overflow-hidden">
           <QuickDateRows kind={kind} count={kind === "week" ? 5 : 6} onNavigate={onNavigate} pathname={pathname} />
@@ -393,6 +526,12 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const { pathname, openMap, toggle, setOpenMap, collapsed, setCollapsed, areas, projects, updateArea } = useSidebarData(forceExpanded);
   const { updateProject, addProject } = useStore();
   const { openPanel } = useWorkspaceLayout();
+  const navigate = useNavigate();
+  const jumpToDay = (d: Date) => {
+    const iso = format(d, "yyyy-MM-dd");
+    navigate(`/today?date=${iso}`);
+    onNavigate?.();
+  };
   const [groupOrder, setGroupOrder] = useState<string[]>(() => loadGroupOrder());
   const [side, setSide] = useState<SidebarSide>(() => readSide());
   const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
@@ -655,6 +794,12 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   onChange={(v) => updateSections({ pinnedNotes: v })}
                 />
                 <SectionToggleRow
+                  icon={Pin}
+                  label="Pinned tags"
+                  checked={sections.pinnedTags}
+                  onChange={(v) => updateSections({ pinnedTags: v })}
+                />
+                <SectionToggleRow
                   icon={CalendarRange}
                   label="Quick weeks"
                   checked={sections.quickWeeks}
@@ -699,6 +844,46 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             </NavLink>
           ))}
         </div>
+
+        {/* Pinned + quick-date jump sections (live right under Logbook) */}
+        {sections.pinnedNotes && (
+          <PinnedNotesSection
+            collapsed={collapsed}
+            open={openMap["pinned-notes"] !== false}
+            onToggle={() => toggle("pinned-notes")}
+            onNavigate={onNavigate}
+            pathname={pathname}
+          />
+        )}
+        {sections.pinnedTags && (
+          <PinnedTagsSection
+            collapsed={collapsed}
+            open={openMap["pinned-tags"] !== false}
+            onToggle={() => toggle("pinned-tags")}
+            onNavigate={onNavigate}
+            pathname={pathname}
+          />
+        )}
+        {!collapsed && sections.quickWeeks && (
+          <QuickDatesSection
+            kind="week"
+            open={openMap["quick-weeks"] !== false}
+            onToggle={() => toggle("quick-weeks")}
+            onNavigate={onNavigate}
+            pathname={pathname}
+            onPickDate={jumpToDay}
+          />
+        )}
+        {!collapsed && sections.quickMonths && (
+          <QuickDatesSection
+            kind="month"
+            open={openMap["quick-months"] !== false}
+            onToggle={() => toggle("quick-months")}
+            onNavigate={onNavigate}
+            pathname={pathname}
+            onPickDate={jumpToDay}
+          />
+        )}
 
         {/* Areas → Projects tree */}
         {!collapsed && projects.some(p => p.isFavorite) && (
@@ -929,34 +1114,6 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           );
         })}
 
-        {sections.pinnedNotes && (
-          <PinnedNotesSection
-            collapsed={collapsed}
-            open={openMap["pinned-notes"] !== false}
-            onToggle={() => toggle("pinned-notes")}
-            onNavigate={onNavigate}
-            pathname={pathname}
-          />
-        )}
-
-        {!collapsed && sections.quickWeeks && (
-          <QuickDatesSection
-            kind="week"
-            open={openMap["quick-weeks"] !== false}
-            onToggle={() => toggle("quick-weeks")}
-            onNavigate={onNavigate}
-            pathname={pathname}
-          />
-        )}
-        {!collapsed && sections.quickMonths && (
-          <QuickDatesSection
-            kind="month"
-            open={openMap["quick-months"] !== false}
-            onToggle={() => toggle("quick-months")}
-            onNavigate={onNavigate}
-            pathname={pathname}
-          />
-        )}
       </nav>
     </div>
     </TooltipProvider>

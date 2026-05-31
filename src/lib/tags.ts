@@ -9,6 +9,7 @@ export interface Tag {
   name: string;
   color: string;       // hex (e.g. #f59e0b)
   icon: string;        // lucide icon name (kebab case ok, we normalize)
+  pinned?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +19,7 @@ const fromRow = (r: any): Tag => ({
   name: r.name,
   color: r.color ?? DEFAULT_COLOR,
   icon: r.icon ?? DEFAULT_ICON,
+  pinned: !!r.pinned,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 });
@@ -116,16 +118,29 @@ export async function createTag(patch: { name: string; color?: string; icon?: st
   return fromRow(data);
 }
 
-export async function updateTag(id: string, patch: Partial<Pick<Tag, "name" | "color" | "icon">>): Promise<void> {
+export async function updateTag(id: string, patch: Partial<Pick<Tag, "name" | "color" | "icon" | "pinned">>): Promise<void> {
   const row: any = {};
   if (patch.name !== undefined) row.name = normalizeTagName(patch.name);
   if (patch.color !== undefined) row.color = patch.color;
   if (patch.icon !== undefined) row.icon = patch.icon;
+  if (patch.pinned !== undefined) row.pinned = patch.pinned;
   const { error } = await supabase.from("tags" as any).update(row).eq("id", id);
   if (error) throw error;
+  try { window.dispatchEvent(new Event("careflow:tags:pinned-changed")); } catch {}
 }
 
 export async function deleteTag(id: string): Promise<void> {
   const { error } = await supabase.from("tags" as any).delete().eq("id", id);
   if (error) throw error;
+  try { window.dispatchEvent(new Event("careflow:tags:pinned-changed")); } catch {}
+}
+
+export async function listPinnedTags(): Promise<Tag[]> {
+  const { data, error } = await supabase
+    .from("tags" as any)
+    .select("*")
+    .eq("pinned", true)
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(fromRow);
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, FileText, Folder, Plus, ShoppingCart } from "lucide-react";
+import { ArrowLeft, CheckCircle2, FileText, Folder, Pin, Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -18,7 +18,7 @@ export default function TagDetail() {
   const { name = "" } = useParams();
   const tagName = decodeURIComponent(name);
   const { state, addTask, addGrocery, addProject } = useStore();
-  const { resolve } = useTags();
+  const { resolve, byName, ensure, setPinned } = useTags();
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
 
@@ -28,6 +28,19 @@ export default function TagDetail() {
   const lc = tagName.toLowerCase();
   const meta = resolve(tagName);
   const accent = meta.color || fallbackColorFor(tagName);
+  const existing = byName(tagName);
+  const isPinned = !!existing?.pinned;
+
+  const togglePin = async () => {
+    try {
+      const t = existing ?? await ensure(tagName);
+      await setPinned(t.id, !t.pinned);
+      toast.success(t.pinned ? `Unpinned #${tagName}` : `Pinned #${tagName} to sidebar`);
+    } catch (e) {
+      console.warn(e);
+      toast.error("Could not update pin");
+    }
+  };
 
   const tasks = useMemo(
     () => (state.tasks ?? []).filter(t => (t.tags ?? []).some(n => n.toLowerCase() === lc)),
@@ -85,6 +98,17 @@ export default function TagDetail() {
           {totalCount} item{totalCount === 1 ? "" : "s"}
         </span>
         <div className="ml-auto">
+          <Button
+            variant={isPinned ? "default" : "outline"}
+            size="sm"
+            className="mr-2 gap-1.5"
+            onClick={() => void togglePin()}
+            aria-pressed={isPinned}
+            title={isPinned ? "Unpin from sidebar" : "Pin to sidebar"}
+          >
+            <Pin className={cn("h-4 w-4", isPinned && "fill-current")} />
+            {isPinned ? "Pinned" : "Pin"}
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" className="gap-1.5 rounded-full">

@@ -76,12 +76,17 @@ export function useTags() {
     emit((cache ?? []).map((t) => (t.id === id ? { ...t, ...patch } : t)));
   }, []);
 
+  const setPinned = useCallback(async (id: string, pinned: boolean) => {
+    await updateTag(id, { pinned });
+    emit((cache ?? []).map((t) => (t.id === id ? { ...t, pinned } : t)));
+  }, []);
+
   const remove = useCallback(async (id: string) => {
     await deleteTag(id);
     emit((cache ?? []).filter((t) => t.id !== id));
   }, []);
 
-  return { tags, loading, reload, byName, resolve, ensure, rename, recolor, remove };
+  return { tags, loading, reload, byName, resolve, ensure, rename, recolor, setPinned, remove };
 }
 
 /* expose for non-hook callers that just need the cache */
