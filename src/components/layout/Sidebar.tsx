@@ -526,6 +526,12 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const { pathname, openMap, toggle, setOpenMap, collapsed, setCollapsed, areas, projects, updateArea } = useSidebarData(forceExpanded);
   const { updateProject, addProject } = useStore();
   const { openPanel } = useWorkspaceLayout();
+  const navigate = useNavigate();
+  const jumpToDay = (d: Date) => {
+    const iso = format(d, "yyyy-MM-dd");
+    navigate(`/today?date=${iso}`);
+    onNavigate?.();
+  };
   const [groupOrder, setGroupOrder] = useState<string[]>(() => loadGroupOrder());
   const [side, setSide] = useState<SidebarSide>(() => readSide());
   const [themePref, setThemePref] = useState<SidebarTheme>(() => readTheme());
