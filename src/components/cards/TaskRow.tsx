@@ -29,7 +29,6 @@ import {
   SwipeableList, SwipeableListItem, LeadingActions, TrailingActions,
   SwipeAction, Type as SwipeType,
 } from "react-swipeable-list";
-import "react-swipeable-list/dist/styles.css";
 
 const PRIORITY_DOTS: Record<Task["priority"], number> = { low: 0, medium: 1, high: 2 };
 const PRIORITY_TONE: Record<Task["priority"], string> = {
