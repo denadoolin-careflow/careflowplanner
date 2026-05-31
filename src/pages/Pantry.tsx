@@ -19,7 +19,7 @@ export default function Pantry() {
         title="Pantry"
         subtitle="Track what you already have so we don't add it to the grocery list."
         accent="warm"
-        actions={
+        action={
           <div className="flex gap-1 rounded-full border border-border/60 p-0.5">
             <Button
               size="sm" variant="ghost"
