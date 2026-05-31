@@ -50,7 +50,7 @@ export function RoutinesPanel() {
   return (
     <>
       <Collapsible open={open} onOpenChange={setOpen}>
-        <div className="cozy-card rounded-2xl p-3">
+        <div className="cozy-card overflow-hidden rounded-2xl p-3">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <CollapsibleTrigger className="flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-semibold text-foreground hover:bg-muted/50">
               <ListChecks className="h-3.5 w-3.5 text-primary" /> Routines
@@ -74,7 +74,7 @@ export function RoutinesPanel() {
             </div>
           </div>
           <CollapsibleContent>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid min-w-0 gap-3 md:grid-cols-3">
               {PARTS.map(({ slot, label, icon: Icon }) => (
                 <RoutineSlotColumn
                   key={slot}
