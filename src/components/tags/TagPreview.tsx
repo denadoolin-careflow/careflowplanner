@@ -125,9 +125,7 @@ export function TagPreviewHover({
   if (touch) {
     return (
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild={asChild} className={className}
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(o => !o); }}
-        >
+        <PopoverTrigger asChild={asChild} className={className}>
           {children}
         </PopoverTrigger>
         <PopoverContent side="top" align="center" className="w-72 rounded-2xl p-3">
