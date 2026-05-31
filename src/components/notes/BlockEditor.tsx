@@ -441,12 +441,45 @@ export function BlockEditor({
   const { state, addTask } = useStore();
   const navigate = useNavigate();
   const [prefs] = useEditorPrefs();
+  const { tags: registeredTags } = useTags();
   const refsRef = useRef<RefItem[]>([]);
   refsRef.current = useMemo(() => buildReferences(state), [state]);
   const lastSyncedRef = useRef<string>(body);
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
   const promoteRef = useRef<() => void>(() => {});
+
+  // Union of registered tag names and orphan tag names across data,
+  // so the `#` autocomplete surfaces everything the user has ever used.
+  const tagNamesRef = useRef<string[]>([]);
+  tagNamesRef.current = useMemo(() => {
+    const set = new Set<string>();
+    registeredTags.forEach(t => set.add(t.name));
+    (state.tasks ?? []).forEach(t => (t.tags ?? []).forEach(n => set.add(n)));
+    (state.projects ?? []).forEach(p => ((p as any).tags ?? []).forEach((n: string) => set.add(n)));
+    (state.grocery ?? []).forEach(g => (g.tags ?? []).forEach(n => set.add(n)));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [registeredTags, state.tasks, state.projects, state.grocery]);
+
+  // Debounced sync of body-extracted #tags into note.tags.
+  const tagSyncTimer = useRef<number | null>(null);
+  const lastTagSetRef = useRef<string>("");
+  const syncBodyTags = useCallback((markdown: string) => {
+    if (!noteIdRef.current) return;
+    if (tagSyncTimer.current) window.clearTimeout(tagSyncTimer.current);
+    tagSyncTimer.current = window.setTimeout(async () => {
+      const found = extractHashtagsFromText(markdown);
+      if (!found.length) return;
+      const sig = found.map(s => s.toLowerCase()).sort().join(",");
+      if (sig === lastTagSetRef.current) return;
+      lastTagSetRef.current = sig;
+      // Merge with whatever tags are already on the note.
+      const existing = (state as any).notesTagsCache?.[noteIdRef.current!] ?? [];
+      const merged = Array.from(new Set([...existing, ...found].map(s => s)))
+        .filter((v, i, arr) => arr.findIndex(x => x.toLowerCase() === v.toLowerCase()) === i);
+      try { await updateNote(noteIdRef.current!, { tags: merged }); } catch {}
+    }, 800) as unknown as number;
+  }, [state]);
 
   const slashExtension = useMemo(() => Extension.create({
     name: "slashCommand",
