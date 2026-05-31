@@ -9,6 +9,7 @@ import { DndContext, useDraggable, useDroppable, type DragEndEvent } from "@dnd-
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { IngredientPopover } from "./IngredientPopover";
+import { ShopMenu } from "./ShopMenu";
 import { statusVar, statusLabel } from "@/lib/pantry-colors";
 import type { GroceryItem } from "@/lib/types";
 import { EmptyState } from "@/components/cards/EmptyState";
@@ -106,6 +107,15 @@ export function GroceryKanban() {
               </AnimatePresence>
             </ul>
             <AddItemRow onAdd={(itemName) => addGrocery(itemName, name).then(() => reloadAll())} categoryName={name} />
+            {visible.length > 0 && (
+              <div className="mt-2 flex justify-end">
+                <ShopMenu
+                  items={visible.filter(i => !i.bought).map(i => i.name)}
+                  size="xs" variant="ghost" compact
+                  className="text-[10px] text-muted-foreground hover:text-primary"
+                />
+              </div>
+            )}
           </>
         )}
       </div>
@@ -245,6 +255,8 @@ function KanbanItem({ item, onToggle, onDelete, onStock, onRename, shoppingMode 
         style={{ background: dotBg, color: dotColor }}>
         {statusLabel(item.stockStatus)}
       </button>
+      <ShopMenu items={item.name} size="xs" variant="ghost" compact
+        className="h-6 px-1 text-muted-foreground/70 opacity-0 transition group-hover:opacity-100 hover:text-primary" />
       <button onPointerDown={(e) => e.stopPropagation()} onClick={onDelete}
         className="opacity-0 transition hover:text-destructive group-hover:opacity-70">
         <Trash2 className="h-3 w-3" />

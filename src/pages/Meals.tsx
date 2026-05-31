@@ -15,6 +15,7 @@ import { PantryPanel } from "@/components/meals/PantryPanel";
 import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
 import { GroceryKanban } from "@/components/meals/GroceryKanban";
 import { GroceryList } from "@/components/meals/GroceryList";
+import { GroceryAssistant } from "@/components/meals/GroceryAssistant";
 import { MealCell } from "@/components/meals/MealCell";
 import { LibrarySidebar } from "@/components/meals/LibrarySidebar";
 import { calendarPanelOptions } from "@/components/meals/CalendarDropPanel";
@@ -509,6 +510,7 @@ export default function Meals() {
         }
       >
         {groceryView === "kanban" ? <GroceryKanban /> : <GroceryList />}
+        <div className="mt-3"><GroceryAssistant /></div>
       </SectionCard>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
