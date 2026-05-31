@@ -138,8 +138,8 @@ export function TaskRow({
       return;
     }
     if (selection.paneOpen) { selection.selectOnly(task.id); return; }
-    // Tap title → expand inline. Double-click → edit.
-    setExpanded(v => !v);
+    // Tap does nothing — expansion is via chevron, edit via double-click,
+    // and the quick-edit menu is reserved for press-and-hold.
   };
 
   const leadingActions = (
