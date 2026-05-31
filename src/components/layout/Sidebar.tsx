@@ -5,7 +5,7 @@ import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
-  PanelLeft, PanelRight, Palette,
+  PanelLeft, PanelRight, Palette, Pin, CalendarDays, SlidersHorizontal, StickyNote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, type MouseEvent } from "react";
@@ -16,6 +16,10 @@ import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { useAtmosphere } from "@/lib/atmospheres";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
+import { listPinnedNotes, type Note } from "@/lib/notes";
+import { addMonths, addWeeks, format, startOfMonth, startOfWeek } from "date-fns";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon },
