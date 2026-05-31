@@ -852,6 +852,51 @@ export function BlockEditor({
   }, [editor, addTask]);
   promoteRef.current = promoteTaskItemToTask;
 
+  /** Turn the current selection into a real Task and tag the chip. */
+  const promoteSelectionToTask = useCallback(() => {
+    if (!editor) return;
+    const { from, to, empty } = editor.state.selection;
+    if (empty) { toast.message("Select some text first"); return; }
+    const text = editor.state.doc.textBetween(from, to, " ").trim();
+    if (!text) { toast.message("Select some text first"); return; }
+    const inlineTags = extractHashtagsFromText(text);
+    const cleanTitle = text.replace(HASHTAG_RE, " ").replace(/\s+/g, " ").trim();
+    void addTask({ title: cleanTitle || text, tags: inlineTags });
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from, to })
+      .setLink({ href: "/anytime", class: "task-chip" } as any)
+      .setTextSelection(to)
+      .unsetMark("link")
+      .run();
+    toast.success("Added to Tasks", { description: cleanTitle || text });
+  }, [editor, addTask]);
+
+  /** Insert a #tag chip at the end of the selection without overwriting it. */
+  const insertTagAtSelection = useCallback((name: string) => {
+    if (!editor || !name.trim()) return;
+    const cleaned = name.trim().replace(/^#+/, "");
+    const href = `/tags/${encodeURIComponent(cleaned)}`;
+    const { to } = editor.state.selection;
+    editor
+      .chain()
+      .focus()
+      .setTextSelection(to)
+      .insertContent(" ")
+      .insertContent({
+        type: "text",
+        text: `#${cleaned}`,
+        marks: [{ type: "link", attrs: { href, class: "tag-chip" } }],
+      })
+      .insertContent(" ")
+      .run();
+    if (noteIdRef.current) {
+      const text = (editor.getText?.() ?? "") + ` #${cleaned}`;
+      updateNote(noteIdRef.current, { tags: extractHashtagsFromText(text) }).catch(() => {});
+    }
+  }, [editor]);
+
   return (
     <div
       onClick={handleClick}
