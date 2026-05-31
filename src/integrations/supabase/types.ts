@@ -1809,6 +1809,33 @@ export type Database = {
           },
         ]
       }
+      grocery_prefs: {
+        Row: {
+          backup_store: string | null
+          created_at: string
+          delivery_mode: string
+          preferred_store: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          backup_store?: string | null
+          created_at?: string
+          delivery_mode?: string
+          preferred_store?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          backup_store?: string | null
+          created_at?: string
+          delivery_mode?: string
+          preferred_store?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       habit_logs: {
         Row: {
           created_at: string
@@ -3286,8 +3313,11 @@ export type Database = {
           in_stock: boolean
           name: string
           notes: string | null
+          price: number | null
           qty: string | null
           stock_status: string
+          store_pref: string | null
+          unit: string | null
           updated_at: string
           user_id: string
         }
@@ -3298,8 +3328,11 @@ export type Database = {
           in_stock?: boolean
           name: string
           notes?: string | null
+          price?: number | null
           qty?: string | null
           stock_status?: string
+          store_pref?: string | null
+          unit?: string | null
           updated_at?: string
           user_id: string
         }
@@ -3310,8 +3343,11 @@ export type Database = {
           in_stock?: boolean
           name?: string
           notes?: string | null
+          price?: number | null
           qty?: string | null
           stock_status?: string
+          store_pref?: string | null
+          unit?: string | null
           updated_at?: string
           user_id?: string
         }

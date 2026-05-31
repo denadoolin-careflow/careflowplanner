@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, RefreshCw, Trash2, Clock } from "lucide-react";
 import type { Meal } from "@/lib/types";
+import { ShopMenu } from "./ShopMenu";
 import { regenerateMeal, saveFavorite } from "@/lib/meal-ai";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -175,6 +176,9 @@ export function RecipeDrawer({ meal, onClose, onChanged }: { meal: Meal | null; 
                 <Button onClick={openTimerDialog} variant="outline" className="rounded-full">
                   <Timer className="mr-2 h-4 w-4" />Add timer
                 </Button>
+                {(meal.ingredients ?? []).length > 0 && (
+                  <ShopMenu items={meal.ingredients ?? []} variant="outline" />
+                )}
                 <Button onClick={remove} variant="ghost" className="rounded-full text-destructive">
                   <Trash2 className="mr-2 h-4 w-4" />Remove
                 </Button>

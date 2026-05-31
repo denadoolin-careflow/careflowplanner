@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/lib/store";
 import { Utensils } from "lucide-react";
 import { statusVar, statusLabel } from "@/lib/pantry-colors";
+import { ShopMenu } from "./ShopMenu";
 
 type Status = "in" | "low" | "out";
 const dbToUi: Record<string, Status> = { in_stock: "in", low: "low", out: "out" };
@@ -114,7 +115,10 @@ export function IngredientPopover({
           </div>
         )}
 
-        <Button size="sm" className="w-full" onClick={save}>Save</Button>
+        <div className="flex gap-2">
+          <Button size="sm" className="flex-1" onClick={save}>Save</Button>
+          <ShopMenu items={ingredient} size="sm" variant="outline" />
+        </div>
       </PopoverContent>
     </Popover>
   );

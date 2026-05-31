@@ -1,134 +1,73 @@
-# Caregiver Dashboard Redesign
+## Goal
+Turn the existing Meals/Pantry/Grocery surface into one connected system: ingredients are first-class, every ingredient can deep-link out to a preferred grocery store, the pantry has its own page with Kanban, and the grocery list is smarter and pantry-aware.
 
-A full redesign of the Today + Home dashboards around 8 caregiver-first widgets. All widgets register into the existing customizable grid so users can reorder, resize, hide, pin, and theme them on both pages.
+This builds on what already exists (`pantry_items`, `grocery_items`, `meals_library`, `IngredientPopover`, `GroceryKanban`, `GroceryList`, `retailer-links.ts`, `ai-meal-plan` edge fn). No legacy data is wiped.
 
-## What ships
+## Scope (phased)
 
-### 1. Widgets (all new, all registered)
+### Phase 1 — Ingredient & store foundation
+- Extend `pantry_items` with: `unit text`, `price numeric`, `store_pref text`, `category` widened to enum-style (Produce/Dairy/Meat/Frozen/Pantry/Bakery/Household/Personal Care/Pet/Other). Status options stay 4-state: `in_stock | low | out | need_soon` (add `need_soon`).
+- Add `grocery_prefs` table: `user_id pk`, `preferred_store text`, `backup_store text`, `delivery_mode text` (`delivery|pickup`).
+- Expand `src/lib/retailer-links.ts`: add `amazon_fresh`, `target`, `costco`, `sams_club` URL builders + labels + small icon map.
+- New helper `src/lib/grocery-prefs.ts` (hook + upsert).
 
-| Widget | Type id | Source data |
-|---|---|---|
-| 🌔 Moon Guidance (hero) | `moon-guidance-hero` | `lib/moon`, `useCycle`, `useWeekForecast`, `getRhythmForecast`, daily affirmation |
-| ❤️ What Needs Me Today | `who-needs-me` | `care_recipients` + `tasks` (people-tagged) + `appointments` + `loved_ones` |
-| ✨ Today's Focus | `todays-focus` | `tasks` (top 3/5/all toggle), reuses `TopThreeStrip` logic + AI top-3 picker (existing `ai-today-guidance`) |
-| 🍽 What's For Dinner | `whats-for-dinner` | tonight from `meals` table; fallback to new `ai-dinner-tonight` edge fn |
-| 🧠 Mental Load Dump | `mental-load-dump` | existing `mental_load_inbox` + `ai-voice-capture` |
-| 💜 Mom Check-In | `mom-checkin` | new `caregiver_checkins` table (water/food/meds/outside/mood/energy) |
-| 📅 Upcoming Events | `upcoming-snapshot` | `appointments` + `tasks` with times (next 3) |
-| 🏡 Home Reset | `home-reset-quick` | existing `reset_items` with 5/15/Full mode toggle |
+### Phase 2 — Shop menu everywhere
+- New `<ShopMenu ingredient="…" qty?="…">` dropdown (in `src/components/meals/ShopMenu.tsx`): "Shop on {preferredStore}" primary button + "More stores" submenu over all 7 retailers. Opens deep-link in new tab.
+- Wire `ShopMenu` into:
+  - `IngredientPopover` (replaces today's plain "Used in" block bottom action).
+  - `RecipeDrawer` / `LibraryRecipeViewer` ingredient rows.
+  - `GroceryList` row action (per item).
+  - `GroceryKanban` card menu.
+- Each ingredient row shows live pantry-status pill (color via `pantry-colors.ts`, extended for `need_soon`).
 
-Each is a separate file under `src/components/dashboard/widgets/caregiver/`, registered in `WidgetRegistry.tsx`, with its `WidgetType` added to `dashboard-layouts.ts`. All use semantic tokens (sage / cream / lavender from index.css) — no hardcoded colors.
+### Phase 3 — Pantry page & Kanban
+- Promote pantry from a sidebar panel to its own route `/pantry` (re-use `PantryPanel` for List view).
+- Add `src/components/meals/PantryKanban.tsx` with 4 columns (In Stock / Low / Out / Need Soon), `@dnd-kit` drag-and-drop between columns (writes `stock_status`), inline qty/unit edit, quick-add input.
+- Add view switcher: List · Grid · Kanban (persist in localStorage).
+- Add nav entry + link from Meals page header.
 
-### 2. Default layouts
+### Phase 4 — Smarter grocery list
+- Auto-group by ingredient category (already partially done) and surface category headers consistently between Kanban and List.
+- Add second Kanban view mode for grocery: Need · Shopping · Purchased · Stocked (state stored in `grocery_items.tags` — values `shopping`, `purchased`, `stocked`; "Need" is default). Reuse existing `GroceryKanban` shell.
+- Pantry awareness when generating from meals (`addLibraryMealsToWeek` already filters `in_stock`; extend filter to skip `in_stock` + `need_soon`, and mark `low` items with a "low — top up?" badge instead of silently adding).
+- Per-row Shop button uses preferred store.
 
-`dashboard-layouts.ts` gets a new default preset `caregiver-default` applied to both `home` and `today` page keys when the user has no saved layout. Order:
+### Phase 5 — AI grocery assistant
+- New edge function `supabase/functions/ai-grocery-assistant/index.ts` (Gemini 3 Flash, structured output). Inputs: prompt + scheduled meals (next N days) + pantry snapshot + grocery list. Outputs: ordered actions (add items, suggest substitutes, mark stocked).
+- Surface as a small "Ask" panel above grocery list with chip prompts: "Generate from meal plan", "What's missing for tonight?", "Use what I have", "Suggest substitutes".
 
-```
-[Moon Guidance Hero — full width]
-[Who Needs Me] [Today's Focus]
-[What's For Dinner — full width on mobile, half on desktop]
-[Mental Load Dump] [Mom Check-In]
-[Upcoming Events] [Home Reset]
-```
+### Phase 6 — Settings & dashboard widgets
+- New `Settings → Grocery Preferences` section: preferred store, backup store, delivery vs pickup.
+- New dashboard widgets (registered in `WidgetRegistry.tsx`, added to `dashboard-layouts.ts`):
+  - `pantry-status` (counts per status + quick link).
+  - `grocery-list-mini` (top 6 unbought items + add).
+  - `low-stock` (items where `stock_status in (low, need_soon)`).
+  - Reuse existing dinner/meal-plan widget for "Meal Plan".
 
-Existing widgets remain available in the Add Widget sheet — nothing is deleted.
+### Phase 7 — Mobile polish
+- Long-press on grocery/pantry rows → edit sheet (extend existing `long-press-drag`).
+- Swipe-right to mark bought / swipe-left to delete (in `GroceryList`).
+- Floating "+ Ingredient" FAB on `/pantry`.
+- Haptics via existing `haptics.ts` on swipe complete.
 
-### 3. Moon Guidance Hero
+## Technical notes
+- Provider abstraction: every shop link goes through `retailerSearchUrl(provider, items)` so swapping in real Instacart/Walmart/Kroger APIs later is a single-file change.
+- Stable IDs already in place (`pantry_items.id`, `grocery_items.id`, `meals_library.id`); no schema redesign needed for future API work.
+- All new colors / status pills via tokens in `index.css` (add `--status-need-soon`); no hard-coded hex.
+- RLS: new `grocery_prefs` follows `auth.uid() = user_id` pattern with `GRANT` for `authenticated` + `service_role`.
 
-Animated `MoonGlyph` (CSS-only phase shading + soft glow pulse), gradient (sage→cream→lavender), three buttons:
-- **Read More** → opens `DayLunarSheet`
-- **Lunar Insights** → navigates `/today` lunar tab
-- **Plan With This Energy** → fires existing cycle planning listener
+## Out of scope (for this pass)
+- Real OAuth integrations with Instacart/Walmart/Kroger APIs (links only).
+- Price tracking / receipts OCR.
+- Multi-household shared grocery lists beyond what `household_users` already supports.
+- Migrating `MobileTodayCard`-era legacy components.
 
-Shows: phase name, illumination %, energy line (`Low/Steady/High Energy • Day N {follicular|luteal|…}`), weather (from `useWeekForecast` today), affirmation (cycle affirmation else moon affirmation).
+## Suggested rollout order
+1. Migration + `retailer-links` expansion + `grocery-prefs` + `ShopMenu` (everything visible immediately).
+2. Pantry page + Kanban.
+3. Grocery Kanban "Need/Shopping/Purchased/Stocked" mode + pantry-aware generator tweak.
+4. AI assistant edge fn + chips.
+5. Settings panel + 3 new widgets.
+6. Mobile gestures pass.
 
-### 4. What's For Dinner
-
-Three states:
-1. **Planned tonight exists** → show meal card with prep/cook time, ingredients-available % computed from `pantry_items` ∩ meal.ingredients, `Cook This` (opens recipe) + `Swap Meal` (calls suggester).
-2. **No plan** → calls new edge function `ai-dinner-tonight` returning 3 suggestions filtered by today's energy + active filters (toddler / sensory / low-energy / 15-min / freezer / healthy / budget); each card has `Save Favorite`, `Add To Weekly Plan`, `Create Grocery List`.
-3. **Use What I Have** toggle → posts pantry to same fn with `mode:"pantry_only"`.
-
-Missing-ingredients block lists items not in pantry with `Add To Grocery List` (existing `grocery_items` insert) plus stub deep-link buttons:
-- Instacart: `https://www.instacart.com/store/s?k=<query>`
-- Walmart: `https://www.walmart.com/search?q=<query>`
-- Kroger: `https://www.kroger.com/search?query=<query>`
-
-Caregiver mode banner ("Low Energy Day" / "Give Yourself A Break") shown based on today's `caregiver_checkins` row — supportive copy only, no guilt phrasing.
-
-### 5. Mom Check-In
-
-New table + new widget. Tracks daily binary (water/food/meds/outside) + 1–10 energy + emoji mood. Gentle insight line shown when a tracker hasn't been hit in N hours; copy bank lives in `src/lib/caregiver-checkin-copy.ts` and is exclusively supportive ("Take two minutes for yourself", never "you forgot").
-
-### 6. What Needs Me Today
-
-Groups today's tasks + appointments by `person_tag` / `care_recipient_id` (existing tables). For each person: avatar, name, list of items (medication, appointments, reminders). `+ Add` button per person opens task editor pre-tagged. Toggle Today / Week / Upcoming.
-
-### 7. Mental Load Dump
-
-Existing `BrainDumpInbox` logic refactored into a compact widget variant. Single text input + mic button (reuses `VoiceCaptureDialog`). Submissions go to `mental_load_inbox` and `ai-mental-load` auto-categorizes into tasks/notes/calendar/grocery/follow-ups.
-
-Also exposed as a floating global FAB via existing `CombinedFab` — adds a new "Brain dump" entry.
-
-### 8. Upcoming Events + Home Reset
-
-Thin wrappers over existing data. Home Reset adds 5-min / 15-min / Full mode selector that filters `reset_items` by `est_minutes`.
-
-## Technical Details
-
-### New files
-- `src/components/dashboard/widgets/caregiver/MoonGuidanceHero.tsx`
-- `src/components/dashboard/widgets/caregiver/WhoNeedsMeWidget.tsx`
-- `src/components/dashboard/widgets/caregiver/TodaysFocusWidget.tsx`
-- `src/components/dashboard/widgets/caregiver/WhatsForDinnerWidget.tsx`
-- `src/components/dashboard/widgets/caregiver/MentalLoadDumpWidget.tsx`
-- `src/components/dashboard/widgets/caregiver/MomCheckinWidget.tsx`
-- `src/components/dashboard/widgets/caregiver/UpcomingSnapshotWidget.tsx`
-- `src/components/dashboard/widgets/caregiver/HomeResetQuickWidget.tsx`
-- `src/lib/caregiver-checkin-copy.ts`
-- `src/lib/caregiver-checkins.ts`
-- `src/lib/dinner-suggester.ts` (client wrapper)
-- `src/lib/retailer-links.ts` (Instacart/Walmart/Kroger URL builders)
-- `supabase/functions/ai-dinner-tonight/index.ts`
-
-### Edited
-- `src/lib/dashboard-layouts.ts` — add 8 new `WidgetType`s + `caregiver-default` preset for `home` and `today`.
-- `src/components/dashboard/WidgetRegistry.tsx` — register 8 widgets.
-- `src/pages/Today.tsx` — replace bespoke today layout with `<CustomizableGrid pageKey="today" />` (mobile keeps existing MobileTodayCard? No — it's superseded by the hero + grid which is already mobile-first).
-- `src/pages/Dashboard.tsx` — switch to `pageKey="home"` using new preset.
-- `src/components/quick-add/CombinedFab.tsx` — add "Brain dump" entry.
-
-### Database (one migration)
-
-```sql
-CREATE TABLE public.caregiver_checkins (
-  id uuid PK default gen_random_uuid(),
-  user_id uuid NOT NULL,
-  date date NOT NULL,
-  water boolean default false,
-  food boolean default false,
-  meds boolean default false,
-  outside boolean default false,
-  movement boolean default false,
-  sleep_hours numeric,
-  energy int,
-  mood text,
-  created_at/updated_at timestamptz,
-  UNIQUE(user_id, date)
-);
--- GRANTs to authenticated + service_role; RLS: auth.uid() = user_id for all ops.
-```
-
-No other schema changes — meals, pantry, mental_load_inbox, reset_items, care_recipients, appointments, tasks all already exist.
-
-### Edge function `ai-dinner-tonight`
-Inputs: `{ energy, filters[], mode: "smart"|"pantry_only", family_size }`. Reads pantry + meal prefs + recent meals (avoid repeat). Calls Lovable AI Gateway (`google/gemini-3-flash-preview`) with structured output → returns `{ suggestions: [{name, prep_minutes, cook_minutes, ingredients[], easy_tag, reason}] }`. `verify_jwt = false` (validates JWT in code per project pattern).
-
-### Out of scope
-- Real Instacart/Walmart/Kroger API integrations (deep-link only).
-- Accessibility audit beyond reusing existing tokens + large touch targets.
-- Migration of legacy `MobileTodayCard` — it stays available but the new caregiver grid is the default Today.
-
-## Risks
-- Schema-only addition is `caregiver_checkins`; no destructive changes.
-- Default-layout reset only applies to users with no saved `home`/`today` layout — existing customizations are preserved.
+Want me to build all 7 phases, or start with Phase 1–3 (shop links + pantry page + Kanban) and iterate?

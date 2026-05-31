@@ -20,6 +20,7 @@ import Goals from "./pages/Goals";
 import Habits from "./pages/Habits";
 import Meals from "./pages/Meals";
 import MealsLibrary from "./pages/MealsLibrary";
+import Pantry from "./pages/Pantry";
 import Caregiving from "./pages/Caregiving";
 import HomeReset from "./pages/HomeReset";
 import HomeHub from "./pages/HomeHub";
@@ -143,6 +144,7 @@ const App = () => (
                 <Route path="/habits" element={<Habits />} />
                 <Route path="/meals" element={<Meals />} />
                 <Route path="/meals/library" element={<MealsLibrary />} />
+                <Route path="/pantry" element={<Pantry />} />
                 <Route path="/caregiving" element={<Caregiving />} />
                 <Route path="/home-reset" element={<HomeHub />} />
                 <Route path="/home" element={<HomeHub />} />

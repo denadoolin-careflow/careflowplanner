@@ -16,6 +16,7 @@ import { playPomodoroChime } from "@/lib/pomodoro-chime";
 import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEditor";
 import { GoogleCalendarSection } from "@/components/calendar/GoogleCalendarSection";
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
+import { GroceryPrefsSection } from "@/components/settings/GroceryPrefsSection";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
 import { WeatherPrefsSection } from "@/components/settings/WeatherPrefsSection";
 import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/TimeZoneSelect";
@@ -221,6 +222,8 @@ export default function Settings() {
       <SectionCard title="Pantry status colors" subtitle="Used across grocery, pantry, and ingredient popups." accent="warm">
         <PantryColorPicker />
       </SectionCard>
+
+      <GroceryPrefsSection />
 
       <SectionCard
         title="US holidays"
