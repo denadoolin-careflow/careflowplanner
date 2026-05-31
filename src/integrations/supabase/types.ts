@@ -3315,6 +3315,7 @@ export type Database = {
           notes: string | null
           price: number | null
           qty: string | null
+          sort_order: number
           stock_status: string
           store_pref: string | null
           unit: string | null
@@ -3330,6 +3331,7 @@ export type Database = {
           notes?: string | null
           price?: number | null
           qty?: string | null
+          sort_order?: number
           stock_status?: string
           store_pref?: string | null
           unit?: string | null
@@ -3345,6 +3347,7 @@ export type Database = {
           notes?: string | null
           price?: number | null
           qty?: string | null
+          sort_order?: number
           stock_status?: string
           store_pref?: string | null
           unit?: string | null

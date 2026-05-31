@@ -1,70 +1,61 @@
 ## Goal
 
-Make tags first-class connective tissue: type `#name` anywhere in a note to autocomplete + insert a styled tag chip, click a tag to land on a beautiful card-grid hub for that tag, and add a "+" menu to create a task, note, grocery item, or project pre-tagged with it. Upgrade the selection bubble menu with Checklist / Task / Tag actions and tighten editor styling toward Craft / Notion / Things 3.
+Make the pantry drag-and-drop feel like a real kanban board (Things 3 / Linear class) and bring drag to the List view too. Four improvements: feel & polish, reorder within a column, multi-select drag, and category-drag in the List view.
 
-## 1 — Inline `#tag` autocomplete in the block editor
+## 1. Feel & polish (Kanban)
 
-`src/components/notes/BlockEditor.tsx` already has a generic `makeSuggestion` factory used by `/` (slash) and `@` (refs). Add a third instance for `#`:
+`src/components/meals/PantryKanban.tsx`
 
-- New `hashtagExtension` (Tiptap `Extension.create`) registered alongside `slashExtension` and `refExtension`.
-- `char: "#"`, `allowSpaces: false`, items pulled from `useTags()` (live registered tags) plus any orphan tags collected across `state.tasks`, loaded notes, and grocery items — same union currently built in `src/pages/Tags.tsx`, lifted into a small `useAllTagNames()` hook in `src/hooks/use-tags.ts` so both places share it.
-- Query that doesn't match any existing tag shows a "Create #query" row at the top.
-- `onSelect` inserts a TipTap `text` node `#name` wrapped in a `link` mark with `href="/tags/<encoded>"` and `class="tag-chip"` (mirrors the existing `ref-chip` / `task-chip` pattern), followed by a space.
-- Persist tag attachment: after insertion, parse the note's text for `#word` tokens in `onUpdate` (debounced) and merge unique names into `note.tags` via existing `updateNote` API so the tag also appears in the note's tags array and on the TagDetail page even before save.
+- Add proper `@dnd-kit/core` **sensors** with activation constraints:
+  - PointerSensor: `activationConstraint: { distance: 6 }` so a 6px move starts the drag (clicks on trash/Shop pass through cleanly).
+  - TouchSensor: `activationConstraint: { delay: 200, tolerance: 8 }` — long-press to drag on mobile.
+  - KeyboardSensor with `sortableKeyboardCoordinates` for accessibility.
+- Add a **`DragOverlay`** that renders a floating, tilted clone of the dragged card (`rotate-2`, `shadow-2xl`, semi-transparent ring in the column's status color). The source card becomes a soft placeholder (`opacity-30`, dashed border) instead of disappearing.
+- **Column drop affordance**: when `isOver`, elevate with `ring-2 ring-[status-color]/40`, `bg-[status]/8`, and a pulsing dashed "Drop here" hint that replaces the static "Drag items here" text only while a drag is in progress.
+- **Card lift**: on `isDragging`, scale to 1.02 and apply a `cursor-grabbing` body class (via `useDndMonitor`) so the cursor reads correctly across the whole document.
+- **Drag handle vs. action buttons**: stop the whole row from being the drag handle. Add a small `GripVertical` handle on the left of each card (visible on hover / always on touch); only the handle gets `attributes`/`listeners`. Trash + ShopMenu become reliably clickable.
+- **Haptics**: call `navigator.vibrate?.(8)` on drag-start and `(12)` on a successful drop (mobile only).
+- **Optimistic + rollback**: keep the optimistic state update but on Supabase error, revert and `toast.error("Could not move — reverted")`.
+- Replace the green check toast with a subtle inline status-color toast (`toast.success` with the column's accent in the description), and debounce repeated drops within 600 ms so multi-drops don't spam.
 
-Style: add a `.tag-chip` rule next to existing `.ref-chip` / `.task-chip` styles (likely in `src/index.css` or the block editor CSS file) — pill background `bg-primary/10`, `text-primary`, `rounded-md`, `px-1`, no underline, hover ring.
+## 2. Reorder within a column
 
-## 2 — Tag grid hub (`/tags/:name` redesign)
+- Schema: add a `sort_order integer` column to `pantry_items` (default `0`, indexed by `(user_id, stock_status, sort_order)`). Backfill existing rows with `row_number() over (partition by user_id, stock_status order by name)`.
+- Wrap each column's list in `SortableContext` (`verticalListSortingStrategy`) and swap `useDraggable` for `useSortable`.
+- On `onDragEnd`:
+  - Same-column drop → `arrayMove`, then bulk-update `sort_order` for the affected column (single RPC `update_pantry_order(ids uuid[])` or a batched `upsert`).
+  - Cross-column drop → set `stock_status` + append to the end of the target column (max `sort_order` + 1) and re-pack the source column's `sort_order`.
+- Load order now uses `.order('sort_order', { ascending: true }).order('name')` as a tiebreaker.
 
-Rewrite `src/pages/TagDetail.tsx` from list rows → card grid.
+## 3. Multi-select drag
 
-- Header row: large `TagChip`, counts, plus a primary "+ Add to this tag" button.
-- "+" opens a `DropdownMenu` with: **Task**, **Note**, **Grocery item**, **Project**. Each option creates the entity pre-tagged with the current tag name:
-  - Task: `addTask({ title: "Untitled task", tags: [tagName] })` then navigate to `/anytime?taskId=...`.
-  - Note: `createNote({ title: tagName, tags: [tagName] })` then navigate to `/notes/:id`.
-  - Grocery item: append to the active list via `grocery-lists` API with `tags: [tagName]` if supported (fallback: title-only entry); land on `/pantry` or active grocery view.
-  - Project: `addProject({ name: "Untitled project", tags: [tagName] })` then navigate to the project route used elsewhere in the app.
-- Grid: 4 sections (Tasks, Notes, Grocery, Projects), each `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` of `cozy-card`-style cards showing title, meta line (date / status / count), and a colored accent strip in the tag color from `TagChip`.
-- Empty section renders a soft dashed-border card with a one-click shortcut that opens the same "+" flow scoped to that entity type.
-- Keep "Ideas" carve-out from the current code as a sub-filter on the Tasks card.
+- Local state: `selectedIds: Set<string>`. Toggle with Cmd/Ctrl+click, range with Shift+click (within a column). Clicking elsewhere or pressing Esc clears the selection.
+- Visual: selected cards show a `ring-2 ring-primary/60` and a small count badge.
+- During drag, if the active id is in `selectedIds`, the `DragOverlay` renders a **stacked card preview** ("3 items") and `onDragEnd` moves the whole set in one Supabase `update ... in (ids)` call.
+- If the active id is not in the selection, the selection is ignored for that drag (no surprise multi-moves).
 
-## 3 — Selection bubble menu upgrades
+## 4. DnD in List view (`PantryPanel`)
 
-In `BlockEditor.tsx`'s `<BubbleMenu>`:
+- Wrap the categories in a single `DndContext`. Each `<section>` becomes a droppable keyed by category; each `<li>` becomes a `useSortable` item.
+- Cross-section drop calls `updatePantryCategory(it.id, targetCategory)` (already exists). Same-section drop reorders — requires the same `sort_order` column from step 2 (scoped per category in this view, per status in the kanban view; both use the same column, sort context is just `(user_id, scope_field, sort_order)`).
+- Use the same sensors, handle, overlay, and haptics as kanban for consistency.
+- Show an inline "Drop to move to **{category}**" caption on the hovered section header during drag.
 
-- New **Checklist** button — converts the selected lines into a TipTap task list (`editor.chain().focus().toggleTaskList().run()` on the wrapping range so multi-line selections become individual checkboxes).
-- New **Task** button — promotes the selected text to a real task via existing `addTask({ title: selectionText, tags: extractedHashtags })`, then wraps the original selection with the `task-chip` link to `/anytime?taskId=...`. Re-use the existing `promoteTaskItemToTask` logic, generalized to accept any selection.
-- New **Tag** button — opens a tiny inline popover (built with shadcn `Popover`) listing existing tags + free-text input; selecting one inserts a `#name` chip at the end of the selection (no replacement) and merges the name into `note.tags`.
-- Reorder buttons into clusters separated by the existing `|` divider: format → headings → structure (Checklist / Task / Tag) → link.
+## Technical details
 
-## 4 — Editor look & feel polish (Craft / Notion / Things 3)
+```text
+Files
+├─ src/components/meals/PantryKanban.tsx     (rewrite DnD: sensors, sortable, overlay, handle, multi-select)
+├─ src/components/meals/PantryPanel.tsx      (add DndContext + sortable list, drag handle)
+├─ src/components/meals/DragOverlayCard.tsx  (new — shared floating card preview)
+├─ src/lib/meal-ai.ts                        (add reorderPantry(ids, scope) + bulkSetStatus)
+└─ supabase migration                        (add sort_order column + backfill + composite index)
+```
 
-Tighten the prose styles already living in the block editor's stylesheet:
-
-- Larger first H1, looser leading on body (`leading-[1.65]`), 17px base on desktop, 16px on mobile.
-- Softer chip pills (tag-chip, ref-chip, task-chip) at uniform `rounded-md`, micro-shadow on hover.
-- Bubble menu: switch container to `rounded-2xl`, `border-border/40`, `shadow-xl`, `backdrop-blur-xl`, 6px button radii, subtle hover scale.
-- Add Things-3-style colored bullet for task items (small filled circle that fills on check, with a 120ms ease).
-- Replace the slash menu's row hover with a subtle `bg-muted/60` highlight and a thin left accent in `primary`.
-
-Pure CSS — no behavioral changes beyond what's described above.
+Libraries already installed: `@dnd-kit/core`, plus `@dnd-kit/sortable` (will be added) and `@dnd-kit/utilities`.
 
 ## Out of scope
 
-- No new database tables. Tags already live as string arrays on tasks/notes; grocery items and projects already support `tags?: string[]`.
-- No realtime collab / sharing changes.
-- No global search rework — just the new `#` autocomplete inside notes.
-
-## Technical notes
-
-- `useAllTagNames` hook merges `useTags()` registered names with orphan names from `state.tasks`, `listNotes()` results, grocery items, and projects.
-- Hashtag detection regex: `/(?:^|\s)#([\p{L}\p{N}_-]{1,40})/gu` — Unicode-aware, ignores leading `#` inside URLs (only matches after whitespace/start).
-- New CSS goes in the same file that already defines `.ref-chip` / `.task-chip` (search for those selectors to find it).
-- Files touched: `BlockEditor.tsx`, `TagDetail.tsx`, `src/hooks/use-tags.ts` (add hook), plus a small `TagPickerPopover` component under `src/components/tags/`.
-
-## Verification
-
-- Type `#fam` in a note → suggestion menu appears, picking "family" inserts a `#family` chip linked to `/tags/family`; the tag also shows up in the note's sidebar tag list.
-- Open `/tags/family` → 4-section card grid; clicking "+" → "Task" lands on a new task pre-tagged with `family`.
-- Select two lines of plain text in a note → bubble menu's "Checklist" button turns them into checkboxes; "Task" promotes the selection into Tasks; "Tag" inserts a chip without destroying the selection.
-- Editor visually matches the Craft/Notion/Things 3 reference: tighter chips, larger headings, plush bubble menu.
+- No realtime sync of kanban order across devices (still loads on mount).
+- No drag-to-grocery-list bridge (separate request).
+- No bulk delete or bulk status changes outside the multi-select drag flow.
