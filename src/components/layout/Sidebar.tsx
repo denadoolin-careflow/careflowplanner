@@ -36,6 +36,7 @@ const GROUP_ORDER_KEY = "careflow:sidebar:group-order";
 const WIDTH_KEY = "careflow:sidebar:width";
 const SIDE_KEY = "careflow:sidebar:side";          // "left" | "right"
 const THEME_KEY = "careflow:sidebar:theme";        // "auto" | "light" | "dark"
+const SECTIONS_KEY = "careflow:sidebar:sections";   // { pinnedNotes, quickWeeks, quickMonths }
 const PREFS_EVENT = "careflow:sidebar:prefs";
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 420;
@@ -43,6 +44,18 @@ const DEFAULT_WIDTH = 256;
 
 type SidebarSide = "left" | "right";
 type SidebarTheme = "auto" | "light" | "dark" | "atmosphere";
+
+type SectionPrefs = { pinnedNotes: boolean; quickWeeks: boolean; quickMonths: boolean };
+const DEFAULT_SECTIONS: SectionPrefs = { pinnedNotes: true, quickWeeks: true, quickMonths: true };
+
+function readSections(): SectionPrefs {
+  if (typeof window === "undefined") return DEFAULT_SECTIONS;
+  try {
+    const raw = window.localStorage.getItem(SECTIONS_KEY);
+    if (!raw) return DEFAULT_SECTIONS;
+    return { ...DEFAULT_SECTIONS, ...(JSON.parse(raw) as Partial<SectionPrefs>) };
+  } catch { return DEFAULT_SECTIONS; }
+}
 
 function hexToHsl(hex: string): { h: number; s: number; l: number } {
   const m = hex.replace("#", "");
