@@ -26,26 +26,34 @@ export function ShopMenu({
   const { prefs } = useGroceryPrefs();
   const primary = preferred ?? prefs.preferred_store;
   const arr = Array.isArray(items) ? items : [items];
-  const open = (r: Retailer) => window.open(retailerSearchUrl(r, arr), "_blank", "noopener,noreferrer");
+  const hrefFor = (r: Retailer) => retailerSearchUrl(r, arr);
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   if (compact) {
     return (
       <Button
+        asChild
         size={size === "icon" ? "icon" : "sm"}
         variant={variant}
         className={cn("rounded-full", size === "xs" && "h-7 px-2 text-xs", className)}
-        onClick={(e) => { e.stopPropagation(); open(primary); }}
-        title={`Shop on ${RETAILER_LABEL[primary]}`}
       >
-        <ShoppingCart className={cn(size === "icon" ? "h-4 w-4" : "mr-1 h-3.5 w-3.5")} />
-        {size !== "icon" && <span>{RETAILER_LABEL[primary]}</span>}
+        <a
+          href={hrefFor(primary)}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={stop}
+          title={`Shop on ${RETAILER_LABEL[primary]}`}
+        >
+          <ShoppingCart className={cn(size === "icon" ? "h-4 w-4" : "mr-1 h-3.5 w-3.5")} />
+          {size !== "icon" && <span>{RETAILER_LABEL[primary]}</span>}
+        </a>
       </Button>
     );
   }
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+      <DropdownMenuTrigger asChild onClick={stop}>
         <Button
           size={size === "icon" ? "icon" : "sm"}
           variant={variant}
@@ -59,18 +67,36 @@ export function ShopMenu({
         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
           Preferred
         </DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => open(primary)}>
-          <ShoppingCart className="mr-2 h-3.5 w-3.5" />{RETAILER_LABEL[primary]}
-          <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
+        <DropdownMenuItem asChild>
+          <a
+            href={hrefFor(primary)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={stop}
+            title={`Shop on ${RETAILER_LABEL[primary]}`}
+            className="flex w-full cursor-pointer items-center"
+          >
+            <ShoppingCart className="mr-2 h-3.5 w-3.5" />{RETAILER_LABEL[primary]}
+            <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
+          </a>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
           More stores
         </DropdownMenuLabel>
         {RETAILERS.filter(r => r !== primary).map(r => (
-          <DropdownMenuItem key={r} onClick={() => open(r)}>
-            {RETAILER_LABEL[r]}
-            <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
+          <DropdownMenuItem key={r} asChild>
+            <a
+              href={hrefFor(r)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={stop}
+              title={`Shop on ${RETAILER_LABEL[r]}`}
+              className="flex w-full cursor-pointer items-center"
+            >
+              {RETAILER_LABEL[r]}
+              <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
+            </a>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

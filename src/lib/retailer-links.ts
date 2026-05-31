@@ -14,15 +14,28 @@ export type Retailer =
   | "sams_club";
 
 const URLS: Record<Retailer, (q: string) => string> = {
-  instacart:    (q) => `https://www.instacart.com/store/s?k=${encodeURIComponent(q)}`,
-  walmart:      (q) => `https://www.walmart.com/search?q=${encodeURIComponent(q)}`,
-  kroger:       (q) => `https://www.kroger.com/search?query=${encodeURIComponent(q)}`,
+  instacart:    (q) => `https://www.instacart.com/store/s?k=${enc(q)}`,
+  walmart:      (q) => `https://www.walmart.com/search?q=${enc(q)}`,
+  kroger:       (q) => `https://www.kroger.com/search?query=${enc(q)}`,
   // Amazon Fresh: scope a normal product search to the Fresh storefront.
-  amazon_fresh: (q) => `https://www.amazon.com/s?k=${encodeURIComponent(q)}&i=amazonfresh`,
-  target:       (q) => `https://www.target.com/s?searchTerm=${encodeURIComponent(q)}`,
-  costco:       (q) => `https://www.costco.com/s?keyword=${encodeURIComponent(q)}`,
-  sams_club:    (q) => `https://www.samsclub.com/search?q=${encodeURIComponent(q)}`,
+  amazon_fresh: (q) => `https://www.amazon.com/s?k=${enc(q)}&i=amazonfresh`,
+  target:       (q) => `https://www.target.com/s?searchTerm=${enc(q)}`,
+  costco:       (q) => `https://www.costco.com/CatalogSearch?dept=All&keyword=${enc(q)}`,
+  sams_club:    (q) => `https://www.samsclub.com/s/${enc(q)}`,
 };
+
+/** encodeURIComponent but render spaces as %20 (some retailers reject +). */
+function enc(s: string): string {
+  return encodeURIComponent(s).replace(/%20/g, "%20");
+}
+
+/** Strip trailing parenthetical notes like "Bananas (2 lbs)" → "Bananas". */
+function cleanQuery(s: string): string {
+  return String(s ?? "")
+    .replace(/\s*\([^)]*\)\s*$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export const RETAILER_LABEL: Record<Retailer, string> = {
   instacart:    "Instacart",
@@ -46,7 +59,7 @@ export const RETAILERS: Retailer[] = [
  */
 export function retailerSearchUrl(r: Retailer, items: string[] | string): string {
   const arr = Array.isArray(items) ? items : [items];
-  const cleaned = arr.map(s => String(s ?? "").trim()).filter(Boolean);
+  const cleaned = arr.map(cleanQuery).filter(Boolean);
   const q = cleaned[0] || "groceries";
   return URLS[r](q);
 }
