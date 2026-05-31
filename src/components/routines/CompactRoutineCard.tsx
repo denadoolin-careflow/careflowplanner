@@ -35,6 +35,9 @@ export function CompactRoutineCard({ routine: r, recipients, onFocus }: Props) {
   const total = r.items.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   const upcoming = nextStep(r);
+  const remaining = r.items.filter(i => !i.done).length;
+  const remainingAfter = Math.max(0, remaining - 1);
+  const microInstruction = upcoming?.note?.trim() || (upcoming?.durationMin ? `Takes about ${upcoming.durationMin} min` : "");
   const timeValue = r.time_of_day ?? SLOT_DEFAULT_TIME[r.slot];
   const [pomo, setPomo] = useState(false);
   const [breakdown, setBreakdown] = useState(false);
@@ -133,14 +136,29 @@ export function CompactRoutineCard({ routine: r, recipients, onFocus }: Props) {
       <button
         type="button"
         onClick={handleCta}
-        className="mt-1.5 flex w-full items-center gap-1.5 text-left text-[12.5px] text-foreground/80 hover:text-foreground"
+        className="mt-1.5 block w-full text-left text-[12.5px] text-foreground/80 hover:text-foreground"
       >
         {upcoming ? (
           <>
-            {upcoming.icon ? <span className="text-sm leading-none">{upcoming.icon}</span> : <span className="text-sm leading-none">✨</span>}
-            <span className="truncate">
-              <span className="text-muted-foreground">Next:</span> {upcoming.text}
-            </span>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="text-sm leading-none">{upcoming.icon || "✨"}</span>
+              <span className="min-w-0 flex-1 truncate">
+                <span className="text-muted-foreground">Next:</span> <span className="font-medium">{upcoming.text}</span>
+              </span>
+              <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+                {remaining} left
+              </span>
+            </div>
+            {microInstruction && (
+              <div className="mt-0.5 truncate pl-[22px] text-[11px] italic text-muted-foreground">
+                {microInstruction}
+              </div>
+            )}
+            {!microInstruction && remainingAfter > 0 && (
+              <div className="mt-0.5 truncate pl-[22px] text-[11px] text-muted-foreground">
+                Then {remainingAfter} more step{remainingAfter === 1 ? "" : "s"} to bloom
+              </div>
+            )}
           </>
         ) : total === 0 ? (
           <span className="italic text-muted-foreground">Add a first step to begin growing</span>
