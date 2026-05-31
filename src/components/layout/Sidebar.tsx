@@ -245,6 +245,131 @@ function usePinnedNotes(enabled: boolean) {
   return notes;
 }
 
+function usePinnedTags(enabled: boolean) {
+  const [tags, setTags] = useState<Tag[]>([]);
+  useEffect(() => {
+    if (!enabled) { setTags([]); return; }
+    let alive = true;
+    const load = () => { void listPinnedTags().then(t => { if (alive) setTags(t); }).catch(() => {}); };
+    load();
+    const onChange = () => load();
+    const onVis = () => { if (document.visibilityState === "visible") load(); };
+    window.addEventListener("careflow:tags:pinned-changed", onChange);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      alive = false;
+      window.removeEventListener("careflow:tags:pinned-changed", onChange);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [enabled]);
+  return tags;
+}
+
+function PinnedTagsSection({
+  collapsed, open, onToggle, onNavigate, pathname,
+}: { collapsed: boolean; open: boolean; onToggle: () => void; onNavigate?: () => void; pathname: string }) {
+  const tags = usePinnedTags(true);
+  if (tags.length === 0) return null;
+
+  if (collapsed) {
+    return (
+      <div className="mb-1 flex flex-col items-center gap-0.5">
+        {tags.slice(0, 8).map(t => {
+          const Icon = tagIconFor(t.icon);
+          const color = t.color || fallbackColorFor(t.name);
+          const to = `/tags/${encodeURIComponent(t.name)}`;
+          const active = pathname === to;
+          return (
+            <Tooltip key={t.id} delayDuration={150}>
+              <TooltipTrigger asChild>
+                <NavLink
+                  to={to}
+                  onClick={onNavigate}
+                  className={cn(
+                    "grid h-10 w-10 place-items-center rounded-xl transition-all",
+                    "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    active && "bg-primary-soft text-foreground shadow-soft",
+                  )}
+                >
+                  <Icon className="h-4 w-4" style={{ color }} />
+                </NavLink>
+              </TooltipTrigger>
+              <TooltipContent side="right">#{t.name}</TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-1">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+      >
+        <Pin className="h-3.5 w-3.5 opacity-70" />
+        <span className="flex-1 text-left">Pinned tags</span>
+        <span className="text-[10px] text-sidebar-foreground/50">{tags.length}</span>
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} />
+      </button>
+      <div className={cn("grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+        <div className="min-h-0 overflow-hidden">
+          <div className="mt-1 flex flex-col gap-0.5 pl-1">
+            {tags.map(t => {
+              const Icon = tagIconFor(t.icon);
+              const color = t.color || fallbackColorFor(t.name);
+              return (
+                <NavLink
+                  key={t.id}
+                  to={`/tags/${encodeURIComponent(t.name)}`}
+                  onClick={onNavigate}
+                  className={({ isActive }) => cn(
+                    "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                    "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    isActive && "bg-primary-soft text-foreground shadow-soft",
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" style={{ color }} />
+                  <span className="flex-1 truncate">#{t.name}</span>
+                </NavLink>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniDatePickerButton({ onPick, label }: { onPick: (d: Date) => void; label: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          onClick={(e) => e.stopPropagation()}
+          className="grid h-5 w-5 place-items-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+        >
+          <CalendarDays className="h-3 w-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="bottom" align="end" className="w-auto p-0">
+        <CalendarPicker
+          mode="single"
+          onSelect={(d) => { if (d) { onPick(d); setOpen(false); } }}
+          initialFocus
+          weekStartsOn={1}
+          className={cn("p-3 pointer-events-auto")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function PinnedNotesSection({
   collapsed, open, onToggle, onNavigate, pathname,
 }: { collapsed: boolean; open: boolean; onToggle: () => void; onNavigate?: () => void; pathname: string }) {
