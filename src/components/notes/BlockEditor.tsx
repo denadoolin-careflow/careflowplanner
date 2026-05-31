@@ -666,6 +666,63 @@ export function BlockEditor({
     },
   }), []);
 
+  type HashItem = { name: string; create?: boolean };
+  const hashtagExtension = useMemo(() => Extension.create({
+    name: "hashtagMention",
+    addProseMirrorPlugins() {
+      return [makeSuggestion<HashItem>(this.editor as Editor, {
+        char: "#",
+        pluginKey: new PluginKey("hashtagSuggestion"),
+        getItems: (query) => {
+          const q = query.trim().toLowerCase();
+          const pool = tagNamesRef.current;
+          const matches = q
+            ? pool.filter(n => n.toLowerCase().includes(q)).slice(0, 8)
+            : pool.slice(0, 8);
+          const exact = !!q && pool.some(n => n.toLowerCase() === q);
+          const items: HashItem[] = matches.map(name => ({ name }));
+          if (q && !exact) items.unshift({ name: query, create: true });
+          return items;
+        },
+        onSelect: (item, range, editor) => {
+          const name = item.name.trim().replace(/^#+/, "");
+          if (!name) return;
+          const href = `/tags/${encodeURIComponent(name)}`;
+          editor.chain().focus().deleteRange(range)
+            .insertContent({
+              type: "text",
+              text: `#${name}`,
+              marks: [{ type: "link", attrs: { href, class: "tag-chip" } }],
+            })
+            .insertContent(" ")
+            .run();
+          // Persist on the note record so it appears on the tag hub immediately.
+          if (noteIdRef.current) {
+            const md = editor.storage?.markdown ?? null;
+            const text = (editor.getText?.() ?? "") + ` #${name}`;
+            const all = extractHashtagsFromText(text);
+            updateNote(noteIdRef.current, { tags: all }).catch(() => {});
+          }
+        },
+        render: (item, active) => (
+          <span className="flex items-center gap-2">
+            <span className={cn("flex h-7 w-7 items-center justify-center rounded-md", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>
+              {item.create ? <Plus className="h-3.5 w-3.5" /> : <Hash className="h-3.5 w-3.5" />}
+            </span>
+            <span className="flex-1">
+              <span className="block font-medium leading-tight">
+                {item.create ? `Create #${item.name}` : `#${item.name}`}
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                {item.create ? "New tag" : "Tag"}
+              </span>
+            </span>
+          </span>
+        ),
+      })];
+    },
+  }), []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -688,6 +745,7 @@ export function BlockEditor({
       }),
       slashExtension,
       refExtension,
+      hashtagExtension,
       toggleKeymap,
     ],
     content: bodyToHtml(body),
@@ -711,6 +769,7 @@ export function BlockEditor({
       const md = htmlToMarkdown(html);
       lastSyncedRef.current = md;
       onChange(md, html);
+      syncBodyTags(md);
     },
   }, []);
 
