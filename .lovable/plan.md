@@ -1,54 +1,50 @@
 ## Goal
 
-Fix two issues with mobile task swipes in `src/components/cards/TaskRow.tsx`:
+1. Align the leading indicators on every task row (status dot, checkbox, area icon) so they sit on the same baseline as the title's first line, regardless of whether the title wraps.
+2. Make the horizontal scrollbar under the Inbox tag-filter chip rail thin and visually separated, so it no longer overlaps the chips.
 
-1. After swiping, the action buttons (Complete / Snooze / Delete / Edit / Priority / Move) snap back before they can be tapped.
-2. Swiping gives no tactile feedback — should buzz when the gesture starts, when it crosses the "armed" threshold, and when an action fires.
+## Why
 
-## What changes
+The mobile screenshot shows two issues:
+- On rows like "Pack Aerie's bag" the green status dot, checkbox, and area icon are at three slightly different vertical positions because each uses a different `mt-*` (currently `mt-2`, `mt-1.5`, `mt-1`).
+- The tag-filter row at the top uses a `scrollbar-none` class that isn't defined in the project, so the default 10px global scrollbar shows directly underneath the chips and visually touches them.
 
-### 1. Swipe actions stay open until tapped or dismissed
+## Changes
 
-- Switch the list from `Type.IOS` (which springs back unless you cross the action threshold) to a latched behavior so a half-swipe parks the row open and exposes the buttons.
-- Keep `fullSwipe={false}` so a long swipe never auto-completes by accident.
-- Add an outside-tap / scroll handler that closes the open row when the user touches another row or the page background — so only one row is open at a time and users can dismiss without picking an action.
-- Track the currently open task id in a small module-level store (or context) so opening row B closes row A.
+### 1. `src/components/cards/TaskRow.tsx` — row indicator alignment
 
-### 2. Haptic feedback on the swipe gesture
+Inside `rowBody`'s `<RowShell>` children:
 
-Using `react-swipeable-list`'s `onSwipeStart`, `onSwipeProgress`, and `onSwipeEnd` callbacks on `SwipeableListItem`:
+- **Status dot** (currently `mt-2 h-2 w-2`) → `mt-[7px]` so its center sits at ~11px (matches first-line center for `text-[15px] leading-snug`).
+- **Checkbox** (currently `mt-1.5`) → `mt-[3px]` so the 16px control centers on ~11px.
+- **Area icon container** (currently `mt-1 h-6 w-6`) → shrink to `h-5 w-5` and use `mt-[1px]` so the box centers on ~11px without overhanging the title line. Inner icon stays `h-3.5 w-3.5`.
+- **Chevron** (when subtasks exist) — keep `mt-1.5` (already aligned with the new checkbox baseline since it's 20px tall ≈ line height).
 
-- `onSwipeStart` → `haptics.swipe()` (featherlight tick when the row begins to move).
-- `onSwipeProgress` → `haptics.snap()` once when progress first crosses the action threshold (~15%), and again when it crosses a stronger "armed" threshold (~40%). Reset the flag on `onSwipeEnd` so re-swipes re-trigger.
-- Each `SwipeAction onClick` → variant matched to the action:
-  - Complete → `haptics.success()`
-  - Snooze → `haptics.tap()`
-  - Delete → `haptics.delete()`
-  - Edit / Priority / Move → `haptics.tap()`
+These tweaks keep the indicators visually centered on the first text line when the title wraps to multiple lines (RowShell stays `items-start`).
 
-(Several of these already call haptics inside their handler; this consolidates them so the swipe path also fires the right pattern.)
+### 2. `src/pages/Inbox.tsx` — slim tag-filter scrollbar
 
-### 3. Tightening the swipe handle behavior (carry-over fix)
+Replace the non-existent `scrollbar-none` class on the chip rail (line 224) with a thin, separated scrollbar:
 
-- Keep the left grip handle as the only swipe-initiating area (already in place).
-- Ensure the action button row itself receives pointer events even while the row body's `onTouchStart` stops propagation — confirm by testing that tapping Complete/Snooze/Delete after a swipe actually fires.
+```
+className="flex items-center gap-1.5 overflow-x-auto pb-1.5
+  [scrollbar-width:thin]
+  [&::-webkit-scrollbar]:h-1
+  [&::-webkit-scrollbar-track]:bg-transparent
+  [&::-webkit-scrollbar-thumb]:rounded-full
+  [&::-webkit-scrollbar-thumb]:bg-border/60"
+```
 
-## Files touched
-
-- `src/components/cards/TaskRow.tsx` — swipe config, haptic callbacks, open-row coordination.
-- (Possibly) `src/lib/swipe-open-store.ts` — tiny new module to track which task row is currently open so opening another closes the first. Alternative: a React context in `AppLayout`.
+This produces a 4px-tall thumb sitting in a 6px reserved track under the chips, so the chip outlines no longer touch the scrollbar. Firefox uses `scrollbar-width: thin` for the same effect.
 
 ## Out of scope
 
-- No changes to the bottom-nav swipe gesture (already fixed via `data-no-swipe`).
-- No changes to long-press / quick-edit behavior.
-- No new action buttons — only how existing ones reveal and confirm.
+- No changes to swipe behavior, haptics, or chip styling/colors.
+- No global scrollbar restyle (the rest of the app keeps the existing 10px scrollbar).
 
 ## Verification
 
-On the mobile preview (411×729):
-1. Swipe a task half-way from the grip → row stays parked, three action buttons visible.
-2. Tap Snooze → action fires, row closes, haptic plays.
-3. Swipe a second task → first row auto-closes.
-4. Tap anywhere outside the open row → it closes without firing an action.
-5. Feel a tick on swipe start, a snap when crossing the threshold, and the action's signature pattern on tap.
+On the 411-wide mobile preview at `/inbox`:
+1. Each task row's green dot, checkbox, and area icon sit on the same horizontal line as the title's first character.
+2. Multi-line task titles (e.g. the "Make sure that the events…" row) keep the indicators aligned to the first line, not vertically centered on the wrapped block.
+3. The tag chip rail shows a thin scrollbar with a small gap beneath the chips; the chip borders no longer touch it.

@@ -222,14 +222,14 @@ export function TaskRow({
     >
       {/* Status dot (area color) — replaces the heavy left border */}
       <span
-        className="mt-2 inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border/60"
+        className="mt-[7px] inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border/60"
         style={areaColor ? { backgroundColor: areaColor } : { backgroundColor: "hsl(var(--muted-foreground) / 0.5)" }}
         aria-hidden
       />
-      <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-1.5" aria-label={`Mark complete: ${task.title}`} />
+      <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-[3px]" aria-label={`Mark complete: ${task.title}`} />
 
       {/* Contextual icon */}
-      <div className="mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-muted/50 text-muted-foreground">
+      <div className="mt-[1px] grid h-5 w-5 shrink-0 place-items-center rounded-md bg-muted/50 text-muted-foreground">
         {resolvedIcon.kind === "lucide"
           ? <resolvedIcon.Icon className="h-3.5 w-3.5" aria-hidden />
           : <span className="text-sm leading-none" aria-hidden>{resolvedIcon.char}</span>}
