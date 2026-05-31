@@ -1108,34 +1108,6 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           );
         })}
 
-        {sections.pinnedNotes && (
-          <PinnedNotesSection
-            collapsed={collapsed}
-            open={openMap["pinned-notes"] !== false}
-            onToggle={() => toggle("pinned-notes")}
-            onNavigate={onNavigate}
-            pathname={pathname}
-          />
-        )}
-
-        {!collapsed && sections.quickWeeks && (
-          <QuickDatesSection
-            kind="week"
-            open={openMap["quick-weeks"] !== false}
-            onToggle={() => toggle("quick-weeks")}
-            onNavigate={onNavigate}
-            pathname={pathname}
-          />
-        )}
-        {!collapsed && sections.quickMonths && (
-          <QuickDatesSection
-            kind="month"
-            open={openMap["quick-months"] !== false}
-            onToggle={() => toggle("quick-months")}
-            onNavigate={onNavigate}
-            pathname={pathname}
-          />
-        )}
       </nav>
     </div>
     </TooltipProvider>
