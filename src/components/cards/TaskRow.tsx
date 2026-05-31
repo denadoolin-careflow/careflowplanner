@@ -95,7 +95,17 @@ export function TaskRow({
       setCelebrate(true);
       playCompletionChime();
       haptics.success?.();
-      toast.success("Done — softly.", { description: pickAffirmation() });
+      toast.success("Done — softly.", {
+        description: pickAffirmation(),
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            haptics.tap?.();
+            void updateTask(task.id, { done: false });
+          },
+        },
+      });
       window.setTimeout(() => { toggleTask(task.id); setCelebrate(false); }, 900);
     } else {
       toggleTask(task.id);
@@ -107,9 +117,20 @@ export function TaskRow({
 
   const handleSnooze = () => {
     const next = format(addDays(new Date(), 1), "yyyy-MM-dd");
+    const prev = { dueDate: task.dueDate, status: task.status, snoozedUntil: task.snoozedUntil };
     void updateTask(task.id, { dueDate: next, status: "parked", snoozedUntil: next });
     haptics.tap?.();
-    toast("Snoozed to tomorrow", { description: task.title });
+    toast("Snoozed to tomorrow", {
+      description: task.title,
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          haptics.tap?.();
+          void updateTask(task.id, prev);
+        },
+      },
+    });
   };
   const handleReschedule = () => setOpen(true);
   const handleCyclePriority = () => {

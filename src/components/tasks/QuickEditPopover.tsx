@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
 import { Repeat, Flag, Folder, Target, MapPin, Tag, Sun, Moon, CloudSun } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 type Props = {
   task: Task;
@@ -25,9 +26,26 @@ export function QuickEditPopover({ task, open, onOpenChange, anchor }: Props) {
   const projects = state.projects ?? [];
   const goals = state.goals ?? [];
 
-  const patch = async (p: Partial<Task>) => {
+  const patch = async (p: Partial<Task>, undoLabel?: string) => {
     haptics.snap?.();
+    const prev: Partial<Task> = {};
+    for (const key of Object.keys(p) as (keyof Task)[]) {
+      (prev as any)[key] = (task as any)[key];
+    }
     await updateTask(task.id, p);
+    if (undoLabel) {
+      toast(undoLabel, {
+        description: task.title,
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            haptics.tap?.();
+            void updateTask(task.id, prev);
+          },
+        },
+      });
+    }
   };
 
   return (
@@ -60,7 +78,7 @@ export function QuickEditPopover({ task, open, onOpenChange, anchor }: Props) {
           <Section icon={MapPin} label="Area">
             <div className="flex flex-wrap gap-1">
               {AREAS.map(a => (
-                <Chip key={a} active={task.area === a} onClick={() => patch({ area: a as Area })}>{a}</Chip>
+                <Chip key={a} active={task.area === a} onClick={() => patch({ area: a as Area }, `Moved to ${a}`)}>{a}</Chip>
               ))}
             </div>
           </Section>
@@ -68,9 +86,9 @@ export function QuickEditPopover({ task, open, onOpenChange, anchor }: Props) {
           {projects.length > 0 && (
             <Section icon={Folder} label="Project">
               <div className="flex flex-wrap gap-1">
-                <Chip active={!task.projectId} onClick={() => patch({ projectId: undefined })}>None</Chip>
+                <Chip active={!task.projectId} onClick={() => patch({ projectId: undefined }, "Removed from project")}>None</Chip>
                 {projects.slice(0, 12).map(p => (
-                  <Chip key={p.id} active={task.projectId === p.id} onClick={() => patch({ projectId: p.id })}>{p.name}</Chip>
+                  <Chip key={p.id} active={task.projectId === p.id} onClick={() => patch({ projectId: p.id }, `Moved to ${p.name}`)}>{p.name}</Chip>
                 ))}
               </div>
             </Section>
