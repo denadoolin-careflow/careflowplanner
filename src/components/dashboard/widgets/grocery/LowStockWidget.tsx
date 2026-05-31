@@ -34,6 +34,7 @@ export function LowStockWidget() {
             {items.map(i => (
               <li key={i.id} className="flex items-center gap-1.5 rounded-md bg-background/50 px-2 py-1">
                 <span className="flex-1 truncate">{i.name}</span>
+                <ShopMenu items={i.name} size="xs" variant="ghost" compact className="h-6 px-1.5" />
               </li>
             ))}
           </ul>
