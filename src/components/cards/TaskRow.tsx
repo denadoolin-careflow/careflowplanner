@@ -241,16 +241,16 @@ export function TaskRow({
       onPointerCancel={cancelLongPress}
       onContextMenu={(e) => { e.preventDefault(); setQuickEditOpen(true); }}
     >
-      {/* Status dot (area color) — replaces the heavy left border */}
+      {/* Status dot (area color) — hidden on mobile to reduce leading clutter */}
       <span
-        className="mt-[7px] inline-block h-2 w-2 shrink-0 rounded-full ring-1 ring-border/60"
+        className="mt-[7px] hidden h-2 w-2 shrink-0 rounded-full ring-1 ring-border/60 sm:inline-block"
         style={areaColor ? { backgroundColor: areaColor } : { backgroundColor: "hsl(var(--muted-foreground) / 0.5)" }}
         aria-hidden
       />
       <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-[3px]" aria-label={`Mark complete: ${task.title}`} />
 
-      {/* Contextual icon */}
-      <div className="mt-[1px] grid h-5 w-5 shrink-0 place-items-center rounded-md bg-muted/50 text-muted-foreground">
+      {/* Contextual icon — desktop only; on mobile the area chip in the meta line carries the same signal */}
+      <div className="mt-[1px] hidden h-5 w-5 shrink-0 place-items-center rounded-md bg-muted/50 text-muted-foreground sm:grid">
         {resolvedIcon.kind === "lucide"
           ? <resolvedIcon.Icon className="h-3.5 w-3.5" aria-hidden />
           : <span className="text-sm leading-none" aria-hidden>{resolvedIcon.char}</span>}
