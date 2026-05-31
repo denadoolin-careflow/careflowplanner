@@ -22,10 +22,10 @@ export function HealthHero() {
 
   return (
     <header
-      className="relative overflow-hidden rounded-3xl border border-secondary/40 p-6 sm:p-8"
+      className="relative overflow-hidden rounded-3xl border border-secondary/40 bg-card p-6 sm:p-8"
       style={{
         background:
-          "linear-gradient(135deg, hsl(145 35% 92%) 0%, hsl(36 45% 96%) 55%, hsl(145 30% 88%) 100%)",
+          "linear-gradient(135deg, hsl(145 45% 50% / 0.18) 0%, hsl(36 70% 55% / 0.14) 55%, hsl(145 50% 45% / 0.20) 100%), hsl(var(--card))",
         boxShadow: "var(--shadow-soft)",
       }}
     >
@@ -43,27 +43,27 @@ export function HealthHero() {
 
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.22em] text-secondary-foreground/70">
+          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground/75">
             <Sparkles className="h-3 w-3" /> Sage Sanctuary
           </p>
           <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Your Health Hub
           </h1>
-          <p className="mt-2 max-w-md text-sm italic text-foreground/70">
+          <p className="mt-2 max-w-md text-sm italic text-foreground/85">
             "{affirmation}"
           </p>
         </div>
 
-        <div className="flex items-center gap-4 rounded-2xl bg-card/70 px-4 py-3 backdrop-blur-sm">
+        <div className="flex items-center gap-4 rounded-2xl bg-background/70 px-4 py-3 backdrop-blur-sm">
           <MoonGlyph size={48} />
           <div className="text-xs leading-tight">
-            <p className="font-display text-base">{moon.label}</p>
+            <p className="font-display text-base text-foreground">{moon.label}</p>
             {cycle ? (
-              <p className="text-muted-foreground">
+              <p className="text-foreground/70">
                 Day {cycle.cycleDay} · {cycle.label}
               </p>
             ) : (
-              <p className="text-muted-foreground">A gentle day to begin</p>
+              <p className="text-foreground/70">A gentle day to begin</p>
             )}
           </div>
         </div>
