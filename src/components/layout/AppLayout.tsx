@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Sidebar, MobileSidebarTrigger } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { ThemeToggle } from "./ThemeToggle";
@@ -34,6 +35,7 @@ export function AppLayout() {
   const { current: atmoId } = useAtmosphere();
   useEffect(() => { applyAnimIntensity(readAnimIntensity()); applyFontPrefs(); installGlobalHaptics(); }, []);
   useEffect(() => { applyFontPrefs(); }, [atmoId]);
+  const reduceMotion = useReducedMotion();
 
   return (
     <div className="min-h-screen w-full gradient-dawn">
@@ -80,7 +82,18 @@ export function AppLayout() {
           <RoutinesStrip />
           <main className="flex-1 px-4 pb-28 pt-6 lg:px-8 lg:pb-12">
             <div className="mx-auto w-full max-w-6xl">
-              <Outlet />
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.div
+                  key={pathname}
+                  initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -2 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.22, 0.61, 0.36, 1] }}
+                  style={{ willChange: "opacity, transform" }}
+                >
+                  <Outlet />
+                </motion.div>
+              </AnimatePresence>
             </div>
           </main>
         </div>
