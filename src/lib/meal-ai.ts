@@ -61,10 +61,18 @@ export async function regenerateMeal(date: string, slot: string, avoid?: string)
   return data;
 }
 
-export interface PantryItem { id: string; name: string; category: string | null; in_stock: boolean; }
+export interface PantryItem {
+  id: string;
+  name: string;
+  category: string | null;
+  in_stock: boolean;
+  stock_status?: string;
+  sort_order?: number;
+}
 
 export async function listPantry(userId: string): Promise<PantryItem[]> {
-  const { data } = await supabase.from("pantry_items").select("*").eq("user_id", userId).order("name");
+  const { data } = await supabase.from("pantry_items").select("*").eq("user_id", userId)
+    .order("sort_order", { ascending: true }).order("name");
   return (data ?? []) as PantryItem[];
 }
 
@@ -83,6 +91,23 @@ export async function removePantry(id: string) {
 
 export async function updatePantryCategory(id: string, category: string | null) {
   await supabase.from("pantry_items").update({ category }).eq("id", id);
+}
+
+/** Persist a new manual order. `ids` is the full ordered list for one scope (status/category). */
+export async function reorderPantry(ids: string[]) {
+  if (!ids.length) return;
+  await Promise.all(
+    ids.map((id, idx) =>
+      supabase.from("pantry_items").update({ sort_order: idx + 1 }).eq("id", id),
+    ),
+  );
+}
+
+export async function bulkSetPantryStatus(ids: string[], stockStatus: string, inStock: boolean) {
+  if (!ids.length) return;
+  await supabase.from("pantry_items")
+    .update({ stock_status: stockStatus, in_stock: inStock })
+    .in("id", ids);
 }
 
 export interface FavoriteMeal {
