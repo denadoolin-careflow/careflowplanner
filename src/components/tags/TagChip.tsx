@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { fallbackColorFor, readableTextOn } from "@/lib/tags";
 import { useTags } from "@/hooks/use-tags";
 import { tagIconFor } from "./tag-icon";
+import { TagPreviewHover } from "./TagPreview";
 
 interface Props {
   name: string;
@@ -60,13 +61,15 @@ export function TagChip({ name, linkable, onRemove, className, size = "sm", subt
 
   if (linkable) {
     return (
-      <Link
-        to={`/tags/${encodeURIComponent(meta.name)}`}
-        className="inline-flex hover:-translate-y-px"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {inner}
-      </Link>
+      <TagPreviewHover name={meta.name}>
+        <Link
+          to={`/tags/${encodeURIComponent(meta.name)}`}
+          className="inline-flex hover:-translate-y-px"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {inner}
+        </Link>
+      </TagPreviewHover>
     );
   }
   return inner;
