@@ -104,7 +104,13 @@ export default function Month() {
       kind: "block" as const, label: `${b.icon ? b.icon + " " : ""}${b.title}`, blockId: b.id, blockColor: b.color,
       time: b.allDay ? null : b.startTime,
     })),
-    ...state.appointments.filter(a => a.date === k).map(a => ({ kind: "appt" as const, label: a.title, apptId: a.id, time: a.time })),
+    ...state.appointments
+      .filter(a => apptOccursOn(a, k))
+      .map(a => {
+        const m = apptRangeMeta(a, k);
+        const prefix = m.isMulti && !m.isStart ? (m.isEnd ? "↦ " : "· ") : "";
+        return { kind: "appt" as const, label: `${prefix}${a.title}`, apptId: a.id, time: m.isStart ? a.time : null };
+      }),
     ...state.birthdays.filter(b => b.date === k).map(b => ({ kind: "bday" as const, label: `🎂 ${b.name}` })),
     ...state.holidays.filter(h => h.date === k).map(h => ({ kind: "hol" as const, label: `✨ ${h.name}` })),
     ...gEvents.filter(g => g.date === k).map(g => ({ kind: "gcal" as const, label: g.title })),
