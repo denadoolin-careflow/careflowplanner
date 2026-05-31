@@ -14,6 +14,7 @@ import { playCompletionChime } from "@/lib/completion-sound";
 import { listMemories, memoryTypeMeta, type Memory } from "@/lib/memories";
 import { QuickTaskInlineEditor } from "@/components/tasks/QuickTaskInlineEditor";
 import { CycleNotificationsSection } from "@/components/cycle/CycleNotificationsSection";
+import { apptOccursOn } from "@/lib/appointment-range";
 
 export function NotificationCenter() {
   const { state, toggleTask, updateTask } = useStore();

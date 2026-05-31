@@ -36,6 +36,7 @@ import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { getMoonPhase } from "@/lib/moon";
 import { useWeatherSnapshot } from "@/lib/weather-store";
 import { supabase } from "@/integrations/supabase/client";
+import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 
 function ChipList({ items, onRemove }: { items: string[]; onRemove?: (i: number) => void }) {
   if (!items.length) return <p className="text-xs text-muted-foreground">None yet.</p>;

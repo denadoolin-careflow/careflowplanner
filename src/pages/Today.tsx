@@ -51,6 +51,7 @@ import { TodayHabitsCard } from "@/components/today/TodayHabitsCard";
 import { RoutinesPanel } from "@/components/today/RoutinesPanel";
 import { personalGreeting } from "@/lib/greeting";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
+import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 
 export default function Today() {
   return (
