@@ -23,6 +23,7 @@ import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
+import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { WeekRhythmRow } from "@/components/rhythm/WeekRhythmRow";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 import { Link } from "react-router-dom";
