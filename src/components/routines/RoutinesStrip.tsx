@@ -178,7 +178,7 @@ export function RoutinesStrip() {
             <span className="mx-1 hidden h-4 w-px bg-border sm:inline-block" />
 
             {/* Slot tabs */}
-            <div className="flex rounded-full bg-muted/50 p-0.5">
+            <div className="flex max-w-full flex-wrap justify-center gap-0.5 rounded-2xl bg-muted/50 p-0.5">
               {ROUTINE_SLOTS.map(s => (
                 <button
                   key={s}
