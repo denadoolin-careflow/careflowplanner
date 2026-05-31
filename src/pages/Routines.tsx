@@ -186,8 +186,6 @@ export default function Routines() {
         onFilterChange={setStateFilter}
       />
 
-      <RitualStrip title="Rituals today" />
-
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/40 p-2">
         <Select value={filterPerson} onValueChange={setFilterPerson}>
           <SelectTrigger className="h-8 w-40 text-xs"><SelectValue placeholder="All people" /></SelectTrigger>
@@ -351,6 +349,8 @@ export default function Routines() {
           startItemId={focus.itemId}
         />
       )}
+
+      <RitualStrip title="Rituals today" className="pt-2" />
     </div>
   );
 }
