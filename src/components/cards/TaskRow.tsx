@@ -209,6 +209,7 @@ export function TaskRow({
       selected={isSelected}
       onPointerDown={startLongPress}
       onPointerUp={cancelLongPress}
+      onPointerMove={moveLongPress}
       onPointerLeave={cancelLongPress}
       onPointerCancel={cancelLongPress}
       onContextMenu={(e) => { e.preventDefault(); setQuickEditOpen(true); }}
