@@ -223,16 +223,16 @@ export default function CalendarPage() {
 
       <SectionCard
         title={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => shift(-1)} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
-            <span>{headerLabel}</span>
+            <span className="whitespace-nowrap text-base sm:text-lg">{headerLabel}</span>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => shift(1)} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
             <Button variant="ghost" size="sm" className="ml-1 h-7 px-2 text-xs" onClick={() => setCursor(new Date())}>Today</Button>
           </div>
         }
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex gap-1 rounded-full bg-muted/60 p-0.5">
+          <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:w-auto sm:flex-wrap sm:overflow-visible sm:pb-0">
+            <div className="flex shrink-0 gap-1 rounded-full bg-muted/60 p-0.5">
               {(["day","week","month","year"] as View[]).map(v => (
                 <button
                   key={v}
@@ -246,7 +246,7 @@ export default function CalendarPage() {
                 </button>
               ))}
             </div>
-            <div className="flex gap-1 rounded-full bg-muted/60 p-0.5">
+            <div className="flex shrink-0 gap-1 rounded-full bg-muted/60 p-0.5">
               <button
                 onClick={() => setLayout("grid")}
                 className={cn(
@@ -298,7 +298,14 @@ export default function CalendarPage() {
           <MonthPlanningDashboard cursor={cursor} onJumpToDate={(d) => { setCursor(d); setLayout("grid"); setView("day"); }} />
         ) : (
           <>
-          <div className="mb-3 flex flex-wrap gap-1.5">
+          <div className="mb-3 -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1.5 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/60 sm:flex-wrap sm:overflow-visible sm:pb-0">
+            <button
+              type="button"
+              onClick={() => setKindFilter(new Set(ALL_KINDS))}
+              className="shrink-0 rounded-full border border-border/50 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+            >
+              All
+            </button>
             {([
               { k: "task" as Kind, label: "Tasks", Icon: CheckSquare },
               { k: "appt" as Kind, label: "Appointments", Icon: CalendarClock },
@@ -316,7 +323,7 @@ export default function CalendarPage() {
                   onClick={() => toggleKind(k)}
                   aria-pressed={on}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
+                    "flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
                     on
                       ? "border-primary/40 bg-primary-soft text-foreground shadow-sm"
                       : "border-border/50 bg-muted/40 text-muted-foreground hover:text-foreground",
@@ -326,13 +333,6 @@ export default function CalendarPage() {
                 </button>
               );
             })}
-            <button
-              type="button"
-              onClick={() => setKindFilter(new Set(ALL_KINDS))}
-              className="ml-auto text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-            >
-              All
-            </button>
           </div>
           {layout === "schedule" ? (
           <ScheduleView
