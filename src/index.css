@@ -1562,3 +1562,7 @@ html[data-atmosphere="moonlit-plum"].dark .cozy-card {
 /* Horizontal scroll rows without a visible scrollbar (mobile action pills). */
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Pantry drag-and-drop: keep the grabbing cursor everywhere while a drag is active. */
+body.pantry-dragging,
+body.pantry-dragging * { cursor: grabbing !important; user-select: none; }
