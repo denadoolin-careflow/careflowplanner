@@ -53,7 +53,7 @@ export function RoutineItemRow({
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className={cn("min-w-0 flex-1 truncate text-left", item.done && "text-muted-foreground line-through")}
+              className={cn("min-w-0 flex-1 break-words text-left", item.done && "text-muted-foreground line-through")}
             >
               {item.text}
             </button>
