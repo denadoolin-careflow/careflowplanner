@@ -341,15 +341,17 @@ export function TaskRow({
 
   return (
     <>
-      <SwipeableList type={SwipeType.IOS} fullSwipe={false} threshold={0.15} className="!bg-transparent">
-        <SwipeableListItem
-          leadingActions={leadingActions}
-          trailingActions={trailingActions}
-          blockSwipe={editing || draggable || isSubtask}
-        >
-          <div className="w-full">{rowBody}</div>
-        </SwipeableListItem>
-      </SwipeableList>
+      <div data-no-swipe>
+        <SwipeableList type={SwipeType.IOS} fullSwipe={false} threshold={0.15} className="!bg-transparent">
+          <SwipeableListItem
+            leadingActions={leadingActions}
+            trailingActions={trailingActions}
+            blockSwipe={editing || draggable || isSubtask}
+          >
+            <div className="w-full">{rowBody}</div>
+          </SwipeableListItem>
+        </SwipeableList>
+      </div>
 
       <QuickEditPopover task={task} open={quickEditOpen} onOpenChange={setQuickEditOpen} />
 
