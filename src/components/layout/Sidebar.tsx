@@ -839,6 +839,46 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           ))}
         </div>
 
+        {/* Pinned + quick-date jump sections (live right under Logbook) */}
+        {sections.pinnedNotes && (
+          <PinnedNotesSection
+            collapsed={collapsed}
+            open={openMap["pinned-notes"] !== false}
+            onToggle={() => toggle("pinned-notes")}
+            onNavigate={onNavigate}
+            pathname={pathname}
+          />
+        )}
+        {sections.pinnedTags && (
+          <PinnedTagsSection
+            collapsed={collapsed}
+            open={openMap["pinned-tags"] !== false}
+            onToggle={() => toggle("pinned-tags")}
+            onNavigate={onNavigate}
+            pathname={pathname}
+          />
+        )}
+        {!collapsed && sections.quickWeeks && (
+          <QuickDatesSection
+            kind="week"
+            open={openMap["quick-weeks"] !== false}
+            onToggle={() => toggle("quick-weeks")}
+            onNavigate={onNavigate}
+            pathname={pathname}
+            onPickDate={jumpToDay}
+          />
+        )}
+        {!collapsed && sections.quickMonths && (
+          <QuickDatesSection
+            kind="month"
+            open={openMap["quick-months"] !== false}
+            onToggle={() => toggle("quick-months")}
+            onNavigate={onNavigate}
+            pathname={pathname}
+            onPickDate={jumpToDay}
+          />
+        )}
+
         {/* Areas → Projects tree */}
         {!collapsed && projects.some(p => p.isFavorite) && (
           <div className="mb-2">
