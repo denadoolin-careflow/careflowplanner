@@ -59,7 +59,11 @@ export default function Week() {
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
 
   const eventsOn = (k: string) => [
-    ...state.appointments.filter(a => a.date === k).map(a => ({ label: a.title, time: a.time, id: a.id, kind: "appt" as const })),
+    ...state.appointments.filter(a => apptOccursOn(a, k)).map(a => {
+      const m = apptRangeMeta(a, k);
+      const prefix = m.isMulti && !m.isStart ? (m.isEnd ? "↦ " : "· ") : "";
+      return { label: `${prefix}${a.title}`, time: m.isStart ? a.time : undefined, id: a.id, kind: "appt" as const };
+    }),
     ...gEvents.filter(g => g.date === k).map(g => ({ label: g.title, time: g.time ?? undefined, kind: "gcal" as const })),
     ...state.tasks.filter(t => t.dueDate === k && !t.parentTaskId).map(t => ({
       label: t.title, time: undefined as string | undefined, id: t.id, kind: "task" as const, done: t.done,
