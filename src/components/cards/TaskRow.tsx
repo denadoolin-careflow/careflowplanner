@@ -348,7 +348,22 @@ export function TaskRow({
             trailingActions={trailingActions}
             blockSwipe={editing || draggable || isSubtask}
           >
-            <div className="w-full">{rowBody}</div>
+            <div className="flex w-full items-stretch">
+              <div
+                className="flex shrink-0 touch-none select-none items-center pl-1 pr-0.5 text-muted-foreground/40 sm:hidden"
+                aria-label="Drag to reveal actions"
+                title="Swipe from here"
+              >
+                <GripVertical className="h-4 w-4" />
+              </div>
+              <div
+                className="min-w-0 flex-1"
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+              >
+                {rowBody}
+              </div>
+            </div>
           </SwipeableListItem>
         </SwipeableList>
       </div>
