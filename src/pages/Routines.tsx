@@ -349,6 +349,8 @@ export default function Routines() {
           startItemId={focus.itemId}
         />
       )}
+
+      <RitualStrip title="Rituals today" className="pt-2" />
     </div>
   );
 }
