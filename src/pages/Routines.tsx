@@ -32,6 +32,9 @@ import { AIBreakdownDialog } from "@/components/routines/AIBreakdownDialog";
 import { RitualStrip } from "@/components/routines/RitualStrip";
 import { peopleTags, PERSON_COLORS, fallbackPersonColor } from "@/lib/people-tags";
 import { SearchableIconPicker, IconView } from "@/components/common/SearchableIconPicker";
+import { TodaysGarden } from "@/components/routines/TodaysGarden";
+import { CompactRoutineCard } from "@/components/routines/CompactRoutineCard";
+import { getRoutineState, GARDEN_META, type GardenState } from "@/lib/routine-garden";
 
 type GroupBy = "person" | "timeframe" | "cadence" | "tag";
 
@@ -43,6 +46,7 @@ export default function Routines() {
   const [filterTag, setFilterTag] = useState<string>("all");
   const [newPerson, setNewPerson] = useState("");
   const [focus, setFocus] = useState<{ routine: Routine; itemId?: string } | null>(null);
+  const [stateFilter, setStateFilter] = useState<GardenState | "all">("all");
 
   const people = useMemo(() => {
     const fromRoutines = routinesApi.people();
@@ -60,7 +64,20 @@ export default function Routines() {
     });
   }, [list, filterPerson, filterTag]);
 
-  const groups = useMemo(() => groupRoutines(filtered, groupBy), [filtered, groupBy]);
+  const visible = useMemo(
+    () => stateFilter === "all" ? filtered : filtered.filter(r => getRoutineState(r) === stateFilter),
+    [filtered, stateFilter],
+  );
+
+  // Smart-sorted state sections — Needs Care first, then Growing, Blooming, Resting.
+  const stateSections = useMemo(() => {
+    const order: GardenState[] = ["seedling", "growing", "blooming", "resting"];
+    const bucket: Record<GardenState, Routine[]> = { seedling: [], growing: [], blooming: [], resting: [] };
+    visible.forEach(r => bucket[getRoutineState(r)].push(r));
+    return order
+      .filter(s => bucket[s].length > 0)
+      .map(s => ({ state: s, items: bucket[s], defaultCollapsed: s === "blooming" || s === "resting" }));
+  }, [visible]);
 
   const addPersonInline = async () => {
     const n = newPerson.trim();
@@ -105,24 +122,15 @@ export default function Routines() {
         onFocus={(r, itemId) => setFocus({ routine: r, itemId })}
       />
 
+      <TodaysGarden
+        routines={filtered}
+        activeFilter={stateFilter}
+        onFilterChange={setStateFilter}
+      />
+
       <RitualStrip title="Rituals today" />
 
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/40 p-2">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Users className="h-3.5 w-3.5" /> Group
-        </div>
-        <Select value={groupBy} onValueChange={(v) => setGroupBy(v as GroupBy)}>
-          <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="person">By person</SelectItem>
-            <SelectItem value="timeframe">By timeframe</SelectItem>
-            <SelectItem value="cadence">By cadence</SelectItem>
-            <SelectItem value="tag">By tag</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <span className="mx-1 h-4 w-px bg-border" />
-
         <Select value={filterPerson} onValueChange={setFilterPerson}>
           <SelectTrigger className="h-8 w-40 text-xs"><SelectValue placeholder="All people" /></SelectTrigger>
           <SelectContent>
@@ -140,7 +148,7 @@ export default function Routines() {
         </Select>
 
         <div className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} routine{filtered.length === 1 ? "" : "s"}
+          {visible.length} routine{visible.length === 1 ? "" : "s"}
         </div>
       </div>
 
@@ -152,21 +160,26 @@ export default function Routines() {
         </div>
       )}
 
-      {loaded && people.length > 0 && filterPerson === "all" && groupBy === "person" && (
+      {loaded && people.length > 0 && filterPerson === "all" && (
         <PersonQuickAdd people={people} />
       )}
 
-      <div className="space-y-5">
-        {groups.map(g => (
-          <RoutineGroup
-            key={g.id}
-            title={g.label}
-            subtitle={g.subtitle}
-            routines={g.items}
+      <div className="space-y-4">
+        {stateSections.map(sec => (
+          <StateSection
+            key={sec.state}
+            state={sec.state}
+            routines={sec.items}
             recipients={state.recipients}
+            defaultCollapsed={sec.defaultCollapsed}
             onFocus={(r, itemId) => setFocus({ routine: r, itemId })}
           />
         ))}
+        {loaded && visible.length === 0 && stateFilter !== "all" && (
+          <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-8 text-center text-sm text-muted-foreground">
+            Nothing {GARDEN_META[stateFilter as GardenState].label.toLowerCase()} right now.
+          </div>
+        )}
       </div>
 
       {focus && (
@@ -178,6 +191,40 @@ export default function Routines() {
         />
       )}
     </div>
+  );
+}
+
+function StateSection({
+  state, routines: items, recipients, defaultCollapsed, onFocus,
+}: {
+  state: GardenState;
+  routines: Routine[];
+  recipients: { id: string; name: string }[];
+  defaultCollapsed: boolean;
+  onFocus?: (r: Routine, itemId?: string) => void;
+}) {
+  const meta = GARDEN_META[state];
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  return (
+    <section className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setCollapsed(c => !c)}
+        className="flex w-full items-center gap-2 rounded-lg px-1 text-left hover:bg-muted/30"
+      >
+        <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", !collapsed && "rotate-90")} />
+        <span className="text-base leading-none">{meta.emoji}</span>
+        <h2 className="text-sm font-semibold">{meta.label}</h2>
+        <span className="ml-auto rounded-full bg-muted/60 px-1.5 text-[10.5px] font-medium tabular-nums text-muted-foreground">{items.length}</span>
+      </button>
+      {!collapsed && (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {items.map(r => (
+            <CompactRoutineCard key={r.id} routine={r} recipients={recipients} onFocus={onFocus} />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

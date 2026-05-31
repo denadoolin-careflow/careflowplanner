@@ -1,31 +1,78 @@
-Add smooth, fast page transitions across the app so route changes feel seamless instead of blinking.
+Redesign Routines page around the CareFlow garden metaphor — compact cards, growth states, today's garden summary, and grouping by attention.
 
-**Approach**
+## New visual model — Garden states
 
-1. **Wrap `<Outlet />` with an animated transition layer** in `src/components/layout/AppLayout.tsx`:
-   - Use `framer-motion`'s `AnimatePresence` + `motion.div` keyed by `pathname`.
-   - Subtle, fast transition: 180ms ease-out, opacity 0→1 + 4px upward translate. No scale (avoids layout shift / blur). Respects `prefers-reduced-motion` and the app's existing `--anim-intensity` (skip animation when set to "calm/none").
+Add a `getRoutineState(routine)` helper that returns one of:
+- `seedling` 🌱 — `doneCount === 0` ("Needs Care") · accent `--sage-soft`
+- `growing` 🌿 — `0 < doneCount < total` ("Growing") · accent `--sage`
+- `blooming` 🌸 — `doneCount === total && total > 0` ("Blooming") · accent `--plum`
+- `resting` 🍂 — `total === 0` or `meta.lastMissedAt` recent ("Resting / Needs Care") · accent `--cream-warm`
 
-2. **Eliminate the "blink" caused by remounts**:
-   - Ensure the transition wrapper uses `mode="wait"` only if needed; default to `mode="popLayout"` so the incoming page fades in over the outgoing one (no white flash).
-   - Use `will-change: opacity, transform` only during the animation.
+Each state ships with: emoji, label, accent color token, contextual CTA label (`Start` / `Continue` / `Blooming 🌸` / `Restart`).
 
-3. **Speed up perceived load**:
-   - Add `<ScrollRestoration>`-style instant scroll reset that runs *before* paint (already handled by `ScrollToTop`, just confirm it doesn't cause an extra frame).
-   - Preload route chunks on hover/touchstart for `NavLink`s in `BottomNav` and `Sidebar` (call `import()` for the lazy route module). Since routes here are statically imported in `App.tsx`, this step is a no-op — note in the plan that no code-split exists, so navigation is already chunk-free; the only remaining cost is React re-render.
+## New page structure (`src/pages/Routines.tsx`)
 
-4. **Reduce re-render cost** on heavy pages by ensuring the transition wrapper doesn't force unnecessary remounts of providers (it lives inside `AppLayout`, below all providers — already correct).
+1. **Header** (kept slim): `🌿 Routines` title + Add person button.
+2. **Today's Garden summary card** (new component `TodaysGarden`):
+   - 3 stat tiles: `🌸 Blooming`, `🌿 Growing`, `🌱 Need Care` (only counts daily routines or those scheduled today).
+   - Soft sage→cream gradient background using existing atmosphere tokens.
+   - Tapping a tile filters the list below to that state.
+3. **NowNextBanner + RitualStrip** kept.
+4. **Filter row**: simplified — keep Group/Person/Tag selects, add **View toggle** (List ↔ Garden grid) and a **State filter chip row** synced with the summary tiles.
+5. **Smart-sorted groups** in this order:
+   - `🌱 Needs Care` (seedling)
+   - `🌿 Growing`
+   - `Upcoming` (scheduled later today, currently seedling but with `time_of_day` in the future)
+   - `🌸 Blooming` — collapsed by default
+   - `🍂 Resting` — collapsed by default
+   The existing `groupBy` selector becomes secondary ("Group within state by person/timeframe/cadence/tag") and only shown in List view.
 
-**Files to edit**
-- `src/components/layout/AppLayout.tsx` — wrap `<Outlet />` with `AnimatePresence` + `motion.div` keyed by `location.pathname`.
-- `src/index.css` — add a tiny `.page-enter` helper if needed (optional; framer-motion handles inline).
+## Compact RoutineCard
 
-**Out of scope**
-- No route-level code splitting refactor.
-- No changes to data fetching or stores.
-- No visual redesign of pages themselves.
+New component `CompactRoutineCard` replaces inline `RoutineCard` rendering in the main list (existing `RoutineCard` stays exported for `PersonRoutinesPanel` / Caregiving but is also slimmed). Layout (~40–50% shorter):
 
-**Verification**
-- Tap between bottom-nav tabs on mobile: pages should cross-fade in ~180ms with no white flash.
-- Reduced-motion users see instant swap.
-- No layout shift on header/bottom nav (they live outside the animated wrapper).
+```
+┌─────────────────────────────────────────┐
+│ 🌿  Aerie · Morning             7:30 AM │  ← row 1: state pill + identity + time
+│ 🪥 Next: Brush teeth                    │  ← row 2: next step preview
+│ ▓▓▓▓▓░░░░ 1 of 2                [Continue] │ ← row 3: progress bar + CTA
+└─────────────────────────────────────────┘
+```
+
+- Card height target: ~96–108px (vs current ~260px+).
+- Tapping the card body opens Focus mode (existing `RoutineFocusMode`).
+- CTA button is contextual per state.
+- Long-press / `…` button opens a popover with the existing controls (time picker, cadence, AI ideas, breakdown, pomodoro, tags, link recipient, delete). No inline toolbars on the card itself.
+- Steps list, tag editor, recipient/prep selectors move into the popover/edit sheet.
+- Garden View: same card but in a 2-col grid (`grid-cols-2`) with vertical stack — emoji on top, name + next step, mini progress dots, CTA.
+
+## Copy / language
+
+Centralize garden language in a `GARDEN_STATE` map: labels, accents, CTAs, accessible aria-labels. Replace any "Completed / In Progress / Missed / Tend" strings on the page with this map.
+
+## Files to add / edit
+
+- **edit** `src/pages/Routines.tsx`:
+  - Rewrite list rendering to use state-grouped sections + view toggle.
+  - Add `TodaysGarden` summary inline (or extracted).
+  - Slim existing `RoutineCard` to the compact layout; move advanced controls into a `RoutineActionsPopover`.
+- **add** `src/lib/routine-garden.ts`: `GardenState` enum, `getRoutineState(routine)`, `GARDEN_STATE` map (label, emoji, accent CSS var, cta).
+- **add** `src/components/routines/TodaysGarden.tsx`: summary card with 3 tappable tiles.
+- **add** `src/components/routines/CompactRoutineCard.tsx`: new compact card.
+- **add** `src/components/routines/RoutineActionsPopover.tsx`: houses time/cadence/AI/breakdown/pomodoro/recipient/prep/tags/delete.
+- **edit** `src/index.css`: add `--garden-seedling`, `--garden-growing`, `--garden-blooming`, `--garden-resting` HSL tokens (mapped to existing sage/plum/cream palette).
+- **keep** `RoutineFocusMode`, `NowNextBanner`, `RitualStrip`, `RoutineItemRow`, `PomodoroDialog`, `AIBreakdownDialog`, `PersonRoutinesPanel` API unchanged.
+
+## Out of scope
+
+- Data model changes (no new fields on `routines` table).
+- Changes to `Caregiving` page beyond the slimmer card it inherits.
+- Backend / sync logic.
+
+## Verification
+
+- At 390px viewport: at least **4 routine cards** visible above the fold including the Today's Garden summary.
+- Each state group renders with correct emoji, accent, and CTA.
+- View toggle swaps between list and 2-col garden grid without losing scroll.
+- All existing actions (focus, AI ideas, breakdown, pomodoro, tag edit, time/cadence change, recipient link, delete) reachable via the actions popover.
+- Reduced-motion respected; no horizontal overflow.
