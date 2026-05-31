@@ -341,7 +341,7 @@ export function TaskRow({
 
   return (
     <>
-      <SwipeableList type={SwipeType.IOS} fullSwipe={false} threshold={0.3} className="!bg-transparent">
+      <SwipeableList type={SwipeType.IOS} fullSwipe={false} threshold={0.15} className="!bg-transparent">
         <SwipeableListItem
           leadingActions={leadingActions}
           trailingActions={trailingActions}
