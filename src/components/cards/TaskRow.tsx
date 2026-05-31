@@ -101,7 +101,7 @@ export function TaskRow({
   const handleSnooze = () => {
     const next = format(addDays(new Date(), 1), "yyyy-MM-dd");
     void updateTask(task.id, { dueDate: next, status: "parked", snoozedUntil: next });
-    haptics.tick?.();
+    haptics.tap?.();
     toast("Snoozed to tomorrow", { description: task.title });
   };
   const handleReschedule = () => setOpen(true);
