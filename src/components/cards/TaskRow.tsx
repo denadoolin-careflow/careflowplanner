@@ -56,6 +56,8 @@ export function TaskRow({
   const [quickEditOpen, setQuickEditOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const longPressTimer = useRef<number | null>(null);
+  const longPressStart = useRef<{ x: number; y: number } | null>(null);
+  const longPressMoved = useRef(false);
 
   const subtasks = state.tasks.filter(t => t.parentTaskId === task.id);
   const hasSubs = subtasks.length > 0;
@@ -113,17 +115,33 @@ export function TaskRow({
   };
   const handleMove = () => setQuickEditOpen(true);
 
-  // Long-press → quick edit popover
+  // Long-press → quick edit popover. Cancelled by movement (scroll/swipe).
+  const LONG_PRESS_MS = 550;
+  const LONG_PRESS_SLOP = 8; // px of movement allowed before cancel
   const startLongPress = (e: React.PointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressStart.current = { x: e.clientX, y: e.clientY };
+    longPressMoved.current = false;
     longPressTimer.current = window.setTimeout(() => {
+      if (longPressMoved.current) return;
       haptics.pickup?.();
       setQuickEditOpen(true);
-    }, 520);
+    }, LONG_PRESS_MS);
+  };
+  const moveLongPress = (e: React.PointerEvent) => {
+    if (!longPressStart.current || !longPressTimer.current) return;
+    const dx = e.clientX - longPressStart.current.x;
+    const dy = e.clientY - longPressStart.current.y;
+    if (Math.hypot(dx, dy) > LONG_PRESS_SLOP) {
+      longPressMoved.current = true;
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
   };
   const cancelLongPress = () => {
     if (longPressTimer.current) { window.clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+    longPressStart.current = null;
   };
 
   const handleTitleClick = (e: React.MouseEvent) => {
@@ -191,6 +209,7 @@ export function TaskRow({
       selected={isSelected}
       onPointerDown={startLongPress}
       onPointerUp={cancelLongPress}
+      onPointerMove={moveLongPress}
       onPointerLeave={cancelLongPress}
       onPointerCancel={cancelLongPress}
       onContextMenu={(e) => { e.preventDefault(); setQuickEditOpen(true); }}
@@ -385,6 +404,7 @@ export function TaskRow({
 type ShellHandlers = {
   onPointerDown?: (e: React.PointerEvent) => void;
   onPointerUp?: (e: React.PointerEvent) => void;
+  onPointerMove?: (e: React.PointerEvent) => void;
   onPointerLeave?: (e: React.PointerEvent) => void;
   onPointerCancel?: (e: React.PointerEvent) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
