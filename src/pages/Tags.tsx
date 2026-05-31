@@ -8,10 +8,12 @@ import { TagChip } from "@/components/tags/TagChip";
 import { TagManagerDialog } from "@/components/tags/TagManagerDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Settings2, Tags as TagsIcon } from "lucide-react";
+import { Pin, Search, Settings2, Tags as TagsIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function Tags() {
-  const { tags, loading } = useTags();
+  const { tags, loading, ensure, setPinned, byName } = useTags();
   const { state } = useStore();
   const [notes, setNotes] = useState<Note[]>([]);
   const [q, setQ] = useState("");
@@ -80,17 +82,40 @@ export default function Tags() {
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map(t => {
             const c = counts.get(t.name.toLowerCase()) ?? { tasks: 0, notes: 0 };
+            const existing = byName(t.name);
+            const pinned = !!existing?.pinned;
             return (
-              <Link
+              <div
                 key={t.name}
-                to={`/tags/${encodeURIComponent(t.name)}`}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card/60 px-3 py-3 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+                className="group relative flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card/60 px-3 py-3 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
               >
-                <TagChip name={t.name} size="md" />
-                <span className="text-xs text-muted-foreground">
-                  {c.tasks} task{c.tasks === 1 ? "" : "s"} · {c.notes} note{c.notes === 1 ? "" : "s"}
-                </span>
-              </Link>
+                <Link to={`/tags/${encodeURIComponent(t.name)}`} className="flex flex-1 items-center justify-between gap-3 min-w-0">
+                  <TagChip name={t.name} size="md" />
+                  <span className="text-xs text-muted-foreground">
+                    {c.tasks} task{c.tasks === 1 ? "" : "s"} · {c.notes} note{c.notes === 1 ? "" : "s"}
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  aria-label={pinned ? "Unpin tag" : "Pin tag to sidebar"}
+                  title={pinned ? "Unpin from sidebar" : "Pin to sidebar"}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try {
+                      const tag = existing ?? await ensure(t.name);
+                      await setPinned(tag.id, !tag.pinned);
+                      toast.success(tag.pinned ? `Unpinned #${t.name}` : `Pinned #${t.name}`);
+                    } catch { toast.error("Could not update pin"); }
+                  }}
+                  className={cn(
+                    "ml-1 grid h-7 w-7 place-items-center rounded-full transition",
+                    pinned ? "text-primary opacity-100" : "text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground",
+                  )}
+                >
+                  <Pin className={cn("h-3.5 w-3.5", pinned && "fill-current")} />
+                </button>
+              </div>
             );
           })}
         </div>
