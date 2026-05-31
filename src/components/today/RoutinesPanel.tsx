@@ -127,7 +127,7 @@ function RoutineSlotColumn({
   };
 
   return (
-    <div className="flex min-h-[160px] flex-col rounded-2xl border border-border/60 bg-card/60 p-3">
+    <div className="flex min-h-[160px] min-w-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-3">
       <div className="mb-2 flex items-center gap-2">
         <span className="grid h-6 w-6 place-items-center rounded-full bg-primary/15 text-primary">
           <Icon className="h-3 w-3" />
@@ -143,7 +143,7 @@ function RoutineSlotColumn({
         </p>
       ) : (
         <>
-          <ul className="flex-1 space-y-1">
+          <ul className="min-w-0 flex-1 space-y-1">
             {items.length === 0 && (
               <li className="rounded-lg border border-dashed border-border/50 px-2 py-2 text-center text-[11px] text-muted-foreground">
                 Nothing yet. Add a small ritual.
