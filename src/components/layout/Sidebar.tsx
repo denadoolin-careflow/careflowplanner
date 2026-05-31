@@ -794,6 +794,12 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   onChange={(v) => updateSections({ pinnedNotes: v })}
                 />
                 <SectionToggleRow
+                  icon={Pin}
+                  label="Pinned tags"
+                  checked={sections.pinnedTags}
+                  onChange={(v) => updateSections({ pinnedTags: v })}
+                />
+                <SectionToggleRow
                   icon={CalendarRange}
                   label="Quick weeks"
                   checked={sections.quickWeeks}
