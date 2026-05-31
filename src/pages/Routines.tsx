@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Clock, MoreHorizontal, Pencil, Play, Plus, Repeat, Sparkles, Tag, Timer, Trash2, UserPlus, Users, Wand2, X } from "lucide-react";
+import { ChevronRight, Clock, MoreHorizontal, Pencil, Play, Plus, Repeat, Sparkles, Tag, Timer, Trash2, UserPlus, Users, Wand2, X, List as ListIcon, LayoutGrid, Columns } from "lucide-react";
 import {
   routines as routinesApi,
   useRoutines,
@@ -47,6 +47,13 @@ export default function Routines() {
   const [newPerson, setNewPerson] = useState("");
   const [focus, setFocus] = useState<{ routine: Routine; itemId?: string } | null>(null);
   const [stateFilter, setStateFilter] = useState<GardenState | "all">("all");
+  const [viewMode, setViewMode] = useState<"list" | "grid" | "kanban">(() => {
+    if (typeof window === "undefined") return "list";
+    return (window.localStorage.getItem("careflow:routines-view") as any) || "list";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("careflow:routines-view", viewMode); } catch {}
+  }, [viewMode]);
 
   const people = useMemo(() => {
     const fromRoutines = routinesApi.people();
@@ -150,6 +157,33 @@ export default function Routines() {
         <div className="ml-auto text-xs text-muted-foreground">
           {visible.length} routine{visible.length === 1 ? "" : "s"}
         </div>
+        <div className="flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5" role="tablist" aria-label="Routine view">
+          {([
+            { id: "list", label: "List", icon: ListIcon },
+            { id: "grid", label: "Grid", icon: LayoutGrid },
+            { id: "kanban", label: "Kanban", icon: Columns },
+          ] as const).map(opt => {
+            const Icon = opt.icon;
+            const active = viewMode === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-label={`${opt.label} view`}
+                onClick={() => setViewMode(opt.id)}
+                className={cn(
+                  "flex h-7 items-center gap-1 rounded-full px-2 text-[11px] font-medium transition-colors",
+                  active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {!loaded && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -164,23 +198,81 @@ export default function Routines() {
         <PersonQuickAdd people={people} />
       )}
 
-      <div className="space-y-4">
-        {stateSections.map(sec => (
-          <StateSection
-            key={sec.state}
-            state={sec.state}
-            routines={sec.items}
-            recipients={state.recipients}
-            defaultCollapsed={sec.defaultCollapsed}
-            onFocus={(r, itemId) => setFocus({ routine: r, itemId })}
-          />
-        ))}
-        {loaded && visible.length === 0 && stateFilter !== "all" && (
-          <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-8 text-center text-sm text-muted-foreground">
-            Nothing {GARDEN_META[stateFilter as GardenState].label.toLowerCase()} right now.
+      {viewMode === "list" && (
+        <div className="space-y-4">
+          {stateSections.map(sec => (
+            <StateSection
+              key={sec.state}
+              state={sec.state}
+              routines={sec.items}
+              recipients={state.recipients}
+              defaultCollapsed={sec.defaultCollapsed}
+              onFocus={(r, itemId) => setFocus({ routine: r, itemId })}
+            />
+          ))}
+        </div>
+      )}
+
+      {viewMode === "grid" && (
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {visible.map(r => (
+            <CompactRoutineCard
+              key={r.id}
+              routine={r}
+              recipients={state.recipients}
+              onFocus={(rt, itemId) => setFocus({ routine: rt, itemId })}
+            />
+          ))}
+        </div>
+      )}
+
+      {viewMode === "kanban" && (
+        <div className="-mx-4 overflow-x-auto px-4 pb-2">
+          <div className="flex min-w-full snap-x snap-mandatory gap-3">
+            {(["seedling", "growing", "blooming", "resting"] as GardenState[]).map(s => {
+              const items = visible.filter(r => getRoutineState(r) === s);
+              const meta = GARDEN_META[s];
+              return (
+                <div
+                  key={s}
+                  className={cn(
+                    "flex w-[78vw] max-w-[320px] shrink-0 snap-start flex-col rounded-2xl border bg-card/40 p-2",
+                    meta.borderClass,
+                  )}
+                >
+                  <div className="mb-2 flex items-center gap-1.5 px-1">
+                    <span className="text-sm leading-none">{meta.emoji}</span>
+                    <h3 className="text-xs font-semibold">{meta.label}</h3>
+                    <span className="ml-auto rounded-full bg-muted/60 px-1.5 text-[10.5px] font-medium tabular-nums text-muted-foreground">
+                      {items.length}
+                    </span>
+                  </div>
+                  <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto pr-0.5">
+                    {items.length === 0 ? (
+                      <p className="rounded-xl border border-dashed border-border/40 bg-background/30 p-3 text-center text-[11px] italic text-muted-foreground">
+                        Nothing here
+                      </p>
+                    ) : items.map(r => (
+                      <CompactRoutineCard
+                        key={r.id}
+                        routine={r}
+                        recipients={state.recipients}
+                        onFocus={(rt, itemId) => setFocus({ routine: rt, itemId })}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {loaded && visible.length === 0 && stateFilter !== "all" && (
+        <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-8 text-center text-sm text-muted-foreground">
+          Nothing {GARDEN_META[stateFilter as GardenState].label.toLowerCase()} right now.
+        </div>
+      )}
 
       {focus && (
         <RoutineFocusMode
