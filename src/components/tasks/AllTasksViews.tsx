@@ -24,7 +24,7 @@ import {
 } from "date-fns";
 
 type View = "grid" | "list" | "board" | "schedule" | "calendar";
-type GroupBy = "none" | "area" | "project" | "priority" | "status" | "due" | "tag" | "energy";
+type GroupBy = "none" | "area" | "project" | "priority" | "status" | "due" | "tag" | "energy" | "dayPart";
 type SortBy = "manual" | "title" | "due" | "priority" | "created" | "energy" | "estMinutes";
 type SortDir = "asc" | "desc";
 
@@ -244,6 +244,7 @@ export function AllTasksViews() {
             <SelectItem value="due">Group: Due date</SelectItem>
             <SelectItem value="tag">Group: Tag</SelectItem>
             <SelectItem value="energy">Group: Energy</SelectItem>
+            <SelectItem value="dayPart">Group: Time of day</SelectItem>
           </SelectContent>
         </Select>
 
