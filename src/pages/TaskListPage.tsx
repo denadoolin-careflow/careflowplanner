@@ -5,6 +5,8 @@ import { TaskRow } from "@/components/cards/TaskRow";
 import { LayoutGrid, LayoutList, CalendarDays, PanelRightOpen, PanelRightClose, type LucideIcon } from "lucide-react";
 import type { Task } from "@/lib/types";
 import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
+import { QuickEntryBar } from "@/components/tasks/QuickEntryBar";
+import { TodayFocusCard } from "@/components/tasks/TodayFocusCard";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
 import { applyFilters, sortTasks, groupTasks } from "@/lib/task-grouping";
@@ -163,8 +165,20 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
         </div>
       )}
 
+      {variant === "upcoming" && <TodayFocusCard />}
+
       {variant !== "logbook" && (
-        <InlineTaskComposer defaults={composerDefaults} placeholder={`Add to ${meta.title.toLowerCase()}…`} />
+        <div className="space-y-2">
+          <QuickEntryBar defaults={composerDefaults} placeholder={`Add to ${meta.title.toLowerCase()} — try natural language…`} />
+          <details className="group">
+            <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
+              More options
+            </summary>
+            <div className="mt-2">
+              <InlineTaskComposer defaults={composerDefaults} placeholder={`Add to ${meta.title.toLowerCase()}…`} />
+            </div>
+          </details>
+        </div>
       )}
 
       {view === "kanban" ? (
