@@ -18,9 +18,12 @@ const SLOT_LABELS = SLOT_LABEL;
 
 const STORAGE_KEY = "careflow:routines-strip:v1";
 function readPrefs() {
-  if (typeof localStorage === "undefined") return { open: true, person: "", slot: "morning" as RoutineSlot };
-  try { return { open: true, person: "", slot: "morning" as RoutineSlot, ...JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") }; }
-  catch { return { open: true, person: "", slot: "morning" as RoutineSlot }; }
+  // Start collapsed by default — calmer first paint, especially on mobile.
+  // Users can still expand and the choice persists.
+  const defaults = { open: false, person: "", slot: "morning" as RoutineSlot };
+  if (typeof localStorage === "undefined") return defaults;
+  try { return { ...defaults, ...JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") }; }
+  catch { return defaults; }
 }
 function writePrefs(p: { open: boolean; person: string; slot: RoutineSlot }) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch { /* noop */ }

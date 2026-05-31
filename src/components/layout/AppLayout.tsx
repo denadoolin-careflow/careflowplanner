@@ -41,36 +41,39 @@ export function AppLayout() {
       <div className="flex w-full">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border/50 bg-background/70 px-4 py-3 backdrop-blur-md lg:px-8">
+          <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-border/50 bg-background/70 px-3 py-2 backdrop-blur-md sm:gap-3 sm:px-4 sm:py-3 lg:px-8">
             <div className="flex min-w-0 items-center gap-2">
               <MobileSidebarTrigger />
               <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">CareFlow</p>
-              <h1 className="font-display text-xl font-semibold leading-tight sm:text-2xl">{current.label}</h1>
+                <p className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:block">CareFlow</p>
+                <h1 className="font-display text-base font-semibold leading-tight sm:text-2xl">{current.label}</h1>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
+            {/* Mobile: keep only search + theme. Secondary actions live in sidebar / bottom-nav "More". */}
+            <div className="flex items-center gap-1 sm:gap-3">
               <UniversalSearchBar />
-              <NotificationCenter />
-              <PanelPicker />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Toggle low-energy mode"
-                    aria-pressed={state.settings.lowEnergyMode}
-                    onClick={() => setLowEnergyMode(!state.settings.lowEnergyMode)}
-                    className={`hidden h-9 w-9 rounded-full sm:inline-flex ${state.settings.lowEnergyMode ? "text-primary bg-primary/10" : ""}`}
-                  >
-                    {state.settings.lowEnergyMode ? <BatteryLow className="h-4 w-4" /> : <BatteryMedium className="h-4 w-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  Low-energy mode {state.settings.lowEnergyMode ? "on" : "off"}
-                </TooltipContent>
-              </Tooltip>
-              <AtmospherePicker />
+              <div className="hidden items-center gap-2 sm:flex sm:gap-3">
+                <NotificationCenter />
+                <PanelPicker />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Toggle low-energy mode"
+                      aria-pressed={state.settings.lowEnergyMode}
+                      onClick={() => setLowEnergyMode(!state.settings.lowEnergyMode)}
+                      className={`h-9 w-9 rounded-full ${state.settings.lowEnergyMode ? "text-primary bg-primary/10" : ""}`}
+                    >
+                      {state.settings.lowEnergyMode ? <BatteryLow className="h-4 w-4" /> : <BatteryMedium className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    Low-energy mode {state.settings.lowEnergyMode ? "on" : "off"}
+                  </TooltipContent>
+                </Tooltip>
+                <AtmospherePicker />
+              </div>
               <ThemeToggle />
             </div>
           </header>

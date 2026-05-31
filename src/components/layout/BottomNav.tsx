@@ -67,7 +67,7 @@ export function BottomNav() {
   const { state, setLowEnergyMode } = useStore();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 px-2 pb-[env(safe-area-inset-bottom,0)] lg:hidden">
-      <div className="mx-auto max-w-screen-md rounded-3xl border border-border/50 bg-card/60 px-1 pb-1 pt-1 shadow-lg backdrop-blur-xl">
+      <div className="mx-auto max-w-screen-md rounded-2xl border border-border/40 bg-background/85 px-1 pb-1 pt-1 shadow-sm backdrop-blur-xl">
         <ul className="grid grid-cols-7">
           {primary.map(({ to, label, icon: Icon }) => (
             <li key={to}>
@@ -83,19 +83,12 @@ export function BottomNav() {
               >
                 {({ isActive }) => (
                   <>
-                    <span
-                      className={cn(
-                        "grid h-8 w-8 place-items-center rounded-2xl transition-all",
-                        isActive
-                          ? "bg-gradient-to-br from-primary/20 to-accent/20 shadow-[0_0_18px_-2px_hsl(var(--primary)/0.55)]"
-                          : "bg-transparent"
-                      )}
-                    >
-                      <Icon className={cn("h-4 w-4 transition-transform", isActive && "scale-110")} />
+                    <span className="grid h-7 w-7 place-items-center rounded-xl transition-colors">
+                      <Icon className={cn("h-[18px] w-[18px]", isActive && "stroke-[2.4]")} />
                     </span>
                     <span className="leading-none">{label}</span>
                     {isActive && (
-                      <span className="absolute -top-0.5 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary/80 shadow-[0_0_8px_hsl(var(--primary)/0.7)]" />
+                      <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
                     )}
                   </>
                 )}

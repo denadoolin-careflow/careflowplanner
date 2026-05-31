@@ -127,71 +127,115 @@ function InboxInner() {
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
-      <header className="flex flex-wrap items-center gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
-          <InboxIcon className="h-5 w-5" />
+      <header className="flex items-center gap-3">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary sm:h-10 sm:w-10">
+          <InboxIcon className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">Inbox</h1>
-          <p className="truncate text-xs text-muted-foreground sm:text-sm">
-            Capture now, organize later. {items.length} waiting.
+          <h1 className="truncate text-lg font-semibold tracking-tight sm:text-2xl">Inbox</h1>
+          <p className="truncate text-[11px] text-muted-foreground sm:text-sm">
+            {items.length} waiting · capture now, organize later
           </p>
         </div>
-        <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          {/* Mobile: icon-only essentials. Full labels return at sm+. */}
           <Button
-            variant={selectionMode ? "default" : "outline"}
-            size="sm"
+            variant={selectionMode ? "default" : "ghost"}
+            size="icon"
             onClick={toggleSelectionMode}
-            className="gap-1.5"
+            className="h-9 w-9 sm:hidden"
             title={selectionMode ? "Exit select mode" : "Select multiple tasks"}
+            aria-label="Select tasks"
           >
-            <CheckSquare className="h-3.5 w-3.5" />
-            {selectionMode ? "Done" : "Select"}
+            <CheckSquare className="h-4 w-4" />
           </Button>
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
             onClick={triage}
             disabled={triaging || items.length === 0}
-            className="gap-1.5"
+            className="h-9 w-9 sm:hidden"
+            title="Smart triage"
+            aria-label="Smart triage"
           >
-            {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-            Smart triage
+            {triaging ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           </Button>
           <Button
-            variant={controlsVisible ? "default" : "outline"}
-            size="sm"
+            variant={controlsVisible ? "default" : "ghost"}
+            size="icon"
             onClick={toggleControls}
-            className="gap-1.5"
-            title={controlsVisible ? "Hide group / filter / sort" : "Show group / filter / sort"}
+            className="h-9 w-9 sm:hidden"
+            title="Options"
+            aria-label="Options"
             aria-pressed={controlsVisible}
           >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Options</span>
+            <SlidersHorizontal className="h-4 w-4" />
           </Button>
-          {controlsVisible && <TaskListControls prefs={prefs} onChange={setPrefs} />}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={toggleTagLibrary}
-            title={tagLibraryVisible ? "Hide tag library" : "Show tag library"}
-            aria-label="Toggle tag library"
-          >
-            {tagLibraryVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden h-8 w-8 lg:inline-flex"
-            onClick={togglePane}
-            title={paneOpen ? "Hide details pane" : "Show details pane"}
-            aria-label="Toggle details pane"
-          >
-            {paneOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-          </Button>
+
+          {/* Desktop / tablet — original full controls */}
+          <div className="hidden flex-wrap items-center justify-end gap-2 sm:flex">
+            <Button
+              variant={selectionMode ? "default" : "outline"}
+              size="sm"
+              onClick={toggleSelectionMode}
+              className="gap-1.5"
+              title={selectionMode ? "Exit select mode" : "Select multiple tasks"}
+            >
+              <CheckSquare className="h-3.5 w-3.5" />
+              {selectionMode ? "Done" : "Select"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={triage}
+              disabled={triaging || items.length === 0}
+              className="gap-1.5"
+            >
+              {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Smart triage
+            </Button>
+            <Button
+              variant={controlsVisible ? "default" : "outline"}
+              size="sm"
+              onClick={toggleControls}
+              className="gap-1.5"
+              title={controlsVisible ? "Hide group / filter / sort" : "Show group / filter / sort"}
+              aria-pressed={controlsVisible}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <span>Options</span>
+            </Button>
+            {controlsVisible && <TaskListControls prefs={prefs} onChange={setPrefs} />}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={toggleTagLibrary}
+              title={tagLibraryVisible ? "Hide tag library" : "Show tag library"}
+              aria-label="Toggle tag library"
+            >
+              {tagLibraryVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden h-8 w-8 lg:inline-flex"
+              onClick={togglePane}
+              title={paneOpen ? "Hide details pane" : "Show details pane"}
+              aria-label="Toggle details pane"
+            >
+              {paneOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
       </header>
+
+      {/* On mobile, when Options is on, surface the group/filter/sort controls below the header */}
+      {controlsVisible && (
+        <div className="flex flex-wrap items-center gap-2 sm:hidden">
+          <TaskListControls prefs={prefs} onChange={setPrefs} />
+        </div>
+      )}
 
       {selectionMode && (
         <div className="flex items-center justify-between rounded-xl border border-primary/40 bg-primary/5 px-3 py-2 text-xs">
