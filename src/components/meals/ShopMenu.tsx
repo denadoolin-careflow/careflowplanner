@@ -2,11 +2,13 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
-import { ShoppingCart, ChevronDown, ExternalLink } from "lucide-react";
+import { ShoppingCart, ChevronDown, ExternalLink, Star } from "lucide-react";
 import { RETAILERS, RETAILER_LABEL, retailerSearchUrl, type Retailer } from "@/lib/retailer-links";
 import { useGroceryPrefs } from "@/lib/grocery-prefs";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ShopMenuProps {
   /** Single ingredient or list of items to search for. */
@@ -23,11 +25,15 @@ interface ShopMenuProps {
 export function ShopMenu({
   items, preferred, size = "sm", variant = "outline", className, compact,
 }: ShopMenuProps) {
-  const { prefs } = useGroceryPrefs();
+  const { prefs, save } = useGroceryPrefs();
   const primary = preferred ?? prefs.preferred_store;
   const arr = Array.isArray(items) ? items : [items];
   const hrefFor = (r: Retailer) => retailerSearchUrl(r, arr);
   const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const setDefault = (r: Retailer) => {
+    void save({ preferred_store: r });
+    toast.success(`Default store set to ${RETAILER_LABEL[r]}`);
+  };
 
   if (compact) {
     return (
@@ -99,6 +105,25 @@ export function ShopMenu({
             </a>
           </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger onClick={stop} className="text-xs">
+            <Star className="mr-2 h-3.5 w-3.5" />
+            Set default store
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-44">
+            <DropdownMenuRadioGroup
+              value={prefs.preferred_store}
+              onValueChange={(v) => setDefault(v as Retailer)}
+            >
+              {RETAILERS.map(r => (
+                <DropdownMenuRadioItem key={r} value={r} onClick={stop}>
+                  {RETAILER_LABEL[r]}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
   );
