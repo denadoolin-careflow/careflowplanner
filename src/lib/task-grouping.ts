@@ -2,7 +2,7 @@ import type { Task, Priority, Project } from "./types";
 import { todayISO } from "./store";
 import { formatRelativeDate } from "./date-format";
 
-export type GroupMode = "none" | "project" | "area" | "priority" | "date" | "energy" | "status" | "tag";
+export type GroupMode = "none" | "project" | "area" | "priority" | "date" | "energy" | "status" | "tag" | "dayPart";
 export type SortMode = "manual" | "date" | "priority" | "title" | "created" | "updated" | "energy" | "estMinutes" | "project";
 export type SortDir = "asc" | "desc";
 export type FilterState = {
@@ -105,12 +105,20 @@ export function groupTasks(list: Task[], mode: GroupMode, projects: Project[] = 
       const tags = t.tags ?? [];
       if (tags.length === 0) push("_none", "No tag", t);
       else for (const tag of tags) push(`#${tag}`, `#${tag}`, t);
+    } else if (mode === "dayPart") {
+      const dp = t.dayPart ?? "_none";
+      const labelMap: Record<string, string> = {
+        Morning: "🌅 Morning", Afternoon: "☀️ Afternoon", Evening: "🌙 Evening", "Late Night": "✨ Late Night",
+      };
+      push(dp, t.dayPart ? (labelMap[t.dayPart] ?? t.dayPart) : "Anytime", t);
     }
   }
   const order = mode === "priority"
     ? ["high","medium","low"]
     : mode === "energy"
     ? ["high","medium","low","_none"]
+    : mode === "dayPart"
+    ? ["Morning","Afternoon","Evening","Late Night","_none"]
     : null;
   const entries = Array.from(map.entries());
   if (order) entries.sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
