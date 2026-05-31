@@ -439,7 +439,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addTask: async (t) => {
       if (!uid) return;
-      const { data } = await supabase.from("tasks").insert({ user_id: uid, ...taskTo({ done: false, priority: "medium", area: "Personal", ...t }) }).select().single();
+      const { inferEnergyFromTitle } = await import("./task-energy");
+      const enriched = { done: false, priority: "medium" as const, area: "Personal" as const, ...t };
+      if (!enriched.energy) {
+        const guess = inferEnergyFromTitle(enriched.title, enriched.notes);
+        if (guess) enriched.energy = guess;
+      }
+      const { data } = await supabase.from("tasks").insert({ user_id: uid, ...taskTo(enriched) }).select().single();
       if (data) {
         const task = taskFrom(data);
         setState(s => ({ ...s, tasks: [task, ...s.tasks] }));

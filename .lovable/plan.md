@@ -1,73 +1,113 @@
-## Goal
-Turn the existing Meals/Pantry/Grocery surface into one connected system: ingredients are first-class, every ingredient can deep-link out to a preferred grocery store, the pantry has its own page with Kanban, and the grocery list is smarter and pantry-aware.
+## Tasks Redesign — Reminders × Things 3 × TickTick × Craft, CareFlow-soft
 
-This builds on what already exists (`pantry_items`, `grocery_items`, `meals_library`, `IngredientPopover`, `GroceryKanban`, `GroceryList`, `retailer-links.ts`, `ai-meal-plan` edge fn). No legacy data is wiped.
+Shipping the full set in one pass. Visual + behavior + organization land together so the page stops feeling stitched together.
 
-## Scope (phased)
+### What's already in place (won't be rebuilt)
+- `tasks` table already has `energy`, `icon`, `priority`, `area`, `parent_task_id`, `snoozed_until`, etc. — **no DB schema migration needed**.
+- `src/lib/task-icons.ts` already maps keywords → Lucide icons. We'll keep it, expand the rules, and add `inferEnergyFromTitle()` next to it.
+- framer-motion is already used in the project (kept for celebrations); `react-swipeable-list` is the new dep for row swipes.
 
-### Phase 1 — Ingredient & store foundation
-- Extend `pantry_items` with: `unit text`, `price numeric`, `store_pref text`, `category` widened to enum-style (Produce/Dairy/Meat/Frozen/Pantry/Bakery/Household/Personal Care/Pet/Other). Status options stay 4-state: `in_stock | low | out | need_soon` (add `need_soon`).
-- Add `grocery_prefs` table: `user_id pk`, `preferred_store text`, `backup_store text`, `delivery_mode text` (`delivery|pickup`).
-- Expand `src/lib/retailer-links.ts`: add `amazon_fresh`, `target`, `costco`, `sams_club` URL builders + labels + small icon map.
-- New helper `src/lib/grocery-prefs.ts` (hook + upsert).
+### 1. New row component — `TaskRowV2`
+Replace `src/components/cards/TaskRow.tsx` consumers in the main list with a new `TaskRowV2`. Old row stays in place for any non-list usages until we sweep them.
 
-### Phase 2 — Shop menu everywhere
-- New `<ShopMenu ingredient="…" qty?="…">` dropdown (in `src/components/meals/ShopMenu.tsx`): "Shop on {preferredStore}" primary button + "More stores" submenu over all 7 retailers. Opens deep-link in new tab.
-- Wire `ShopMenu` into:
-  - `IngredientPopover` (replaces today's plain "Used in" block bottom action).
-  - `RecipeDrawer` / `LibraryRecipeViewer` ingredient rows.
-  - `GroceryList` row action (per item).
-  - `GroceryKanban` card menu.
-- Each ingredient row shows live pantry-status pill (color via `pantry-colors.ts`, extended for `need_soon`).
+Layout (mobile-first, ~64px tall):
+```text
+[●]  [icon]  Task title                        [swipe→]
+            Area · 🟢 Today · ⭐⭐
+            ▓▓▓▓▓░░░  3/5
+```
+- **No left green border.** Replace with: 6px circular status dot (color = area color); priority shown as 0–3 small filled dots to the right of the title; area as a faint text tag in the metadata row.
+- Title is `text-base font-medium text-foreground` — the loud element.
+- Metadata row is `text-xs text-muted-foreground` with `·` separators.
+- Subtask progress bar only renders when `hasSubs` — animated width transition via Tailwind `transition-all duration-500`.
+- Glass card: `bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl px-4 py-3`, subtle hover lift.
+- Tap target ≥44px; whole row taps to expand inline (no modal).
 
-### Phase 3 — Pantry page & Kanban
-- Promote pantry from a sidebar panel to its own route `/pantry` (re-use `PantryPanel` for List view).
-- Add `src/components/meals/PantryKanban.tsx` with 4 columns (In Stock / Low / Out / Need Soon), `@dnd-kit` drag-and-drop between columns (writes `stock_status`), inline qty/unit edit, quick-add input.
-- Add view switcher: List · Grid · Kanban (persist in localStorage).
-- Add nav entry + link from Meals page header.
+### 2. Smart due date chip — `SmartDueChip`
+New `src/components/tasks/SmartDueChip.tsx`. Given `dueDate`, returns:
+- Overdue → red dot + "Overdue · 2d"
+- Today → green dot + "Today"
+- Tomorrow → amber dot + "Tomorrow"
+- ≤7d → blue dot + "Fri"
+- >7d → muted "Mar 14"
+- No date → renders nothing (hides pill entirely).
 
-### Phase 4 — Smarter grocery list
-- Auto-group by ingredient category (already partially done) and surface category headers consistently between Kanban and List.
-- Add second Kanban view mode for grocery: Need · Shopping · Purchased · Stocked (state stored in `grocery_items.tags` — values `shopping`, `purchased`, `stocked`; "Need" is default). Reuse existing `GroceryKanban` shell.
-- Pantry awareness when generating from meals (`addLibraryMealsToWeek` already filters `in_stock`; extend filter to skip `in_stock` + `need_soon`, and mark `low` items with a "low — top up?" badge instead of silently adding).
-- Per-row Shop button uses preferred store.
+### 3. Contextual icons + auto energy
+- Extend `task-icons.ts` with the explicit set the user listed (📞🚗🏕️🧺🍽️🛒❤️📚🌙).
+- Add `inferEnergyFromTitle(title): "high" | "medium" | "low"` using keyword buckets (workout/clean/repair → high; call/email/admin → medium; rest/read/water → low).
+- On task create (and via a one-shot "Auto-tag" backfill button in settings), if `energy` is unset, persist the inferred value. User override always wins; stored on the existing `tasks.energy` and `tasks.icon` columns.
 
-### Phase 5 — AI grocery assistant
-- New edge function `supabase/functions/ai-grocery-assistant/index.ts` (Gemini 3 Flash, structured output). Inputs: prompt + scheduled meals (next N days) + pantry snapshot + grocery list. Outputs: ordered actions (add items, suggest substitutes, mark stocked).
-- Surface as a small "Ask" panel above grocery list with chip prompts: "Generate from meal plan", "What's missing for tonight?", "Use what I have", "Suggest substitutes".
+### 4. Swipe + hover actions
+Install `react-swipeable-list`. Remove the permanent settings cog from rows.
+- **Mobile swipe left (trailing):** Complete · Snooze (1d) · Reschedule (opens date popover).
+- **Mobile swipe right (leading):** Edit · Priority cycle · Move (area picker).
+- **Desktop:** same actions reveal on row hover as a compact icon group on the right; row remains clickable to expand.
+- Each action plays existing `haptics` + `completion chime` where appropriate.
 
-### Phase 6 — Settings & dashboard widgets
-- New `Settings → Grocery Preferences` section: preferred store, backup store, delivery vs pickup.
-- New dashboard widgets (registered in `WidgetRegistry.tsx`, added to `dashboard-layouts.ts`):
-  - `pantry-status` (counts per status + quick link).
-  - `grocery-list-mini` (top 6 unbought items + add).
-  - `low-stock` (items where `stock_status in (low, need_soon)`).
-  - Reuse existing dinner/meal-plan widget for "Meal Plan".
+### 5. Expand-in-place
+Tapping a row toggles an inline expansion (replacing the current modal-only editor for quick edits):
+- Notes textarea, subtasks list w/ inline add, attachments thumbnails, voice-note recorder (reuses existing recorder if present, else hidden), comments placeholder, Pomodoro timer button.
+- Smooth height animation (Tailwind `data-[state=open]:animate-accordion-down`).
+- "Open full editor" link still opens existing `TaskEditor` for power features.
 
-### Phase 7 — Mobile polish
-- Long-press on grocery/pantry rows → edit sheet (extend existing `long-press-drag`).
-- Swipe-right to mark bought / swipe-left to delete (in `GroceryList`).
-- Floating "+ Ingredient" FAB on `/pantry`.
-- Haptics via existing `haptics.ts` on swipe complete.
+### 6. Today Focus card
+New `src/components/tasks/TodayFocusCard.tsx` rendered above the task list on `Today` and `TaskListPage`.
+- Pinned focus tasks (1–5). Reuses existing `is_top_three` flag, raised limit to 5 via a derived `isFocus` boolean stored in the same column (no schema change) plus a client cap.
+- Sections: **Must Do**, **Progress** (today's completed/total), **Energy** (today's average from new helper).
+- Glass card with gentle gradient using existing tokens (`bg-gradient-to-br from-primary/10 via-card/60 to-accent/10`).
 
-## Technical notes
-- Provider abstraction: every shop link goes through `retailerSearchUrl(provider, items)` so swapping in real Instacart/Walmart/Kroger APIs later is a single-file change.
-- Stable IDs already in place (`pantry_items.id`, `grocery_items.id`, `meals_library.id`); no schema redesign needed for future API work.
-- All new colors / status pills via tokens in `index.css` (add `--status-need-soon`); no hard-coded hex.
-- RLS: new `grocery_prefs` follows `auth.uid() = user_id` pattern with `GRANT` for `authenticated` + `service_role`.
+### 7. Grouping + views — `TaskListControls`
+Extend the existing sort/group menu with new groupings:
+- Area · Project · Due Date · Priority · Status · **Energy** · **Time of Day** (🌅 Morning / ☀️ Afternoon / 🌙 Evening using `dayPart`) · Custom Sections.
+- Persist last-chosen grouping per-list in localStorage (already a pattern in `ViewOptionsMenu`).
 
-## Out of scope (for this pass)
-- Real OAuth integrations with Instacart/Walmart/Kroger APIs (links only).
-- Price tracking / receipts OCR.
-- Multi-household shared grocery lists beyond what `household_users` already supports.
-- Migrating `MobileTodayCard`-era legacy components.
+### 8. Energy view
+A grouping preset that buckets tasks into 🔥 High / ⚡ Medium / 🌱 Low with collapsible headers and a one-tap "Show me only Low energy" filter chip (useful for low-spoons days).
 
-## Suggested rollout order
-1. Migration + `retailer-links` expansion + `grocery-prefs` + `ShopMenu` (everything visible immediately).
-2. Pantry page + Kanban.
-3. Grocery Kanban "Need/Shopping/Purchased/Stocked" mode + pantry-aware generator tweak.
-4. AI assistant edge fn + chips.
-5. Settings panel + 3 new widgets.
-6. Mobile gestures pass.
+### 9. Enhanced Quick Capture (`QuickCapturePlus`)
+Replace the floating `+` with an expandable speed-dial:
+- Task · Note · Voice Note · Habit · Reminder · Project.
+- Sticky **Quick Entry Bar** at top of task list — `<input placeholder="Add a task… try 'Call Alex tomorrow 5pm'">` that submits on Enter.
+- Natural-language parser: small client util `parseQuickTask()` that extracts date ("tomorrow", "fri", "5pm"), priority ("!", "!!"), area (`#home`), person (`@alex`). No AI call required for the basic case; falls back to plain title if nothing matches.
 
-Want me to build all 7 phases, or start with Phase 1–3 (shop links + pantry page + Kanban) and iterate?
+### 10. Visual + motion polish
+- Tokens only (no hardcoded colors). Adds soft gradients via existing CSS variables, larger radii (`rounded-2xl`), 12–16px row spacing.
+- Animations:
+  - Completion: existing `CompletionBurst` + checkbox scale.
+  - Progress bar: width transition + subtle shimmer when crossing 100%.
+  - Expand/collapse: accordion keyframes from `tailwind.config.ts`.
+  - Swipe reveal: handled by `react-swipeable-list` defaults, themed with our tokens.
+- Respect `prefers-reduced-motion` (skip burst + shimmer).
+
+### 11. Accessibility
+- All swipe actions have equivalent buttons on the expanded row (keyboard reachable).
+- `aria-label` on every icon-only button (status dot button = "Mark complete: <title>").
+- Text-size toggle (S/M/L) in Settings → Appearance writes a CSS var consumed by the new row.
+- High-contrast mode toggle flips a `data-contrast="high"` attribute that overrides metadata/foreground opacities.
+
+### Files (new)
+- `src/components/cards/TaskRowV2.tsx`
+- `src/components/tasks/SmartDueChip.tsx`
+- `src/components/tasks/TodayFocusCard.tsx`
+- `src/components/tasks/QuickCapturePlus.tsx`
+- `src/components/tasks/QuickEntryBar.tsx`
+- `src/lib/quick-task-parser.ts`
+- `src/lib/task-energy.ts` (inferEnergyFromTitle + bucket helpers)
+
+### Files (edited)
+- `src/lib/task-icons.ts` — add explicit emoji/icon rules from the spec.
+- `src/components/tasks/AllTasksViews.tsx` — render `TaskRowV2`, add Energy & Time-of-Day grouping, mount Quick Entry Bar.
+- `src/components/tasks/TaskListControls.tsx` — new grouping options.
+- `src/pages/TaskListPage.tsx` & `src/pages/Today.tsx` — mount `TodayFocusCard` and `QuickCapturePlus`.
+- `src/components/cards/TaskRow.tsx` — keep but stop importing from main lists.
+- `tailwind.config.ts` — small additions: `shimmer` keyframe.
+- `src/pages/Settings.tsx` — text size + high-contrast + reduced-motion toggles.
+
+### Out of scope (call out)
+- No DB schema changes.
+- No new realtime/collab features.
+- Voice notes UI mounts the existing recorder if available; if none exists I'll stub a disabled state and flag it for a follow-up rather than build a recorder.
+
+### Risks
+- `react-swipeable-list` bundle (~12KB gz) — acceptable.
+- `TaskRowV2` will diverge from `TaskRow` briefly; we'll migrate remaining consumers in the same pass where trivial, leaving the old row only for legacy embedded contexts.

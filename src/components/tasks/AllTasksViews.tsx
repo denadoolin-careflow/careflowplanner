@@ -24,7 +24,7 @@ import {
 } from "date-fns";
 
 type View = "grid" | "list" | "board" | "schedule" | "calendar";
-type GroupBy = "none" | "area" | "project" | "priority" | "status" | "due" | "tag" | "energy";
+type GroupBy = "none" | "area" | "project" | "priority" | "status" | "due" | "tag" | "energy" | "dayPart";
 type SortBy = "manual" | "title" | "due" | "priority" | "created" | "energy" | "estMinutes";
 type SortDir = "asc" | "desc";
 
@@ -145,6 +145,9 @@ export function AllTasksViews() {
       else if (group === "status") key = STATUS_LABEL[t.status ?? "active"];
       else if (group === "due") key = dueBucket(t.dueDate);
       else if (group === "energy") key = t.energy ? t.energy[0].toUpperCase() + t.energy.slice(1) : "No energy";
+      else if (group === "dayPart") key = t.dayPart ? ({
+        Morning: "🌅 Morning", Afternoon: "☀️ Afternoon", Evening: "🌙 Evening", "Late Night": "✨ Late Night",
+      } as Record<string,string>)[t.dayPart] : "Anytime";
       if (group === "tag") {
         const tags = t.tags ?? [];
         if (tags.length === 0) push("No tag", t);
@@ -244,6 +247,7 @@ export function AllTasksViews() {
             <SelectItem value="due">Group: Due date</SelectItem>
             <SelectItem value="tag">Group: Tag</SelectItem>
             <SelectItem value="energy">Group: Energy</SelectItem>
+            <SelectItem value="dayPart">Group: Time of day</SelectItem>
           </SelectContent>
         </Select>
 
