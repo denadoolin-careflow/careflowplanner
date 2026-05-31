@@ -145,6 +145,9 @@ export function AllTasksViews() {
       else if (group === "status") key = STATUS_LABEL[t.status ?? "active"];
       else if (group === "due") key = dueBucket(t.dueDate);
       else if (group === "energy") key = t.energy ? t.energy[0].toUpperCase() + t.energy.slice(1) : "No energy";
+      else if (group === "dayPart") key = t.dayPart ? ({
+        Morning: "🌅 Morning", Afternoon: "☀️ Afternoon", Evening: "🌙 Evening", "Late Night": "✨ Late Night",
+      } as Record<string,string>)[t.dayPart] : "Anytime";
       if (group === "tag") {
         const tags = t.tags ?? [];
         if (tags.length === 0) push("No tag", t);
