@@ -919,7 +919,7 @@ export function BlockEditor({
       {editor && (
         <BubbleMenu
           editor={editor}
-          className="flex items-center gap-0.5 rounded-xl border border-border/60 bg-popover/95 px-1 py-1 shadow-lg backdrop-blur-md"
+          className="bubble-toolbar flex items-center gap-0.5 rounded-2xl border border-border/40 bg-popover/95 px-1 py-1 shadow-xl backdrop-blur-xl"
         >
           <ToolbarButton active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} label="Bold"><Bold className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} label="Italic"><Italic className="h-3.5 w-3.5" /></ToolbarButton>
@@ -932,6 +932,19 @@ export function BlockEditor({
           <ToolbarButton active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} label="H1"><Heading1 className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} label="H2"><Heading2 className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-3.5 w-3.5" /></ToolbarButton>
+          <span className="mx-1 h-4 w-px bg-border" />
+          <ToolbarButton
+            active={editor.isActive("taskList")}
+            onClick={() => editor.chain().focus().toggleTaskList().run()}
+            label="Convert to checklist"
+          ><CheckSquare className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton onClick={promoteSelectionToTask} label="Add selection to Tasks">
+            <ListPlus className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <BubbleTagPicker
+            tagNames={tagNamesRef.current}
+            onPick={insertTagAtSelection}
+          />
           <ToolbarButton
             active={editor.isActive("link")}
             onClick={() => {
