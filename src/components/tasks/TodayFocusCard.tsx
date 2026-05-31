@@ -70,7 +70,7 @@ export function TodayFocusCard() {
               {focus.map(t => (
                 <li key={t.id} className="flex items-start gap-3 rounded-xl bg-background/50 px-3 py-2 transition hover:bg-background/70">
                   <Checkbox checked={t.done} onCheckedChange={() => toggleTask(t.id)} aria-label={`Complete ${t.title}`} />
-                  <span className="flex-1 text-sm font-medium text-foreground">{t.title}</span>
+                  <span className="flex-1 text-sm font-medium text-foreground break-words">{t.title}</span>
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />
                 </li>
               ))}
