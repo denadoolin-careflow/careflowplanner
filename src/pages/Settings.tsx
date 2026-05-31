@@ -223,6 +223,8 @@ export default function Settings() {
         <PantryColorPicker />
       </SectionCard>
 
+      <GroceryPrefsSection />
+
       <SectionCard
         title="US holidays"
         subtitle={`Auto-populate your calendar with US federal & popular holidays for ${new Date().getFullYear()}–${new Date().getFullYear() + 1}.`}
