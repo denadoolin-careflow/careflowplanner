@@ -298,7 +298,14 @@ export default function CalendarPage() {
           <MonthPlanningDashboard cursor={cursor} onJumpToDate={(d) => { setCursor(d); setLayout("grid"); setView("day"); }} />
         ) : (
           <>
-          <div className="mb-3 flex flex-wrap gap-1.5">
+          <div className="mb-3 -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1.5 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/60 sm:flex-wrap sm:overflow-visible sm:pb-0">
+            <button
+              type="button"
+              onClick={() => setKindFilter(new Set(ALL_KINDS))}
+              className="shrink-0 rounded-full border border-border/50 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+            >
+              All
+            </button>
             {([
               { k: "task" as Kind, label: "Tasks", Icon: CheckSquare },
               { k: "appt" as Kind, label: "Appointments", Icon: CalendarClock },
@@ -316,7 +323,7 @@ export default function CalendarPage() {
                   onClick={() => toggleKind(k)}
                   aria-pressed={on}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
+                    "flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
                     on
                       ? "border-primary/40 bg-primary-soft text-foreground shadow-sm"
                       : "border-border/50 bg-muted/40 text-muted-foreground hover:text-foreground",
@@ -326,13 +333,6 @@ export default function CalendarPage() {
                 </button>
               );
             })}
-            <button
-              type="button"
-              onClick={() => setKindFilter(new Set(ALL_KINDS))}
-              className="ml-auto text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-            >
-              All
-            </button>
           </div>
           {layout === "schedule" ? (
           <ScheduleView
