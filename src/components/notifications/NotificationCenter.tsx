@@ -62,7 +62,7 @@ export function NotificationCenter() {
       else if (isBefore(d, today)) overdue.push(t);
       else if (isAfter(d, today) && isBefore(d, weekEnd)) upcoming.push(t);
     }
-    const todayAppts = state.appointments.filter(a => a.date === todayISO && !dismissed.has(a.id));
+    const todayAppts = state.appointments.filter(a => apptOccursOn(a, todayISO) && !dismissed.has(a.id));
     return { overdue, dueToday, dueTomorrow, upcoming, todayAppts };
   }, [state.tasks, state.appointments, todayISO, tomorrowISO, today, weekEnd, dismissed]);
 
