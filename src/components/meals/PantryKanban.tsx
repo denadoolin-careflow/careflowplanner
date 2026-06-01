@@ -9,6 +9,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { Repeat } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,8 @@ import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { reorderPantry, bulkSetPantryStatus } from "@/lib/meal-ai";
 import { buzz, usePantrySensors } from "./dnd-shared";
+import { setRestockCadence } from "@/lib/inventory-restock";
+import type { Location } from "@/lib/inventory-seed";
 
 type PantryRow = {
   id: string;
@@ -28,6 +31,8 @@ type PantryRow = {
   stock_status: string;
   in_stock: boolean;
   sort_order: number;
+  location?: string | null;
+  restock_cadence?: string | null;
 };
 
 const COLUMNS: { key: StockStatus; db: string }[] = [
@@ -44,7 +49,7 @@ const uiFromDb = (db: string): StockStatus => {
   return "out";
 };
 
-export function PantryKanban() {
+export function PantryKanban({ location }: { location?: Location | "All" } = {}) {
   const { user } = useStore();
   const [rows, setRows] = useState<PantryRow[]>([]);
   const [newName, setNewName] = useState("");
@@ -57,7 +62,7 @@ export function PantryKanban() {
   const load = async () => {
     if (!user) return;
     const { data } = await supabase.from("pantry_items")
-      .select("id,name,qty,unit,category,stock_status,in_stock,sort_order")
+      .select("id,name,qty,unit,category,stock_status,in_stock,sort_order,location,restock_cadence")
       .eq("user_id", user.id)
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });
@@ -66,24 +71,41 @@ export function PantryKanban() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [user]);
 
+  const filteredRows = useMemo(
+    () => (!location || location === "All") ? rows : rows.filter(r => (r.location ?? "Pantry") === location),
+    [rows, location],
+  );
+
   const grouped = useMemo(() => {
     const out: Record<StockStatus, PantryRow[]> = { in: [], low: [], need_soon: [], out: [] };
-    rows.forEach(r => { out[uiFromDb(r.stock_status)].push(r); });
+    filteredRows.forEach(r => { out[uiFromDb(r.stock_status)].push(r); });
     (Object.keys(out) as StockStatus[]).forEach(k => {
       out[k].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name.localeCompare(b.name));
     });
     return out;
-  }, [rows]);
+  }, [filteredRows]);
 
   const add = async () => {
     if (!user || !newName.trim()) return;
     const out = grouped.out;
     const nextOrder = out.length ? Math.max(...out.map(r => r.sort_order ?? 0)) + 1 : 1;
+    const insertLoc = (!location || location === "All") ? "Pantry" : location;
     const { data } = await supabase.from("pantry_items").insert({
-      user_id: user.id, name: newName.trim(), stock_status: "out", in_stock: false, sort_order: nextOrder,
-    }).select().single();
+      user_id: user.id, name: newName.trim(), stock_status: "out", in_stock: false,
+      sort_order: nextOrder, location: insertLoc,
+    } as any).select().single();
     if (data) setRows(prev => [...prev, data as any]);
     setNewName("");
+  };
+
+  const toggleRestock = async (id: string) => {
+    const cur = rows.find(r => r.id === id);
+    const next = cur?.restock_cadence === "weekly" ? "biweekly"
+               : cur?.restock_cadence === "biweekly" ? "none"
+               : "weekly";
+    setRows(prev => prev.map(r => r.id === id ? { ...r, restock_cadence: next } : r));
+    await setRestockCadence(id, next);
+    toast.success(next === "none" ? "Removed from restock" : `Restock ${next === "weekly" ? "every week" : "every 2 weeks"}`);
   };
 
   const remove = async (id: string) => {
@@ -284,6 +306,7 @@ export function PantryKanban() {
                     selected={selectedIds.has(r.id)}
                     onSelectClick={(e) => toggleSelection(r.id, e)}
                     onRemove={() => remove(r.id)}
+                    onToggleRestock={() => toggleRestock(r.id)}
                   />
                 ))}
               </SortableContext>
