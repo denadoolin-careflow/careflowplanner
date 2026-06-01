@@ -12,6 +12,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { RestockPanel } from "@/components/meals/RestockPanel";
+import { Link } from "react-router-dom";
+import { Repeat } from "lucide-react";
 
 type Period = "week" | "month";
 type ChecklistItem = { id: string; label: string; done: boolean };
@@ -229,6 +232,19 @@ export default function Reset() {
               <ResetChecklist items={current.checklist} onToggle={toggleCheck} onChange={(next) => patch({ checklist: next })} />
             </div>
           </SectionCard>
+
+          {period === "week" && (
+            <SectionCard
+              accent="sage"
+              title={<span className="flex items-center gap-2"><Repeat className="h-4 w-4" /> Inventory check</span>}
+              subtitle="A quick sweep of your repeat-restock items before planning next week's groceries."
+              action={<Button size="sm" variant="ghost" className="h-7 rounded-full text-xs" asChild><Link to="/pantry?tab=Restock">Open inventory →</Link></Button>}
+            >
+              <div className="px-5 pb-5">
+                <RestockPanel compact />
+              </div>
+            </SectionCard>
+          )}
 
           <SectionCard
             accent="warm"
