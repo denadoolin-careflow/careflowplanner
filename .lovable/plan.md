@@ -1,50 +1,44 @@
+
 ## Goal
 
-Add two new collapsible sections to the left sidebar:
+Turn the existing pantry into a full **Home Inventory** organized by storage location (Fridge, Freezer, Pantry, Cabinets, Other), seed it with typical staples, add a **Weekly Restock** list of items you always rebuy, fix mobile wrapping on the grocery list, and wire everything into the Meals plan + Weekly Reset.
 
-1. **Pinned Notes** — every note flagged `pinned` shows as a sidebar link to `/notes/:id`. Pin/unpin from the existing pin button on `NoteDetail`, plus a new hover-pin action on each row in the Notes list.
-2. **Quick Dates** — fast jumps into the calendar:
-   - **This Week** + 4 upcoming weeks → `/week?date=YYYY-MM-DD` (Monday of that week)
-   - **This Month** + next 5 months → `/month?date=YYYY-MM-01`
-   Each subsection (Weeks, Months) can be collapsed independently like other sidebar groups.
+## What you get
 
-A new **Sidebar sections** toggle menu (gear popover at the top of the sidebar, next to the existing theme/side buttons) lets the user show/hide Pinned Notes, Quick Weeks, and Quick Months independently. Preferences persist in localStorage.
+1. **Inventory by location** — Fridge / Freezer / Pantry / Cabinets / Other tabs. Each item has stock status (In / Low / Need soon / Out), qty, and notes. DnD between locations and between status columns; click any item to edit inline (name, qty, location, status, restock toggle).
+2. **Static starter library** — one-tap "Seed common items" populates each location with typical staples (eggs, milk, butter in Fridge; frozen veg in Freezer; rice/pasta/canned beans in Pantry; oil/spices in Cabinets). Editable afterward; nothing is locked.
+3. **Weekly Restock list** — mark any inventory item as "Restock weekly" (or bi-weekly). Every Monday (or on reset), items marked restock that are Low/Out are auto-added to the grocery list with a `restock` tag. A dedicated **Restock** panel in Meals shows what's queued for the week with one-click "Add all to grocery list".
+4. **Meal plan connection** — when a meal is planned, ingredients already In-stock in Inventory are skipped on the grocery list (existing behavior, kept). Newly bought grocery items can be "Send to Inventory" → moves to the right location with In-stock status.
+5. **Mobile grocery list polish** — wrap long item names instead of truncating, larger tap targets (44px), full-width chips, status pill below name on narrow screens, swipe-to-delete preserved.
+6. **Weekly Reset hook** — the existing Reset section gets an "Inventory check" step: opens a quick sweep of Restock items to mark Low/Out before generating the new grocery list.
 
-## Behavior
+## Where it lives
 
-- Pinned Notes section is hidden when no notes are pinned (even if toggle is on), with a small "Pin a note to see it here" hint shown only when toggle on and list empty.
-- Active week/month route is highlighted using existing `NavLink` active styling — match against `?date=` query.
-- Collapsed sidebar: each pinned note and quick date renders as an icon-only row with tooltip (note title, or formatted date label like "Wk of Jun 2").
-- Section order: existing nav groups → Pinned Notes → Quick Dates (placed after the current groups, above no footer).
-- New sections respect the same `wrapItem` collapsed/tooltip pattern and `onNavigate` close-on-mobile behavior.
+- **Pantry page** (`/pantry`) becomes **Inventory** with 5 location tabs + a Restock tab. Existing Kanban/List toggle stays.
+- **Meals page** grocery section gets a small "Restock this week" strip above the Kanban.
+- **Reset page** gets a new "Inventory check" checklist item.
+- Sidebar entry renamed Pantry → **Inventory**.
 
-## Technical Details
+## Technical notes
 
-**Files touched (frontend only, no schema changes — `notes.pinned` already exists):**
+- Migration on `pantry_items`: add `location text` (Fridge|Freezer|Pantry|Cabinets|Other, default 'Pantry'), `restock_cadence text` (none|weekly|biweekly, default 'none'), `last_restocked_at timestamptz`, `notes text`. Backfill existing rows: map current `category` → `location` heuristically (Fridge/Dairy/Meat → Fridge; Frozen → Freezer; everything else → Pantry).
+- New `src/lib/inventory-seed.ts` with the static starter lists per location.
+- New `src/lib/inventory-restock.ts`:
+  - `getDueRestockItems(userId)` — restock items that are Low/Out and not already on grocery list.
+  - `addRestockToGrocery(userId)` — bulk insert into `grocery_items` with `tags: ['restock']`, dedupe by name.
+  - `runWeeklyRestock(userId)` — called from Reset and from a "Run now" button.
+- Refactor `PantryPanel` / `PantryKanban` to read/write `location` and `restock_cadence`. Add a `LocationTabs` wrapper component.
+- New `RestockPanel.tsx` component used in both Inventory page and Meals grocery section.
+- `GroceryList.tsx` + `GroceryKanban.tsx` mobile pass: replace `truncate` with `break-words` + `whitespace-normal` on item names, bump row min-height to `min-h-11`, stack metadata on `<sm` screens, ensure ShopMenu button hits 44px.
+- Add `restock` chip styling in `pantry-colors.ts`.
+- Reset checklist: add a new built-in item "Inventory check" that deep-links to `/pantry?tab=restock`.
 
-- `src/components/layout/Sidebar.tsx`
-  - Add `usePinnedNotes()` hook: subscribes to `notes` via existing `listNotes()` + a realtime channel filter `pinned=eq.true` (or simple refetch on `visibilitychange` + on a custom `careflow:notes:pinned-changed` event dispatched from `updateNote`).
-  - Add `SidebarSectionsMenu` popover (Settings icon) with three switches: Pinned Notes / Quick Weeks / Quick Months. Persist under `careflow:sidebar:sections` key.
-  - Add `<PinnedNotesSection>` and `<QuickDatesSection>` components inside `SidebarBody`, rendered conditionally based on prefs.
-  - Use `date-fns` `startOfWeek({ weekStartsOn: 1 })`, `addWeeks`, `startOfMonth`, `addMonths`, `format`.
+## Out of scope (call out if you want these)
 
-- `src/lib/notes.ts`
-  - In `updateNote`, after a successful update that includes `pinned`, dispatch `window.dispatchEvent(new Event("careflow:notes:pinned-changed"))` so the sidebar refreshes immediately.
-  - Add `listPinnedNotes()` helper that selects `id, title, kind, date` where `pinned = true` ordered by `updated_at desc`.
+- Barcode scanning, expiry-date tracking, receipts OCR.
+- Household-shared inventory sync (currently per-user).
+- Smart suggestions ("you usually buy X every 9 days") — could be a v2.
 
-- `src/pages/Notes.tsx` (small UX add)
-  - Add a pin button on each note row (hover-revealed) that toggles `pinned`. Uses existing `updateNote`. This is optional polish but keeps the feature discoverable.
+## Open question
 
-**No database migration required** — `pinned boolean` column already exists on `notes`.
-
-**LocalStorage keys added:**
-- `careflow:sidebar:sections` → `{ pinnedNotes: boolean; quickWeeks: boolean; quickMonths: boolean }` (defaults: all true)
-- Reuses existing `STORAGE_KEY` (`careflow:sidebar:open-groups`) for open/closed state of the two new sections, with ids `pinned-notes`, `quick-weeks`, `quick-months`.
-
-## Out of Scope
-
-- Reordering pinned notes (uses note `updated_at` order)
-- Drag-pinning notes onto the sidebar
-- Pinning tasks/projects (projects already have a Favorite star)
-- Quick dates beyond the 5-week / 6-month horizon
-- A separate Day quick-jump (Today already exists in the top section)
+Do you want **one global restock list** (simplest) or **per-location restock sub-lists** (Fridge restock vs Pantry restock)? I'll default to one global list grouped by location unless you say otherwise.

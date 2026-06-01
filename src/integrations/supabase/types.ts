@@ -3311,10 +3311,13 @@ export type Database = {
           created_at: string
           id: string
           in_stock: boolean
+          last_restocked_at: string | null
+          location: string
           name: string
           notes: string | null
           price: number | null
           qty: string | null
+          restock_cadence: string
           sort_order: number
           stock_status: string
           store_pref: string | null
@@ -3327,10 +3330,13 @@ export type Database = {
           created_at?: string
           id?: string
           in_stock?: boolean
+          last_restocked_at?: string | null
+          location?: string
           name: string
           notes?: string | null
           price?: number | null
           qty?: string | null
+          restock_cadence?: string
           sort_order?: number
           stock_status?: string
           store_pref?: string | null
@@ -3343,10 +3349,13 @@ export type Database = {
           created_at?: string
           id?: string
           in_stock?: boolean
+          last_restocked_at?: string | null
+          location?: string
           name?: string
           notes?: string | null
           price?: number | null
           qty?: string | null
+          restock_cadence?: string
           sort_order?: number
           stock_status?: string
           store_pref?: string | null
