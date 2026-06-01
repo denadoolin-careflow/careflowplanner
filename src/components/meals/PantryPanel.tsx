@@ -22,6 +22,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { buzz, usePantrySensors } from "./dnd-shared";
+import type { Location } from "@/lib/inventory-seed";
 
 export const PANTRY_CATEGORIES = [
   "Fridge", "Frozen", "Snacks", "Canned Goods", "Pasta & Grains",
@@ -82,7 +83,7 @@ function guessCategory(name: string): PantryCategory {
   return "Other";
 }
 
-export function PantryPanel() {
+export function PantryPanel({ location }: { location?: Location | "All" } = {}) {
   const { user } = useStore();
   const [items, setItems] = useState<PantryItem[]>([]);
   const [name, setName] = useState("");
@@ -93,6 +94,11 @@ export function PantryPanel() {
   const sensors = usePantrySensors();
 
   useEffect(() => { if (user) listPantry(user.id).then(setItems); }, [user]);
+
+  const visible = useMemo(() => {
+    if (!location || location === "All") return items;
+    return items.filter(it => ((it as any).location ?? "Pantry") === location);
+  }, [items, location]);
 
   const add = async () => {
     if (!user || !name.trim()) return;
@@ -118,7 +124,7 @@ export function PantryPanel() {
 
   const grouped = useMemo(() => {
     const map = new Map<string, PantryItem[]>();
-    for (const it of items) {
+    for (const it of visible) {
       const key = it.category && (PANTRY_CATEGORIES as readonly string[]).includes(it.category)
         ? it.category
         : "Other";
@@ -133,7 +139,7 @@ export function PantryPanel() {
           (a, b) => ((a.sort_order ?? 0) - (b.sort_order ?? 0)) || a.name.localeCompare(b.name),
         ),
       ] as const);
-  }, [items]);
+  }, [visible]);
 
   const findItem = useCallback((id: string) => items.find(i => i.id === id), [items]);
   const activeItem = activeId ? findItem(activeId) : null;
@@ -226,7 +232,7 @@ export function PantryPanel() {
         </Select>
         <Button type="submit">Add</Button>
       </form>
-      {items.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="text-xs text-muted-foreground">Track what's already in the pantry — the AI will avoid adding it to your grocery list.</p>
       ) : (
         <DndContext

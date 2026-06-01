@@ -20,7 +20,7 @@ export const NAV = [
   { to: "/habits", label: "Habits", icon: Sparkles },
   { to: "/meals", label: "Meals", icon: UtensilsCrossed },
   { to: "/meals/library", label: "Meals Library", icon: BookOpen },
-  { to: "/pantry", label: "Pantry", icon: ShoppingBasket },
+  { to: "/pantry", label: "Inventory", icon: ShoppingBasket },
   { to: "/caregiving", label: "Caregiving", icon: HeartHandshake },
   { to: "/trips", label: "Trips", icon: Plane },
   { to: "/routines", label: "Routines", icon: Repeat },
