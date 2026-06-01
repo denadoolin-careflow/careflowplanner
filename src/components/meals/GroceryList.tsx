@@ -171,16 +171,18 @@ export function GroceryList() {
       <DraggableRow key={item.id} id={item.id} enabled={draggable} dim={!!dim}>
         <Checkbox checked={item.bought} onCheckedChange={() => toggleGrocery(item.id)} />
         {isEditing ? (
-          <div className="flex flex-1 items-center gap-1.5">
-            <Input value={editName} onChange={e => setEditName(e.target.value)} className="h-7 text-sm" autoFocus />
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+            <Input value={editName} onChange={e => setEditName(e.target.value)} className="h-9 min-w-[8rem] flex-1 text-sm" autoFocus />
             <Input value={editQty} onChange={e => setEditQty(e.target.value)} placeholder="qty" className="h-7 w-20 text-sm" />
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => saveEdit(item.id)}><Check className="h-3.5 w-3.5" /></Button>
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditing(null)}><X className="h-3.5 w-3.5" /></Button>
           </div>
         ) : (
           <>
-            <span className={item.bought ? "text-muted-foreground line-through" : ""}>{item.name}</span>
-            {item.qty && <span className="text-[11px] text-muted-foreground">· {item.qty}</span>}
+            <span className={cn("min-w-0 flex-1 break-words", item.bought && "text-muted-foreground line-through")}>
+              {item.name}
+              {item.qty && <span className="ml-1 text-[11px] text-muted-foreground">· {item.qty}</span>}
+            </span>
             <button onPointerDown={(e) => e.stopPropagation()} onClick={() => setGroceryStock(item.id, next)} title={`Mark ${next}`}>
               <Badge variant={status === "out" ? "outline" : "secondary"}
                 className={`ml-1 cursor-pointer rounded-full text-[10px] ${stockClass}`}>
@@ -194,16 +196,18 @@ export function GroceryList() {
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => { setGroupBy("meal"); setHighlightMealId(item.sourceMealId ?? null); }}
                 title={`From ${item.sourceMealName}${item.sourceSlot ? " · " + item.sourceSlot : ""}${item.sourceDate ? " · " + item.sourceDate : ""}`}
-                className="ml-1"
+                className="ml-1 hidden sm:inline-flex"
               >
-                <Badge variant="outline" className="rounded-full text-[10px] text-muted-foreground hover:bg-muted">
+                <Badge variant="outline" className="max-w-[10rem] truncate rounded-full text-[10px] text-muted-foreground hover:bg-muted">
                   <Utensils className="mr-0.5 h-2.5 w-2.5" />{item.sourceMealName}
                 </Badge>
               </button>
             )}
-            <div className="ml-auto flex items-center gap-1 opacity-0 transition group-hover:opacity-70">
-              <button onPointerDown={(e) => e.stopPropagation()} onClick={() => startEdit(item.id, item.name, item.qty)} title="Edit"><Pencil className="h-3 w-3" /></button>
-              <button onPointerDown={(e) => e.stopPropagation()} onClick={() => deleteGrocery(item.id)} title="Delete"><Trash2 className="h-3 w-3" /></button>
+            <div className="ml-1 flex shrink-0 items-center gap-0.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-70">
+              <button onPointerDown={(e) => e.stopPropagation()} onClick={() => startEdit(item.id, item.name, item.qty)} title="Edit"
+                className="grid h-9 w-9 place-items-center text-muted-foreground hover:text-foreground sm:h-7 sm:w-7"><Pencil className="h-3.5 w-3.5" /></button>
+              <button onPointerDown={(e) => e.stopPropagation()} onClick={() => deleteGrocery(item.id)} title="Delete"
+                className="grid h-9 w-9 place-items-center text-muted-foreground hover:text-destructive sm:h-7 sm:w-7"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
           </>
         )}
@@ -392,7 +396,7 @@ function DraggableRow({
       {...(enabled ? attributes : {})}
       {...(enabled ? listeners : {})}
       className={cn(
-        "group flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition hover:bg-muted/40",
+        "group flex min-h-11 items-start gap-2 rounded-lg px-2 py-1.5 text-sm transition hover:bg-muted/40 sm:min-h-0 sm:items-center",
         enabled && "cursor-grab active:cursor-grabbing",
         isDragging && "opacity-40",
         dim && "opacity-30",
