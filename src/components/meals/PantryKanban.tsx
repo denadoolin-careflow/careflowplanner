@@ -365,13 +365,14 @@ function Column({
 }
 
 function SortablePantryCard({
-  row, column, selected, onSelectClick, onRemove,
+  row, column, selected, onSelectClick, onRemove, onToggleRestock,
 }: {
   row: PantryRow;
   column: StockStatus;
   selected: boolean;
   onSelectClick: (e: React.MouseEvent) => void;
   onRemove: () => void;
+  onToggleRestock: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: `pk-${row.id}` });
@@ -415,6 +416,22 @@ function SortablePantryCard({
       <div onClick={(e) => e.stopPropagation()}>
         <ShopMenu items={row.name} size="icon" variant="ghost" />
       </div>
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggleRestock(); }}
+        title={
+          row.restock_cadence === "weekly" ? "Restocking weekly — click for bi-weekly"
+          : row.restock_cadence === "biweekly" ? "Restocking bi-weekly — click to remove"
+          : "Mark as repeat restock"
+        }
+        className={cn(
+          "rounded-full p-1 transition",
+          row.restock_cadence === "weekly" || row.restock_cadence === "biweekly"
+            ? "bg-primary/15 text-primary"
+            : "text-muted-foreground/60 opacity-0 group-hover:opacity-100 hover:text-primary",
+        )}
+      >
+        <Repeat className="h-3 w-3" />
+      </button>
       <button
         onClick={(e) => { e.stopPropagation(); onRemove(); }}
         className="text-muted-foreground hover:text-destructive"
