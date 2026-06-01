@@ -16,6 +16,7 @@ import { FavoritesPanel } from "@/components/meals/FavoritesPanel";
 import { GroceryKanban } from "@/components/meals/GroceryKanban";
 import { GroceryList } from "@/components/meals/GroceryList";
 import { GroceryAssistant } from "@/components/meals/GroceryAssistant";
+import { RestockPanel } from "@/components/meals/RestockPanel";
 import { MealCell } from "@/components/meals/MealCell";
 import { LibrarySidebar } from "@/components/meals/LibrarySidebar";
 import { calendarPanelOptions } from "@/components/meals/CalendarDropPanel";
@@ -509,6 +510,13 @@ export default function Meals() {
           </div>
         }
       >
+        <div className="mb-3 rounded-2xl border border-border/40 bg-muted/20 p-3">
+          <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span>↻ Weekly restock</span>
+            <Link to="/pantry?tab=Restock" className="ml-auto text-[10px] normal-case tracking-normal text-primary hover:underline">Manage</Link>
+          </div>
+          <RestockPanel compact />
+        </div>
         {groceryView === "kanban" ? <GroceryKanban /> : <GroceryList />}
         <div className="mt-3"><GroceryAssistant /></div>
       </SectionCard>
@@ -517,7 +525,12 @@ export default function Meals() {
         <SectionCard title="Saved favorites" accent="warm">
           <FavoritesPanel />
         </SectionCard>
-        <SectionCard title="Pantry staples" subtitle="Skipped from grocery generation" accent="sage">
+        <SectionCard
+          title="Inventory"
+          subtitle="Skipped from grocery generation"
+          accent="sage"
+          action={<Button size="sm" variant="ghost" className="h-7 rounded-full text-xs" asChild><Link to="/pantry">Open →</Link></Button>}
+        >
           <PantryPanel />
         </SectionCard>
       </div>
