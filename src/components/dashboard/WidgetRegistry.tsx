@@ -38,7 +38,9 @@ import { HomeResetQuickWidget } from "./widgets/caregiver/HomeResetQuickWidget";
 import { PantryStatusWidget } from "./widgets/grocery/PantryStatusWidget";
 import { GroceryListMiniWidget } from "./widgets/grocery/GroceryListMiniWidget";
 import { LowStockWidget } from "./widgets/grocery/LowStockWidget";
-import { Package, ShoppingCart, AlertTriangle } from "lucide-react";
+import { Package, ShoppingCart, AlertTriangle, Telescope } from "lucide-react";
+import { TransitsTodayWidget } from "./widgets/TransitsToday";
+import { LunarPlannerCard } from "./widgets/LunarPlannerCard";
 
 export interface WidgetSpec {
   type: WidgetType;
@@ -117,6 +119,8 @@ export const WIDGET_REGISTRY: Record<WidgetType, WidgetSpec> = {
   "pantry-status": { type: "pantry-status", title: "Pantry status", icon: Package, defaultSize: { w: 4, h: 4 }, Component: PantryStatusWidget, pageHref: "/pantry" },
   "grocery-list-mini": { type: "grocery-list-mini", title: "Grocery list", icon: ShoppingCart, defaultSize: { w: 4, h: 5 }, Component: GroceryListMiniWidget, pageHref: "/meals" },
   "low-stock": { type: "low-stock", title: "Running low", icon: AlertTriangle, defaultSize: { w: 4, h: 5 }, Component: LowStockWidget, pageHref: "/pantry" },
+  "transits-today": { type: "transits-today", title: "Transits today", icon: Telescope, defaultSize: { w: 4, h: 5 }, Component: TransitsTodayWidget, bare: true, pageHref: "/today" },
+  "lunar-planner": { type: "lunar-planner", title: "Lunar planner", icon: Moon, defaultSize: { w: 6, h: 6 }, Component: LunarPlannerCard, bare: true, pageHref: "/today" },
 };
 
 export const ALL_WIDGET_TYPES = Object.keys(WIDGET_REGISTRY) as WidgetType[];

@@ -40,6 +40,9 @@ import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyPlanningDashboard } from "@/components/calendar/DailyPlanningDashboard";
 import { cn } from "@/lib/utils";
 import { TodayEnergy } from "@/components/today/TodayEnergy";
+import { TransitStrip } from "@/components/rhythm/TransitStrip";
+import { EnergyToggle } from "@/components/today/EnergyToggle";
+import { useTransitsEnabled } from "@/lib/astrology-prefs";
 import { DailyBrief } from "@/components/today/DailyBrief";
 import { MobileTodayCard } from "@/components/today/MobileTodayCard";
 import { EndOfDaySummary } from "@/components/today/EndOfDaySummary";
@@ -149,6 +152,7 @@ function TodayInner() {
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
   const [widgetsOpen, setWidgetsOpen] = useState(false);
   const [rhythmOn] = useRhythmForecastEnabled();
+  const transitsOn = useTransitsEnabled();
   const [planEnergyOpen, setPlanEnergyOpen] = useState(false);
   const forecast = useMemo(() => getRhythmForecast(today), [today]);
 
@@ -224,6 +228,7 @@ function TodayInner() {
                 </div>
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                   <EnergyCheckIn />
+                  <EnergyToggle dateISO={format(today, "yyyy-MM-dd")} />
                   <Button
                     size="sm"
                     variant="outline"
@@ -247,6 +252,7 @@ function TodayInner() {
         {rhythmOn && (
           <TodayEnergy date={today} />
         )}
+        {transitsOn && <TransitStrip date={today} />}
         {!rhythmOn && (
           <WeatherHeroCard />
         )}
