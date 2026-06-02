@@ -4,10 +4,13 @@ import { Sparkles, Heart, BookHeart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MoonGlyph } from "@/components/widgets/MoonGlyph";
+import { MoonLogo } from "@/components/widgets/MoonLogo";
 import { useMoonDataVersion } from "@/lib/moon-providers";
 import { getRhythmForecast, ELEMENT_META } from "@/lib/rhythm-forecast";
 import { tarotForDate } from "@/lib/tarot";
 import { TarotCard } from "./TarotCard";
+import { TarotSpreadSheet } from "./TarotSpreadSheet";
+import { useTarotEnabled } from "@/lib/astrology-prefs";
 import { PlanWithEnergyDialog } from "@/components/rhythm/PlanWithEnergyDialog";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -28,6 +31,8 @@ export function RhythmGuidanceCard({ date }: Props) {
   const tint = ELEMENT_TINT[f.element];
   const elemMeta = ELEMENT_META[f.element];
   const [planOpen, setPlanOpen] = useState(false);
+  const [spreadOpen, setSpreadOpen] = useState(false);
+  const tarotOn = useTarotEnabled();
   const { addJournal } = useStore();
 
   const saveAffirmationToJournal = async () => {
@@ -69,6 +74,7 @@ export function RhythmGuidanceCard({ date }: Props) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
+            <MoonLogo size={14} className="opacity-70" />
             <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Today's Energy</p>
             <span
               className="rounded-full px-1.5 py-px text-[9px] font-medium uppercase tracking-wider"
@@ -117,9 +123,21 @@ export function RhythmGuidanceCard({ date }: Props) {
       </button>
 
       {/* Tarot */}
-      <div className="mt-3">
-        <TarotCard card={card} />
-      </div>
+      {tarotOn && (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setSpreadOpen(true)}
+            className="block w-full text-left"
+            aria-label="Open tarot spreads"
+          >
+            <TarotCard card={card} />
+          </button>
+          <p className="mt-1 px-1 text-[11px] italic text-muted-foreground">
+            Tap card for a 3-card spread.
+          </p>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/50 pt-3">
@@ -134,6 +152,7 @@ export function RhythmGuidanceCard({ date }: Props) {
       </div>
 
       <PlanWithEnergyDialog open={planOpen} onOpenChange={setPlanOpen} date={date} forecast={f} />
+      {tarotOn && <TarotSpreadSheet open={spreadOpen} onOpenChange={setSpreadOpen} date={date} />}
     </section>
   );
 }
