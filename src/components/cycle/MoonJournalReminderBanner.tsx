@@ -8,10 +8,12 @@ import {
   isReminderDismissed,
   dismissReminder,
 } from "@/lib/moon-reminders";
+import { useAstrologyEnabled } from "@/lib/astrology-prefs";
 
 export function MoonJournalReminderBanner({ date = new Date() }: { date?: Date }) {
   const navigate = useNavigate();
   const [tick, setTick] = useState(0);
+  const [astroOn] = useAstrologyEnabled();
 
   useEffect(() => {
     const onChange = () => setTick(t => t + 1);
@@ -23,6 +25,7 @@ export function MoonJournalReminderBanner({ date = new Date() }: { date?: Date }
     };
   }, []);
 
+  if (!astroOn) return null;
   if (!getMoonRemindersEnabled()) return null;
   const reminder = getMoonReminderFor(date);
   if (!reminder) return null;

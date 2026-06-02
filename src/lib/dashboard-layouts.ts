@@ -45,7 +45,9 @@ export type WidgetType =
   | "home-reset-quick"
   | "pantry-status"
   | "grocery-list-mini"
-  | "low-stock";
+  | "low-stock"
+  | "transits-today"
+  | "lunar-planner";
 
 export interface WidgetInstance {
   id: string;

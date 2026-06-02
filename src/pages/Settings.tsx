@@ -25,6 +25,11 @@ import { AtmosphereFeelSection } from "@/components/settings/AtmosphereFeelSecti
 import { FontSection } from "@/components/settings/FontSection";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import { useRhythmForecastEnabled, useRecommendationTone } from "@/lib/rhythm-forecast";
+import {
+  useAstrologyEnabled,
+  useTransitsEnabledPref,
+  useTarotEnabledPref,
+} from "@/lib/astrology-prefs";
 import { MOON_PROVIDERS, useMoonProvider } from "@/lib/moon-providers";
 import { useEffect } from "react";
 import {
@@ -40,6 +45,9 @@ export default function Settings() {
   const templates = usePomodoroTemplatesList();
   const [rhythmOn, setRhythmOn] = useRhythmForecastEnabled();
   const [tone, setTone] = useRecommendationTone();
+  const [astroOn, setAstroOn] = useAstrologyEnabled();
+  const [transitsOn, setTransitsOn] = useTransitsEnabledPref();
+  const [tarotOn, setTarotOn] = useTarotEnabledPref();
   const [moonProviderId, setMoonProviderId] = useMoonProvider();
   const activeProvider = MOON_PROVIDERS.find(p => p.id === moonProviderId);
 
@@ -142,16 +150,42 @@ export default function Settings() {
       </SectionCard>
 
       <SectionCard
-        title="Rhythm Forecast"
-        subtitle="Gentle moon + zodiac planning hints. Caregiver-friendly language, never mystical."
+        title="Astrology & Rhythm"
+        subtitle="Moon phases, transits, tarot, and lunar journal nudges — all opt-in."
         accent="sage"
       >
         <div className="space-y-4">
           <div className="flex items-center gap-3">
+            <Switch checked={astroOn} onCheckedChange={setAstroOn} />
+            <div className="flex flex-col">
+              <Label className="text-sm font-medium">Astrology master switch</Label>
+              <span className="text-[11px] text-muted-foreground">
+                {astroOn
+                  ? "On — moon, sign, transits, tarot, and lunar prompts may appear."
+                  : "Off — hides moon phases, transits, tarot, and lunar journal prompts everywhere. Cycle tracking stays available under Health."}
+              </span>
+            </div>
+          </div>
+
+          <div className={`space-y-3 rounded-xl border border-border/50 bg-card/40 p-3 transition-opacity ${astroOn ? "opacity-100" : "pointer-events-none opacity-40"}`}>
+          <div className="flex items-center gap-3">
             <Switch checked={rhythmOn} onCheckedChange={setRhythmOn} />
             <Label className="text-sm">
-              {rhythmOn ? "On — shown on Today, Week, and the dashboard" : "Off — hidden everywhere"}
+              Rhythm forecast — {rhythmOn ? "shown on Today, Week, and the dashboard" : "hidden"}
             </Label>
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch checked={transitsOn} onCheckedChange={setTransitsOn} />
+            <Label className="text-sm">
+              Transits — {transitsOn ? "Mercury retrograde, ingresses, VoC moon" : "hidden"}
+            </Label>
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch checked={tarotOn} onCheckedChange={setTarotOn} />
+            <Label className="text-sm">
+              Tarot — {tarotOn ? "card of the day + small spreads" : "hidden"}
+            </Label>
+          </div>
           </div>
 
           <div>
