@@ -686,10 +686,12 @@ export function pickEnergyTaskSuggestions(
 
 /* --- Settings toggle (localStorage) --- */
 import { useEffect, useState } from "react";
+import { isAstrologyEnabled } from "@/lib/astrology-prefs";
 const KEY = "careflow:rhythm-forecast:enabled";
 
 export function isRhythmForecastEnabled(): boolean {
   if (typeof window === "undefined") return true;
+  if (!isAstrologyEnabled()) return false;
   const v = window.localStorage.getItem(KEY);
   return v === null ? true : v === "1";
 }
@@ -700,9 +702,11 @@ export function useRhythmForecastEnabled(): [boolean, (v: boolean) => void] {
     const handler = () => setOn(isRhythmForecastEnabled());
     window.addEventListener("storage", handler);
     window.addEventListener("rhythm-forecast:change", handler);
+    window.addEventListener("careflow:astrology:change", handler);
     return () => {
       window.removeEventListener("storage", handler);
       window.removeEventListener("rhythm-forecast:change", handler);
+      window.removeEventListener("careflow:astrology:change", handler);
     };
   }, []);
   const set = (v: boolean) => {
