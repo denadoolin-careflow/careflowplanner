@@ -785,12 +785,18 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   return (
     <TooltipProvider>
     <div className={cn(
-      "flex h-full flex-col gap-2 bg-sidebar p-3 transition-[width] duration-200 ease-out",
-      collapsed ? "w-[68px] items-center" : "w-full",
+      "flex h-full flex-col gap-2 bg-sidebar transition-[width] duration-200 ease-out",
+      collapsed ? "w-14 items-center px-2 py-3" : "w-full p-3",
     )} ref={rootRef}>
-      <div className={cn("flex items-center gap-1.5 px-1 py-2 w-full", collapsed && "justify-center")}>
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sidebar-accent/60 text-sidebar-foreground ring-1 ring-sidebar-border/60">
-          <CareFlowMark size={20} />
+      <div className={cn(
+        "flex w-full py-2",
+        collapsed ? "flex-col items-center gap-1" : "items-center gap-1.5 px-1",
+      )}>
+        <div className={cn(
+          "grid shrink-0 place-items-center rounded-xl bg-sidebar-accent/60 text-sidebar-foreground ring-1 ring-sidebar-border/60",
+          collapsed ? "h-10 w-10" : "h-9 w-9",
+        )}>
+          <CareFlowMark size={collapsed ? 22 : 20} />
         </div>
         {!collapsed && (
           <div className="min-w-0 flex-1">
@@ -888,7 +894,10 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           type="button"
           onClick={() => setCollapsed(c => !c)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className={cn(
+            "hidden lg:grid place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            collapsed ? "h-10 w-10" : "h-7 w-7",
+          )}
         >
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
         </button>}
