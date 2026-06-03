@@ -10,7 +10,6 @@ import { WorkspaceLayoutProvider } from "@/components/workspace/useWorkspaceLayo
 import "@/lib/theme-preset";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { InlineTagPreviewLayer } from "@/components/tags/InlineTagPreviewLayer";
-import Dashboard from "./pages/Dashboard";
 import { IndexRedirect } from "@/components/auth/IndexRedirect";
 import Today from "./pages/Today";
 import Week from "./pages/Week";
