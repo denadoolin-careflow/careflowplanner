@@ -45,6 +45,8 @@ import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap } fr
 import type { WeatherCondition } from "@/lib/weather";
 import { DayDetailExtras } from "@/components/calendar/DayDetailExtras";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
+import { getTransitsForDate } from "@/lib/transits";
+import { useTransitsEnabled } from "@/lib/astrology-prefs";
 
 function MonthWxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-2.5 w-2.5 sm:h-3 sm:w-3", className);
@@ -67,6 +69,7 @@ export default function Month() {
   const { state, updateTask, updateAppointment, toggleTask } = useStore();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const transitsOn = useTransitsEnabled();
   const { settings: cycleSettings, periods: cyclePeriods } = useCycle();
   const [cursor, setCursor] = useState(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
@@ -262,6 +265,9 @@ export default function Month() {
               const dayPhase = getMoonPhase(d);
               const keyPhase = isKeyPhaseDay(dayPhase) ? getKeyPhaseInfo(dayPhase) : null;
               const wx = wxDays?.find(w => w.date === k) ?? null;
+              const transits = transitsOn && inMonth
+                ? getTransitsForDate(d).filter(t => t.kind === "ingress" || t.kind === "retrograde" || t.kind === "voc")
+                : [];
               return (
                 <div
                   key={k}
@@ -364,6 +370,25 @@ export default function Month() {
                           {wx.precip >= 40 && <span className="hidden text-primary tabular-nums sm:inline">{wx.precip}%</span>}
                         </span>
                       )}
+                    </div>
+                  )}
+                  {inMonth && transits.length > 0 && (
+                    <div className="mt-0.5 flex flex-wrap items-center gap-0.5 text-[9px] leading-none sm:text-[10px]">
+                      {transits.slice(0, 3).map(t => (
+                        <span
+                          key={t.id}
+                          title={t.detail}
+                          aria-label={t.label}
+                          className={cn(
+                            "rounded px-0.5 tabular-nums",
+                            t.tone === "warn" && "text-amber-600 dark:text-amber-400",
+                            t.tone === "rest" && "text-muted-foreground",
+                            t.tone === "soft" && "text-foreground/70",
+                          )}
+                        >
+                          {t.glyph}
+                        </span>
+                      ))}
                     </div>
                   )}
                   {/* Mobile (<md): dot row indicator, max 4 dots */}

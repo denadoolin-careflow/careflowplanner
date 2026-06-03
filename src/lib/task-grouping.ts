@@ -1,6 +1,7 @@
 import type { Task, Priority, Project } from "./types";
 import { todayISO } from "./store";
 import { formatRelativeDate } from "./date-format";
+import { getEnergyFor, ENERGY_RANK, type Energy } from "./energy-store";
 
 export type GroupMode = "none" | "project" | "area" | "priority" | "date" | "energy" | "status" | "tag" | "dayPart";
 export type SortMode = "manual" | "date" | "priority" | "title" | "created" | "updated" | "energy" | "estMinutes" | "project";
@@ -12,6 +13,8 @@ export type FilterState = {
   tags?: string[];
   goalIds?: string[];
   dueRange?: "any" | "overdue" | "today" | "week" | "month" | "none";
+  /** When true, hide tasks heavier than the user's reported energy for today. */
+  matchEnergy?: boolean;
 };
 
 const PRIO: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
@@ -20,12 +23,21 @@ const ENERGY: Record<string, number> = { high: 0, medium: 1, low: 2 };
 export function applyFilters(list: Task[], f: FilterState): Task[] {
   if (!f) return list;
   const today = todayISO();
+  const energy: Energy | null = f.matchEnergy ? (getEnergyFor(today) ?? "medium") : null;
+  const energyCap = energy ? ENERGY_RANK[energy] : 0;
+  const heavyMinutes = energy === "low" ? 30 : energy === "medium" ? 60 : Infinity;
   return list.filter(t => {
     if (f.areas?.length && !f.areas.includes(t.area)) return false;
     if (f.projectIds?.length && !(t.projectId && f.projectIds.includes(t.projectId))) return false;
     if (f.priorities?.length && !f.priorities.includes(t.priority)) return false;
     if (f.goalIds?.length && !(t.goalId && f.goalIds.includes(t.goalId))) return false;
     if (f.tags?.length && !(t.tags?.some(tag => f.tags!.includes(tag)))) return false;
+    if (energy) {
+      // Hide tasks tagged with a heavier energy than today's level.
+      if (t.energy && ENERGY_RANK[t.energy as Energy] > energyCap) return false;
+      // Hide long tasks when energy is limited.
+      if ((t.estMinutes ?? 0) > heavyMinutes) return false;
+    }
     if (f.dueRange && f.dueRange !== "any") {
       const d = t.dueDate;
       if (f.dueRange === "none" && d) return false;

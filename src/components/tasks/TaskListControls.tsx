@@ -6,6 +6,9 @@ import { useStore } from "@/lib/store";
 import { AREAS } from "@/lib/types";
 import type { Priority } from "@/lib/types";
 import { loadPrefs, savePrefs, type TaskListPrefs, type GroupMode, type SortMode, type FilterState } from "@/lib/task-grouping";
+import { useDayEnergy } from "@/lib/energy-store";
+import { format } from "date-fns";
+import { Zap } from "lucide-react";
 
 const GROUP_LABEL: Record<GroupMode, string> = {
   none: "None", project: "Project", area: "Area", priority: "Priority", date: "Date", energy: "Energy", status: "Status", tag: "Tag", dayPart: "Time of day",
@@ -32,6 +35,9 @@ export function TaskListControls({ prefs, onChange }: { prefs: TaskListPrefs; on
   const { state } = useStore();
   const projects = state.projects ?? [];
   const f = prefs.filter;
+  const todayISO = format(new Date(), "yyyy-MM-dd");
+  const [energy] = useDayEnergy(todayISO);
+  const matchOn = !!f.matchEnergy;
   const activeFilters =
     (f.areas?.length ?? 0) +
     (f.projectIds?.length ?? 0) +
@@ -47,6 +53,16 @@ export function TaskListControls({ prefs, onChange }: { prefs: TaskListPrefs; on
 
   return (
     <div className="flex flex-wrap items-center gap-1">
+      <Button
+        variant={matchOn ? "default" : "ghost"}
+        size="sm"
+        className="gap-1.5 text-xs"
+        onClick={() => onChange({ filter: { matchEnergy: !matchOn } })}
+        title={matchOn ? `Showing tasks that match your ${energy} energy` : "Match my energy"}
+      >
+        <Zap className="h-3.5 w-3.5" />
+        {matchOn ? `Match: ${energy}` : "Match energy"}
+      </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
