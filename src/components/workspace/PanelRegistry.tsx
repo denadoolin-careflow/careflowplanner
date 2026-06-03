@@ -1,9 +1,10 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
-import { Inbox, FolderOpen, Target, Compass, CalendarDays, NotebookPen, CalendarRange, UtensilsCrossed, BookHeart, Repeat, Timer } from "lucide-react";
+import { Inbox, FolderOpen, Target, Compass, CalendarDays, NotebookPen, CalendarRange, UtensilsCrossed, BookHeart, Repeat, Timer, Sun, Calendar } from "lucide-react";
 
 export type PanelId =
   | "inbox" | "projects" | "goals" | "areas"
-  | "calendar" | "notes" | "agenda" | "meals" | "journal" | "routines" | "focus";
+  | "calendar" | "notes" | "agenda" | "meals" | "journal" | "routines" | "focus"
+  | "today" | "week" | "month" | "year";
 
 export interface PanelDef {
   id: PanelId;
@@ -25,6 +26,10 @@ export const PANELS: Record<PanelId, PanelDef> = {
   journal:  { id: "journal",  title: "Journal",  icon: BookHeart,       component: lazy(() => import("@/pages/Journal")) },
   routines: { id: "routines", title: "Routines", icon: Repeat,          component: lazy(() => import("@/pages/Routines")) },
   focus:    { id: "focus",    title: "Focus",    icon: Timer,           component: lazy(() => import("@/pages/PomodoroPicker")) },
+  today:    { id: "today",    title: "Today",    icon: Sun,             component: lazy(() => import("@/pages/Today")) },
+  week:     { id: "week",     title: "Week",     icon: CalendarRange,   component: lazy(() => import("@/pages/Week")) },
+  month:    { id: "month",    title: "Month",    icon: CalendarDays,    component: lazy(() => import("@/pages/Month")) },
+  year:     { id: "year",     title: "Year",     icon: Calendar,        component: lazy(() => import("@/pages/Year")) },
 };
 
 export const PANEL_BY_ROUTE: Record<string, PanelId> = {
@@ -39,4 +44,8 @@ export const PANEL_BY_ROUTE: Record<string, PanelId> = {
   "/journal": "journal",
   "/routines": "routines",
   "/focus": "focus",
+  "/today": "today",
+  "/week": "week",
+  "/month": "month",
+  "/year": "year",
 };
