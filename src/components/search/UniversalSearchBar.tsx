@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ShoppingBasket, Plus, Mic } from "lucide-react";
+import { Search, ShoppingBasket, Plus, Mic, Tag as TagIcon } from "lucide-react";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator,
 } from "@/components/ui/command";
@@ -9,6 +9,10 @@ import { useStore } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
+import { useTags } from "@/hooks/use-tags";
+import { getTopTags } from "@/lib/tags";
+import { tagIconFor } from "@/components/tags/tag-icon";
+import { readableTextOn } from "@/lib/tags";
 
 type NoteHit = { id: string; title: string; body: string };
 
@@ -19,6 +23,11 @@ export function UniversalSearchBar() {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const { state, addGrocery } = useStore();
   const navigate = useNavigate();
+  const { tags } = useTags();
+  const recentTags = useMemo(
+    () => getTopTags(tags, (state.tasks ?? []) as any, 5),
+    [tags, state.tasks],
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -92,6 +101,30 @@ export function UniversalSearchBar() {
         <CommandInput placeholder="Search tasks, notes, projects, events, meals…" value={q} onValueChange={setQ} />
         <CommandList>
           <CommandEmpty>{term ? "Nothing found." : "Type to search across everything."}</CommandEmpty>
+
+          {!term && recentTags.length > 0 && (
+            <CommandGroup heading="Recent tags">
+              {recentTags.map(t => {
+                const Icon = tagIconFor(t.icon);
+                return (
+                  <CommandItem
+                    key={`tag-${t.id}`}
+                    value={`tag-${t.id}-${t.name}`}
+                    onSelect={() => go(`/tags/${encodeURIComponent(t.name)}`)}
+                  >
+                    <span
+                      className="mr-2 grid h-5 w-5 place-items-center rounded-full"
+                      style={{ backgroundColor: t.color, color: readableTextOn(t.color) }}
+                    >
+                      <Icon className="h-3 w-3" />
+                    </span>
+                    <span className="truncate">{t.name}</span>
+                    <TagIcon className="ml-auto h-3.5 w-3.5 opacity-50" />
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          )}
 
           <CommandGroup heading="Capture">
             <CommandItem
