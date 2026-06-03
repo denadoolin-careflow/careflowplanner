@@ -632,8 +632,6 @@
 }
 
 /* TipTap block editor */
-@import "tippy.js/dist/tippy.css";
-@import "tippy.js/themes/light-border.css";
 .block-editor .tippy-box[data-theme~='light-border'] { background: hsl(var(--popover)); color: hsl(var(--popover-foreground)); border-color: hsl(var(--border)); }
 .block-editor .ProseMirror { outline: none; }
 .block-editor .ProseMirror p.is-editor-empty:first-child::before {
