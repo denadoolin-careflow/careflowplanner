@@ -37,6 +37,8 @@ interface Suggestion {
 }
 
 export default function Inbox() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <MobileInbox />;
   return (
     <TaskSelectionProvider storageKey="inbox">
       <InboxInner />
