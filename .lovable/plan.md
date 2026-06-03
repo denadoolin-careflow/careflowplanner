@@ -1,40 +1,33 @@
-## Sidebar header + Inbox controls polish
+## CareFlow gradient line logo
 
-### 1. Sidebar brand block (fix overlap, new logo + tagline)
-- File: `src/components/layout/Sidebar.tsx` (header at ~L776–L785) and a new `src/components/widgets/CareFlowMark.tsx`.
-- Replace the heart-in-gradient chip with a new line-style SVG mark (`CareFlowMark`): crescent enclosing a small calendar grid with a heart inside, drawn with `stroke="currentColor"`, no fills, ~1.5 stroke width. Uses semantic tokens so it inherits atmosphere/light/dark colors.
-- Brand text becomes:
-  - Title: `CareFlow` (font-display, leading-none)
-  - Tagline: `Care · Plan · Grow` (text-[10px] uppercase tracking-[0.18em] text-muted-foreground)
-- Fix overlap with the 3 header buttons (theme/side/sections):
-  - Wrap brand in `min-w-0 flex-1` with `truncate`.
-  - When sidebar width < ~232px, hide the action row (CSS via `@container` or a `useEffect` width measurement against existing `width` state) so the brand never gets clipped.
-  - Reduce icon button size to `h-6 w-6` and gap to `gap-0.5` when narrow.
+Replace the current `CareFlowMark` with a single SVG that mirrors the uploaded reference — a circular yin-yang frame holding a calendar with heart on one side and a caregiver-with-heart cradled by a leafy sprig on the other — drawn as pure line work with a gradient stroke that adapts to the active theme and atmosphere.
 
-### 2. Inbox-only header cleanup
-- File: `src/components/layout/AppLayout.tsx`.
-- Add `const onInbox = pathname === "/inbox"`.
-- Conditionally hide on `/inbox`:
-  - `<MobileSidebarTrigger />` (hamburger)
-  - `<UniversalSearchBar />` (search)
-  - `<ThemeToggle />` (day/night)
-- All other pages unaffected. Mobile bottom-sheet inbox header (in `Inbox.tsx`) is untouched per scope.
+### 1. Rebuild `src/components/widgets/CareFlowMark.tsx`
+- Output a 48×48 `viewBox="0 0 48 48"` SVG, `fill="none"`, `strokeLinecap="round"`, `strokeLinejoin="round"`, default `strokeWidth={1.4}`.
+- Define a per-instance `<linearGradient>` (`id` suffixed with `useId()` to avoid collisions) with stops:
+  - `0%`  → `hsl(var(--primary))`
+  - `55%` → `hsl(var(--accent, var(--primary)))`
+  - `100%` → `hsl(var(--primary-glow, var(--primary)))`
+- All strokes use `stroke="url(#gradId)"`. Because the stops reference semantic HSL tokens, the gradient automatically retints on light/dark and every atmosphere preset (sage, dusk, ocean, sunset, etc.) without per-theme code.
+- Compose the mark from these line elements (matches the reference silhouette):
+  1. Outer circle `cx=24 cy=24 r=21`.
+  2. S-curve yin-yang divider `M24 3 C 14 12 34 24 24 45` plus the two enclosing arc lobes.
+  3. Left lobe: small calendar — rounded rect (`x=10 y=15 w=14 h=12 rx=2`), two hanger ticks, top rule line, and a tiny heart glyph centered in the grid.
+  4. Leafy sprig under the calendar: a gentle stem path with 4 alternating leaf ovals.
+  5. Right lobe: caregiver silhouette — head circle + shoulders arc cradling an inner heart.
+- Keep the existing exported API: `{ className?, size?, strokeWidth? }`. Add an optional `gradient?: boolean` (default `true`); when `false`, fall back to `stroke="currentColor"` for monochrome contexts (favicons, print).
+- Wrap in a `<span>`-free pure `<svg>` so callers' layout (`Sidebar.tsx` brand block) is unchanged.
 
-### 3. Dropdown picker icons on Inbox controls
-- File: `src/components/tasks/TaskListControls.tsx` (the Group/Filter/Sort menus rendered in Inbox header).
-- Add Lucide icons next to each `DropdownMenuItem`:
-  - Group: `Layers`, `Folder`, `Flag`, `CalendarDays`, `Tag`, `Slash` (none)
-  - Filter: `Filter`, `Star`, `Tag`, `Flag`, `CircleDot`
-  - Sort: `ArrowUpAZ`, `Calendar`, `Flag`, `Clock`, with direction arrow
-- Icons sized `h-3.5 w-3.5 text-muted-foreground`, leading the label. Trigger buttons already show their lead icon; ensure the visible value (e.g. "Group: None") also includes its current icon.
+### 2. Favicon
+- Add `public/careflow-mark.svg` containing the same paths but with `stroke="currentColor"` and a hard-coded gradient using the default rose-dawn primary stops, so it renders nicely against any browser chrome.
+- Update `index.html` to add `<link rel="icon" type="image/svg+xml" href="/careflow-mark.svg" />` just below the existing `apple-touch-icon` line. Leave the apple-touch-icon untouched.
 
-### 4. Recent (top-5) tags in pickers
-- New helper in `src/lib/tags.ts`: `getTopTags(tags, tasks, notes, n=5)` — counts tag references across `tasks[].tags` and `notes` body/tags; returns the top N by usage, falling back to most-recent `createdAt` ties.
-- File: `src/components/tags/TagPicker.tsx` — when the popover opens with an empty query, render a "Recent" section above the full list showing those top 5 (with `tagIconFor` icon, count badge muted). Selecting one behaves like the existing tag click.
-- File: `src/components/search/UniversalSearchBar.tsx` — in the empty-query state of the search results dropdown, add a "Recent tags" row of up to 5 chips; each navigates to `/tags/<name>` like the existing tag results.
+### 3. No other call sites change
+- `Sidebar.tsx` already renders `<CareFlowMark className="text-sidebar-primary" />`; the new gradient ignores `currentColor` for strokes but still inherits sizing/spacing. The previous `text-sidebar-primary` class becomes a no-op for color but is harmless — leave as-is to keep diff minimal.
+- No other files import the mark (confirmed via `rg`).
 
 ### Technical notes
-- New `CareFlowMark` uses only `stroke="currentColor"` and `fill="none"` so it inherits `text-sidebar-foreground`/atmosphere tints automatically.
-- Width-aware hiding in the sidebar uses the existing measured `width` state already in `Sidebar.tsx` (no new listeners).
-- No backend / store schema changes. `getTopTags` is a pure derivation memoized with `useMemo` at call sites.
-- All icons from `lucide-react`; no new dependencies.
+- `useId()` from React 18 guarantees unique gradient `id`s when multiple marks render on one page (sidebar + future landing hero).
+- Gradient stops use `hsl(var(--token))` directly in SVG `stop-color` — supported in all modern browsers and re-reads the token whenever the `data-theme` attribute or `.dark` class flips, so atmosphere changes are live without remount.
+- `--accent` and `--primary-glow` may not exist in every preset; the `var(--accent, var(--primary))` fallback chain guarantees a valid color.
+- No new dependencies. No backend changes.
