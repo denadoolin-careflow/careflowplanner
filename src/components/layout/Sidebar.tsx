@@ -913,14 +913,12 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
               className={({ isActive }) => cn(
                 "group relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
                 "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                collapsed ? "justify-center h-10 w-10 mx-auto" : "px-2 py-2",
+                collapsed ? "justify-center h-10 w-10" : "px-2 py-2",
                 isActive && "bg-primary-soft text-foreground shadow-soft",
               )}
             >
               {collapsed ? (
-                <span className={cn("grid h-7 w-7 place-items-center rounded-lg", tint)}>
-                  <Icon className="h-4 w-4" />
-                </span>
+                <Icon className="h-[18px] w-[18px]" />
               ) : (
                 <>
                   <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-lg", tint)}>
