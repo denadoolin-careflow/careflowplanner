@@ -14,6 +14,8 @@ import { Check, Pencil, Trash2 } from "lucide-react";
 import { haptics } from "@/lib/haptics";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { toast } from "sonner";
+import { useRef, useState } from "react";
+import { MobileTaskSheet } from "./MobileTaskSheet";
 
 const DOTS: Record<Task["priority"], number> = { low: 0, medium: 1, high: 2 };
 
@@ -31,6 +33,11 @@ function dueLabel(d?: string) {
 export function MobileTaskCard({ task }: { task: Task }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
   const navigate = useNavigate();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const lpTimer = useRef<number | null>(null);
+  const lpStart = useRef<{ x: number; y: number } | null>(null);
+  const lpMoved = useRef(false);
+  const lpFired = useRef(false);
   const proj = task.projectId ? state.projects?.find(p => p.id === task.projectId) : undefined;
   const dl = dueLabel(task.dueDate);
   const dueClass = (() => {
@@ -87,7 +94,30 @@ export function MobileTaskCard({ task }: { task: Task }) {
   const card = (
     <button
       type="button"
-      onClick={() => navigate(`/tasks/${task.id}`)}
+      onClick={() => { if (lpFired.current) { lpFired.current = false; return; } navigate(`/tasks/${task.id}`); }}
+      onPointerDown={(e) => {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        if (lpTimer.current) window.clearTimeout(lpTimer.current);
+        lpStart.current = { x: e.clientX, y: e.clientY };
+        lpMoved.current = false;
+        lpFired.current = false;
+        lpTimer.current = window.setTimeout(() => {
+          if (lpMoved.current) return;
+          lpFired.current = true;
+          haptics.pickup?.();
+          setSheetOpen(true);
+        }, 500);
+      }}
+      onPointerMove={(e) => {
+        if (!lpStart.current || !lpTimer.current) return;
+        if (Math.hypot(e.clientX - lpStart.current.x, e.clientY - lpStart.current.y) > 8) {
+          lpMoved.current = true;
+          window.clearTimeout(lpTimer.current); lpTimer.current = null;
+        }
+      }}
+      onPointerUp={() => { if (lpTimer.current) { window.clearTimeout(lpTimer.current); lpTimer.current = null; } }}
+      onPointerCancel={() => { if (lpTimer.current) { window.clearTimeout(lpTimer.current); lpTimer.current = null; } }}
+      onContextMenu={(e) => { e.preventDefault(); lpFired.current = true; haptics.pickup?.(); setSheetOpen(true); }}
       className="cf-card w-full text-left p-4 active:scale-[0.995] transition-transform"
     >
       <div className="flex items-start gap-3">
@@ -147,6 +177,7 @@ export function MobileTaskCard({ task }: { task: Task }) {
   );
 
   return (
+    <>
     <SwipeableList type={SwipeType.IOS} fullSwipe={false} threshold={0.25} className="!bg-transparent">
       <SwipeableListItem
         leadingActions={leading}
@@ -157,5 +188,7 @@ export function MobileTaskCard({ task }: { task: Task }) {
         {card}
       </SwipeableListItem>
     </SwipeableList>
+    <MobileTaskSheet task={task} open={sheetOpen} onOpenChange={setSheetOpen} />
+    </>
   );
 }
