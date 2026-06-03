@@ -37,6 +37,7 @@ export function AppLayout() {
   useEffect(() => { applyAnimIntensity(readAnimIntensity()); applyFontPrefs(); installGlobalHaptics(); }, []);
   useEffect(() => { applyFontPrefs(); }, [atmoId]);
   const reduceMotion = useReducedMotion();
+  const onInbox = pathname === "/inbox";
 
   return (
     <div className="min-h-screen w-full gradient-dawn">
@@ -46,7 +47,7 @@ export function AppLayout() {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-border/50 bg-background/70 px-3 py-2 backdrop-blur-md sm:gap-3 sm:px-4 sm:py-3 lg:px-8">
             <div className="flex min-w-0 items-center gap-2">
-              <MobileSidebarTrigger />
+              {!onInbox && <MobileSidebarTrigger />}
               <div className="min-w-0">
                 <p className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:block">CareFlow</p>
                 <h1 className="font-display text-base font-semibold leading-tight sm:text-2xl">{current.label}</h1>
@@ -54,7 +55,7 @@ export function AppLayout() {
             </div>
             {/* Mobile: keep only search + theme. Secondary actions live in sidebar / bottom-nav "More". */}
             <div className="flex items-center gap-1 sm:gap-3">
-              <UniversalSearchBar />
+              {!onInbox && <UniversalSearchBar />}
               <div className="hidden items-center gap-2 sm:flex sm:gap-3">
                 <NotificationCenter />
                 <PanelPicker />
@@ -77,7 +78,7 @@ export function AppLayout() {
                 </Tooltip>
                 <AtmospherePicker />
               </div>
-              <ThemeToggle />
+              {!onInbox && <ThemeToggle />}
             </div>
           </header>
           <RoutinesStrip />
