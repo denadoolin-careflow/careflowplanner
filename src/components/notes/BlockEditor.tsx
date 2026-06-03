@@ -523,6 +523,29 @@ export function BlockEditor({
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
   const promoteRef = useRef<() => void>(() => {});
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+
+  const insertImage = useCallback(async (file: File) => {
+    const tid = toast.loading("Uploading image…");
+    try {
+      const url = await uploadNoteImage(file);
+      const ed = (window as any).__cfEditorRef as Editor | undefined;
+      // Use ref via closure below
+      void ed;
+      // editor is in scope via closure; defined just below
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      editor?.chain().focus().setImage({ src: url, alt: file.name }).run();
+      toast.success("Image added", { id: tid });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed", { id: tid });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const triggerImageUpload = useCallback(() => {
+    imageInputRef.current?.click();
+  }, []);
 
   // Union of registered tag names and orphan tag names across data,
   // so the `#` autocomplete surfaces everything the user has ever used.
