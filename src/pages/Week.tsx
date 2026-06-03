@@ -25,6 +25,7 @@ import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-pre
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { WeekRhythmRow } from "@/components/rhythm/WeekRhythmRow";
+import { WeekTransitStrip } from "@/components/rhythm/WeekTransitStrip";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 import { Link } from "react-router-dom";
 import { Flower2 } from "lucide-react";
@@ -147,6 +148,7 @@ export default function Week() {
         </div>
 
         <RhythmJournalPrompt date={start} scope="weekly" />
+        <WeekTransitStrip weekStart={start} />
 
         {layout === "plan" ? (
           <WeekPlanningDashboard weekStart={start} onJumpToDay={(d) => { setStart(startOfWeek(d, { weekStartsOn: 1 })); setLayout("grid"); }} />
