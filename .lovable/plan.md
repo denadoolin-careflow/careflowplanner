@@ -1,48 +1,65 @@
-# Composer pills — searchable & expanded
+# Beautiful note editor with images (Notion/Craft style)
 
-The inbox "capture" appears in two places:
-- Desktop/tablet: `InlineTaskComposer` (already has Date, Project, Area, Energy, Tag, Time-estimate pills).
-- Mobile: `MobileCaptureCard` (has only Date, Project, Area as plain lists; no NLP).
+## 1. Image support
 
-Both will get the same treatment.
+**New public storage bucket `note-images`** (created via storage tool, not SQL).
+RLS policies (migration) on `storage.objects` restrict uploads/updates/deletes to the owner's `{uid}/...` folder; public read is implicit since the bucket is public.
 
-## Changes
+**Tiptap image extension**:
+- Add `@tiptap/extension-image` dependency.
+- Wire it into `BlockEditor` with `inline: false`, `allowBase64: false`.
+- Add an upload helper `uploadNoteImage(file)` in a new `src/lib/note-images.ts` that uploads to `note-images/{uid}/{uuid}-{name}` and returns the public URL.
 
-### `src/components/tasks/InlineTaskComposer.tsx`
+**Three ways to add an image:**
+1. Slash command `/image` → opens hidden `<input type="file" accept="image/*">`.
+2. Toolbar "Image" button (in main sticky toolbar) — same trigger.
+3. Drag-and-drop / paste — `editorProps.handlePaste` and `handleDrop` intercept image files, upload, then insert via `editor.chain().setImage({ src }).run()`.
 
-1. **Date pill — add presets + searchable list.**
-   Replace the preset button list inside the date popover with a `Command` palette listing:
-   - Today
-   - Tomorrow
-   - This weekend (next Saturday)
-   - Next week (next Monday)
-   - Next month (`addMonths(today, 1)`)
-   - In 2 weeks
-   Each shows the resolved date as a right-aligned hint. `CommandInput` placeholder: "Find a date…". `CommandEmpty` lets user type any natural date (kept simple: tells them to use the calendar). Calendar stays below.
+**Inline image rendering:**
+- Custom image render via `addNodeView` is overkill — instead use a small CSS pass: rounded corners, soft shadow, max-w-full, mx-auto, mt-3 mb-3, hover ring.
+- BubbleMenu when an image is selected → "Remove" and "Open original" buttons.
 
-2. **Project pill — keep `Command`, add a "No project" entry** at the top so the user can clear via search.
+Markdown round-trip: turndown already serializes `<img>` to `![](url)`; `marked` parses it back. Existing `bodyToHtml`/`htmlToMarkdown` work as-is.
 
-3. **Area pill — keep `Command`, add a "No area" entry** at the top.
+## 2. Cover image
 
-4. **NEW Priority pill.**
-   New popover with `Command` list: Low / Medium / High / Clear. Wire to `priority` state, default `undefined`. Pass to `addTask` overriding NLP when set. Icon: `Flag`. Colored dot per level (green/amber/rose).
+**Add `cover_url text` column to `public.notes`** (migration). Update `Note` interface, `fromRow`, and `updateNote` to handle `coverUrl`.
 
-5. **NEW Time of Day pill.**
-   New popover with `Command` list: Morning / Afternoon / Evening / Late Night / Clear. Wire to `dayPart` state (`DayPart`). Pass to `addTask`. Icon: `Sun`. (Distinct from the existing Time-estimate "Time" pill — relabel that pill to "Est" to avoid confusion.)
+In `NoteDetail`:
+- Above the title, render a 160-220px cover area.
+  - If `cover_url` set: full-bleed `<img>` with subtle gradient fade-to-card at the bottom.
+  - Else: a subtle "Add cover" button that fades in on header hover.
+- "Change cover" / "Remove cover" controls overlay the cover on hover.
+- Reuse `uploadNoteImage` for the cover too.
 
-6. **Tag pill — search already present in `TagPicker`**, no change.
+## 3. Editor UX/UI polish — Notion/Craft feel
 
-### `src/components/tasks/mobile/MobileCaptureCard.tsx`
+`NoteDetail.tsx`:
+- Drop `cozy-card` wrapper; use a clean centered page (max-w-[760px], mx-auto, px-6 md:px-10, py-8) with no border, just background.
+- Cover above title; title input becomes larger (text-4xl md:text-5xl), tighter leading, no border.
+- Meta row (updated time + tags) gets a single soft row beneath the title.
+- Hide right TOC into a slim floating panel that auto-hides when narrow (`hidden 2xl:block`), Craft-style.
 
-Bring it to parity with the desktop composer (lighter weight):
-- Date popover: same `Command` preset list above the `Calendar`.
-- Project popover: replace plain button list with `Command` (searchable, "None" entry).
-- Area popover: replace plain button list with `Command` (searchable, "None" entry).
-- Add the same NEW Priority and Time-of-Day pills (icons + small `Command` lists).
-- Add a Tag pill backed by the existing `TagPicker`.
-- Wire `priority`, `dayPart`, and `tags` into the `addTask` payload.
+`BlockEditor.tsx`:
+- Sticky toolbar: round it more (rounded-2xl), reduce height, give it a stronger blur, only appear on scroll / focus (already sticky — tighten styling only).
+- Slash menu items: group into sections (Basic / Media / Embeds / Advanced), bigger icon tile, secondary description line on hover.
+- BubbleMenu: tighter spacing, pill segments separated by hairlines.
+- `prose` tweaks via existing `block-editor` CSS class: tighter paragraph leading (1.65), more breathing space around H1/H2, refined `:focus` caret color (already themed).
+- Placeholder text refined to "Type ‘/’ for blocks, ‘@’ to mention, drag an image…".
+- Add subtle drag-over highlight on the editor surface (`drag-active:ring-2 ring-primary/40`) using state + handleDOMEvents.
+
+No changes to suggestion plumbing, hashtag plugin, toggle keymap, AI button, links sidebar, or backlinks behavior.
+
+## 4. Files touched
+
+- `package.json` — add `@tiptap/extension-image`.
+- `src/lib/note-images.ts` — new upload helper.
+- `src/lib/notes.ts` — add `coverUrl`, persist via `updateNote`.
+- `src/components/notes/BlockEditor.tsx` — image extension, slash item, toolbar button, paste/drop, drag-over highlight, slash-menu grouping, minor toolbar/bubble styling.
+- `src/pages/NoteDetail.tsx` — cover image, refreshed layout/typography.
+- `src/index.css` (or existing `block-editor` styles) — image styling, cover gradient, drag-over ring, tightened prose.
+- 1 migration: add `cover_url` column + storage RLS for `note-images`.
+- 1 storage tool call: create `note-images` public bucket.
 
 ## Out of scope
-- No backend/types changes; `priority` and `dayPart` already exist on `Task`.
-- No changes to NLP parsing; explicit pill selections still override parsed values.
-- No restyling of the chip row beyond adding two more pills.
+- No embeds (YouTube/Twitter), no tables, no full-text search changes, no AI image generation, no comment threads. Daily notes get the same cover/image treatment automatically.

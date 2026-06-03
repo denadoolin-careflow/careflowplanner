@@ -32,10 +32,12 @@ import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import tippy, { Instance as TippyInstance } from "tippy.js";
 import { marked } from "marked";
 import TurndownService from "turndown";
+import Image from "@tiptap/extension-image";
+import { uploadNoteImage } from "@/lib/note-images";
 import {
   Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
-  ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus,
+  ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus, Image as ImageIcon,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
@@ -273,7 +275,7 @@ function ToolbarButton({ active, onClick, label, children }: { active?: boolean;
   );
 }
 
-function Toolbar({ editor, onPromoteTask }: { editor: Editor; onPromoteTask: () => void }) {
+function Toolbar({ editor, onPromoteTask, onInsertImage }: { editor: Editor; onPromoteTask: () => void; onInsertImage: () => void }) {
   if (!editor) return null;
   const setLink = () => {
     const previous = editor.getAttributes("link").href;
@@ -297,6 +299,7 @@ function Toolbar({ editor, onPromoteTask }: { editor: Editor; onPromoteTask: () 
       <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-4 w-4" /></ToolbarButton>
       <ColorPickerPopover editor={editor} />
       <ToolbarButton active={editor.isActive("link")} onClick={setLink} label="Link"><LinkIcon className="h-4 w-4" /></ToolbarButton>
+      <ToolbarButton onClick={onInsertImage} label="Insert image"><ImageIcon className="h-4 w-4" /></ToolbarButton>
       <span className="mx-1 h-5 w-px bg-border" />
       <ToolbarButton active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} label="Bullet list"><List className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} label="Numbered list"><ListOrdered className="h-4 w-4" /></ToolbarButton>
@@ -521,6 +524,24 @@ export function BlockEditor({
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
   const promoteRef = useRef<() => void>(() => {});
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const editorRef = useRef<Editor | null>(null);
+
+  const uploadAndInsert = useCallback(async (file: File) => {
+    const tid = toast.loading("Uploading image…");
+    try {
+      const url = await uploadNoteImage(file);
+      editorRef.current?.chain().focus().setImage({ src: url, alt: file.name }).run();
+      toast.success("Image added", { id: tid });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed", { id: tid });
+    }
+  }, []);
+
+  const triggerImageUpload = useCallback(() => {
+    imageInputRef.current?.click();
+  }, []);
 
   // Union of registered tag names and orphan tag names across data,
   // so the `#` autocomplete surfaces everything the user has ever used.
@@ -568,32 +589,44 @@ export function BlockEditor({
         pluginKey: new PluginKey("slashSuggestion"),
         getItems: (query) => {
           const q = query.toLowerCase();
-          const extra: SlashItem[] = [{
-            title: "Add to Tasks",
-            description: "Promote this checkbox to a Task (⌘⇧↵)",
-            icon: ListPlus,
-            keywords: ["task", "todo", "promote", "add", "send"],
-            command: () => promoteRef.current?.(),
-          }];
+          const extra: SlashItem[] = [
+            {
+              title: "Image",
+              description: "Upload from your device",
+              icon: ImageIcon,
+              keywords: ["image", "picture", "photo", "upload", "img"],
+              command: () => triggerImageUpload(),
+            },
+            {
+              title: "Add to Tasks",
+              description: "Promote this checkbox to a Task (⌘⇧↵)",
+              icon: ListPlus,
+              keywords: ["task", "todo", "promote", "add", "send"],
+              command: () => promoteRef.current?.(),
+            },
+          ];
           return [...slashItems(), ...extra].filter(i =>
             i.title.toLowerCase().includes(q) || (i.keywords ?? []).some(k => k.includes(q))
-          ).slice(0, 8);
+          ).slice(0, 10);
         },
         onSelect: (item, range, editor) => {
           editor.chain().focus().deleteRange(range).run();
           item.command(editor);
         },
         render: (item, active) => (
-          <span className="flex items-center gap-2">
-            <span className={cn("flex h-7 w-7 items-center justify-center rounded-md", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>
-              <item.icon className="h-3.5 w-3.5" />
+          <span className="flex items-center gap-2.5">
+            <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg border border-border/50", active ? "bg-primary/15 text-primary border-primary/30" : "bg-card text-foreground/80")}>
+              <item.icon className="h-4 w-4" />
             </span>
-            <span className="font-medium">{item.title}</span>
+            <span className="flex-1">
+              <span className="block font-medium leading-tight">{item.title}</span>
+              {item.description && <span className="block text-[11px] text-muted-foreground">{item.description}</span>}
+            </span>
           </span>
         ),
       })];
     },
-  }), []);
+  }), [triggerImageUpload]);
 
   /* --------------------------------------------------------------- */
   /*  Seamless toggle / bullet keymap                                */
@@ -810,6 +843,11 @@ export function BlockEditor({
       Details.configure({ persist: true, HTMLAttributes: { class: "cf-toggle" } }),
       DetailsSummary,
       DetailsContent,
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+        HTMLAttributes: { class: "cf-note-image" },
+      }),
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
@@ -824,6 +862,21 @@ export function BlockEditor({
     editorProps: {
       attributes: {
         class: "prose prose-sm max-w-none focus:outline-none min-h-[40vh] prose-headings:font-display prose-headings:font-semibold prose-a:text-primary dark:prose-invert",
+      },
+      handlePaste: (_view, event) => {
+        const files = Array.from(event.clipboardData?.files ?? []).filter(f => f.type.startsWith("image/"));
+        if (!files.length) return false;
+        event.preventDefault();
+        files.forEach(f => { void uploadAndInsert(f); });
+        return true;
+      },
+      handleDrop: (_view, event) => {
+        const dt = (event as DragEvent).dataTransfer;
+        const files = Array.from(dt?.files ?? []).filter(f => f.type.startsWith("image/"));
+        if (!files.length) return false;
+        event.preventDefault();
+        files.forEach(f => { void uploadAndInsert(f); });
+        return true;
       },
       handleClickOn: (_view, _pos, _node, _nodePos, event) => {
         const a = (event.target as HTMLElement | null)?.closest("a") as HTMLAnchorElement | null;
@@ -848,6 +901,7 @@ export function BlockEditor({
   // Sync external body changes (e.g. AI replace) without losing focus
   useEffect(() => {
     if (!editor) return;
+    editorRef.current = editor;
     if (body === lastSyncedRef.current) return;
     lastSyncedRef.current = body;
     const next = bodyToHtml(body);
@@ -973,8 +1027,14 @@ export function BlockEditor({
   return (
     <div
       onClick={handleClick}
+      onDragEnter={(e) => { if (Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === "file")) { setDragActive(true); } }}
+      onDragOver={(e) => { if (Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === "file")) { e.preventDefault(); setDragActive(true); } }}
+      onDragLeave={(e) => { if (e.currentTarget === e.target) setDragActive(false); }}
+      onDrop={() => setDragActive(false)}
       className={cn(
         "block-editor",
+        "relative rounded-2xl transition",
+        dragActive && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background",
         `editor-theme-${prefs.theme}`,
         `editor-density-${prefs.density}`,
       )}
@@ -988,7 +1048,7 @@ export function BlockEditor({
         } : {}),
       } as React.CSSProperties}
     >
-      {editor && <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} />}
+      {editor && <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} onInsertImage={triggerImageUpload} />}
       {editor && (
         <BubbleMenu
           editor={editor}
@@ -1040,6 +1100,25 @@ export function BlockEditor({
         </BubbleMenu>
       )}
       <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          files.forEach(f => { void uploadAndInsert(f); });
+          e.target.value = "";
+        }}
+      />
+      {dragActive && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-primary/5 backdrop-blur-[2px]">
+          <div className="rounded-full border border-primary/40 bg-popover/95 px-4 py-2 text-sm font-medium text-primary shadow-lg">
+            Drop image to upload
+          </div>
+        </div>
+      )}
       {showFooter && (
         <WordCountFooter body={body} goal={goal ?? null} onGoalChange={onGoalChange} />
       )}
