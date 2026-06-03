@@ -534,6 +534,45 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const pqTerm = pquery.trim().toLowerCase();
   const filteredAreas = pqTerm ? areas.filter(a => a.name.toLowerCase().includes(pqTerm)) : areas;
   const filteredProjects = pqTerm ? projects.filter(p => p.name.toLowerCase().includes(pqTerm) || (p.areaName ?? "").toLowerCase().includes(pqTerm)) : [];
+  type SearchResult =
+    | { kind: "area"; id: string; name: string; icon?: string | null; color?: string | null; to: string }
+    | { kind: "project"; id: string; name: string; icon?: string | null; color?: string | null; areaName?: string; to: string };
+  const results: SearchResult[] = pqTerm
+    ? [
+        ...filteredAreas.map((a): SearchResult => ({
+          kind: "area", id: a.id, name: a.name, icon: a.icon, color: a.color,
+          to: `/areas/${encodeURIComponent(a.name)}`,
+        })),
+        ...filteredProjects.map((p): SearchResult => ({
+          kind: "project", id: p.id, name: p.name, icon: p.icon, color: p.color, areaName: p.areaName,
+          to: `/projects/${p.id}`,
+        })),
+      ]
+    : [];
+  const [activeIdx, setActiveIdx] = useState(0);
+  useEffect(() => { setActiveIdx(0); }, [pquery, results.length]);
+  const resultRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  useEffect(() => {
+    resultRefs.current[activeIdx]?.scrollIntoView({ block: "nearest" });
+  }, [activeIdx]);
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") { setPquery(""); return; }
+    if (results.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIdx(i => (i + 1) % results.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIdx(i => (i - 1 + results.length) % results.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const r = results[activeIdx];
+      if (!r) return;
+      navigate(r.to);
+      setPquery("");
+      onNavigate?.();
+    }
+  };
   const jumpToDay = (d: Date) => {
     const iso = format(d, "yyyy-MM-dd");
     navigate(`/today?date=${iso}`);
