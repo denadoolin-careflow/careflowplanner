@@ -76,6 +76,7 @@ export default function TaskDetail() {
   const [notes, setNotes] = useState(task?.notes ?? "");
   const [lastEdited, setLastEdited] = useState<Date | null>(null);
   const notesTimer = useRef<number | null>(null);
+  const [subDraft, setSubDraft] = useState("");
 
   useEffect(() => { setNotes(task?.notes ?? ""); }, [task?.id]);
 
@@ -104,7 +105,6 @@ export default function TaskDetail() {
     }, 500);
   };
 
-  const [subDraft, setSubDraft] = useState("");
   const addSub = async () => {
     const t = subDraft.trim(); if (!t) return;
     await addTask({ title: t, parentTaskId: task.id, area: task.area, priority: "medium" } as any);
