@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, Filter, Layers, X, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  ArrowUpDown, Filter, Layers, X, ArrowUp, ArrowDown,
+  Folder, Flag, CalendarDays, Tag as TagIcon, Slash, CircleDot,
+  Zap as EnergyIcon, Map, Clock as ClockIcon, Type, FilePlus, RefreshCcw,
+  ArrowUpAZ, ListChecks, Sun, Star, Hash,
+} from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AREAS } from "@/lib/types";
 import type { Priority } from "@/lib/types";
@@ -13,10 +18,25 @@ import { Zap } from "lucide-react";
 const GROUP_LABEL: Record<GroupMode, string> = {
   none: "None", project: "Project", area: "Area", priority: "Priority", date: "Date", energy: "Energy", status: "Status", tag: "Tag", dayPart: "Time of day",
 };
+const GROUP_ICON: Record<GroupMode, typeof Layers> = {
+  none: Slash, project: Folder, area: Map, priority: Flag, date: CalendarDays,
+  energy: EnergyIcon, status: ListChecks, tag: TagIcon, dayPart: Sun,
+};
 const SORT_LABEL: Record<SortMode, string> = {
   manual: "Manual", date: "Date", priority: "Priority", title: "Title", created: "Created", updated: "Updated", energy: "Energy", estMinutes: "Time", project: "Project",
 };
+const SORT_ICON: Record<SortMode, typeof Layers> = {
+  manual: Hash, date: CalendarDays, priority: Flag, title: Type,
+  created: FilePlus, updated: RefreshCcw, energy: EnergyIcon,
+  estMinutes: ClockIcon, project: Folder,
+};
 const DUE_LABEL: Record<string, string> = { any: "Any", overdue: "Overdue", today: "Today", week: "This week", month: "This month", none: "No date" };
+const DUE_ICON: Record<string, typeof Layers> = {
+  any: Slash, overdue: CircleDot, today: Sun, week: CalendarDays, month: CalendarDays, none: Slash,
+};
+const PRIORITY_ICON: Record<string, typeof Layers> = {
+  high: Flag, medium: Flag, low: Flag,
+};
 
 export function useTaskListPrefs(pageId: string): [TaskListPrefs, (p: Partial<TaskListPrefs>) => void] {
   const [prefs, setPrefs] = useState<TaskListPrefs>(() => loadPrefs(pageId));
