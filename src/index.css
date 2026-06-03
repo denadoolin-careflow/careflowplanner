@@ -253,6 +253,27 @@
   }
   .cozy-card { @apply transition-shadow duration-200; }
   .cozy-card:hover { box-shadow: var(--shadow-cozy); }
+  /* ===== CareFlow Mobile redesign helpers ===== */
+  .cf-card {
+    @apply rounded-[22px] bg-card border border-border/60;
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.03), 0 8px 24px -16px hsl(var(--foreground) / 0.10);
+  }
+  .cf-icon-tile {
+    @apply grid place-items-center rounded-full bg-primary/12 text-primary;
+    width: 38px; height: 38px;
+  }
+  .cf-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5 text-[12.5px] text-foreground/80;
+  }
+  .cf-chip-active {
+    @apply border-transparent bg-primary text-primary-foreground;
+  }
+  .cf-row {
+    @apply flex items-center gap-3 py-3 px-4;
+  }
+  .cf-row + .cf-row { border-top: 1px solid hsl(var(--border) / 0.6); }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
 /* ====== Theme presets — applied via data-theme on html.

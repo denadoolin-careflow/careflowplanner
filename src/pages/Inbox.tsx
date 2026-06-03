@@ -19,6 +19,13 @@ import { Link } from "react-router-dom";
 import { Tags as TagsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileCaptureCard } from "@/components/tasks/mobile/MobileCaptureCard";
+import { MobileFilterChips, type InboxFilter } from "@/components/tasks/mobile/MobileFilterChips";
+import { MobileTaskCard } from "@/components/tasks/mobile/MobileTaskCard";
+import { Menu, Search as SearchIcon, Moon, ChevronDown } from "lucide-react";
+import { useTheme } from "next-themes";
+import { isToday, isFuture, isPast, parseISO } from "date-fns";
 
 interface Suggestion {
   task_id: string;
@@ -40,6 +47,8 @@ export default function Inbox() {
 
 function InboxInner() {
   const { state, updateTask } = useStore();
+  const isMobile = useIsMobile();
+  if (isMobile) return <MobileInbox />;
   const { paneOpen, togglePane, setOrderedIds, clear, selectionMode, toggleSelectionMode, selectAll, count } = useTaskSelection();
   const [prefs, setPrefs] = useTaskListPrefs("inbox");
   const [triaging, setTriaging] = useState(false);
@@ -378,6 +387,96 @@ function InboxInner() {
       </div>
       {paneOpen && <TaskDetailPane />}
       <UnscheduledTasksRail />
+    </div>
+  );
+}
+
+/* ---------- Mobile Inbox ---------- */
+function MobileInbox() {
+  const { state } = useStore();
+  const [filter, setFilter] = useState<InboxFilter>("all");
+  const [tagsOpen, setTagsOpen] = useState(false);
+  const { tags } = useTags();
+  const { theme, setTheme } = useTheme();
+
+  const base = useMemo(
+    () => state.tasks.filter(t => t.inbox && !t.done && !t.parentTaskId && t.status !== "parked"),
+    [state.tasks],
+  );
+  const items = useMemo(() => {
+    return base.filter(t => {
+      if (filter === "all") return true;
+      const d = t.dueDate ? parseISO(t.dueDate) : null;
+      if (filter === "today") return d ? isToday(d) : false;
+      if (filter === "upcoming") return d ? isFuture(d) && !isToday(d) : false;
+      if (filter === "scheduled") return !!d;
+      if (filter === "overdue") return d ? (isPast(d) && !isToday(d)) : false;
+      return true;
+    });
+  }, [base, filter]);
+
+  const counts = useMemo(() => ({
+    all: base.length,
+    today: base.filter(t => t.dueDate && isToday(parseISO(t.dueDate))).length,
+    upcoming: base.filter(t => t.dueDate && isFuture(parseISO(t.dueDate)) && !isToday(parseISO(t.dueDate))).length,
+    scheduled: base.filter(t => !!t.dueDate).length,
+    overdue: base.filter(t => t.dueDate && isPast(parseISO(t.dueDate)) && !isToday(parseISO(t.dueDate))).length,
+  }), [base]);
+
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-background/85 backdrop-blur px-4 pt-3 pb-3">
+        <div className="flex items-center gap-3">
+          <button onClick={() => window.dispatchEvent(new CustomEvent("careflow:open-sidebar"))} aria-label="Menu" className="grid h-10 w-10 place-items-center rounded-xl bg-card border border-border/60">
+            <Menu className="h-4 w-4" />
+          </button>
+          <h1 className="text-[22px] font-display tracking-tight">Inbox</h1>
+          <div className="ml-auto flex items-center gap-2">
+            <Link to="/search" className="grid h-10 w-10 place-items-center rounded-xl bg-card border border-border/60" aria-label="Search">
+              <SearchIcon className="h-4 w-4" />
+            </Link>
+            <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Toggle theme" className="grid h-10 w-10 place-items-center rounded-xl bg-card border border-border/60">
+              <Moon className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="px-4 space-y-4">
+        {/* Capture */}
+        <MobileCaptureCard />
+
+        {/* Filter chips */}
+        <MobileFilterChips value={filter} onChange={setFilter} counts={counts} />
+
+        {/* Tag library — collapsed by default */}
+        {tags.length > 0 && (
+          <section className="cf-card overflow-hidden">
+            <button type="button" onClick={() => setTagsOpen(o => !o)} className="flex w-full items-center gap-2 px-4 py-3 text-left">
+              <span className="text-[14px] font-medium">Tags</span>
+              <span className="text-[12.5px] text-muted-foreground">· {tags.length}</span>
+              <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", tagsOpen && "rotate-180")} />
+            </button>
+            {tagsOpen && (
+              <div className="flex flex-wrap gap-1.5 border-t border-border/60 p-3">
+                {tags.map(t => (
+                  <Link key={t.id} to={`/tags/${encodeURIComponent(t.name)}`}>
+                    <TagChip name={t.name} subtle size="sm" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Task list */}
+        <div className="space-y-2.5">
+          {items.length === 0 ? (
+            <div className="cf-card p-8 text-center text-sm text-muted-foreground">Your inbox is clear ✨</div>
+          ) : items.map(t => <MobileTaskCard key={t.id} task={t} />)}
+        </div>
+      </div>
     </div>
   );
 }
