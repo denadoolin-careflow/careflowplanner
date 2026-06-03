@@ -15,6 +15,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { BigCard, SmallTile, SectionLabel } from "@/components/tasks/TaskSettingsBits";
 
 type Props = {
   task: Task;
