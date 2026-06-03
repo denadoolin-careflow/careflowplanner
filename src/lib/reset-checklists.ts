@@ -275,6 +275,13 @@ export async function fetchTemplates(): Promise<ResetChecklist[]> {
   if (!cls) return [];
   return cls.map((c: any) => ({
     id: c.id, name: c.name, kind: c.kind, week_start: c.week_start,
-    is_template: c.is_template, sort_order: c.sort_order, items: [],
+    is_template: c.is_template, sort_order: c.sort_order,
+    recurrence_type: c.recurrence_type ?? "none",
+    recurrence_days: c.recurrence_days ?? [],
+    recurrence_time: c.recurrence_time ?? null,
+    auto_reset: c.auto_reset ?? true,
+    last_run_at: c.last_run_at ?? null,
+    next_run_at: c.next_run_at ?? null,
+    items: [],
   }));
 }
