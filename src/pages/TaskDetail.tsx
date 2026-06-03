@@ -385,6 +385,26 @@ export default function TaskDetail() {
             {task.done && <li>Marked complete</li>}
           </ul>
         </CollapseCard>
+
+        {/* DANGER ZONE */}
+        <div className="mt-6">
+          <div className="mb-2 flex items-center gap-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-rose-500">
+            <Trash2 className="h-3 w-3" /> Danger zone
+          </div>
+          <button
+            onClick={async () => {
+              if (!window.confirm("Delete this task?")) return;
+              await deleteTask(task.id);
+              navigate(-1);
+            }}
+            className="flex h-14 w-full items-center gap-3 rounded-2xl border border-rose-500/20 bg-rose-500/8 px-4 text-rose-500 active:scale-[0.99]"
+          >
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-rose-500/15">
+              <Trash2 className="h-4 w-4" />
+            </span>
+            <span className="flex-1 text-left text-[15px] font-semibold">Delete task</span>
+          </button>
+        </div>
       </div>
 
       {/* Sticky bottom bar */}
