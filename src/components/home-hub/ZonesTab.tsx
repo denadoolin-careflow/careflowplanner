@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import {
   BedDouble, UtensilsCrossed, Bath, WashingMachine, DoorOpen, Sofa,
   Trees, TreePine, Sparkles, Wand2, Loader2, Plus, ChevronRight,
+  ListChecks, Moon, ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -90,7 +92,7 @@ export function ZonesTab() {
     toast.success(`Added "${label}"`);
   };
 
-  const generateChecklist = async (zone: string, energy: "low" | "medium" | "deep") => {
+  const generateChecklist = async (zone: string, energy: string) => {
     setAiBusy(zone);
     try {
       const list = zoneListByLabel.get(zone);
@@ -189,21 +191,11 @@ export function ZonesTab() {
                 <div className={cn("h-full rounded-full transition-all", z.bar)} style={{ width: `${pct}%` }} />
               </div>
 
-              <div className="flex flex-wrap gap-1 border-t border-white/40 pt-2">
-                <span className="mr-1 self-center text-[10px] uppercase tracking-wider text-foreground/60">AI checklist:</span>
-                {(["low", "medium", "deep"] as const).map((lvl) => (
-                  <Button
-                    key={lvl}
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 rounded-full px-2 text-[10px] hover:bg-white/60"
-                    disabled={busy}
-                    onClick={() => generateChecklist(z.label, lvl)}
-                  >
-                    {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Wand2 className="mr-1 h-3 w-3" />}
-                    {lvl === "low" ? "Low energy" : lvl === "medium" ? "Weekly" : "Deep clean"}
-                  </Button>
-                ))}
+              <div className="border-t border-white/40 pt-2">
+                <AiChecklistMenu
+                  busy={busy}
+                  onGenerate={(mode) => generateChecklist(z.label, mode)}
+                />
               </div>
             </article>
           );
@@ -238,5 +230,104 @@ export function ZonesTab() {
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+const AI_OPTIONS: { id: string; label: string; desc: string; icon: typeof Sparkles }[] = [
+  { id: "low",    label: "Quick reset",     desc: "5–10 min surface tidy",       icon: Sparkles },
+  { id: "gentle", label: "Low-energy mode", desc: "Gentle, sit-down friendly",   icon: Moon },
+  { id: "medium", label: "Weekly reset",    desc: "Your standard rhythm",        icon: ListChecks },
+  { id: "deep",   label: "Deep clean",      desc: "Thorough, monthly cadence",   icon: Wand2 },
+];
+
+function AiChecklistMenu({
+  busy, onGenerate,
+}: {
+  busy: boolean;
+  onGenerate: (mode: string) => void | Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState("");
+
+  const pick = (id: string) => {
+    setOpen(false);
+    void onGenerate(id);
+  };
+
+  const submitCustom = () => {
+    const t = custom.trim();
+    if (!t) return;
+    setOpen(false);
+    setCustom("");
+    void onGenerate(t);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1 text-[11px] font-medium text-foreground/80 ring-1 ring-white/60 transition-all hover:bg-white/80 disabled:opacity-60"
+        >
+          {busy ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Generating…
+            </>
+          ) : (
+            <>
+              <Wand2 className="h-3 w-3" />
+              AI checklist
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-1.5">
+        <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Generate a checklist
+        </p>
+        <ul className="space-y-0.5">
+          {AI_OPTIONS.map((opt) => {
+            const Icon = opt.icon;
+            return (
+              <li key={opt.id}>
+                <button
+                  onClick={() => pick(opt.id)}
+                  className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-muted/70"
+                >
+                  <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md bg-muted/60 text-foreground/70">
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-xs font-medium leading-tight">{opt.label}</span>
+                    <span className="block text-[10px] text-muted-foreground">{opt.desc}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="mt-2 border-t border-border/50 pt-2">
+          <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Custom
+          </p>
+          <form
+            onSubmit={(e) => { e.preventDefault(); submitCustom(); }}
+            className="flex items-center gap-1 px-1"
+          >
+            <Input
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              placeholder="e.g. before guests arrive"
+              className="h-7 text-xs"
+            />
+            <Button type="submit" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={!custom.trim()}>
+              Go
+            </Button>
+          </form>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
