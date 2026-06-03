@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -129,10 +129,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
 
   useEffect(() => { setDraft(task); }, [task]);
 
-  const parsed = useMemo(
-    () => (nlpOn && draft?.title.trim() ? parseTaskInput(draft.title) : null),
-    [nlpOn, draft?.title]
-  );
+  const parsed = nlpOn && draft?.title.trim() ? parseTaskInput(draft.title) : null;
 
   if (!draft) return null;
 
