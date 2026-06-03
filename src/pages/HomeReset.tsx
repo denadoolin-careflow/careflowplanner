@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,7 +8,7 @@ import {
 import {
   ArrowRight, Plus, Home as HomeIcon, ListChecks, Sparkle, Check,
   BedDouble, UtensilsCrossed, Bath, WashingMachine, DoorOpen, Sofa,
-  ChevronRight, Clock, Timer, History, ChevronDown, ChevronUp,
+  ChevronRight, Clock, Timer, History, ChevronDown, ChevronUp, CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,8 @@ import { ChecklistInline } from "@/components/reset/ChecklistInline";
 import { AIGenerateMenu } from "@/components/reset/AIGenerateMenu";
 import { MoonResetTip } from "@/components/rhythm/MoonResetTip";
 import { ResetHistorySheet } from "@/components/reset/ResetHistorySheet";
+import { ResetScheduleDialog } from "@/components/reset/ResetScheduleDialog";
+import { processDueResets, describeRecurrence } from "@/lib/reset-recurrence";
 import { fireConfetti } from "@/lib/confetti";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { logResetCompletion } from "@/lib/reset-history";
@@ -102,6 +104,20 @@ export default function HomeReset() {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [sheetListId, setSheetListId] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+
+  // Auto-run any recurring resets that are due.
+  useEffect(() => {
+    (async () => {
+      try {
+        const n = await processDueResets();
+        if (n > 0) {
+          toast.success(`${n} reset${n > 1 ? "s" : ""} refreshed for today ✨`);
+          await reset.refresh();
+        }
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Choose current reset: pinned selection → first with progress → first overall
   const current = useMemo(() => {
@@ -222,6 +238,7 @@ export default function HomeReset() {
             const { nextUp } = listStats(current, { lowEnergy });
             if (nextUp) startTimer(nextUp);
           }}
+          onSchedule={(patch) => reset.updateList(current.id, patch)}
         />
       ) : (
         <EmptyHero
@@ -347,7 +364,7 @@ function StatChip({ label, value, accent }: { label: string; value: number; acce
 }
 
 function CurrentResetHero({
-  list, lowEnergy, onContinue, onOpenAll, onCompleteNext, onStartTimer,
+  list, lowEnergy, onContinue, onOpenAll, onCompleteNext, onStartTimer, onSchedule,
 }: {
   list: ResetChecklist;
   lowEnergy: boolean;
@@ -355,10 +372,12 @@ function CurrentResetHero({
   onOpenAll: () => void;
   onCompleteNext: () => void;
   onStartTimer: () => void;
+  onSchedule: (patch: Partial<ResetChecklist>) => Promise<void> | void;
 }) {
   const { done, total, pct, nextUp, reason } = listStats(list, { lowEnergy });
   const complete = total > 0 && done >= total;
   const Icon = KIND_ICON[list.kind] ?? Sparkle;
+  const hasSchedule = list.recurrence_type && list.recurrence_type !== "none";
 
   return (
     <article
@@ -380,7 +399,18 @@ function CurrentResetHero({
           <p className="mt-1 text-xs text-foreground/70">
             {total === 0 ? "Add your first small step." : `${done} of ${total} completed`}
           </p>
+          {hasSchedule && (
+            <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-medium text-foreground/70 ring-1 ring-white/60">
+              <CalendarClock className="h-3 w-3" />
+              {describeRecurrence({
+                recurrence_type: list.recurrence_type,
+                recurrence_days: list.recurrence_days,
+                recurrence_time: list.recurrence_time,
+              })}
+            </p>
+          )}
         </div>
+        <ResetScheduleDialog list={list} onSave={onSchedule} />
       </div>
 
       <div className="mt-4">

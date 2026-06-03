@@ -29,6 +29,12 @@ export interface ResetChecklist {
   week_start: string | null;
   is_template: boolean;
   sort_order: number;
+  recurrence_type: "none" | "daily" | "weekly";
+  recurrence_days: number[];
+  recurrence_time: string | null;
+  auto_reset: boolean;
+  last_run_at: string | null;
+  next_run_at: string | null;
   items: ResetItem[];
 }
 
@@ -72,6 +78,12 @@ export function useResetChecklists(opts?: { weekStart?: string; templatesOnly?: 
     setLists(cls.map((c: any) => ({
       id: c.id, name: c.name, kind: c.kind, week_start: c.week_start,
       is_template: c.is_template, sort_order: c.sort_order,
+      recurrence_type: c.recurrence_type ?? "none",
+      recurrence_days: c.recurrence_days ?? [],
+      recurrence_time: c.recurrence_time ?? null,
+      auto_reset: c.auto_reset ?? true,
+      last_run_at: c.last_run_at ?? null,
+      next_run_at: c.next_run_at ?? null,
       items: group(items.filter(i => i.checklist_id === c.id)),
     })));
     setLoading(false);
@@ -97,6 +109,13 @@ export function useResetChecklists(opts?: { weekStart?: string; templatesOnly?: 
   const renameList = async (id: string, name: string) => {
     await supabase.from("reset_checklists").update({ name }).eq("id", id);
     setLists(prev => prev.map(l => l.id === id ? { ...l, name } : l));
+  };
+
+  const updateList = async (id: string, patch: Partial<ResetChecklist>) => {
+    setLists(prev => prev.map(l => l.id === id ? { ...l, ...patch } as ResetChecklist : l));
+    const dbPatch: any = { ...patch };
+    delete dbPatch.id; delete dbPatch.items;
+    await supabase.from("reset_checklists").update(dbPatch).eq("id", id);
   };
 
   const deleteList = async (id: string) => {
@@ -245,7 +264,7 @@ export function useResetChecklists(opts?: { weekStart?: string; templatesOnly?: 
 
   return {
     lists, loading, refresh,
-    createList, renameList, deleteList, saveAsTemplate, loadTemplate,
+    createList, renameList, updateList, deleteList, saveAsTemplate, loadTemplate,
     addItem, updateItem, deleteItem, duplicateItem, reorderItems,
   };
 }
@@ -256,6 +275,13 @@ export async function fetchTemplates(): Promise<ResetChecklist[]> {
   if (!cls) return [];
   return cls.map((c: any) => ({
     id: c.id, name: c.name, kind: c.kind, week_start: c.week_start,
-    is_template: c.is_template, sort_order: c.sort_order, items: [],
+    is_template: c.is_template, sort_order: c.sort_order,
+    recurrence_type: c.recurrence_type ?? "none",
+    recurrence_days: c.recurrence_days ?? [],
+    recurrence_time: c.recurrence_time ?? null,
+    auto_reset: c.auto_reset ?? true,
+    last_run_at: c.last_run_at ?? null,
+    next_run_at: c.next_run_at ?? null,
+    items: [],
   }));
 }
