@@ -577,26 +577,18 @@ export default function Month() {
 
           {sheetISO && (() => {
             const items = eventsOn(sheetISO);
-            const partOf = (hm?: string | null): "morning" | "afternoon" | "evening" | "allday" => {
-              if (!hm || !/^\d{2}:\d{2}/.test(hm)) return "allday";
+            const isTimed = (hm?: string | null) => !!hm && /^\d{2}:\d{2}/.test(hm);
+            const timed = items
+              .filter(it => isTimed(it.time))
+              .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+            const allDay = items.filter(it => !isTimed(it.time));
+            const hourLabel = (hm: string) => {
               const h = parseInt(hm.slice(0, 2), 10);
-              if (h < 12) return "morning";
-              if (h < 17) return "afternoon";
-              return "evening";
+              if (h === 0) return "12 AM";
+              if (h < 12) return `${h} AM`;
+              if (h === 12) return "12 PM";
+              return `${h - 12} PM`;
             };
-            const groups: Record<"morning" | "afternoon" | "evening" | "allday", typeof items> = {
-              morning: [], afternoon: [], evening: [], allday: [],
-            };
-            for (const it of items) groups[partOf(it.time)].push(it);
-            for (const k of ["morning", "afternoon", "evening"] as const) {
-              groups[k].sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
-            }
-            const PARTS = [
-              { key: "morning", label: "Morning", icon: Sunrise, hint: "Before 12 PM" },
-              { key: "afternoon", label: "Afternoon", icon: Sun, hint: "12 – 5 PM" },
-              { key: "evening", label: "Evening", icon: Moon, hint: "After 5 PM" },
-              { key: "allday", label: "All day", icon: Check, hint: "No time" },
-            ] as const;
             const handleClick = (it: typeof items[number]) => {
               if (it.kind === "task" && it.taskId) {
                 const t = state.tasks.find(x => x.id === it.taskId);
@@ -607,57 +599,97 @@ export default function Month() {
                 openBlockInWeek(sheetISO!); setSheetISO(null);
               }
             };
+            const renderRow = (it: typeof items[number], i: number) => {
+              const blockCls = it.kind === "block" && it.blockColor ? colorClasses(it.blockColor) : null;
+              const task = it.kind === "task" && it.taskId
+                ? state.tasks.find(x => x.id === it.taskId) ?? null
+                : null;
+              return (
+                <div
+                  key={i}
+                  onClick={() => handleClick(it)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+                    blockCls ? cn(blockCls.bg, blockCls.text, "ring-1 ring-inset", blockCls.ring) : colorOf(it.kind as any),
+                    (it.kind === "task" || it.kind === "appt" || it.kind === "block") && "cursor-pointer",
+                    task?.done && "opacity-60",
+                  )}
+                  style={blockCls?.style}
+                >
+                  {task && (
+                    <Checkbox
+                      checked={!!task.done}
+                      onClick={(e) => e.stopPropagation()}
+                      onCheckedChange={() => { haptics.tap(); void toggleTask(task.id); }}
+                      aria-label={task.done ? "Mark not done" : "Mark done"}
+                      className="shrink-0"
+                    />
+                  )}
+                  <span className={cn("min-w-0 flex-1", task?.done && "line-through")}>{it.label}</span>
+                </div>
+              );
+            };
+            if (items.length === 0) {
+              return (
+                <div className="mt-5 rounded-lg border border-dashed border-border/60 px-4 py-6 text-center text-xs text-muted-foreground">
+                  Nothing scheduled
+                </div>
+              );
+            }
             return (
               <div className="mt-5 space-y-4">
-                {PARTS.map(p => {
-                  const list = groups[p.key];
-                  if (list.length === 0) return null;
-                  const Icon = p.icon;
-                  return (
-                    <section key={p.key}>
-                      <div className="mb-1.5 flex items-baseline justify-between">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                          <Icon className="h-3.5 w-3.5" />
-                          {p.label}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground/70">{p.hint}</span>
-                      </div>
-                      <ul className="space-y-1.5">
-                        {list.map((it, i) => {
-                          const blockCls = it.kind === "block" && it.blockColor ? colorClasses(it.blockColor) : null;
-                          const task = it.kind === "task" && it.taskId
-                            ? state.tasks.find(x => x.id === it.taskId) ?? null
-                            : null;
-                          return (
-                            <li
-                              key={i}
-                              onClick={() => handleClick(it)}
-                              className={cn(
-                                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
-                                blockCls ? cn(blockCls.bg, blockCls.text, "ring-1 ring-inset", blockCls.ring) : colorOf(it.kind as any),
-                                (it.kind === "task" || it.kind === "appt" || it.kind === "block") && "cursor-pointer",
-                                task?.done && "opacity-60",
-                              )}
-                              style={blockCls?.style}
-                            >
-                              {task && (
-                                <Checkbox
-                                  checked={!!task.done}
-                                  onClick={(e) => e.stopPropagation()}
-                                  onCheckedChange={() => { haptics.tap(); void toggleTask(task.id); }}
-                                  aria-label={task.done ? "Mark not done" : "Mark done"}
-                                  className="shrink-0"
-                                />
-                              )}
-                              {it.time && <span className="shrink-0 font-mono text-xs opacity-70">{formatTime12(it.time.slice(0, 5))}</span>}
-                              <span className={cn("min-w-0 flex-1", task?.done && "line-through")}>{it.label}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </section>
-                  );
-                })}
+                {allDay.length > 0 && (
+                  <section>
+                    <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <Check className="h-3 w-3" /> All day
+                    </div>
+                    <div className="space-y-1.5">
+                      {allDay.map((it, i) => renderRow(it, i))}
+                    </div>
+                  </section>
+                )}
+
+                {timed.length > 0 && (
+                  <section>
+                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <Clock className="h-3 w-3" /> Timeline
+                    </div>
+                    <ol className="relative space-y-2">
+                      {timed.map((it, i) => {
+                        const hm = it.time!.slice(0, 5);
+                        const prevH = i > 0 ? parseInt(timed[i - 1].time!.slice(0, 2), 10) : -1;
+                        const curH = parseInt(hm.slice(0, 2), 10);
+                        const showHour = curH !== prevH;
+                        return (
+                          <li key={i}>
+                            {showHour && i > 0 && (
+                              <div className="mb-2 flex items-center gap-2 pl-[64px]">
+                                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                                  {hourLabel(hm)}
+                                </span>
+                                <span className="h-px flex-1 bg-border/60" />
+                              </div>
+                            )}
+                            <div className="flex items-stretch gap-3">
+                              <div className="relative flex w-[56px] shrink-0 flex-col items-end pr-2">
+                                <span className="font-mono text-[11px] leading-5 text-muted-foreground">
+                                  {formatTime12(hm)}
+                                </span>
+                              </div>
+                              <div className="relative flex flex-1 items-start">
+                                <span className="absolute -left-[10px] top-2 h-2 w-2 rounded-full bg-primary ring-2 ring-background" />
+                                <span className="absolute -left-[5px] top-0 bottom-0 w-px bg-border/60" />
+                                <div className="ml-2 min-w-0 flex-1">
+                                  {renderRow(it, i)}
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </section>
+                )}
               </div>
             );
           })()}
