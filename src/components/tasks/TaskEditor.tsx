@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { Sparkles } from "lucide-react";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { parseTaskInput } from "@/lib/nlp-task";
 
 type Props = {
   open: boolean;
@@ -114,11 +115,58 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   const [addingSub, setAddingSub] = useState(false);
   const [subAiLoading, setSubAiLoading] = useState(false);
   const [autoBusy, setAutoBusy] = useState(false);
+  const [nlpOn, setNlpOn] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("cf.taskedit.nlp") !== "0";
+  });
+  const toggleNlp = () => {
+    setNlpOn(v => {
+      const next = !v;
+      try { localStorage.setItem("cf.taskedit.nlp", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
 
   useEffect(() => { setDraft(task); }, [task]);
   if (!draft) return null;
 
   const set = <K extends keyof Task>(k: K, v: Task[K]) => setDraft(d => d ? { ...d, [k]: v } : d);
+
+  const parsed = useMemo(
+    () => (nlpOn && draft?.title.trim() ? parseTaskInput(draft.title) : null),
+    [nlpOn, draft?.title]
+  );
+
+  const applyNlp = () => {
+    if (!draft || !parsed) return;
+    const next: Partial<Task> = {};
+    if (parsed.title && parsed.title !== draft.title) next.title = parsed.title;
+    if (parsed.dueDate && !draft.dueDate) next.dueDate = parsed.dueDate;
+    if (parsed.time && !draft.startTime) next.startTime = parsed.time;
+    if (parsed.priority && (draft.priority == null || draft.priority === "none")) next.priority = parsed.priority;
+    if (parsed.area && !draft.area) next.area = parsed.area;
+    if (parsed.energy && !draft.energy) next.energy = parsed.energy;
+    if (parsed.estMinutes && !draft.estMinutes) next.estMinutes = parsed.estMinutes;
+    if (parsed.recurrenceType && !draft.recurrenceType) {
+      next.recurrenceType = parsed.recurrenceType;
+      if (parsed.recurrenceInterval) next.recurrenceInterval = parsed.recurrenceInterval;
+      if (parsed.recurrenceDays) next.recurrenceDays = parsed.recurrenceDays;
+    }
+    if (parsed.tags && parsed.tags.length) {
+      const merged = Array.from(new Set([...(draft.tags ?? []), ...parsed.tags]));
+      if (merged.length !== (draft.tags?.length ?? 0)) next.tags = merged;
+    }
+    if (parsed.projectName && !draft.projectId) {
+      const lc = parsed.projectName.toLowerCase();
+      const match = (state.projects ?? []).find(p => p.title.toLowerCase() === lc)
+        ?? (state.projects ?? []).find(p => p.title.toLowerCase().includes(lc));
+      if (match) next.projectId = match.id;
+    }
+    if (Object.keys(next).length === 0) return;
+    setDraft(d => d ? { ...d, ...next } : d);
+    const labels = parsed.chips.map(c => c.label).join(" · ");
+    toast.success("NLP applied", { description: labels });
+  };
 
   const runAutoDetect = () => {
     if (!draft) return;
@@ -211,9 +259,43 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               <Input
                 value={draft.title}
                 onChange={e => set("title", e.target.value)}
+                onBlur={() => { if (nlpOn && parsed && parsed.chips.length) applyNlp(); }}
                 placeholder="Task title"
                 className="h-11 flex-1 border-0 bg-transparent px-0 text-lg font-medium shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
+            </div>
+
+            {/* NLP row */}
+            <div className="-mt-2 flex flex-wrap items-center gap-1.5 pl-9">
+              <button
+                type="button"
+                onClick={toggleNlp}
+                title={nlpOn ? "NLP on — click to disable" : "NLP off — click to enable"}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] transition-colors",
+                  nlpOn
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-border/60 text-muted-foreground hover:bg-muted"
+                )}
+              >
+                <Sparkles className="h-3 w-3" /> NLP {nlpOn ? "on" : "off"}
+              </button>
+              {parsed && parsed.chips.length > 0 && (
+                <>
+                  {parsed.chips.map((c, i) => (
+                    <span key={i} className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+                      {c.label}
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={applyNlp}
+                    className="ml-1 inline-flex items-center rounded-full border border-border/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                  >
+                    Apply
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Notes */}
