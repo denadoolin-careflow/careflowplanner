@@ -28,6 +28,7 @@ import { fallbackColorFor } from "@/lib/tags";
 import { useNavigate } from "react-router-dom";
 import { AstrologySection } from "./AstrologySection";
 import { Sparkles } from "lucide-react";
+import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon, tint: "bg-indigo-500/15 text-indigo-500", dot: "bg-indigo-500" },
@@ -530,6 +531,20 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const { updateProject, addProject } = useStore();
   const { openPanel } = useWorkspaceLayout();
   const navigate = useNavigate();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        setCompact(w > 0 && w < 232);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [pquery, setPquery] = useState("");
   const pqTerm = pquery.trim().toLowerCase();
   const filteredAreas = pqTerm ? areas.filter(a => a.name.toLowerCase().includes(pqTerm)) : areas;
@@ -772,18 +787,20 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     <div className={cn(
       "flex h-full flex-col gap-2 bg-sidebar p-3 transition-[width] duration-200 ease-out",
       collapsed ? "w-[68px] items-center" : "w-full",
-    )}>
-      <div className={cn("flex items-center gap-2 px-1 py-2 w-full", collapsed && "justify-center")}>
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-glow">
-          <Heart className="h-4 w-4" fill="currentColor" />
+    )} ref={rootRef}>
+      <div className={cn("flex items-center gap-1.5 px-1 py-2 w-full", collapsed && "justify-center")}>
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sidebar-accent/60 text-sidebar-foreground ring-1 ring-sidebar-border/60">
+          <CareFlowMark size={20} />
         </div>
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <div className="font-display text-lg font-semibold leading-none">CareFlow</div>
-            <div className="text-xs text-muted-foreground truncate">a gentle planner</div>
+            <div className="font-display text-[15px] font-semibold leading-none truncate">CareFlow</div>
+            <div className="mt-1 text-[9.5px] font-medium uppercase tracking-[0.16em] text-muted-foreground truncate">
+              Care · Plan · Grow
+            </div>
           </div>
         )}
-        {!forceExpanded && !collapsed && (
+        {!forceExpanded && !collapsed && !compact && (
           <>
             <Tooltip delayDuration={150}>
               <TooltipTrigger asChild>

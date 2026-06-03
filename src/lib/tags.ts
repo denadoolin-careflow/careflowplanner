@@ -144,3 +144,32 @@ export async function listPinnedTags(): Promise<Tag[]> {
   if (error) throw error;
   return (data ?? []).map(fromRow);
 }
+
+/**
+ * Top N tags by usage across the supplied items.
+ * Counts each occurrence of a tag name (case-insensitive) and returns the
+ * matching Tag rows ordered by descending count, with createdAt as tie-break.
+ */
+export function getTopTags(
+  tags: Tag[],
+  items: ReadonlyArray<{ tags?: string[] | null }>,
+  n = 5,
+): Tag[] {
+  if (!tags.length) return [];
+  const counts = new Map<string, number>();
+  for (const it of items) {
+    for (const raw of it?.tags ?? []) {
+      if (!raw) continue;
+      const k = String(raw).toLowerCase();
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+  }
+  return [...tags]
+    .map(t => ({ t, c: counts.get(t.name.toLowerCase()) ?? 0 }))
+    .sort((a, b) => {
+      if (b.c !== a.c) return b.c - a.c;
+      return (b.t.createdAt ?? "").localeCompare(a.t.createdAt ?? "");
+    })
+    .slice(0, n)
+    .map(x => x.t);
+}
