@@ -892,6 +892,14 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             onPickDate={jumpToDay}
           />
         )}
+        {sections.astrology && (
+          <AstrologySection
+            collapsed={collapsed}
+            open={openMap["astrology"] !== false}
+            onToggle={() => toggle("astrology")}
+            onNavigate={onNavigate}
+          />
+        )}
 
         {/* Areas → Projects tree */}
         {!collapsed && projects.some(p => p.isFavorite) && (
