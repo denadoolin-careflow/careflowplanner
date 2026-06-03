@@ -14,6 +14,7 @@ import { loadPrefs, savePrefs, type TaskListPrefs, type GroupMode, type SortMode
 import { useDayEnergy } from "@/lib/energy-store";
 import { format } from "date-fns";
 import { Zap } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const GROUP_LABEL: Record<GroupMode, string> = {
   none: "None", project: "Project", area: "Area", priority: "Priority", date: "Date", energy: "Energy", status: "Status", tag: "Tag", dayPart: "Time of day",
