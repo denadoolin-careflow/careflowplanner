@@ -18,6 +18,7 @@ import { RoutinesStrip } from "@/components/routines/RoutinesStrip";
 import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { PanelPicker } from "@/components/workspace/PanelPicker";
+import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { FocusPanel } from "@/components/focus/FocusPanel";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
@@ -91,7 +92,9 @@ export function AppLayout() {
                   transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.22, 0.61, 0.36, 1] }}
                   style={{ willChange: "opacity, transform" }}
                 >
-                  <Outlet />
+                  <WorkspaceShell>
+                    <Outlet />
+                  </WorkspaceShell>
                 </motion.div>
               </AnimatePresence>
             </div>

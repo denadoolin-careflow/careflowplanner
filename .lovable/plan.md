@@ -1,40 +1,31 @@
-## Goal
+# Side panels everywhere + Focus option
 
-In the Month view's day-detail bottom sheet, remove the Morning / Afternoon / Evening / All day grouping and present the day as one continuous, time-ordered timeline.
+## Problem
+- `WorkspaceShell` (the component that actually renders docked panels) is only used in `Today.tsx`. On every other page, opening a panel from the header picker does nothing visible.
+- There's no Focus panel in the picker, and the panel list is a fixed hardcoded order with no way to search it.
 
-## Where
+## Changes
 
-`src/pages/Month.tsx` — the day-sheet render block at roughly lines 578–663 (the `PARTS.map(...)` section). No other files need to change.
+### 1. Mount WorkspaceShell globally
+`src/components/layout/AppLayout.tsx`
+- Wrap the `<Outlet />` (inside the `AnimatePresence` block) with `<WorkspaceShell>` so any route gets left/right docked panels.
+- When no panels are open, `WorkspaceShell` already returns a plain pass-through, so unaffected pages render identically.
+- Remove the now-redundant `WorkspaceShell` wrapper in `src/pages/Today.tsx` to avoid double-nesting.
 
-## What changes
+### 2. Add Focus panel
+`src/components/workspace/PanelRegistry.tsx`
+- Add `focus` to `PanelId` union.
+- Register: `focus: { title: "Focus", icon: Timer, component: lazy(() => import("@/pages/PomodoroPicker")) }`.
+- Add `"/focus": "focus"` to `PANEL_BY_ROUTE`.
 
-1. **Remove** the `partOf` helper, the `groups` bucketing, and the `PARTS` array.
-2. **Build one list** from `eventsOn(sheetISO)`:
-   - Split into `timed` (items with a valid `HH:MM` time) and `allDay` (no time).
-   - Sort `timed` ascending by time.
-   - Render `allDay` first as a compact "All day" cluster, then the timed timeline below.
-3. **Timeline layout** for timed items, using existing tokens:
-   - Left gutter (~56px) shows the time in 12-hour format (`formatTime12`) and a small dot on a vertical rail (`border-l border-border/60`).
-   - Right side: the existing item row (checkbox, label, block colors) reused verbatim — same click handler, same styling, same task strike-through, same block color classes.
-   - Add a faint hour separator between items whose hour changes (light divider + greyed hour label) so the timeline still feels structured without the 3-bucket toggle.
-4. **Empty state**: when both lists are empty, show a single muted "Nothing scheduled" line.
-5. Preserve all current behaviors: tap a task → `setEditingTask`, tap appt → `setEditApptId`, tap block → `openBlockInWeek`, checkbox toggles task done with haptic.
+### 3. Searchable panel picker
+`src/components/workspace/PanelPicker.tsx`
+- Add `focus` to the `ORDER` array (after `routines`).
+- Add a small search `<Input>` at the top of the dropdown content (under the dock-side label) with local `useState` for the query.
+- Filter the rendered list by `p.title.toLowerCase().includes(q)`.
+- Keep dock-side toggle and existing open/close behavior unchanged.
 
 ## Out of scope
-
-- No changes to month grid, header toggles (`CalendarViewToggle`, astro overlay), or any other page.
-- No data model changes; this is presentation only.
-- Mobile and desktop both get the same timeline (the sheet is shared).
-
-```text
-Sheet body
-├── Day stats (unchanged)
-├── DayDetailExtras (unchanged)
-└── Timeline
-    ├── All-day chips row (if any)
-    ├── 09:00  ●──  Drop off kids
-    ├── 10:30  ●──  Standup
-    ├── ── 12 PM ──
-    ├── 12:15  ●──  Lunch with mom
-    └── 18:00  ●──  Dinner block
-```
+- No changes to which panels exist beyond adding Focus.
+- No changes to mobile layout (panel picker is already desktop-only via `sm:flex` parent).
+- No restyling of `WorkspaceShell`; its existing height/border behavior is preserved.
