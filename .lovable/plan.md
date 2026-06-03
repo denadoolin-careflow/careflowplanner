@@ -1,31 +1,48 @@
-# Side panels everywhere + Focus option
+# Composer pills — searchable & expanded
 
-## Problem
-- `WorkspaceShell` (the component that actually renders docked panels) is only used in `Today.tsx`. On every other page, opening a panel from the header picker does nothing visible.
-- There's no Focus panel in the picker, and the panel list is a fixed hardcoded order with no way to search it.
+The inbox "capture" appears in two places:
+- Desktop/tablet: `InlineTaskComposer` (already has Date, Project, Area, Energy, Tag, Time-estimate pills).
+- Mobile: `MobileCaptureCard` (has only Date, Project, Area as plain lists; no NLP).
+
+Both will get the same treatment.
 
 ## Changes
 
-### 1. Mount WorkspaceShell globally
-`src/components/layout/AppLayout.tsx`
-- Wrap the `<Outlet />` (inside the `AnimatePresence` block) with `<WorkspaceShell>` so any route gets left/right docked panels.
-- When no panels are open, `WorkspaceShell` already returns a plain pass-through, so unaffected pages render identically.
-- Remove the now-redundant `WorkspaceShell` wrapper in `src/pages/Today.tsx` to avoid double-nesting.
+### `src/components/tasks/InlineTaskComposer.tsx`
 
-### 2. Add Focus panel
-`src/components/workspace/PanelRegistry.tsx`
-- Add `focus` to `PanelId` union.
-- Register: `focus: { title: "Focus", icon: Timer, component: lazy(() => import("@/pages/PomodoroPicker")) }`.
-- Add `"/focus": "focus"` to `PANEL_BY_ROUTE`.
+1. **Date pill — add presets + searchable list.**
+   Replace the preset button list inside the date popover with a `Command` palette listing:
+   - Today
+   - Tomorrow
+   - This weekend (next Saturday)
+   - Next week (next Monday)
+   - Next month (`addMonths(today, 1)`)
+   - In 2 weeks
+   Each shows the resolved date as a right-aligned hint. `CommandInput` placeholder: "Find a date…". `CommandEmpty` lets user type any natural date (kept simple: tells them to use the calendar). Calendar stays below.
 
-### 3. Searchable panel picker
-`src/components/workspace/PanelPicker.tsx`
-- Add `focus` to the `ORDER` array (after `routines`).
-- Add a small search `<Input>` at the top of the dropdown content (under the dock-side label) with local `useState` for the query.
-- Filter the rendered list by `p.title.toLowerCase().includes(q)`.
-- Keep dock-side toggle and existing open/close behavior unchanged.
+2. **Project pill — keep `Command`, add a "No project" entry** at the top so the user can clear via search.
+
+3. **Area pill — keep `Command`, add a "No area" entry** at the top.
+
+4. **NEW Priority pill.**
+   New popover with `Command` list: Low / Medium / High / Clear. Wire to `priority` state, default `undefined`. Pass to `addTask` overriding NLP when set. Icon: `Flag`. Colored dot per level (green/amber/rose).
+
+5. **NEW Time of Day pill.**
+   New popover with `Command` list: Morning / Afternoon / Evening / Late Night / Clear. Wire to `dayPart` state (`DayPart`). Pass to `addTask`. Icon: `Sun`. (Distinct from the existing Time-estimate "Time" pill — relabel that pill to "Est" to avoid confusion.)
+
+6. **Tag pill — search already present in `TagPicker`**, no change.
+
+### `src/components/tasks/mobile/MobileCaptureCard.tsx`
+
+Bring it to parity with the desktop composer (lighter weight):
+- Date popover: same `Command` preset list above the `Calendar`.
+- Project popover: replace plain button list with `Command` (searchable, "None" entry).
+- Area popover: replace plain button list with `Command` (searchable, "None" entry).
+- Add the same NEW Priority and Time-of-Day pills (icons + small `Command` lists).
+- Add a Tag pill backed by the existing `TagPicker`.
+- Wire `priority`, `dayPart`, and `tags` into the `addTask` payload.
 
 ## Out of scope
-- No changes to which panels exist beyond adding Focus.
-- No changes to mobile layout (panel picker is already desktop-only via `sm:flex` parent).
-- No restyling of `WorkspaceShell`; its existing height/border behavior is preserved.
+- No backend/types changes; `priority` and `dayPart` already exist on `Task`.
+- No changes to NLP parsing; explicit pill selections still override parsed values.
+- No restyling of the chip row beyond adding two more pills.
