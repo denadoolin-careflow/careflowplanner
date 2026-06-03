@@ -364,7 +364,7 @@ function StatChip({ label, value, accent }: { label: string; value: number; acce
 }
 
 function CurrentResetHero({
-  list, lowEnergy, onContinue, onOpenAll, onCompleteNext, onStartTimer,
+  list, lowEnergy, onContinue, onOpenAll, onCompleteNext, onStartTimer, onSchedule,
 }: {
   list: ResetChecklist;
   lowEnergy: boolean;
@@ -372,10 +372,12 @@ function CurrentResetHero({
   onOpenAll: () => void;
   onCompleteNext: () => void;
   onStartTimer: () => void;
+  onSchedule: (patch: Partial<ResetChecklist>) => Promise<void> | void;
 }) {
   const { done, total, pct, nextUp, reason } = listStats(list, { lowEnergy });
   const complete = total > 0 && done >= total;
   const Icon = KIND_ICON[list.kind] ?? Sparkle;
+  const hasSchedule = list.recurrence_type && list.recurrence_type !== "none";
 
   return (
     <article
@@ -397,7 +399,18 @@ function CurrentResetHero({
           <p className="mt-1 text-xs text-foreground/70">
             {total === 0 ? "Add your first small step." : `${done} of ${total} completed`}
           </p>
+          {hasSchedule && (
+            <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-medium text-foreground/70 ring-1 ring-white/60">
+              <CalendarClock className="h-3 w-3" />
+              {describeRecurrence({
+                recurrence_type: list.recurrence_type,
+                recurrence_days: list.recurrence_days,
+                recurrence_time: list.recurrence_time,
+              })}
+            </p>
+          )}
         </div>
+        <ResetScheduleDialog list={list} onSave={onSchedule} />
       </div>
 
       <div className="mt-4">
