@@ -45,6 +45,19 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
   const { state, updateTask, deleteTask, toggleTask, addTask } = useStore();
   const navigate = useNavigate();
   const [picker, setPicker] = useState<PickerKind>(null);
+  const [justCompleted, setJustCompleted] = useState(false);
+
+  const handleToggleComplete = () => {
+    const willComplete = !task.done;
+    if (willComplete) {
+      haptics.success?.();
+      setJustCompleted(true);
+      window.setTimeout(() => setJustCompleted(false), 900);
+    } else {
+      haptics.tap?.();
+    }
+    void toggleTask(task.id);
+  };
 
   const project = task.projectId ? state.projects?.find(p => p.id === task.projectId) : undefined;
   const goal = task.goalId ? state.goals?.find(g => g.id === task.goalId) : undefined;
@@ -101,10 +114,16 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
         </div>
 
         {/* Header */}
-        <div className="flex items-start gap-3 px-5 pt-3 pb-4">
+        <div className="relative overflow-hidden flex items-start gap-3 px-5 pt-3 pb-4">
+          {justCompleted && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -translate-x-full animate-task-sweep bg-gradient-to-r from-transparent via-primary/40 to-emerald-400/50 blur-md"
+            />
+          )}
           <button
-            onClick={() => { haptics.tap?.(); void toggleTask(task.id); }}
-            className="mt-0.5 shrink-0"
+            onClick={handleToggleComplete}
+            className={cn("mt-0.5 shrink-0 transition-transform", justCompleted && "scale-110")}
             aria-label="Toggle complete"
           >
             <Checkbox checked={task.done} className="h-6 w-6 rounded-full border-2" />
