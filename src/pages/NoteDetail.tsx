@@ -230,9 +230,11 @@ export default function NoteDetail() {
         </div>
       )}
 
-      <NoteLinksSidebar noteId={note.id} />
+      <div className="mx-auto mt-4 w-full max-w-[760px] px-2">
+        <NoteLinksSidebar noteId={note.id} />
       </div>
-      <div className="hidden xl:block">
+      </div>
+      <div className="hidden 2xl:block">
         <div className="sticky top-20">
           <NoteTOC body={body} />
         </div>
