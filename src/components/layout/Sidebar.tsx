@@ -954,7 +954,12 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 type="text"
                 value={pquery}
                 onChange={(e) => setPquery(e.target.value)}
+                onKeyDown={onSearchKeyDown}
                 placeholder="Jump to project or area…"
+                role="combobox"
+                aria-expanded={pqTerm.length > 0}
+                aria-controls="sidebar-search-results"
+                aria-activedescendant={results[activeIdx] ? `sidebar-search-opt-${activeIdx}` : undefined}
                 className="w-full rounded-md border border-sidebar-border/60 bg-sidebar-accent/40 py-1.5 pl-7 pr-7 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 outline-none focus:border-primary/50 focus:bg-sidebar-accent/70"
               />
               {pquery && (
