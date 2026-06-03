@@ -182,69 +182,113 @@ export default function TaskDetail() {
           {moon && <span className="text-[12.5px] text-muted-foreground">{moon.emoji} {moon.label}</span>}
         </div>
 
-        {/* Settings card */}
-        <section className="cf-card overflow-hidden">
-          {/* Date */}
+        {/* CONTEXT */}
+        <SectionLabel icon={<FolderKanban className="h-3.5 w-3.5" />} label="Context" />
+        <div className="grid grid-cols-2 gap-3">
           <Popover>
             <PopoverTrigger asChild>
-              <div className="cf-row cursor-pointer active:bg-muted/40 min-h-[58px]">
-                <div className="cf-icon-tile shrink-0" style={{ width: 34, height: 34 }}><CalIcon className="h-4 w-4" /></div>
-                <span className="text-[14.5px]">Date</span>
-                <span className="ml-auto text-[13px] text-muted-foreground">{task.dueDate ? format(parseISO(task.dueDate), "EEE, MMM d") : "—"}</span>
-              </div>
+              <BigCard tone="primary" icon={<FolderKanban className="h-5 w-5" />} label="Project" value={proj?.name ?? "None"} />
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-auto p-0">
+            <PopoverContent align="start" className="max-h-72 w-64 overflow-auto p-1">
+              <button onClick={() => patch({ projectId: undefined })} className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">None</button>
+              {(state.projects ?? []).map(p => (
+                <button key={p.id} onClick={() => patch({ projectId: p.id })} className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">{p.name}</button>
+              ))}
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <BigCard tone="emerald" icon={<Target className="h-5 w-5" />} label="Goal" value={goal?.title ?? "None"}>
+                {goal && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-[11px] font-medium text-emerald-600">{goal.progress}% complete</p>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-500/15">
+                      <div className="h-full bg-emerald-500/80" style={{ width: `${goal.progress}%` }} />
+                    </div>
+                  </div>
+                )}
+              </BigCard>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="max-h-72 w-64 overflow-auto p-1">
+              <button onClick={() => patch({ goalId: undefined } as any)} className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">None</button>
+              {(state.goals ?? []).map(g => (
+                <button key={g.id} onClick={() => patch({ goalId: g.id } as any)} className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">{g.title}</button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* SCHEDULING */}
+        <SectionLabel icon={<CalendarDays className="h-3.5 w-3.5" />} label="Scheduling" />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <BigCard tone="primary" icon={<CalIcon className="h-5 w-5" />} label="Date" value={task.dueDate ? format(parseISO(task.dueDate), "EEE, MMM d") : "None"} />
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-auto p-0">
               <Calendar mode="single" selected={task.dueDate ? parseISO(task.dueDate) : undefined}
                 onSelect={(d) => patch({ dueDate: d ? format(d, "yyyy-MM-dd") : undefined })}
                 initialFocus className="p-3 pointer-events-auto" />
             </PopoverContent>
           </Popover>
-
-          {/* Time */}
           <Popover>
             <PopoverTrigger asChild>
-              <div className="cf-row cursor-pointer active:bg-muted/40 min-h-[58px]">
-                <div className="cf-icon-tile shrink-0" style={{ width: 34, height: 34 }}><Clock className="h-4 w-4" /></div>
-                <span className="text-[14.5px]">Time</span>
-                <span className="ml-auto text-[13px] text-muted-foreground">{task.startTime ?? "—"}</span>
-              </div>
+              <BigCard tone="indigo" icon={<Clock className="h-5 w-5" />} label="Time" value={task.startTime ?? "Any time"} />
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-56 p-3">
+            <PopoverContent align="start" className="w-56 p-3">
               <Input type="time" defaultValue={task.startTime ?? ""} onBlur={(e) => patch({ startTime: e.target.value || undefined })} />
             </PopoverContent>
           </Popover>
-
-          {/* Repeat */}
           <Popover>
             <PopoverTrigger asChild>
-              <div className="cf-row cursor-pointer active:bg-muted/40 min-h-[58px]">
-                <div className="cf-icon-tile shrink-0" style={{ width: 34, height: 34 }}><Repeat className="h-4 w-4" /></div>
-                <span className="text-[14.5px]">Repeat</span>
-                <span className="ml-auto text-[13px] text-muted-foreground capitalize">{RECUR_OPTS.find(r => r.id === (task.recurrenceType ?? "none"))?.label}</span>
-              </div>
+              <BigCard tone="teal" icon={<Repeat className="h-5 w-5" />} label="Repeat" value={RECUR_OPTS.find(r => r.id === (task.recurrenceType ?? "none"))?.label ?? "Never"} />
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-56 p-1">
+            <PopoverContent align="start" className="w-56 p-1">
               {RECUR_OPTS.map(r => (
                 <button key={r.id} onClick={() => patch({ recurrenceType: r.id })} className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">{r.label}</button>
               ))}
             </PopoverContent>
           </Popover>
+        </div>
 
-          {/* Priority */}
+        {/* ORGANIZATION */}
+        <SectionLabel icon={<TagIcon className="h-3.5 w-3.5" />} label="Organization" />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <Sheet open={tagSheet} onOpenChange={setTagSheet}>
+            <SheetTrigger asChild>
+              <BigCard
+                tone="violet"
+                icon={<TagIcon className="h-5 w-5" />}
+                label="Tags"
+                value={(task.tags?.length ?? 0) > 0 ? `${task.tags!.length} tag${task.tags!.length > 1 ? "s" : ""}` : "None"}
+              >
+                {(task.tags?.length ?? 0) > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {(task.tags ?? []).slice(0, 3).map(t => <TagChip key={t} name={t} subtle size="sm" />)}
+                  </div>
+                )}
+              </BigCard>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-2xl">
+              <SheetHeader><SheetTitle>Tags</SheetTitle></SheetHeader>
+              <div className="mt-4">
+                <TagPicker value={task.tags ?? []} onChange={(tags) => patch({ tags })} />
+              </div>
+            </SheetContent>
+          </Sheet>
           <Popover>
             <PopoverTrigger asChild>
-              <div className="cf-row cursor-pointer active:bg-muted/40 min-h-[58px]">
-                <div className="cf-icon-tile shrink-0" style={{ width: 34, height: 34 }}><Flag className="h-4 w-4" /></div>
-                <span className="text-[14.5px]">Priority</span>
-                <span className="ml-auto flex items-center gap-1.5 text-[13px] text-muted-foreground capitalize">
-                  {Array.from({ length: PRIORITY_OPTS.find(p => p.id === task.priority)?.dots ?? 0 }).map((_, i) => (
-                    <span key={i} className={cn("h-1.5 w-1.5 rounded-full", task.priority === "high" ? "bg-rose-500" : "bg-amber-500")} />
-                  ))}
-                  {task.priority}
-                </span>
-              </div>
+              <BigCard tone="amber" icon={<Flag className="h-5 w-5" />} label="Priority" value={PRIORITY_OPTS.find(p => p.id === task.priority)?.label ?? "Low"}>
+                {PRIORITY_OPTS.find(p => p.id === task.priority)!.dots > 0 && (
+                  <div className="mt-2 flex gap-0.5">
+                    {Array.from({ length: PRIORITY_OPTS.find(p => p.id === task.priority)!.dots }).map((_, i) => (
+                      <span key={i} className={cn("h-1.5 w-1.5 rounded-full", task.priority === "high" ? "bg-rose-500" : "bg-amber-500")} />
+                    ))}
+                  </div>
+                )}
+              </BigCard>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-48 p-1">
+            <PopoverContent align="start" className="w-48 p-1">
               {PRIORITY_OPTS.map(p => (
                 <button key={p.id} onClick={() => patch({ priority: p.id })} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">
                   <span className="flex items-center gap-0.5">
@@ -256,62 +300,20 @@ export default function TaskDetail() {
               ))}
             </PopoverContent>
           </Popover>
-
-          {/* Tags */}
-          <Sheet open={tagSheet} onOpenChange={setTagSheet}>
-            <SheetTrigger asChild>
-              <div className="cf-row cursor-pointer active:bg-muted/40 min-h-[58px]">
-                <div className="cf-icon-tile shrink-0" style={{ width: 34, height: 34 }}><TagIcon className="h-4 w-4" /></div>
-                <span className="text-[14.5px]">Tags</span>
-                <div className="ml-auto flex max-w-[60%] flex-wrap items-center justify-end gap-1">
-                  {(task.tags ?? []).slice(0, 3).map(t => <TagChip key={t} name={t} subtle size="sm" />)}
-                  {(task.tags?.length ?? 0) === 0 && <span className="text-[13px] text-muted-foreground">—</span>}
-                </div>
-              </div>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-2xl">
-              <SheetHeader><SheetTitle>Tags</SheetTitle></SheetHeader>
-              <div className="mt-4">
-                <TagPicker value={task.tags ?? []} onChange={(tags) => patch({ tags })} />
-              </div>
-            </SheetContent>
-          </Sheet>
-
-          {/* Area */}
           <Popover>
             <PopoverTrigger asChild>
-              <div className="cf-row cursor-pointer active:bg-muted/40 min-h-[58px]">
-                <div className="cf-icon-tile shrink-0" style={{ width: 34, height: 34 }}><Layers className="h-4 w-4" /></div>
-                <span className="text-[14.5px]">Area</span>
-                <span className="ml-auto text-[13px] text-muted-foreground">{task.area}</span>
-              </div>
+              <BigCard tone="pink" icon={<Layers className="h-5 w-5" />} label="Area" value={task.area} />
             </PopoverTrigger>
-            <PopoverContent align="end" className="max-h-72 w-48 overflow-auto p-1">
+            <PopoverContent align="start" className="max-h-72 w-48 overflow-auto p-1">
               {AREAS.map(a => (
                 <button key={a} onClick={() => patch({ area: a })} className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">{a}</button>
               ))}
             </PopoverContent>
           </Popover>
+        </div>
 
-          {/* Project */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <div className="cf-row cursor-pointer active:bg-muted/40 min-h-[58px]">
-                <div className="cf-icon-tile shrink-0" style={{ width: 34, height: 34 }}><FolderKanban className="h-4 w-4" /></div>
-                <span className="text-[14.5px]">Project</span>
-                <span className="ml-auto text-[13px] text-muted-foreground">{proj?.name ?? "—"}</span>
-              </div>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="max-h-72 w-56 overflow-auto p-1">
-              <button onClick={() => patch({ projectId: undefined })} className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">None</button>
-              {(state.projects ?? []).map(p => (
-                <button key={p.id} onClick={() => patch({ projectId: p.id })} className="block w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">{p.name}</button>
-              ))}
-            </PopoverContent>
-          </Popover>
-        </section>
-
-        {/* Premium: Energy + Time estimate (+ Moon already in chips) */}
+        {/* PREMIUM: Energy + Time estimate chips */}
+        <SectionLabel icon={<Zap className="h-3.5 w-3.5" />} label="Focus" />
         <section className="cf-card p-4 space-y-3">
           <div>
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground mb-2 flex items-center gap-1.5"><Zap className="h-3 w-3" /> Energy</p>
@@ -336,6 +338,17 @@ export default function TaskDetail() {
           </Button>
           <VoiceCaptureDialog open={voiceOpen} onOpenChange={setVoiceOpen} />
         </section>
+
+        {/* UTILITIES */}
+        <SectionLabel icon={<TimerIcon className="h-3.5 w-3.5" />} label="Utilities" />
+        <div className="grid grid-cols-3 gap-3">
+          <SmallTile tone="teal" icon={<TimerIcon className="h-4 w-4" />} label="Focus timer"
+            onClick={() => navigate(`/pomodoro?task=${task.id}`)} />
+          <SmallTile tone="indigo" icon={<Copy className="h-4 w-4" />} label="Duplicate"
+            onClick={() => { void addTask({ ...task, id: undefined as any, title: `${task.title} (copy)`, createdAt: undefined as any } as any); toast.success("Duplicated"); }} />
+          <SmallTile tone="pink" icon={<Pin className="h-4 w-4" />} label={task.isTopThree ? "Unpin" : "Pin task"}
+            onClick={() => patch({ isTopThree: !task.isTopThree } as any)} />
+        </div>
 
         {/* Notes */}
         <CollapseCard icon={StickyNote} title="Notes" defaultOpen={!!task.notes} badge={lastEdited ? `Edited ${formatDistanceToNow(lastEdited, { addSuffix: true })}` : undefined}>
