@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
 import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
@@ -15,9 +15,15 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Sparkles, ListChecks, Sprout, Wrench, BarChart3, Home as HomeIcon,
+  Pin, ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/cards/SectionCard";
+import { toast } from "sonner";
+import { useResetChecklists } from "@/lib/reset-checklists";
+import {
+  getDefaultHomeHubTab, setDefaultHomeHubTab, type HomeHubTabId,
+} from "@/lib/home-hub-prefs";
 
 function greeting() {
   const h = new Date().getHours();
@@ -28,7 +34,7 @@ function greeting() {
   return "Soft night";
 }
 
-type TabId = "dashboard" | "rhythm" | "reset" | "zones" | "maintenance" | "analytics";
+type TabId = HomeHubTabId;
 
 const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon?: boolean }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -49,7 +55,8 @@ function ComingSoon({ title, blurb }: { title: string; blurb: string }) {
 }
 
 export default function HomeHub() {
-  const [tab, setTab] = useState<TabId>("dashboard");
+  const [tab, setTab] = useState<TabId>(() => getDefaultHomeHubTab());
+  const [pinnedTab, setPinnedTab] = useState<TabId>(() => getDefaultHomeHubTab());
   const { state } = useStore();
   const navigate = useNavigate();
   const [now, setNow] = useState(new Date());
@@ -57,6 +64,15 @@ export default function HomeHub() {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  const pinTab = (id: TabId) => {
+    const next = pinnedTab === id ? "dashboard" : id;
+    setPinnedTab(next);
+    setDefaultHomeHubTab(next);
+    toast.success(
+      pinnedTab === id ? "Default tab cleared." : `"${TABS.find(t => t.id === id)?.label}" opens first now.`,
+    );
+  };
 
   return (
     <div className="space-y-5">
