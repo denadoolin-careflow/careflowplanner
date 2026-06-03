@@ -86,16 +86,21 @@ export function TaskListControls({ prefs, onChange }: { prefs: TaskListPrefs; on
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-            <Layers className="h-3.5 w-3.5" /> Group: {GROUP_LABEL[prefs.group]}
+            {(() => { const I = GROUP_ICON[prefs.group]; return <I className="h-3.5 w-3.5" />; })()}
+            Group: {GROUP_LABEL[prefs.group]}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44">
           <DropdownMenuLabel>Group by</DropdownMenuLabel>
-          {(Object.keys(GROUP_LABEL) as GroupMode[]).map(k => (
-            <DropdownMenuCheckboxItem key={k} checked={prefs.group === k} onCheckedChange={() => onChange({ group: k })}>
-              {GROUP_LABEL[k]}
-            </DropdownMenuCheckboxItem>
-          ))}
+          {(Object.keys(GROUP_LABEL) as GroupMode[]).map(k => {
+            const I = GROUP_ICON[k];
+            return (
+              <DropdownMenuCheckboxItem key={k} checked={prefs.group === k} onCheckedChange={() => onChange({ group: k })}>
+                <I className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                {GROUP_LABEL[k]}
+              </DropdownMenuCheckboxItem>
+            );
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -108,20 +113,28 @@ export function TaskListControls({ prefs, onChange }: { prefs: TaskListPrefs; on
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60 max-h-[70vh] overflow-y-auto">
           <DropdownMenuLabel>Due</DropdownMenuLabel>
-          {(Object.keys(DUE_LABEL) as FilterState["dueRange"][]).map(k => (
-            <DropdownMenuCheckboxItem
-              key={k}
-              checked={(f.dueRange ?? "any") === k}
-              onCheckedChange={() => onChange({ filter: { dueRange: k } })}
-            >
-              {DUE_LABEL[k!]}
-            </DropdownMenuCheckboxItem>
-          ))}
+          {(Object.keys(DUE_LABEL) as FilterState["dueRange"][]).map(k => {
+            const I = DUE_ICON[k as string] ?? Slash;
+            return (
+              <DropdownMenuCheckboxItem
+                key={k}
+                checked={(f.dueRange ?? "any") === k}
+                onCheckedChange={() => onChange({ filter: { dueRange: k } })}
+              >
+                <I className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                {DUE_LABEL[k!]}
+              </DropdownMenuCheckboxItem>
+            );
+          })}
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Priority</DropdownMenuLabel>
           {(["high","medium","low"] as Priority[]).map(p => (
             <DropdownMenuCheckboxItem key={p} checked={f.priorities?.includes(p) ?? false}
               onCheckedChange={() => onChange({ filter: { priorities: toggle(f.priorities, p) } })}>
+              <Flag className={cn(
+                "mr-2 h-3.5 w-3.5",
+                p === "high" ? "text-rose-500" : p === "medium" ? "text-amber-500" : "text-muted-foreground",
+              )} />
               {p[0].toUpperCase() + p.slice(1)}
             </DropdownMenuCheckboxItem>
           ))}
@@ -130,6 +143,7 @@ export function TaskListControls({ prefs, onChange }: { prefs: TaskListPrefs; on
           {AREAS.map(a => (
             <DropdownMenuCheckboxItem key={a} checked={f.areas?.includes(a) ?? false}
               onCheckedChange={() => onChange({ filter: { areas: toggle(f.areas, a) } })}>
+              <Map className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
               {a}
             </DropdownMenuCheckboxItem>
           ))}
@@ -139,6 +153,7 @@ export function TaskListControls({ prefs, onChange }: { prefs: TaskListPrefs; on
             {projects.map(p => (
               <DropdownMenuCheckboxItem key={p.id} checked={f.projectIds?.includes(p.id) ?? false}
                 onCheckedChange={() => onChange({ filter: { projectIds: toggle(f.projectIds, p.id) } })}>
+                <Folder className="mr-2 h-3.5 w-3.5" style={p.color ? { color: p.color } : undefined} />
                 {p.name}
               </DropdownMenuCheckboxItem>
             ))}
@@ -158,16 +173,21 @@ export function TaskListControls({ prefs, onChange }: { prefs: TaskListPrefs; on
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-            <ArrowUpDown className="h-3.5 w-3.5" /> Sort: {SORT_LABEL[prefs.sort]}
+            {(() => { const I = SORT_ICON[prefs.sort]; return <I className="h-3.5 w-3.5" />; })()}
+            Sort: {SORT_LABEL[prefs.sort]}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
           <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-          {(Object.keys(SORT_LABEL) as SortMode[]).map(k => (
-            <DropdownMenuCheckboxItem key={k} checked={prefs.sort === k} onCheckedChange={() => onChange({ sort: k })}>
-              {SORT_LABEL[k]}
-            </DropdownMenuCheckboxItem>
-          ))}
+          {(Object.keys(SORT_LABEL) as SortMode[]).map(k => {
+            const I = SORT_ICON[k];
+            return (
+              <DropdownMenuCheckboxItem key={k} checked={prefs.sort === k} onCheckedChange={() => onChange({ sort: k })}>
+                <I className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                {SORT_LABEL[k]}
+              </DropdownMenuCheckboxItem>
+            );
+          })}
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Direction</DropdownMenuLabel>
           <DropdownMenuCheckboxItem checked={(prefs.sortDir ?? "asc") === "asc"} onCheckedChange={() => onChange({ sortDir: "asc" })}>
