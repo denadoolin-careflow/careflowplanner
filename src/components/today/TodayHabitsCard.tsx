@@ -19,7 +19,7 @@ const GROUPS: { key: NonNullable<Habit["timesOfDay"]>[number]; label: string }[]
   { key: "anytime", label: "Anytime" },
 ];
 
-export function TodayHabitsCard({ date }: { date: Date }) {
+export function TodayHabitsCard({ date, collapsibleId }: { date: Date; collapsibleId?: string }) {
   const { state, toggleHabit } = useStore();
   const [openId, setOpenId] = useState<string | null>(null);
   const iso = format(date, "yyyy-MM-dd");
@@ -58,6 +58,8 @@ export function TodayHabitsCard({ date }: { date: Date }) {
         title={<span className="inline-flex items-center gap-2"><Sprout className="h-4 w-4 text-primary" /> Today's habits</span>}
         subtitle={`${done} of ${total} tended`}
         accent="sage"
+        collapsibleId={collapsibleId}
+        collapsedPreview={`${done}/${total} tended`}
       >
         <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
           <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />

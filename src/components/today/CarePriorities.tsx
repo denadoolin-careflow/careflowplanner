@@ -29,7 +29,7 @@ function pickTopTasks(tasks: Task[], dateISO: string, n: number): Task[] {
   return scored.slice(0, n);
 }
 
-export function CarePriorities({ date, onTaskClick }: { date: Date; onTaskClick?: (id: string) => void }) {
+export function CarePriorities({ date, onTaskClick, collapsibleId }: { date: Date; onTaskClick?: (id: string) => void; collapsibleId?: string }) {
   const { state, toggleTask, updateTask } = useStore();
   const { profile } = useCareProfile();
   const lowMode = state.settings.lowEnergyMode;
@@ -83,11 +83,20 @@ export function CarePriorities({ date, onTaskClick }: { date: Date; onTaskClick?
 
   const mvp = (profile.mvp_items?.length ? profile.mvp_items : []) as string[];
 
+  const doneCount = top.filter((t) => t.done).length;
+  const preview = gentle
+    ? `${mvpChecked.size}/${mvp.length} kept`
+    : top.length
+      ? `${doneCount}/${top.length} complete`
+      : "Pick priorities";
+
   return (
     <SectionCard
       title={gentle ? "Minimum viable day" : `Top ${n} for today`}
       subtitle={gentle ? "What you'd be proud of, even on the heaviest day." : careHeaderForSeason(profile.season)}
       accent={gentle ? "sage" : "warm"}
+      collapsibleId={collapsibleId}
+      collapsedPreview={preview}
       action={
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="rounded-full text-[10px] uppercase tracking-wide">
