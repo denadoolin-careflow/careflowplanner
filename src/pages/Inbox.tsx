@@ -37,6 +37,8 @@ interface Suggestion {
 }
 
 export default function Inbox() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <MobileInbox />;
   return (
     <TaskSelectionProvider storageKey="inbox">
       <InboxInner />
@@ -47,8 +49,6 @@ export default function Inbox() {
 
 function InboxInner() {
   const { state, updateTask } = useStore();
-  const isMobile = useIsMobile();
-  if (isMobile) return <MobileInbox />;
   const { paneOpen, togglePane, setOrderedIds, clear, selectionMode, toggleSelectionMode, selectAll, count } = useTaskSelection();
   const [prefs, setPrefs] = useTaskListPrefs("inbox");
   const [triaging, setTriaging] = useState(false);
