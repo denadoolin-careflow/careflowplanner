@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Calendar as CalIcon, Clock, Repeat, Flag, Tag as TagIcon, Layers, FolderKanban, ListTree, StickyNote, Paperclip, Activity, ChevronDown, ChevronUp, Zap, Timer as TimerIcon, Moon, Mic, Trash2, Copy, FolderInput, Check, Target, Pin, CalendarDays } from "lucide-react";
+import { ArrowLeft, MoreVertical, Calendar as CalIcon, Clock, Repeat, Flag, Tag as TagIcon, Layers, FolderKanban, ListTree, StickyNote, Paperclip, Activity, ChevronDown, ChevronUp, Zap, Timer as TimerIcon, Mic, Trash2, Copy, FolderInput, Check, Target, Pin, CalendarDays } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -39,16 +39,6 @@ const RECUR_OPTS: { id: RecurrenceType; label: string }[] = [
   { id: "weekly", label: "Weekly" },
   { id: "monthly", label: "Monthly" },
 ];
-
-function SettingsRow({ icon: Icon, label, children, onClick }: { icon: any; label: string; children?: React.ReactNode; onClick?: () => void }) {
-  return (
-    <div onClick={onClick} className={cn("cf-row min-h-[58px]", onClick && "cursor-pointer active:bg-muted/40")}>
-      <div className="cf-icon-tile shrink-0" style={{ width: 34, height: 34 }}><Icon className="h-4 w-4" /></div>
-      <span className="text-[14.5px] text-foreground/90">{label}</span>
-      <div className="ml-auto flex items-center gap-2 text-[13px] text-muted-foreground">{children}</div>
-    </div>
-  );
-}
 
 function CollapseCard({ icon: Icon, title, defaultOpen = false, badge, children }: { icon: any; title: string; defaultOpen?: boolean; badge?: React.ReactNode; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
