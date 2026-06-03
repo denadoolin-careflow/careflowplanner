@@ -1,40 +1,24 @@
-## Sidebar header + Inbox controls polish
+## Plan: Line-art CareFlow mark from your reference
 
-### 1. Sidebar brand block (fix overlap, new logo + tagline)
-- File: `src/components/layout/Sidebar.tsx` (header at ~L776–L785) and a new `src/components/widgets/CareFlowMark.tsx`.
-- Replace the heart-in-gradient chip with a new line-style SVG mark (`CareFlowMark`): crescent enclosing a small calendar grid with a heart inside, drawn with `stroke="currentColor"`, no fills, ~1.5 stroke width. Uses semantic tokens so it inherits atmosphere/light/dark colors.
-- Brand text becomes:
-  - Title: `CareFlow` (font-display, leading-none)
-  - Tagline: `Care · Plan · Grow` (text-[10px] uppercase tracking-[0.18em] text-muted-foreground)
-- Fix overlap with the 3 header buttons (theme/side/sections):
-  - Wrap brand in `min-w-0 flex-1` with `truncate`.
-  - When sidebar width < ~232px, hide the action row (CSS via `@container` or a `useEffect` width measurement against existing `width` state) so the brand never gets clipped.
-  - Reduce icon button size to `h-6 w-6` and gap to `gap-0.5` when narrow.
+Translate the attached emblem (circle frame · calendar · leaf branch · caregiver-with-child + heart) into a single-color SVG using `stroke="currentColor"` so it adapts to every atmosphere/light/dark theme.
 
-### 2. Inbox-only header cleanup
-- File: `src/components/layout/AppLayout.tsx`.
-- Add `const onInbox = pathname === "/inbox"`.
-- Conditionally hide on `/inbox`:
-  - `<MobileSidebarTrigger />` (hamburger)
-  - `<UniversalSearchBar />` (search)
-  - `<ThemeToggle />` (day/night)
-- All other pages unaffected. Mobile bottom-sheet inbox header (in `Inbox.tsx`) is untouched per scope.
+### Single file changed: `src/components/widgets/CareFlowMark.tsx`
 
-### 3. Dropdown picker icons on Inbox controls
-- File: `src/components/tasks/TaskListControls.tsx` (the Group/Filter/Sort menus rendered in Inbox header).
-- Add Lucide icons next to each `DropdownMenuItem`:
-  - Group: `Layers`, `Folder`, `Flag`, `CalendarDays`, `Tag`, `Slash` (none)
-  - Filter: `Filter`, `Star`, `Tag`, `Flag`, `CircleDot`
-  - Sort: `ArrowUpAZ`, `Calendar`, `Flag`, `Clock`, with direction arrow
-- Icons sized `h-3.5 w-3.5 text-muted-foreground`, leading the label. Trigger buttons already show their lead icon; ensure the visible value (e.g. "Group: None") also includes its current icon.
+Replace the current paths with a 64×64 viewBox composition:
 
-### 4. Recent (top-5) tags in pickers
-- New helper in `src/lib/tags.ts`: `getTopTags(tags, tasks, notes, n=5)` — counts tag references across `tasks[].tags` and `notes` body/tags; returns the top N by usage, falling back to most-recent `createdAt` ties.
-- File: `src/components/tags/TagPicker.tsx` — when the popover opens with an empty query, render a "Recent" section above the full list showing those top 5 (with `tagIconFor` icon, count badge muted). Selecting one behaves like the existing tag click.
-- File: `src/components/search/UniversalSearchBar.tsx` — in the empty-query state of the search results dropdown, add a "Recent tags" row of up to 5 chips; each navigates to `/tags/<name>` like the existing tag results.
+1. **Outer ring** — `<circle cx="32" cy="32" r="28">` open at top-right to suggest the crescent sweep from the reference.
+2. **Calendar (upper-left quadrant)** — rounded rect ~18×16 with two top binder ticks, one horizontal divider, a 3-col × 2-row grid, and a tiny heart glyph in the center cell.
+3. **Leaf sprig (lower-left)** — gentle stem curve with 4 alternating teardrop leaves.
+4. **Caregiver + child (lower-right)** — two nested arcs forming the parent's embrace, a small circle for the child's head, and a heart at the child's chest.
 
-### Technical notes
-- New `CareFlowMark` uses only `stroke="currentColor"` and `fill="none"` so it inherits `text-sidebar-foreground`/atmosphere tints automatically.
-- Width-aware hiding in the sidebar uses the existing measured `width` state already in `Sidebar.tsx` (no new listeners).
-- No backend / store schema changes. `getTopTags` is a pure derivation memoized with `useMemo` at call sites.
-- All icons from `lucide-react`; no new dependencies.
+All paths: `fill="none"`, `stroke="currentColor"`, `stroke-width="1.6"`, `stroke-linecap="round"`, `stroke-linejoin="round"`. Keep the existing component API (`className`, optional `size`) and add a `compact` prop that bumps stroke to 2 for ≤16px use so the favicon stays legible.
+
+### Not changing
+- Sidebar layout, wordmark, tagline, responsive collapse — already wired to this component.
+- No favicon swap in this pass (say the word and I'll regenerate `/favicon.svg` from the same paths).
+- No new dependencies.
+
+### Acceptance
+- Renders crisp at 16 / 22 / 56 px.
+- Inherits color from any atmosphere via `currentColor` (no hardcoded hex).
+- Background fully transparent — sits cleanly inside the sidebar chip.
