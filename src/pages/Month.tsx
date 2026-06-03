@@ -8,7 +8,7 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Check, Flower2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Flower2, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
