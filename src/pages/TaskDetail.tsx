@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, MoreVertical, Calendar as CalIcon, Clock, Repeat, Flag, Tag as TagIcon, Layers, FolderKanban, ListTree, StickyNote, Paperclip, Activity, ChevronDown, ChevronUp, Zap, Timer as TimerIcon, Moon, Mic, Trash2, Copy, FolderInput, Check } from "lucide-react";
+import { ArrowLeft, MoreVertical, Calendar as CalIcon, Clock, Repeat, Flag, Tag as TagIcon, Layers, FolderKanban, ListTree, StickyNote, Paperclip, Activity, ChevronDown, ChevronUp, Zap, Timer as TimerIcon, Moon, Mic, Trash2, Copy, FolderInput, Check, Target, Pin, CalendarDays } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { useAstrologyEnabled } from "@/lib/astrology-prefs";
 import { moonPhaseFor } from "@/lib/moon-phase";
 import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
+import { haptics } from "@/lib/haptics";
+import { BigCard, SmallTile, SectionLabel } from "@/components/tasks/TaskSettingsBits";
 
 const AREAS: Area[] = ["Personal","Family","Kids","Caregiving","Home","Meals","Appointments","Money","Creative Projects","Holidays & Birthdays"];
 const PRIORITY_OPTS: { id: Priority; label: string; dots: number; tone: string }[] = [
