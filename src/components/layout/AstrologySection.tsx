@@ -6,7 +6,6 @@ import { format } from "date-fns";
 import { useAstrologyEnabled, useTransitsEnabled } from "@/lib/astrology-prefs";
 import { getTransitsForDate } from "@/lib/transits";
 import { getRhythmForecast } from "@/lib/rhythm-forecast";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   collapsed: boolean;
@@ -38,20 +37,14 @@ export function AstrologySection({ collapsed, open, onToggle, onNavigate }: Prop
   if (collapsed) {
     return (
       <div className="mb-1 flex flex-col items-center gap-0.5">
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <NavLink
-              to={todayHref}
-              onClick={onNavigate}
-              className="grid h-10 w-10 place-items-center rounded-xl text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            >
-              <span aria-hidden className="text-base leading-none">{forecast.glyph}</span>
-            </NavLink>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            {forecast.phaseLabel} · Moon in {forecast.sign.sign}
-          </TooltipContent>
-        </Tooltip>
+        <NavLink
+          to={todayHref}
+          onClick={onNavigate}
+          title={`${forecast.phaseLabel} · Moon in ${forecast.sign.sign}`}
+          className="grid h-10 w-10 place-items-center rounded-xl text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <span aria-hidden className="text-base leading-none">{forecast.glyph}</span>
+        </NavLink>
       </div>
     );
   }
