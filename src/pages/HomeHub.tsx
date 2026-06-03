@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
 import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
@@ -15,9 +15,15 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Sparkles, ListChecks, Sprout, Wrench, BarChart3, Home as HomeIcon,
+  Pin, ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/cards/SectionCard";
+import { toast } from "sonner";
+import { useResetChecklists } from "@/lib/reset-checklists";
+import {
+  getDefaultHomeHubTab, setDefaultHomeHubTab, type HomeHubTabId,
+} from "@/lib/home-hub-prefs";
 
 function greeting() {
   const h = new Date().getHours();
@@ -28,7 +34,7 @@ function greeting() {
   return "Soft night";
 }
 
-type TabId = "dashboard" | "rhythm" | "reset" | "zones" | "maintenance" | "analytics";
+type TabId = HomeHubTabId;
 
 const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard; comingSoon?: boolean }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -49,7 +55,8 @@ function ComingSoon({ title, blurb }: { title: string; blurb: string }) {
 }
 
 export default function HomeHub() {
-  const [tab, setTab] = useState<TabId>("dashboard");
+  const [tab, setTab] = useState<TabId>(() => getDefaultHomeHubTab());
+  const [pinnedTab, setPinnedTab] = useState<TabId>(() => getDefaultHomeHubTab());
   const { state } = useStore();
   const navigate = useNavigate();
   const [now, setNow] = useState(new Date());
@@ -57,6 +64,15 @@ export default function HomeHub() {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  const pinTab = (id: TabId) => {
+    const next = pinnedTab === id ? "dashboard" : id;
+    setPinnedTab(next);
+    setDefaultHomeHubTab(next);
+    toast.success(
+      pinnedTab === id ? "Default tab cleared." : `"${TABS.find(t => t.id === id)?.label}" opens first now.`,
+    );
+  };
 
   return (
     <div className="space-y-5">
@@ -109,31 +125,48 @@ export default function HomeHub() {
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
+            const pinned = pinnedTab === t.id;
             return (
-              <button
+              <div
                 key={t.id}
-                onClick={() => setTab(t.id)}
                 className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all",
+                  "group flex shrink-0 items-center gap-1 rounded-full border px-1 pl-3.5 pr-1 py-1 text-xs font-medium transition-all",
                   active
                     ? "border-primary/45 bg-primary/15 text-primary shadow-[0_0_12px_-2px_hsl(var(--primary)/0.45)]"
                     : "border-border/60 bg-card/70 text-muted-foreground hover:bg-card",
                 )}
               >
-                <Icon className="h-3.5 w-3.5" />
-                {t.label}
-                {t.comingSoon && (
-                  <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Soon
-                  </span>
-                )}
-              </button>
+                <button
+                  onClick={() => setTab(t.id)}
+                  className="flex items-center gap-1.5 py-0.5"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {t.label}
+                  {pinned && <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-primary" aria-label="default tab" />}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); pinTab(t.id); }}
+                  title={pinned ? "Unpin default" : "Open this tab first next time"}
+                  className={cn(
+                    "ml-0.5 grid h-5 w-5 place-items-center rounded-full transition-all",
+                    pinned ? "bg-primary/20 text-primary opacity-100" : "opacity-0 group-hover:opacity-100 hover:bg-muted",
+                  )}
+                >
+                  <Pin className={cn("h-3 w-3", pinned && "fill-current")} />
+                </button>
+              </div>
             );
           })}
         </div>
       </div>
 
-      {tab === "dashboard" && <CustomizableGrid pageKey="home-hub" />}
+      {tab === "dashboard" && (
+        <CustomizableGrid
+          pageKey="home-hub"
+          sectionTitle="Your widgets"
+          hero={<DashboardHero onOpenReset={() => setTab("reset")} />}
+        />
+      )}
 
       {tab === "rhythm" && <RhythmTab />}
 
@@ -144,6 +177,96 @@ export default function HomeHub() {
       {tab === "maintenance" && <MaintenanceTab />}
 
       {tab === "analytics" && <AnalyticsTab />}
+    </div>
+  );
+}
+
+/** Reset-style hero shown above the dashboard widget grid. */
+function DashboardHero({ onOpenReset }: { onOpenReset: () => void }) {
+  const reset = useResetChecklists({});
+  const { state } = useStore();
+
+  const activeLists = reset.lists.filter(l => !l.is_template);
+  let remaining = 0;
+  let inProgress = 0;
+  for (const l of activeLists) {
+    const roots = l.items.filter(i => !i.parent_id);
+    const done = roots.filter(i => i.done).length;
+    remaining += Math.max(0, roots.length - done);
+    if (roots.length > 0 && done > 0 && done < roots.length) inProgress += 1;
+  }
+  const top3Done = state.tasks.filter(t => t.isTopThree && t.done).length;
+  const top3Total = state.tasks.filter(t => t.isTopThree).length;
+  const nextAppt = state.appointments
+    .filter(a => {
+      const d = new Date((a.date ?? "") + (a.time ? `T${a.time}` : "T00:00"));
+      return d.getTime() >= Date.now();
+    })
+    .sort((a, b) => (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")))[0];
+
+  return (
+    <article
+      aria-label="Today at a glance"
+      className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-100/70 to-amber-50/40 p-5 ring-1 ring-emerald-200/60 shadow-soft sm:p-6"
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/60">
+        Today at a glance
+      </p>
+      <div className="mt-2 flex items-start gap-3">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-emerald-700 ring-1 ring-white/60 shadow-sm">
+          <LayoutDashboard className="h-6 w-6" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">
+            Your soft command center
+          </h2>
+          <p className="mt-1 text-xs text-foreground/70">
+            Resets, top three, and what's next — all in one calm view.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <HeroStat label="reset tasks" value={remaining} accent="emerald" />
+        <HeroStat label="top 3 done" value={`${top3Done}/${top3Total || 0}`} accent="rose" />
+        <HeroStat
+          label="next up"
+          value={nextAppt ? format(new Date(nextAppt.date + (nextAppt.time ? `T${nextAppt.time}` : "T00:00")), "MMM d · h:mm a") : "—"}
+          accent="violet"
+          small
+        />
+      </div>
+
+      <div className="mt-4 flex flex-col gap-2 rounded-2xl bg-white/70 p-3 ring-1 ring-white/60 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-foreground/80">
+          {inProgress > 0
+            ? `${inProgress} reset${inProgress > 1 ? "s" : ""} in progress.`
+            : remaining > 0
+              ? `${remaining} small step${remaining > 1 ? "s" : ""} waiting in Reset.`
+              : "Everything's tidy. Take a breath. ✨"}
+        </p>
+        <button
+          onClick={onOpenReset}
+          className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--primary))] px-4 py-1.5 text-xs font-medium text-primary-foreground hover:bg-[hsl(var(--primary))]/90"
+        >
+          Open reset <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function HeroStat({ label, value, accent, small }: { label: string; value: React.ReactNode; accent: "emerald" | "rose" | "violet"; small?: boolean }) {
+  const tone =
+    accent === "emerald" ? "bg-emerald-100/70 text-emerald-700" :
+    accent === "rose" ? "bg-rose-100/70 text-rose-700" :
+    "bg-violet-100/70 text-violet-700";
+  return (
+    <div className="rounded-2xl bg-white/55 p-3 ring-1 ring-white/60 backdrop-blur-sm">
+      <p className={cn("inline-block rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider", tone)}>{label}</p>
+      <p className={cn("mt-1 font-display font-semibold tabular-nums leading-tight", small ? "text-sm" : "text-2xl")}>
+        {value}
+      </p>
     </div>
   );
 }

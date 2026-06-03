@@ -3,7 +3,7 @@ import { useResetChecklists } from "@/lib/reset-checklists";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Sparkle, ListChecks } from "lucide-react";
+import { Plus, Sparkle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
@@ -46,7 +46,7 @@ export function HomeResetChecklistWidget() {
 
   return (
     <div className="flex h-full flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
         {lists.length > 1 ? (
           <select
             className="rounded-lg border border-border/60 bg-card/80 px-2 py-1 text-xs"
@@ -56,11 +56,11 @@ export function HomeResetChecklistWidget() {
             {lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
           </select>
         ) : (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <ListChecks className="h-3.5 w-3.5" /> {list.name}
-          </span>
+          <span />
         )}
-        <span className="text-xs text-muted-foreground">{done} / {roots.length}</span>
+        <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+          {done} / {roots.length}
+        </span>
       </div>
 
       <ul className="flex-1 space-y-1.5 overflow-y-auto pr-1">
