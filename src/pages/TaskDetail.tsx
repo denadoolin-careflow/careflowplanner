@@ -79,6 +79,7 @@ export default function TaskDetail() {
   const [lastEdited, setLastEdited] = useState<Date | null>(null);
   const notesTimer = useRef<number | null>(null);
   const [subDraft, setSubDraft] = useState("");
+  const [justCompleted, setJustCompleted] = useState(false);
 
   useEffect(() => { setNotes(task?.notes ?? ""); }, [task?.id]);
 
@@ -92,11 +93,24 @@ export default function TaskDetail() {
   }
 
   const proj = task.projectId ? state.projects?.find(p => p.id === task.projectId) : undefined;
+  const goal = task.goalId ? state.goals?.find(g => g.id === task.goalId) : undefined;
   const subtasks = state.tasks.filter(t => t.parentTaskId === task.id);
   const doneSubs = subtasks.filter(s => s.done).length;
   const moon = (astroOn && task.dueDate) ? moonPhaseFor(parseISO(task.dueDate)) : null;
 
   const patch = (p: Partial<Task>) => updateTask(task.id, p);
+
+  const handleToggleComplete = () => {
+    const willComplete = !task.done;
+    if (willComplete) {
+      haptics.success?.();
+      setJustCompleted(true);
+      window.setTimeout(() => setJustCompleted(false), 900);
+    } else {
+      haptics.tap?.();
+    }
+    void toggleTask(task.id);
+  };
 
   const onNotesChange = (v: string) => {
     setNotes(v);
