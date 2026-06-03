@@ -413,7 +413,7 @@ export default function TaskDetail() {
           <Button variant="outline" className="flex-1 rounded-full gap-1.5" onClick={() => navigate(`/pomodoro?task=${task.id}`)}>
             <TimerIcon className="h-4 w-4" /> Focus
           </Button>
-          <Button className="flex-[1.4] rounded-full gap-1.5" onClick={async () => { await toggleTask(task.id); toast.success(task.done ? "Reopened" : "Completed"); if (!task.done) navigate(-1); }}>
+          <Button className="flex-[1.4] rounded-full gap-1.5" onClick={async () => { const willComplete = !task.done; if (willComplete) { haptics.success?.(); setJustCompleted(true); window.setTimeout(() => setJustCompleted(false), 900); } await toggleTask(task.id); toast.success(task.done ? "Reopened" : "Completed"); if (willComplete) window.setTimeout(() => navigate(-1), 700); }}>
             <Check className="h-4 w-4" /> {task.done ? "Reopen" : "Complete"}
           </Button>
         </div>
