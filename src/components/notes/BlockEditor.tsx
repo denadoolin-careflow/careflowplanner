@@ -588,32 +588,44 @@ export function BlockEditor({
         pluginKey: new PluginKey("slashSuggestion"),
         getItems: (query) => {
           const q = query.toLowerCase();
-          const extra: SlashItem[] = [{
-            title: "Add to Tasks",
-            description: "Promote this checkbox to a Task (⌘⇧↵)",
-            icon: ListPlus,
-            keywords: ["task", "todo", "promote", "add", "send"],
-            command: () => promoteRef.current?.(),
-          }];
+          const extra: SlashItem[] = [
+            {
+              title: "Image",
+              description: "Upload from your device",
+              icon: ImageIcon,
+              keywords: ["image", "picture", "photo", "upload", "img"],
+              command: () => triggerImageUpload(),
+            },
+            {
+              title: "Add to Tasks",
+              description: "Promote this checkbox to a Task (⌘⇧↵)",
+              icon: ListPlus,
+              keywords: ["task", "todo", "promote", "add", "send"],
+              command: () => promoteRef.current?.(),
+            },
+          ];
           return [...slashItems(), ...extra].filter(i =>
             i.title.toLowerCase().includes(q) || (i.keywords ?? []).some(k => k.includes(q))
-          ).slice(0, 8);
+          ).slice(0, 10);
         },
         onSelect: (item, range, editor) => {
           editor.chain().focus().deleteRange(range).run();
           item.command(editor);
         },
         render: (item, active) => (
-          <span className="flex items-center gap-2">
-            <span className={cn("flex h-7 w-7 items-center justify-center rounded-md", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>
-              <item.icon className="h-3.5 w-3.5" />
+          <span className="flex items-center gap-2.5">
+            <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg border border-border/50", active ? "bg-primary/15 text-primary border-primary/30" : "bg-card text-foreground/80")}>
+              <item.icon className="h-4 w-4" />
             </span>
-            <span className="font-medium">{item.title}</span>
+            <span className="flex-1">
+              <span className="block font-medium leading-tight">{item.title}</span>
+              {item.description && <span className="block text-[11px] text-muted-foreground">{item.description}</span>}
+            </span>
           </span>
         ),
       })];
     },
-  }), []);
+  }), [triggerImageUpload]);
 
   /* --------------------------------------------------------------- */
   /*  Seamless toggle / bullet keymap                                */
