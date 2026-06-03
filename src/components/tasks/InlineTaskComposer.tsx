@@ -179,40 +179,42 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <div className="flex flex-col gap-1 border-b border-border/60 p-2">
-                  {([
-                    { label: "Today", get: () => new Date() },
-                    { label: "Tomorrow", get: () => addDays(new Date(), 1) },
-                    { label: "This weekend", get: () => nextSaturday(new Date()) },
-                    { label: "Next week", get: () => nextMonday(new Date()) },
-                    { label: "In 2 weeks", get: () => addDays(new Date(), 14) },
-                  ] as const).map(p => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => setDate(format(p.get(), "yyyy-MM-dd"))}
-                      className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted"
-                    >
-                      <span>{p.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{format(p.get(), "EEE MMM d")}</span>
-                    </button>
-                  ))}
-                  {date && (
-                    <button
-                      type="button"
-                      onClick={() => setDate(undefined)}
-                      className="rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted"
-                    >
-                      Clear date
-                    </button>
-                  )}
-                </div>
+                <Command>
+                  <CommandInput placeholder="Find a date…" />
+                  <CommandList>
+                    <CommandEmpty>Use the calendar below.</CommandEmpty>
+                    <CommandGroup heading="Quick">
+                      {([
+                        { label: "Today", get: () => new Date() },
+                        { label: "Tomorrow", get: () => addDays(new Date(), 1) },
+                        { label: "This weekend", get: () => nextSaturday(new Date()) },
+                        { label: "Next week", get: () => nextMonday(new Date()) },
+                        { label: "Next month", get: () => addMonths(new Date(), 1) },
+                        { label: "In 2 weeks", get: () => addDays(new Date(), 14) },
+                      ] as const).map(opt => (
+                        <CommandItem
+                          key={opt.label}
+                          value={opt.label}
+                          onSelect={() => setDate(format(opt.get(), "yyyy-MM-dd"))}
+                        >
+                          <span className="flex-1">{opt.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{format(opt.get(), "EEE MMM d")}</span>
+                        </CommandItem>
+                      ))}
+                      {date && (
+                        <CommandItem value="Clear date" onSelect={() => setDate(undefined)}>
+                          <span className="text-muted-foreground">Clear date</span>
+                        </CommandItem>
+                      )}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
                 <Calendar
                   mode="single"
                   selected={date ? parseISO(date) : undefined}
                   onSelect={(d) => setDate(d ? format(d, "yyyy-MM-dd") : undefined)}
                   initialFocus
-                  className="pointer-events-auto"
+                  className="pointer-events-auto border-t border-border/60"
                 />
               </PopoverContent>
             </Popover>
@@ -244,6 +246,10 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   <CommandList>
                     <CommandEmpty>No projects.</CommandEmpty>
                     <CommandGroup>
+                      <CommandItem value="No project" onSelect={() => setProjectId(undefined)}>
+                        <span className="mr-2 h-2 w-2 rounded-full bg-muted-foreground/40" />
+                        No project
+                      </CommandItem>
                       {(state.projects ?? []).filter(p => p.status !== "done").map(p => (
                         <CommandItem key={p.id} value={p.name} onSelect={() => setProjectId(p.id)}>
                           <span className="h-2 w-2 rounded-full mr-2" style={{ background: p.color ?? "hsl(var(--muted-foreground))" }} />
@@ -282,6 +288,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   <CommandList>
                     <CommandEmpty>No areas.</CommandEmpty>
                     <CommandGroup>
+                      <CommandItem value="No area" onSelect={() => setArea(undefined)}>No area</CommandItem>
                       {AREAS.map(a => (
                         <CommandItem key={a} value={a} onSelect={() => setArea(a)}>{a}</CommandItem>
                       ))}
