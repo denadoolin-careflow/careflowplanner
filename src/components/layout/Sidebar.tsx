@@ -907,7 +907,73 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         )}
 
         {/* Areas → Projects tree */}
-        {!collapsed && projects.some(p => p.isFavorite) && (
+        {!collapsed && (
+          <div className="mb-2 px-1">
+            <div className="relative">
+              <SearchIcon className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-sidebar-foreground/50" />
+              <input
+                type="text"
+                value={pquery}
+                onChange={(e) => setPquery(e.target.value)}
+                placeholder="Jump to project or area…"
+                className="w-full rounded-md border border-sidebar-border/60 bg-sidebar-accent/40 py-1.5 pl-7 pr-7 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 outline-none focus:border-primary/50 focus:bg-sidebar-accent/70"
+              />
+              {pquery && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setPquery("")}
+                  className="absolute right-1.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                >
+                  <XIcon className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!collapsed && pqTerm && (
+          <div className="mb-2">
+            {filteredAreas.length === 0 && filteredProjects.length === 0 ? (
+              <div className="px-2 py-2 text-[11px] italic text-sidebar-foreground/50">No matches</div>
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                {filteredAreas.map(area => {
+                  const AreaIcon = getAreaIcon(area.icon);
+                  return (
+                    <NavLink
+                      key={`s-area-${area.id}`}
+                      to={`/areas/${encodeURIComponent(area.name)}`}
+                      onClick={() => { setPquery(""); onNavigate?.(); }}
+                      className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent"
+                    >
+                      <AreaIcon className="h-3.5 w-3.5 opacity-80" style={area.color ? { color: area.color } : undefined} />
+                      <span className="flex-1 truncate">{area.name}</span>
+                      <span className="text-[10px] text-sidebar-foreground/50">Area</span>
+                    </NavLink>
+                  );
+                })}
+                {filteredProjects.map(p => {
+                  const PIcon = getAreaIcon(p.icon);
+                  return (
+                    <NavLink
+                      key={`s-proj-${p.id}`}
+                      to={`/projects/${p.id}`}
+                      onClick={() => { setPquery(""); onNavigate?.(); }}
+                      className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent"
+                    >
+                      <PIcon className="h-3.5 w-3.5 opacity-80" style={p.color ? { color: p.color } : undefined} />
+                      <span className="flex-1 truncate">{p.name}</span>
+                      {p.areaName && <span className="text-[10px] text-sidebar-foreground/50 truncate">{p.areaName}</span>}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!collapsed && !pqTerm && projects.some(p => p.isFavorite) && (
           <div className="mb-2">
             <div className="flex items-center justify-between px-2 py-1.5">
               <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60">
@@ -946,7 +1012,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           </div>
         )}
 
-        {areas.length > 0 && !collapsed && (
+        {areas.length > 0 && !collapsed && !pqTerm && (
           <div className="mb-2">
             <div className="flex items-center justify-between px-2 py-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60">Areas</span>
