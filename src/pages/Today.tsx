@@ -54,6 +54,7 @@ import { RoutinesPanel } from "@/components/today/RoutinesPanel";
 import { personalGreeting } from "@/lib/greeting";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
+import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 
 export default function Today() {
   return (
@@ -246,27 +247,33 @@ function TodayInner() {
 
         <MoonJournalReminderBanner date={today} />
 
-        <DailyBrief date={today} />
+        <CollapsibleSection id="daily-brief" title="Daily brief" subtitle="Your day at a glance" preview={format(today, "EEE MMM d")}>
+          <DailyBrief date={today} />
+        </CollapsibleSection>
 
-        {rhythmOn && (
-          <TodayEnergy date={today} />
+        {(rhythmOn || transitsOn || !rhythmOn) && (
+          <CollapsibleSection id="energy-weather" title="Energy & weather" subtitle="Today's rhythm and conditions" preview="Tap to expand">
+            {rhythmOn && <TodayEnergy date={today} />}
+            {transitsOn && <TransitStrip date={today} />}
+            {!rhythmOn && <WeatherHeroCard />}
+          </CollapsibleSection>
         )}
-        {transitsOn && <TransitStrip date={today} />}
-        {!rhythmOn && (
-          <WeatherHeroCard />
-        )}
 
-        <CarePriorities date={today} onTaskClick={setEditTaskId} />
+        <CarePriorities date={today} onTaskClick={setEditTaskId} collapsibleId="care-priorities" />
 
-        <TodayHabitsCard date={today} />
+        <TodayHabitsCard date={today} collapsibleId="today-habits" />
 
         {layout === "plan" ? (
-          <DailyPlanningDashboard day={today} />
+          <CollapsibleSection id="schedule-plan" title="Plan" subtitle="Daily planning dashboard" preview="Tap to expand">
+            <DailyPlanningDashboard day={today} />
+          </CollapsibleSection>
         ) : (
         <SectionCard
           title="Today"
           subtitle={view === "schedule" ? "Click a slot to add a time block, or drag a task in." : "Chronological view of everything on your day."}
           accent="warm"
+          collapsibleId="schedule"
+          collapsedPreview={`${state.appointments.filter(a => apptOccursOn(a, todayISO)).length} events`}
           action={<QuickAddCalendarPopover days={[today]} />}
         >
           <div className="mb-3 flex justify-center sm:justify-end">
@@ -294,9 +301,15 @@ function TodayInner() {
         </SectionCard>
         )}
 
-        {layout === "schedule" && <CalendarTasksPanel days={days} />}
+        {layout === "schedule" && (
+          <CollapsibleSection id="calendar-tasks" title={`Tasks · ${format(today, "MMM d")}`} subtitle="Scheduled for this view" preview={`${visibleTaskIds.length} tasks`}>
+            <CalendarTasksPanel days={days} />
+          </CollapsibleSection>
+        )}
 
-        <EndOfDaySummary date={today} />
+        <CollapsibleSection id="end-of-day" title="End of day" subtitle="Wind down & prepare for tomorrow" preview="Wind down">
+          <EndOfDaySummary date={today} />
+        </CollapsibleSection>
 
         <Collapsible open={widgetsOpen} onOpenChange={setWidgetsOpen}>
           <div className="cozy-card p-4">
