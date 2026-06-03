@@ -7,6 +7,7 @@ import {
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
   PanelLeft, PanelRight, Palette, Pin, CalendarDays, SlidersHorizontal, StickyNote,
 } from "lucide-react";
+import { Search as SearchIcon, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, type MouseEvent } from "react";
 import { useStore } from "@/lib/store";
