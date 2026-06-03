@@ -1,48 +1,56 @@
-## Goals
+## Goal
+Make every content section on the Today page collapsible to a compact header preview, so scrolling is effortless and users can focus on what matters right now.
 
-1. Stop the Inbox capture pill row from extending past the window.
-2. Tighten the collapsed sidebar so every icon tile is the same size, perfectly centered in the rail, and the hover background hugs the icon area (no wider-than-icon hover).
+## Approach
+Build a single reusable `CollapsibleSection` wrapper that persists its open/closed state in localStorage. Apply it to every major section below the hero header on the Today page.
 
-## 1. Inbox capture row (`src/components/tasks/InlineTaskComposer.tsx`)
+## Plan Details
 
-Today the row uses horizontal scroll with a hidden scrollbar (`overflow-x-auto`), so pills overflow off-screen with no visible affordance. Two simple changes:
+### 1. Reusable `CollapsibleSection` component
+Create `src/components/today/CollapsibleSection.tsx`:
+- Wraps children in a `cozy-card` with a `Collapsible` from `@/components/ui/collapsible`
+- Header shows: icon (optional), title, subtitle (optional), and a right-side preview slot (ReactNode, optional)
+- Chevron rotates on open/close
+- `id` prop controls the `localStorage` persistence key (`careflow:today-section:${id}`)
+- `defaultOpen` prop (defaults to `true`)
+- Uses smooth height animation via `CollapsibleContent`
+- The card surface stays visible even when collapsed — only the body content is hidden
 
-**a. Wrap instead of scroll.**
-- Swap the pill container from `overflow-x-auto … flex` to `flex flex-wrap items-center gap-1.5`.
-- Remove the `-mx-1 px-1 pb-1 scrollbar-none …` overflow styling and the `shrink-0` on every pill (no longer needed once wrapping is allowed).
+### 2. Add collapsible support to `SectionCard`
+Modify `src/components/cards/SectionCard.tsx` to accept optional props:
+- `collapsibleId?: string` — when provided, the entire card becomes a `CollapsibleSection` wrapper
+- `defaultOpen?: boolean`
+- Keeps existing non-collapsible behavior unchanged for all other pages
 
-**b. Reduce pill count.**
-- **Merge low / med / high into a single "Energy" popover pill** (icon: `Zap`, label "Energy" → reflects selection: "Low" / "Med" / "High" with the same active soft-color background as today). Popover options: Low, Medium, High, Clear.
-- **Group secondary pills behind a "More" popover** — keep visible: `Describe`, `Date`, `Project`, `Area`, `Priority`, `Energy`. Move `Time of day`, `Tag`, `Est` into a `More ▾` popover that lists them as rows (icon + label + their existing popover content opens on click via a nested popover or inline expander).
-- Keep the bottom-right actions row (`Template`, `Add`) unchanged.
+### 3. Update child components to forward collapsible props
+Modify `CarePriorities` and `TodayHabitsCard` to accept and forward an optional `collapsibleId` prop to their internal `SectionCard`. No visual or functional changes when the prop is absent.
 
-Net effect: pills wrap inside the card on narrow widths and never overflow the window, and the visible set drops from ~11 to 7 controls.
+### 4. Wrap every section on the Today page
+In `src/pages/Today.tsx`, wrap each major section (after the hero header) with `CollapsibleSection` or pass `collapsibleId` to components that use `SectionCard`:
 
-## 2. Sidebar rail alignment (`src/components/layout/Sidebar.tsx`)
+| Section | Wrapper | Preview when collapsed |
+|---------|---------|----------------------|
+| DailyBrief | `CollapsibleSection` id="daily-brief" | Brief title + date |
+| TodayEnergy | `CollapsibleSection` id="energy-weather" | "Energy & Weather" |
+| TransitStrip | Grouped inside TodayEnergy (same toggle) | — |
+| WeatherHeroCard (fallback) | Same as TodayEnergy | — |
+| CarePriorities | `collapsibleId="care-priorities"` | Title + "X of Y complete" |
+| TodayHabitsCard | `collapsibleId="today-habits"` | Title + "X of Y tended" |
+| Schedule / Plan | `CollapsibleSection` id="schedule" | View mode label + event count |
+| CalendarTasksPanel | `CollapsibleSection` id="tasks" | Task count |
+| EndOfDaySummary | `CollapsibleSection` id="end-of-day" | Completion % |
+| Widgets | Already uses `Collapsible` — leave as-is (already toggleable) |
 
-The collapsed rail is `w-[68px] p-3` (= 44px inner) while icon tiles are `h-10 w-10` (40px) — 2px of slack per side that drifts depending on which section's wrapper is used (`mx-auto` in Lists vs `flex flex-col items-center` in tag/notes sections vs no wrapper for project rail items). The collapse/theme/sliders buttons in the header are `h-7 w-7`, which makes them look smaller than the body tiles and visually off-center.
+Sections intentionally **not** made collapsible:
+- Hero header (contains primary day navigation and layout controls)
+- `MoonJournalReminderBanner` (transient banner, not a section)
 
-**a. Normalize rail dimensions.**
-- Change collapsed rail from `w-[68px] p-3` to `w-14 px-2 py-3` (56px wide, 8px horizontal padding → exactly centers a 40px tile).
-- Set every collapsed section's wrapper to `flex flex-col items-center gap-1` so the children sit on the rail centerline regardless of section.
+### 5. Persist state across sessions
+Each `CollapsibleSection` reads/writes its open state to `localStorage` under `careflow:today-section:${id}`. This means the user's preferred collapsed/expanded layout survives page reloads.
 
-**b. Unify the tile size.**
-- Add a tiny `RailTile` className constant: `grid h-10 w-10 place-items-center rounded-xl transition-colors text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground`.
-- Apply it to:
-  - `LISTS.map(...)` NavLink (currently `justify-center h-10 w-10 mx-auto`)
-  - `PinnedTagsSection` collapsed NavLink
-  - `PinnedNotesSection` collapsed NavLink
-  - Calendar (`week`/`month`) collapsed rail items
-  - The project-rail collapsed nodes inside `renderProjectNode` (currently render full row even when collapsed — replace with a 40×40 tile that shows the project icon only).
-- Active state stays the same (`bg-primary-soft text-foreground shadow-soft`).
-
-**c. Align the header chrome in collapsed mode.**
-- In collapsed mode, hide the header utility buttons (theme cycle, side flip, sliders) — they don't fit a 40px tile cleanly and only show on `lg:` anyway.
-- The logo (`h-9 w-9`) and the collapse toggle (`h-7 w-7`) are bumped to `h-10 w-10` so they sit on the same grid line as the nav tiles. Header switches to `flex flex-col items-center gap-1` when collapsed.
-
-After this, every clickable area in the collapsed rail is exactly 40×40, centered horizontally inside the 56px rail, and the hover background never extends past the icon's tile.
-
-## Out of scope
-
-- No changes to expanded-sidebar layout, project tree behavior, or DnD.
-- No new dependencies, no design tokens added — only Tailwind class adjustments and the one Energy/More popover refactor in the composer.
+## Technical Notes
+- No new dependencies — uses existing `@/components/ui/collapsible`
+- `SectionCard` changes are fully backward-compatible
+- Child component changes (`CarePriorities`, `TodayHabitsCard`) are additive only
+- All animation comes from the existing `Collapsible` primitive
+- Preview data for collapsed headers is computed in the parent (`Today.tsx`) where data is already available, avoiding prop drilling or context changes
