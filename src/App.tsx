@@ -40,6 +40,7 @@ import AreaPage from "./pages/AreaPage";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Inbox from "./pages/Inbox";
+import TaskDetail from "./pages/TaskDetail";
 import Graph from "./pages/Graph";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
@@ -115,6 +116,7 @@ const App = () => (
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/inbox" element={<Inbox />} />
+                <Route path="/tasks/:id" element={<TaskDetail />} />
                 <Route path="/upcoming" element={<Upcoming />} />
                 <Route path="/anytime" element={<Anytime />} />
                 <Route path="/someday" element={<Someday />} />
