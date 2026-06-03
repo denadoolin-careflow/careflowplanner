@@ -143,7 +143,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     if (parsed.title && parsed.title !== draft.title) next.title = parsed.title;
     if (parsed.dueDate && !draft.dueDate) next.dueDate = parsed.dueDate;
     if (parsed.time && !draft.startTime) next.startTime = parsed.time;
-    if (parsed.priority && (draft.priority == null || draft.priority === "none")) next.priority = parsed.priority;
+    if (parsed.priority && draft.priority == null) next.priority = parsed.priority;
     if (parsed.area && !draft.area) next.area = parsed.area;
     if (parsed.energy && !draft.energy) next.energy = parsed.energy;
     if (parsed.estMinutes && !draft.estMinutes) next.estMinutes = parsed.estMinutes;
@@ -158,8 +158,8 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     }
     if (parsed.projectName && !draft.projectId) {
       const lc = parsed.projectName.toLowerCase();
-      const match = (state.projects ?? []).find(p => p.title.toLowerCase() === lc)
-        ?? (state.projects ?? []).find(p => p.title.toLowerCase().includes(lc));
+      const match = (state.projects ?? []).find(p => p.name.toLowerCase() === lc)
+        ?? (state.projects ?? []).find(p => p.name.toLowerCase().includes(lc));
       if (match) next.projectId = match.id;
     }
     if (Object.keys(next).length === 0) return;
