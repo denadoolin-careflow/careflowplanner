@@ -15,6 +15,7 @@ export interface Note {
   tags?: string[];
   wordGoal?: number | null;
   coverUrl?: string | null;
+  coverPosition?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +27,7 @@ const fromRow = (r: any): Note => ({
   tags: Array.isArray(r.tags) ? r.tags : [],
   wordGoal: r.word_goal ?? null,
   coverUrl: r.cover_url ?? null,
+  coverPosition: r.cover_position ?? null,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -69,6 +71,7 @@ export async function updateNote(id: string, patch: Partial<Note>): Promise<void
     tags?: string[];
     word_goal?: number | null;
     cover_url?: string | null;
+    cover_position?: number | null;
   } = {};
   if (patch.title !== undefined) row.title = patch.title;
   if (patch.body !== undefined) row.body = patch.body;
@@ -78,6 +81,7 @@ export async function updateNote(id: string, patch: Partial<Note>): Promise<void
   if (patch.tags !== undefined) row.tags = patch.tags;
   if (patch.wordGoal !== undefined) row.word_goal = patch.wordGoal;
   if (patch.coverUrl !== undefined) row.cover_url = patch.coverUrl;
+  if (patch.coverPosition !== undefined) row.cover_position = patch.coverPosition;
   const { error } = await supabase.from("notes").update(row).eq("id", id);
   if (error) throw error;
   if (patch.pinned !== undefined || patch.title !== undefined || patch.archived !== undefined) {

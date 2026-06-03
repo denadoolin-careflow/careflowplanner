@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X } from "lucide-react";
+import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { deleteNote, extractBacklinks, findBacklinksTo, getNote, updateNote, type Note } from "@/lib/notes";
@@ -26,6 +26,8 @@ export default function NoteDetail() {
   const saveTimer = useRef<number | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
+  const [repositioning, setRepositioning] = useState(false);
+  const coverDragRef = useRef<{ startY: number; startPos: number; height: number } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -84,7 +86,43 @@ export default function NoteDetail() {
   const removeCover = async () => {
     if (!id) return;
     setNote(n => n ? { ...n, coverUrl: null } : n);
-    await updateNote(id, { coverUrl: null });
+    await updateNote(id, { coverUrl: null, coverPosition: null });
+    setRepositioning(false);
+  };
+
+  const setCoverPosition = (pos: number) => {
+    const clamped = Math.max(0, Math.min(100, pos));
+    setNote(n => n ? { ...n, coverPosition: clamped } : n);
+  };
+
+  const onCoverPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!repositioning || !note) return;
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+    coverDragRef.current = {
+      startY: e.clientY,
+      startPos: note.coverPosition ?? 50,
+      height: el.getBoundingClientRect().height,
+    };
+  };
+  const onCoverPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = coverDragRef.current;
+    if (!d) return;
+    const dy = e.clientY - d.startY;
+    // Drag down moves image down (shows more of top) → decreases object-position Y%
+    const delta = (dy / d.height) * 100;
+    setCoverPosition(d.startPos - delta);
+  };
+  const onCoverPointerUp = async (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!coverDragRef.current) return;
+    coverDragRef.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+  };
+  const saveCoverPosition = async () => {
+    if (!id || !note) return;
+    await updateNote(id, { coverPosition: note.coverPosition ?? 50 });
+    setRepositioning(false);
+    toast.success("Cover position saved");
   };
 
   if (!note) {
@@ -142,16 +180,56 @@ export default function NoteDetail() {
 
       {note.coverUrl && (
         <div className="mx-auto mt-3 w-full max-w-[920px] px-2">
-          <div className="note-cover group relative h-44 md:h-56">
-            <img src={note.coverUrl} alt="" />
-            <div className="absolute right-3 top-3 z-10 flex gap-1 opacity-0 transition group-hover:opacity-100">
-              <Button size="sm" variant="secondary" className="h-8 gap-1.5 shadow" onClick={() => coverInputRef.current?.click()} disabled={coverBusy}>
-                <ImagePlus className="h-3.5 w-3.5" /> Change
-              </Button>
-              <Button size="icon" variant="secondary" className="h-8 w-8 shadow" onClick={removeCover} aria-label="Remove cover">
-                <X className="h-3.5 w-3.5" />
-              </Button>
+          <div
+            className={cn(
+              "note-cover group relative h-44 md:h-56 touch-none select-none",
+              repositioning && "cursor-grab active:cursor-grabbing ring-2 ring-primary"
+            )}
+            onPointerDown={onCoverPointerDown}
+            onPointerMove={onCoverPointerMove}
+            onPointerUp={onCoverPointerUp}
+            onPointerCancel={onCoverPointerUp}
+          >
+            <img
+              src={note.coverUrl}
+              alt=""
+              style={{ objectPosition: `center ${note.coverPosition ?? 50}%` }}
+              draggable={false}
+            />
+            <div
+              className={cn(
+                "absolute right-3 top-3 z-10 flex gap-1 transition",
+                repositioning ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              )}
+            >
+              {repositioning ? (
+                <>
+                  <Button size="sm" variant="secondary" className="h-8 gap-1.5 shadow" onClick={saveCoverPosition}>
+                    <Check className="h-3.5 w-3.5" /> Save position
+                  </Button>
+                  <Button size="icon" variant="secondary" className="h-8 w-8 shadow" onClick={() => setRepositioning(false)} aria-label="Cancel">
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button size="sm" variant="secondary" className="h-8 gap-1.5 shadow" onClick={() => setRepositioning(true)}>
+                    <Move className="h-3.5 w-3.5" /> Reposition
+                  </Button>
+                  <Button size="sm" variant="secondary" className="h-8 gap-1.5 shadow" onClick={() => coverInputRef.current?.click()} disabled={coverBusy}>
+                    <ImagePlus className="h-3.5 w-3.5" /> Change
+                  </Button>
+                  <Button size="icon" variant="secondary" className="h-8 w-8 shadow" onClick={removeCover} aria-label="Remove cover">
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              )}
             </div>
+            {repositioning && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-2 z-10 text-center text-[11px] font-medium text-white drop-shadow">
+                Drag to reposition · click Save when done
+              </div>
+            )}
           </div>
         </div>
       )}
