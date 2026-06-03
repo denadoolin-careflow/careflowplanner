@@ -273,64 +273,6 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
 
 /* -------------------- Bits -------------------- */
 
-function SectionLabel({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <div className="mt-5 mb-2 flex items-center gap-1.5 px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-      {icon} {label}
-    </div>
-  );
-}
-
-const TONE_BG: Record<string, string> = {
-  primary: "bg-primary/12 text-primary",
-  violet: "bg-violet-500/12 text-violet-500",
-  amber: "bg-amber-500/15 text-amber-600",
-  indigo: "bg-indigo-500/12 text-indigo-500",
-  teal: "bg-teal-500/12 text-teal-600",
-  pink: "bg-pink-500/12 text-pink-500",
-};
-
-function BigCard({
-  icon, label, value, onClick, tone = "primary", extra, valueTone,
-}: {
-  icon: React.ReactNode; label: string; value: string; onClick: () => void;
-  tone?: keyof typeof TONE_BG | string; extra?: React.ReactNode; valueTone?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="relative flex min-h-[96px] w-full flex-col rounded-2xl border border-border/50 bg-card p-3.5 text-left shadow-sm active:scale-[0.985] transition-transform"
-    >
-      <div className="flex items-start justify-between">
-        <div className={cn("grid h-10 w-10 place-items-center rounded-full", TONE_BG[tone as string] ?? TONE_BG.primary)}>
-          {icon}
-        </div>
-        <ChevronRight className="mt-1 h-4 w-4 text-muted-foreground/60" />
-      </div>
-      <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-primary/70">{label}</p>
-      <p className={cn("mt-0.5 truncate text-[15px] font-semibold",
-        valueTone === "indigo" ? "text-indigo-500" : "text-foreground")}>{value}</p>
-      {extra}
-    </button>
-  );
-}
-
-function SmallTile({ icon, label, onClick, tone = "teal" }:
-  { icon: React.ReactNode; label: string; onClick: () => void; tone?: keyof typeof TONE_BG }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex min-h-[56px] items-center gap-2 rounded-2xl border border-border/50 bg-card px-3 text-left shadow-sm active:scale-[0.985]"
-    >
-      <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full", TONE_BG[tone])}>{icon}</span>
-      <span className="flex-1 truncate text-[13px] font-medium">{label}</span>
-      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
-    </button>
-  );
-}
-
 /* -------------------- Picker sub-sheet -------------------- */
 
 function PickerSheet({
