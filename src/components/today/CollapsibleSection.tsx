@@ -78,7 +78,7 @@ export function CollapsibleSection({
             />
           </button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+        <CollapsibleContent>
           <div className="px-5 pb-5 pt-1">{children}</div>
         </CollapsibleContent>
       </Collapsible>
