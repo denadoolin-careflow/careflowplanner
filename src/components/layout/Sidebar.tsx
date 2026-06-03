@@ -813,6 +813,12 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   checked={sections.quickMonths}
                   onChange={(v) => updateSections({ quickMonths: v })}
                 />
+                <SectionToggleRow
+                  icon={Sparkles}
+                  label="Astrology"
+                  checked={sections.astrology}
+                  onChange={(v) => updateSections({ astrology: v })}
+                />
               </PopoverContent>
             </Popover>
           </>
