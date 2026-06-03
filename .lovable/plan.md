@@ -1,76 +1,53 @@
-## Goal
+# Revamp Home Hub Dashboard + Widget Polish
 
-Unify the Home Hub around the look/feel of the new Home Reset page, level up every reset interaction (timer, smart next step, history, one-tap complete with confetti, quick-reset toggle), and rebuild Zones as beautiful, editable, schedulable checklists. Also collapse the legacy `/dashboard` Home into Home Hub so there's one home.
+Make the Dashboard tab inside Home Hub feel like the Home Reset page, fix the "title shown twice" issue on reset checklist widgets, add an auto-arrange action so widgets snap into a clean layout, and let the user pin which tab opens first.
 
----
+## 1. Dashboard tab → Home Reset visual language
 
-## 1. Reset experience upgrades (Home Reset hero + sheet)
+Wrap `CustomizableGrid` inside a new `DashboardCanvas` (or render in place inside `HomeHub.tsx` dashboard branch) with:
 
-**Reset timer** — In `CurrentResetHero`, when "Continue Reset" is pressed start a soft inline countdown using the current task's `est_minutes` (fallback 5 min). Reuses existing `pomodoro-store` (already wired in `QuickTimerMenu`) so the floating timer + chime keep working. Show a tiny "5:00 · pause · skip" strip below the "Next up" row. Pressing complete advances + chains into next task.
+- **"Today at a glance" hero card** — same shape and gradient treatment as Home Reset's `CurrentResetHero`: rounded-3xl, kind-tinted gradient, rounded icon tile (`LayoutDashboard`), display heading, soft caption. Inside it: 3 quick stat chips (resets in progress, top-3 done today, next appointment time) and one big CTA "Continue your reset →" that jumps to the Reset tab.
+- **Section headers** — reuse Home Reset's `SectionHeader` pattern (display font, bold, optional trailing link) above the grid: "Your widgets" with a trailing "Add widget" button when not editing.
+- **Soft section background** — wrap the widget grid in `bg-card/60 ring-1 ring-border/40 rounded-3xl p-3` so it visually anchors instead of floating.
+- Move the existing controls row (preset menu, page theme, edit) into a quiet right-aligned strip under the section header.
 
-**Smart next step** — Replace simple `find(!done)` with a scorer that prefers items that:
-1. match `time_block` for current hour (morning/afternoon/evening),
-2. match `day_of_week` for today,
-3. have the lowest `est_minutes` when user is in low-energy mode (`state.settings.lowEnergyMode`),
-4. otherwise lowest `sort_order`.
-Surface a tiny "Picked because: morning · 5 min" caption under the next-step row.
+## 2. Stop the duplicate title
 
-**One-tap complete with confetti** — Add a single big checkbox/disk on the "Next up" row. On tap: `haptics.success()`, mark done, fire confetti burst (use lightweight inline canvas — small helper `src/lib/confetti.ts`, ~40 lines, no new dep), play optional chime via existing `completion-sound.ts`, then auto-advance to the next smart pick. Hero shows "Beautifully done ✨" celebration state when list completes.
+`WidgetFrame` already renders the widget title. Today `HomeResetChecklistWidget` also renders its own header chip ("📋 Weekly reset · 0/3"), which reads as two titles stacked.
 
-**Reset history** — New table `reset_history` (one row per item completion: `checklist_id`, `item_id`, `title`, `completed_at`, `duration_seconds`). Logged automatically on toggle-done. New `ResetHistorySheet` (opened from a "History" button on hero) shows last 7 days grouped by date with checklist + duration; total reset streaks at top.
+Fix:
 
-**Quick-reset toggle** — `QuickResetCard` gets a new top-right toggle pill ("Show tasks ▾"). Toggling reveals an inline collapsed compact checklist (checkbox + title, no metadata) right inside the card — taps mark done immediately. Double-click still opens the full editor sheet. This makes a quick reset literally a tap-to-toggle list, no sheet required.
+- Remove the inner `<ListChecks /> {list.name}` chip from `HomeResetChecklistWidget` when there is exactly one list (frame title is enough), and keep only a compact `done/total` counter aligned right.
+- When the user has multiple lists, replace the chip with just the list-switcher `<select>` — no icon, no second label.
+- Same audit for `HomeResetQuickWidget` and `WeeklyResetWidget` — if any of them render an internal title row, collapse it to a single compact meta row (progress + small action only).
 
----
+## 3. Auto-snap / Auto-arrange
 
-## 2. Unified Home Hub (kills `/dashboard` Home)
+`react-grid-layout` already snaps on drop. What's missing is a way to recover from messy layouts without manual dragging.
 
-- `/dashboard`, `/home`, `/home-reset` all render `HomeHub`. Remove separate `Dashboard.tsx` route (kept file as redirect to `/home`).
-- `HomeHub` keeps the existing 6-tab strip (Dashboard / Rhythm / Reset / Zones / Maintenance / Analytics) but the **Dashboard tab now embeds the greeting/clock/energy hero from old `Dashboard.tsx`** + the existing `CustomizableGrid pageKey="home"` so nothing is lost.
-- Header band of `HomeHub` matches the Home Reset header style (rounded icon tile + display heading + stat chips), replacing the current `gradient-sage` slab so the whole hub feels consistent.
+Add:
 
----
+- **"Auto-arrange" action** in the controls strip (icon `Wand2`). Calls a new `compactLayout(items)` helper that re-flows widgets row-by-row by reading order, packs them left-to-right at the current breakpoint's column count, and clamps each widget to its `defaultSize` if it has been resized below its `minW/minH`. Pipes the result through `updateLayout`.
+- **Snap on add** — when a new widget is added via `addWidget`, immediately run the same packer so it lands in the first open slot instead of always at the bottom.
+- **Snap on hide/remove** — after removing/hiding a widget, call the packer once so the remaining widgets collapse the gap.
+- Keep `compactType="vertical"` and `preventCollision={false}` as today; the new helper just enforces a clean state up front.
 
-## 3. All Home Hub tabs match Home Reset style
+## 4. Pick which tab opens first
 
-Apply a single visual language to `RhythmTab`, `MaintenanceTab`, `ZonesTab`, `AnalyticsTab`:
+Add a default-tab preference for the Home Hub tab strip:
 
-- Same `SectionHeader` (display, bold, trailing link) as Home Reset.
-- Replace ad-hoc `SectionCard` panels with the soft `rounded-3xl bg-gradient-to-br … ring-1 shadow-soft` card pattern, using the same KIND_ACCENT palette (sage/blush/plum/cream/gold) per section.
-- Icons standardized — every panel/widget gets the rounded 12 tile + lucide icon used on Dashboard widgets and Home Reset hero.
-- Cards use the same `bg-card/80 ring-1 ring-border/50 backdrop-blur-sm hover:-translate-y-0.5 hover:shadow-soft` pattern.
+- New helper `src/lib/home-hub-prefs.ts` with `getDefaultHomeHubTab()` / `setDefaultHomeHubTab(tab)` backed by `localStorage` (key `careflow:home-hub-default-tab`).
+- `HomeHub.tsx` initial `useState<TabId>` reads from this helper (falling back to `"dashboard"`).
+- Each tab pill gets a small pin button revealed on hover/long-press (icon `Pin` / `PinOff`). Tapping pins/unpins that tab as the default; toast confirms. Active pinned tab shows a tiny dot indicator on the pill.
+- No backend change — preference is per-device, which matches existing dashboard preset behavior.
 
----
+## Files
 
-## 4. Unified Checklist UI everywhere
+- **Edit** `src/pages/HomeHub.tsx` — dashboard branch wrapped in new hero + section frame; pin button on tab pills; read default tab on mount.
+- **Edit** `src/components/dashboard/CustomizableGrid.tsx` — accept optional `hero` slot, add Auto-arrange button, call packer on add/hide/remove.
+- **New** `src/lib/dashboard-pack.ts` — `compactLayout(items, cols)` packer.
+- **Edit** `src/components/dashboard/widgets/HomeResetChecklistWidget.tsx` — drop duplicate header chip.
+- **Edit** `src/components/dashboard/widgets/caregiver/HomeResetQuickWidget.tsx` and `DashboardWidgets.tsx` (WeeklyReset) — same dedup pass.
+- **New** `src/lib/home-hub-prefs.ts` — default-tab preference.
 
-Reset checklists, Zone checklists, and Rhythm slots currently render with three different UIs. Standardize on `ChecklistTree` (used in the Reset sheet) wherever a list of tasks is shown inside Home Hub:
-
-- New thin wrapper `ChecklistInline` (compact, no drag handles) for in-card use (Quick Reset cards, Zone cards).
-- Open-in-sheet uses the full `ChecklistTree`.
-- All checkbox toggles share the one-tap-complete + confetti behavior from §1.
-
----
-
-## 5. Beautiful Zone pages (Zones tab rewrite + per-zone route)
-
-Replace `ZonesTab` with a gallery of zone cards using the same `KIND_ACCENT` gradient + icon tile style:
-
-- Cards: icon tile, zone name, progress ring, "n tasks · n done", "Open" → opens a Sheet (or new route `/home/zones/:slug`) showing the zone's checklist using `ChecklistTree`.
-- Each zone has an editable checklist backed by `reset_checklists` (kind `custom`, `zone` stored in `category`) so items are full reset items — meaning they get scheduling (day, time block, est mins), recurrence (already in `reset_items.recurrence_type` + `recurrence_days`), due dates, and they auto-sync to `tasks` via the existing DB trigger.
-- Edit affordances per item: schedule (day/time), recurrence (none/daily/weekly/monthly with day picker), due date, est minutes — all already supported by `ItemDetails` popover in `ChecklistTree`. Surface those controls more prominently on zone pages.
-- AI generate-checklist button per zone (kept from current Zones tab) creates real `reset_checklists` so each zone produces schedulable + recurring tasks.
-
----
-
-## Technical notes
-
-- New migration: `reset_history(id, user_id, checklist_id, item_id, title, est_minutes, completed_at, duration_seconds)` with full GRANT block + RLS scoped to `auth.uid()`.
-- New file `src/lib/confetti.ts` (canvas confetti, no dep).
-- New `src/components/reset/ChecklistInline.tsx`, `src/components/reset/ResetHistorySheet.tsx`, `src/components/reset/ResetTimerBar.tsx`.
-- Rewrite `src/components/home-hub/ZonesTab.tsx` to use `reset_checklists` per zone (drop the old `state.cleaning` path inside Home Hub; legacy `state.cleaning` widgets elsewhere untouched).
-- Update `src/pages/HomeReset.tsx` (hero timer, smart next, confetti, history button, quick-reset toggle).
-- Update `src/pages/HomeHub.tsx` (header restyle, embed Dashboard hero in Dashboard tab).
-- Update `src/App.tsx` (`/dashboard` → `HomeHub`).
-- Apply unified card/section styling across `RhythmTab`, `MaintenanceTab`, `AnalyticsTab`.
-- No changes to existing reset_items ↔ tasks sync triggers — they already give us recurring/scheduled task behavior for free.
+No DB changes, no new dependencies.
