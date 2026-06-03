@@ -4203,33 +4203,51 @@ export type Database = {
       }
       reset_checklists: {
         Row: {
+          auto_reset: boolean
           created_at: string
           id: string
           is_template: boolean
           kind: string
+          last_run_at: string | null
           name: string
+          next_run_at: string | null
+          recurrence_days: number[]
+          recurrence_time: string | null
+          recurrence_type: string
           sort_order: number
           updated_at: string
           user_id: string
           week_start: string | null
         }
         Insert: {
+          auto_reset?: boolean
           created_at?: string
           id?: string
           is_template?: boolean
           kind?: string
+          last_run_at?: string | null
           name: string
+          next_run_at?: string | null
+          recurrence_days?: number[]
+          recurrence_time?: string | null
+          recurrence_type?: string
           sort_order?: number
           updated_at?: string
           user_id: string
           week_start?: string | null
         }
         Update: {
+          auto_reset?: boolean
           created_at?: string
           id?: string
           is_template?: boolean
           kind?: string
+          last_run_at?: string | null
           name?: string
+          next_run_at?: string | null
+          recurrence_days?: number[]
+          recurrence_time?: string | null
+          recurrence_type?: string
           sort_order?: number
           updated_at?: string
           user_id?: string
