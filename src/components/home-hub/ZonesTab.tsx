@@ -232,3 +232,102 @@ export function ZonesTab() {
     </div>
   );
 }
+
+const AI_OPTIONS: { id: string; label: string; desc: string; icon: typeof Sparkles }[] = [
+  { id: "low",    label: "Quick reset",     desc: "5–10 min surface tidy",       icon: Sparkles },
+  { id: "gentle", label: "Low-energy mode", desc: "Gentle, sit-down friendly",   icon: Moon },
+  { id: "medium", label: "Weekly reset",    desc: "Your standard rhythm",        icon: ListChecks },
+  { id: "deep",   label: "Deep clean",      desc: "Thorough, monthly cadence",   icon: Wand2 },
+];
+
+function AiChecklistMenu({
+  busy, onGenerate,
+}: {
+  busy: boolean;
+  onGenerate: (mode: string) => void | Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState("");
+
+  const pick = (id: string) => {
+    setOpen(false);
+    void onGenerate(id);
+  };
+
+  const submitCustom = () => {
+    const t = custom.trim();
+    if (!t) return;
+    setOpen(false);
+    setCustom("");
+    void onGenerate(t);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1 text-[11px] font-medium text-foreground/80 ring-1 ring-white/60 transition-all hover:bg-white/80 disabled:opacity-60"
+        >
+          {busy ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Generating…
+            </>
+          ) : (
+            <>
+              <Wand2 className="h-3 w-3" />
+              AI checklist
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-1.5">
+        <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Generate a checklist
+        </p>
+        <ul className="space-y-0.5">
+          {AI_OPTIONS.map((opt) => {
+            const Icon = opt.icon;
+            return (
+              <li key={opt.id}>
+                <button
+                  onClick={() => pick(opt.id)}
+                  className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-muted/70"
+                >
+                  <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md bg-muted/60 text-foreground/70">
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-xs font-medium leading-tight">{opt.label}</span>
+                    <span className="block text-[10px] text-muted-foreground">{opt.desc}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="mt-2 border-t border-border/50 pt-2">
+          <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Custom
+          </p>
+          <form
+            onSubmit={(e) => { e.preventDefault(); submitCustom(); }}
+            className="flex items-center gap-1 px-1"
+          >
+            <Input
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              placeholder="e.g. before guests arrive"
+              className="h-7 text-xs"
+            />
+            <Button type="submit" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={!custom.trim()}>
+              Go
+            </Button>
+          </form>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
