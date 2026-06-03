@@ -118,7 +118,7 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
           {justCompleted && (
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -translate-x-full animate-task-sweep bg-gradient-to-r from-transparent via-primary/40 to-emerald-400/50 blur-md"
+              className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 animate-task-sweep bg-gradient-to-r from-transparent via-primary/40 to-emerald-400/50 blur-md"
             />
           )}
           <button
