@@ -149,7 +149,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
               type="button"
               onClick={() => { setNotesOpen(v => !v); setTimeout(() => notesRef.current?.focus(), 0); }}
               className={cn(
-                "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none transition-colors hover:bg-muted",
                 notesOpen || notes ? "text-foreground" : "text-muted-foreground",
               )}
               title="Add description"
@@ -164,7 +164,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none transition-colors hover:bg-muted",
                     date ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
@@ -225,7 +225,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none transition-colors hover:bg-muted",
                     project ? "text-foreground" : "text-muted-foreground",
                   )}
                   style={project?.color ? { color: project.color } : undefined}
@@ -268,7 +268,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none transition-colors hover:bg-muted",
                     area ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
@@ -305,7 +305,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   type="button"
                   title="Energy (or type @low / @med / @high)"
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] leading-none transition-colors",
                     energy === "low"  ? "border-transparent bg-secondary-soft text-secondary-foreground" :
                     energy === "high" ? "border-transparent bg-warm-soft text-warm-foreground" :
                     energy === "medium" ? "border-transparent bg-primary-soft text-primary-foreground" :
@@ -361,7 +361,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none transition-colors hover:bg-muted",
                     priority ? "text-foreground" : "text-muted-foreground",
                   )}
                   title="Priority"
@@ -409,7 +409,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none transition-colors hover:bg-muted",
                     dayPart ? "text-foreground" : "text-muted-foreground",
                   )}
                   title="Time of day"
@@ -452,7 +452,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none transition-colors hover:bg-muted",
                     tags.length ? "text-foreground" : "text-muted-foreground",
                   )}
                   title="Tags"
@@ -489,7 +489,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none transition-colors hover:bg-muted",
                     estMinutes ? "text-foreground" : "text-muted-foreground",
                   )}
                   title="Time estimate"
@@ -564,7 +564,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 trigger={
                   <button
                     type="button"
-                    className="mr-1 inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted"
+                    className="mr-1 inline-flex items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none text-muted-foreground transition-colors hover:bg-muted"
                     title="Insert from template"
                   >
                     <BookTemplate className="h-3 w-3" /> Template
