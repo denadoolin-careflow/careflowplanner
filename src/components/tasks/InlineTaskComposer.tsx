@@ -323,6 +323,97 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
               );
             })}
 
+            {/* Priority pill */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    priority ? "text-foreground" : "text-muted-foreground",
+                  )}
+                  title="Priority"
+                >
+                  <Flag className="h-3 w-3" />
+                  {priority ? priority[0].toUpperCase() + priority.slice(1) : "Priority"}
+                  {priority && (
+                    <X
+                      className="h-3 w-3 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setPriority(undefined); }}
+                    />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Find priority…" />
+                  <CommandList>
+                    <CommandEmpty>No match.</CommandEmpty>
+                    <CommandGroup>
+                      {([
+                        { v: "high" as Priority, label: "High", dot: "bg-rose-500" },
+                        { v: "medium" as Priority, label: "Medium", dot: "bg-amber-500" },
+                        { v: "low" as Priority, label: "Low", dot: "bg-emerald-500" },
+                      ]).map(opt => (
+                        <CommandItem key={opt.v} value={opt.label} onSelect={() => setPriority(opt.v)}>
+                          <span className={cn("mr-2 h-2 w-2 rounded-full", opt.dot)} />
+                          {opt.label}
+                        </CommandItem>
+                      ))}
+                      {priority && (
+                        <CommandItem value="Clear priority" onSelect={() => setPriority(undefined)}>
+                          <span className="text-muted-foreground">Clear</span>
+                        </CommandItem>
+                      )}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* Time of Day pill */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    dayPart ? "text-foreground" : "text-muted-foreground",
+                  )}
+                  title="Time of day"
+                >
+                  <Sun className="h-3 w-3" />
+                  {dayPart ?? "Time of day"}
+                  {dayPart && (
+                    <X
+                      className="h-3 w-3 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setDayPart(undefined); }}
+                    />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Find time of day…" />
+                  <CommandList>
+                    <CommandEmpty>No match.</CommandEmpty>
+                    <CommandGroup>
+                      {(["Morning", "Afternoon", "Evening", "Late Night"] as DayPart[]).map(dp => (
+                        <CommandItem key={dp} value={dp} onSelect={() => setDayPart(dp)}>
+                          {dp}
+                        </CommandItem>
+                      ))}
+                      {dayPart && (
+                        <CommandItem value="Clear time of day" onSelect={() => setDayPart(undefined)}>
+                          <span className="text-muted-foreground">Clear</span>
+                        </CommandItem>
+                      )}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
             {/* Tag pill — sticky selection across submissions */}
             <Popover>
               <PopoverTrigger asChild>
@@ -372,7 +463,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   title="Time estimate"
                 >
                   <Timer className="h-3 w-3" />
-                  {estMinutes ? `${estMinutes}m` : "Time"}
+                  {estMinutes ? `${estMinutes}m` : "Est"}
                   {estMinutes != null && (
                     <X
                       className="h-3 w-3 opacity-60 hover:opacity-100"
