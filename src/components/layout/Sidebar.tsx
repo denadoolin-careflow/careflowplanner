@@ -530,6 +530,10 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const { updateProject, addProject } = useStore();
   const { openPanel } = useWorkspaceLayout();
   const navigate = useNavigate();
+  const [pquery, setPquery] = useState("");
+  const pqTerm = pquery.trim().toLowerCase();
+  const filteredAreas = pqTerm ? areas.filter(a => a.name.toLowerCase().includes(pqTerm)) : areas;
+  const filteredProjects = pqTerm ? projects.filter(p => p.name.toLowerCase().includes(pqTerm) || (p.areaName ?? "").toLowerCase().includes(pqTerm)) : [];
   const jumpToDay = (d: Date) => {
     const iso = format(d, "yyyy-MM-dd");
     navigate(`/today?date=${iso}`);
