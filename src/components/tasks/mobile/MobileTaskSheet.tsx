@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { BigCard, SmallTile, SectionLabel } from "@/components/tasks/TaskSettingsBits";
+import { copyToClipboard, formatTaskForCopy } from "@/lib/clipboard";
 
 type Props = {
   task: Task;
@@ -85,6 +86,18 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
     } as any);
     toast("Duplicated", { description: task.title });
     onOpenChange(false);
+  };
+
+  const handleCopyAll = async () => {
+    const subs = (state.tasks ?? []).filter(t => t.parentTaskId === task.id);
+    const text = formatTaskForCopy({
+      title: task.title, done: task.done, area: task.area,
+      projectName: project?.name, dueDate: task.dueDate, priority: task.priority,
+      tags: task.tags, notes: task.notes,
+      subtasks: subs.map(s => ({ title: s.title, done: s.done })),
+    });
+    const ok = await copyToClipboard(text);
+    if (ok) toast("Copied"); else toast.error("Copy failed");
   };
 
   const handlePin = async () => {
@@ -244,10 +257,11 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
         {/* UTILITIES */}
         <SectionLabel className="!px-5" icon={<Zap className="h-3.5 w-3.5" />} label="Utilities" />
         <div className="px-5">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <SmallTile tone="teal" icon={<Timer className="h-4 w-4" />} label="Timer"
               onClick={() => { onOpenChange(false); navigate(`/tasks/${task.id}`); }} />
             <SmallTile tone="teal" icon={<Copy className="h-4 w-4" />} label="Duplicate" onClick={handleDuplicate} />
+            <SmallTile tone="indigo" icon={<Copy className="h-4 w-4" />} label="Copy all" onClick={handleCopyAll} />
             <SmallTile tone="pink" icon={<Pin className="h-4 w-4" />} label={task.isTopThree ? "Unpin" : "Pin task"} onClick={handlePin} />
           </div>
         </div>

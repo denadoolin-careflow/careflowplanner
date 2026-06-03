@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check } from "lucide-react";
+import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { deleteNote, extractBacklinks, findBacklinksTo, getNote, updateNote, type Note } from "@/lib/notes";
@@ -14,6 +14,7 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { NoteTOC } from "@/components/notes/NoteTOC";
+import { copyToClipboard } from "@/lib/clipboard";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -146,6 +147,21 @@ export default function NoteDetail() {
             onApply={(next) => { setBody(next); save({ body: next }); }}
           />
           <EditorPrefsMenu />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={async () => {
+              const headerText = note.kind === "daily" && note.date
+                ? format(parseISO(note.date), "EEEE, MMMM d, yyyy")
+                : (title || "Untitled");
+              const ok = await copyToClipboard(`${headerText}\n\n${body}`);
+              if (ok) toast.success("Copied to clipboard");
+              else toast.error("Copy failed");
+            }}
+            className="gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <Copy className="h-4 w-4" /> Copy
+          </Button>
           {!note.coverUrl && (
             <Button
               variant="ghost"

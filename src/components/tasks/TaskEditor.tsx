@@ -31,6 +31,8 @@ import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { Sparkles } from "lucide-react";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { copyToClipboard, formatTaskForCopy } from "@/lib/clipboard";
+import { Copy } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -241,6 +243,25 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
             <DialogTitle className="font-display text-base font-semibold">Edit task</DialogTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="ml-auto gap-1.5 text-muted-foreground hover:text-foreground"
+              onClick={async () => {
+                const proj = state.projects?.find(p => p.id === draft.projectId);
+                const subs = (state.tasks ?? []).filter(t => t.parentTaskId === draft.id);
+                const ok = await copyToClipboard(formatTaskForCopy({
+                  title: draft.title, done: draft.done, area: draft.area,
+                  projectName: proj?.name, dueDate: draft.dueDate, priority: draft.priority,
+                  tags: draft.tags, notes: draft.notes,
+                  subtasks: subs.map(s => ({ title: s.title, done: s.done })),
+                }));
+                if (ok) toast.success("Copied to clipboard"); else toast.error("Copy failed");
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" /> Copy
+            </Button>
           </div>
         </DialogHeader>
 
