@@ -888,6 +888,7 @@ export function BlockEditor({
   // Sync external body changes (e.g. AI replace) without losing focus
   useEffect(() => {
     if (!editor) return;
+    editorRef.current = editor;
     if (body === lastSyncedRef.current) return;
     lastSyncedRef.current = body;
     const next = bodyToHtml(body);
