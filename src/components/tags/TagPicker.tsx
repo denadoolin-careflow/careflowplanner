@@ -7,11 +7,12 @@ import { cn } from "@/lib/utils";
 import { useTags } from "@/hooks/use-tags";
 import {
   TAG_COLORS, fallbackColorFor, readableTextOn, normalizeTagName,
-  DEFAULT_ICON,
+  DEFAULT_ICON, getTopTags,
 } from "@/lib/tags";
 import { TagChip } from "./TagChip";
 import { tagIconFor, TAG_ICON_OPTIONS } from "./tag-icon";
 import { toast } from "sonner";
+import { useStore } from "@/lib/store";
 
 interface Props {
   value: string[];
@@ -25,6 +26,7 @@ interface Props {
 
 export function TagPicker({ value, onChange, triggerLabel = "Add tag", triggerClassName, inline = true }: Props) {
   const { tags, ensure, recolor } = useTags();
+  const { state } = useStore();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [creatingColor, setCreatingColor] = useState<string>(TAG_COLORS[6].hex);
@@ -37,6 +39,14 @@ export function TagPicker({ value, onChange, triggerLabel = "Add tag", triggerCl
     if (!q) return tags;
     return tags.filter((t) => t.name.toLowerCase().includes(q));
   }, [tags, query]);
+
+  const recentTop = useMemo(() => {
+    const sources: Array<{ tags?: string[] | null }> = [
+      ...(state.tasks ?? []),
+      ...((state as any).notes ?? []),
+    ];
+    return getTopTags(tags, sources, 5);
+  }, [tags, state.tasks, (state as any).notes]);
 
   const exactExists = !!tags.find((t) => t.name.toLowerCase() === query.trim().toLowerCase());
   const canCreate = query.trim().length > 0 && !exactExists;
