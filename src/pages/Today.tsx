@@ -32,7 +32,6 @@ import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 import { useRhythmForecastEnabled, getRhythmForecast } from "@/lib/rhythm-forecast";
 import { PlanWithEnergyDialog } from "@/components/rhythm/PlanWithEnergyDialog";
 import { Wand2 } from "lucide-react";
-import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
