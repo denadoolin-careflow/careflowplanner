@@ -128,14 +128,15 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   };
 
   useEffect(() => { setDraft(task); }, [task]);
-  if (!draft) return null;
-
-  const set = <K extends keyof Task>(k: K, v: Task[K]) => setDraft(d => d ? { ...d, [k]: v } : d);
 
   const parsed = useMemo(
     () => (nlpOn && draft?.title.trim() ? parseTaskInput(draft.title) : null),
     [nlpOn, draft?.title]
   );
+
+  if (!draft) return null;
+
+  const set = <K extends keyof Task>(k: K, v: Task[K]) => setDraft(d => d ? { ...d, [k]: v } : d);
 
   const applyNlp = () => {
     if (!draft || !parsed) return;
