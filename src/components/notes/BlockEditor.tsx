@@ -32,10 +32,12 @@ import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import tippy, { Instance as TippyInstance } from "tippy.js";
 import { marked } from "marked";
 import TurndownService from "turndown";
+import Image from "@tiptap/extension-image";
+import { uploadNoteImage } from "@/lib/note-images";
 import {
   Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
-  ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus,
+  ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus, Image as ImageIcon,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
