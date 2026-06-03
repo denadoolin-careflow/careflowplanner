@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,7 +8,7 @@ import {
 import {
   ArrowRight, Plus, Home as HomeIcon, ListChecks, Sparkle, Check,
   BedDouble, UtensilsCrossed, Bath, WashingMachine, DoorOpen, Sofa,
-  ChevronRight, Clock, Timer, History, ChevronDown, ChevronUp,
+  ChevronRight, Clock, Timer, History, ChevronDown, ChevronUp, CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,8 @@ import { ChecklistInline } from "@/components/reset/ChecklistInline";
 import { AIGenerateMenu } from "@/components/reset/AIGenerateMenu";
 import { MoonResetTip } from "@/components/rhythm/MoonResetTip";
 import { ResetHistorySheet } from "@/components/reset/ResetHistorySheet";
+import { ResetScheduleDialog } from "@/components/reset/ResetScheduleDialog";
+import { processDueResets, describeRecurrence } from "@/lib/reset-recurrence";
 import { fireConfetti } from "@/lib/confetti";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { logResetCompletion } from "@/lib/reset-history";
@@ -102,6 +104,20 @@ export default function HomeReset() {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [sheetListId, setSheetListId] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+
+  // Auto-run any recurring resets that are due.
+  useEffect(() => {
+    (async () => {
+      try {
+        const n = await processDueResets();
+        if (n > 0) {
+          toast.success(`${n} reset${n > 1 ? "s" : ""} refreshed for today ✨`);
+          await reset.refresh();
+        }
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Choose current reset: pinned selection → first with progress → first overall
   const current = useMemo(() => {
@@ -222,6 +238,7 @@ export default function HomeReset() {
             const { nextUp } = listStats(current, { lowEnergy });
             if (nextUp) startTimer(nextUp);
           }}
+          onSchedule={(patch) => reset.updateList(current.id, patch)}
         />
       ) : (
         <EmptyHero
