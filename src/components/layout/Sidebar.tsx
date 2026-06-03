@@ -28,6 +28,7 @@ import { fallbackColorFor } from "@/lib/tags";
 import { useNavigate } from "react-router-dom";
 import { AstrologySection } from "./AstrologySection";
 import { Sparkles } from "lucide-react";
+import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon, tint: "bg-indigo-500/15 text-indigo-500", dot: "bg-indigo-500" },
