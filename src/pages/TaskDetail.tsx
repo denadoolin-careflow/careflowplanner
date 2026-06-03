@@ -22,6 +22,7 @@ import { moonPhaseFor } from "@/lib/moon-phase";
 import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
 import { haptics } from "@/lib/haptics";
 import { BigCard, SmallTile, SectionLabel } from "@/components/tasks/TaskSettingsBits";
+import { copyToClipboard, formatTaskForCopy } from "@/lib/clipboard";
 
 const AREAS: Area[] = ["Personal","Family","Kids","Caregiving","Home","Meals","Appointments","Money","Creative Projects","Holidays & Birthdays"];
 const PRIORITY_OPTS: { id: Priority; label: string; dots: number; tone: string }[] = [
@@ -133,6 +134,16 @@ export default function TaskDetail() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => { void addTask({ ...task, id: undefined as any, title: `${task.title} (copy)`, createdAt: undefined as any } as any); toast.success("Duplicated"); }}><Copy className="mr-2 h-4 w-4" /> Duplicate</DropdownMenuItem>
+              <DropdownMenuItem onClick={async () => {
+                const text = formatTaskForCopy({
+                  title: task.title, done: task.done, area: task.area,
+                  projectName: proj?.name, dueDate: task.dueDate, priority: task.priority,
+                  tags: task.tags, notes: task.notes,
+                  subtasks: subtasks.map(s => ({ title: s.title, done: s.done })),
+                });
+                const ok = await copyToClipboard(text);
+                if (ok) toast.success("Copied to clipboard"); else toast.error("Copy failed");
+              }}><Copy className="mr-2 h-4 w-4" /> Copy all</DropdownMenuItem>
               <DropdownMenuItem onClick={() => patch({ inbox: false })}><FolderInput className="mr-2 h-4 w-4" /> Remove from inbox</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" onClick={async () => { await deleteTask(task.id); navigate(-1); }}><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
