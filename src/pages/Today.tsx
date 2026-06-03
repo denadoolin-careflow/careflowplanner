@@ -329,5 +329,5 @@ function TodayInner() {
     </div>
   );
 
-  return <WorkspaceShell>{body}</WorkspaceShell>;
+  return body;
 }
