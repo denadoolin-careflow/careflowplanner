@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Search as SearchIcon, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useStore } from "@/lib/store";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
@@ -534,6 +534,45 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const pqTerm = pquery.trim().toLowerCase();
   const filteredAreas = pqTerm ? areas.filter(a => a.name.toLowerCase().includes(pqTerm)) : areas;
   const filteredProjects = pqTerm ? projects.filter(p => p.name.toLowerCase().includes(pqTerm) || (p.areaName ?? "").toLowerCase().includes(pqTerm)) : [];
+  type SearchResult =
+    | { kind: "area"; id: string; name: string; icon?: string | null; color?: string | null; to: string }
+    | { kind: "project"; id: string; name: string; icon?: string | null; color?: string | null; areaName?: string; to: string };
+  const results: SearchResult[] = pqTerm
+    ? [
+        ...filteredAreas.map((a): SearchResult => ({
+          kind: "area", id: a.id, name: a.name, icon: a.icon, color: a.color,
+          to: `/areas/${encodeURIComponent(a.name)}`,
+        })),
+        ...filteredProjects.map((p): SearchResult => ({
+          kind: "project", id: p.id, name: p.name, icon: p.icon, color: p.color, areaName: p.areaName,
+          to: `/projects/${p.id}`,
+        })),
+      ]
+    : [];
+  const [activeIdx, setActiveIdx] = useState(0);
+  useEffect(() => { setActiveIdx(0); }, [pquery, results.length]);
+  const resultRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  useEffect(() => {
+    resultRefs.current[activeIdx]?.scrollIntoView({ block: "nearest" });
+  }, [activeIdx]);
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") { setPquery(""); return; }
+    if (results.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIdx(i => (i + 1) % results.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIdx(i => (i - 1 + results.length) % results.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const r = results[activeIdx];
+      if (!r) return;
+      navigate(r.to);
+      setPquery("");
+      onNavigate?.();
+    }
+  };
   const jumpToDay = (d: Date) => {
     const iso = format(d, "yyyy-MM-dd");
     navigate(`/today?date=${iso}`);
@@ -915,7 +954,12 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 type="text"
                 value={pquery}
                 onChange={(e) => setPquery(e.target.value)}
+                onKeyDown={onSearchKeyDown}
                 placeholder="Jump to project or area…"
+                role="combobox"
+                aria-expanded={pqTerm.length > 0}
+                aria-controls="sidebar-search-results"
+                aria-activedescendant={results[activeIdx] ? `sidebar-search-opt-${activeIdx}` : undefined}
                 className="w-full rounded-md border border-sidebar-border/60 bg-sidebar-accent/40 py-1.5 pl-7 pr-7 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 outline-none focus:border-primary/50 focus:bg-sidebar-accent/70"
               />
               {pquery && (
@@ -934,37 +978,33 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
 
         {!collapsed && pqTerm && (
           <div className="mb-2">
-            {filteredAreas.length === 0 && filteredProjects.length === 0 ? (
+            {results.length === 0 ? (
               <div className="px-2 py-2 text-[11px] italic text-sidebar-foreground/50">No matches</div>
             ) : (
-              <div className="flex flex-col gap-0.5">
-                {filteredAreas.map(area => {
-                  const AreaIcon = getAreaIcon(area.icon);
+              <div id="sidebar-search-results" role="listbox" className="flex flex-col gap-0.5">
+                {results.map((r, idx) => {
+                  const Icon = getAreaIcon(r.icon ?? undefined);
+                  const isActive = idx === activeIdx;
                   return (
                     <NavLink
-                      key={`s-area-${area.id}`}
-                      to={`/areas/${encodeURIComponent(area.name)}`}
+                      key={`s-${r.kind}-${r.id}`}
+                      ref={(el) => { resultRefs.current[idx] = el; }}
+                      id={`sidebar-search-opt-${idx}`}
+                      role="option"
+                      aria-selected={isActive}
+                      to={r.to}
+                      onMouseEnter={() => setActiveIdx(idx)}
                       onClick={() => { setPquery(""); onNavigate?.(); }}
-                      className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent"
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent",
+                        isActive && "bg-sidebar-accent text-foreground",
+                      )}
                     >
-                      <AreaIcon className="h-3.5 w-3.5 opacity-80" style={area.color ? { color: area.color } : undefined} />
-                      <span className="flex-1 truncate">{area.name}</span>
-                      <span className="text-[10px] text-sidebar-foreground/50">Area</span>
-                    </NavLink>
-                  );
-                })}
-                {filteredProjects.map(p => {
-                  const PIcon = getAreaIcon(p.icon);
-                  return (
-                    <NavLink
-                      key={`s-proj-${p.id}`}
-                      to={`/projects/${p.id}`}
-                      onClick={() => { setPquery(""); onNavigate?.(); }}
-                      className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent"
-                    >
-                      <PIcon className="h-3.5 w-3.5 opacity-80" style={p.color ? { color: p.color } : undefined} />
-                      <span className="flex-1 truncate">{p.name}</span>
-                      {p.areaName && <span className="text-[10px] text-sidebar-foreground/50 truncate">{p.areaName}</span>}
+                      <Icon className="h-3.5 w-3.5 opacity-80" style={r.color ? { color: r.color } : undefined} />
+                      <span className="flex-1 truncate">{r.name}</span>
+                      {r.kind === "area"
+                        ? <span className="text-[10px] text-sidebar-foreground/50">Area</span>
+                        : r.areaName && <span className="text-[10px] text-sidebar-foreground/50 truncate">{r.areaName}</span>}
                     </NavLink>
                   );
                 })}
