@@ -879,20 +879,31 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
       <nav className={cn("mt-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden w-full", !collapsed && "pr-1")}>
         {/* Things-style Lists rail */}
         <div className="mb-3 flex flex-col gap-0.5">
-          {LISTS.map(({ to, label, icon: Icon }) => wrapItem(label,
+          {LISTS.map(({ to, label, icon: Icon, tint, dot }) => wrapItem(label,
             <NavLink
               key={to}
               to={to}
               onClick={handleNavClick(to)}
               className={({ isActive }) => cn(
-                "group flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
+                "group relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
                 "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                collapsed ? "justify-center h-10 w-10 mx-auto" : "px-3 py-2",
+                collapsed ? "justify-center h-10 w-10 mx-auto" : "px-2 py-2",
                 isActive && "bg-primary-soft text-foreground shadow-soft",
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
-              {!collapsed && <span>{label}</span>}
+              {collapsed ? (
+                <span className={cn("grid h-7 w-7 place-items-center rounded-lg", tint)}>
+                  <Icon className="h-4 w-4" />
+                </span>
+              ) : (
+                <>
+                  <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-lg", tint)}>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="flex-1">{label}</span>
+                  <span className={cn("h-1.5 w-1.5 rounded-full opacity-60", dot)} />
+                </>
+              )}
             </NavLink>
           ))}
         </div>
