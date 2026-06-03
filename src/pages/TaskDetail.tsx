@@ -151,13 +151,23 @@ export default function TaskDetail() {
         </div>
       </div>
 
-      <div className="space-y-4 px-4">
+      <div className="mx-auto max-w-4xl space-y-4 px-4">
         {/* Title */}
-        <div className="flex items-start gap-3 px-1 pt-2">
-          <button onClick={() => toggleTask(task.id)} className="mt-1 grid h-7 w-7 place-items-center rounded-full border-2 border-foreground/40">
-            {task.done && <Check className="h-4 w-4 text-primary" />}
+        <div className="relative overflow-hidden flex items-start gap-3 rounded-2xl px-1 pt-2">
+          {justCompleted && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 animate-task-sweep bg-gradient-to-r from-transparent via-primary/40 to-emerald-400/50 blur-md"
+            />
+          )}
+          <button
+            onClick={handleToggleComplete}
+            className={cn("mt-2 shrink-0 transition-transform", justCompleted && "scale-110")}
+            aria-label="Toggle complete"
+          >
+            <Checkbox checked={task.done} className="h-6 w-6 rounded-full border-2" />
           </button>
-          <h1 className="font-display text-[26px] leading-tight">{task.title}</h1>
+          <h1 className={cn("font-display text-[26px] leading-tight", task.done && "line-through text-muted-foreground")}>{task.title}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2 px-1">
           <span className="text-[12.5px] text-muted-foreground">{task.area}</span>
