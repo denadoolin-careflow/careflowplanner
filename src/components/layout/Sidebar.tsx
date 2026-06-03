@@ -531,6 +531,20 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const { updateProject, addProject } = useStore();
   const { openPanel } = useWorkspaceLayout();
   const navigate = useNavigate();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        setCompact(w > 0 && w < 232);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [pquery, setPquery] = useState("");
   const pqTerm = pquery.trim().toLowerCase();
   const filteredAreas = pqTerm ? areas.filter(a => a.name.toLowerCase().includes(pqTerm)) : areas;
