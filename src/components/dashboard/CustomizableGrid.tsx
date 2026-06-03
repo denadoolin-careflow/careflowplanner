@@ -8,7 +8,7 @@ import { WIDGET_REGISTRY } from "./WidgetRegistry";
 import { WidgetFrame } from "./WidgetFrame";
 import { AddWidgetSheet } from "./AddWidgetSheet";
 import { Button } from "@/components/ui/button";
-import { Pencil, Check, Plus, RotateCcw, Palette, Layers, Trash2 } from "lucide-react";
+import { Pencil, Check, Plus, RotateCcw, Palette, Layers, Trash2, Wand2 } from "lucide-react";
 import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
 import { WidgetThemePicker } from "./WidgetThemePicker";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { compactLayout } from "@/lib/dashboard-pack";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -40,9 +41,11 @@ function broadcastQuickAdd(event: string) {
 
 interface Props {
   pageKey: PageKey;
+  hero?: React.ReactNode;
+  sectionTitle?: string;
 }
 
-export function CustomizableGrid({ pageKey }: Props) {
+export function CustomizableGrid({ pageKey, hero, sectionTitle }: Props) {
   const {
     data, loading, updateLayout, addWidget, removeWidget,
     hideWidget, updateWidgetProps, resetToDefault,
@@ -95,6 +98,21 @@ export function CustomizableGrid({ pageKey }: Props) {
     xxs: fitToCols(visibleLayout, 1),
   }), [visibleLayout]);
 
+  const autoArrange = () => {
+    if (!data) return;
+    const cols = window.innerWidth >= 996 ? 12 : window.innerWidth >= 768 ? 6 : window.innerWidth >= 480 ? 4 : 1;
+    const packed = compactLayout(visibleLayout, cols);
+    // merge packed positions back into the full layout (hidden items untouched)
+    const map = new Map(packed.map((x) => [x.i, x]));
+    const merged = data.layout.map((it) => {
+      const u = map.get(it.i);
+      return u ? { ...it, x: u.x, y: u.y, w: u.w, h: u.h } : it;
+    });
+    updateLayout(merged as GridItem[]);
+    haptics.snap();
+    toast.success("Widgets snapped into place.");
+  };
+
   // Group widgets by mobile section for the swipeable layout.
   const mobileGrouped = useMemo(() => {
     const order = new Map(MOBILE_SECTIONS.map((s, i) => [s.id, i] as const));
@@ -116,7 +134,18 @@ export function CustomizableGrid({ pageKey }: Props) {
 
   return (
     <div>
+      {hero ? <div className="mb-4">{hero}</div> : null}
+
+      {sectionTitle && (
+        <div className="mb-3 flex items-end justify-between">
+          <h2 className="font-display text-xl font-semibold tracking-tight">{sectionTitle}</h2>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={autoArrange} title="Snap widgets into a clean grid">
+          <Wand2 className="mr-1 h-4 w-4" /> Auto-arrange
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="font-medium">
