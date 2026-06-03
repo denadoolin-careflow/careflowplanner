@@ -1,63 +1,100 @@
 import { useMemo, useState } from "react";
-import { Plus, Trash2, RotateCcw, Sparkles, Wand2, Loader2, HeartHandshake } from "lucide-react";
+import {
+  BedDouble, UtensilsCrossed, Bath, WashingMachine, DoorOpen, Sofa,
+  Trees, TreePine, Sparkles, Wand2, Loader2, Plus, ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Checkbox } from "@/components/ui/checkbox";
-import { SectionCard } from "@/components/cards/SectionCard";
-import { useStore } from "@/lib/store";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { aiInvoke } from "@/lib/ai-invoke";
-import { useCaregivingChores, caregivingChores } from "@/lib/caregiving-chores";
+import { useResetChecklists } from "@/lib/reset-checklists";
+import { ChecklistTree } from "@/components/reset/ChecklistTree";
 
-const DEFAULT_ZONES = [
-  "Kitchen", "Bathrooms", "Bedrooms", "Laundry",
-  "Living Room", "Playroom", "Outdoors", "Whole home",
+const ZONE_PREFIX = "Zone: ";
+
+type ZoneDef = {
+  label: string;
+  icon: typeof BedDouble;
+  accent: string;
+  bar: string;
+};
+
+const DEFAULT_ZONES: ZoneDef[] = [
+  { label: "Bedroom",  icon: BedDouble,       accent: "from-rose-100/70 to-rose-50/40 ring-rose-200/60",         bar: "bg-rose-400" },
+  { label: "Kitchen",  icon: UtensilsCrossed, accent: "from-emerald-100/70 to-emerald-50/40 ring-emerald-200/60", bar: "bg-emerald-500" },
+  { label: "Bathroom", icon: Bath,            accent: "from-violet-100/70 to-violet-50/40 ring-violet-200/60",   bar: "bg-violet-500" },
+  { label: "Laundry",  icon: WashingMachine,  accent: "from-sky-100/70 to-sky-50/40 ring-sky-200/60",            bar: "bg-sky-500" },
+  { label: "Entryway", icon: DoorOpen,        accent: "from-amber-100/70 to-amber-50/40 ring-amber-200/60",      bar: "bg-amber-500" },
+  { label: "Living",   icon: Sofa,            accent: "from-stone-100/70 to-stone-50/40 ring-stone-200/60",      bar: "bg-stone-500" },
+  { label: "Outdoors", icon: Trees,           accent: "from-lime-100/70 to-lime-50/40 ring-lime-200/60",         bar: "bg-lime-500" },
+  { label: "Whole home", icon: TreePine,      accent: "from-teal-100/70 to-teal-50/40 ring-teal-200/60",         bar: "bg-teal-500" },
 ];
 
 export function ZonesTab() {
-  const { state, addCleaning, toggleCleaning, deleteCleaning, resetThisWeek } = useStore() as any;
-  const cleaning: any[] = state.cleaning ?? [];
-  const chores = useCaregivingChores();
-  const recipients: { id: string; name: string }[] = state.recipients ?? [];
-  const recipientName = (id: string | null) => id ? (recipients.find(r => r.id === id)?.name ?? null) : null;
+  const reset = useResetChecklists({});
   const [newZone, setNewZone] = useState("");
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [zoneOrder, setZoneOrder] = useState<ZoneDef[]>(DEFAULT_ZONES);
+  const [openZone, setOpenZone] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
 
-  const zones = useMemo(() => {
-    const set = new Set<string>([...DEFAULT_ZONES, ...cleaning.map((c) => c.zone || "Whole home")]);
-    return Array.from(set);
-  }, [cleaning]);
-
-  const byZone = useMemo(() => {
-    const m: Record<string, any[]> = {};
-    zones.forEach((z) => { m[z] = []; });
-    cleaning.forEach((c) => {
-      const z = c.zone || "Whole home";
-      (m[z] ||= []).push(c);
-    });
+  // Map zone label -> checklist (the first list whose name === "Zone: <label>").
+  const zoneListByLabel = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof useResetChecklists>["lists"][number]>();
+    for (const l of reset.lists) {
+      if (l.is_template) continue;
+      if (l.name.startsWith(ZONE_PREFIX)) {
+        const label = l.name.slice(ZONE_PREFIX.length).trim();
+        if (!m.has(label)) m.set(label, l);
+      }
+    }
     return m;
-  }, [cleaning, zones]);
+  }, [reset.lists]);
 
-  const onAdd = async (zone: string) => {
-    const title = (drafts[zone] || "").trim();
-    if (!title) return;
-    await addCleaning({ title, zone, cadence: "weekly" });
-    setDrafts((d) => ({ ...d, [zone]: "" }));
+  // Merge defaults with any user-added zones (lists prefixed with "Zone: ").
+  const allZones = useMemo(() => {
+    const seen = new Set(zoneOrder.map(z => z.label.toLowerCase()));
+    const extras: ZoneDef[] = [];
+    for (const label of zoneListByLabel.keys()) {
+      if (!seen.has(label.toLowerCase())) {
+        extras.push({
+          label,
+          icon: Sparkles,
+          accent: "from-blue-100/70 to-blue-50/40 ring-blue-200/60",
+          bar: "bg-blue-500",
+        });
+      }
+    }
+    return [...zoneOrder, ...extras];
+  }, [zoneOrder, zoneListByLabel]);
+
+  const ensureZoneList = async (label: string) => {
+    const existing = zoneListByLabel.get(label);
+    if (existing) return existing.id;
+    const id = await reset.createList({ name: `${ZONE_PREFIX}${label}`, kind: "custom" });
+    return id;
   };
 
-  const onResetWeek = async () => {
-    await resetThisWeek();
-    toast.success("Fresh week — all weekly tasks uncheckered");
+  const openZoneSheet = async (label: string) => {
+    await ensureZoneList(label);
+    setOpenZone(label);
+  };
+
+  const addZone = async () => {
+    const label = newZone.trim();
+    if (!label) return;
+    await ensureZoneList(label);
+    setNewZone("");
+    toast.success(`Added "${label}"`);
   };
 
   const generateChecklist = async (zone: string, energy: "low" | "medium" | "deep") => {
     setAiBusy(zone);
     try {
-      const existing = (byZone[zone] ?? []).map((c) => c.title);
+      const list = zoneListByLabel.get(zone);
+      const existing = list ? list.items.filter(i => !i.parent_id).map(i => i.title) : [];
       const { data, error } = await aiInvoke("ai-home-assistant", {
         body: { mode: "zone_checklist", context: { zone, energy, existing } },
       });
@@ -69,29 +106,24 @@ export function ZonesTab() {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Not signed in");
 
-      const { data: list, error: listErr } = await supabase.from("reset_checklists").insert({
-        user_id: u.user.id,
-        name: checklist.name || `${zone} reset`,
-        kind: energy === "deep" ? "deep" : energy === "low" ? "low_energy" : "weekly",
-        is_template: false,
-        sort_order: 0,
-      }).select("*").single();
-      if (listErr || !list) throw listErr ?? new Error("Could not create checklist");
-
+      const listId = await ensureZoneList(zone);
+      if (!listId) throw new Error("Could not create zone checklist");
+      const base = (list?.items.filter(i => !i.parent_id).length) ?? 0;
       const rows = checklist.items.map((it, idx) => ({
         user_id: u.user!.id,
-        checklist_id: list.id,
+        checklist_id: listId,
         title: it.title,
         category: it.category ?? zone,
         est_minutes: it.est_minutes ?? null,
-        sort_order: idx,
+        sort_order: base + idx,
         done: false,
       }));
       const { error: itemsErr } = await supabase.from("reset_items").insert(rows);
       if (itemsErr) throw itemsErr;
+      await reset.refresh();
 
-      toast.success(`"${list.name}" added to your Reset page`, {
-        description: `${rows.length} tasks · also synced to your Tasks list`,
+      toast.success(`Added ${rows.length} tasks to ${zone}`, {
+        description: "Synced to your Tasks list automatically.",
       });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI checklist failed");
@@ -100,150 +132,111 @@ export function ZonesTab() {
     }
   };
 
+  const openList = openZone ? zoneListByLabel.get(openZone) : null;
+
   return (
     <div className="space-y-5">
-      <SectionCard title="Weekly reset" accent="calm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            Start your week fresh — uncheck all weekly cleaning tasks across every zone.
-          </p>
-          <Button onClick={onResetWeek} variant="outline" className="rounded-full">
-            <RotateCcw className="mr-1.5 h-4 w-4" /> Reset this week
-          </Button>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="AI cleaning checklists" accent="warm">
-        <p className="mb-1 text-sm text-muted-foreground">
-          Generate a gentle, ordered checklist for any zone. Items appear under the <strong>Reset</strong> tab and your Tasks list automatically.
-        </p>
-        <p className="text-xs text-muted-foreground">Use the wand button on each zone below ↓</p>
-      </SectionCard>
-
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
-          placeholder="Add a new zone (e.g. Garage)"
+          placeholder="Add a zone (e.g. Garage)"
           value={newZone}
           onChange={(e) => setNewZone(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && newZone.trim()) {
-              addCleaning({ title: "First task", zone: newZone.trim(), cadence: "weekly" });
-              setNewZone("");
-            }
-          }}
+          onKeyDown={(e) => e.key === "Enter" && addZone()}
           className="max-w-xs"
         />
-        <span className="text-xs text-muted-foreground">Press enter to seed a starter task</span>
+        <Button onClick={addZone} variant="outline" size="sm" className="rounded-full">
+          <Plus className="mr-1 h-4 w-4" /> Add zone
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          Zone checklists support scheduling, recurrence, and sync to your Tasks list.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {zones.map((z) => {
-          const list = byZone[z] ?? [];
-          const total = list.length;
-          const done = list.filter((c) => c.done).length;
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {allZones.map((z) => {
+          const list = zoneListByLabel.get(z.label);
+          const roots = list ? list.items.filter(i => !i.parent_id) : [];
+          const total = roots.length;
+          const done = roots.filter(i => i.done).length;
           const pct = total ? Math.round((done / total) * 100) : 0;
-          const busy = aiBusy === z;
+          const busy = aiBusy === z.label;
+          const Icon = z.icon;
           return (
-            <div key={z} className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card/70 p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <h3 className="font-display text-sm font-semibold">{z}</h3>
+            <article
+              key={z.label}
+              className={cn(
+                "group relative flex flex-col gap-3 rounded-3xl bg-gradient-to-br p-4 ring-1 shadow-soft transition-all hover:-translate-y-0.5",
+                z.accent,
+              )}
+            >
+              <button
+                onClick={() => openZoneSheet(z.label)}
+                className="flex items-start gap-3 text-left"
+              >
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-foreground/80 ring-1 ring-white/60 shadow-sm">
+                  <Icon className="h-6 w-6" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-display text-lg font-semibold leading-tight">{z.label}</h3>
+                  <p className="mt-0.5 text-[11px] text-foreground/60">
+                    {total === 0 ? "No tasks yet" : `${done} of ${total} done`}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{done}/{total}</span>
-                </div>
-              </div>
-              <Progress value={pct} className="h-1.5" />
+                <ChevronRight className="h-4 w-4 text-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
+              </button>
 
-              <ul className="flex flex-col gap-1">
-                {list.length === 0 && (
-                  <li className="rounded-xl border border-dashed border-border/50 p-2 text-center text-xs text-muted-foreground">
-                    No tasks here yet
-                  </li>
-                )}
-                {list.map((c) => (
-                  <li
-                    key={c.id}
-                    className={cn(
-                      "group flex items-center gap-2 rounded-xl border border-border/50 bg-background/60 px-2.5 py-1.5 text-sm",
-                      c.done && "opacity-60",
-                    )}
-                  >
-                    <Checkbox checked={!!c.done} onCheckedChange={() => toggleCleaning(c.id)} />
-                    <span className={cn("flex-1 truncate", c.done && "line-through")}>{c.title}</span>
-                    <button
-                      onClick={() => deleteCleaning(c.id)}
-                      className="opacity-0 transition-opacity group-hover:opacity-100"
-                      aria-label="Remove"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-
-              {(() => {
-                const zoneChores = chores.filter(ch => (ch.zone ?? "").toLowerCase() === z.toLowerCase());
-                if (zoneChores.length === 0) return null;
-                return (
-                  <div className="rounded-xl border border-border/40 bg-muted/30 p-2">
-                    <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      <HeartHandshake className="h-3 w-3" /> Caregiving chores
-                    </div>
-                    <ul className="flex flex-col gap-1">
-                      {zoneChores.map(ch => (
-                        <li key={ch.id} className={cn(
-                          "group flex items-center gap-2 rounded-lg bg-background/60 px-2 py-1 text-xs",
-                          ch.done && "opacity-60",
-                        )}>
-                          <Checkbox checked={ch.done} onCheckedChange={() => caregivingChores.toggle(ch.id)} />
-                          <span className={cn("flex-1 truncate", ch.done && "line-through")}>
-                            {ch.title}
-                            {recipientName(ch.recipient_id) && (
-                              <span className="ml-1 text-muted-foreground">· {recipientName(ch.recipient_id)}</span>
-                            )}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })()}
-
-              <div className="flex gap-1.5">
-                <Input
-                  value={drafts[z] ?? ""}
-                  onChange={(e) => setDrafts((d) => ({ ...d, [z]: e.target.value }))}
-                  onKeyDown={(e) => e.key === "Enter" && onAdd(z)}
-                  placeholder="Add task…"
-                  className="h-8 text-xs"
-                />
-                <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={() => onAdd(z)} aria-label="Add">
-                  <Plus className="h-4 w-4" />
-                </Button>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/50">
+                <div className={cn("h-full rounded-full transition-all", z.bar)} style={{ width: `${pct}%` }} />
               </div>
 
-              <div className="flex flex-wrap gap-1 border-t border-border/40 pt-2">
-                <span className="mr-1 text-[10px] uppercase tracking-wider text-muted-foreground self-center">AI checklist:</span>
+              <div className="flex flex-wrap gap-1 border-t border-white/40 pt-2">
+                <span className="mr-1 self-center text-[10px] uppercase tracking-wider text-foreground/60">AI checklist:</span>
                 {(["low", "medium", "deep"] as const).map((lvl) => (
                   <Button
                     key={lvl}
                     size="sm"
                     variant="ghost"
-                    className="h-6 rounded-full px-2 text-[11px]"
+                    className="h-6 rounded-full px-2 text-[10px] hover:bg-white/60"
                     disabled={busy}
-                    onClick={() => generateChecklist(z, lvl)}
+                    onClick={() => generateChecklist(z.label, lvl)}
                   >
                     {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Wand2 className="mr-1 h-3 w-3" />}
                     {lvl === "low" ? "Low energy" : lvl === "medium" ? "Weekly" : "Deep clean"}
                   </Button>
                 ))}
               </div>
-            </div>
+            </article>
           );
         })}
       </div>
+
+      <Sheet open={!!openZone} onOpenChange={(o) => !o && setOpenZone(null)}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
+          {openZone && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="font-display text-2xl">{openZone}</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                {openList ? (
+                  <ChecklistTree
+                    list={openList}
+                    onAdd={(item) => reset.addItem(openList.id, item)}
+                    onUpdate={reset.updateItem}
+                    onDelete={reset.deleteItem}
+                    onDuplicate={reset.duplicateItem}
+                    onReorder={(parentId, ordered) => reset.reorderItems(openList.id, parentId, ordered)}
+                    onRenameList={(name) => reset.renameList(openList.id, name)}
+                    onDeleteList={() => { reset.deleteList(openList.id); setOpenZone(null); }}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Loading…</p>
+                )}
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
