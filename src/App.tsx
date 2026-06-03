@@ -114,7 +114,7 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/" element={<IndexRedirect />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={<HomeHub />} />
                 <Route path="/inbox" element={<Inbox />} />
                 <Route path="/tasks/:id" element={<TaskDetail />} />
                 <Route path="/upcoming" element={<Upcoming />} />
