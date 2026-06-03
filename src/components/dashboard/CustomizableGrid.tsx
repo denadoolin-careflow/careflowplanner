@@ -361,12 +361,13 @@ export function CustomizableGrid({ pageKey, hero, sectionTitle }: Props) {
         open={addOpen}
         onOpenChange={setAddOpen}
         hiddenWidgets={data.widgets.filter((w) => w.hidden)}
-        onUnhide={(id) => { hideWidget(id, false); haptics.tap(); }}
+        onUnhide={(id) => { hideWidget(id, false); haptics.tap(); setTimeout(autoArrange, 0); }}
         onAdd={(type) => {
           const spec = WIDGET_REGISTRY[type];
           addWidget(type, spec.defaultSize);
           haptics.snap();
           toast.success(`${spec.title} added.`);
+          setTimeout(autoArrange, 0);
         }}
       />
     </div>
