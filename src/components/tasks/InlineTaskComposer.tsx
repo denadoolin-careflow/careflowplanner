@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap, Tag as TagIcon, Timer, AlignLeft } from "lucide-react";
-import { format, parseISO, addDays, nextMonday, nextSaturday } from "date-fns";
+import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap, Tag as TagIcon, Timer, AlignLeft, Flag, Sun } from "lucide-react";
+import { format, parseISO, addDays, addMonths, nextMonday, nextSaturday } from "date-fns";
 import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
-import { AREAS, type Area, type Energy, type Task } from "@/lib/types";
+import { AREAS, type Area, type DayPart, type Energy, type Priority, type Task } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -39,6 +39,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
   const [projectId, setProjectId] = useState<string | undefined>(defaults.projectId);
   const [area, setArea] = useState<Area | undefined>(defaults.area);
   const [energy, setEnergy] = useState<Energy | undefined>(defaults.energy);
+  const [priority, setPriority] = useState<Priority | undefined>(undefined);
+  const [dayPart, setDayPart] = useState<DayPart | undefined>(undefined);
   const [tags, setTags] = useState<string[]>(() => defaultTags ?? defaults.tags ?? []);
   const [estMinutes, setEstMinutes] = useState<number | undefined>(defaults.estMinutes);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -78,7 +80,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
       title: p.title || raw,
       notes: notes.trim() || undefined,
       dueDate: finalDate,
-      priority: p.priority ?? "medium",
+      priority: priority ?? p.priority ?? "medium",
+      dayPart: dayPart ?? undefined,
       area: (finalArea ?? "Personal") as Area,
       tags: mergedTags.length ? mergedTags : undefined,
       energy: finalEnergy,
@@ -98,6 +101,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     setProjectId(defaults.projectId);
     setArea(defaults.area);
     setEnergy(defaults.energy);
+    setPriority(undefined);
+    setDayPart(undefined);
     // Sticky tags + time: keep them so subsequent captures share the same.
     setTags(defaultTags ?? defaults.tags ?? tags);
     inputRef.current?.focus();
@@ -174,40 +179,42 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <div className="flex flex-col gap-1 border-b border-border/60 p-2">
-                  {([
-                    { label: "Today", get: () => new Date() },
-                    { label: "Tomorrow", get: () => addDays(new Date(), 1) },
-                    { label: "This weekend", get: () => nextSaturday(new Date()) },
-                    { label: "Next week", get: () => nextMonday(new Date()) },
-                    { label: "In 2 weeks", get: () => addDays(new Date(), 14) },
-                  ] as const).map(p => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => setDate(format(p.get(), "yyyy-MM-dd"))}
-                      className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted"
-                    >
-                      <span>{p.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{format(p.get(), "EEE MMM d")}</span>
-                    </button>
-                  ))}
-                  {date && (
-                    <button
-                      type="button"
-                      onClick={() => setDate(undefined)}
-                      className="rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted"
-                    >
-                      Clear date
-                    </button>
-                  )}
-                </div>
+                <Command>
+                  <CommandInput placeholder="Find a date…" />
+                  <CommandList>
+                    <CommandEmpty>Use the calendar below.</CommandEmpty>
+                    <CommandGroup heading="Quick">
+                      {([
+                        { label: "Today", get: () => new Date() },
+                        { label: "Tomorrow", get: () => addDays(new Date(), 1) },
+                        { label: "This weekend", get: () => nextSaturday(new Date()) },
+                        { label: "Next week", get: () => nextMonday(new Date()) },
+                        { label: "Next month", get: () => addMonths(new Date(), 1) },
+                        { label: "In 2 weeks", get: () => addDays(new Date(), 14) },
+                      ] as const).map(opt => (
+                        <CommandItem
+                          key={opt.label}
+                          value={opt.label}
+                          onSelect={() => setDate(format(opt.get(), "yyyy-MM-dd"))}
+                        >
+                          <span className="flex-1">{opt.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{format(opt.get(), "EEE MMM d")}</span>
+                        </CommandItem>
+                      ))}
+                      {date && (
+                        <CommandItem value="Clear date" onSelect={() => setDate(undefined)}>
+                          <span className="text-muted-foreground">Clear date</span>
+                        </CommandItem>
+                      )}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
                 <Calendar
                   mode="single"
                   selected={date ? parseISO(date) : undefined}
                   onSelect={(d) => setDate(d ? format(d, "yyyy-MM-dd") : undefined)}
                   initialFocus
-                  className="pointer-events-auto"
+                  className="pointer-events-auto border-t border-border/60"
                 />
               </PopoverContent>
             </Popover>
@@ -239,6 +246,10 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   <CommandList>
                     <CommandEmpty>No projects.</CommandEmpty>
                     <CommandGroup>
+                      <CommandItem value="No project" onSelect={() => setProjectId(undefined)}>
+                        <span className="mr-2 h-2 w-2 rounded-full bg-muted-foreground/40" />
+                        No project
+                      </CommandItem>
                       {(state.projects ?? []).filter(p => p.status !== "done").map(p => (
                         <CommandItem key={p.id} value={p.name} onSelect={() => setProjectId(p.id)}>
                           <span className="h-2 w-2 rounded-full mr-2" style={{ background: p.color ?? "hsl(var(--muted-foreground))" }} />
@@ -277,6 +288,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   <CommandList>
                     <CommandEmpty>No areas.</CommandEmpty>
                     <CommandGroup>
+                      <CommandItem value="No area" onSelect={() => setArea(undefined)}>No area</CommandItem>
                       {AREAS.map(a => (
                         <CommandItem key={a} value={a} onSelect={() => setArea(a)}>{a}</CommandItem>
                       ))}
@@ -310,6 +322,97 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                 </button>
               );
             })}
+
+            {/* Priority pill */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    priority ? "text-foreground" : "text-muted-foreground",
+                  )}
+                  title="Priority"
+                >
+                  <Flag className="h-3 w-3" />
+                  {priority ? priority[0].toUpperCase() + priority.slice(1) : "Priority"}
+                  {priority && (
+                    <X
+                      className="h-3 w-3 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setPriority(undefined); }}
+                    />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Find priority…" />
+                  <CommandList>
+                    <CommandEmpty>No match.</CommandEmpty>
+                    <CommandGroup>
+                      {([
+                        { v: "high" as Priority, label: "High", dot: "bg-rose-500" },
+                        { v: "medium" as Priority, label: "Medium", dot: "bg-amber-500" },
+                        { v: "low" as Priority, label: "Low", dot: "bg-emerald-500" },
+                      ]).map(opt => (
+                        <CommandItem key={opt.v} value={opt.label} onSelect={() => setPriority(opt.v)}>
+                          <span className={cn("mr-2 h-2 w-2 rounded-full", opt.dot)} />
+                          {opt.label}
+                        </CommandItem>
+                      ))}
+                      {priority && (
+                        <CommandItem value="Clear priority" onSelect={() => setPriority(undefined)}>
+                          <span className="text-muted-foreground">Clear</span>
+                        </CommandItem>
+                      )}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* Time of Day pill */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] transition-colors hover:bg-muted",
+                    dayPart ? "text-foreground" : "text-muted-foreground",
+                  )}
+                  title="Time of day"
+                >
+                  <Sun className="h-3 w-3" />
+                  {dayPart ?? "Time of day"}
+                  {dayPart && (
+                    <X
+                      className="h-3 w-3 opacity-60 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setDayPart(undefined); }}
+                    />
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Find time of day…" />
+                  <CommandList>
+                    <CommandEmpty>No match.</CommandEmpty>
+                    <CommandGroup>
+                      {(["Morning", "Afternoon", "Evening", "Late Night"] as DayPart[]).map(dp => (
+                        <CommandItem key={dp} value={dp} onSelect={() => setDayPart(dp)}>
+                          {dp}
+                        </CommandItem>
+                      ))}
+                      {dayPart && (
+                        <CommandItem value="Clear time of day" onSelect={() => setDayPart(undefined)}>
+                          <span className="text-muted-foreground">Clear</span>
+                        </CommandItem>
+                      )}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
 
             {/* Tag pill — sticky selection across submissions */}
             <Popover>
@@ -360,7 +463,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   title="Time estimate"
                 >
                   <Timer className="h-3 w-3" />
-                  {estMinutes ? `${estMinutes}m` : "Time"}
+                  {estMinutes ? `${estMinutes}m` : "Est"}
                   {estMinutes != null && (
                     <X
                       className="h-3 w-3 opacity-60 hover:opacity-100"
