@@ -1,92 +1,66 @@
-# Lunar Life × CareFlow Integration
+## CareFlow Mobile Task Experience Redesign
 
-Layer Lunar Life Home's softness and a real **astrological transits** engine into CareFlow's existing rhythm/cycle/tarot stack — fully toggleable for users who aren't into astrology.
+Bring the Inbox and Task Editor in line with the screenshots: cream background, sage accents, soft 20–24px rounded cards, large readable type, big touch targets, calm spacing. Things 3 / TickTick / Craft feel without disrupting desktop or other planning pages.
 
-## 1. Astrology master toggle (Settings → Rhythm)
+### Scope (mobile-first, responsive on desktop)
+- **Inbox page** redesign
+- **New full-screen Task Detail route** for mobile (`/tasks/:id`) — replaces the modal on small screens, modal stays on desktop
+- Reuse existing data + store, no schema changes
 
-Today `useRhythmForecastEnabled` toggles moon/sign chips. Replace it with a small group:
+### 1. Inbox (`src/pages/Inbox.tsx`)
+Simplified mobile layout:
+- Header: hamburger · "Inbox" · search · theme toggle (no large icon tile)
+- **Quick Capture Card** (`MobileCaptureCard`): big input "Capture anything…", below it three pill buttons (Date, Project, Area) + sage Add button; "More" reveals priority/tags/notes
+- **Filter chip row**: All · Today · Upcoming · Scheduled · Overdue — horizontally scrollable, sticky
+- **Tag library**: collapsed by default, header "Tags (12) ▾"
+- **Task cards** (`MobileTaskCard`): checkbox · title · meta line (project · due · priority dots); swipe left = complete, swipe right = edit/delete (use existing swipe util if any, else simple touch handlers)
+- Bottom tab bar already exists via AppLayout — leave as-is
 
-- **Astrology** (master) — when OFF hides all of: rhythm forecast, moon-sign chips, tarot, transits, moon journal banner, MoonGuidanceHero, lunar widgets. Cycle stays (it's health, not astrology).
-- **Transits** (sub-toggle, on by default when Astrology is on)
-- **Tarot** (sub-toggle)
-- **Menstrual cycle overlay on lunar surfaces** (already exists via `cycle-store.enabled`)
+Desktop (≥sm) keeps current rich controls (Group/Filter/Sort, detail pane, etc.).
 
-New helpers in `src/lib/astrology-prefs.ts`: `useAstrologyEnabled`, `useTransitsEnabled`, `useTarotEnabled`. `isRhythmForecastEnabled` becomes `astrology && rhythm`. Wire all current call sites (`MoonPrefetcher`, `RhythmGuidanceCard`, `TodayEnergy`, `MoonJournalReminderBanner`, sidebar lunar quick-jumps, dashboard widgets) through the new gate.
+### 2. Task Detail screen (`src/pages/TaskDetail.tsx` — new)
+Full-screen route, mobile-first:
+- **Header**: back · checkbox · ⋯ menu; title large; chips row (Project · Due · Priority)
+- **Settings card**: Date, Time, Repeat, Priority (dots), Tags, Area, Project, List — rows with sage icon tile + label + value + chevron
+- **Notes** card: collapsible; expanded if notes exist; rich-ish textarea with autosave + "Last edited" timestamp
+- **Attachments** card: collapsible, reuses `AttachmentsField`
+- **Subtasks** card: collapsible, progress "X/Y Complete", reorder + due/priority
+- **Activity timeline**: collapsible (created / due changes / completed / notes updates) — derive from existing task fields
+- **Premium CareFlow extras** (toggleable, persisted):
+  - Caregiver Notes (private) — separate text field stored on task
+  - Energy Level chips (Low/Med/High) — reuses `task-energy.ts`
+  - Time Estimate chips (5m/15m/30m/1h/Custom)
+  - Moon Phase chip (only when astrology pref on) — shows phase for due date
+  - Voice Capture button (reuses `VoiceCaptureDialog`)
+- **Sticky bottom bar**: Save Changes · Start Focus · Complete
 
-## 2. Astrological transits engine (new)
+Route added in `App.tsx`. `TaskRow` / open-task-editor hook routes to `/tasks/:id` on mobile (`useIsMobile`) and opens existing dialog on desktop, so other pages (Today, Week, Calendar, etc.) keep working.
 
-New `src/lib/transits.ts` — pure math, no API keys, follows the same Meeus-style approach already in `rhythm-forecast.ts`:
+### 3. Design tokens
+- Use existing semantic tokens. Background uses `--background` (already cream-ish). Sage accent = existing `--primary`. Add a small set of utility classes in `index.css` for `.cf-card` (24px radius, soft shadow) and `.cf-icon-tile` (sage soft tile) used by the new screens only.
 
-- **Planet longitudes** (Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn) — abridged VSOP87 mean-element series; ~0.1° accuracy is plenty for caregiver-grade guidance.
-- **Daily transit list**: planet → sign (and ingress days), retrograde stations for Mercury/Venus/Mars/Jupiter/Saturn, **Mercury retrograde windows**, **void-of-course moon** (gap between last major Moon aspect and next sign ingress), **Sun↔Moon major aspects** (conjunction, square, opposition), and the active **moon phase**.
-- Each transit gets a caregiver-friendly one-liner (e.g. *"Mercury retrograde — re-read, re-do, re-check. Don't sign new things."*, *"Void of course moon — drift is allowed."*, *"Moon ingresses Cancer — soft, family-first window."*).
-- Cached per local date to localStorage, prefetched by `MoonPrefetcher` for ±1 month so the Today/Week/Month surfaces render instantly.
+### Files
+**Create**
+- `src/components/tasks/mobile/MobileCaptureCard.tsx`
+- `src/components/tasks/mobile/MobileFilterChips.tsx`
+- `src/components/tasks/mobile/MobileTaskCard.tsx`
+- `src/components/tasks/mobile/TaskDetailHeader.tsx`
+- `src/components/tasks/mobile/TaskSettingsCard.tsx`
+- `src/components/tasks/mobile/TaskNotesCard.tsx`
+- `src/components/tasks/mobile/TaskSubtasksCard.tsx`
+- `src/components/tasks/mobile/TaskAttachmentsCard.tsx`
+- `src/components/tasks/mobile/TaskActivityCard.tsx`
+- `src/components/tasks/mobile/TaskStickyBar.tsx`
+- `src/pages/TaskDetail.tsx`
 
-## 3. New surfaces
+**Edit**
+- `src/pages/Inbox.tsx` — mobile branch using new components
+- `src/App.tsx` — add `/tasks/:id` route
+- `src/lib/open-task-editor.ts` — on mobile, navigate to route instead of dispatching event
+- `src/components/cards/TaskRow.tsx` — mobile uses MobileTaskCard
+- `src/index.css` — add `.cf-card`, `.cf-icon-tile` helpers
 
-### Today
-- New **TransitStrip** card (between RhythmGuidanceCard and AIDailyGuidance): horizontally scrollable chips for today's active transits with tooltip explanations and a "Plan around this" button that opens the existing `PlanWithEnergyDialog` pre-filled with the dominant transit's guidance.
-- Extend `RhythmGuidanceCard` to render the **moon-day affirmation in Lunar Life voice** ("You are not behind. You are exactly where today needed you.") and gain a tiny `MoonLogo` (ported from Lunar Life Home).
-- New **TarotSpreadSheet** trigger: tap today's tarot card → bottom sheet offers three small spreads (Past/Present/Future, Mind/Body/Spirit, Morning/Afternoon/Evening). Cards are deterministic per date + spread name, drawn from existing `MAJOR_ARCANA`.
-
-### Week / Month
-- `WeekRhythmStrip` already shows moon glyphs per day — add a small dot/indicator for days with active named transits (retrograde stations, ingresses, VoC). Tap → opens `DayLunarSheet` with the transit list for that day.
-- `Month.tsx` calendar cells gain a faint glyph row (already has moon phase glyphs from earlier work) — extend to show ingress glyphs (♋, ♌ …) and an "℞" mark on retrograde station days.
-
-### Dashboard
-- New **TransitsToday** widget (registered like `MoonWrap`) and a new **LunarPlannerCard** that brings the Lunar Life Home aesthetic: greeting, gentle wins progress bar, energy toggle (low/med/high), and a peek at the day's top transit.
-
-### Sidebar
-- The existing pinned/months/weeks block gains a small "Astrology" disclosure (only when Astrology=on) with quick links to Moon Journal, Today's Transits, and current Cycle phase.
-
-## 4. Energy-gated planning (from Lunar Life Home)
-
-Port Lunar Life Home's energy concept into CareFlow's planner without duplicating tasks:
-
-- New `src/lib/energy-store.ts` (localStorage + cycle-store-style hook) holds today's self-reported energy (low/med/high). Persists per date.
-- New `EnergyToggle.tsx` component (3 pill buttons, sage/clay/moon styling) — appears on **Today**, **PlanDay**, and the **DailyPlanningDashboard**.
-- Existing task lists on Today and Plan get an optional **"Match my energy"** filter: hides tasks tagged `est_minutes >= 45` when energy=low, surfaces `low-effort` first when energy=medium, shows everything when high. No DB schema change — purely a client-side view filter that respects existing `est_minutes`, `energy` task field, and rhythm forecast's `energyFloor`.
-- `RhythmGuidanceCard` reads the energy toggle so its suggestion text adapts (e.g. low-energy + waxing-gibbous = "tend one thing, postpone the rest").
-
-## 5. Moon journal upgrade
-
-- `MoonJournalReminderBanner` already nudges on key-phase days. Extend its target sheet (`DayLunarSheet`) with:
-  - Two new prompts per key phase (Sow/Grow/Glow/Let Go) — pulled from `lunar-phases.ts`.
-  - "Cycle + moon" combined reflection when `cycleSettings.enabled` (e.g. *"Cycle day 14 meets a full moon — what feels amplified?"*).
-  - The chosen tarot card and any active transit are written into the journal entry as italic context lines (read-only).
-- A new `moon_journal_entries` table is **not** needed — entries continue to live in existing `notes` with a `moon-journal` tag (matches current pattern).
-
-## 6. Visual layer (port from Lunar Life Home)
-
-- Add `MoonLogo.tsx` to `src/components/widgets/` (small SVG of crescent + dot, animates with existing `animate-float`).
-- Add 3 new gradient tokens in `index.css` under `--lunar-*` namespace: `--gradient-moon`, `--gradient-sage`, `--gradient-clay` (HSL only, semantic). Tailwind tokens: `bg-moon-grad`, `bg-sage-grad`, `bg-clay-grad`. Used only by lunar surfaces — does not change the global theme.
-- Reuse Lunar Life's "gentle wins" progress bar pattern inside the new LunarPlannerCard.
-
-## 7. Settings copy
-
-`/settings` Rhythm section becomes:
-
-```text
-Astrology
-  ├─ Master switch
-  ├─ Show transits (Mercury retrograde, ingresses, VoC moon)
-  ├─ Show tarot card of the day + spreads
-  └─ Recommendation tone: Gentle | Actionable   (existing)
-```
-
-Microcopy under the master: *"Off — hides moon phases, transits, tarot, and lunar journal prompts everywhere. Cycle tracking stays available under Health."*
-
-## Technical notes
-
-- **No database migrations.** Everything is client-side prefs (localStorage) + math.
-- New files: `src/lib/astrology-prefs.ts`, `src/lib/transits.ts`, `src/lib/energy-store.ts`, `src/components/rhythm/TransitStrip.tsx`, `src/components/rhythm/TransitChip.tsx`, `src/components/today/TarotSpreadSheet.tsx`, `src/components/today/EnergyToggle.tsx`, `src/components/widgets/MoonLogo.tsx`, `src/components/dashboard/widgets/TransitsToday.tsx`, `src/components/dashboard/widgets/LunarPlannerCard.tsx`.
-- Edits: `src/lib/rhythm-forecast.ts` (delegate `isRhythmForecastEnabled` to the new gate), `src/pages/Settings.tsx` (new toggles), `src/pages/Today.tsx` (TransitStrip + EnergyToggle), `src/pages/PlanDay.tsx` (EnergyToggle), `src/pages/Week.tsx`, `src/pages/Month.tsx` (transit indicators), `src/components/today/RhythmGuidanceCard.tsx` (MoonLogo + tarot spread trigger), `src/components/cycle/MoonJournalReminderBanner.tsx` (combined cycle+moon prompts), `src/components/rhythm/MoonPrefetcher.tsx` (prefetch transits), `src/components/dashboard/WidgetRegistry.tsx` (register new widgets), `src/components/layout/Sidebar.tsx` (astrology disclosure), `src/index.css` + `tailwind.config.ts` (lunar gradient tokens).
-- Reuses existing `MAJOR_ARCANA`, `KEY_PHASES`, `getMoonSign`, `getPhaseInfo`, `MoonPrefetcher`, `PlanWithEnergyDialog`, `DayLunarSheet`, `cycle-store`.
-- All copy stays in the existing caregiver-gentle voice; transit one-liners modeled on `MOON_GUIDANCE`.
-
-## Out of scope (call out if you want them later)
-
-- Natal-chart input / personal placements (would need birth time/location form).
-- Real ephemeris from an external API (Swiss Ephemeris). Local math is accurate to ~0.1° which is plenty for the chips we're showing.
-- Custom tarot decks / Minor Arcana.
-- Persisting energy history to Supabase (currently localStorage only).
+### Non-goals
+- No DB migration, no auth change, no edits to Today/Week/Calendar/etc.
+- Desktop Inbox and existing `TaskEditor` dialog preserved.
+- No new external dependencies.
