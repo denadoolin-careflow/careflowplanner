@@ -830,6 +830,11 @@ export function BlockEditor({
       Details.configure({ persist: true, HTMLAttributes: { class: "cf-toggle" } }),
       DetailsSummary,
       DetailsContent,
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+        HTMLAttributes: { class: "cf-note-image" },
+      }),
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
@@ -844,6 +849,21 @@ export function BlockEditor({
     editorProps: {
       attributes: {
         class: "prose prose-sm max-w-none focus:outline-none min-h-[40vh] prose-headings:font-display prose-headings:font-semibold prose-a:text-primary dark:prose-invert",
+      },
+      handlePaste: (_view, event) => {
+        const files = Array.from(event.clipboardData?.files ?? []).filter(f => f.type.startsWith("image/"));
+        if (!files.length) return false;
+        event.preventDefault();
+        files.forEach(f => { void uploadAndInsert(f); });
+        return true;
+      },
+      handleDrop: (_view, event) => {
+        const dt = (event as DragEvent).dataTransfer;
+        const files = Array.from(dt?.files ?? []).filter(f => f.type.startsWith("image/"));
+        if (!files.length) return false;
+        event.preventDefault();
+        files.forEach(f => { void uploadAndInsert(f); });
+        return true;
       },
       handleClickOn: (_view, _pos, _node, _nodePos, event) => {
         const a = (event.target as HTMLElement | null)?.closest("a") as HTMLAnchorElement | null;
