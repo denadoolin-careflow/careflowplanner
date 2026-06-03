@@ -1027,8 +1027,14 @@ export function BlockEditor({
   return (
     <div
       onClick={handleClick}
+      onDragEnter={(e) => { if (Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === "file")) { setDragActive(true); } }}
+      onDragOver={(e) => { if (Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === "file")) { e.preventDefault(); setDragActive(true); } }}
+      onDragLeave={(e) => { if (e.currentTarget === e.target) setDragActive(false); }}
+      onDrop={() => setDragActive(false)}
       className={cn(
         "block-editor",
+        "relative rounded-2xl transition",
+        dragActive && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background",
         `editor-theme-${prefs.theme}`,
         `editor-density-${prefs.density}`,
       )}
@@ -1094,6 +1100,25 @@ export function BlockEditor({
         </BubbleMenu>
       )}
       <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          files.forEach(f => { void uploadAndInsert(f); });
+          e.target.value = "";
+        }}
+      />
+      {dragActive && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-primary/5 backdrop-blur-[2px]">
+          <div className="rounded-full border border-primary/40 bg-popover/95 px-4 py-2 text-sm font-medium text-primary shadow-lg">
+            Drop image to upload
+          </div>
+        </div>
+      )}
       {showFooter && (
         <WordCountFooter body={body} goal={goal ?? null} onGoalChange={onGoalChange} />
       )}
