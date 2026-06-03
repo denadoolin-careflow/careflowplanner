@@ -19,6 +19,13 @@ import { Link } from "react-router-dom";
 import { Tags as TagsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileCaptureCard } from "@/components/tasks/mobile/MobileCaptureCard";
+import { MobileFilterChips, type InboxFilter } from "@/components/tasks/mobile/MobileFilterChips";
+import { MobileTaskCard } from "@/components/tasks/mobile/MobileTaskCard";
+import { Menu, Search as SearchIcon, Moon, ChevronDown } from "lucide-react";
+import { useTheme } from "next-themes";
+import { isToday, isFuture, isPast, parseISO } from "date-fns";
 
 interface Suggestion {
   task_id: string;
@@ -40,6 +47,8 @@ export default function Inbox() {
 
 function InboxInner() {
   const { state, updateTask } = useStore();
+  const isMobile = useIsMobile();
+  if (isMobile) return <MobileInbox />;
   const { paneOpen, togglePane, setOrderedIds, clear, selectionMode, toggleSelectionMode, selectAll, count } = useTaskSelection();
   const [prefs, setPrefs] = useTaskListPrefs("inbox");
   const [triaging, setTriaging] = useState(false);
