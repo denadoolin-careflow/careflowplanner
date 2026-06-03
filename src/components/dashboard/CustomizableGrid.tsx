@@ -346,8 +346,8 @@ export function CustomizableGrid({ pageKey, hero, sectionTitle }: Props) {
                 onToggleCollapse={spec.bare ? undefined : () => { toggleCollapsed(w.id); haptics.tap(); }}
                 pageHref={spec.pageHref}
                 onQuickAdd={spec.quickAddEvent ? () => { broadcastQuickAdd(spec.quickAddEvent!); haptics.tap(); } : undefined}
-                onHide={() => { hideWidget(w.id, true); haptics.tap(); toast("Hidden — find it in Add widget."); }}
-                onRemove={() => { removeWidget(w.id); haptics.delete(); toast("Widget removed."); }}
+                onHide={() => { hideWidget(w.id, true); haptics.tap(); toast("Hidden — find it in Add widget."); setTimeout(autoArrange, 0); }}
+                onRemove={() => { removeWidget(w.id); haptics.delete(); toast("Widget removed."); setTimeout(autoArrange, 0); }}
               >
                 <Comp props={w.props} onChange={(next: Record<string, any>) => updateWidgetProps(w.id, next)} />
               </WidgetFrame>
