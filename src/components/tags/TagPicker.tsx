@@ -115,6 +115,38 @@ export function TagPicker({ value, onChange, triggerLabel = "Add tag", triggerCl
           </div>
 
           <div className="mt-2 max-h-48 space-y-0.5 overflow-y-auto">
+            {!query.trim() && recentTop.length > 0 && (
+              <div className="mb-1">
+                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Recent
+                </div>
+                {recentTop.map((t) => {
+                  const Icon = tagIconFor(t.icon);
+                  const selected = selectedSet.has(t.name.toLowerCase());
+                  return (
+                    <button
+                      key={`recent-${t.id}`}
+                      type="button"
+                      onClick={() => toggle(t.name)}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition",
+                        "hover:bg-muted",
+                      )}
+                    >
+                      <span
+                        className="grid h-5 w-5 place-items-center rounded-full"
+                        style={{ backgroundColor: t.color, color: readableTextOn(t.color) }}
+                      >
+                        <Icon className="h-3 w-3" />
+                      </span>
+                      <span className="flex-1 truncate">{t.name}</span>
+                      {selected && <Check className="h-3.5 w-3.5 text-primary" />}
+                    </button>
+                  );
+                })}
+                <div className="my-1 h-px bg-border/60" />
+              </div>
+            )}
             {filtered.map((t) => {
               const Icon = tagIconFor(t.icon);
               const selected = selectedSet.has(t.name.toLowerCase());
