@@ -1042,7 +1042,7 @@ export function BlockEditor({
         } : {}),
       } as React.CSSProperties}
     >
-      {editor && <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} />}
+      {editor && <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} onInsertImage={triggerImageUpload} />}
       {editor && (
         <BubbleMenu
           editor={editor}
