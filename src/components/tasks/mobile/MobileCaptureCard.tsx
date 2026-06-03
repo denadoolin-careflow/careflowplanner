@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, Calendar as CalIcon, FolderKanban, Layers, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
-import { parseTaskNlp } from "@/lib/nlp-task";
+import { parseTaskInput } from "@/lib/nlp-task";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -25,7 +25,7 @@ export function MobileCaptureCard({ defaultArea }: { defaultArea?: Area }) {
     const t = title.trim();
     if (!t) return;
     try {
-      const parsed = (() => { try { return parseTaskNlp(t); } catch { return null; } })();
+      const parsed = (() => { try { return parseTaskInput(t); } catch { return null; } })();
       await addTask({
         title: parsed?.title ?? t,
         inbox: true,
