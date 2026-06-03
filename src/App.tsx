@@ -10,7 +10,6 @@ import { WorkspaceLayoutProvider } from "@/components/workspace/useWorkspaceLayo
 import "@/lib/theme-preset";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { InlineTagPreviewLayer } from "@/components/tags/InlineTagPreviewLayer";
-import Dashboard from "./pages/Dashboard";
 import { IndexRedirect } from "@/components/auth/IndexRedirect";
 import Today from "./pages/Today";
 import Week from "./pages/Week";
@@ -114,7 +113,7 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/" element={<IndexRedirect />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={<HomeHub />} />
                 <Route path="/inbox" element={<Inbox />} />
                 <Route path="/tasks/:id" element={<TaskDetail />} />
                 <Route path="/upcoming" element={<Upcoming />} />

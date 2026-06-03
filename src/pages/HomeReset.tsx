@@ -8,26 +8,62 @@ import {
 import {
   ArrowRight, Plus, Home as HomeIcon, ListChecks, Sparkle, Check,
   BedDouble, UtensilsCrossed, Bath, WashingMachine, DoorOpen, Sofa,
-  ChevronRight, Clock,
+  ChevronRight, Clock, Timer, History, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
-import { useResetChecklists, type ResetChecklist, type ResetKind } from "@/lib/reset-checklists";
+import { useResetChecklists, type ResetChecklist, type ResetItem, type ResetKind } from "@/lib/reset-checklists";
 import { ChecklistTree } from "@/components/reset/ChecklistTree";
+import { ChecklistInline } from "@/components/reset/ChecklistInline";
 import { AIGenerateMenu } from "@/components/reset/AIGenerateMenu";
 import { MoonResetTip } from "@/components/rhythm/MoonResetTip";
+import { ResetHistorySheet } from "@/components/reset/ResetHistorySheet";
+import { fireConfetti } from "@/lib/confetti";
+import { playCompletionChime } from "@/lib/completion-sound";
+import { logResetCompletion } from "@/lib/reset-history";
+import { pomodoro } from "@/lib/pomodoro-store";
+import { useStore } from "@/lib/store";
 
 // ---------- helpers ----------
-function listStats(list: ResetChecklist) {
+function currentTimeBlock(): "morning" | "afternoon" | "evening" {
+  const h = new Date().getHours();
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
+/** Smart "next step" scorer: prefers matching time-block, today's day,
+ *  shortest task when low-energy, else sort order. */
+function smartNext(list: ResetChecklist, opts: { lowEnergy: boolean }): { item: ResetItem | undefined; reason: string } {
+  const roots = list.items.filter(i => !i.parent_id && !i.done);
+  if (roots.length === 0) return { item: undefined, reason: "" };
+  const block = currentTimeBlock();
+  const today = new Date().getDay();
+  const scored = roots.map(i => {
+    let s = 0;
+    const tags: string[] = [];
+    if (i.time_block === block) { s += 6; tags.push(block); }
+    if (i.day_of_week === today) { s += 5; tags.push("today"); }
+    if (opts.lowEnergy && i.est_minutes && i.est_minutes <= 5) { s += 4; tags.push("low-energy"); }
+    if (i.est_minutes != null) { s += Math.max(0, 3 - Math.floor((i.est_minutes ?? 0) / 5)); }
+    s -= i.sort_order * 0.01;
+    return { i, s, tags };
+  });
+  scored.sort((a, b) => b.s - a.s);
+  const top = scored[0];
+  const reason = top.tags.length
+    ? `Picked for ${top.tags.join(" · ")}${top.i.est_minutes ? ` · ${top.i.est_minutes}m` : ""}`
+    : top.i.est_minutes ? `≈ ${top.i.est_minutes}m` : "Next up";
+  return { item: top.i, reason };
+}
+
+function listStats(list: ResetChecklist, opts?: { lowEnergy?: boolean }) {
   const roots = list.items.filter(i => !i.parent_id);
   const done = roots.filter(i => i.done).length;
   const total = roots.length;
-  const nextUp = roots
-    .slice()
-    .sort((a, b) => a.sort_order - b.sort_order)
-    .find(i => !i.done);
-  return { done, total, pct: total ? Math.round((done / total) * 100) : 0, nextUp, roots };
+  const { item: nextUp, reason } = smartNext(list, { lowEnergy: !!opts?.lowEnergy });
+  return { done, total, pct: total ? Math.round((done / total) * 100) : 0, nextUp, reason, roots };
 }
 
 const KIND_ACCENT: Record<ResetKind, string> = {
@@ -57,12 +93,15 @@ const ZONES = [
 // ---------- page ----------
 export default function HomeReset() {
   const reset = useResetChecklists({});
+  const { state } = useStore();
+  const lowEnergy = !!state.settings?.lowEnergyMode;
   const activeLists = useMemo(
     () => reset.lists.filter(l => !l.is_template),
     [reset.lists],
   );
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [sheetListId, setSheetListId] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Choose current reset: pinned selection → first with progress → first overall
   const current = useMemo(() => {
@@ -88,13 +127,40 @@ export default function HomeReset() {
     return { remaining, inProgress };
   }, [activeLists]);
 
+  const completeItem = async (list: ResetChecklist, item: ResetItem, opts?: { celebrate?: boolean }) => {
+    haptics.success();
+    await reset.updateItem(item.id, { done: true });
+    void logResetCompletion({
+      checklist_id: list.id,
+      item_id: item.id,
+      title: item.title,
+      kind: list.kind,
+      est_minutes: item.est_minutes,
+      duration_seconds: item.est_minutes ? item.est_minutes * 60 : null,
+    });
+    if (opts?.celebrate !== false) {
+      try { playCompletionChime(); } catch {}
+      fireConfetti({ count: 70 });
+    }
+  };
+
   const continueNext = async () => {
     if (!current) return;
-    const { nextUp } = listStats(current);
+    const { nextUp } = listStats(current, { lowEnergy });
     if (!nextUp) return;
+    await completeItem(current, nextUp);
+  };
+
+  const startTimer = (item: ResetItem) => {
+    const mins = item.est_minutes ?? 5;
+    pomodoro.startTemplate({
+      label: item.title.slice(0, 60),
+      focusSeconds: mins * 60,
+      breakSeconds: 5 * 60,
+      templateId: "reset",
+    });
     haptics.tap();
-    await reset.updateItem(nextUp.id, { done: true });
-    toast.success("One small thing done ✨");
+    toast.success(`${mins}m focus started`, { description: item.title });
   };
 
   const sheetList = sheetListId
@@ -126,6 +192,14 @@ export default function HomeReset() {
             variant="outline"
             size="sm"
             className="rounded-full"
+            onClick={() => setHistoryOpen(true)}
+          >
+            <History className="mr-1 h-4 w-4" /> History
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full"
             onClick={async () => {
               const id = await reset.createList({ name: "New reset", kind: "custom" });
               if (id) { setCurrentId(id); toast.success("Reset created"); }
@@ -140,8 +214,14 @@ export default function HomeReset() {
       {current ? (
         <CurrentResetHero
           list={current}
+          lowEnergy={lowEnergy}
           onContinue={continueNext}
           onOpenAll={() => setSheetListId(current.id)}
+          onCompleteNext={() => continueNext()}
+          onStartTimer={() => {
+            const { nextUp } = listStats(current, { lowEnergy });
+            if (nextUp) startTimer(nextUp);
+          }}
         />
       ) : (
         <EmptyHero
@@ -164,6 +244,16 @@ export default function HomeReset() {
                 active={current?.id === l.id}
                 onSelect={() => { setCurrentId(l.id); haptics.tap(); }}
                 onOpenAll={() => setSheetListId(l.id)}
+                onToggleItem={(itemId, done) => {
+                  const item = l.items.find(i => i.id === itemId);
+                  if (!item) return;
+                  if (done) {
+                    void completeItem(l, item, { celebrate: true });
+                  } else {
+                    void reset.updateItem(itemId, { done: false });
+                  }
+                }}
+                onAddItem={(title) => reset.addItem(l.id, { title })}
               />
             ))}
           </div>
@@ -225,6 +315,9 @@ export default function HomeReset() {
         </SheetContent>
         <SheetTrigger className="hidden" />
       </Sheet>
+
+      {/* ============ HISTORY SHEET ============ */}
+      <ResetHistorySheet open={historyOpen} onOpenChange={setHistoryOpen} />
     </div>
   );
 }
@@ -254,9 +347,16 @@ function StatChip({ label, value, accent }: { label: string; value: number; acce
 }
 
 function CurrentResetHero({
-  list, onContinue, onOpenAll,
-}: { list: ResetChecklist; onContinue: () => void; onOpenAll: () => void }) {
-  const { done, total, pct, nextUp } = listStats(list);
+  list, lowEnergy, onContinue, onOpenAll, onCompleteNext, onStartTimer,
+}: {
+  list: ResetChecklist;
+  lowEnergy: boolean;
+  onContinue: () => void;
+  onOpenAll: () => void;
+  onCompleteNext: () => void;
+  onStartTimer: () => void;
+}) {
+  const { done, total, pct, nextUp, reason } = listStats(list, { lowEnergy });
   const complete = total > 0 && done >= total;
   const Icon = KIND_ICON[list.kind] ?? Sparkle;
 
@@ -299,7 +399,13 @@ function CurrentResetHero({
               </span>
             ) : nextUp ? (
               <>
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full ring-1 ring-foreground/30" />
+                <button
+                  aria-label="Complete next step"
+                  onClick={(e) => { e.stopPropagation(); onCompleteNext(); }}
+                  className="group/check flex h-6 w-6 shrink-0 items-center justify-center rounded-full ring-1 ring-foreground/30 transition-all hover:scale-110 hover:bg-emerald-500 hover:text-white hover:ring-emerald-500"
+                >
+                  <Check className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover/check:opacity-100" />
+                </button>
                 <span className="truncate text-sm font-medium">{nextUp.title}</span>
                 {nextUp.est_minutes ? (
                   <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] text-muted-foreground">
@@ -311,8 +417,21 @@ function CurrentResetHero({
               <span className="text-sm text-muted-foreground">No steps yet — add one.</span>
             )}
           </div>
+          {!complete && nextUp && reason && (
+            <p className="mt-1 text-[10px] uppercase tracking-wider text-foreground/50">{reason}</p>
+          )}
         </div>
         <div className="flex items-center gap-2">
+          {!complete && nextUp && (
+            <button
+              onClick={onStartTimer}
+              className="flex items-center gap-1 rounded-full bg-white/60 px-2.5 py-1 text-xs font-medium text-foreground/70 ring-1 ring-white/60 hover:text-foreground"
+              title="Start a focus timer"
+            >
+              <Timer className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{nextUp.est_minutes ?? 5}m</span>
+            </button>
+          )}
           <button
             onClick={onOpenAll}
             className="text-xs font-medium text-foreground/70 hover:text-foreground"
@@ -334,21 +453,31 @@ function CurrentResetHero({
 }
 
 function QuickResetCard({
-  list, active, onSelect, onOpenAll,
-}: { list: ResetChecklist; active: boolean; onSelect: () => void; onOpenAll: () => void }) {
+  list, active, onSelect, onOpenAll, onToggleItem, onAddItem,
+}: {
+  list: ResetChecklist;
+  active: boolean;
+  onSelect: () => void;
+  onOpenAll: () => void;
+  onToggleItem: (id: string, done: boolean) => void;
+  onAddItem: (title: string) => void;
+}) {
   const { done, total, pct } = listStats(list);
   const Icon = KIND_ICON[list.kind] ?? Sparkle;
+  const [expanded, setExpanded] = useState(false);
   return (
-    <button
-      onClick={onSelect}
-      onDoubleClick={onOpenAll}
+    <div
       className={cn(
-        "group relative flex flex-col gap-2 rounded-2xl bg-card/80 p-3 text-left ring-1 ring-border/50 backdrop-blur-sm transition-all",
+        "group relative flex flex-col gap-2 rounded-2xl bg-card/80 p-3 ring-1 ring-border/50 backdrop-blur-sm transition-all",
         "hover:-translate-y-0.5 hover:shadow-soft",
         active && "ring-2 ring-primary/60",
       )}
     >
-      <div className="flex items-center justify-between">
+      <button
+        onClick={onSelect}
+        onDoubleClick={onOpenAll}
+        className="flex items-center justify-between text-left"
+      >
         <span className={cn(
           "flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ring-1",
           KIND_ACCENT[list.kind] ?? KIND_ACCENT.custom,
@@ -356,18 +485,35 @@ function QuickResetCard({
           <Icon className="h-4.5 w-4.5 text-foreground/80" />
         </span>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-      </div>
-      <div className="min-w-0">
+      </button>
+      <button onClick={onSelect} onDoubleClick={onOpenAll} className="min-w-0 text-left">
         <p className="truncate font-display text-sm font-semibold leading-tight">{list.name}</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">{done}/{total || 0}</p>
-      </div>
+      </button>
       <div className="h-1 w-full overflow-hidden rounded-full bg-foreground/5">
         <div
           className={cn("h-full rounded-full transition-all", KIND_BAR[list.kind] ?? KIND_BAR.custom)}
           style={{ width: `${pct}%` }}
         />
       </div>
-    </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); setExpanded(v => !v); }}
+        className="flex items-center justify-between rounded-md px-1 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
+      >
+        <span>{expanded ? "Hide tasks" : "Show tasks"}</span>
+        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {expanded && (
+        <div className="border-t border-border/40 pt-2">
+          <ChecklistInline
+            items={list.items}
+            onToggle={onToggleItem}
+            onAdd={onAddItem}
+            maxVisible={6}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -4237,6 +4237,45 @@ export type Database = {
         }
         Relationships: []
       }
+      reset_history: {
+        Row: {
+          checklist_id: string | null
+          completed_at: string
+          created_at: string
+          duration_seconds: number | null
+          est_minutes: number | null
+          id: string
+          item_id: string | null
+          kind: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          checklist_id?: string | null
+          completed_at?: string
+          created_at?: string
+          duration_seconds?: number | null
+          est_minutes?: number | null
+          id?: string
+          item_id?: string | null
+          kind?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          checklist_id?: string | null
+          completed_at?: string
+          created_at?: string
+          duration_seconds?: number | null
+          est_minutes?: number | null
+          id?: string
+          item_id?: string | null
+          kind?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reset_items: {
         Row: {
           category: string | null
