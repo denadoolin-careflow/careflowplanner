@@ -143,8 +143,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
             />
           )}
 
-          {/* Scrollable pill row — keeps options accessible without wrapping */}
-          <div className="mt-1 -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Wrapping pill row — pills flow to a new line instead of overflowing */}
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <button
               type="button"
               onClick={() => { setNotesOpen(v => !v); setTimeout(() => notesRef.current?.focus(), 0); }}
@@ -298,30 +298,62 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
               </PopoverContent>
             </Popover>
 
-            {/* Energy dropper — quick tap or type @low / @med / @high */}
-            {(["low","medium","high"] as Energy[]).map(e => {
-              const active = energy === e;
-              const label = e === "medium" ? "med" : e;
-              return (
+            {/* Energy pill — single popover replaces the low/med/high triplet */}
+            <Popover>
+              <PopoverTrigger asChild>
                 <button
-                  key={e}
                   type="button"
-                  onClick={() => setEnergy(active ? undefined : e)}
-                  title={`Energy: ${e}  (or type @${label})`}
+                  title="Energy (or type @low / @med / @high)"
                   className={cn(
                     "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
-                    active
-                      ? e === "low"  ? "border-transparent bg-secondary-soft text-secondary-foreground"
-                      : e === "high" ? "border-transparent bg-warm-soft text-warm-foreground"
-                      :                "border-transparent bg-primary-soft text-primary-foreground"
-                      : "border-border/60 text-muted-foreground hover:bg-muted",
+                    energy === "low"  ? "border-transparent bg-secondary-soft text-secondary-foreground" :
+                    energy === "high" ? "border-transparent bg-warm-soft text-warm-foreground" :
+                    energy === "medium" ? "border-transparent bg-primary-soft text-primary-foreground" :
+                    "border-border/60 text-muted-foreground hover:bg-muted",
                   )}
                 >
                   <Zap className="h-3 w-3" />
-                  {label}
+                  {energy ? (energy === "medium" ? "Med" : energy[0].toUpperCase() + energy.slice(1)) : "Energy"}
+                  {energy && (
+                    <X
+                      className="h-3 w-3 opacity-70 hover:opacity-100"
+                      onClick={(e) => { e.stopPropagation(); setEnergy(undefined); }}
+                    />
+                  )}
                 </button>
-              );
-            })}
+              </PopoverTrigger>
+              <PopoverContent className="w-40 p-1" align="start">
+                {(["low","medium","high"] as Energy[]).map(e => {
+                  const label = e === "medium" ? "Medium" : e[0].toUpperCase() + e.slice(1);
+                  const dot = e === "low" ? "bg-secondary" : e === "high" ? "bg-warm" : "bg-primary";
+                  const active = energy === e;
+                  return (
+                    <button
+                      key={e}
+                      type="button"
+                      onClick={() => setEnergy(e)}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] transition-colors",
+                        active ? "bg-muted text-foreground" : "hover:bg-muted",
+                      )}
+                    >
+                      <span className={cn("h-2 w-2 rounded-full", dot)} />
+                      <span className="flex-1 text-left">{label}</span>
+                      <Zap className="h-3 w-3 opacity-60" />
+                    </button>
+                  );
+                })}
+                {energy && (
+                  <button
+                    type="button"
+                    onClick={() => setEnergy(undefined)}
+                    className="mt-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-muted"
+                  >
+                    Clear
+                  </button>
+                )}
+              </PopoverContent>
+            </Popover>
 
             {/* Priority pill */}
             <Popover>
