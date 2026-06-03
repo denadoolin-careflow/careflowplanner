@@ -275,7 +275,7 @@ function ToolbarButton({ active, onClick, label, children }: { active?: boolean;
   );
 }
 
-function Toolbar({ editor, onPromoteTask }: { editor: Editor; onPromoteTask: () => void }) {
+function Toolbar({ editor, onPromoteTask, onInsertImage }: { editor: Editor; onPromoteTask: () => void; onInsertImage: () => void }) {
   if (!editor) return null;
   const setLink = () => {
     const previous = editor.getAttributes("link").href;
@@ -299,6 +299,7 @@ function Toolbar({ editor, onPromoteTask }: { editor: Editor; onPromoteTask: () 
       <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-4 w-4" /></ToolbarButton>
       <ColorPickerPopover editor={editor} />
       <ToolbarButton active={editor.isActive("link")} onClick={setLink} label="Link"><LinkIcon className="h-4 w-4" /></ToolbarButton>
+      <ToolbarButton onClick={onInsertImage} label="Insert image"><ImageIcon className="h-4 w-4" /></ToolbarButton>
       <span className="mx-1 h-5 w-px bg-border" />
       <ToolbarButton active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} label="Bullet list"><List className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} label="Numbered list"><ListOrdered className="h-4 w-4" /></ToolbarButton>
