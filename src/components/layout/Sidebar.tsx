@@ -30,12 +30,12 @@ import { AstrologySection } from "./AstrologySection";
 import { Sparkles } from "lucide-react";
 
 const LISTS = [
-  { to: "/inbox", label: "Inbox", icon: InboxIcon },
-  { to: "/today", label: "Today", icon: Sun },
-  { to: "/upcoming", label: "Upcoming", icon: CalendarRange },
-  { to: "/anytime", label: "Anytime", icon: Layers },
-  { to: "/someday", label: "Someday", icon: Moon },
-  { to: "/logbook", label: "Logbook", icon: Archive },
+  { to: "/inbox", label: "Inbox", icon: InboxIcon, tint: "bg-indigo-500/15 text-indigo-500", dot: "bg-indigo-500" },
+  { to: "/today", label: "Today", icon: Sun, tint: "bg-amber-500/15 text-amber-600", dot: "bg-amber-500" },
+  { to: "/upcoming", label: "Upcoming", icon: CalendarRange, tint: "bg-violet-500/15 text-violet-500", dot: "bg-violet-500" },
+  { to: "/anytime", label: "Anytime", icon: Layers, tint: "bg-teal-500/15 text-teal-600", dot: "bg-teal-500" },
+  { to: "/someday", label: "Someday", icon: Moon, tint: "bg-slate-500/15 text-slate-500", dot: "bg-slate-500" },
+  { to: "/logbook", label: "Logbook", icon: Archive, tint: "bg-stone-500/15 text-stone-500", dot: "bg-stone-500" },
 ] as const;
 
 const STORAGE_KEY = "careflow:sidebar:open-groups";
