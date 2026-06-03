@@ -372,6 +372,25 @@ export default function Month() {
                       )}
                     </div>
                   )}
+                  {inMonth && transits.length > 0 && (
+                    <div className="mt-0.5 flex flex-wrap items-center gap-0.5 text-[9px] leading-none sm:text-[10px]">
+                      {transits.slice(0, 3).map(t => (
+                        <span
+                          key={t.id}
+                          title={t.detail}
+                          aria-label={t.label}
+                          className={cn(
+                            "rounded px-0.5 tabular-nums",
+                            t.tone === "warn" && "text-amber-600 dark:text-amber-400",
+                            t.tone === "rest" && "text-muted-foreground",
+                            t.tone === "soft" && "text-foreground/70",
+                          )}
+                        >
+                          {t.glyph}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {/* Mobile (<md): dot row indicator, max 4 dots */}
                   {inMonth && ev.length > 0 && (
                     <div className="mt-0.5 flex flex-wrap gap-0.5 md:hidden">
