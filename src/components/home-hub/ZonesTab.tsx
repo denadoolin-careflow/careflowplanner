@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import {
   BedDouble, UtensilsCrossed, Bath, WashingMachine, DoorOpen, Sofa,
   Trees, TreePine, Sparkles, Wand2, Loader2, Plus, ChevronRight,
+  ListChecks, Moon, ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -90,7 +92,7 @@ export function ZonesTab() {
     toast.success(`Added "${label}"`);
   };
 
-  const generateChecklist = async (zone: string, energy: "low" | "medium" | "deep") => {
+  const generateChecklist = async (zone: string, energy: string) => {
     setAiBusy(zone);
     try {
       const list = zoneListByLabel.get(zone);
@@ -189,21 +191,11 @@ export function ZonesTab() {
                 <div className={cn("h-full rounded-full transition-all", z.bar)} style={{ width: `${pct}%` }} />
               </div>
 
-              <div className="flex flex-wrap gap-1 border-t border-white/40 pt-2">
-                <span className="mr-1 self-center text-[10px] uppercase tracking-wider text-foreground/60">AI checklist:</span>
-                {(["low", "medium", "deep"] as const).map((lvl) => (
-                  <Button
-                    key={lvl}
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 rounded-full px-2 text-[10px] hover:bg-white/60"
-                    disabled={busy}
-                    onClick={() => generateChecklist(z.label, lvl)}
-                  >
-                    {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Wand2 className="mr-1 h-3 w-3" />}
-                    {lvl === "low" ? "Low energy" : lvl === "medium" ? "Weekly" : "Deep clean"}
-                  </Button>
-                ))}
+              <div className="border-t border-white/40 pt-2">
+                <AiChecklistMenu
+                  busy={busy}
+                  onGenerate={(mode) => generateChecklist(z.label, mode)}
+                />
               </div>
             </article>
           );
