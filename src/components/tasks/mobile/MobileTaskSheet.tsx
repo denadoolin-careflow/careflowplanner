@@ -169,7 +169,7 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
         </div>
 
         {/* SCHEDULING */}
-        <SectionLabel icon={<CalendarDays className="h-3.5 w-3.5" />} label="Scheduling" />
+        <SectionLabel className="!px-5" icon={<CalendarDays className="h-3.5 w-3.5" />} label="Scheduling" />
         <div className="px-5">
           <div className="grid grid-cols-2 gap-3">
             <BigCard
@@ -190,7 +190,7 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
         </div>
 
         {/* ORGANIZATION */}
-        <SectionLabel icon={<Tag className="h-3.5 w-3.5" />} label="Organization" />
+        <SectionLabel className="!px-5" icon={<Tag className="h-3.5 w-3.5" />} label="Organization" />
         <div className="px-5">
           <div className="grid grid-cols-2 gap-3">
             <BigCard
@@ -220,7 +220,7 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
         </div>
 
         {/* CONTENT */}
-        <SectionLabel icon={<StickyNote className="h-3.5 w-3.5" />} label="Content" />
+        <SectionLabel className="!px-5" icon={<StickyNote className="h-3.5 w-3.5" />} label="Content" />
         <div className="px-5">
           <div className="grid grid-cols-2 gap-3">
             <BigCard
@@ -242,7 +242,7 @@ export function MobileTaskSheet({ task, open, onOpenChange }: Props) {
         </div>
 
         {/* UTILITIES */}
-        <SectionLabel icon={<Zap className="h-3.5 w-3.5" />} label="Utilities" />
+        <SectionLabel className="!px-5" icon={<Zap className="h-3.5 w-3.5" />} label="Utilities" />
         <div className="px-5">
           <div className="grid grid-cols-3 gap-3">
             <SmallTile tone="teal" icon={<Timer className="h-4 w-4" />} label="Timer"
