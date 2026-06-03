@@ -5,6 +5,15 @@ import { cn } from "@/lib/utils";
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { TagChip } from "@/components/tags/TagChip";
+import {
+  SwipeableList, SwipeableListItem, LeadingActions, TrailingActions,
+  SwipeAction, Type as SwipeType,
+} from "react-swipeable-list";
+import "react-swipeable-list/dist/styles.css";
+import { Check, Pencil, Trash2 } from "lucide-react";
+import { haptics } from "@/lib/haptics";
+import { playCompletionChime } from "@/lib/completion-sound";
+import { toast } from "sonner";
 
 const DOTS: Record<Task["priority"], number> = { low: 0, medium: 1, high: 2 };
 
@@ -20,7 +29,7 @@ function dueLabel(d?: string) {
 
 /** Simplified mobile task card — checkbox, title, meta. Tap → /tasks/:id */
 export function MobileTaskCard({ task }: { task: Task }) {
-  const { toggleTask, state } = useStore();
+  const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
   const navigate = useNavigate();
   const proj = task.projectId ? state.projects?.find(p => p.id === task.projectId) : undefined;
   const dl = dueLabel(task.dueDate);
@@ -33,7 +42,49 @@ export function MobileTaskCard({ task }: { task: Task }) {
     } catch { return "text-muted-foreground"; }
   })();
 
-  return (
+  const handleComplete = async () => {
+    const wasDone = task.done;
+    const prevLastCompletedAt = task.lastCompletedAt;
+    haptics.success();
+    if (!wasDone) playCompletionChime();
+    await toggleTask(task.id);
+    toast(wasDone ? "Reopened" : "Completed", {
+      description: task.title,
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          haptics.tap();
+          void updateTask(task.id, { done: wasDone, lastCompletedAt: prevLastCompletedAt });
+        },
+      },
+    });
+  };
+
+  const handleDelete = async () => {
+    const snapshot: Partial<Task> = {
+      title: task.title, notes: task.notes, dueDate: task.dueDate,
+      startTime: task.startTime, priority: task.priority, area: task.area,
+      tags: task.tags, energy: task.energy, estMinutes: task.estMinutes,
+      projectId: task.projectId, parentTaskId: task.parentTaskId,
+      inbox: task.inbox, status: task.status,
+    };
+    haptics.delete();
+    await deleteTask(task.id);
+    toast("Deleted", {
+      description: task.title,
+      duration: 6000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          haptics.tap();
+          void addTask({ title: task.title, ...snapshot } as any);
+        },
+      },
+    });
+  };
+
+  const card = (
     <button
       type="button"
       onClick={() => navigate(`/tasks/${task.id}`)}
@@ -68,5 +119,43 @@ export function MobileTaskCard({ task }: { task: Task }) {
         </div>
       </div>
     </button>
+  );
+
+  const leading = (
+    <LeadingActions>
+      <SwipeAction onClick={handleComplete}>
+        <div className="flex h-full w-full items-center gap-2 rounded-l-[22px] bg-primary px-5 text-sm font-medium text-primary-foreground">
+          <Check className="h-4 w-4" /> {task.done ? "Reopen" : "Complete"}
+        </div>
+      </SwipeAction>
+    </LeadingActions>
+  );
+
+  const trailing = (
+    <TrailingActions>
+      <SwipeAction onClick={() => { haptics.tap(); navigate(`/tasks/${task.id}`); }}>
+        <div className="flex h-full w-full items-center justify-end gap-2 bg-secondary px-5 text-sm font-medium text-secondary-foreground">
+          <Pencil className="h-4 w-4" /> Edit
+        </div>
+      </SwipeAction>
+      <SwipeAction destructive onClick={handleDelete}>
+        <div className="flex h-full w-full items-center justify-end gap-2 rounded-r-[22px] bg-destructive px-5 text-sm font-medium text-destructive-foreground">
+          <Trash2 className="h-4 w-4" /> Delete
+        </div>
+      </SwipeAction>
+    </TrailingActions>
+  );
+
+  return (
+    <SwipeableList type={SwipeType.IOS} fullSwipe={false} threshold={0.25} className="!bg-transparent">
+      <SwipeableListItem
+        leadingActions={leading}
+        trailingActions={trailing}
+        onSwipeStart={() => haptics.swipe()}
+        className="overflow-hidden rounded-[22px]"
+      >
+        {card}
+      </SwipeableListItem>
+    </SwipeableList>
   );
 }
