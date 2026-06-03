@@ -25,6 +25,8 @@ import { listPinnedTags, type Tag } from "@/lib/tags";
 import { tagIconFor } from "@/components/tags/tag-icon";
 import { fallbackColorFor } from "@/lib/tags";
 import { useNavigate } from "react-router-dom";
+import { AstrologySection } from "./AstrologySection";
+import { Sparkles } from "lucide-react";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon },
@@ -50,8 +52,8 @@ const DEFAULT_WIDTH = 256;
 type SidebarSide = "left" | "right";
 type SidebarTheme = "auto" | "light" | "dark" | "atmosphere";
 
-type SectionPrefs = { pinnedNotes: boolean; pinnedTags: boolean; quickWeeks: boolean; quickMonths: boolean };
-const DEFAULT_SECTIONS: SectionPrefs = { pinnedNotes: true, pinnedTags: true, quickWeeks: true, quickMonths: true };
+type SectionPrefs = { pinnedNotes: boolean; pinnedTags: boolean; quickWeeks: boolean; quickMonths: boolean; astrology: boolean };
+const DEFAULT_SECTIONS: SectionPrefs = { pinnedNotes: true, pinnedTags: true, quickWeeks: true, quickMonths: true, astrology: true };
 
 function readSections(): SectionPrefs {
   if (typeof window === "undefined") return DEFAULT_SECTIONS;
