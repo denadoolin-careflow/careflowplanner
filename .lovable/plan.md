@@ -1,65 +1,42 @@
-# Beautiful note editor with images (Notion/Craft style)
+# NLP-aware title in Task Settings
 
-## 1. Image support
+Bring the inbox-style natural-language parsing into the task editor's title field so editing a task's title (e.g. "Doctor appt tomorrow 3pm #health p2 30m") can fill in date, time, priority, tags, energy, estimate, recurrence, reminder, and area.
 
-**New public storage bucket `note-images`** (created via storage tool, not SQL).
-RLS policies (migration) on `storage.objects` restrict uploads/updates/deletes to the owner's `{uid}/...` folder; public read is implicit since the bucket is public.
+## UX
 
-**Tiptap image extension**:
-- Add `@tiptap/extension-image` dependency.
-- Wire it into `BlockEditor` with `inline: false`, `allowBase64: false`.
-- Add an upload helper `uploadNoteImage(file)` in a new `src/lib/note-images.ts` that uploads to `note-images/{uid}/{uuid}-{name}` and returns the public URL.
+In `src/components/tasks/TaskEditor.tsx`, just below the title input:
 
-**Three ways to add an image:**
-1. Slash command `/image` → opens hidden `<input type="file" accept="image/*">`.
-2. Toolbar "Image" button (in main sticky toolbar) — same trigger.
-3. Drag-and-drop / paste — `editorProps.handlePaste` and `handleDrop` intercept image files, upload, then insert via `editor.chain().setImage({ src }).run()`.
+1. **Live chip preview** — when the user types in the title, run `parseTaskInput(draft.title)` (memoized). If it returns chips, render a small row of pill chips beneath the title (same look as `InlineTaskComposer`: `Sparkles` icon + `bg-primary/10` pills).
+2. **NLP toggle + "Apply"** — a tiny row next to the chips:
+   - `Sparkles` toggle button "NLP" (on/off, persisted in localStorage `cf.taskedit.nlp`, default ON) — when off, no parsing is done.
+   - "Apply" button (only visible when chips exist) that:
+     - Sets `draft.title` to the cleaned `parsed.title`.
+     - Merges parsed fields into `draft` only when they are currently empty/undefined OR when the user holds Shift / clicks an "Override" toggle. Default behavior: do not overwrite existing values, only fill blanks. Tags get merged (deduped).
+     - Toasts "NLP applied" listing the applied chips.
+3. **Auto-apply on blur** — when the title input loses focus, if NLP is on and there are chips and any of the parsed fields would actually fill a blank, apply automatically (same merge rule). This matches Inbox capture's feel where typing the sentence is enough.
 
-**Inline image rendering:**
-- Custom image render via `addNodeView` is overkill — instead use a small CSS pass: rounded corners, soft shadow, max-w-full, mx-auto, mt-3 mb-3, hover ring.
-- BubbleMenu when an image is selected → "Remove" and "Open original" buttons.
+No changes elsewhere — only `TaskEditor.tsx` is touched, plus reusing existing `parseTaskInput` from `src/lib/nlp-task.ts`.
 
-Markdown round-trip: turndown already serializes `<img>` to `![](url)`; `marked` parses it back. Existing `bodyToHtml`/`htmlToMarkdown` work as-is.
+## Field-mapping rules
 
-## 2. Cover image
+| Parsed | Task field | Apply when |
+| --- | --- | --- |
+| `dueDate` | `dueDate` | currently empty |
+| `time` | `dueTime` (if field exists) else appended into title | currently empty |
+| `priority` | `priority` | currently empty |
+| `area` | `area` | currently default/empty |
+| `tags` | `tags` | merged + deduped |
+| `energy` | `energy` | currently empty |
+| `estMinutes` | `estMinutes` | currently empty |
+| `recurrenceType/Interval/Days` | matching task fields | currently empty |
+| `reminderMinutes` | `reminderMinutes` | currently empty |
+| `projectName` | `projectId` if a project name matches in `state.projects` | currently empty |
+| `someday` | `someday` | currently false |
 
-**Add `cover_url text` column to `public.notes`** (migration). Update `Note` interface, `fromRow`, and `updateNote` to handle `coverUrl`.
-
-In `NoteDetail`:
-- Above the title, render a 160-220px cover area.
-  - If `cover_url` set: full-bleed `<img>` with subtle gradient fade-to-card at the bottom.
-  - Else: a subtle "Add cover" button that fades in on header hover.
-- "Change cover" / "Remove cover" controls overlay the cover on hover.
-- Reuse `uploadNoteImage` for the cover too.
-
-## 3. Editor UX/UI polish — Notion/Craft feel
-
-`NoteDetail.tsx`:
-- Drop `cozy-card` wrapper; use a clean centered page (max-w-[760px], mx-auto, px-6 md:px-10, py-8) with no border, just background.
-- Cover above title; title input becomes larger (text-4xl md:text-5xl), tighter leading, no border.
-- Meta row (updated time + tags) gets a single soft row beneath the title.
-- Hide right TOC into a slim floating panel that auto-hides when narrow (`hidden 2xl:block`), Craft-style.
-
-`BlockEditor.tsx`:
-- Sticky toolbar: round it more (rounded-2xl), reduce height, give it a stronger blur, only appear on scroll / focus (already sticky — tighten styling only).
-- Slash menu items: group into sections (Basic / Media / Embeds / Advanced), bigger icon tile, secondary description line on hover.
-- BubbleMenu: tighter spacing, pill segments separated by hairlines.
-- `prose` tweaks via existing `block-editor` CSS class: tighter paragraph leading (1.65), more breathing space around H1/H2, refined `:focus` caret color (already themed).
-- Placeholder text refined to "Type ‘/’ for blocks, ‘@’ to mention, drag an image…".
-- Add subtle drag-over highlight on the editor surface (`drag-active:ring-2 ring-primary/40`) using state + handleDOMEvents.
-
-No changes to suggestion plumbing, hashtag plugin, toggle keymap, AI button, links sidebar, or backlinks behavior.
-
-## 4. Files touched
-
-- `package.json` — add `@tiptap/extension-image`.
-- `src/lib/note-images.ts` — new upload helper.
-- `src/lib/notes.ts` — add `coverUrl`, persist via `updateNote`.
-- `src/components/notes/BlockEditor.tsx` — image extension, slash item, toolbar button, paste/drop, drag-over highlight, slash-menu grouping, minor toolbar/bubble styling.
-- `src/pages/NoteDetail.tsx` — cover image, refreshed layout/typography.
-- `src/index.css` (or existing `block-editor` styles) — image styling, cover gradient, drag-over ring, tightened prose.
-- 1 migration: add `cover_url` column + storage RLS for `note-images`.
-- 1 storage tool call: create `note-images` public bucket.
+Verify each target key exists on `Task` before wiring (read `src/lib/types.ts`); silently skip any field the model doesn't have.
 
 ## Out of scope
-- No embeds (YouTube/Twitter), no tables, no full-text search changes, no AI image generation, no comment threads. Daily notes get the same cover/image treatment automatically.
+
+- No new parser features; uses the existing `parseTaskInput` as-is.
+- No changes to `InlineTaskComposer`, mobile sheet, or any other surface.
+- No persistence of chips on the task — chips are derived from the title each render.
