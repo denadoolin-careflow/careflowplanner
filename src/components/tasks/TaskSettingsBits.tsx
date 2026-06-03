@@ -23,21 +23,29 @@ export function SectionLabel({ icon, label, className }: { icon?: React.ReactNod
   );
 }
 
-export function BigCard({
-  icon, label, value, onClick, tone = "primary", extra, valueTone, asChild = false, children,
-}: {
+type BigCardProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "value"> & {
   icon: React.ReactNode;
   label: string;
   value?: string;
-  onClick?: () => void;
   tone?: ToneKey | string;
   extra?: React.ReactNode;
   valueTone?: string;
-  asChild?: boolean;
-  children?: React.ReactNode;
-}) {
-  const Inner = (
-    <>
+};
+
+export const BigCard = React.forwardRef<HTMLButtonElement, BigCardProps>(function BigCard(
+  { icon, label, value, tone = "primary", extra, valueTone, className, children, ...rest },
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      {...rest}
+      className={cn(
+        "relative flex min-h-[104px] w-full flex-col rounded-2xl border border-border/50 bg-card p-3.5 text-left shadow-sm transition-transform active:scale-[0.985] hover:border-border",
+        className,
+      )}
+    >
       <div className="flex items-start justify-between">
         <div className={cn("grid h-10 w-10 place-items-center rounded-full", TONE_BG[tone as string] ?? TONE_BG.primary)}>
           {icon}
@@ -51,16 +59,9 @@ export function BigCard({
       )}
       {children}
       {extra}
-    </>
+    </button>
   );
-  const classes = "relative flex min-h-[104px] w-full flex-col rounded-2xl border border-border/50 bg-card p-3.5 text-left shadow-sm transition-transform active:scale-[0.985] hover:border-border";
-  if (asChild) {
-    return <div className={classes}>{Inner}</div>;
-  }
-  return (
-    <button type="button" onClick={onClick} className={classes}>{Inner}</button>
-  );
-}
+});
 
 export function SmallTile({
   icon, label, onClick, tone = "teal", danger = false,
