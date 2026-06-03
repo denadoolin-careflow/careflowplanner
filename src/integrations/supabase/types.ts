@@ -3261,6 +3261,7 @@ export type Database = {
         Row: {
           archived: boolean
           body: string
+          cover_position: number | null
           cover_url: string | null
           created_at: string
           date: string | null
@@ -3277,6 +3278,7 @@ export type Database = {
         Insert: {
           archived?: boolean
           body?: string
+          cover_position?: number | null
           cover_url?: string | null
           created_at?: string
           date?: string | null
@@ -3293,6 +3295,7 @@ export type Database = {
         Update: {
           archived?: boolean
           body?: string
+          cover_position?: number | null
           cover_url?: string | null
           created_at?: string
           date?: string | null
