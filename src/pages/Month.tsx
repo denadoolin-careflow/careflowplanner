@@ -45,6 +45,8 @@ import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap } fr
 import type { WeatherCondition } from "@/lib/weather";
 import { DayDetailExtras } from "@/components/calendar/DayDetailExtras";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
+import { getTransitsForDate } from "@/lib/transits";
+import { useTransitsEnabled } from "@/lib/astrology-prefs";
 
 function MonthWxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-2.5 w-2.5 sm:h-3 sm:w-3", className);
@@ -67,6 +69,7 @@ export default function Month() {
   const { state, updateTask, updateAppointment, toggleTask } = useStore();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const transitsOn = useTransitsEnabled();
   const { settings: cycleSettings, periods: cyclePeriods } = useCycle();
   const [cursor, setCursor] = useState(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
@@ -262,6 +265,9 @@ export default function Month() {
               const dayPhase = getMoonPhase(d);
               const keyPhase = isKeyPhaseDay(dayPhase) ? getKeyPhaseInfo(dayPhase) : null;
               const wx = wxDays?.find(w => w.date === k) ?? null;
+              const transits = transitsOn && inMonth
+                ? getTransitsForDate(d).filter(t => t.kind === "ingress" || t.kind === "retrograde" || t.kind === "voc")
+                : [];
               return (
                 <div
                   key={k}
