@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap, Tag as TagIcon, Timer, AlignLeft } from "lucide-react";
-import { format, parseISO, addDays, nextMonday, nextSaturday } from "date-fns";
+import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap, Tag as TagIcon, Timer, AlignLeft, Flag, Sun } from "lucide-react";
+import { format, parseISO, addDays, addMonths, nextMonday, nextSaturday } from "date-fns";
 import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
-import { AREAS, type Area, type Energy, type Task } from "@/lib/types";
+import { AREAS, type Area, type DayPart, type Energy, type Priority, type Task } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -39,6 +39,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
   const [projectId, setProjectId] = useState<string | undefined>(defaults.projectId);
   const [area, setArea] = useState<Area | undefined>(defaults.area);
   const [energy, setEnergy] = useState<Energy | undefined>(defaults.energy);
+  const [priority, setPriority] = useState<Priority | undefined>(undefined);
+  const [dayPart, setDayPart] = useState<DayPart | undefined>(undefined);
   const [tags, setTags] = useState<string[]>(() => defaultTags ?? defaults.tags ?? []);
   const [estMinutes, setEstMinutes] = useState<number | undefined>(defaults.estMinutes);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -78,7 +80,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
       title: p.title || raw,
       notes: notes.trim() || undefined,
       dueDate: finalDate,
-      priority: p.priority ?? "medium",
+      priority: priority ?? p.priority ?? "medium",
+      dayPart: dayPart ?? undefined,
       area: (finalArea ?? "Personal") as Area,
       tags: mergedTags.length ? mergedTags : undefined,
       energy: finalEnergy,
@@ -98,6 +101,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     setProjectId(defaults.projectId);
     setArea(defaults.area);
     setEnergy(defaults.energy);
+    setPriority(undefined);
+    setDayPart(undefined);
     // Sticky tags + time: keep them so subsequent captures share the same.
     setTags(defaultTags ?? defaults.tags ?? tags);
     inputRef.current?.focus();
