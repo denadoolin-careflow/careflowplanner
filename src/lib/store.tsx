@@ -132,6 +132,7 @@ const mealFrom = (r: any): Meal => ({
   ingredients: r.ingredients ?? [],
   steps: r.steps ?? [],
   tags: r.tags ?? [],
+  updatedAt: r.updated_at ?? undefined,
 });
 const groceryFrom = (r: any): GroceryItem => ({
   id: r.id, name: r.name, qty: r.qty ?? undefined, bought: r.bought, category: r.category ?? undefined,
@@ -155,9 +156,10 @@ const apptFrom = (r: any): Appointment => ({
   googleEventId: r.google_event_id ?? undefined,
   googleCalendarId: r.google_calendar_id ?? undefined,
   googleLastSyncedAt: r.google_last_synced_at ?? undefined,
+  updatedAt: r.updated_at ?? undefined,
 });
-const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined });
-const holidayFrom = (r: any): Holiday => ({ id: r.id, name: r.name, date: r.date, notes: r.notes ?? undefined });
+const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined, updatedAt: r.updated_at ?? undefined });
+const holidayFrom = (r: any): Holiday => ({ id: r.id, name: r.name, date: r.date, notes: r.notes ?? undefined, updatedAt: r.updated_at ?? undefined });
 const recipFrom = (r: any): CareRecipient => ({
   id: r.id,
   name: r.name,
