@@ -99,13 +99,14 @@ export default function CalendarPage() {
 
   useEffect(() => { loadGoogle(); }, []);
 
-  const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task"|"care"|"meal") =>
+  const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task"|"care"|"meal"|"season") =>
     k === "appt" ? "bg-primary-soft text-foreground"
     : k === "bday" ? "bg-accent-soft text-accent-foreground"
     : k === "hol" ? "bg-secondary-soft text-secondary-foreground"
     : k === "task" ? "bg-warm-soft text-warm-foreground border border-primary/30"
     : k === "care" ? "bg-rose-100 text-rose-900 border border-rose-300/50 dark:bg-rose-900/30 dark:text-rose-100"
     : k === "meal" ? "bg-amber-100 text-amber-900 border border-amber-300/50 dark:bg-amber-900/30 dark:text-amber-100"
+    : k === "season" ? "bg-pink-100 text-pink-900 border border-pink-300/50 dark:bg-pink-900/30 dark:text-pink-100"
     : "bg-muted text-foreground";
 
   const { celebrations } = useCelebrations();
@@ -348,6 +349,7 @@ export default function CalendarPage() {
               { k: "bday" as Kind, label: "Birthdays", Icon: Cake },
               { k: "hol" as Kind, label: "Holidays", Icon: Cake },
               { k: "gcal" as Kind, label: "Google", Icon: CalendarClock },
+              { k: "season" as Kind, label: "Celebrations", Icon: Sparkles },
             ] as const).map(({ k, label, Icon }) => {
               const on = kindFilter.has(k);
               return (
