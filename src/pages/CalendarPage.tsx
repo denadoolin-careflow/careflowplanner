@@ -1033,10 +1033,14 @@ function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick, onItemResc
                   const draggable = !!onItemReschedule && editable && !!e.id;
                   return (
                     <li key={i}>
-                      <button
-                        type="button"
-                        disabled={!clickable}
-                        onClick={() => clickable && onItemClick!(e)}
+                      <CalendarItemCard
+                        kind={e.kind}
+                        id={e.id}
+                        label={e.label}
+                        time={e.time}
+                        color={e.color}
+                        disabled={!clickable && !draggable}
+                        onClick={clickable ? () => onItemClick!(e) : undefined}
                         draggable={draggable}
                         onDragStart={draggable ? (ev) => {
                           ev.dataTransfer.setData(SCHED_DRAG_MIME, e.id!);
@@ -1044,19 +1048,8 @@ function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick, onItemResc
                           setDragging(e);
                         } : undefined}
                         onDragEnd={() => { setDragging(null); setHoverISO(null); }}
-                        className={cn(
-                          "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-all",
-                          colorOf(e.kind),
-                          clickable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                          draggable && "active:cursor-grabbing",
-                          dragging?.id === e.id && "opacity-50",
-                          !clickable && "cursor-default",
-                        )}
-                      >
-                        <span className="w-16 shrink-0 text-xs font-medium opacity-80">{e.time ?? "any time"}</span>
-                        <span className="flex-1 truncate">{e.label}</span>
-                        <span className="text-[10px] uppercase tracking-wider opacity-60">{e.kind}</span>
-                      </button>
+                        className={cn(dragging?.id === e.id && "opacity-50")}
+                      />
                     </li>
                   );
                 })()
