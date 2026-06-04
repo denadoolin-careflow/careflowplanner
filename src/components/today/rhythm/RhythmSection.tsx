@@ -1,18 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
-  Sunrise, Sun, Moon, ChevronDown, Plus, UtensilsCrossed, ListChecks, ArrowRight,
+  Sunrise, Sun, Moon, ChevronDown, Plus, UtensilsCrossed, ListChecks, ArrowRight, BookOpen, User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { useRoutines, routines as routinesApi, type RoutineSlot } from "@/lib/routines";
 import { MealSlotCard } from "@/components/today/MealSlotCard";
 import { RoutineItemRow } from "@/components/routines/RoutineItemRow";
+import { RecipeDrawer } from "@/components/meals/RecipeDrawer";
 import { Link } from "react-router-dom";
-import type { Task } from "@/lib/types";
+import type { Meal, Task } from "@/lib/types";
 import { SlotWeather } from "./SlotWeather";
 import { WeatherWarningsCard } from "@/components/weather/WeatherWarningsCard";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
@@ -36,9 +38,26 @@ const SLOT_META: Record<Slot, {
 };
 
 const PERSON_KEY = "careflow:dayextras:person:v1";
+const PERSON_EVT = "careflow:routine-person-changed";
 function readPerson(): string {
   if (typeof localStorage === "undefined") return "";
   return localStorage.getItem(PERSON_KEY) ?? "";
+}
+function writePerson(p: string) {
+  try { localStorage.setItem(PERSON_KEY, p); } catch {}
+  try { window.dispatchEvent(new CustomEvent<string>(PERSON_EVT, { detail: p })); } catch {}
+}
+function usePersonFilter(): [string, (next: string) => void] {
+  const [person, setPerson] = useState<string>(() => readPerson());
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const next = (e as CustomEvent<string>).detail ?? "";
+      setPerson(next);
+    };
+    window.addEventListener(PERSON_EVT, handler);
+    return () => window.removeEventListener(PERSON_EVT, handler);
+  }, []);
+  return [person, (next: string) => { setPerson(next); writePerson(next); }];
 }
 
 interface Props {
@@ -59,6 +78,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
 
   const { state, toggleTask, updateTask, addTask } = useStore();
   const iso = format(date, "yyyy-MM-dd");
+  const [quickMeal, setQuickMeal] = useState<Meal | null>(null);
 
   const tasks = useMemo(
     () => state.tasks.filter(t =>
@@ -77,7 +97,12 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
 
   // Routine for selected person + this slot
   const { routines: allRoutines } = useRoutines();
-  const person = readPerson() || allRoutines[0]?.person_name || "";
+  const [personPref, setPersonPref] = usePersonFilter();
+  const peopleList = useMemo(
+    () => Array.from(new Set(allRoutines.map(r => r.person_name))).sort(),
+    [allRoutines],
+  );
+  const person = personPref || peopleList[0] || "";
   const routine = useMemo(
     () => allRoutines.find(r => r.person_name === person && r.slot === (slot as RoutineSlot)),
     [allRoutines, person, slot],
@@ -226,12 +251,23 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <UtensilsCrossed className="h-3 w-3 text-accent" /> {meta.mealSlot}
                 </div>
-                <Link
-                  to="/meals"
-                  className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                >
-                  Plan
-                </Link>
+                <div className="flex items-center gap-2">
+                  {meal && ((meal.ingredients?.length ?? 0) > 0 || (meal.steps?.length ?? 0) > 0) && (
+                    <button
+                      type="button"
+                      onClick={() => setQuickMeal(meal)}
+                      className="inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent hover:bg-accent/25"
+                    >
+                      <BookOpen className="h-2.5 w-2.5" /> Recipe
+                    </button>
+                  )}
+                  <Link
+                    to="/meals"
+                    className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                  >
+                    Plan
+                  </Link>
+                </div>
               </div>
               {meal ? (
                 <div className="space-y-1.5">
@@ -247,6 +283,9 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                       {meal.ingredients.slice(0, 3).map((ing, i) => (
                         <li key={i}>• {ing}</li>
                       ))}
+                      {meal.ingredients.length > 3 && (
+                        <li className="text-muted-foreground/70">+ {meal.ingredients.length - 3} more</li>
+                      )}
                     </ul>
                   )}
                 </div>
@@ -265,12 +304,27 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <Sunrise className="h-3 w-3 text-primary" /> {meta.routineLabel}
                 </div>
-                <Link
-                  to="/routines"
-                  className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                >
-                  Edit
-                </Link>
+                <div className="flex items-center gap-2">
+                  {peopleList.length > 0 && (
+                    <Select value={person || "__all__"} onValueChange={(v) => setPersonPref(v === "__all__" ? "" : v)}>
+                      <SelectTrigger className="h-6 gap-1 rounded-md border-border/50 bg-background/70 px-2 py-0 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+                        <User className="h-2.5 w-2.5" />
+                        <SelectValue placeholder="Person" />
+                      </SelectTrigger>
+                      <SelectContent align="end">
+                        {peopleList.map(p => (
+                          <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Link
+                    to="/routines"
+                    className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                  >
+                    Edit
+                  </Link>
+                </div>
               </div>
               {!routine || routine.items.length === 0 ? (
                 <div className="space-y-2">
@@ -315,6 +369,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
           </div>
         </CollapsibleContent>
       </section>
+      <RecipeDrawer meal={quickMeal} onClose={() => setQuickMeal(null)} onChanged={() => {}} />
     </Collapsible>
   );
 }
