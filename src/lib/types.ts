@@ -62,7 +62,10 @@ export interface Task {
   /** Date (ISO yyyy-mm-dd) when a parked task should automatically return to active. */
   snoozedUntil?: string;
   attachments?: Attachment[];
+  /** Server-side last-modified timestamp; used for LWW conflict resolution. */
+  updatedAt?: string;
 }
+
 
 export interface AreaRecord {
   id: string;
@@ -192,6 +195,7 @@ export interface Meal {
   ingredients?: string[];
   steps?: string[];
   tags?: string[];
+  updatedAt?: string;
 }
 
 export interface GroceryItem {
@@ -225,10 +229,11 @@ export interface Appointment {
   googleEventId?: string;
   googleCalendarId?: string;
   googleLastSyncedAt?: string;
+  updatedAt?: string;
 }
 
-export interface Birthday { id: string; name: string; date: string; relation?: string; notes?: string; }
-export interface Holiday { id: string; name: string; date: string; notes?: string; }
+export interface Birthday { id: string; name: string; date: string; relation?: string; notes?: string; updatedAt?: string; }
+export interface Holiday { id: string; name: string; date: string; notes?: string; updatedAt?: string; }
 
 export interface CareRecipient {
   id: string;

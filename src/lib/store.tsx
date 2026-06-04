@@ -11,6 +11,10 @@ import { AREAS } from "./types";
 import { toast } from "sonner";
 import { runAutomations, ensureDefaultAutomations, PANTRY_TAG } from "./automations/engine";
 import { emitScheduleEvent } from "./cycle-prefs";
+import { syncOp, flushQueue, subscribeSync, isOnline as syncIsOnline, pendingCount } from "./sync-queue";
+import { lww } from "./calendar-conflict";
+
+const nowIso = () => new Date().toISOString();
 
 /* Fire-and-forget push of one CareFlow appointment to Google Calendar.
    Failures are silent — the local DB is the source of truth and the cron
@@ -60,6 +64,7 @@ const taskFrom = (r: any): Task => ({
   sectionId: r.section_id ?? undefined,
   snoozedUntil: r.snoozed_until ?? undefined,
   attachments: Array.isArray(r.attachments) ? r.attachments : [],
+  updatedAt: r.updated_at ?? undefined,
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null,
@@ -127,6 +132,7 @@ const mealFrom = (r: any): Meal => ({
   ingredients: r.ingredients ?? [],
   steps: r.steps ?? [],
   tags: r.tags ?? [],
+  updatedAt: r.updated_at ?? undefined,
 });
 const groceryFrom = (r: any): GroceryItem => ({
   id: r.id, name: r.name, qty: r.qty ?? undefined, bought: r.bought, category: r.category ?? undefined,
@@ -150,9 +156,10 @@ const apptFrom = (r: any): Appointment => ({
   googleEventId: r.google_event_id ?? undefined,
   googleCalendarId: r.google_calendar_id ?? undefined,
   googleLastSyncedAt: r.google_last_synced_at ?? undefined,
+  updatedAt: r.updated_at ?? undefined,
 });
-const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined });
-const holidayFrom = (r: any): Holiday => ({ id: r.id, name: r.name, date: r.date, notes: r.notes ?? undefined });
+const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined, updatedAt: r.updated_at ?? undefined });
+const holidayFrom = (r: any): Holiday => ({ id: r.id, name: r.name, date: r.date, notes: r.notes ?? undefined, updatedAt: r.updated_at ?? undefined });
 const recipFrom = (r: any): CareRecipient => ({
   id: r.id,
   name: r.name,
@@ -461,9 +468,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               return { ...s, [key]: list.filter((r: any) => r.id !== id) } as AppState;
             }
             const row = mapper(payload.new);
-            const idx = list.findIndex((r: any) => r.id === row.id);
-            const next = idx >= 0
-              ? list.map((r: any) => (r.id === row.id ? { ...r, ...row } : r))
+            // Last-write-wins: ignore inbound rows older than what we have
+            // (e.g. our own optimistic edit is newer than what arrived back).
+            const existing = list.find((r: any) => r.id === row.id);
+            const winner = lww(existing as any, row as any);
+            if (existing && winner === existing) return s;
+            const next = existing
+              ? list.map((r: any) => (r.id === row.id ? winner : r))
               : [row, ...list];
             return { ...s, [key]: next } as AppState;
           });
@@ -544,8 +555,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     updateTask: async (id, patch) => {
       const prev = state.tasks.find(t => t.id === id);
-      setState(s => ({ ...s, tasks: s.tasks.map(t => t.id === id ? { ...t, ...patch } : t) }));
-      await supabase.from("tasks").update(taskTo(patch)).eq("id", id);
+      const localTs = nowIso();
+      setState(s => ({ ...s, tasks: s.tasks.map(t => t.id === id ? { ...t, ...patch, updatedAt: localTs } : t) }));
+      const values = taskTo(patch);
+      // Drop undefined keys so we don't blow away unrelated cols.
+      for (const k of Object.keys(values)) if ((values as any)[k] === undefined) delete (values as any)[k];
+      await syncOp({ kind: "update", table: "tasks", id, values, localTs });
       if (patch.dueDate !== undefined && patch.dueDate && patch.dueDate !== prev?.dueDate) {
         const merged = { ...(prev ?? {}), ...patch } as Task;
         emitScheduleEvent({
@@ -558,7 +573,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     deleteTask: async (id) => {
       setState(s => ({ ...s, tasks: s.tasks.filter(t => t.id !== id) }));
-      await supabase.from("tasks").delete().eq("id", id);
+      await syncOp({ kind: "delete", table: "tasks", id });
     },
 
     addProject: async (p) => {
@@ -792,18 +807,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (data) setState(s => ({ ...s, meals: [mealFrom(data), ...s.meals] }));
     },
     updateMeal: async (id, patch) => {
-      setState(s => ({ ...s, meals: s.meals.map(m => m.id === id ? { ...m, ...patch } : m) }));
+      const localTs = nowIso();
+      setState(s => ({ ...s, meals: s.meals.map(m => m.id === id ? { ...m, ...patch, updatedAt: localTs } : m) }));
       const dbPatch: any = {};
       if (patch.name !== undefined) dbPatch.name = patch.name;
       if (patch.slot !== undefined) dbPatch.slot = patch.slot;
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
       if (patch.kidSafe !== undefined) dbPatch.kid_safe = patch.kidSafe;
-      await supabase.from("meals").update(dbPatch).eq("id", id);
+      await syncOp({ kind: "update", table: "meals", id, values: dbPatch, localTs });
     },
     deleteMeal: async (id) => {
       setState(s => ({ ...s, meals: s.meals.filter(m => m.id !== id) }));
-      await supabase.from("meals").delete().eq("id", id);
+      await syncOp({ kind: "delete", table: "meals", id });
     },
 
     addGrocery: async (name, category) => {
@@ -882,7 +898,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // Fire push BEFORE deleting the row so the edge function can read it.
         await pushAppointmentToGoogle(id, "delete").catch(() => {});
       }
-      await supabase.from("appointments").delete().eq("id", id);
+      await syncOp({ kind: "delete", table: "appointments", id });
     },
     updateAppointment: async (id, patch) => {
       const prevAppt = state.appointments.find(a => a.id === id);
@@ -903,8 +919,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.areaName !== undefined) dbPatch.area_name = patch.areaName ?? null;
       if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
       if (patch.recipientId !== undefined) dbPatch.recipient_id = patch.recipientId ?? null;
-      setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch } : a) }));
-      await supabase.from("appointments").update(dbPatch).eq("id", id);
+      const localTs = nowIso();
+      setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch, updatedAt: localTs } : a) }));
+      await syncOp({ kind: "update", table: "appointments", id, values: dbPatch, localTs });
       const next = { ...(state.appointments.find(a => a.id === id) ?? {}), ...patch } as Appointment;
       if (next.syncToGoogle) void pushAppointmentToGoogle(id);
       if (patch.date !== undefined && patch.date && patch.date !== prevAppt?.date) {
@@ -914,12 +931,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addBirthday: async (b) => {
       if (!uid) return;
-      const { data } = await supabase.from("birthdays").insert({ user_id: uid, ...b }).select().single();
+      const { updatedAt: _bu, ...bRest } = b as any;
+      const { data } = await supabase.from("birthdays").insert({ user_id: uid, ...bRest }).select().single();
       if (data) setState(s => ({ ...s, birthdays: [bdayFrom(data), ...s.birthdays] }));
     },
     deleteBirthday: async (id) => {
       setState(s => ({ ...s, birthdays: s.birthdays.filter(b => b.id !== id) }));
-      await supabase.from("birthdays").delete().eq("id", id);
+      await syncOp({ kind: "delete", table: "birthdays", id });
     },
     updateBirthday: async (id, patch) => {
       const dbPatch: any = {};
@@ -927,25 +945,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.relation !== undefined) dbPatch.relation = patch.relation ?? null;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
-      setState(s => ({ ...s, birthdays: s.birthdays.map(b => b.id === id ? { ...b, ...patch } : b) }));
-      await supabase.from("birthdays").update(dbPatch).eq("id", id);
+      const localTs = nowIso();
+      setState(s => ({ ...s, birthdays: s.birthdays.map(b => b.id === id ? { ...b, ...patch, updatedAt: localTs } : b) }));
+      await syncOp({ kind: "update", table: "birthdays", id, values: dbPatch, localTs });
     },
     addHoliday: async (h) => {
       if (!uid) return;
-      const { data } = await supabase.from("holidays").insert({ user_id: uid, ...h }).select().single();
+      const { updatedAt: _hu, ...hRest } = h as any;
+      const { data } = await supabase.from("holidays").insert({ user_id: uid, ...hRest }).select().single();
       if (data) setState(s => ({ ...s, holidays: [holidayFrom(data), ...s.holidays] }));
     },
     deleteHoliday: async (id) => {
       setState(s => ({ ...s, holidays: s.holidays.filter(h => h.id !== id) }));
-      await supabase.from("holidays").delete().eq("id", id);
+      await syncOp({ kind: "delete", table: "holidays", id });
     },
     updateHoliday: async (id, patch) => {
       const dbPatch: any = {};
       if (patch.name !== undefined) dbPatch.name = patch.name;
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
-      setState(s => ({ ...s, holidays: s.holidays.map(h => h.id === id ? { ...h, ...patch } : h) }));
-      await supabase.from("holidays").update(dbPatch).eq("id", id);
+      const localTs = nowIso();
+      setState(s => ({ ...s, holidays: s.holidays.map(h => h.id === id ? { ...h, ...patch, updatedAt: localTs } : h) }));
+      await syncOp({ kind: "update", table: "holidays", id, values: dbPatch, localTs });
     },
 
     addRecipient: async (r) => {
