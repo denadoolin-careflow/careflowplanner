@@ -21,7 +21,7 @@ const cacheKey = (iso: string) => `careflow:daily-brief:${iso}`;
 export function DailyBrief({ date }: { date: Date }) {
   const iso = format(date, "yyyy-MM-dd");
   const today = startOfDay(date);
-  const { state, toggleTask } = useStore();
+  const { state, toggleTask, updateTask } = useStore();
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -141,7 +141,7 @@ export function DailyBrief({ date }: { date: Date }) {
           toast.success(`Completed “${title}”`);
         }}
         onReschedule={async (id, title, newDate) => {
-          await useStore.getState().updateTask(id, { dueDate: format(newDate, "yyyy-MM-dd") });
+          await updateTask(id, { dueDate: format(newDate, "yyyy-MM-dd") });
           toast.success(`Rescheduled “${title}” to ${format(newDate, "EEE MMM d")}`);
         }}
       />
