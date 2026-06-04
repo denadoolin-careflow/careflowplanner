@@ -16,6 +16,7 @@ import { GrowingSeasonCard } from "@/components/today/rhythm/GrowingSeasonCard";
 import { CareLoopCard } from "@/components/today/rhythm/CareLoopCard";
 import { UpcomingEventsCard } from "@/components/today/rhythm/UpcomingEventsCard";
 import { EndOfDayCard } from "@/components/today/rhythm/EndOfDayCard";
+import { TasksWidget } from "@/components/today/rhythm/TasksWidget";
 
 export default function Today() {
   return (
@@ -88,7 +89,8 @@ function TodayInner() {
         </div>
 
         {/* Sidebar */}
-        <aside className="space-y-4 md:sticky md:top-20 md:self-start">
+        <aside className="space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
+          <TasksWidget date={day} />
           <FamilySnapshotCard date={day} />
           <GrowingSeasonCard />
           <CareLoopCard />
