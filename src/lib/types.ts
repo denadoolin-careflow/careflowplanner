@@ -85,6 +85,7 @@ export interface ProjectIdea {
   note?: string;
   source?: string;
   promotedProjectId?: string;
+  projectId?: string;
   createdAt: string;
 }
 
@@ -131,6 +132,9 @@ export interface Project {
   stage?: ProjectStage;
   health?: ProjectHealth;
   waitingOn?: string;
+  atmosphere?: string;
+  focusThisWeek?: string;
+  targetDate?: string;
 }
 
 export interface Goal {

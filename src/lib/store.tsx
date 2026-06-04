@@ -202,6 +202,9 @@ const projectFrom = (r: any): Project => ({
   stage: r.stage ?? undefined,
   health: r.health ?? undefined,
   waitingOn: r.waiting_on ?? undefined,
+  atmosphere: r.atmosphere ?? undefined,
+  focusThisWeek: r.focus_this_week ?? undefined,
+  targetDate: r.target_date ?? undefined,
 });
 const sectionFrom = (r: any): ProjectSection => ({
   id: r.id, projectId: r.project_id, name: r.name,
@@ -567,6 +570,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if ((patch as any).stage !== undefined) dbPatch.stage = (patch as any).stage ?? null;
       if ((patch as any).health !== undefined) dbPatch.health = (patch as any).health ?? null;
       if ((patch as any).waitingOn !== undefined) dbPatch.waiting_on = (patch as any).waitingOn ?? null;
+      if ((patch as any).atmosphere !== undefined) dbPatch.atmosphere = (patch as any).atmosphere ?? null;
+      if ((patch as any).focusThisWeek !== undefined) dbPatch.focus_this_week = (patch as any).focusThisWeek ?? null;
+      if ((patch as any).targetDate !== undefined) dbPatch.target_date = (patch as any).targetDate ?? null;
       await supabase.from("projects").update(dbPatch).eq("id", id);
     },
     deleteProject: async (id) => {

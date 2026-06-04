@@ -3924,6 +3924,7 @@ export type Database = {
           created_at: string
           id: string
           note: string | null
+          project_id: string | null
           promoted_project_id: string | null
           source: string | null
           title: string
@@ -3934,6 +3935,7 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
+          project_id?: string | null
           promoted_project_id?: string | null
           source?: string | null
           title: string
@@ -3944,6 +3946,7 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
+          project_id?: string | null
           promoted_project_id?: string | null
           source?: string | null
           title?: string
@@ -3951,6 +3954,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "project_ideas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "project_ideas_promoted_project_id_fkey"
             columns: ["promoted_project_id"]
@@ -4000,12 +4010,14 @@ export type Database = {
           archived_at: string | null
           area_id: string | null
           area_name: string | null
+          atmosphere: string | null
           budget_cents: number | null
           color: string | null
           cover_url: string | null
           created_at: string
           deadline: string | null
           end_date: string | null
+          focus_this_week: string | null
           health: string | null
           icon: string | null
           id: string
@@ -4022,6 +4034,7 @@ export type Database = {
           stage: string | null
           start_date: string | null
           status: string
+          target_date: string | null
           updated_at: string
           user_id: string
           waiting_on: string | null
@@ -4032,12 +4045,14 @@ export type Database = {
           archived_at?: string | null
           area_id?: string | null
           area_name?: string | null
+          atmosphere?: string | null
           budget_cents?: number | null
           color?: string | null
           cover_url?: string | null
           created_at?: string
           deadline?: string | null
           end_date?: string | null
+          focus_this_week?: string | null
           health?: string | null
           icon?: string | null
           id?: string
@@ -4054,6 +4069,7 @@ export type Database = {
           stage?: string | null
           start_date?: string | null
           status?: string
+          target_date?: string | null
           updated_at?: string
           user_id: string
           waiting_on?: string | null
@@ -4064,12 +4080,14 @@ export type Database = {
           archived_at?: string | null
           area_id?: string | null
           area_name?: string | null
+          atmosphere?: string | null
           budget_cents?: number | null
           color?: string | null
           cover_url?: string | null
           created_at?: string
           deadline?: string | null
           end_date?: string | null
+          focus_this_week?: string | null
           health?: string | null
           icon?: string | null
           id?: string
@@ -4086,6 +4104,7 @@ export type Database = {
           stage?: string | null
           start_date?: string | null
           status?: string
+          target_date?: string | null
           updated_at?: string
           user_id?: string
           waiting_on?: string | null

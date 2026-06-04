@@ -1,118 +1,97 @@
-## Goal
+# Project Detail → Project Hub Redesign
 
-Replace the current Projects page (a status-tab + tasks-list shell) with a **visual Project Hub** modeled after the attached CareFlow Creative Projects mock — warm sage / cream / plum / blush / gold palette, big editorial cards, hero "Focus This Week" panel, sidebar shelves for Ideas Inbox / Recently Updated / Waiting On, and Cards / List / Gallery views. Projects become first-class containers for tasks, notes, resources, inspirations, and milestones — not a wrapper around a task table.
+Transform `src/pages/ProjectDetail.tsx` (currently a 920-line task-DB style page) into a calm, inspiring single-project workspace matching the new Projects Hub aesthetic and the attached mockup.
 
-The All-tasks tab on the existing page is preserved (moved to `/projects/all-tasks` or kept as a secondary view) so nothing is lost.
+## Scope
 
-## Visual language
+- Rebuild the Overview surface (hero + 3-column dashboard + Ideas Inbox).
+- Restyle tabs and wrap existing task/notes/resources components in the new visual shell.
+- Add lightweight UI-only concepts: Atmosphere, Project Energy, Next Best Step AI card.
+- Reuse existing data: `projects`, `tasks`, `project_sections`, `project_ideas`, notes, resources, milestones.
 
-Reference: attached mockup. Tokens applied across the page:
+Out of scope: changing task data model, kanban internals, file upload backend, real journal/atmosphere persistence beyond a single new column.
 
-- **Sage** `hsl(140 25% 70%)` — primary calm accent, active projects, progress fills
-- **Cream** `hsl(40 50% 96%)` — page background washes & card surfaces
-- **Plum** `hsl(330 30% 35%)` — primary CTA (Continue Project), headline accents
-- **Blush** `hsl(15 60% 88%)` — warm secondary tiles, ideas
-- **Gold** `hsl(40 80% 65%)` — highlights, stars, "Focus This Week" sparkle
+## New Components (`src/components/projects/detail/`)
 
-These are added as semantic tokens (`--studio-sage`, `--studio-cream`, etc.) in `index.css` and `tailwind.config.ts` alongside the existing tokens — no replacement of the global theme.
+- `ProjectHubHeader.tsx` — back link, project icon, title, description, avatars, Share, Edit Project, quick search.
+- `ProjectHero.tsx` — cover (reuses `ProjectCoverArt`), status + stage chips, % progress bar, stat tiles (Team / Tasks remaining / Target date), inline Focus-this-week card with Update Focus.
+- `NextUpCard.tsx` — top priority task with due, assignee, energy, est. minutes.
+- `MilestonesTimelineCard.tsx` — wraps existing `MilestonesCard` content in the new soft card style.
+- `ProgressRingCard.tsx` — donut for Completed / In Progress / Not Started / Blocked.
+- `ThisWeekCard.tsx` — current-week tasks with checkboxes.
+- `NotesPreviewCard.tsx` — last 3 notes (uses `useEntityNotes`).
+- `ProjectLinksCard.tsx` — links from existing resources (filter `type=link`), grouped by inferred provider (Figma/Notion/Miro/Docs/Lovable).
+- `IdeasInboxStrip.tsx` — uses `useProjectIdeas` filtered to this project (add `project_id` filter); cards + Capture Idea.
+- `AtmospherePicker.tsx` — chip picker (Sage Sanctuary, Moonlit Focus, Blossom, Quiet Morning, Momentum); updates CSS vars on hero.
+- `NextBestStepCard.tsx` — calls existing `aiInvoke` with project context; returns one suggestion.
+- `ProjectEnergyCard.tsx` — derived (avg task energy) + recommended action label.
 
-## Data model additions
-
-Two new optional fields on `projects`:
-
-- `stage TEXT` — one of `idea | planning | building | launching | maintaining` (nullable, defaults to `planning`)
-- `health TEXT` — one of `active | waiting | blocked` (nullable, defaults to `active`)
-
-Plus a tiny new table for the Ideas Inbox so ideas aren't full Projects yet:
-
-- `project_ideas (id, user_id, title, note, source, created_at)` with full RLS + GRANTs.
-
-`Project` interface in `src/lib/types.ts` gains `stage?` and `health?`. The store's project upsert logic includes the new columns. Existing projects without a value render as `planning` / `active`.
-
-Tasks, notes, resources, milestones already link to projects via existing columns — no schema change there. "Inspirations" reuse `resources` with a `kind = 'inspiration'` filter (the resources table already supports a kind/category field — if not, the resource card stores them as a tagged group via existing tag field).
-
-## Page architecture
-
-`src/pages/Projects.tsx` becomes a thin shell. New components under `src/components/projects/hub/`:
+## Layout
 
 ```text
-ProjectsHub.tsx          ← top-level layout (hero row + projects grid + bottom shelves)
-HeroFocusCard.tsx        ← left "Focus This Week" panel with Continue Project CTA
-HeroStatsGrid.tsx        ← right 4-tile grid: Active / In Progress / Ready to Launch / On Hold
-QuickCaptureRow.tsx      ← chips: New Idea · New Task · New Note · Resource · Inspiration
-ProjectCard.tsx          ← cover-art card with icon, stage, health, %, next action, remaining
-ProjectsToolbar.tsx      ← Cards / List / Gallery switcher + filters
-ProjectsListView.tsx     ← compact list rows (existing list view, restyled)
-ProjectsGalleryView.tsx  ← Pinterest-style mosaic with large covers
-IdeasInboxShelf.tsx      ← bottom-left: list of `project_ideas` + "Capture a new idea"
-RecentlyUpdatedShelf.tsx ← bottom-middle: projects by updated_at desc, with stage dot
-WaitingOnShelf.tsx       ← bottom-right: projects with `health = waiting` + per-row "owner"
+[ Back · Title · Icon · Search · Avatars · Share · Edit ]
+[ ───────── Hero (cover + status/stage/% + stats + Focus) ───────── ]
+[ Tabs: Overview | Tasks | Milestones | Notes | Resources | Files | Activity ]
+
+Overview:
+  ┌ Col 1 ───────────┐ ┌ Col 2 ───────────┐ ┌ Col 3 ───────────┐
+  │ Next Up          │ │ Progress Ring    │ │ Notes preview    │
+  │ Milestones       │ │ This Week        │ │ Project Links    │
+  └──────────────────┘ └──────────────────┘ └──────────────────┘
+  [ Ideas Inbox strip ]
+  [ Atmosphere · Energy · Next Best Step row ]
 ```
 
-### Hero row
+## Tabs
 
-Two columns on desktop, stacked on mobile:
+- **Overview**: new dashboard above.
+- **Tasks**: keep existing list/kanban/schedule logic from current `ProjectDetail` extracted into `ProjectTasksTab.tsx`; add a 4th view stub "Timeline" (reuses `ProjectProgressTimeline`).
+- **Milestones**: full `MilestonesCard` view.
+- **Notes**: existing `LinkedNotesPanel` + `ProjectJournalPanel`.
+- **Resources**: existing `ResourcesCard`.
+- **Files**: filter resources where `type=file`, render as gallery grid (existing data, new presentation).
+- **Activity**: simple chronological merge of task completions, notes added, milestone toggles (client-side from store, no new tables).
 
-- **Left (60%)** — `HeroFocusCard`. Picks the user's "focus" project (most-recently-active with an open top task). Shows: cover art (gradient + leaf SVG when no cover), project name, % complete with sage progress bar, "Next up" + the open top task, and a big plum "Continue Project →" button that links to `/projects/:id`.
-- **Right (40%)** — `HeroStatsGrid` (2×2 tiles): Active Projects, In Progress, Ready to Launch, On Hold. Each tile uses a small soft icon, the count, and a one-line label.
+## Data Changes
 
-### Quick Capture row
+One small migration:
 
-Five soft chips: New Idea (gold), New Task (sage), New Note (cream), Resource (plum-outline), Inspiration (blush). Each opens an inline mini-form (`Popover`) and writes to the appropriate table.
+- `ALTER TABLE public.projects ADD COLUMN atmosphere TEXT, ADD COLUMN focus_this_week TEXT, ADD COLUMN target_date DATE;`
+- `ALTER TABLE public.project_ideas ADD COLUMN project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE;` (nullable — inbox stays global; project-scoped when set).
 
-### Projects grid (Cards view, default)
+No new tables, no new RLS — covered by existing policies. Update `types.ts`, `store.tsx` mapping, and `project-ideas.ts` to accept optional `projectId`.
 
-Responsive grid: 1 / 2 / 3 / 4 columns. Each `ProjectCard`:
+## Files
 
-- Top: cover image OR a gradient SVG mood scene derived from project color
-- Floating icon tile in lower-left of cover
-- Health pill in top-right (`Active` / `Waiting` / `Blocked`) with color coding
-- Title (large display font)
-- Progress bar in sage with **percent** on the right
-- "**N** tasks remaining" subtitle
-- Footer: stage chip (`Planning` / `Building` / etc.) + collaborator avatars stack
-- Hover: lift + plum ring
+**Created**
+- `src/components/projects/detail/ProjectHubHeader.tsx`
+- `src/components/projects/detail/ProjectHero.tsx`
+- `src/components/projects/detail/NextUpCard.tsx`
+- `src/components/projects/detail/MilestonesTimelineCard.tsx`
+- `src/components/projects/detail/ProgressRingCard.tsx`
+- `src/components/projects/detail/ThisWeekCard.tsx`
+- `src/components/projects/detail/NotesPreviewCard.tsx`
+- `src/components/projects/detail/ProjectLinksCard.tsx`
+- `src/components/projects/detail/IdeasInboxStrip.tsx`
+- `src/components/projects/detail/AtmospherePicker.tsx`
+- `src/components/projects/detail/NextBestStepCard.tsx`
+- `src/components/projects/detail/ProjectEnergyCard.tsx`
+- `src/components/projects/detail/ProjectTasksTab.tsx` (extracted)
+- `src/components/projects/detail/ProjectActivityTab.tsx`
+- `src/components/projects/detail/ProjectFilesTab.tsx`
+- `supabase/migrations/<ts>_project_detail_hub.sql`
 
-### Cards / List / Gallery
+**Rewritten**
+- `src/pages/ProjectDetail.tsx` — slim shell composing header + hero + tabs.
 
-- **Cards** — described above.
-- **List** — compact rows (icon · name · stage chip · health pill · % bar · next due). Re-uses styling vocabulary.
-- **Gallery** — mosaic of cover art only, big visual feel, name overlay on hover. Good for browsing creative work.
+**Edited**
+- `src/lib/types.ts`, `src/lib/store.tsx`, `src/lib/project-ideas.ts`.
 
-### Bottom shelves
+## Visual System
 
-Three columns, each a soft card with header + "View all":
+Reuses `studio-tokens.ts` (sage/cream/plum/blush/gold). Rounded `2xl` cards, soft shadows (`shadow-sm` + tinted blur), botanical hero gradients from `ProjectCoverArt`. Atmosphere selection swaps the hero gradient and accent CSS vars locally — no global theme change.
 
-1. **Ideas Inbox** — recent `project_ideas` rows; inline "+ Capture a new idea" input.
-2. **Recently Updated** — projects sorted by `updated_at` desc, last 5, colored dot per stage.
-3. **Waiting On** — projects with `health = waiting`; right column shows free-text "owner/blocker" field (stored in `projects.notes` JSON? **No** — use the existing `notes` column as a single `waiting_on` text via a new optional `waiting_on TEXT` column in the migration).
+## Preserved
 
-(Adding `waiting_on TEXT` keeps semantics clean; same migration as `stage` / `health`.)
-
-## Filters / Empty states
-
-- Filter bar: stage chips (Idea / Planning / Building / Launching / Maintaining / All), health chips (Active / Waiting / Blocked / All), and area dropdown.
-- Empty hub: warm full-bleed illustration card with "Plant your first project" plum CTA → opens the create dialog.
-
-## Technical details
-
-**New / changed files**
-
-- `supabase/migrations/<ts>_projects_hub.sql` — `ALTER TABLE projects ADD COLUMN stage`, `health`, `waiting_on`; `CREATE TABLE project_ideas` with full GRANTs + RLS.
-- `src/lib/types.ts` — extend `Project`, add `ProjectStage`, `ProjectHealth`, `ProjectIdea`.
-- `src/lib/project-ideas.ts` *(new)* — small CRUD module (list/add/promote-to-project/remove).
-- `src/lib/store.ts` (or wherever projects are persisted) — read/write the new fields.
-- `src/pages/Projects.tsx` — rewritten as the hub shell + a small `/?tab=tasks` fallback link to the existing AllTasksViews (kept reachable so power users don't lose it).
-- `src/components/projects/hub/*` — new components listed above.
-- `index.css` + `tailwind.config.ts` — add `--studio-sage / cream / plum / blush / gold` semantic tokens and Tailwind utilities (`bg-studio-sage`, etc.).
-
-**Preserved behavior**
-
-- `/projects/:id` (ProjectDetail) is untouched in this round — already supports tasks/notes/resources/milestones. We only link to it from the new cards.
-- `addProject`, project status, area grouping, ProjectsAISummary — all reused. Stage replaces the visual emphasis on status but `status` continues to drive archive/done logic.
-
-**Out of scope for this round**
-
-- Cover-art uploader (cards use gradient placeholders that respect project color when no `coverUrl`).
-- Reordering inside Cards view via drag-and-drop.
-- ProjectDetail page redesign (separate effort).
+- `addProject`, `ProjectsAISummary`, all task/section CRUD, kanban/schedule logic, journal panel, resources, milestones data.
+- `/projects` hub (already redesigned).
