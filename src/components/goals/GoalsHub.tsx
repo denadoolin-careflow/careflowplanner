@@ -334,8 +334,11 @@ export function GoalsHub() {
 
           {/* Recent wins */}
           <div className="rounded-2xl border border-border/60 bg-card/60 p-5">
+          <div className="flex items-center justify-between">
             <h3 className="font-display text-lg">Recent Wins</h3>
-            <RecentWins />
+            <TinyWinQuickAdd />
+          </div>
+          <RecentWins />
           </div>
         </aside>
       </div>
@@ -361,6 +364,7 @@ export function GoalsHub() {
             const g = goals.find(x => x.id === openId);
             if (!g) return null;
             const ex = extras[g.id] || {};
+            const linkedTasks = state.tasks.filter(t => t.goalId === g.id);
             return (
               <JourneyDetail
                 goal={g}
@@ -370,6 +374,10 @@ export function GoalsHub() {
                 onPatch={(p)=>updateGoal(g.id, p)}
                 onExtra={(p)=>setExtra(g.id, p)}
                 onDelete={async ()=>{ await deleteGoal(g.id); setOpenId(null); toast.success("Goal released gently"); }}
+                linkedTasks={linkedTasks}
+                onAddTask={(title)=>addTask({ title, goalId: g.id, area: "Personal", priority: "medium" } as any)}
+                onToggleTask={(id, done)=>updateTask(id, { done, lastCompletedAt: done ? new Date().toISOString() : undefined })}
+                onUnlinkTask={(id)=>updateTask(id, { goalId: undefined })}
               />
             );
           })()}
