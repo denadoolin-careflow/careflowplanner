@@ -13,7 +13,10 @@ import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
-import { CalendarRail } from "@/components/calendar/CalendarRail";
+import { WidgetRail } from "@/components/calendar/WidgetRail";
+import { SummaryStrip } from "@/components/calendar/SummaryStrip";
+import { TodaysRhythmCard } from "@/components/calendar/TodaysRhythmCard";
+import { useCalendarPrefs } from "@/lib/calendar-prefs";
 import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
 import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
 import { hoursToHM } from "@/lib/time-blocks";
@@ -43,17 +46,26 @@ export default function CalendarPage() {
       return parts.find(p => p.type === "timeZoneName")?.value ?? "";
     } catch { return ""; }
   })();
-  const [view, setView] = useState<View>("month");
-  const [layout, setLayout] = useState<"grid" | "schedule" | "kanban" | "plan">("grid");
-  const [cursor, setCursor] = useState<Date>(new Date());
-  const ALL_KINDS = ["task","appt","care","meal","bday","hol","gcal"] as const;
+  const { prefs, setView: persistView, setLayout: persistLayout, toggleFilter, resetFilters, ALL_KINDS } = useCalendarPrefs();
+  const view = prefs.view as View;
+  const layout = prefs.layout;
   type Kind = typeof ALL_KINDS[number];
-  const [kindFilter, setKindFilter] = useState<Set<Kind>>(() => new Set(ALL_KINDS));
-  const toggleKind = (k: Kind) => setKindFilter(prev => {
-    const next = new Set(prev);
-    next.has(k) ? next.delete(k) : next.add(k);
-    return next;
-  });
+  const setView = (v: View) => persistView(v);
+  const setLayout = (l: typeof layout) => persistLayout(l);
+  const kindFilter = useMemo(() => new Set<Kind>(prefs.filters as Kind[]), [prefs.filters]);
+  const setKindFilter = (next: Set<Kind>) => resetFilters_setExplicit(next);
+  // ad-hoc setter that mirrors set-state semantics (only used by "All" filter reset).
+  const resetFilters_setExplicit = (next: Set<Kind>) => {
+    // Synchronize by toggling deltas via toggleFilter.
+    const current = new Set<Kind>(prefs.filters as Kind[]);
+    for (const k of ALL_KINDS) {
+      const inNext = next.has(k);
+      const inCur = current.has(k);
+      if (inNext !== inCur) toggleFilter(k);
+    }
+  };
+  const toggleKind = (k: Kind) => toggleFilter(k);
+  const [cursor, setCursor] = useState<Date>(new Date());
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   const [gLoading, setGLoading] = useState(false);
   const [editApptId, setEditApptId] = useState<string | null>(null);
