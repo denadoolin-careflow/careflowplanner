@@ -7,7 +7,7 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useStore } from "@/lib/store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
-import { Wind } from "lucide-react";
+import { Wind, ArrowUp, ArrowDown, RotateCcw, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { RhythmHeader } from "@/components/today/rhythm/RhythmHeader";
@@ -29,6 +29,12 @@ import { NotesTodayWidget } from "@/components/today/widgets/NotesTodayWidget";
 import { JournalTodayWidget } from "@/components/today/widgets/JournalTodayWidget";
 import { MemoriesTodayWidget } from "@/components/today/widgets/MemoriesTodayWidget";
 import { HomeResetWidget } from "@/components/today/widgets/HomeResetWidget";
+import { BrainDumpWidget } from "@/components/today/widgets/BrainDumpWidget";
+import { PlannedTasksWidget } from "@/components/today/widgets/PlannedTasksWidget";
+import { MoonPhaseSidebarCard } from "@/components/today/widgets/MoonPhaseSidebarCard";
+import { CycleSidebarCard } from "@/components/today/widgets/CycleSidebarCard";
+import { useSidebarOrder } from "@/lib/today-sidebar-order";
+import { cn } from "@/lib/utils";
 
 export default function Today() {
   return (
@@ -86,6 +92,30 @@ function TodayInner() {
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
 
+  const [reorderMode, setReorderMode] = useState(false);
+
+  const widgetRegistry: { id: string; label: string; render: () => JSX.Element | null }[] = [
+    { id: "brain-dump",       label: "Brain dump",       render: () => <BrainDumpWidget /> },
+    { id: "planned-tasks",    label: "Planned tasks",    render: () => <PlannedTasksWidget date={day} /> },
+    { id: "scheduled-today",  label: "Scheduled today",  render: () => <ScheduledTodayWidget date={day} /> },
+    { id: "tasks",            label: "Tasks",            render: () => <TasksWidget date={day} /> },
+    { id: "meals-planned",    label: "Meals planned",    render: () => <MealsPlannedWidget date={day} /> },
+    { id: "grocery",          label: "Grocery",          render: () => <GroceryWidget /> },
+    { id: "moon-phase",       label: "Moon phase",       render: () => <MoonPhaseSidebarCard /> },
+    { id: "cycle",            label: "Cycle",            render: () => <CycleSidebarCard date={day} /> },
+    { id: "notes-today",      label: "Notes today",      render: () => <NotesTodayWidget /> },
+    { id: "journal-today",    label: "Journal today",    render: () => <JournalTodayWidget /> },
+    { id: "memories-today",   label: "Memories today",   render: () => <MemoriesTodayWidget /> },
+    { id: "home-reset",       label: "Home reset",       render: () => <HomeResetWidget /> },
+    { id: "family-snapshot",  label: "Family snapshot",  render: () => <FamilySnapshotCard date={day} /> },
+    { id: "growing-season",   label: "Growing season",   render: () => <GrowingSeasonCard /> },
+    { id: "care-loop",        label: "Care loop",        render: () => <CareLoopCard /> },
+    { id: "upcoming-events",  label: "Upcoming events",  render: () => <UpcomingEventsCard date={day} /> },
+  ];
+  const canonical = widgetRegistry.map(w => w.id);
+  const { order, move, reset } = useSidebarOrder(canonical);
+  const byId = new Map(widgetRegistry.map(w => [w.id, w]));
+
   return (
     <>
       <div className="mx-auto grid w-full min-w-0 max-w-6xl gap-4 overflow-x-clip md:gap-5 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
@@ -115,18 +145,71 @@ function TodayInner() {
 
         {/* Sidebar */}
         <aside className="min-w-0 max-w-full space-y-3 md:space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
-          <ScheduledTodayWidget date={day} />
-          <TasksWidget date={day} />
-          <MealsPlannedWidget date={day} />
-          <GroceryWidget />
-          <NotesTodayWidget />
-          <JournalTodayWidget />
-          <MemoriesTodayWidget />
-          <HomeResetWidget />
-          <FamilySnapshotCard date={day} />
-          <GrowingSeasonCard />
-          <CareLoopCard />
-          <UpcomingEventsCard date={day} />
+          <div className="flex items-center justify-between gap-2 px-1">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {reorderMode ? "Reorder widgets" : "Widgets"}
+            </span>
+            <div className="flex items-center gap-1">
+              {reorderMode && (
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  title="Reset to default order"
+                >
+                  <RotateCcw className="h-2.5 w-2.5" /> Reset
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setReorderMode(v => !v)}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider transition-colors",
+                  reorderMode
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                )}
+                title="Toggle reorder mode"
+              >
+                <GripVertical className="h-2.5 w-2.5" /> {reorderMode ? "Done" : "Reorder"}
+              </button>
+            </div>
+          </div>
+
+          {order.map((id, idx) => {
+            const w = byId.get(id);
+            if (!w) return null;
+            const node = w.render();
+            if (!node) return null;
+            if (!reorderMode) return <div key={id}>{node}</div>;
+            return (
+              <div key={id} className="relative">
+                <div className="absolute -left-1 top-1 z-10 flex flex-col gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => move(id, -1)}
+                    disabled={idx === 0}
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm ring-1 ring-border hover:text-foreground disabled:opacity-30"
+                    aria-label={`Move ${w.label} up`}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(id, 1)}
+                    disabled={idx === order.length - 1}
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm ring-1 ring-border hover:text-foreground disabled:opacity-30"
+                    aria-label={`Move ${w.label} down`}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </button>
+                </div>
+                <div className="rounded-2xl ring-1 ring-dashed ring-primary/40">
+                  {node}
+                </div>
+              </div>
+            );
+          })}
         </aside>
       </div>
 
