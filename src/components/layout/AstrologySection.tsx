@@ -36,15 +36,16 @@ export function AstrologySection({ collapsed, open, onToggle, onNavigate }: Prop
 
   if (collapsed) {
     return (
-      <div className="mb-1 flex flex-col items-center gap-0.5">
+      <div className="flex flex-col items-center gap-1.5">
         <NavLink
           to={todayHref}
           onClick={onNavigate}
           title={`${forecast.phaseLabel} · Moon in ${forecast.sign.sign}`}
-          className="grid h-10 w-10 place-items-center rounded-xl text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="grid h-12 w-12 place-items-center rounded-xl text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-150"
         >
-          <span aria-hidden className="text-base leading-none">{forecast.glyph}</span>
+          <span aria-hidden className="grid h-6 w-6 place-items-center text-lg leading-none">{forecast.glyph}</span>
         </NavLink>
+        <div aria-hidden className="my-2 h-px w-6 rounded-full bg-sidebar-border/40" />
       </div>
     );
   }
