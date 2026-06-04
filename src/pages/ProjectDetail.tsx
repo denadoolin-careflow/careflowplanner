@@ -22,6 +22,7 @@ import {
 import { format, parseISO, isThisWeek } from "date-fns";
 import { ProjectCoverArt } from "@/components/projects/hub/ProjectCoverArt";
 import { STAGE_META, HEALTH_META, stageOf, healthOf, STUDIO, hsl } from "@/components/projects/hub/studio-tokens";
+import { ProjectIconGlyph, projectIconTileStyle } from "@/lib/project-icon";
 import ClassicProjectView from "@/components/projects/detail/ClassicProjectView";
 import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { ProjectJournalPanel } from "@/components/journal/ProjectJournalPanel";
@@ -172,9 +173,9 @@ function HubHeader({ project, onUpdate }: { project: Project; onUpdate: (p: Part
       <div className="flex flex-1 items-center gap-3 min-w-0">
         <span
           className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-lg"
-          style={{ background: hsl(STUDIO.goldSoft), color: hsl("40 60% 28%") }}
+          style={projectIconTileStyle(project)}
         >
-          {project.icon ?? "🌱"}
+          <ProjectIconGlyph project={project} className="h-5 w-5" />
         </span>
         {editing ? (
           <Input
@@ -254,9 +255,10 @@ function ProjectHero({
         <div className="p-6 md:p-8 space-y-5">
           <div className="flex items-start gap-4">
             <div
-              className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-border/40 bg-background/80 text-3xl shadow-sm"
+              className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-border/40 text-3xl shadow-sm"
+              style={projectIconTileStyle(project, { bgAlpha: 0.2 })}
             >
-              {project.icon ?? "🌿"}
+              <ProjectIconGlyph project={project} className="h-8 w-8" fallback="🌿" />
             </div>
             <div className="min-w-0 flex-1">
               <Textarea

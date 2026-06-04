@@ -93,7 +93,7 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
         className="relative overflow-hidden rounded-3xl border p-8"
         style={{ background: `linear-gradient(135deg, hsl(${STUDIO.sage} / 0.35), hsl(${STUDIO.cream}))`, borderColor: `hsl(${STUDIO.sageDeep} / 0.15)` }}
       >
-        <div className="text-xs uppercase tracking-[0.2em]" style={{ color: `hsl(${STUDIO.plum})` }}>
+        <div className="text-xs uppercase tracking-[0.2em]" style={{ color: `hsl(${STUDIO.plumText})` }}>
           Focus This Week
         </div>
         <h2 className="mt-3 font-display text-2xl">Plant your first project</h2>
@@ -112,7 +112,7 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
         className="relative p-6 md:p-8"
         style={{ background: `linear-gradient(115deg, hsl(${STUDIO.cream} / 0.92) 35%, hsl(${STUDIO.cream} / 0.35) 100%)` }}
       >
-        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em]" style={{ color: `hsl(${STUDIO.plum})` }}>
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em]" style={{ color: `hsl(${STUDIO.plumText})` }}>
           Focus This Week <Sparkles className="h-3.5 w-3.5" style={{ color: `hsl(${STUDIO.gold})` }} />
         </div>
         <h2 className="mt-3 font-display text-3xl leading-tight">{focus.name}</h2>
@@ -498,7 +498,7 @@ export default function ProjectsHub() {
     >
       <div className="mx-auto w-full max-w-7xl space-y-8 p-4 md:p-8">
         <header className="space-y-1">
-          <div className="text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plum})` }}>CareFlow</div>
+          <div className="text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plumText})` }}>CareFlow</div>
           <h1 className="font-display text-4xl tracking-tight">
             Creative Projects <Sparkles className="inline h-5 w-5" style={{ color: `hsl(${STUDIO.gold})` }} />
           </h1>

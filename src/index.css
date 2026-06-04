@@ -82,6 +82,13 @@
     --shadow-soft: 0 2px 12px -4px hsl(258 30% 50% / 0.08), 0 1px 3px hsl(258 20% 30% / 0.04);
     --shadow-cozy: 0 8px 30px -12px hsl(258 30% 50% / 0.18);
     --shadow-glow: 0 0 0 1px hsl(258 45% 62% / 0.15), 0 4px 20px -4px hsl(258 45% 62% / 0.25);
+
+    /* Studio palette (Project Hub) — theme-aware surfaces & text */
+    --studio-cream: 40 50% 96%;
+    --studio-cream-deep: 36 35% 90%;
+    --studio-ink: 260 12% 22%;
+    --studio-plum-text: 330 30% 35%;
+    --studio-sage-deep-text: 140 28% 30%;
   }
 
   .dark {
@@ -143,6 +150,13 @@
     --gradient-calm: linear-gradient(135deg, hsl(258 30% 18%), hsl(215 35% 18%));
     --gradient-sage: linear-gradient(135deg, hsl(145 20% 18%), hsl(260 22% 14%));
     --gradient-dawn: linear-gradient(160deg, hsl(260 22% 12%) 0%, hsl(258 30% 18%) 50%, hsl(350 25% 18%) 100%);
+
+    /* Studio palette (Project Hub) — dark surfaces & flipped text */
+    --studio-cream: 260 22% 13%;
+    --studio-cream-deep: 260 20% 18%;
+    --studio-ink: 36 30% 92%;
+    --studio-plum-text: 330 55% 80%;
+    --studio-sage-deep-text: 140 35% 72%;
 
     --shadow-soft: 0 2px 12px -4px hsl(0 0% 0% / 0.4), 0 1px 3px hsl(0 0% 0% / 0.2);
     --shadow-cozy: 0 8px 30px -12px hsl(0 0% 0% / 0.55);
