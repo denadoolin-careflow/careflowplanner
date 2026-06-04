@@ -61,7 +61,7 @@ export function DailySnapshotRow({ date }: { date: Date }) {
     const done = todays.filter(t => t.done).length;
     const total = todays.length;
     const pct = total === 0 ? 0 : Math.round((done / total) * 100);
-    const wins = todays.filter(t => t.done && (t.isTopThree || (t.priority ?? 0) >= 2)).length;
+    const wins = todays.filter(t => t.done && (t.isTopThree || t.priority === "high")).length;
 
     // Streak: consecutive days with at least one completed task ending today.
     const completed = new Set<string>();
