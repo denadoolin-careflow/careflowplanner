@@ -21,13 +21,13 @@ function Chip({ icon: Icon, label, value, tone }: {
   icon: typeof CheckCircle2; label: string; value: string; tone: ChipTone;
 }) {
   return (
-    <div className="flex min-w-[7.5rem] flex-1 items-center gap-2.5 rounded-2xl border border-border/50 bg-card/70 px-3 py-2.5 shadow-soft backdrop-blur-sm">
-      <div className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-full", TONE[tone])}>
-        <Icon className="h-4 w-4" />
+    <div className="flex w-full items-center gap-2 rounded-2xl border border-border/50 bg-card/70 px-2.5 py-2 shadow-soft backdrop-blur-sm sm:gap-2.5 sm:px-3 sm:py-2.5">
+      <div className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full sm:h-9 sm:w-9", TONE[tone])}>
+        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
       </div>
       <div className="min-w-0">
-        <div className="font-display text-lg font-semibold leading-none text-foreground">{value}</div>
-        <div className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+        <div className="font-display text-base font-semibold leading-none text-foreground sm:text-lg">{value}</div>
+        <div className="mt-0.5 truncate text-[9px] uppercase tracking-wider text-muted-foreground sm:text-[10px]">{label}</div>
       </div>
     </div>
   );
@@ -77,13 +77,13 @@ export function DailySnapshotRow({ date }: { date: Date }) {
   const energyLabel = energy === "low" ? "Low" : energy === "high" ? "Bright" : "Steady";
 
   return (
-    <div className="flex w-full snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
-      <div className="snap-start"><Chip icon={CheckCircle2} label={`${stats.total} planned`} value={`${stats.done}`} tone="sage" /></div>
-      <div className="snap-start"><Chip icon={Star} label="Wins today" value={`${stats.wins}`} tone="gold" /></div>
-      <div className="snap-start"><Chip icon={TrendingUp} label="Complete" value={`${stats.pct}%`} tone="sky" /></div>
-      <div className="snap-start"><Chip icon={Zap} label={`${energyLabel} energy`} value={energyLabel} tone="ember" /></div>
-      <div className="snap-start"><Chip icon={Moon} label="Moon" value={moon.glyph} tone="lavender" /></div>
-      <div className="snap-start"><Chip icon={Flame} label="Day streak" value={`${stats.streak}`} tone="blush" /></div>
+    <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
+      <Chip icon={CheckCircle2} label={`${stats.total} planned`} value={`${stats.done}`} tone="sage" />
+      <Chip icon={Star} label="Wins today" value={`${stats.wins}`} tone="gold" />
+      <Chip icon={TrendingUp} label="Complete" value={`${stats.pct}%`} tone="sky" />
+      <Chip icon={Zap} label={`${energyLabel} energy`} value={energyLabel} tone="ember" />
+      <Chip icon={Moon} label="Moon" value={moon.glyph} tone="lavender" />
+      <Chip icon={Flame} label="Day streak" value={`${stats.streak}`} tone="blush" />
     </div>
   );
 }
