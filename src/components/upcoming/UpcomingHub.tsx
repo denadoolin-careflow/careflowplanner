@@ -20,8 +20,11 @@ import {
   CalendarRange, LayoutList, CalendarDays, LayoutGrid, Grid3x3,
   Sparkles, Plus, CalendarPlus, ListChecks, Sprout, Zap, Flame,
   Sun, Cloud, Moon, ChevronDown, ChevronUp, ArrowRight, Target,
-  AlertCircle, Compass, Heart,
+  AlertCircle, Compass, Heart, Settings2, Heart as HeartIcon,
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 /* ---------------- Types & persistence ---------------- */
 
@@ -33,6 +36,30 @@ const VIEW_KEY = "careflow:upcoming:view";
 const TF_KEY = "careflow:upcoming:tf";
 const EN_KEY = "careflow:upcoming:energy";
 const COLLAPSE_KEY = "careflow:upcoming:collapsed";
+const SP_KEY = "careflow:upcoming:smartplan";
+
+type EnergyBalance = "gentle" | "balanced" | "ambitious";
+type SmartPlanPrefs = {
+  energyBalance: EnergyBalance;
+  microSteps: number;          // 2–5
+  prioritizeCaregiver: boolean;
+  perDay: number;              // 1–4 tasks scheduled per day
+};
+const DEFAULT_SP_PREFS: SmartPlanPrefs = {
+  energyBalance: "balanced",
+  microSteps: 3,
+  prioritizeCaregiver: true,
+  perDay: 2,
+};
+function loadSpPrefs(): SmartPlanPrefs {
+  try { return { ...DEFAULT_SP_PREFS, ...JSON.parse(localStorage.getItem(SP_KEY) || "{}") }; }
+  catch { return DEFAULT_SP_PREFS; }
+}
+function isCaregiverTask(t: Task): boolean {
+  const a = (t.area || "").toLowerCase();
+  if (a.includes("care")) return true;
+  return (t.tags ?? []).some(tag => /care|caregiv|loved/i.test(tag));
+}
 
 const TIMEFRAMES: { key: Timeframe; label: string }[] = [
   { key: "all", label: "All" },
