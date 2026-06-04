@@ -173,6 +173,7 @@ const App = () => (
                 <Route path="/family" element={<FamilySettings />} />
                 <Route path="/family/requests" element={<FamilyRequests />} />
                 <Route path="/flow/:id" element={<FlowLanding />} />
+                <Route path="/settings/flow-colors" element={<FlowColorsPreview />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
