@@ -189,6 +189,21 @@ export function BottomNav() {
                   {NAV_GROUPS.map((group) => {
                     const GroupIcon = group.icon;
                     const accent = flowAccents[group.id] ?? flowAccents.settings;
+                    const flowTo = `/flow/${group.id}`;
+                    const isPinned = navIds.includes(flowTo);
+                    const togglePin = (e: React.MouseEvent) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      haptics.tap();
+                      if (isPinned) {
+                        setNavIds(navIds.filter(x => x !== flowTo));
+                      } else if (navIds.length >= 6) {
+                        toast.message("Bottom nav is full", { description: "Remove a destination first or open Customize." });
+                      } else {
+                        setNavIds([...navIds, flowTo]);
+                        toast.success(`${group.label} pinned to bottom nav`);
+                      }
+                    };
                     return (
                     <section key={group.id}>
                       <Link
@@ -211,6 +226,18 @@ export function BottomNav() {
                             </span>
                           )}
                         </div>
+                        <button
+                          type="button"
+                          onClick={togglePin}
+                          aria-label={isPinned ? `Unpin ${group.label} from bottom nav` : `Pin ${group.label} to bottom nav`}
+                          aria-pressed={isPinned}
+                          className={cn(
+                            "grid h-8 w-8 place-items-center rounded-lg transition-colors",
+                            isPinned ? "bg-primary-soft text-foreground" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                          )}
+                        >
+                          {isPinned ? <Pin className="h-4 w-4 fill-current" /> : <PinOff className="h-4 w-4" />}
+                        </button>
                         <ArrowRight className="h-4 w-4" style={{ color: accent.color }} />
                       </Link>
                       <ul className="grid grid-cols-3 gap-2">
