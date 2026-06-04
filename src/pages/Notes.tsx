@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { listNotes, createNote, getOrCreateDailyNote, type Note } from "@/lib/notes";
+import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
+import { getNoteCoverCss } from "@/lib/note-covers";
 import { todayISO, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
