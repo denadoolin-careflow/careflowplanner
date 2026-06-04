@@ -90,14 +90,14 @@ export function AppLayout() {
           <RoutinesStrip />
           <main className="flex-1 px-4 pb-28 pt-6 lg:px-8 lg:pb-12">
             <div className="mx-auto w-full max-w-6xl">
-              <AnimatePresence mode="popLayout" initial={false}>
+              <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={pathname}
-                  initial={reduceMotion ? false : { opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -2 }}
-                  transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.22, 0.61, 0.36, 1] }}
-                  style={{ willChange: "opacity, transform" }}
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 1 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.14, ease: "easeOut" }}
+                  style={{ willChange: "opacity" }}
                 >
                   <WorkspaceShell>
                     <Outlet />
