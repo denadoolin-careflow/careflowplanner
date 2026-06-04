@@ -1,51 +1,65 @@
 ## Goal
 
-Replace the current vector `<CareFlowMark>` with the uploaded CareFlow icon image, place it in the **top-right of the app header**, and have it auto-retint to follow the active atmosphere + light/dark mode.
+When viewing a caregiving profile (`PersonDashboard`), surface every memory and journal entry tied to that person — with their photos/attachments — in a single panel. Make it easy to link entries to a person from both the Journal and the Memory editor.
 
-## Approach
+## Data model (no migration needed)
 
-### 1. Host the logo as a Lovable Asset
+- `memories.recipient_ids uuid[]` already exists → the canonical link.
+- `journal_entries.linked_ids jsonb` already supports `{type, id, label}` entries → use `{type: "recipient", id: recipient.id, label: recipient.name}`.
+- Recipient "tag handle" = slugified `recipient.name`; we'll also match journal `tags[]` containing that handle for back-compat.
 
-Upload `user-uploads://5166074C-C19F-4A49-9FAB-014E1B9DBA4C.png` (icon-only — cleaner in small sizes than the variant with the CareFlow wordmark) via the `lovable-assets` CLI and write the pointer to `src/assets/careflow-logo.png.asset.json`. The first uploaded image (with text + tagline) is the brand asset; we'll save it too as `careflow-logo-full.png.asset.json` for marketing / future use, but the in-app logo will use the icon-only one.
+No schema change. Everything works inside existing RLS.
 
-### 2. New `CareFlowLogo` component
+## 1. Helpers — `src/lib/person-memories.ts` (new)
 
-Create `src/components/widgets/CareFlowLogo.tsx`:
-
-```
-<span className="grid place-items-center rounded-xl overflow-hidden ring-1 ring-border/40 shadow-soft"
-      style={{ background: 'hsl(var(--primary))' }}>
-  <img src={logo.url} alt="CareFlow"
-       style={{ mixBlendMode: 'luminosity' }}
-       className="h-full w-full object-cover" />
-</span>
+```ts
+export function memoriesForRecipient(memories: Memory[], recipientId: string): Memory[]
+export function journalsForRecipient(entries: JournalEntry[], recipient: {id; name}): JournalEntry[]
+export function recipientTagHandle(name: string): string  // lower-kebab
+export function allAttachmentsForRecipient(...): {src, kind, source: "memory"|"journal", parentId, date, caption}[]
 ```
 
-`mix-blend-mode: luminosity` keeps the icon's brightness/shape but pulls its hue + saturation from the underlying primary color, which already shifts per atmosphere and light/dark mode (we just retuned all atmosphere primaries). Result: the green plate retints to sage in Sage Sanctuary, dusty plum in Moonlit Plum, terracotta in Dawn, etc. — automatically.
+Filters:
+- Memories where `recipientIds.includes(recipient.id)`.
+- Journals where `linkedIds` has `{type:"recipient", id}` **or** `tags` includes the handle.
 
-Props: `size` (default 28), `className`, `tint` ("primary" | "accent" | "auto", default "primary"), `rounded` ("md" | "lg" | "xl", default "xl").
+## 2. New section — `src/components/caregiving/PersonMemoriesSection.tsx`
 
-### 3. Place in top-right of the header
+Renders inside `PersonDashboard` (added after `PersonTrendsSection`). Three subviews behind small tabs (`Photos · Memories · Journal`):
 
-In `src/components/layout/AppLayout.tsx`, add `<CareFlowLogo size={32} />` as the rightmost element in the header's right-side cluster, after `<ThemeToggle />`. Wrap with a `<Link to="/">` so tapping it returns home.
+- **Photos**: square thumbnail grid from `allAttachmentsForRecipient` (images only). Click → opens existing `MemoryLightbox` for memory-sourced images, or a lightweight image lightbox for journal-sourced ones.
+- **Memories**: list of `MemoryCard`s (reuse existing component) sorted by `date` desc.
+- **Journal**: compact cards (date · title/body excerpt · tag chips · attachment count). Click → routes to `/journal?focus={id}` (existing route accepts focus param if available; otherwise scrolls to entry).
 
-### 4. Replace the sidebar mark
+Empty state CTA: "Tag a memory or journal entry with {name} to see it here" + two buttons → "New memory" (opens `MemoryEditor` with `recipientIds=[id]` preselected) and "New journal entry" (routes to `/journal?recipient={id}`).
 
-Swap the `<CareFlowMark>` in `src/components/layout/Sidebar.tsx` (top-left brand tile) for `<CareFlowLogo>` at sizes `40` (collapsed) / `36` (expanded). The wrapping tile div is removed — the new logo already has its own rounded plate. Keep `CareFlowMark.tsx` in the codebase but unreferenced (future inline-SVG fallback if needed).
+Loads memories via `listMemories()` once, cached in component state; journals come from `useStore().state.journal`.
 
-### 5. No atmosphere changes needed
+## 3. MemoryEditor — preselect recipient
 
-Atmosphere primary tokens already drive the tint; nothing in `src/index.css` needs editing.
+`MemoryEditor` already supports `recipientIds`. Make `PersonMemoriesSection`'s "New memory" button open it with that prop preset. No editor changes needed beyond accepting an `initialRecipientIds` prop if not already present (verify; add if missing).
+
+## 4. Journal — recipient picker
+
+`src/pages/Journal.tsx` and `src/pages/JournalFlow.tsx` editor toolbar: add a "Link person" popover next to the existing project linker. Pulls `state.recipients`, multi-select. On save, append to `linkedIds` as `{type:"recipient", id, label: name}` and also add the slug to `tags` so legacy tag filters work.
+
+Read `?recipient={id}` query param on mount and preselect that recipient.
+
+## 5. PersonDashboard wiring
+
+Add `<PersonMemoriesSection recipient={recipient} />` after `<PersonTrendsSection />` in `src/components/caregiving/PersonDashboard.tsx`.
 
 ## Out of scope
 
-- Replacing the favicon / PWA icons.
-- Animated brand mark, splash screen, marketing pages.
-- Wordmark text in the header (sidebar's "CareFlow / Care · Plan · Grow" caption stays as-is).
+- Cross-syncing existing untagged entries (user backfills via the new pickers).
+- Loved-ones (`loved_one_ids`) parallel surface — same pattern but not requested here.
+- Server-side full-text search across linked entries.
+- New tables, RLS, or migrations.
 
-## Deliverable
+## Deliverables
 
-- 2 asset pointers in `src/assets/`.
-- New `CareFlowLogo` component.
-- Updated `AppLayout.tsx` header (logo top-right, links home).
-- Updated `Sidebar.tsx` brand tile.
+- `src/lib/person-memories.ts` (new)
+- `src/components/caregiving/PersonMemoriesSection.tsx` (new)
+- `src/components/caregiving/PersonDashboard.tsx` (mount the section)
+- `src/pages/Journal.tsx` + `src/pages/JournalFlow.tsx` (recipient picker + `?recipient=` param)
+- `src/components/memories/MemoryEditor.tsx` (verify/accept `initialRecipientIds` prop)
