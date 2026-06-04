@@ -1,37 +1,84 @@
-## Goal
+# Weather upgrades — location picker, unit toggle, auto-refresh, hourly precip, warnings
 
-1. Show a clear weather card on Morning, Afternoon, and Evening rhythm sections with the temperature and conditions for that part of the day.
-2. Always-visible date, live time, and current weather in the top app header (sticky on every page) so it's available outside the Today hero.
+Bring the Today weather cards under user control: pick a saved city/ZIP, toggle °C/°F inline, auto-refresh on a cadence, surface hourly rain probability, and call out any active weather warnings.
 
-## Changes
+## 1. Location picker (city / ZIP)
 
-### 1. Weather card per rhythm slot
-File: `src/components/today/rhythm/SlotWeather.tsx`
+New component `src/components/weather/LocationPickerPopover.tsx` (trigger = small "📍 {city}" chip):
+- Search input that calls `geocodeCity(query)` from `src/lib/weather.ts` (already supports city + ZIP via Open-Meteo geocoding).
+- Renders up to 5 results (name · admin1 · country); click saves via `savePlace()` and immediately refetches via `fetchWeather()` → `setWeatherSnapshot()`.
+- "Use my location" button: `navigator.geolocation` + `reverseLabel()`, same save+refetch path.
+- "Clear saved location" → removes localStorage key and falls back to auto-detect.
 
-Today this renders a thin inline strip that's easy to miss and silently returns `null` when conditions look empty. Promote it to a proper card:
+Wire the chip into:
+- `SlotWeather.tsx` (header row of the per-slot card — only render on the first slot to avoid duplicates), and
+- `HeaderNowStrip.tsx` (the temp pill becomes the trigger).
 
-- Always render when a forecast for that day-part exists (don't hide on `"—"` label — show a neutral "Forecast unavailable" state instead).
-- Layout: rounded card matching other Today cards (`cozy-card`-style border + bg), with:
-  - Left: large condition icon + day-part label ("Morning", "Afternoon", "Evening").
-  - Middle: big temp (avg) + "Feels / H ° · L °" line + condition label.
-  - Right: precip chance (with droplet) and the existing day-part suggestion as a soft caption underneath.
-- Keep using `useWeatherSnapshot()` + `useTempUnit()` + `dayPartSuggestion()` — no data-layer changes.
-- Visual only — the card is still placed inside `RhythmSection` via the existing `showWeather` prop (already enabled on all three slots in `Today.tsx`).
+No changes to `weather.ts` data layer.
 
-### 2. Header date / time / weather
-File: `src/components/layout/AppLayout.tsx`
+## 2. Inline °C / °F toggle
 
-Add a compact info cluster inside the existing sticky `<header>` (between the page title block and the action buttons, hidden on the smallest screens to keep mobile clean):
+Tiny segmented control reusing the existing `useTempUnit()` store (already global):
+- New `src/components/weather/UnitToggle.tsx` — same visual as the one in `WeatherPrefsSection`.
+- Placed beside the location chip in the SlotWeather header and in `HeaderNowStrip`.
 
-- Live clock: `h:mm a`, updating every 30s via a small `useEffect` + `setInterval` (or a tiny new `HeaderNowChip` component to keep AppLayout tidy).
-- Today's date: `EEE, MMM d`.
-- Current weather: condition icon + temp (using `useWeatherSnapshot` + `useTempUnit`, same pattern as `RhythmHeader`). Hidden gracefully if snapshot unavailable.
-- Styled as pill chips with `bg-muted/40` / border, matching `DateBarStrip` so it feels consistent across the app.
+No new state, no migration — `setTempUnit()` already persists to localStorage and broadcasts.
 
-A new small component `src/components/layout/HeaderNowStrip.tsx` will hold the clock + date + weather chips so `AppLayout.tsx` stays readable. It will call `useEnsureWeather()` so weather is fetched on every page, not only Today.
+## 3. Auto-refresh
+
+Extend `src/lib/use-ensure-weather.ts`:
+- After initial load, set an interval (default 15 min) that re-calls `fetchWeather()` for the saved place and `setWeatherSnapshot()`.
+- Also refresh on `document.visibilitychange` when the tab becomes visible and the snapshot is older than 10 min (`snap.fetchedAt`).
+- Cleared on unmount.
+
+No new pref UI — interval is a constant; the existing `autoLocate` pref still governs first-load geolocation.
+
+## 4. Hourly rain chance
+
+Today's hourly data is already in `snap.todayHourly` (each entry has `precipChance`). Add a compact strip inside `SlotWeather`:
+- Filter `todayHourly` to the slot's hour range (reuse the same ranges as `bucketHourly` in `weather.ts` — export `PART_RANGES` or duplicate the constant in the component).
+- Render a horizontal row of small cells: hour label (`ha`), tiny rain-drop icon, `precipChance%`.
+- Only show hours with `precipChance >= 10` to keep it calm; if none, show "No rain expected".
+
+Renders below the existing tip line; mobile scrolls horizontally.
+
+## 5. Weather warnings
+
+New helper `src/lib/weather-warnings.ts`:
+- Pure function `computeWarnings(snap, prefs)` returning `{ id, severity: 'info'|'caution'|'alert', label, detail }[]`.
+- Rules driven by existing `WeatherPrefs` (`coldC`, `hotC`, `rainAlerts`, `snowAlerts`, `windAlerts`):
+  - Thunderstorm anywhere today → alert.
+  - Any hour ≥70% precip + rainAlerts → caution ("Heavy rain around 3 PM").
+  - Snow in dayParts + snowAlerts → caution.
+  - Min hourly temp ≤ `coldC` → info ("Cold snap — bundle up").
+  - Max hourly temp ≥ `hotC` → caution ("Heat — hydrate & shade").
+  - Fog in next 6 hours → info.
+  - (Wind: Open-Meteo `wind_speed_10m` not currently fetched; add `wind_speed_10m_max` to the daily query in `fetchWeather` and gate on `windAlerts` ≥ 40 km/h.)
+
+Render in a new `WeatherWarningsCard` placed above the three SlotWeather cards in `RhythmSection.tsx`. Each warning is a pill row with an icon + label + short detail. Empty list = component renders nothing.
+
+## Technical notes
+
+- `weather.ts`: extend the `fetchWeather` query string with `wind_speed_10m_max` (daily) only; add `windMaxKph` to `WeatherSnapshot`. No other data-layer changes.
+- All temps continue to render through `useTempUnit()` + `cToF()`.
+- No DB / edge function changes. Pure client.
+- No changes to `WeatherPrefsSection` other than (optional) wording — the picker is now also reachable from Today, but Settings keeps the full pref panel.
 
 ## Out of scope
 
-- No changes to the weather data layer, providers, or units logic.
-- No changes to `RhythmHeader` (it already shows time + temp inside the Today hero; we're adding to the global header so it's visible on every page).
-- No changes to Today.tsx wiring (already passes `showWeather` to all three slots).
+- Multi-location saving (only one active place).
+- 7-day forecast UI.
+- Push notifications for warnings (in-app banners only).
+- Replacing the weather provider.
+
+## Files
+
+- new: `src/components/weather/LocationPickerPopover.tsx`
+- new: `src/components/weather/UnitToggle.tsx`
+- new: `src/components/weather/WeatherWarningsCard.tsx`
+- new: `src/lib/weather-warnings.ts`
+- edit: `src/lib/weather.ts` (add `windMaxKph` to snapshot + query)
+- edit: `src/lib/use-ensure-weather.ts` (interval + visibility refresh)
+- edit: `src/components/today/rhythm/SlotWeather.tsx` (header chips + hourly precip strip)
+- edit: `src/components/today/rhythm/RhythmSection.tsx` (mount warnings card)
+- edit: `src/components/layout/HeaderNowStrip.tsx` (chip becomes picker trigger + unit toggle)

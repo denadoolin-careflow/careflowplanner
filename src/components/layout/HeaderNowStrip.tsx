@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
 import type { WeatherCondition } from "@/lib/weather";
+import { LocationPickerPopover } from "@/components/weather/LocationPickerPopover";
+import { UnitToggle } from "@/components/weather/UnitToggle";
 
 function CondIcon({ c, isNight, className }: { c: WeatherCondition; isNight?: boolean; className?: string }) {
   const cls = cn("h-3.5 w-3.5", className);
@@ -43,14 +45,21 @@ export function HeaderNowStrip({ className }: { className?: string }) {
         {date}
       </span>
       {snap && tempStr && (
-        <span
-          className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85"
-          title={snap.conditionLabel ?? undefined}
-        >
-          <CondIcon c={snap.condition} isNight={snap.isNight} />
-          <span className="tabular-nums">{tempStr}</span>
-        </span>
+        <LocationPickerPopover
+          trigger={
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85 hover:bg-muted/70 transition"
+              title={snap.conditionLabel ?? undefined}
+            >
+              <CondIcon c={snap.condition} isNight={snap.isNight} />
+              <span className="tabular-nums">{tempStr}</span>
+              <span className="max-w-[100px] truncate text-foreground/60">· {snap.locationLabel}</span>
+            </button>
+          }
+        />
       )}
+      <UnitToggle />
     </div>
   );
 }

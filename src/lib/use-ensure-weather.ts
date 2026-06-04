@@ -8,6 +8,9 @@ import {
 } from "@/lib/weather";
 import { getWeatherSnapshot, setWeatherSnapshot } from "@/lib/weather-store";
 
+const REFRESH_MS = 15 * 60 * 1000;
+const STALE_MS = 10 * 60 * 1000;
+
 /**
  * Ensures a weather snapshot is loaded into the shared store.
  * Safe to call from any component — no-ops if a snapshot already exists.
@@ -17,10 +20,6 @@ import { getWeatherSnapshot, setWeatherSnapshot } from "@/lib/weather-store";
 export function useEnsureWeather() {
   const tried = useRef(false);
   useEffect(() => {
-    if (tried.current) return;
-    tried.current = true;
-    if (getWeatherSnapshot()) return;
-
     const load = async (place: GeoPlace, persist = false) => {
       try {
         const snap = await fetchWeather(place.lat, place.lon, place.name);
@@ -31,18 +30,43 @@ export function useEnsureWeather() {
       }
     };
 
-    const saved = loadSavedPlace();
-    if (saved) { void load(saved); return; }
-    if (!("geolocation" in navigator)) return;
+    const refresh = () => {
+      const saved = loadSavedPlace();
+      const snap = getWeatherSnapshot();
+      const place = saved ?? (snap ? { name: snap.locationLabel, lat: snap.lat, lon: snap.lon } : null);
+      if (place) void load(place);
+    };
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const label = await reverseLabel(latitude, longitude);
-        await load({ name: label, lat: latitude, lon: longitude }, true);
-      },
-      () => { /* user denied — no weather shown */ },
-      { timeout: 6000, maximumAge: 5 * 60 * 1000 },
-    );
+    if (!tried.current) {
+      tried.current = true;
+      if (!getWeatherSnapshot()) {
+        const saved = loadSavedPlace();
+        if (saved) {
+          void load(saved);
+        } else if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              const { latitude, longitude } = pos.coords;
+              const label = await reverseLabel(latitude, longitude);
+              await load({ name: label, lat: latitude, lon: longitude }, true);
+            },
+            () => { /* denied */ },
+            { timeout: 6000, maximumAge: 5 * 60 * 1000 },
+          );
+        }
+      }
+    }
+
+    const interval = window.setInterval(refresh, REFRESH_MS);
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      const snap = getWeatherSnapshot();
+      if (!snap || Date.now() - new Date(snap.fetchedAt).getTime() > STALE_MS) refresh();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, []);
 }
