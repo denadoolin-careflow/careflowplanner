@@ -8,7 +8,7 @@ import {
 import { useStore } from "@/lib/store";
 import type { Task, Area } from "@/lib/types";
 import { useAtmosphere } from "@/lib/atmospheres";
-import { resolveTaskIcon } from "@/lib/task-icons";
+import { resolveTaskIcon, inferTaskIcon } from "@/lib/task-icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { openTaskEditor } from "@/lib/open-task-editor";
@@ -337,7 +337,7 @@ function FilterChip({ active, onClick, label }: { active: boolean; onClick: () =
 }
 
 function RecommendedRow({ task, onDo }: { task: Task; onDo: () => void }) {
-  const Icon = resolveTaskIcon(task) ?? Leaf;
+  const Icon = inferTaskIcon(task.title, task.notes);
   const m = areaMeta(task.area);
   const min = estMin(task);
   return (
@@ -396,7 +396,7 @@ function CardsGrid({ tasks, onDo }: { tasks: Task[]; onDo: (t: Task) => void }) 
 }
 
 function CardTile({ task, onDo }: { task: Task; onDo: (t: Task) => void }) {
-  const Icon = resolveTaskIcon(task) ?? Leaf;
+  const Icon = inferTaskIcon(task.title, task.notes);
   const m = areaMeta(task.area);
   const min = estMin(task);
   const energy = inferEnergy(task);
@@ -434,7 +434,7 @@ function GalleryGrid({ tasks, onDo }: { tasks: Task[]; onDo: (t: Task) => void }
   return (
     <div className="columns-2 gap-3 sm:columns-3 lg:columns-4">
       {tasks.slice(0, 60).map(t => {
-        const Icon = resolveTaskIcon(t) ?? Leaf;
+        const Icon = inferTaskIcon(t.title, t.notes);
         const m = areaMeta(t.area);
         return (
           <div key={t.id} className="mb-3 break-inside-avoid rounded-2xl border border-border/60 bg-card/70 p-3">
