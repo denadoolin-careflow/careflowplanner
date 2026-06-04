@@ -16,6 +16,7 @@ import {
   Sparkles, Plus, Sprout, Flame, TrendingUp, Trophy, Heart, Home, Briefcase,
   Palette, Wallet, Users, Moon, HandHeart, Target, Calendar, CheckCircle2,
   Circle, ArrowRight, Edit3, Trash2, Compass, Leaf, Mountain, Flower2,
+  Share2, Link2, ListChecks,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +36,34 @@ type GoalExtras = {
 const EXTRAS_KEY = "careflow:goal-extras:v1";
 const SEASON_KEY = "careflow:goal-season:v1";
 const TOP3_KEY = "careflow:goal-top3:v1";
+const TINY_WINS_KEY = "careflow:tiny-wins:v1";
+
+type TinyWin = { id: string; text: string; at: string; goalId?: string };
+function loadTinyWins(): TinyWin[] {
+  try { return JSON.parse(localStorage.getItem(TINY_WINS_KEY) || "[]"); } catch { return []; }
+}
+function saveTinyWins(w: TinyWin[]) {
+  try { localStorage.setItem(TINY_WINS_KEY, JSON.stringify(w)); } catch {}
+}
+function addTinyWin(text: string, goalId?: string) {
+  const wins = loadTinyWins();
+  wins.unshift({ id: crypto.randomUUID(), text, goalId, at: new Date().toISOString() });
+  saveTinyWins(wins.slice(0, 100));
+  window.dispatchEvent(new Event("careflow:tiny-wins"));
+}
+
+const CHECKIN_STALE_DAYS = 7;
+function checkInIsStale(at?: string) {
+  if (!at) return true;
+  return (Date.now() - new Date(at).getTime()) / 86400000 >= CHECKIN_STALE_DAYS;
+}
+
+const TONE_META: Record<CheckIn, { label: string; emoji: string; tint: string }> = {
+  energizing: { label: "Energizing", emoji: "😊", tint: "bg-emerald-100/70 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+  steady:     { label: "Steady",     emoji: "😌", tint: "bg-sky-100/70 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300" },
+  neutral:    { label: "Neutral",    emoji: "😐", tint: "bg-stone-100/70 text-stone-700 dark:bg-stone-900/40 dark:text-stone-300" },
+  heavy:      { label: "Heavy",      emoji: "😓", tint: "bg-rose-100/70 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" },
+};
 
 function loadExtras(): Record<string, GoalExtras> {
   try { return JSON.parse(localStorage.getItem(EXTRAS_KEY) || "{}"); } catch { return {}; }
