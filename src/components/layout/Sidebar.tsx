@@ -1,5 +1,6 @@
 import { NavLink, useLocation, Link } from "react-router-dom";
-import { NAV_GROUPS, FLOW_ACCENTS } from "@/lib/nav";
+import { NAV_GROUPS } from "@/lib/nav";
+import { useFlowAccents } from "@/lib/flow-accent";
 import { PANEL_BY_ROUTE } from "@/components/workspace/PanelRegistry";
 import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
