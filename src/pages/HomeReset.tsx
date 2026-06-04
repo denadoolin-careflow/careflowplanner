@@ -93,7 +93,7 @@ const ZONES = [
 ];
 
 // ---------- page ----------
-export default function HomeReset() {
+export default function HomeReset({ embedded = false }: { embedded?: boolean } = {}) {
   const reset = useResetChecklists({});
   const { state } = useStore();
   const lowEnergy = !!state.settings?.lowEnergyMode;
@@ -186,6 +186,7 @@ export default function HomeReset() {
   return (
     <div className="space-y-6 pb-4">
       {/* ============ HEADER ============ */}
+      {!embedded && (
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-100 to-amber-100/80 text-rose-700 shadow-soft ring-1 ring-rose-200/60">
@@ -225,6 +226,32 @@ export default function HomeReset() {
           </Button>
         </div>
       </header>
+      )}
+      {embedded && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
+            <StatChip label="tasks remaining" value={totals.remaining} accent="sage" />
+            <StatChip label="resets in progress" value={totals.inProgress} accent="blush" />
+          </div>
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            <AIGenerateMenu onGenerated={reset.refresh} />
+            <Button variant="outline" size="sm" className="rounded-full" onClick={() => setHistoryOpen(true)}>
+              <History className="mr-1 h-4 w-4" /> History
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={async () => {
+                const id = await reset.createList({ name: "New reset", kind: "custom" });
+                if (id) { setCurrentId(id); toast.success("Reset created"); }
+              }}
+            >
+              <Plus className="mr-1 h-4 w-4" /> New reset
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ============ CURRENT RESET HERO ============ */}
       {current ? (
