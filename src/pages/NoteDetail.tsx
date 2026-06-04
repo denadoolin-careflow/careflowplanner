@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy } from "lucide-react";
@@ -15,6 +15,10 @@ import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { NoteTOC } from "@/components/notes/NoteTOC";
 import { copyToClipboard } from "@/lib/clipboard";
+import { NoteIconPicker } from "@/components/notes/NoteIconPicker";
+import { NoteCoverPicker } from "@/components/notes/NoteCoverPicker";
+import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
+import { getNoteCoverCss } from "@/lib/note-covers";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
