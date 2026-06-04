@@ -74,6 +74,7 @@ import Terms from "./pages/Terms";
 import FamilySettings from "./pages/FamilySettings";
 import JoinHousehold from "./pages/JoinHousehold";
 import FamilyRequests from "./pages/FamilyRequests";
+import FlowLanding from "./pages/FlowLanding";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -170,6 +171,7 @@ const App = () => (
                 <Route path="/trips/:id" element={<TripDetail />} />
                 <Route path="/family" element={<FamilySettings />} />
                 <Route path="/family/requests" element={<FamilyRequests />} />
+                <Route path="/flow/:id" element={<FlowLanding />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

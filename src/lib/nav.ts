@@ -7,6 +7,70 @@ import {
   Zap, Plane, Users,
 } from "lucide-react";
 
+/** Per-flow accent classes for tints and gradients. */
+export const FLOW_ACCENTS: Record<
+  string,
+  { text: string; bg: string; ring: string; border: string; gradient: string }
+> = {
+  planflow:   { text: "text-indigo-500",  bg: "bg-indigo-500/15",  ring: "ring-indigo-500/40",  border: "border-indigo-500/40",  gradient: "from-indigo-500/25 via-indigo-500/5 to-transparent" },
+  careflow:   { text: "text-rose-500",    bg: "bg-rose-500/15",    ring: "ring-rose-500/40",    border: "border-rose-500/40",    gradient: "from-rose-500/25 via-rose-500/5 to-transparent" },
+  homeflow:   { text: "text-amber-500",   bg: "bg-amber-500/15",   ring: "ring-amber-500/40",   border: "border-amber-500/40",   gradient: "from-amber-500/25 via-amber-500/5 to-transparent" },
+  wellflow:   { text: "text-emerald-500", bg: "bg-emerald-500/15", ring: "ring-emerald-500/40", border: "border-emerald-500/40", gradient: "from-emerald-500/25 via-emerald-500/5 to-transparent" },
+  growthflow: { text: "text-sky-500",     bg: "bg-sky-500/15",     ring: "ring-sky-500/40",     border: "border-sky-500/40",     gradient: "from-sky-500/25 via-sky-500/5 to-transparent" },
+  moneyflow:  { text: "text-lime-600",    bg: "bg-lime-500/15",    ring: "ring-lime-500/40",    border: "border-lime-500/40",    gradient: "from-lime-500/25 via-lime-500/5 to-transparent" },
+  lunarflow:  { text: "text-violet-500",  bg: "bg-violet-500/15",  ring: "ring-violet-500/40",  border: "border-violet-500/40",  gradient: "from-violet-500/25 via-violet-500/5 to-transparent" },
+  settings:   { text: "text-muted-foreground", bg: "bg-muted",     ring: "ring-border",         border: "border-border",         gradient: "from-muted/40 via-muted/10 to-transparent" },
+};
+
+/** Short descriptions for nav items, used on flow landing cards. */
+export const NAV_DESCRIPTIONS: Record<string, string> = {
+  "/inbox": "Capture anything fast and triage it later.",
+  "/today": "Today's focus, brief, and time blocks.",
+  "/plan": "Plan your day on a single timeline.",
+  "/week": "Zoom out to a weekly rhythm.",
+  "/month": "See the whole month at a glance.",
+  "/year": "Map seasons, milestones, and themes.",
+  "/calendar": "Unified calendar across sources.",
+  "/upcoming": "What's coming up next.",
+  "/anytime": "Tasks with no fixed date.",
+  "/someday": "Ideas to revisit when the time is right.",
+  "/not-today": "Snoozed out of today's view.",
+  "/logbook": "Everything you've completed.",
+  "/projects": "Multi-step work, organized.",
+  "/focus": "Pomodoro and deep-work timers.",
+  "/automations": "Automatic actions across the app.",
+  "/review": "Past reviews and reflections.",
+  "/care": "The CARE loop for caregivers.",
+  "/caregiving": "Care plans, contacts, and check-ins.",
+  "/family": "Household, members, and sharing.",
+  "/mental-load": "Track invisible work and balance it.",
+  "/home-areas": "Rooms, zones, and home life.",
+  "/home-reset": "Resets, routines, and the home hub.",
+  "/meals": "This week's meal plan.",
+  "/meals/library": "Saved recipes and ideas.",
+  "/pantry": "Inventory and shopping lists.",
+  "/routines": "Repeatable rhythms for daily life.",
+  "/trips": "Plan trips and packing lists.",
+  "/health": "Health, energy, and check-ins.",
+  "/habits": "Daily habits and streaks.",
+  "/journal": "A quiet space to write.",
+  "/journal-flow": "Guided journaling and flow.",
+  "/goals": "Goals, milestones, and progress.",
+  "/ideas": "Idea capture and incubation.",
+  "/notes": "Notes, docs, and references.",
+  "/whiteboards": "Free-form visual thinking.",
+  "/graph": "Knowledge graph across notes.",
+  "/tags": "Browse and manage tags.",
+  "/wealth": "Budgets, accounts, and financial wellness.",
+  "/rhythm": "Lunar and seasonal rhythms.",
+  "/insights": "Patterns and reflections.",
+  "/reset/week": "Close the week and prep the next.",
+  "/reset/month": "Close the month and reset.",
+  "/memories": "Moments worth remembering.",
+  "/": "Your home dashboard.",
+  "/settings": "Preferences, account, and integrations.",
+};
+
 export const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/care", label: "CARE Loop", icon: Flower2 },
