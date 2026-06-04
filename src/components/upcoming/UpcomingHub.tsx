@@ -479,6 +479,20 @@ export function UpcomingHub() {
         onComplete={async (id) => { await toggleTask(id); }}
         stepCount={spPrefs.microSteps}
       />
+
+      <SmartPlanPreviewDialog
+        plan={planPreview}
+        prefs={spPrefs}
+        onCancel={() => setPlanPreview(null)}
+        onApply={applySmartPlan}
+        onRegenerate={() => setPlanPreview(buildSmartPlan())}
+        onRemove={(taskId) =>
+          setPlanPreview(p => (p ? p.filter(x => x.task.id !== taskId) : p))
+        }
+        onMove={(taskId, iso) =>
+          setPlanPreview(p => (p ? p.map(x => x.task.id === taskId ? { ...x, iso } : x) : p))
+        }
+      />
     </div>
   );
 }
