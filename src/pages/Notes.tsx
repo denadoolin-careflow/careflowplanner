@@ -353,18 +353,28 @@ function KanbanView({ notes, projectsById }: { notes: Note[]; projectsById: Reco
               <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px]">{c.items.length}</span>
             </div>
             <div className="space-y-2">
-              {c.items.map(n => (
-                <Link
-                  key={n.id}
-                  to={`/notes/${n.id}`}
-                  className="block rounded-xl border border-border/40 bg-background/60 p-2.5 transition hover:border-primary/40 hover:shadow-sm"
-                >
-                  <div className="truncate text-sm font-medium">
-                    {n.kind === "daily" && n.date ? format(parseISO(n.date), "EEE, MMM d") : (n.title || "Untitled")}
-                  </div>
-                  <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body || "Empty"}</div>
-                </Link>
-              ))}
+              {c.items.map(n => {
+                const Icon = getLucideIcon(resolveNoteIcon(n));
+                const gradient = !n.coverUrl ? getNoteCoverCss(n.coverGradient) : null;
+                return (
+                  <Link
+                    key={n.id}
+                    to={`/notes/${n.id}`}
+                    className="block overflow-hidden rounded-xl border border-border/40 bg-background/60 transition hover:border-primary/40 hover:shadow-sm"
+                  >
+                    {gradient && <div className="h-8 w-full" style={{ background: gradient }} />}
+                    <div className="p-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                        <div className="truncate text-sm font-medium">
+                          {n.kind === "daily" && n.date ? format(parseISO(n.date), "EEE, MMM d") : (n.title || "Untitled")}
+                        </div>
+                      </div>
+                      <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body || "Empty"}</div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         ))}
