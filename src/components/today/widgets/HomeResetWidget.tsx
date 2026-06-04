@@ -45,7 +45,7 @@ export function HomeResetWidget() {
                 onCheckedChange={() => void updateItem(i.id, { done: !i.done })}
               />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-xs text-foreground">{i.label}</div>
+                <div className="truncate text-xs text-foreground">{i.title}</div>
                 <div className="truncate text-[10px] text-muted-foreground">{i.listName}</div>
               </div>
             </li>
