@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Leaf, RefreshCw, ExternalLink, AlertTriangle, Copy, Mail } from "lucide-react";
+import { RefreshCw, ExternalLink, AlertTriangle, Copy, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 
 // Detect known in-app browsers that block Google OAuth (Instagram/Facebook/
 // TikTok/LinkedIn webviews). These don't let users complete sign-in and just
@@ -171,12 +172,10 @@ export default function Auth() {
     >
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
         <Link to="/" className="mb-6 flex items-center gap-2.5">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-[hsl(145_30%_28%)] text-[hsl(36_50%_96%)] shadow-sm">
-            <Leaf className="h-4 w-4" />
-          </span>
+          <CareFlowMark size={40} />
           <span className="leading-tight">
             <span className="font-display text-lg font-semibold text-foreground">CareFlow</span>
-            <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">plan, care, grow</span>
+            <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Plan · Care · Grow</span>
           </span>
         </Link>
 

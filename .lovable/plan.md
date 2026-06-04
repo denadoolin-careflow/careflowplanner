@@ -1,87 +1,45 @@
-# Plan: cleaner task quick-edit, hover actions, project jump
+## Goal
 
-Three focused upgrades to the Inbox / task row experience. No backend changes.
+Adopt the uploaded sage-green app icon as the brand mark across the public-facing surfaces, and refresh the tagline lockup on Auth.
 
-## 1. Replace the "3 dots" QuickEditPopover with a clean Quick Sheet
+## Steps
 
-Today the `MoreHorizontal` button on a task row opens `QuickEditPopover` — a dense 5-section chip wall. We'll replace it with a new **`QuickTaskSheet.tsx`** modeled on the mobile sheet's visual language (`BigCard`, `SmallTile`, `SectionLabel` from `TaskSettingsBits.tsx`) so quick-edit looks consistent with the polished mobile view.
+1. **Upload the new app icon as a Lovable asset**
+   - Take `user-uploads://Screenshot_20260604_094314_ChatGPT.jpg`, crop to just the rounded square icon (remove the phone status bar + white margins), save to `/tmp/careflow-app-icon.png`.
+   - Run `lovable-assets create --file /tmp/careflow-app-icon.png --filename careflow-app-icon.png > src/assets/careflow-app-icon.png.asset.json`.
 
-Layout (compact, ~360px popover or side-sheet on desktop, sheet on mobile):
+2. **Create a reusable `CareFlowMark` component** (`src/components/widgets/CareFlowMark.tsx`)
+   - Renders the app-icon image inside a rounded square (matching existing `rounded-xl`, ring, shadow conventions).
+   - Props: `size` (number, default 28), `className`, `rounded` ("md" | "lg" | "xl").
+   - Uses the new `.asset.json` URL. No tint / blend so the sage-on-cream artwork stays true to brand.
+   - Image gets `alt=""` (decorative) when used next to wordmark, otherwise `alt="CareFlow"`.
 
-```text
-┌─────────────────────────────────────────┐
-│  ◯  Task title (inline edit)        ✕  │
-├─────────────────────────────────────────┤
-│  [ Today ] [ Tomorrow ] [ +Days ] [📅] │  ← Quick due
-│  [ Morning · Afternoon · Eve · Late ]  │  ← Day part
-├─────────────────────────────────────────┤
-│  Project   ▸  Home renovation          │
-│  Goal      ▸  None                     │
-│  Area      ▸  Home                     │
-│  Priority  ▸  ● ● Medium               │
-│  Repeat    ▸  Weekly                   │
-│  Tags      ▸  #urgent #call            │
-├─────────────────────────────────────────┤
-│  Open full editor   ·   Delete         │
-└─────────────────────────────────────────┘
-```
+3. **Auth page** (`src/pages/Auth.tsx`)
+   - Replace the green `<span>` + `<Leaf>` lockup in the header link with `<CareFlowMark size={40} />`.
+   - Update tagline span from `plan, care, grow` to `Plan · Care · Grow` (keep existing uppercase tracking class).
+   - Remove `Leaf` from the `lucide-react` import.
 
-Each row is a tappable `SmallTile` that swaps the body into an inline picker (project list w/ search, goals, area chips, etc.) — same pattern `MobileTaskSheet` already uses. Reuses `updateTask` for live patches with toast+undo (already in QuickEditPopover).
+4. **Waitlist page** (`src/pages/Waitlist.tsx`)
+   - Same swap as Auth header (size 36).
+   - Update tagline to `Plan · Care · Grow`.
+   - Drop `Leaf` from imports.
 
-Wire-up: `TaskRow.tsx` and any other call sites of `QuickEditPopover` swap to `QuickTaskSheet`. Behavior keys (right-click, long-press, `MoreHorizontal` click) stay identical.
+5. **Landing page** (`src/pages/Landing.tsx`) — replace every `Leaf` usage:
+   - **Header brand mark & footer brand mark**: use `<CareFlowMark />`.
+   - **Inline contexts** (CTA buttons, "Capture" step icon, "Home Reset" feature card, "App features" pill, bullet rows, atmosphere preset "Sage Sanctuary"): these need a small monochrome glyph that inherits `currentColor`, so the app icon image would not work. Substitute with another Lucide icon that fits each spot:
+     - `Capture` step → `Sparkles`
+     - `Home Reset` feature → `Home`
+     - `App features` pill → `Sparkles`
+     - Bullet checkmarks (`l.map` row) → `Check`
+     - "Start Your CareFlow" CTAs (3 occurrences) → use `<CareFlowMark size={18} rounded="md" />` so the brand mark appears inside the button
+     - `Sage Sanctuary` atmosphere `icon` entry → `Sprout` (closest organic-but-not-leaf option)
+   - Remove `Leaf` from the lucide import list.
+   - Tagline lockup in header/footer: update text to `Plan · Care · Grow`.
 
-## 2. Hover quick-action rail on inbox task rows
+6. **QA**
+   - Visit `/`, `/auth`, `/waitlist` in the preview, screenshot header + a CTA, confirm the new app-icon mark renders crisp, the tagline reads `Plan · Care · Grow`, and no stray `<Leaf>` remains (`rg "Leaf" src/pages/Landing.tsx src/pages/Auth.tsx src/pages/Waitlist.tsx` returns nothing).
 
-Right now hovering a task row only shows the More button. Add a small action cluster that fades in on hover (and is always visible on touch via long-press) with these actions:
+## Out of scope
 
-- **Plan** (`CalendarClock`) → opens a tiny date popover (Today / Tomorrow / Next week / pick…)
-- **Edit** (`Pencil`) → inline rename (existing behavior)
-- **Snooze** (`Snowflake`) → +1d / +3d / +1w (sets `dueDate`)
-- **Move** (`FolderInput`) → project picker popover with search
-- **Details** (`MoreHorizontal`) → opens new QuickTaskSheet
-
-Implementation: new **`TaskHoverActions.tsx`** rendered inside `TaskRow.tsx` next to the existing More button. Uses `opacity-0 group-hover:opacity-100` on the row (row already a `group`). On touch, surfaces via the existing long-press handler. Each action is keyboard-reachable and has a `title` tooltip.
-
-A user preference (`mem://design`) will let us later toggle which icons are pinned vs. tucked into More; v1 ships all five visible.
-
-## 3. Project search & jump in the Inbox side panel
-
-`TaskDetailPane.tsx` already sits on the right of the Inbox. When no task is selected we currently show only an empty state. Add a **"Jump to project"** section underneath:
-
-```text
-No task selected
-────────────────
-🔍 Find a project…
-────────────────
-★ Pinned
-  • Home renovation       (12)
-  • Wedding planning      (3)
-All projects
-  • …
-```
-
-- Search input filters `state.projects` (non-archived) by name & area, case-insensitive.
-- Clicking a row navigates via `navigate('/projects/' + id)` (same path used elsewhere).
-- Shows open-task count per project (derived from `state.tasks`).
-- ⌘K still opens universal search; this is an inline jumper scoped to projects.
-
-The same component (`ProjectQuickJump.tsx`) is reused inside the Move hover action above so we have one searchable project list.
-
----
-
-### Files
-
-**New**
-- `src/components/tasks/QuickTaskSheet.tsx` — replaces QuickEditPopover visual
-- `src/components/tasks/TaskHoverActions.tsx` — hover quick-action rail
-- `src/components/tasks/ProjectQuickJump.tsx` — searchable project list (used by side panel + Move action)
-
-**Edited**
-- `src/components/cards/TaskRow.tsx` — render `TaskHoverActions`, swap popover to `QuickTaskSheet`
-- `src/components/tasks/TaskDetailPane.tsx` — mount `ProjectQuickJump` in the empty state
-- `src/components/tasks/QuickEditPopover.tsx` — kept temporarily as fallback, removed once all call sites migrate (only `TaskRow.tsx` today)
-
-**Out of scope**
-- No changes to `TaskEditor.tsx` (full editor) or mobile sheet
-- No DB / store schema changes
-- No new drag-and-drop libraries
+- In-app (post-login) navigation, dashboards, and the existing `CareFlowLogo` component used inside the app stay unchanged.
+- No color/palette or layout changes beyond the icon and tagline swap.
