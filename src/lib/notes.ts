@@ -16,6 +16,8 @@ export interface Note {
   wordGoal?: number | null;
   coverUrl?: string | null;
   coverPosition?: number | null;
+  icon?: string | null;
+  coverGradient?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +30,8 @@ const fromRow = (r: any): Note => ({
   wordGoal: r.word_goal ?? null,
   coverUrl: r.cover_url ?? null,
   coverPosition: r.cover_position ?? null,
+  icon: r.icon ?? null,
+  coverGradient: r.cover_gradient ?? null,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
