@@ -1,28 +1,10 @@
-import { useMemo, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Album, Image as ImageIcon, Trash2 } from "lucide-react";
-import { useMemoryBook } from "@/lib/seasons/hooks";
-import type { MemoryGroupType } from "@/lib/seasons/types";
-import { format, parseISO } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { Navigate } from "react-router-dom";
 
-const GROUPS: Array<{ value: MemoryGroupType; label: string }> = [
-  { value: "year", label: "Year" },
-  { value: "season", label: "Season" },
-  { value: "holiday", label: "Holiday" },
-  { value: "birthday", label: "Birthday" },
-  { value: "celebration", label: "Celebration" },
-];
-
+// The Memory Book is now unified with the main Memories feature.
+// This route exists for backward compatibility and forwards to /memories.
 export default function SeasonsMemoryBook() {
+  return <Navigate to="/memories" replace />;
+}
   const { entries, add, remove } = useMemoryBook();
   const [view, setView] = useState<"timeline" | "gallery" | "story">("timeline");
   const [open, setOpen] = useState(false);
