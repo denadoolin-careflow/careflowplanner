@@ -21,7 +21,7 @@ function Chip({ icon: Icon, label, value, tone }: {
   icon: typeof CheckCircle2; label: string; value: string; tone: ChipTone;
 }) {
   return (
-    <div className="flex w-full items-center gap-2 rounded-2xl border border-border/50 bg-card/70 px-2.5 py-2 shadow-soft backdrop-blur-sm sm:gap-2.5 sm:px-3 sm:py-2.5">
+    <div className="flex w-full items-center gap-2 rounded-2xl border border-border/50 bg-card/70 px-2.5 py-2 shadow-soft backdrop-blur-sm sm:w-auto sm:min-w-[7.5rem] sm:flex-1 sm:gap-2.5 sm:px-3 sm:py-2.5">
       <div className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full sm:h-9 sm:w-9", TONE[tone])}>
         <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
       </div>
