@@ -695,9 +695,16 @@ function WeekView({ cursor, eventsOn, colorOf }: { cursor: Date; eventsOn: Event
             <div className="space-y-1">
               {ev.length === 0 && <p className="text-[11px] text-muted-foreground">—</p>}
               {ev.map((e, i) => (
-                <div key={i} className={cn("truncate rounded px-1.5 py-1 text-[11px]", colorOf(e.kind))}>
-                  {e.time && <span className="mr-1 font-medium">{e.time}</span>}{e.label}
-                </div>
+                <CalendarItemCard
+                  key={i}
+                  kind={e.kind}
+                  id={e.id}
+                  label={e.label}
+                  time={e.time}
+                  color={e.color}
+                  variant="compact"
+                  disabled
+                />
               ))}
             </div>
           </div>
