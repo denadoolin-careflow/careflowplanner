@@ -427,6 +427,7 @@ function PinnedNotesSection({
           <div className="mt-1 flex flex-col gap-0.5 pl-1">
             {notes.map(n => {
               const title = n.kind === "daily" && n.date ? `Daily · ${n.date}` : (n.title || "Untitled");
+              const Icon = getLucideIcon(resolveNoteIcon(n));
               return (
                 <NavLink
                   key={n.id}
@@ -438,7 +439,7 @@ function PinnedNotesSection({
                     isActive && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
-                  <StickyNote className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                  <Icon className="h-3.5 w-3.5 shrink-0 opacity-80" />
                   <span className="flex-1 truncate">{title}</span>
                 </NavLink>
               );
