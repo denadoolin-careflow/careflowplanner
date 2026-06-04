@@ -3,7 +3,7 @@
  * Wraps the existing task management UI inside ClassicProjectView for the
  * Tasks tab so all the section/kanban/schedule logic is preserved.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ import {
   ArrowLeft, Sparkles, Search, Share2, Pencil, Plus, Star, Calendar,
   Users, CheckCircle2, Circle, ListChecks, FileText, Link2, Flame,
   Activity as ActivityIcon, ImagePlus, RefreshCw, ExternalLink, Lightbulb,
-  Flag, ArrowRight, Wind, Moon, Flower2, Leaf, Cloud, Trash2,
+  Flag, ArrowRight, Wind, Moon, Flower2, Leaf, Cloud, Trash2, History, Clock,
 } from "lucide-react";
 import { format, parseISO, isThisWeek } from "date-fns";
 import { STAGE_META, HEALTH_META, stageOf, healthOf, STUDIO, hsl } from "@/components/projects/hub/studio-tokens";
@@ -27,6 +27,7 @@ import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { ProjectJournalPanel } from "@/components/journal/ProjectJournalPanel";
 import { MilestonesCard } from "@/components/projects/MilestonesCard";
 import { ResourcesCard } from "@/components/projects/ResourcesCard";
+import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { useEntityNotes } from "@/lib/note-links";
 import { useProjectIdeas } from "@/lib/project-ideas";
 import { aiInvoke } from "@/lib/ai-invoke";
@@ -344,10 +345,74 @@ function ProjectHero({
 
 /* ----------------------------- AI Summary Panel ----------------------------- */
 
+type AISummaryEntry = {
+  id: string;
+  body: string;
+  mode: "overview" | "update";
+  createdAt: string;
+};
+
+function timelineKey(projectId: string) {
+  return `careflow:ai-summary-timeline:${projectId}`;
+}
+
+function loadTimeline(projectId: string): AISummaryEntry[] {
+  try {
+    const raw = localStorage.getItem(timelineKey(projectId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveTimeline(projectId: string, entries: AISummaryEntry[]) {
+  try {
+    localStorage.setItem(timelineKey(projectId), JSON.stringify(entries.slice(0, 25)));
+  } catch {
+    /* quota */
+  }
+}
+
+function SummarySkeleton() {
+  return (
+    <div className="space-y-2.5">
+      <div className="h-3 w-3/5 animate-pulse rounded-full bg-foreground/10" />
+      <div className="h-3 w-full animate-pulse rounded-full bg-foreground/10" />
+      <div className="h-3 w-11/12 animate-pulse rounded-full bg-foreground/10" />
+      <div className="h-3 w-4/5 animate-pulse rounded-full bg-foreground/10" />
+      <div className="h-3 w-2/3 animate-pulse rounded-full bg-foreground/10" />
+    </div>
+  );
+}
+
 function AISummaryPanel({
   project, atmo, onUpdate,
 }: { project: Project; atmo: typeof ATMOSPHERES[AtmosphereKey]; onUpdate: (p: Partial<Project>) => void }) {
   const [busy, setBusy] = useState<"overview" | "update" | null>(null);
+  const [view, setView] = useState<"current" | "timeline">("current");
+  const [timeline, setTimeline] = useState<AISummaryEntry[]>(() => loadTimeline(project.id));
+
+  useEffect(() => {
+    setTimeline(loadTimeline(project.id));
+    setView("current");
+  }, [project.id]);
+
+  // Backfill: if we have an aiOverview but no timeline yet, seed one entry.
+  useEffect(() => {
+    if (project.aiOverview && timeline.length === 0) {
+      const seeded: AISummaryEntry[] = [{
+        id: `seed-${project.id}`,
+        body: project.aiOverview,
+        mode: "overview",
+        createdAt: project.aiOverviewUpdatedAt ?? new Date().toISOString(),
+      }];
+      setTimeline(seeded);
+      saveTimeline(project.id, seeded);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id]);
 
   const run = async (mode: "overview" | "update") => {
     setBusy(mode);
@@ -357,11 +422,19 @@ function AISummaryPanel({
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      if ((data as any)?.overview) {
-        onUpdate({
-          aiOverview: (data as any).overview,
-          aiOverviewUpdatedAt: (data as any).updated_at ?? new Date().toISOString(),
-        });
+      const body = (data as any)?.overview as string | undefined;
+      if (body) {
+        const createdAt = (data as any).updated_at ?? new Date().toISOString();
+        onUpdate({ aiOverview: body, aiOverviewUpdatedAt: createdAt });
+        const entry: AISummaryEntry = {
+          id: `${createdAt}-${Math.random().toString(36).slice(2, 7)}`,
+          body,
+          mode,
+          createdAt,
+        };
+        const next = [entry, ...timeline].slice(0, 25);
+        setTimeline(next);
+        saveTimeline(project.id, next);
         haptics.success();
         toast.success(mode === "update" ? "Status update added" : "Overview generated");
       }
@@ -373,39 +446,92 @@ function AISummaryPanel({
   };
 
   const hasOverview = !!project.aiOverview;
+  const updateCount = timeline.length;
 
   return (
     <div
-      className="relative flex min-h-[220px] flex-col gap-3 border-l border-border/40 p-5 md:min-h-full"
+      className="relative flex min-h-[260px] flex-col gap-3 border-l border-border/40 p-5 md:min-h-full"
       style={{ background: atmo.gradient }}
     >
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/70">
-          <Sparkles className="h-3.5 w-3.5" style={{ color: hsl(atmo.accent) }} />
-          AI Summary
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/60">
+            <Sparkles className="h-3 w-3" style={{ color: hsl(atmo.accent) }} />
+            AI Summary
+          </div>
+          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            {project.aiOverviewUpdatedAt
+              ? `Updated ${format(parseISO(project.aiOverviewUpdatedAt), "MMM d · h:mm a")}`
+              : "Not generated yet"}
+          </div>
         </div>
-        <span className="rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-medium tracking-wider text-muted-foreground backdrop-blur">
+        <span
+          className="shrink-0 rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-medium tracking-wider text-muted-foreground backdrop-blur"
+        >
           {atmo.label}
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto rounded-2xl border border-border/40 bg-background/70 p-3 text-sm leading-relaxed text-foreground/85 backdrop-blur">
-        {hasOverview ? (
-          <p className="whitespace-pre-wrap">{project.aiOverview}</p>
+      {/* View toggle */}
+      {hasOverview && (
+        <div className="inline-flex w-fit gap-0.5 rounded-full border border-border/40 bg-background/60 p-0.5 text-[11px] backdrop-blur">
+          {(["current", "timeline"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={cn(
+                "rounded-full px-2.5 py-1 font-medium transition",
+                view === v
+                  ? "bg-foreground/90 text-background"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {v === "current" ? "Current" : `Timeline · ${updateCount}`}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto rounded-2xl border border-border/40 bg-background/80 p-4 text-sm leading-relaxed text-foreground/90 shadow-sm backdrop-blur">
+        {busy ? (
+          <SummarySkeleton />
+        ) : !hasOverview ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2 py-4 text-center">
+            <div
+              className="grid h-10 w-10 place-items-center rounded-full"
+              style={{ background: hsl(atmo.accent, 0.15), color: hsl(atmo.accent) }}
+            >
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="text-sm font-medium text-foreground">No summary yet</div>
+            <p className="max-w-[26ch] text-xs leading-relaxed text-muted-foreground">
+              Generate a calm read on what's moving, what's stuck, and where to look next.
+            </p>
+            <Button
+              size="sm"
+              className="mt-1 h-7 gap-1 rounded-full text-[11px]"
+              style={{ background: hsl(atmo.accent), color: "white" }}
+              onClick={() => run("overview")}
+            >
+              <Sparkles className="h-3 w-3" /> Generate summary
+            </Button>
+          </div>
+        ) : view === "current" ? (
+          <div className="text-sm">
+            <NoteMarkdown body={project.aiOverview ?? ""} />
+          </div>
         ) : (
-          <p className="text-muted-foreground">
-            No summary yet. Generate one to see a quick status read on this project — what's moving, what's stuck, and what to look at next.
-          </p>
+          <SummaryTimeline entries={timeline} accent={atmo.accent} />
         )}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-[10px] text-muted-foreground">
-          {project.aiOverviewUpdatedAt
-            ? `Updated ${format(parseISO(project.aiOverviewUpdatedAt), "MMM d, h:mm a")}`
-            : "Not generated yet"}
-        </span>
-        <div className="flex gap-1.5">
+      {/* Actions */}
+      {hasOverview && (
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
           <Button
             size="sm"
             variant="outline"
@@ -414,23 +540,60 @@ function AISummaryPanel({
             onClick={() => run("overview")}
           >
             <Sparkles className="h-3 w-3" />
-            {busy === "overview" ? "Generating…" : hasOverview ? "Regenerate" : "Generate"}
+            {busy === "overview" ? "Regenerating…" : "Regenerate"}
           </Button>
-          {hasOverview && (
-            <Button
-              size="sm"
-              className="h-7 gap-1 rounded-full text-[11px]"
-              style={{ background: hsl(atmo.accent), color: "white" }}
-              disabled={busy !== null}
-              onClick={() => run("update")}
-            >
-              <RefreshCw className={cn("h-3 w-3", busy === "update" && "animate-spin")} />
-              {busy === "update" ? "Updating…" : "Add update"}
-            </Button>
-          )}
+          <Button
+            size="sm"
+            className="h-7 gap-1 rounded-full text-[11px]"
+            style={{ background: hsl(atmo.accent), color: "white" }}
+            disabled={busy !== null}
+            onClick={() => run("update")}
+          >
+            <RefreshCw className={cn("h-3 w-3", busy === "update" && "animate-spin")} />
+            {busy === "update" ? "Saving…" : "Add update"}
+          </Button>
         </div>
-      </div>
+      )}
     </div>
+  );
+}
+
+function SummaryTimeline({ entries, accent }: { entries: AISummaryEntry[]; accent: string }) {
+  if (entries.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-1 py-6 text-center">
+        <History className="h-5 w-5 text-muted-foreground/70" />
+        <div className="text-sm font-medium text-foreground">No updates yet</div>
+        <p className="max-w-[28ch] text-xs text-muted-foreground">
+          Each time you regenerate or add an update, it'll be saved here.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <ol className="relative space-y-4 pl-4">
+      <span
+        className="pointer-events-none absolute left-1 top-1 bottom-1 w-px"
+        style={{ background: hsl(accent, 0.25) }}
+      />
+      {entries.map((e) => (
+        <li key={e.id} className="relative">
+          <span
+            className="absolute -left-3 top-1.5 h-2 w-2 rounded-full ring-2 ring-background"
+            style={{ background: hsl(accent) }}
+          />
+          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+            <span className="font-semibold" style={{ color: hsl(accent) }}>
+              {e.mode === "update" ? "Update" : "Overview"}
+            </span>
+            <span>· {format(parseISO(e.createdAt), "MMM d · h:mm a")}</span>
+          </div>
+          <div className="mt-1 text-sm">
+            <NoteMarkdown body={e.body} />
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }
 
