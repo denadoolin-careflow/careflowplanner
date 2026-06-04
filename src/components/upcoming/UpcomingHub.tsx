@@ -810,14 +810,17 @@ function CalendarStrip({ groups, onDropTask, allowDrop }: {
 
 /* ---------- Micro-plan dialog ---------- */
 
-function deriveMicroSteps(task: Task): string[] {
+function deriveMicroSteps(task: Task, count = 3): string[] {
   const title = task.title.trim();
-  // Lightweight heuristic: 3 atomic sub-steps from the task title.
-  return [
-    `Set a 2-minute timer and start: ${title}`,
+  const all = [
+    `Take one slow breath, then begin: ${title}`,
+    `Set a 2-minute timer to start small`,
     `Do the smallest visible piece (just one bite)`,
     `Pause, breathe, decide: keep going or mark done`,
+    `Celebrate the start — momentum matters more than finish`,
   ];
+  const n = Math.max(2, Math.min(5, count));
+  return all.slice(0, n);
 }
 
 function MicroPlanDialog({
