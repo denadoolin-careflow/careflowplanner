@@ -108,7 +108,7 @@ export default function CalendarPage() {
     : k === "meal" ? "bg-amber-100 text-amber-900 border border-amber-300/50 dark:bg-amber-900/30 dark:text-amber-100"
     : "bg-muted text-foreground";
 
-  const { items: celebrations } = useCelebrations();
+  const { celebrations } = useCelebrations();
 
   // Adapter for TimeGrid which only knows about a narrower set of kinds.
   const eventsOnForGrid = (k: string) => eventsOn(k)
@@ -460,7 +460,7 @@ export default function CalendarPage() {
   );
 }
 
-type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task" | "care" | "meal"; id?: string; label: string; time?: string; color?: string };
+type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task" | "care" | "meal" | "season"; id?: string; label: string; time?: string; color?: string };
 type EventsFn = (k: string) => EventItem[];
 type ColorFn = (k: EventItem["kind"]) => string;
 
