@@ -7,7 +7,7 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake, Sparkles, Columns3, Sun, Moon, Sunrise, Check } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
@@ -223,6 +223,9 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      <TodaysRhythmCard date={cursor} />
+      <SummaryStrip />
+
       <InboxCapture defaultDate={cursor} />
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
@@ -433,7 +436,7 @@ export default function CalendarPage() {
         </ul>
       </SectionCard>
       </div>
-      <CalendarRail />
+      <WidgetRail date={cursor} />
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <BirthdayHolidayEditor kind="birthday" item={editingBday} open={!!editingBday} onOpenChange={(o) => !o && setEditBdayId(null)} />
