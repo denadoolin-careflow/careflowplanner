@@ -97,8 +97,6 @@ function paletteColor(palette: string[], index: number, alpha?: number): string 
 }
 
 function buildAtmosphereSidebarStyle(palette: string[]): React.CSSProperties {
-
-function buildAtmosphereSidebarStyle(palette: string[]): React.CSSProperties {
   const hsls = palette.map(hexToHsl);
   // pick darkest swatch as the hue/sat anchor
   const dark = [...hsls].sort((a, b) => a.l - b.l)[0];
