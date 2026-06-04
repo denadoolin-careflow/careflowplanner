@@ -516,7 +516,7 @@ function ViewToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMo
   );
 }
 
-function FocusHero({ done, total, energy, pinned, pinnedTitle, accent, onSmartPlan }: { done: number; total: number; energy: Energy; pinned: number; pinnedTitle?: string; accent?: { color: string; soft: string; gradient: string }; onSmartPlan?: () => void }) {
+function FocusHero({ done, total, energy, pinned, pinnedTitle, accent, onSmartPlan, prefs, onPrefsChange }: { done: number; total: number; energy: Energy; pinned: number; pinnedTitle?: string; accent?: { color: string; soft: string; gradient: string }; onSmartPlan?: () => void; prefs?: SmartPlanPrefs; onPrefsChange?: (p: SmartPlanPrefs) => void }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
   const tintStyle = accent
     ? { background: `linear-gradient(135deg, ${accent.gradient}, ${accent.soft} 60%, transparent)` }
@@ -551,10 +551,13 @@ function FocusHero({ done, total, energy, pinned, pinnedTitle, accent, onSmartPl
               </div>
             )}
             {onSmartPlan && (
-              <div className="mt-4">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Button onClick={onSmartPlan} size="sm" variant="outline" className="rounded-full bg-background/70">
                   <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Smart-plan my week
                 </Button>
+                {prefs && onPrefsChange && (
+                  <SmartPlanPrefsPopover prefs={prefs} onChange={onPrefsChange} />
+                )}
               </div>
             )}
           </div>
