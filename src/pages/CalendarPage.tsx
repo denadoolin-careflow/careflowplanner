@@ -869,26 +869,20 @@ function KanbanByTimeframe({
               const clickable = !!onItemClick && editable && !!e.id;
               const draggable = editable && !!e.id && !!onItemReschedule;
               return (
-                <button
+                <CalendarItemCard
                   key={i}
-                  type="button"
-                  disabled={!clickable}
-                  onClick={() => clickable && onItemClick!(e)}
+                  kind={e.kind}
+                  id={e.id}
+                  label={e.label}
+                  time={e.time}
+                  color={e.color}
+                  disabled={!clickable && !draggable}
+                  onClick={clickable ? () => onItemClick!(e) : undefined}
                   draggable={draggable}
                   onDragStart={() => draggable && setDragging(e)}
                   onDragEnd={() => { setDragging(null); setOverKey(null); }}
-                  className={cn(
-                    "w-full rounded-lg px-2 py-1.5 text-left text-[11px] leading-snug transition-transform",
-                    colorOf(e.kind),
-                    clickable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm",
-                    !clickable && "cursor-default",
-                    draggable && "cursor-grab active:cursor-grabbing",
-                    dragging?.id === e.id && "opacity-50",
-                  )}
-                >
-                  {e.time && <span className="mr-1 font-semibold opacity-80">{e.time}</span>}
-                  {e.label}
-                </button>
+                  className={cn(dragging?.id === e.id && "opacity-50")}
+                />
               );
             })}
           </div>
