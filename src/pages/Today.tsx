@@ -89,7 +89,7 @@ function TodayInner() {
         </div>
 
         {/* Sidebar */}
-        <aside className="space-y-4 md:sticky md:top-20 md:self-start">
+        <aside className="space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
           <TasksWidget date={day} />
           <FamilySnapshotCard date={day} />
           <GrowingSeasonCard />
