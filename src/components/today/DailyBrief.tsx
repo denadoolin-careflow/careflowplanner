@@ -164,7 +164,7 @@ function Stat({ label, value, icon, tone = "default", compact = false, onClick }
 }
 
 function BriefDialog({
-  open, onClose, kind, date, tasks, appts, forecast, onComplete,
+  open, onClose, kind, date, tasks, appts, forecast, onComplete, onReschedule,
 }: {
   open: boolean;
   onClose: () => void;
@@ -174,8 +174,10 @@ function BriefDialog({
   appts: any[];
   forecast: ReturnType<typeof getRhythmForecast>;
   onComplete: (id: string, title: string) => Promise<void> | void;
+  onReschedule: (id: string, title: string, newDate: Date) => Promise<void> | void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [reschedId, setReschedId] = useState<string | null>(null);
   const titleMap: Record<string, string> = {
     today: `Today · ${format(date, "EEE MMM d")}`,
     overdue: "Overdue tasks",
@@ -234,6 +236,32 @@ function BriefDialog({
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
+                  {kind === "overdue" && (
+                    <Popover open={reschedId === t.id} onOpenChange={(o) => setReschedId(o ? t.id : null)}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost" size="icon" className="h-7 w-7 shrink-0"
+                          title="Reschedule"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <CalendarDays className="h-3.5 w-3.5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-auto p-2">
+                        <div className="flex flex-col gap-1 pb-2">
+                          <Button size="sm" variant="ghost" className="justify-start" onClick={async () => { setReschedId(null); await onReschedule(t.id, t.title, date); }}>Today</Button>
+                          <Button size="sm" variant="ghost" className="justify-start" onClick={async () => { setReschedId(null); await onReschedule(t.id, t.title, addDays(date, 1)); }}>Tomorrow</Button>
+                          <Button size="sm" variant="ghost" className="justify-start" onClick={async () => { setReschedId(null); await onReschedule(t.id, t.title, addDays(date, 7)); }}>Next week</Button>
+                        </div>
+                        <Calendar
+                          mode="single"
+                          onSelect={async (d) => { if (d) { setReschedId(null); await onReschedule(t.id, t.title, d); } }}
+                          initialFocus
+                          className="p-0"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
                   <Button
                     variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-[11px]"
                     onClick={() => { onClose(); openTaskEditor(t.id); }}
