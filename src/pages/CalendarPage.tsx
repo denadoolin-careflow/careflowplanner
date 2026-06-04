@@ -13,7 +13,8 @@ import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
-import { CalendarRail, CalendarMobileWidgets, AtmosphereChip } from "@/components/calendar/CalendarRail";
+import { CalendarRail, CalendarMobileWidgets } from "@/components/calendar/CalendarRail";
+import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -26,8 +27,6 @@ import { moonPhaseFor } from "@/lib/moon-phase";
 import { getMoonPhase } from "@/lib/moon";
 import { getKeyPhaseInfo, isKeyPhaseDay } from "@/lib/lunar-phases";
 import { Globe2 } from "lucide-react";
-import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
-import { ElementBadge } from "@/components/rhythm/ElementBadge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { formatTime12 } from "@/lib/routines";
@@ -206,8 +205,8 @@ export default function CalendarPage() {
         <h2 className="font-display mt-1 text-3xl font-semibold">Calendar 🌿</h2>
         <p className="mt-1 text-sm text-muted-foreground">Appointments, birthdays, holidays, meals, caregiving, and life planning — all in one place.</p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <MoonPhaseBadge date={cursor} />
-          <ElementBadge date={cursor} />
+          <MoonPhaseChip date={cursor} />
+          <ElementChip date={cursor} />
           <AtmosphereChip />
         </div>
       </div>
