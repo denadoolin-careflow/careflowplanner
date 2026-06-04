@@ -17,28 +17,29 @@ import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail
 
 export function CalendarRail() {
   return (
-    <>
-      {/* Mobile / tablet swipeable deck above the calendar */}
-      <div className="-mx-4 mb-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 xl:hidden">
-        <Swipe><GoalsThisMonthCard /></Swipe>
-        <Swipe><IntentionCard /></Swipe>
-        <Swipe><AreasToGrowCard /></Swipe>
-        <Swipe><UpcomingBirthdaysCard /></Swipe>
-        <Swipe><CelebrationsCard /></Swipe>
-        <Swipe><UpcomingHighlightsCard /></Swipe>
-      </div>
+    <aside className="hidden w-[300px] shrink-0 space-y-4 xl:block">
+      <GoalsThisMonthCard />
+      <IntentionCard />
+      <AreasToGrowCard />
+      <UpcomingBirthdaysCard />
+      <CelebrationsCard />
+      <UpcomingHighlightsCard />
+      <UnscheduledTasksRail />
+    </aside>
+  );
+}
 
-      {/* Desktop right rail */}
-      <aside className="hidden w-[300px] shrink-0 space-y-4 xl:block">
-        <GoalsThisMonthCard />
-        <IntentionCard />
-        <AreasToGrowCard />
-        <UpcomingBirthdaysCard />
-        <CelebrationsCard />
-        <UpcomingHighlightsCard />
-        <UnscheduledTasksRail />
-      </aside>
-    </>
+/** Mobile/tablet swipeable widgets, rendered at the top of the inner column. */
+export function CalendarMobileWidgets() {
+  return (
+    <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 xl:hidden">
+      <Swipe><GoalsThisMonthCard /></Swipe>
+      <Swipe><IntentionCard /></Swipe>
+      <Swipe><AreasToGrowCard /></Swipe>
+      <Swipe><UpcomingBirthdaysCard /></Swipe>
+      <Swipe><CelebrationsCard /></Swipe>
+      <Swipe><UpcomingHighlightsCard /></Swipe>
+    </div>
   );
 }
 
