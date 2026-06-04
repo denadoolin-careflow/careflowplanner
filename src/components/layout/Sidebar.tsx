@@ -406,7 +406,7 @@ function PinnedNotesSection({
 
   if (collapsed) {
     return (
-      <div className="mb-3 flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1.5">
         {notes.slice(0, 8).map(n => {
           const title = n.kind === "daily" && n.date ? n.date : (n.title || "Untitled");
           const active = pathname === `/notes/${n.id}`;
@@ -417,18 +417,27 @@ function PinnedNotesSection({
                   to={`/notes/${n.id}`}
                   onClick={onNavigate}
                   className={cn(
-                    "grid h-10 w-10 place-items-center rounded-xl transition-all",
+                    "relative grid h-12 w-12 place-items-center rounded-xl transition-colors duration-150",
                     "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     active && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
-                  <Pin className="h-[18px] w-[18px]" />
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
+                    />
+                  )}
+                  <span className="grid h-6 w-6 place-items-center">
+                    <Pin className="h-5 w-5" />
+                  </span>
                 </NavLink>
               </TooltipTrigger>
               <TooltipContent side="right">{title}</TooltipContent>
             </Tooltip>
           );
         })}
+        <RailDivider />
       </div>
     );
   }
