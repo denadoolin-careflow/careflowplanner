@@ -651,21 +651,16 @@ function MonthView({
                         {list.map((it, i) => {
                           const editable = (it.kind === "appt" || it.kind === "task" || it.kind === "care" || it.kind === "bday" || it.kind === "hol") && !!it.id;
                           return (
-                            <li
-                              key={i}
-                              onClick={() => handle(it)}
-                              className={cn(
-                                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
-                                colorOf(it.kind),
-                                editable && onItemClick && "cursor-pointer",
-                              )}
-                            >
-                              {it.time && (
-                                <span className="shrink-0 font-mono text-xs opacity-70">
-                                  {formatTime12(it.time.slice(0, 5))}
-                                </span>
-                              )}
-                              <span className="min-w-0 flex-1">{it.label}</span>
+                            <li key={i}>
+                              <CalendarItemCard
+                                kind={it.kind}
+                                id={it.id}
+                                label={it.label}
+                                time={it.time}
+                                color={it.color}
+                                onClick={editable && onItemClick ? () => handle(it) : undefined}
+                                disabled={!(editable && onItemClick)}
+                              />
                             </li>
                           );
                         })}
