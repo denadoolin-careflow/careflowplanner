@@ -5,7 +5,7 @@ import { authedUserId, getValidAccessToken } from "../_shared/google-token.ts";
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const uid = await authedUserId(req);
-  if (!uid) return json({ error: "Unauthorized" }, 401);
+  if (!uid) return json({ connected: false, events: [] });
 
   const url = new URL(req.url);
   const timeMin = url.searchParams.get("timeMin") ?? new Date(Date.now() - 7 * 86400000).toISOString();
