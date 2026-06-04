@@ -468,9 +468,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               return { ...s, [key]: list.filter((r: any) => r.id !== id) } as AppState;
             }
             const row = mapper(payload.new);
-            const idx = list.findIndex((r: any) => r.id === row.id);
-            const next = idx >= 0
-              ? list.map((r: any) => (r.id === row.id ? { ...r, ...row } : r))
+            // Last-write-wins: ignore inbound rows older than what we have
+            // (e.g. our own optimistic edit is newer than what arrived back).
+            const existing = list.find((r: any) => r.id === row.id);
+            const winner = lww(existing as any, row as any);
+            if (existing && winner === existing) return s;
+            const next = existing
+              ? list.map((r: any) => (r.id === row.id ? winner : r))
               : [row, ...list];
             return { ...s, [key]: next } as AppState;
           });
