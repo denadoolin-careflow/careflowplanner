@@ -35,11 +35,11 @@ function useSignedThumb(path: string | undefined) {
 
 function PhotoTile({
   path,
-  kind,
+  mime,
   onClick,
-}: { path: string; kind: string; onClick: () => void }) {
+}: { path: string; mime?: string; onClick: () => void }) {
   const url = useSignedThumb(path);
-  const isImage = kind?.startsWith("image");
+  const isImage = (mime ?? "").startsWith("image");
   return (
     <button
       onClick={onClick}
@@ -95,7 +95,7 @@ export function PersonMemoriesSection({ recipient }: { recipient: CareRecipient 
   );
   const photos = useMemo(
     () => attachmentsForRecipient(memories ?? [], state.journal ?? [], recipient)
-      .filter((p) => p.attachment.kind === "image"),
+      .filter((p) => (p.attachment.mimeType ?? "").startsWith("image")),
     [memories, state.journal, recipient.id, recipient.name],
   );
 
@@ -196,7 +196,7 @@ export function PersonMemoriesSection({ recipient }: { recipient: CareRecipient 
                   <PhotoTile
                     key={`${p.source}-${p.parentId}-${p.attachment.id ?? i}`}
                     path={p.attachment.path}
-                    kind={p.attachment.kind}
+                    mime={p.attachment.mimeType}
                     onClick={() => {
                       if (p.source === "memory") openMemoryFromPhoto(p.parentId);
                       else navigate(`/journal?focus=${p.parentId}`);
