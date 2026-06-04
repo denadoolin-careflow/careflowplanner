@@ -4,7 +4,7 @@ import { MOBILE_NAV, NAV, NAV_GROUPS } from "@/lib/nav";
 import { useFlowAccents } from "@/lib/flow-accent";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight } from "lucide-react";
+import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight, Pin, PinOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useStore } from "@/lib/store";
 import { haptics } from "@/lib/haptics";
+import { toast } from "sonner";
 
 const NAV_ORDER_KEY = "careflow:mobile-nav-order";
 const DEFAULT_NAV_IDS = MOBILE_NAV.slice(0, 6).map(n => n.to);
@@ -52,6 +53,11 @@ const ALL_DESTINATIONS = (() => {
   const seen = new Map<string, { to: string; label: string; icon: any }>();
   for (const item of MOBILE_NAV) seen.set(item.to, item);
   for (const item of NAV) if (!seen.has(item.to)) seen.set(item.to, item);
+  // Flow landing pages — one per group, jumps straight to the flow hub.
+  for (const g of NAV_GROUPS) {
+    const to = `/flow/${g.id}`;
+    if (!seen.has(to)) seen.set(to, { to, label: g.label, icon: g.icon });
+  }
   return Array.from(seen.values());
 })();
 
