@@ -13,8 +13,9 @@ import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
-import { CalendarRail, CalendarMobileWidgets } from "@/components/calendar/CalendarRail";
+import { CalendarRail } from "@/components/calendar/CalendarRail";
 import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
+import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -29,7 +30,6 @@ import { getKeyPhaseInfo, isKeyPhaseDay } from "@/lib/lunar-phases";
 import { Globe2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { formatTime12 } from "@/lib/routines";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 
 type View = "day" | "week" | "month" | "year";
@@ -210,8 +210,6 @@ export default function CalendarPage() {
           <AtmosphereChip />
         </div>
       </div>
-
-      <CalendarMobileWidgets />
 
       <InboxCapture defaultDate={cursor} />
 
@@ -572,31 +570,27 @@ function MonthView({
                   const clickable = editable && !!onItemClick;
                   const draggable = editable && !!onItemReschedule;
                   return (
-                    <button
-                      key={i}
-                      type="button"
-                      title={e.label}
-                      disabled={!clickable && !draggable}
-                      onClick={(ev2) => { ev2.stopPropagation(); if (clickable) onItemClick!(e); }}
-                      draggable={draggable}
-                      onDragStart={(ev2) => {
-                        if (!draggable) return;
-                        ev2.dataTransfer.effectAllowed = "move";
-                        ev2.dataTransfer.setData(ITEM_DRAG_MIME, JSON.stringify({ sourceISO: k }));
-                        setDraggingItem({ item: e, sourceISO: k });
-                      }}
-                      onDragEnd={() => setDraggingItem(null)}
-                      className={cn(
-                        "w-full rounded-md px-1.5 py-1 text-left text-[11px] leading-snug break-words whitespace-normal transition-transform",
-                        colorOf(e.kind),
-                        clickable && "hover:-translate-y-0.5 hover:shadow-sm cursor-pointer",
-                        draggable && "active:cursor-grabbing",
-                        draggingItem?.item.id === e.id && "opacity-50",
-                      )}
-                    >
-                      {e.time && <span className="mr-1 font-medium opacity-80">{e.time}</span>}
-                      {e.label}
-                    </button>
+                    <div key={i} onClick={(ev2) => ev2.stopPropagation()}>
+                      <CalendarItemCard
+                        kind={e.kind}
+                        id={e.id}
+                        label={e.label}
+                        time={e.time}
+                        color={e.color}
+                        variant="compact"
+                        disabled={!clickable && !draggable}
+                        onClick={clickable ? () => onItemClick!(e) : undefined}
+                        draggable={draggable}
+                        onDragStart={(ev2) => {
+                          if (!draggable) return;
+                          ev2.dataTransfer.effectAllowed = "move";
+                          ev2.dataTransfer.setData(ITEM_DRAG_MIME, JSON.stringify({ sourceISO: k }));
+                          setDraggingItem({ item: e, sourceISO: k });
+                        }}
+                        onDragEnd={() => setDraggingItem(null)}
+                        className={cn(draggingItem?.item.id === e.id && "opacity-50")}
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -656,21 +650,16 @@ function MonthView({
                         {list.map((it, i) => {
                           const editable = (it.kind === "appt" || it.kind === "task" || it.kind === "care" || it.kind === "bday" || it.kind === "hol") && !!it.id;
                           return (
-                            <li
-                              key={i}
-                              onClick={() => handle(it)}
-                              className={cn(
-                                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
-                                colorOf(it.kind),
-                                editable && onItemClick && "cursor-pointer",
-                              )}
-                            >
-                              {it.time && (
-                                <span className="shrink-0 font-mono text-xs opacity-70">
-                                  {formatTime12(it.time.slice(0, 5))}
-                                </span>
-                              )}
-                              <span className="min-w-0 flex-1">{it.label}</span>
+                            <li key={i}>
+                              <CalendarItemCard
+                                kind={it.kind}
+                                id={it.id}
+                                label={it.label}
+                                time={it.time}
+                                color={it.color}
+                                onClick={editable && onItemClick ? () => handle(it) : undefined}
+                                disabled={!(editable && onItemClick)}
+                              />
                             </li>
                           );
                         })}
@@ -705,9 +694,16 @@ function WeekView({ cursor, eventsOn, colorOf }: { cursor: Date; eventsOn: Event
             <div className="space-y-1">
               {ev.length === 0 && <p className="text-[11px] text-muted-foreground">—</p>}
               {ev.map((e, i) => (
-                <div key={i} className={cn("truncate rounded px-1.5 py-1 text-[11px]", colorOf(e.kind))}>
-                  {e.time && <span className="mr-1 font-medium">{e.time}</span>}{e.label}
-                </div>
+                <CalendarItemCard
+                  key={i}
+                  kind={e.kind}
+                  id={e.id}
+                  label={e.label}
+                  time={e.time}
+                  color={e.color}
+                  variant="compact"
+                  disabled
+                />
               ))}
             </div>
           </div>
@@ -872,26 +868,20 @@ function KanbanByTimeframe({
               const clickable = !!onItemClick && editable && !!e.id;
               const draggable = editable && !!e.id && !!onItemReschedule;
               return (
-                <button
+                <CalendarItemCard
                   key={i}
-                  type="button"
-                  disabled={!clickable}
-                  onClick={() => clickable && onItemClick!(e)}
+                  kind={e.kind}
+                  id={e.id}
+                  label={e.label}
+                  time={e.time}
+                  color={e.color}
+                  disabled={!clickable && !draggable}
+                  onClick={clickable ? () => onItemClick!(e) : undefined}
                   draggable={draggable}
                   onDragStart={() => draggable && setDragging(e)}
                   onDragEnd={() => { setDragging(null); setOverKey(null); }}
-                  className={cn(
-                    "w-full rounded-lg px-2 py-1.5 text-left text-[11px] leading-snug transition-transform",
-                    colorOf(e.kind),
-                    clickable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm",
-                    !clickable && "cursor-default",
-                    draggable && "cursor-grab active:cursor-grabbing",
-                    dragging?.id === e.id && "opacity-50",
-                  )}
-                >
-                  {e.time && <span className="mr-1 font-semibold opacity-80">{e.time}</span>}
-                  {e.label}
-                </button>
+                  className={cn(dragging?.id === e.id && "opacity-50")}
+                />
               );
             })}
           </div>
@@ -1042,10 +1032,14 @@ function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick, onItemResc
                   const draggable = !!onItemReschedule && editable && !!e.id;
                   return (
                     <li key={i}>
-                      <button
-                        type="button"
-                        disabled={!clickable}
-                        onClick={() => clickable && onItemClick!(e)}
+                      <CalendarItemCard
+                        kind={e.kind}
+                        id={e.id}
+                        label={e.label}
+                        time={e.time}
+                        color={e.color}
+                        disabled={!clickable && !draggable}
+                        onClick={clickable ? () => onItemClick!(e) : undefined}
                         draggable={draggable}
                         onDragStart={draggable ? (ev) => {
                           ev.dataTransfer.setData(SCHED_DRAG_MIME, e.id!);
@@ -1053,19 +1047,8 @@ function ScheduleView({ view, cursor, eventsOn, colorOf, onItemClick, onItemResc
                           setDragging(e);
                         } : undefined}
                         onDragEnd={() => { setDragging(null); setHoverISO(null); }}
-                        className={cn(
-                          "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-all",
-                          colorOf(e.kind),
-                          clickable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                          draggable && "active:cursor-grabbing",
-                          dragging?.id === e.id && "opacity-50",
-                          !clickable && "cursor-default",
-                        )}
-                      >
-                        <span className="w-16 shrink-0 text-xs font-medium opacity-80">{e.time ?? "any time"}</span>
-                        <span className="flex-1 truncate">{e.label}</span>
-                        <span className="text-[10px] uppercase tracking-wider opacity-60">{e.kind}</span>
-                      </button>
+                        className={cn(dragging?.id === e.id && "opacity-50")}
+                      />
                     </li>
                   );
                 })()

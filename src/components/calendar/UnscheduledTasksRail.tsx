@@ -89,7 +89,10 @@ export function UnscheduledTasksRail({ onTaskClick }: RailProps = {}) {
   };
 
   const [q, setQ] = useState("");
-  const [scope, setScope] = useState<"unscheduled" | "all">("unscheduled");
+  const [scope, setScope] = useState<"unscheduled" | "all">(
+    () => (localStorage.getItem("careflow:rail:tasks:scope") as "unscheduled" | "all") || "all",
+  );
+  useEffect(() => { localStorage.setItem("careflow:rail:tasks:scope", scope); }, [scope]);
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   useEffect(() => {
     if (tab !== "calendar") return;
