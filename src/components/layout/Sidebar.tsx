@@ -742,9 +742,6 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     </Tooltip>
   );
 
-  const RailDivider = () => (
-    <div aria-hidden className="my-2 h-px w-6 rounded-full bg-sidebar-border/40" />
-  );
 
   const renderProjectNode = (p: typeof projects[number], depth: number, allProjects: typeof projects, areaName: string | undefined) => {
     const children = allProjects.filter(c => c.parentProjectId === p.id);
