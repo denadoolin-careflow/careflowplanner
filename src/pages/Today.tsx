@@ -23,14 +23,13 @@ import { TasksWidget } from "@/components/today/rhythm/TasksWidget";
 import { TopThreeStrip } from "@/components/today/TopThreeStrip";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { MealsPlannedWidget } from "@/components/today/widgets/MealsPlannedWidget";
-import { ScheduledTodayWidget } from "@/components/today/widgets/ScheduledTodayWidget";
+import { TasksTodayWidget } from "@/components/today/widgets/TasksTodayWidget";
 import { GroceryWidget } from "@/components/today/widgets/GroceryWidget";
 import { NotesTodayWidget } from "@/components/today/widgets/NotesTodayWidget";
 import { JournalTodayWidget } from "@/components/today/widgets/JournalTodayWidget";
 import { MemoriesTodayWidget } from "@/components/today/widgets/MemoriesTodayWidget";
 import { HomeResetWidget } from "@/components/today/widgets/HomeResetWidget";
 import { BrainDumpWidget } from "@/components/today/widgets/BrainDumpWidget";
-import { PlannedTasksWidget } from "@/components/today/widgets/PlannedTasksWidget";
 import { MoonPhaseSidebarCard } from "@/components/today/widgets/MoonPhaseSidebarCard";
 import { CycleSidebarCard } from "@/components/today/widgets/CycleSidebarCard";
 import { useSidebarOrder } from "@/lib/today-sidebar-order";
@@ -107,8 +106,7 @@ function TodayInner() {
 
   const widgetRegistry: { id: string; label: string; render: () => JSX.Element | null }[] = [
     { id: "brain-dump",       label: "Brain dump",       render: () => <BrainDumpWidget /> },
-    { id: "planned-tasks",    label: "Planned tasks",    render: () => <PlannedTasksWidget date={day} /> },
-    { id: "scheduled-today",  label: "Scheduled today",  render: () => <ScheduledTodayWidget date={day} /> },
+    { id: "tasks-today",      label: "Tasks",            render: () => <TasksTodayWidget date={day} /> },
     { id: "tasks",            label: "Tasks",            render: () => <TasksWidget date={day} /> },
     { id: "meals-planned",    label: "Meals planned",    render: () => <MealsPlannedWidget date={day} /> },
     { id: "grocery",          label: "Grocery",          render: () => <GroceryWidget /> },

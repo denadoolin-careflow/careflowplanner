@@ -7,6 +7,8 @@ import { Tooltip, TooltipContent, TooltipTrigger as TooltipTriggerBase } from "@
 import { cn } from "@/lib/utils";
 import { formatTime12, routines as routinesApi, type RoutineItem, type RoutineSlot } from "@/lib/routines";
 import { IconPickerPopover } from "./IconPickerPopover";
+import { playCompletionChime } from "@/lib/completion-sound";
+import { haptics } from "@/lib/haptics";
 
 export function RoutineItemRow({
   item, person, slot, compact, onFocus,
@@ -28,7 +30,10 @@ export function RoutineItemRow({
     )}>
       <Checkbox
         checked={item.done}
-        onCheckedChange={() => routinesApi.toggleItem(person, slot, item.id)}
+        onCheckedChange={() => {
+          if (!item.done) { playCompletionChime(); haptics.success?.(); }
+          void routinesApi.toggleItem(person, slot, item.id);
+        }}
       />
       <IconPickerPopover
         value={item.icon}

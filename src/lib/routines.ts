@@ -88,6 +88,7 @@ async function loadAll() {
   cache = ((data ?? []) as any[]).map(mapRow);
   loaded = true;
   emit();
+  void resetRoutinesIfNewDay();
 }
 
 function mapRow(r: any): Routine {
@@ -113,7 +114,40 @@ function ensureLoaded() {
 
 function uid() { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`; }
 
+const RESET_KEY = "careflow:routines:last-reset-date";
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+
+async function resetRoutinesIfNewDay() {
+  if (typeof localStorage === "undefined") return;
+  const today = todayISO();
+  let last: string | null = null;
+  try { last = localStorage.getItem(RESET_KEY); } catch { /* */ }
+  if (last === today) return;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const toReset = cache.filter(r => r.items.some(i => i.done));
+  for (const r of toReset) {
+    const items = r.items.map(i => i.done ? { ...i, done: false } : i);
+    await supabase
+      .from("routines" as any)
+      .update({ items } as any)
+      .eq("user_id", user.id)
+      .eq("person_name", r.person_name)
+      .eq("slot", r.slot);
+  }
+  if (toReset.length) {
+    cache = cache.map(r => toReset.includes(r) ? { ...r, items: r.items.map(i => ({ ...i, done: false })) } : r);
+    emit();
+  }
+  try { localStorage.setItem(RESET_KEY, today); } catch { /* */ }
+}
+
 export const routines = {
+  /**
+   * Reset all routine item `done` flags to false when the day rolls over.
+   * Historical completions are preserved separately in `routine_completions`.
+   */
+  async resetIfNewDay() { return resetRoutinesIfNewDay(); },
   list(): Routine[] { return cache; },
   people(): string[] {
     return Array.from(new Set(cache.map(r => r.person_name))).sort();
