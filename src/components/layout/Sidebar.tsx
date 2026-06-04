@@ -985,44 +985,56 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           </button>
         )}
       </div>
-      <nav className={cn("mt-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden w-full", collapsed && "items-center", !collapsed && "pr-1")}>
+      <nav className={cn(
+        "mt-1 flex flex-col overflow-y-auto overflow-x-hidden w-full",
+        collapsed ? "items-center gap-1.5 flex-1 min-h-0" : "gap-1 pr-1",
+      )}>
         {/* Things-style Lists rail */}
-        <div className={cn("mb-3 flex flex-col gap-1", collapsed && "items-center")}>
-          {LISTS.map(({ to, label, icon: Icon, paletteIndex }) => wrapItem(label,
-            <NavLink
-              key={to}
-              to={to}
-              onClick={handleNavClick(to)}
-              className={({ isActive }) => cn(
-                "group relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
-                "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                collapsed ? "justify-center h-10 w-10" : "px-2 py-2",
-                isActive && "bg-primary-soft text-foreground shadow-soft",
-              )}
-            >
-              {collapsed ? (
-                <Icon className="h-[18px] w-[18px]" style={{ color: paletteColor(atmosphere.palette, paletteIndex) }} />
-              ) : (
-                <>
-                  <span
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
-                    style={{
-                      backgroundColor: paletteColor(atmosphere.palette, paletteIndex, 0.15),
-                      color: paletteColor(atmosphere.palette, paletteIndex),
-                    }}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="flex-1">{label}</span>
-                  <span
-                    className="h-1.5 w-1.5 rounded-full opacity-60"
-                    style={{ backgroundColor: paletteColor(atmosphere.palette, paletteIndex) }}
-                  />
-                </>
-              )}
-            </NavLink>
-          ))}
-        </div>
+        {collapsed ? (
+          <div className="flex flex-col items-center gap-1.5">
+            {LISTS.map(({ to, label, icon: Icon, paletteIndex }) => (
+              <RailButton
+                key={to}
+                to={to}
+                label={label}
+                icon={Icon}
+                accentColor={paletteColor(atmosphere.palette, paletteIndex)}
+                onClick={handleNavClick(to)}
+              />
+            ))}
+            <RailDivider />
+          </div>
+        ) : (
+          <div className="mb-3 flex flex-col gap-1">
+            {LISTS.map(({ to, label, icon: Icon, paletteIndex }) => (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={handleNavClick(to)}
+                className={({ isActive }) => cn(
+                  "group relative flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-all",
+                  "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  isActive && "bg-primary-soft text-foreground shadow-soft",
+                )}
+              >
+                <span
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
+                  style={{
+                    backgroundColor: paletteColor(atmosphere.palette, paletteIndex, 0.15),
+                    color: paletteColor(atmosphere.palette, paletteIndex),
+                  }}
+                >
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="flex-1">{label}</span>
+                <span
+                  className="h-1.5 w-1.5 rounded-full opacity-60"
+                  style={{ backgroundColor: paletteColor(atmosphere.palette, paletteIndex) }}
+                />
+              </NavLink>
+            ))}
+          </div>
+        )}
 
         {/* Pinned + quick-date jump sections (live right under Logbook) */}
         {sections.pinnedNotes && (
