@@ -77,7 +77,7 @@ export const NOTE_ICONS: IconEntry[] = [
   { name: "Brain",         label: "Mind",      category: "Health", tags: ["mind","mental","brain","therapy"] },
   { name: "Dumbbell",      label: "Workout",   category: "Health", tags: ["workout","gym","exercise"] },
   { name: "Bike",          label: "Cycling",   category: "Health", tags: ["bike","cycle","ride"] },
-  { name: "Yoga",          label: "Stretch",   category: "Health", tags: ["yoga","stretch","mindful"] },
+  { name: "PersonStanding", label: "Stretch",  category: "Health", tags: ["yoga","stretch","mindful"] },
 
   // Home
   { name: "Home",          label: "Home",      category: "Home", tags: ["home","house"] },
@@ -149,7 +149,7 @@ const RULES: { test: RegExp; icon: string }[] = [
   { test: /\b(med|medicine|pill|prescription|rx)\b/i, icon: "Pill" },
   { test: /\b(therapy|mental|mind|brain|anxious|anxiety)\b/i, icon: "Brain" },
   { test: /\b(workout|gym|exercise|lift)\b/i, icon: "Dumbbell" },
-  { test: /\b(yoga|stretch|mindful)\b/i, icon: "Yoga" },
+  { test: /\b(yoga|stretch|mindful)\b/i, icon: "PersonStanding" },
   { test: /\b(trip|travel|vacation|flight|airport)\b/i, icon: "Plane" },
   { test: /\b(camp|outdoor|tent)\b/i, icon: "Tent" },
   { test: /\b(hike|mountain|peak)\b/i, icon: "Mountain" },
