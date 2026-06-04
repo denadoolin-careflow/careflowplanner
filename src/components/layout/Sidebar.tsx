@@ -307,7 +307,7 @@ function PinnedTagsSection({
                   <Icon className="h-[18px] w-[18px]" style={{ color }} />
                 </NavLink>
               </TooltipTrigger>
-              <TooltipContent side="right">#{t.name}</TooltipContent>
+              <TooltipContent side="right">{t.name}</TooltipContent>
             </Tooltip>
           );
         })}
@@ -345,7 +345,7 @@ function PinnedTagsSection({
                   )}
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" style={{ color }} />
-                  <span className="flex-1 truncate">#{t.name}</span>
+                  <span className="flex-1 truncate">{t.name}</span>
                 </NavLink>
               );
             })}
