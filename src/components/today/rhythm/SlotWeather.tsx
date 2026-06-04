@@ -41,7 +41,7 @@ export function SlotWeather({ slot }: { slot: Slot }) {
   const tip = hasData ? dayPartSuggestion(dp) : null;
   const [fromH, toH] = SLOT_HOURS[slot];
   const slotHours = (snap?.todayHourly ?? []).filter(h => h.hour >= fromH && h.hour < toH);
-  const rainyHours = slotHours.filter(h => h.precipChance >= 10);
+  const anyRain = slotHours.some(h => h.precipChance >= 10);
   const showLocationControls = slot === "morning";
 
   return (
@@ -85,15 +85,26 @@ export function SlotWeather({ slot }: { slot: Slot }) {
             <p className="mt-1.5 text-[11px] italic leading-snug text-muted-foreground">{tip}</p>
           )}
           {hasData && slotHours.length > 0 && (
-            <div className="-mx-1 mt-2 flex gap-1 overflow-x-auto pb-0.5">
-              {rainyHours.length === 0 ? (
-                <span className="px-1 text-[11px] text-muted-foreground">No rain expected</span>
-              ) : rainyHours.map(h => (
-                <div key={h.hour} className="flex shrink-0 flex-col items-center rounded-lg bg-muted/40 px-2 py-1 text-[10px] tabular-nums text-muted-foreground">
-                  <span>{h.hour % 12 === 0 ? 12 : h.hour % 12}{h.hour < 12 ? "a" : "p"}</span>
-                  <span className="text-foreground/85">💧 {h.precipChance}%</span>
-                </div>
-              ))}
+            <div className="mt-2 space-y-1">
+              <div className="-mx-1 flex gap-1 overflow-x-auto pb-0.5">
+                {slotHours.map(h => (
+                  <div
+                    key={h.hour}
+                    className="flex shrink-0 flex-col items-center rounded-lg bg-muted/40 px-2 py-1 text-[10px] tabular-nums text-muted-foreground"
+                    title={h.conditionLabel}
+                  >
+                    <span>{h.hour % 12 === 0 ? 12 : h.hour % 12}{h.hour < 12 ? "a" : "p"}</span>
+                    <ConditionIcon condition={h.condition} isNight={h.isNight} className="h-3.5 w-3.5 my-0.5 text-foreground/80" />
+                    <span className="text-foreground/85">{fmt(h.tempC, unit)}</span>
+                    {h.precipChance >= 10 && (
+                      <span className="text-[9px] text-primary">💧{h.precipChance}%</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {!anyRain && (
+                <p className="px-1 text-[10px] text-muted-foreground">No rain expected</p>
+              )}
             </div>
           )}
         </div>

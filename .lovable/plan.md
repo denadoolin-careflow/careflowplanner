@@ -1,67 +1,69 @@
-# Today page upgrades — header conditions, scheduled tasks, person filter, meal quick view
+## Today page sidebar upgrades
 
-Four focused additions, each isolated to a small set of files.
+Five focused additions to the right-hand sidebar of `/today`, plus an hourly forecast inside each rhythm section.
 
-## 1. Show conditions text in the static header
+### 1. Planned Tasks panel (Today / This Week / This Month) with drag-to-today
 
-`HeaderNowStrip` already pulls `WeatherSnapshot.conditionLabel` but only exposes it via the button `title`. Add a visible label next to the temp pill (e.g. "72° · Partly cloudy") on `md:` and up; keep the existing icon + temp combo on smaller screens.
+New widget `PlannedTasksWidget.tsx` mounted near the top of the sidebar.
 
-- Edit `src/components/layout/HeaderNowStrip.tsx:47-61` to render `snap.conditionLabel` in a sibling `<span>` with `hidden lg:inline text-sidebar-foreground/70`.
-- Keep tooltip + location label unchanged.
+- Three tabs: **Today**, **This Week**, **This Month**.
+  - Today = `dueDate === todayISO`
+  - This Week = `dueDate` within `startOfWeek..endOfWeek` (excluding today)
+  - This Month = `dueDate` within current month (excluding this week)
+- Each row is `draggable` and emits the existing `TASK_DRAG_MIME` payload so it works with the calendar grid and day-part lanes already in the app.
+- A "Drop to move to Today" zone at the top of the widget. Dropping a Week/Month task sets `dueDate = todayISO` via `updateTask`.
+- Click row → `openTaskEditor(task.id)`. Reuses the same row pattern as `TasksWidget`.
+- No schema changes. Pure read/write through `useStore()`.
 
-## 2. "Scheduled today" panel on the right of the Today page
+### 2. Brain Dump widget (top-right)
 
-New widget `ScheduledTodayWidget` mounted as the first child in the Today aside (`src/pages/Today.tsx:117`, above `TasksWidget`).
+New `BrainDumpWidget.tsx` pinned as the first sidebar card.
 
-- Source: `useStore()` tasks where `t.dueDate === todayISO && !!t.startTime && !t.completedAt`, sorted by `startTime` (string compare is fine — all "HH:MM" 24h).
-- Render: ordered list of rows with `startTime` chip, title, optional `endTime`, area dot. Empty state: "Nothing scheduled · drag a task to a time."
-- Click row → `openTaskEditor(task.id)` (reuse `src/lib/open-task-editor.ts`).
-- File: `src/components/today/widgets/ScheduledTodayWidget.tsx` (new).
-- Mount: insert before `<TasksWidget />` in `Today.tsx`.
+- Single textarea with auto-grow, a "Capture" button, and a list of the last 5 entries.
+- Each captured line creates a task via `addTask({ title, inbox: true })` (same path used elsewhere in the app) so dumps land in Inbox and can be triaged.
+- Local "recently captured" cache in `localStorage` for instant feedback; the truth lives in the task store.
+- Cmd/Ctrl+Enter to capture; Esc to clear.
 
-No data-model changes; uses existing `Task.startTime`/`endTime`/`dueDate`.
+### 3. Reorderable sidebar widgets
 
-## 3. Per-person routine dropdown per reset section
+Make the sidebar in `Today.tsx` user-reorderable.
 
-`RhythmSection` already reads `PERSON_KEY` from localStorage but has no UI to change it. Add a `<Select>` in each section's Routines column header.
+- Introduce `useSidebarOrder()` hook backed by `localStorage` key `careflow:today:sidebar-order` storing an array of widget IDs.
+- Replace the static JSX list in the `<aside>` with a registry: `{ id, render }` pairs for every widget (BrainDump, PlannedTasks, ScheduledToday, Tasks, MealsPlanned, Grocery, Notes, Journal, Memories, HomeReset, MoonPhase, Cycle, FamilySnapshot, GrowingSeason, CareLoop, UpcomingEvents).
+- Reorder UI: small drag handle on each widget header (uses HTML5 drag, same pattern as existing draggable rows — no new dep). A "Reset order" item in the sidebar footer.
+- New widgets users haven't seen yet are appended automatically.
 
-- Edit `src/components/today/rhythm/RhythmSection.tsx:263-273` (routine column header).
-- Use `routines.people()` for options + an "All people" option (empty string).
-- Local state: `const [person, setPerson] = useState(readPerson())`. On change, write to `localStorage` and `setPerson(next)`.
-- Also dispatch a `window` event (`careflow:routine-person-changed`) so the other two `RhythmSection` instances (morning/afternoon/evening) update without a manual refresh — subscribe via a small `usePersonFilter()` hook colocated in `RhythmSection.tsx`.
-- Routine list filter stays driven by the same `person` value already used downstream.
+### 4. Hourly forecast in each rhythm section
 
-Selection persists across reloads via the existing localStorage key. No schema work.
+Extend `SlotWeather.tsx` (already shows rainy hours only).
 
-## 4. Meal quick view with ingredients per timeframe
+- Replace the rainy-hours strip with a full hourly strip for that slot's hour range (`SLOT_HOURS[slot]`).
+- Each chip: hour label, condition icon (reuse `ConditionIcon`), temp in current unit, precip % if ≥ 10%.
+- Horizontally scrollable; keeps current "No rain expected" subtle copy underneath when applicable.
+- No data fetching changes — `snap.todayHourly` already carries condition + temp + precip.
 
-For each meal slot in `RhythmSection`'s meal column, show the ingredient preview (already partially there) and add a "Recipe" trigger that opens the existing `RecipeDrawer`.
+### 5. Moon Phase & Cycle widgets in sidebar
 
-- Edit `src/components/today/rhythm/RhythmSection.tsx:236-260` (meal column).
-- Keep the existing `meal.ingredients.slice(0,3)` preview; add "+N more" when longer.
-- Add a button (icon + "Recipe") next to the meal name that sets `quickMeal` state and opens `<RecipeDrawer meal={quickMeal} onClose={() => setQuickMeal(null)} onChanged={() => {}} />` mounted once per `RhythmSection`.
-- Also do the same in `MealsPlannedWidget` so the sidebar widget can open the drawer.
-- Guard: only show the Recipe button when `meal.ingredients?.length > 0 || meal.steps?.length > 0` (otherwise the drawer is empty).
-- Reuse `RecipeDrawer` as-is — no changes needed there.
+Two new sidebar cards that link to their full pages.
 
-## Out of scope
+- **MoonPhase card**: reuse existing `MoonPhaseWidget` (compact variant) and wrap in a `<Link to="/rhythm">` (or whichever route hosts lunar — confirm during implementation by checking `nav.ts`). Tap-through visible affordance.
+- **Cycle card**: lightweight summary built from `cycle-store` — current phase, day of cycle, days-to-next-period, and a "View cycle" link to the Cycle page route from `nav.ts`. No new schema; reads existing cycle state.
 
-- No new tables, edge functions, or store changes.
-- No fuzzy match to `LibraryMeal` (no `library_id` exists; `RecipeDrawer` works directly off the `Meal` copy).
-- No changes to `TasksWidget` behavior (the new widget is additive).
-- No global person store — stays in localStorage + a window event for cross-section sync.
+### Files
 
-## Files
+**New**
+- `src/components/today/widgets/PlannedTasksWidget.tsx`
+- `src/components/today/widgets/BrainDumpWidget.tsx`
+- `src/components/today/widgets/MoonPhaseSidebarCard.tsx`
+- `src/components/today/widgets/CycleSidebarCard.tsx`
+- `src/lib/today-sidebar-order.ts` (hook + registry helpers)
 
-- edit: `src/components/layout/HeaderNowStrip.tsx`
-- edit: `src/pages/Today.tsx`
-- edit: `src/components/today/rhythm/RhythmSection.tsx`
-- edit: `src/components/today/widgets/MealsPlannedWidget.tsx`
-- new:  `src/components/today/widgets/ScheduledTodayWidget.tsx`
+**Edited**
+- `src/pages/Today.tsx` — switch `<aside>` to registry-driven render with reorder.
+- `src/components/today/rhythm/SlotWeather.tsx` — full hourly strip.
 
-## Acceptance
+### Out of scope
 
-- Header shows "72° · Partly cloudy · City" on desktop; condition icon stays on narrow screens.
-- A "Scheduled today" card sits at the top of the Today right column listing timed tasks in chronological order.
-- Each reset section's Routines column has a person picker; choosing a person filters that section immediately and the other two sections follow on next render.
-- Each meal slot shows ingredients preview and a Recipe button that opens the existing drawer; same in the sidebar Meals widget.
+- No changes to backend tables, edge functions, or auth.
+- No changes to the main column layout or non-sidebar pages.
+- No new drag-and-drop libraries (uses native HTML5 DnD already in use across the app).
