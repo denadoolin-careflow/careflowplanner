@@ -84,6 +84,7 @@ import { FullScreenFocus } from "@/components/tasks/FullScreenFocus";
 import { MoonPrefetcher } from "@/components/rhythm/MoonPrefetcher";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CyclePlanningListener } from "@/components/cycle/CyclePlanningListener";
+import { ExhaleReminderHost } from "@/components/today/ExhaleReminderHost";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,7 @@ const App = () => (
             <FullScreenFocus />
             <MoonPrefetcher />
             <CyclePlanningListener />
+            <ExhaleReminderHost />
             <InlineTagPreviewLayer />
             <Routes>
               <Route path="/auth" element={<Auth />} />
