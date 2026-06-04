@@ -34,7 +34,7 @@ import { hourToDayPart } from "@/lib/long-press-drag";
 import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { getMoonPhase } from "@/lib/moon";
-import { useWeatherSnapshot } from "@/lib/weather-store";
+import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store";
 import { supabase } from "@/integrations/supabase/client";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 
