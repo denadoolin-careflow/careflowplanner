@@ -13,7 +13,7 @@ import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
-import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
+import { CalendarRail, CalendarMobileWidgets, AtmosphereChip } from "@/components/calendar/CalendarRail";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -202,13 +202,17 @@ export default function CalendarPage() {
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-6">
       <div className="cozy-card gradient-calm p-6">
-        <h2 className="font-display text-3xl font-semibold">Calendar</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Appointments, birthdays, holidays — color-coded and gentle.</p>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">CareFlow</div>
+        <h2 className="font-display mt-1 text-3xl font-semibold">Calendar 🌿</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Appointments, birthdays, holidays, meals, caregiving, and life planning — all in one place.</p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <MoonPhaseBadge date={cursor} />
           <ElementBadge date={cursor} />
+          <AtmosphereChip />
         </div>
       </div>
+
+      <CalendarMobileWidgets />
 
       <InboxCapture defaultDate={cursor} />
 
@@ -420,7 +424,7 @@ export default function CalendarPage() {
         </ul>
       </SectionCard>
       </div>
-      <UnscheduledTasksRail />
+      <CalendarRail />
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <BirthdayHolidayEditor kind="birthday" item={editingBday} open={!!editingBday} onOpenChange={(o) => !o && setEditBdayId(null)} />
