@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { format, addDays, addWeeks, addMonths, addYears, endOfWeek, endOfMonth, endOfYear } from "date-fns";
 import {
   ListTodo, Search, GripVertical, CalendarDays, CalendarRange, CalendarClock, Calendar as CalendarIcon, Inbox,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -43,12 +44,26 @@ interface Props {
  * onto any external drop target that accepts the standard
  * TASK_DRAG_MIME — e.g. the calendar grid or day-part lanes.
  */
+const COLLAPSE_KEY = "careflow:today:tasks-widget:collapsed";
+function readCollapsed(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  return localStorage.getItem(COLLAPSE_KEY) === "1";
+}
+
 export function TasksWidget({ date = new Date() }: Props) {
   const { state, updateTask } = useStore();
   const [q, setQ] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [hover, setHover] = useState<Scope | null>(null);
+  const [collapsed, setCollapsed] = useState<boolean>(readCollapsed);
+  const toggleCollapsed = () => {
+    setCollapsed(v => {
+      const next = !v;
+      try { localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0"); } catch { /* noop */ }
+      return next;
+    });
+  };
 
   const tasks = useMemo(() => {
     const root = state.tasks.filter(t => !t.done && !t.parentTaskId && t.status !== "parked");
@@ -81,6 +96,29 @@ export function TasksWidget({ date = new Date() }: Props) {
     if (id) await assignTo(id, scope);
   };
 
+  const openCount = useMemo(
+    () => state.tasks.filter(t => !t.done && !t.parentTaskId && t.status !== "parked" && !t.dueDate).length,
+    [state.tasks],
+  );
+
+  if (collapsed) {
+    return (
+      <section className="cozy-card flex flex-col items-center gap-2 p-2">
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          className="inline-flex w-full items-center justify-between gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted/40"
+          aria-label="Expand tasks"
+          title="Expand tasks"
+        >
+          <ListTodo className="h-3.5 w-3.5 text-primary" />
+          <span className="tabular-nums">{openCount}</span>
+          <ChevronLeft className="h-3 w-3" />
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className="cozy-card overflow-hidden p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -88,13 +126,24 @@ export function TasksWidget({ date = new Date() }: Props) {
           <ListTodo className="h-3.5 w-3.5 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground">Tasks</h3>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowAll(s => !s)}
-          className="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-muted"
-        >
-          {showAll ? "All open" : <><Inbox className="h-2.5 w-2.5" /> Unscheduled</>}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setShowAll(s => !s)}
+            className="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-muted"
+          >
+            {showAll ? "All open" : <><Inbox className="h-2.5 w-2.5" /> Unscheduled</>}
+          </button>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            aria-label="Minimize tasks"
+            title="Minimize tasks"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       <div className="relative mb-2">

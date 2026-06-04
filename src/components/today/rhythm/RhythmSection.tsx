@@ -14,6 +14,8 @@ import { RoutineItemRow } from "@/components/routines/RoutineItemRow";
 import { Link } from "react-router-dom";
 import type { Task } from "@/lib/types";
 import { SlotWeather } from "./SlotWeather";
+import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
+import { toast } from "sonner";
 
 type Slot = "morning" | "afternoon" | "evening";
 
@@ -49,8 +51,9 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
   const meta = SLOT_META[slot];
   const Icon = meta.icon;
   const [open, setOpen] = useState(defaultOpen);
+  const [dropHover, setDropHover] = useState(false);
 
-  const { state, toggleTask } = useStore();
+  const { state, toggleTask, updateTask } = useStore();
   const iso = format(date, "yyyy-MM-dd");
 
   const tasks = useMemo(
@@ -78,6 +81,17 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
 
   const routineDone = routine ? routine.items.filter(i => i.done).length : 0;
   const routineTotal = routine ? routine.items.length : 0;
+
+  const onTaskDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDropHover(false);
+    const id = e.dataTransfer.getData(TASK_DRAG_MIME);
+    if (!id) return;
+    const t = state.tasks.find(x => x.id === id);
+    if (!t) return;
+    await updateTask(id, { dueDate: iso, dayPart: meta.dayPart, inbox: false });
+    toast.success(`Scheduled “${t.title}” → ${meta.label}`);
+  };
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -108,9 +122,28 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
           {showWeather && <SlotWeather slot={slot} />}
           <div className="grid gap-3 p-4 sm:p-5 md:grid-cols-3">
             {/* Tasks column */}
-            <div className="rounded-2xl border border-border/40 bg-background/60 p-3">
+            <div
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes(TASK_DRAG_MIME)) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDropHover(true);
+                }
+              }}
+              onDragLeave={() => setDropHover(false)}
+              onDrop={onTaskDrop}
+              className={cn(
+                "rounded-2xl border bg-background/60 p-3 transition-all",
+                dropHover
+                  ? "border-primary/70 bg-primary/10 ring-2 ring-primary/40"
+                  : "border-border/40",
+              )}
+            >
               <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <ListChecks className="h-3 w-3 text-primary" /> Tasks
+                <span className="ml-auto text-[10px] normal-case tracking-normal text-muted-foreground/70">
+                  Drop here
+                </span>
               </div>
               {tasks.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-border/50 px-2 py-3 text-center text-xs text-muted-foreground">
