@@ -64,6 +64,7 @@ const taskFrom = (r: any): Task => ({
   sectionId: r.section_id ?? undefined,
   snoozedUntil: r.snoozed_until ?? undefined,
   attachments: Array.isArray(r.attachments) ? r.attachments : [],
+  updatedAt: r.updated_at ?? undefined,
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null,
