@@ -34,7 +34,7 @@ import { hourToDayPart } from "@/lib/long-press-drag";
 import { PhaseBadge } from "@/components/cycle/PhaseBadge";
 import { CycleLogSheet } from "@/components/cycle/CycleLogSheet";
 import { getMoonPhase } from "@/lib/moon";
-import { useWeatherSnapshot } from "@/lib/weather-store";
+import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store";
 import { supabase } from "@/integrations/supabase/client";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 
@@ -224,6 +224,7 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
   const [cycleOpen, setCycleOpen] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const weather = useWeatherSnapshot();
+  const [tempUnit] = useTempUnit();
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
 
@@ -505,7 +506,7 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
           {weather ? (
             <div className="flex items-baseline gap-3">
               <span className="font-display text-2xl font-semibold">
-                {Math.round(weather.tempC)}°
+                {formatTemp(weather.tempC, tempUnit)}
               </span>
               <span className="text-sm text-muted-foreground">{weather.conditionLabel}</span>
               <span className="text-xs text-muted-foreground">{weather.locationLabel}</span>
