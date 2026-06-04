@@ -8,6 +8,7 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { CalendarDays, Check, Settings2, Trash2, X, FolderKanban, Tag } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { cn } from "@/lib/utils";
+import { ProjectQuickJump } from "@/components/tasks/ProjectQuickJump";
 
 export function TaskDetailPane() {
   const { selected, count, clear, selectOnly } = useTaskSelection();
@@ -26,7 +27,12 @@ export function TaskDetailPane() {
   return (
     <aside className="sticky top-20 hidden h-[calc(100vh-7rem)] w-80 shrink-0 overflow-y-auto rounded-2xl border border-border/60 bg-card/70 p-4 backdrop-blur-sm lg:block">
       {count === 0 && (
-        <EmptyState title="No task selected" subtitle="Click a task to see details here, or hold ⌘/Ctrl-click to multi-select." />
+        <div className="space-y-4">
+          <EmptyState title="No task selected" subtitle="Click a task to see details, or hold ⌘/Ctrl-click to multi-select." />
+          <div className="border-t border-border/50 pt-4">
+            <ProjectQuickJump />
+          </div>
+        </div>
       )}
 
       {count > 1 && (
