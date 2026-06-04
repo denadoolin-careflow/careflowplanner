@@ -906,9 +906,9 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
         </button>}
       </div>
-      <nav className={cn("mt-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden w-full", !collapsed && "pr-1")}>
+      <nav className={cn("mt-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden w-full", collapsed && "items-center", !collapsed && "pr-1")}>
         {/* Things-style Lists rail */}
-        <div className="mb-3 flex flex-col gap-0.5">
+        <div className={cn("mb-3 flex flex-col gap-1", collapsed && "items-center")}>
           {LISTS.map(({ to, label, icon: Icon, tint, dot }) => wrapItem(label,
             <NavLink
               key={to}
