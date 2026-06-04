@@ -9,6 +9,7 @@ import { useStore } from "@/lib/store";
 import type { Task } from "@/lib/types";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { toast } from "sonner";
+import { openTaskEditor } from "@/lib/open-task-editor";
 
 type Scope = "today" | "tomorrow" | "thisWeek" | "thisMonth" | "thisYear";
 
@@ -151,19 +152,31 @@ export function TasksWidget({ date = new Date() }: Props) {
               draggable
               onDragStart={(e) => onDragStart(e, t)}
               onDragEnd={onDragEnd}
-              className="group flex cursor-grab items-center gap-1.5 rounded-lg border border-border/40 bg-background/60 px-2 py-1.5 text-xs hover:border-primary/40 active:cursor-grabbing"
-              title="Drag onto a bucket above or onto a calendar slot"
+              className="group flex items-center gap-1.5 rounded-lg border border-border/40 bg-background/60 px-1 py-1 text-xs hover:border-primary/40"
+              title="Drag onto a bucket above or onto a calendar slot — tap to edit"
             >
-              <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground/60 group-hover:text-muted-foreground" />
-              <span className="min-w-0 flex-1 truncate text-foreground">{t.title}</span>
-              {t.dueDate && (
-                <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] text-muted-foreground">
-                  {format(new Date(t.dueDate + "T00:00:00"), "MMM d")}
-                </span>
-              )}
-              {t.estMinutes ? (
-                <span className="shrink-0 text-[9px] text-muted-foreground">{t.estMinutes}m</span>
-              ) : null}
+              <span
+                className="flex h-7 w-5 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground/60 group-hover:text-muted-foreground active:cursor-grabbing"
+                aria-hidden
+              >
+                <GripVertical className="h-3 w-3" />
+              </span>
+              <button
+                type="button"
+                onClick={() => openTaskEditor(t.id)}
+                className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-left hover:bg-muted/40 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+                aria-label={`Edit ${t.title}`}
+              >
+                <span className="min-w-0 flex-1 truncate text-foreground">{t.title}</span>
+                {t.dueDate && (
+                  <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] text-muted-foreground">
+                    {format(new Date(t.dueDate + "T00:00:00"), "MMM d")}
+                  </span>
+                )}
+                {t.estMinutes ? (
+                  <span className="shrink-0 text-[9px] text-muted-foreground">{t.estMinutes}m</span>
+                ) : null}
+              </button>
             </li>
           ))}
         </ul>
