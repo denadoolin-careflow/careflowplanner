@@ -295,6 +295,8 @@ export function UpcomingHub() {
             energy={dominantEnergy}
             pinned={pinnedFocus.length}
             pinnedTitle={pinnedFocus[0]?.title}
+            accent={accent}
+            onSmartPlan={smartPlan}
           />
 
           {/* QUICK ADD */}
@@ -310,30 +312,48 @@ export function UpcomingHub() {
             <EmptyBreathingRoom onPlan={() => navigate("/week")} onAnytime={() => navigate("/anytime")} onGoals={() => navigate("/goals")} />
           ) : view === "grid" ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              {filtered.map(t => <TaskRow key={t.id} task={t} />)}
+              {filtered.map(t => (
+                <div key={t.id} draggable onDragStart={(e) => onDragStart(e, t.id)} className="cursor-grab active:cursor-grabbing">
+                  <TaskRow task={t} />
+                </div>
+              ))}
             </div>
           ) : view === "board" ? (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {groups.map(g => (
-                <div key={g.label + g.date} className="rounded-2xl border border-border/50 bg-card/50 p-3">
+                <div
+                  key={g.label + g.date}
+                  onDragOver={allowDrop}
+                  onDrop={(e) => rescheduleDrop(e, g.date)}
+                  className="rounded-2xl border border-border/50 bg-card/50 p-3 transition-colors"
+                >
                   <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     <g.icon className="h-3.5 w-3.5" /> {g.label}
                     <span className="ml-auto">{g.tasks.length}</span>
                   </div>
                   <div className="space-y-2">
-                    {g.tasks.map(t => <TaskRow key={t.id} task={t} dense />)}
+                    {g.tasks.map(t => (
+                      <div key={t.id} draggable onDragStart={(e) => onDragStart(e, t.id)} className="cursor-grab active:cursor-grabbing">
+                        <TaskRow task={t} dense />
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           ) : view === "calendar" ? (
-            <CalendarStrip groups={groups} />
+            <CalendarStrip groups={groups} onDropTask={rescheduleDrop} allowDrop={allowDrop} />
           ) : (
             <div className="space-y-3">
               {groups.map(g => {
                 const isC = !!collapsed[g.label + g.date];
                 return (
-                  <section key={g.label + g.date} className="rounded-2xl border border-border/50 bg-card/60 p-2">
+                  <section
+                    key={g.label + g.date}
+                    onDragOver={allowDrop}
+                    onDrop={(e) => rescheduleDrop(e, g.date)}
+                    className="rounded-2xl border border-border/50 bg-card/60 p-2 transition-colors"
+                  >
                     <button
                       onClick={() => toggleCollapsed(g.label + g.date)}
                       className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-muted/40"
@@ -347,7 +367,12 @@ export function UpcomingHub() {
                     </button>
                     {!isC && (
                       <div className="mt-1 space-y-1">
-                        {g.tasks.map(t => <TaskRow key={t.id} task={t} />)}
+                        {g.tasks.map(t => (
+                          <div key={t.id} draggable onDragStart={(e) => onDragStart(e, t.id)} className="group flex items-start gap-1 cursor-grab active:cursor-grabbing">
+                            <GripVertical className="mt-3 h-3.5 w-3.5 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
+                            <div className="min-w-0 flex-1"><TaskRow task={t} /></div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </section>
@@ -361,10 +386,13 @@ export function UpcomingHub() {
         <aside className="hidden lg:block lg:space-y-4">
           <OverviewCard total={base.length} week={counts.thisWeek} overdue={overdueCount} unsched={unscheduledCount} onPlan={() => navigate("/week")} />
           <EnergyGuide counts={energyCounts} active={energy} onSelect={setEnergy} />
-          <WhatFits items={recommendations} onDoOne={() => {
-            const t = recommendations[0]; if (!t) return;
-            toast.success(`Starting: ${t.title}`);
-          }} />
+          <WhatFits
+            items={recommendations}
+            goals={state.goals ?? []}
+            accent={accent}
+            onDoOne={() => setMicroOpen(true)}
+            onLinkGoal={(taskId, goalId) => updateTask(taskId, { goalId })}
+          />
           <ComingUpNext items={upcomingAppts} onAll={() => navigate("/calendar")} />
         </aside>
       </div>
@@ -373,9 +401,24 @@ export function UpcomingHub() {
       <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 lg:hidden">
         <div className="min-w-[85%] snap-start"><OverviewCard total={base.length} week={counts.thisWeek} overdue={overdueCount} unsched={unscheduledCount} onPlan={() => navigate("/week")} /></div>
         <div className="min-w-[85%] snap-start"><EnergyGuide counts={energyCounts} active={energy} onSelect={setEnergy} /></div>
-        <div className="min-w-[85%] snap-start"><WhatFits items={recommendations} onDoOne={() => recommendations[0] && toast.success(`Starting: ${recommendations[0].title}`)} /></div>
+        <div className="min-w-[85%] snap-start">
+          <WhatFits
+            items={recommendations}
+            goals={state.goals ?? []}
+            accent={accent}
+            onDoOne={() => setMicroOpen(true)}
+            onLinkGoal={(taskId, goalId) => updateTask(taskId, { goalId })}
+          />
+        </div>
         <div className="min-w-[85%] snap-start"><ComingUpNext items={upcomingAppts} onAll={() => navigate("/calendar")} /></div>
       </div>
+
+      <MicroPlanDialog
+        open={microOpen}
+        onOpenChange={setMicroOpen}
+        tasks={recommendations}
+        onComplete={async (id) => { await toggleTask(id); }}
+      />
     </div>
   );
 }
