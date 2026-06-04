@@ -21,7 +21,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
   const { state } = useStore();
   return (
     <div className="cozy-card overflow-hidden">
-      <div className="relative gradient-calm px-5 py-5 sm:px-7 sm:py-6">
+      <div className="relative gradient-calm px-4 py-4 sm:px-7 sm:py-6">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-60"
@@ -36,10 +36,10 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
               <Sparkles className="h-3 w-3 text-primary" />
               {personalGreeting(state.settings.name)}
             </p>
-            <h1 className="font-display text-3xl font-semibold leading-none text-foreground sm:text-4xl">
+            <h1 className="font-display text-2xl font-semibold leading-none text-foreground sm:text-4xl">
               Today
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               {format(date, "EEEE, MMMM d, yyyy")}
             </p>
           </div>
