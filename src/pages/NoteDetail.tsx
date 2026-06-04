@@ -279,17 +279,33 @@ export default function NoteDetail() {
         </div>
       )}
 
+      {!note.coverUrl && gradientCss && (
+        <div className="mx-auto mt-3 w-full max-w-[920px] px-2">
+          <div
+            className="group relative h-32 overflow-hidden rounded-2xl border border-border/60 md:h-44"
+            style={{ background: gradientCss }}
+          >
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background/40 to-transparent" />
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto mt-6 w-full max-w-[760px] px-2">
-        {note.kind === "daily" ? (
-          <h1 className="note-page-title text-3xl sm:text-4xl md:text-5xl">{headerTitle}</h1>
-        ) : (
-          <Input
-            value={title}
-            onChange={(e) => { setTitle(e.target.value); save({ title: e.target.value }); }}
-            placeholder="Untitled"
-            className="note-page-title h-auto border-0 bg-transparent px-0 py-1 text-3xl shadow-none focus-visible:ring-0 sm:text-4xl md:text-5xl"
-          />
-        )}
+        <div className="flex items-center gap-3">
+          <IconEl className="h-7 w-7 shrink-0 text-primary sm:h-8 sm:w-8" />
+          <div className="min-w-0 flex-1">
+            {note.kind === "daily" ? (
+              <h1 className="note-page-title text-3xl sm:text-4xl md:text-5xl">{headerTitle}</h1>
+            ) : (
+              <Input
+                value={title}
+                onChange={(e) => { setTitle(e.target.value); save({ title: e.target.value }); }}
+                placeholder="Untitled"
+                className="note-page-title h-auto border-0 bg-transparent px-0 py-1 text-3xl shadow-none focus-visible:ring-0 sm:text-4xl md:text-5xl"
+              />
+            )}
+          </div>
+        </div>
         <p className="mt-2 text-xs text-muted-foreground">
           Updated {format(parseISO(note.updatedAt), "MMM d, h:mm a")}
         </p>
