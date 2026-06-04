@@ -555,8 +555,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     updateTask: async (id, patch) => {
       const prev = state.tasks.find(t => t.id === id);
-      setState(s => ({ ...s, tasks: s.tasks.map(t => t.id === id ? { ...t, ...patch } : t) }));
-      await supabase.from("tasks").update(taskTo(patch)).eq("id", id);
+      const localTs = nowIso();
+      setState(s => ({ ...s, tasks: s.tasks.map(t => t.id === id ? { ...t, ...patch, updatedAt: localTs } : t) }));
+      const values = taskTo(patch);
+      // Drop undefined keys so we don't blow away unrelated cols.
+      for (const k of Object.keys(values)) if ((values as any)[k] === undefined) delete (values as any)[k];
+      await syncOp({ kind: "update", table: "tasks", id, values, localTs });
       if (patch.dueDate !== undefined && patch.dueDate && patch.dueDate !== prev?.dueDate) {
         const merged = { ...(prev ?? {}), ...patch } as Task;
         emitScheduleEvent({
@@ -569,7 +573,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     deleteTask: async (id) => {
       setState(s => ({ ...s, tasks: s.tasks.filter(t => t.id !== id) }));
-      await supabase.from("tasks").delete().eq("id", id);
+      await syncOp({ kind: "delete", table: "tasks", id });
     },
 
     addProject: async (p) => {
