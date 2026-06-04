@@ -157,6 +157,9 @@ export default function NoteDetail() {
 
   const linkedOut = extractBacklinks(body);
   const headerTitle = note.kind === "daily" && note.date ? format(parseISO(note.date), "EEEE, MMMM d, yyyy") : null;
+  const resolvedIcon = resolveNoteIcon({ title, body, kind: note.kind, icon: note.icon ?? null });
+  const IconEl = getLucideIcon(resolvedIcon);
+  const gradientCss = getNoteCoverCss(note.coverGradient);
 
   return (
     <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 2xl:grid-cols-[minmax(0,1fr)_220px]">
