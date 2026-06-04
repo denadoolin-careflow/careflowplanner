@@ -75,6 +75,17 @@ function TodayInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // Auto-open Exhale flow when the reminder toast/notification deep-links here.
+  useEffect(() => {
+    if (searchParams.get("exhale") === "1") {
+      setExhaleOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("exhale");
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const setDayAndUrl = useCallback((d: Date) => {
     setDay(d);
     const next = new URLSearchParams(searchParams);
