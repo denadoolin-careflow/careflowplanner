@@ -224,6 +224,7 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
   const [cycleOpen, setCycleOpen] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const weather = useWeatherSnapshot();
+  const [tempUnit] = useTempUnit();
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
 
