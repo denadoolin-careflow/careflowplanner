@@ -279,7 +279,7 @@ function PinnedTagsSection({
 
   if (collapsed) {
     return (
-      <div className="mb-1 flex flex-col items-center gap-0.5">
+      <div className="mb-3 flex flex-col items-center gap-1">
         {tags.slice(0, 8).map(t => {
           const Icon = tagIconFor(t.icon);
           const color = t.color || fallbackColorFor(t.name);
@@ -297,7 +297,7 @@ function PinnedTagsSection({
                     active && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
-                  <Icon className="h-4 w-4" style={{ color }} />
+                  <Icon className="h-[18px] w-[18px]" style={{ color }} />
                 </NavLink>
               </TooltipTrigger>
               <TooltipContent side="right">#{t.name}</TooltipContent>
