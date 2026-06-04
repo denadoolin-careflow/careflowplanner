@@ -1191,22 +1191,23 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           const accent = flowAccents[group.id] ?? flowAccents.settings;
           if (collapsed) {
             return (
-              <div key={group.id} className="mb-1 flex flex-col items-center gap-0.5">
+              <div key={group.id} className="mb-3 flex flex-col items-center gap-1">
                 {wrapItem(`Open ${group.label}`,
                   <NavLink
                     to={`/flow/${group.id}`}
                     onClick={handleNavClick(`/flow/${group.id}`)}
                     className={({ isActive }) => cn(
-                      "grid h-10 w-10 place-items-center rounded-xl transition-all",
-                      isActive && "shadow-soft",
+                      "relative grid h-10 w-10 place-items-center rounded-xl transition-all",
+                      "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      isActive && "bg-primary-soft text-foreground shadow-soft",
                     )}
-                    style={{
-                      background: accent.soft,
-                      boxShadow: `inset 0 0 0 1px ${accent.ring}`,
-                      color: accent.color,
-                    }}
                   >
-                    <GroupIcon className="h-4 w-4" />
+                    <GroupIcon className="h-[18px] w-[18px]" style={{ color: accent.color }} />
+                    <span
+                      className="pointer-events-none absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full"
+                      style={{ background: accent.color }}
+                      aria-hidden
+                    />
                   </NavLink>
                 )}
                 {group.items.map(({ to, label, icon: Icon }) => wrapItem(label,
@@ -1221,7 +1222,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                       isActive && "bg-primary-soft text-foreground shadow-soft",
                     )}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-[18px] w-[18px]" />
                   </NavLink>
                 ))}
               </div>
