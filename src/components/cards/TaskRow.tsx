@@ -3,8 +3,8 @@ import { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
-  Trash2, GripVertical, Timer, ChevronRight, Sparkle,
-  Pencil, CalendarClock, Snowflake, Star, FolderInput, MoreHorizontal,
+  Trash2, GripVertical, ChevronRight, Sparkle,
+  Pencil, Snowflake, Star, FolderInput,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -13,7 +13,8 @@ import { useDraggable } from "@dnd-kit/core";
 import { toast } from "sonner";
 import { pickAffirmation } from "@/lib/affirmations";
 import { Input } from "@/components/ui/input";
-import { QuickEditPopover } from "@/components/tasks/QuickEditPopover";
+import { QuickTaskSheet } from "@/components/tasks/QuickTaskSheet";
+import { TaskHoverActions } from "@/components/tasks/TaskHoverActions";
 import { haptics } from "@/lib/haptics";
 import { useTaskSelection } from "@/lib/task-selection";
 import { Progress } from "@/components/ui/progress";
@@ -349,18 +350,12 @@ export function TaskRow({
         )}
       </div>
 
-      {/* Desktop hover actions — replaces the permanent settings cog */}
-      <div className="hidden items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 sm:flex">
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/70" onClick={(e) => { e.stopPropagation(); handleReschedule(); }} title="Reschedule" aria-label="Reschedule">
-          <CalendarClock className="h-3.5 w-3.5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/70" onClick={(e) => { e.stopPropagation(); setPomOpen(true); }} title="Pomodoro" aria-label="Start pomodoro">
-          <Timer className="h-3.5 w-3.5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/70" onClick={(e) => { e.stopPropagation(); setQuickEditOpen(true); }} title="More" aria-label="More options">
-          <MoreHorizontal className="h-3.5 w-3.5" />
-        </Button>
-      </div>
+      {/* Desktop hover actions — plan, edit, snooze, move, details */}
+      <TaskHoverActions
+        task={task}
+        onEdit={() => setEditing(true)}
+        onDetails={() => setQuickEditOpen(true)}
+      />
 
       {celebrate && <CompletionBurst variant={completionVisual} />}
     </RowShell>
@@ -407,7 +402,7 @@ export function TaskRow({
         </SwipeableList>
       </div>
 
-      <QuickEditPopover task={task} open={quickEditOpen} onOpenChange={setQuickEditOpen} />
+      <QuickTaskSheet task={task} open={quickEditOpen} onOpenChange={setQuickEditOpen} />
 
       {expanded && (
         <div className="ml-10 mt-1 space-y-1 border-l border-border/40 pl-3">

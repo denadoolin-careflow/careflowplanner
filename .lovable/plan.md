@@ -1,69 +1,87 @@
-## Today page sidebar upgrades
+# Plan: cleaner task quick-edit, hover actions, project jump
 
-Five focused additions to the right-hand sidebar of `/today`, plus an hourly forecast inside each rhythm section.
+Three focused upgrades to the Inbox / task row experience. No backend changes.
 
-### 1. Planned Tasks panel (Today / This Week / This Month) with drag-to-today
+## 1. Replace the "3 dots" QuickEditPopover with a clean Quick Sheet
 
-New widget `PlannedTasksWidget.tsx` mounted near the top of the sidebar.
+Today the `MoreHorizontal` button on a task row opens `QuickEditPopover` — a dense 5-section chip wall. We'll replace it with a new **`QuickTaskSheet.tsx`** modeled on the mobile sheet's visual language (`BigCard`, `SmallTile`, `SectionLabel` from `TaskSettingsBits.tsx`) so quick-edit looks consistent with the polished mobile view.
 
-- Three tabs: **Today**, **This Week**, **This Month**.
-  - Today = `dueDate === todayISO`
-  - This Week = `dueDate` within `startOfWeek..endOfWeek` (excluding today)
-  - This Month = `dueDate` within current month (excluding this week)
-- Each row is `draggable` and emits the existing `TASK_DRAG_MIME` payload so it works with the calendar grid and day-part lanes already in the app.
-- A "Drop to move to Today" zone at the top of the widget. Dropping a Week/Month task sets `dueDate = todayISO` via `updateTask`.
-- Click row → `openTaskEditor(task.id)`. Reuses the same row pattern as `TasksWidget`.
-- No schema changes. Pure read/write through `useStore()`.
+Layout (compact, ~360px popover or side-sheet on desktop, sheet on mobile):
 
-### 2. Brain Dump widget (top-right)
+```text
+┌─────────────────────────────────────────┐
+│  ◯  Task title (inline edit)        ✕  │
+├─────────────────────────────────────────┤
+│  [ Today ] [ Tomorrow ] [ +Days ] [📅] │  ← Quick due
+│  [ Morning · Afternoon · Eve · Late ]  │  ← Day part
+├─────────────────────────────────────────┤
+│  Project   ▸  Home renovation          │
+│  Goal      ▸  None                     │
+│  Area      ▸  Home                     │
+│  Priority  ▸  ● ● Medium               │
+│  Repeat    ▸  Weekly                   │
+│  Tags      ▸  #urgent #call            │
+├─────────────────────────────────────────┤
+│  Open full editor   ·   Delete         │
+└─────────────────────────────────────────┘
+```
 
-New `BrainDumpWidget.tsx` pinned as the first sidebar card.
+Each row is a tappable `SmallTile` that swaps the body into an inline picker (project list w/ search, goals, area chips, etc.) — same pattern `MobileTaskSheet` already uses. Reuses `updateTask` for live patches with toast+undo (already in QuickEditPopover).
 
-- Single textarea with auto-grow, a "Capture" button, and a list of the last 5 entries.
-- Each captured line creates a task via `addTask({ title, inbox: true })` (same path used elsewhere in the app) so dumps land in Inbox and can be triaged.
-- Local "recently captured" cache in `localStorage` for instant feedback; the truth lives in the task store.
-- Cmd/Ctrl+Enter to capture; Esc to clear.
+Wire-up: `TaskRow.tsx` and any other call sites of `QuickEditPopover` swap to `QuickTaskSheet`. Behavior keys (right-click, long-press, `MoreHorizontal` click) stay identical.
 
-### 3. Reorderable sidebar widgets
+## 2. Hover quick-action rail on inbox task rows
 
-Make the sidebar in `Today.tsx` user-reorderable.
+Right now hovering a task row only shows the More button. Add a small action cluster that fades in on hover (and is always visible on touch via long-press) with these actions:
 
-- Introduce `useSidebarOrder()` hook backed by `localStorage` key `careflow:today:sidebar-order` storing an array of widget IDs.
-- Replace the static JSX list in the `<aside>` with a registry: `{ id, render }` pairs for every widget (BrainDump, PlannedTasks, ScheduledToday, Tasks, MealsPlanned, Grocery, Notes, Journal, Memories, HomeReset, MoonPhase, Cycle, FamilySnapshot, GrowingSeason, CareLoop, UpcomingEvents).
-- Reorder UI: small drag handle on each widget header (uses HTML5 drag, same pattern as existing draggable rows — no new dep). A "Reset order" item in the sidebar footer.
-- New widgets users haven't seen yet are appended automatically.
+- **Plan** (`CalendarClock`) → opens a tiny date popover (Today / Tomorrow / Next week / pick…)
+- **Edit** (`Pencil`) → inline rename (existing behavior)
+- **Snooze** (`Snowflake`) → +1d / +3d / +1w (sets `dueDate`)
+- **Move** (`FolderInput`) → project picker popover with search
+- **Details** (`MoreHorizontal`) → opens new QuickTaskSheet
 
-### 4. Hourly forecast in each rhythm section
+Implementation: new **`TaskHoverActions.tsx`** rendered inside `TaskRow.tsx` next to the existing More button. Uses `opacity-0 group-hover:opacity-100` on the row (row already a `group`). On touch, surfaces via the existing long-press handler. Each action is keyboard-reachable and has a `title` tooltip.
 
-Extend `SlotWeather.tsx` (already shows rainy hours only).
+A user preference (`mem://design`) will let us later toggle which icons are pinned vs. tucked into More; v1 ships all five visible.
 
-- Replace the rainy-hours strip with a full hourly strip for that slot's hour range (`SLOT_HOURS[slot]`).
-- Each chip: hour label, condition icon (reuse `ConditionIcon`), temp in current unit, precip % if ≥ 10%.
-- Horizontally scrollable; keeps current "No rain expected" subtle copy underneath when applicable.
-- No data fetching changes — `snap.todayHourly` already carries condition + temp + precip.
+## 3. Project search & jump in the Inbox side panel
 
-### 5. Moon Phase & Cycle widgets in sidebar
+`TaskDetailPane.tsx` already sits on the right of the Inbox. When no task is selected we currently show only an empty state. Add a **"Jump to project"** section underneath:
 
-Two new sidebar cards that link to their full pages.
+```text
+No task selected
+────────────────
+🔍 Find a project…
+────────────────
+★ Pinned
+  • Home renovation       (12)
+  • Wedding planning      (3)
+All projects
+  • …
+```
 
-- **MoonPhase card**: reuse existing `MoonPhaseWidget` (compact variant) and wrap in a `<Link to="/rhythm">` (or whichever route hosts lunar — confirm during implementation by checking `nav.ts`). Tap-through visible affordance.
-- **Cycle card**: lightweight summary built from `cycle-store` — current phase, day of cycle, days-to-next-period, and a "View cycle" link to the Cycle page route from `nav.ts`. No new schema; reads existing cycle state.
+- Search input filters `state.projects` (non-archived) by name & area, case-insensitive.
+- Clicking a row navigates via `navigate('/projects/' + id)` (same path used elsewhere).
+- Shows open-task count per project (derived from `state.tasks`).
+- ⌘K still opens universal search; this is an inline jumper scoped to projects.
+
+The same component (`ProjectQuickJump.tsx`) is reused inside the Move hover action above so we have one searchable project list.
+
+---
 
 ### Files
 
 **New**
-- `src/components/today/widgets/PlannedTasksWidget.tsx`
-- `src/components/today/widgets/BrainDumpWidget.tsx`
-- `src/components/today/widgets/MoonPhaseSidebarCard.tsx`
-- `src/components/today/widgets/CycleSidebarCard.tsx`
-- `src/lib/today-sidebar-order.ts` (hook + registry helpers)
+- `src/components/tasks/QuickTaskSheet.tsx` — replaces QuickEditPopover visual
+- `src/components/tasks/TaskHoverActions.tsx` — hover quick-action rail
+- `src/components/tasks/ProjectQuickJump.tsx` — searchable project list (used by side panel + Move action)
 
 **Edited**
-- `src/pages/Today.tsx` — switch `<aside>` to registry-driven render with reorder.
-- `src/components/today/rhythm/SlotWeather.tsx` — full hourly strip.
+- `src/components/cards/TaskRow.tsx` — render `TaskHoverActions`, swap popover to `QuickTaskSheet`
+- `src/components/tasks/TaskDetailPane.tsx` — mount `ProjectQuickJump` in the empty state
+- `src/components/tasks/QuickEditPopover.tsx` — kept temporarily as fallback, removed once all call sites migrate (only `TaskRow.tsx` today)
 
-### Out of scope
-
-- No changes to backend tables, edge functions, or auth.
-- No changes to the main column layout or non-sidebar pages.
-- No new drag-and-drop libraries (uses native HTML5 DnD already in use across the app).
+**Out of scope**
+- No changes to `TaskEditor.tsx` (full editor) or mobile sheet
+- No DB / store schema changes
+- No new drag-and-drop libraries
