@@ -1,62 +1,78 @@
-# Tag Detail — Notes views with inline context
+# Calendar → CareFlow Command Center
 
-Redesign the **Notes** section on `/tags/:name` (`src/pages/TagDetail.tsx`) so a tag page becomes a real lens into how that tag shows up across your notes — not just a list of titles.
+Transform `/calendar` from a utilitarian grid into the calm, glanceable life dashboard shown in the reference. The existing `CalendarPage` keeps its data model and editors — we wrap and restyle the surface, then add a new right-rail of life widgets and a mobile swipe deck.
 
-## What changes for the user
+## Scope
 
-When you open a tag, the Notes block gets a view switcher with four modes:
+In: visual + structural redesign of `/calendar`, new right-rail widgets, hero, expanded filter chips, restyled day cards, mobile swipeable widgets, atmosphere theming.
 
-1. **List** (default — current behavior, refined)
-2. **Gallery** — visual cards with a larger snippet excerpt
-3. **Kanban** — columns grouped by note `kind` (Daily, Quick, Standard, Meeting, etc.) or by status
-4. **Date** — timeline grouped by month/week, newest first
-
-In every view, each note shows an **inline context snippet**: the sentence(s) around where `#tagname` appears in the body, with the hashtag highlighted in the tag's accent color. If the tag is only in metadata (not body), we show a subtle "tagged" pill plus the first line of the note instead of the title alone.
-
-Tasks, Grocery, and Projects sections stay as-is.
+Out: data model changes, new backend tables, calendar engine rewrite, drag/drop refactor (current behavior preserved), changes to other pages.
 
 ## Layout
 
 ```text
-┌─ Notes · 12 ────────────────[ List | Gallery | Kanban | Date ]─┐
-│                                                                 │
-│  Gallery example:                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │ Tue, Jun 3   │  │ Garden ideas │  │ Meeting w/ M │          │
-│  │ …watered the │  │ …plant more  │  │ …discussed   │          │
-│  │ #sage and …  │  │ #sage near…  │  │ the #sage …  │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│ HERO  CareFlow · Calendar 🌿                                │
+│ "Appointments, birthdays, holidays — color-coded & gentle." │
+│ [🌙 Moon phase]  [🌿 Element · verb]  [🪐 Atmosphere]       │
+├──────────────────────────────────────────┬──────────────────┤
+│ CONTROLS  ‹ Month › Today | D W M Y | Grid Sched Kanban Plan│
+│ FILTERS   All · Tasks · Appts · Care · Meals · Birthdays ·  │
+│           Holidays · Google · Family · Bills · Goals        │
+│                                          │  RIGHT RAIL      │
+│  CALENDAR SURFACE (grid / schedule /     │  • Goals month   │
+│  kanban / planning — existing views,     │  • Intention     │
+│  restyled cards)                         │  • Areas to grow │
+│                                          │  • Birthdays     │
+│                                          │  • Celebrations  │
+│                                          │  • Highlights    │
+└──────────────────────────────────────────┴──────────────────┘
+            Floating Quick-Add (existing) anchored bottom-right
 ```
+
+Desktop ≥1280px: 3-column (main + 320px rail). Tablet: main only, rail items become a swipe deck above the calendar. Mobile: same swipe deck plus existing bottom nav and FAB.
+
+## Build steps
+
+1. **New shell `CalendarHub`** — wraps existing `CalendarPage` body. Adds hero, right rail, and mobile swipe deck. Existing month/week/day/year/kanban views render inside unchanged but with refined card styles.
+2. **Hero block** — display name + tagline + three small chips: moon phase (`moonPhaseFor`), seasonal element (`getRhythmForecast`), current atmosphere (`useAtmosphere`). Soft sage→cream gradient tinted by `useFlowAccent("planflow")`.
+3. **Filter chips** — extend the existing `kindFilter` set with `family`, `bill`, `goal`. Render as pill chips with category color dots; keep multi-select behavior. "All" resets to default.
+4. **Day cards** — restyle the per-event chips inside month grid cells: rounded-xl, soft category-tinted background (caregiving = blush, meals = sage, tasks = cream, appts = lavender, birthdays = gold, holidays = peach), icon prefix, dense one-line title, optional time + family-tag dot row.
+5. **Right rail widgets** (new file per widget, all in `src/components/calendar/rail/`):
+   - `GoalsThisMonthCard` — top 3–5 active goals from `state.goals` (progress bar, area color, +Add → opens goal sheet).
+   - `IntentionCard` — pulls from existing intention store (or localStorage `careflow:intention`); shows seasonal label + focus word + moon phase emoji.
+   - `AreasToGrowCard` — 5 circular icons (Home, Health, Finance, Creative, Family) using existing `area-resources`/`category-icons`, tap routes to `/areas/:slug`.
+   - `UpcomingBirthdaysCard` — sorts `state.birthdays` by days-until, shows 3 with initials/avatar.
+   - `CelebrationsCard` — merges `state.holidays`, family events tagged as "celebration", and trip ranges from `state.trips`; next 4 within 60 days.
+   - `UpcomingHighlightsCard` — next appointment + next family event + next high-priority task in a mini timeline.
+6. **Mobile swipe deck** — horizontal `snap-x` carousel that renders the same widgets at 85% width, slotted above the calendar surface on `<lg` screens. Re-uses the same card components.
+7. **Empty states** — replace bare blank cells with kind copy: "No plans here yet. Leave room for life to happen." in the month grid when a day is empty and hovered; and a full-surface message for filtered views with zero results.
+8. **Atmosphere theming** — derive accent via `useFlowAccent("planflow")`; apply to hero gradient, active filter chip ring, focus highlights, and "Today" cell ring so the page automatically retints with the active atmosphere.
+9. **Persistence** — store selected view, layout, and filter set in `localStorage` under `careflow:calendar:*` so the page restores its state.
 
 ## Technical details
 
-**New file:** `src/components/tags/TagNotesPanel.tsx`
-- Props: `{ notes: Note[]; tagName: string; accent: string; onAdd: () => void }`
-- Internal `view` state: `"list" | "gallery" | "kanban" | "date"`, persisted to `localStorage` key `tag-notes-view`
-- View switcher: shadcn `Tabs` styled as a compact segmented control in the section header
-- Helper `extractTagContext(body, tagName)`:
-  - Strip markdown, find first case-insensitive match of `#tagName`
-  - Return ~140 chars of surrounding text with the match index, so the renderer can wrap the hashtag in a `<mark style={{ color: accent, background: 'transparent' }}>` span
-  - Fallback to first non-empty line if no body match
-- Title resolver reuses existing logic (`kind === "daily"` → formatted date, else `title || "Untitled"`)
+- Files added:
+  - `src/components/calendar/CalendarHub.tsx` (new shell)
+  - `src/components/calendar/rail/GoalsThisMonthCard.tsx`
+  - `src/components/calendar/rail/IntentionCard.tsx`
+  - `src/components/calendar/rail/AreasToGrowCard.tsx`
+  - `src/components/calendar/rail/UpcomingBirthdaysCard.tsx`
+  - `src/components/calendar/rail/CelebrationsCard.tsx`
+  - `src/components/calendar/rail/UpcomingHighlightsCard.tsx`
+  - `src/components/calendar/CalendarHero.tsx`
+  - `src/components/calendar/CalendarFilterChips.tsx`
+- Files edited:
+  - `src/pages/CalendarPage.tsx` — extract main surface into a child component used by `CalendarHub`; keep editors, kindFilter state, and event aggregation. Expose `kindFilter`, `setKindFilter`, `cursor`, `view`, `layout` via props so chips/hero can drive them.
+  - Add `family`, `bill`, `goal` to the `Kind` union and event sources (goal milestones from `state.goals[].dueDate` if present; bills from `state.bills` if present, else hidden chip).
+- Reused: `useStore`, `useFlowAccent`, `useAtmosphere`, `moonPhaseFor`, `getRhythmForecast`, `MoonPhaseBadge`, `ElementBadge`, existing `AppointmentEditor`, `BirthdayHolidayEditor`, `TaskEditor`, `QuickAddCalendarPopover`, `InboxCapture`.
+- Routing unchanged (`/calendar` still renders `CalendarPage`, which now renders `CalendarHub`).
+- All colors via existing semantic tokens / atmosphere palette — no hard-coded hex outside `flow-accent`.
 
-**Views:**
-- `ListView` — refined version of today's card grid, snippet under title
-- `GalleryView` — `grid-cols-2 md:grid-cols-3 lg:grid-cols-4`, taller cards with 3-line snippet clamp, soft gradient header using `accent`
-- `KanbanView` — horizontal scroll, one column per `Note.kind` (or "Other"); column header shows count; cards are compact
-- `DateView` — flat list grouped by `format(updatedAt, "MMMM yyyy")` then sorted desc; each entry shows day chip + snippet
+## Acceptance
 
-All cards remain `<Link to={"/notes/" + n.id}>` and keep current hover/lift styling and the accent left-bar.
-
-**Edits in `src/pages/TagDetail.tsx`:**
-- Replace the existing `<CardSection title="Notes" …>` invocation with `<TagNotesPanel notes={taggedNotes} tagName={tagName} accent={accent} onAdd={() => void addEntity("note")} />`
-- Keep `CardSection` for Tasks / Grocery / Projects unchanged
-
-**No data or schema changes.** Uses existing `Note` shape (`id`, `title`, `body`, `kind`, `date`, `updatedAt`, `tags`).
-
-## Out of scope
-
-- Drag-to-reorder on Kanban (notes have no status field to persist into)
-- View switchers for Tasks / Grocery / Projects sections
-- Editing snippets inline
+- `/calendar` shows the hero, expanded filter chips, restyled day cards, and right rail on desktop; swipe deck on mobile.
+- All 10 filter chips toggle event visibility; multi-select works; selection persists across reloads.
+- Right-rail widgets pull live data from the store and route to their respective pages on click.
+- Day, Week, Month, Year, Kanban, Schedule, Planning views all still work and keep current editing behavior.
+- Atmosphere switch retints hero, active chips, and Today highlight without code changes.
