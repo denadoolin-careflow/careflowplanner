@@ -5,7 +5,7 @@ import { useAtmosphere } from "@/lib/atmospheres";
 import { getMoonPhase, MOON_INFO, getIllumination } from "@/lib/moon";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo } from "@/lib/cycle";
-import { useWeather } from "@/lib/weather-store";
+import { useWeatherSnapshot, cToF } from "@/lib/weather-store";
 
 type FocusItem = { icon: string; label: string };
 
@@ -32,7 +32,7 @@ function focusFor(cyclePhase: string | null, moonPhase: string): FocusItem[] {
 export function TodaysRhythmCard({ date = new Date() }: { date?: Date }) {
   const { atmosphere } = useAtmosphere();
   const { settings: cycleSettings, periods, loaded: cycleLoaded } = useCycle();
-  const weather = useWeather();
+  const weather = useWeatherSnapshot();
 
   const moonPhase = getMoonPhase(date);
   const moon = MOON_INFO[moonPhase];
@@ -44,8 +44,8 @@ export function TodaysRhythmCard({ date = new Date() }: { date?: Date }) {
   );
 
   const focus = focusFor(cycleInfo?.phase ?? null, moonPhase);
-  const tempF = weather?.current?.tempF;
-  const cond = weather?.current?.condition;
+  const tempF = weather ? cToF(weather.tempC) : null;
+  const cond = weather?.conditionLabel;
 
   return (
     <section
@@ -64,7 +64,7 @@ export function TodaysRhythmCard({ date = new Date() }: { date?: Date }) {
         <Stat label="Atmosphere" value={atmosphere.name} hint={atmosphere.mood?.[0]} swatch={atmosphere.palette?.[0]} />
         <Stat label="Moon" value={moon.label} hint={`${illum}% lit`} icon={moon.glyph} />
         {cycleInfo ? (
-          <Stat label="Cycle" value={capitalize(cycleInfo.phase)} hint={`Day ${cycleInfo.dayOfCycle}`} icon="🌸" />
+          <Stat label="Cycle" value={capitalize(cycleInfo.phase)} hint={`Day ${cycleInfo.cycleDay}`} icon={cycleInfo.glyph} />
         ) : (
           <Stat label="Cycle" value="—" hint="Tap to enable" icon="🌸" />
         )}
