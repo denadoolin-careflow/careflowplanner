@@ -31,7 +31,15 @@ export function resolveProjectIcon(raw?: string | null): LucideIcon | null {
   const key = raw.trim().toLowerCase();
   if (!key) return null;
   if (EMOJI_RE.test(raw)) return null;
-  return ICON_MAP[key] ?? null;
+  if (ICON_MAP[key]) return ICON_MAP[key];
+  // Normalize separators: "shopping-cart" / "shopping_cart" / "shopping cart"
+  const compact = key.replace(/[-_\s]+/g, "");
+  if (ICON_MAP[compact]) return ICON_MAP[compact];
+  // Try each token (e.g. "shopping-cart" -> "shopping", "cart")
+  for (const part of key.split(/[-_\s]+/)) {
+    if (ICON_MAP[part]) return ICON_MAP[part];
+  }
+  return null;
 }
 
 /** Compute a tint color (hex or hsl()) for the icon tile bg from project.color, with fallback. */
@@ -54,10 +62,13 @@ export function ProjectIconGlyph({
 }) {
   const Icon = resolveProjectIcon(project.icon);
   if (Icon) return <Icon className={className} />;
-  if (project.icon && project.icon.trim()) {
-    return <span className="leading-none">{project.icon}</span>;
+  const raw = project.icon?.trim();
+  // Only render raw text if it's an actual emoji/pictograph — never raw words
+  // like "shopping-cart" which would distort the tile.
+  if (raw && EMOJI_RE.test(raw)) {
+    return <span className="inline-flex items-center justify-center leading-none">{raw}</span>;
   }
-  return <span className="leading-none">{fallback}</span>;
+  return <span className="inline-flex items-center justify-center leading-none">{fallback}</span>;
 }
 
 /** Compute a soft background + readable foreground from a project's color. */
