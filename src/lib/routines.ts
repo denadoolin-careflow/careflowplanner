@@ -88,6 +88,7 @@ async function loadAll() {
   cache = ((data ?? []) as any[]).map(mapRow);
   loaded = true;
   emit();
+  void resetRoutinesIfNewDay();
 }
 
 function mapRow(r: any): Routine {
@@ -114,6 +115,11 @@ function ensureLoaded() {
 function uid() { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`; }
 
 export const routines = {
+  /**
+   * Reset all routine item `done` flags to false when the day rolls over.
+   * Historical completions are preserved separately in `routine_completions`.
+   */
+  async resetIfNewDay() { return resetRoutinesIfNewDay(); },
   list(): Routine[] { return cache; },
   people(): string[] {
     return Array.from(new Set(cache.map(r => r.person_name))).sort();
