@@ -37,7 +37,7 @@ export function SlotWeather({ slot }: { slot: Slot }) {
   const tip = dayPartSuggestion(dp);
 
   return (
-    <div className="mx-4 mt-0 mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border/40 bg-card/60 px-3 py-2 text-[12px] backdrop-blur sm:mx-5">
+    <div className="mx-4 mt-0 mb-3 flex min-w-0 max-w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border/40 bg-card/60 px-3 py-2 text-[12px] backdrop-blur sm:mx-5">
       <span className="inline-flex items-center gap-1.5 text-foreground/80">
         <ConditionIcon condition={dp.condition} isNight={dp.isNight} />
         <span className="font-display tabular-nums text-base leading-none">{fmt(dp.avgTempC, unit)}</span>
@@ -50,7 +50,7 @@ export function SlotWeather({ slot }: { slot: Slot }) {
         <span className="text-[11px] text-muted-foreground">💧 {dp.precipChance}%</span>
       )}
       {tip && (
-        <span className="ml-auto truncate text-[11px] italic text-muted-foreground">{tip}</span>
+        <span className="ml-auto min-w-0 max-w-full truncate text-[11px] italic text-muted-foreground sm:max-w-[50%]">{tip}</span>
       )}
     </div>
   );
