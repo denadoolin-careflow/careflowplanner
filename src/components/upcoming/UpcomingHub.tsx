@@ -2,12 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, isToday, parseISO, startOfWeek } from "date-fns";
 import { useStore, todayISO } from "@/lib/store";
-import type { Task, Appointment, Energy } from "@/lib/types";
+import type { Task, Appointment, Energy, Goal } from "@/lib/types";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { QuickEntryBar } from "@/components/tasks/QuickEntryBar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useFlowAccent } from "@/lib/flow-accent";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, Link2, Wand2, GripVertical } from "lucide-react";
 import {
   CalendarRange, LayoutList, CalendarDays, LayoutGrid, Grid3x3,
   Sparkles, Plus, CalendarPlus, ListChecks, Sprout, Zap, Flame,
