@@ -13,7 +13,7 @@ import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
-import { CalendarRail, CalendarMobileWidgets } from "@/components/calendar/CalendarRail";
+import { CalendarRail } from "@/components/calendar/CalendarRail";
 import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
 import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
 import { hoursToHM } from "@/lib/time-blocks";
