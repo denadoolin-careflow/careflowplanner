@@ -242,6 +242,8 @@ function GalleryCard({ note, projectsById }: { note: Note; projectsById: Record<
     ? format(parseISO(note.date), "EEEE, MMM d")
     : (note.title || "Untitled");
   const projectName = note.projectId ? projectsById[note.projectId] : null;
+  const Icon = getLucideIcon(resolveNoteIcon(note));
+  const gradient = !note.coverUrl ? getNoteCoverCss(note.coverGradient) : null;
   return (
     <Link
       to={`/notes/${note.id}`}
@@ -250,8 +252,11 @@ function GalleryCard({ note, projectsById }: { note: Note; projectsById: Record<
         "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg",
       )}
     >
+      {gradient && (
+        <div className="h-16 w-full shrink-0" style={{ background: gradient }} />
+      )}
       <div className="flex items-start gap-2 px-4 pt-4">
-        {note.kind === "daily" ? <Sun className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> : null}
+        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
         {note.pinned ? <Pin className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-current text-accent-foreground" /> : null}
         <h3 className="line-clamp-2 flex-1 font-display text-base font-semibold leading-snug">{title}</h3>
       </div>
