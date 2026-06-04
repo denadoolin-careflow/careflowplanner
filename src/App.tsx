@@ -75,6 +75,7 @@ import FamilySettings from "./pages/FamilySettings";
 import JoinHousehold from "./pages/JoinHousehold";
 import FamilyRequests from "./pages/FamilyRequests";
 import FlowLanding from "./pages/FlowLanding";
+import FlowColorsPreview from "./pages/FlowColorsPreview";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
