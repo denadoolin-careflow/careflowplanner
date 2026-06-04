@@ -1234,15 +1234,26 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 type="button"
                 onClick={() => toggle(group.id)}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]",
+                  "flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left",
                   "text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors",
                   hasActive && "text-sidebar-foreground/90",
                 )}
               >
-                <GroupIcon className="h-3.5 w-3.5 opacity-70" />
-                <span className="flex-1 text-left">{group.label}</span>
+                <span className="mt-0.5 text-sm leading-none" aria-hidden>
+                  {("emoji" in group && (group as any).emoji) || null}
+                </span>
+                <span className="flex flex-1 flex-col gap-0.5">
+                  <span className="text-[12px] font-display font-semibold tracking-tight text-sidebar-foreground">
+                    {group.label}
+                  </span>
+                  {"subtitle" in group && (group as any).subtitle ? (
+                    <span className="text-[10px] uppercase tracking-[0.14em] text-sidebar-foreground/55">
+                      {(group as any).subtitle}
+                    </span>
+                  ) : null}
+                </span>
                 <ChevronDown
-                  className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")}
+                  className={cn("mt-1 h-3.5 w-3.5 shrink-0 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")}
                 />
               </button>
               <div
