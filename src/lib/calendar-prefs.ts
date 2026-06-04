@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 
 export type CalendarView = "day" | "week" | "month" | "year";
 export type CalendarLayout = "grid" | "schedule" | "kanban" | "plan";
-export type CalendarKind = "task" | "appt" | "care" | "meal" | "bday" | "hol" | "gcal" | "season";
+export type CalendarKind = "task" | "appt" | "care" | "meal" | "bday" | "hol" | "gcal" | "season" | "cosmic";
 
-const ALL_KINDS: CalendarKind[] = ["task", "appt", "care", "meal", "bday", "hol", "gcal", "season"];
+const ALL_KINDS: CalendarKind[] = ["task", "appt", "care", "meal", "bday", "hol", "gcal", "season", "cosmic"];
 const K = "careflow:calendar:prefs:v1";
 
 export interface CalendarPrefs {
