@@ -88,7 +88,7 @@ function TodayInner() {
 
   return (
     <>
-      <div className="grid gap-4 md:gap-5 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+      <div className="mx-auto grid w-full max-w-6xl gap-4 px-3 sm:px-5 lg:px-8 md:gap-5 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
         {/* Main column */}
         <div className="min-w-0 space-y-4 md:space-y-5">
           <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
