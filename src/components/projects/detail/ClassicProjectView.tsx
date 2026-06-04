@@ -51,8 +51,16 @@ import { aiInvoke } from "@/lib/ai-invoke";
 type ViewMode = "list" | "kanban" | "schedule";
 const NO_SECTION = "__no_section__";
 
-export default function ProjectDetail() {
-  const { id } = useParams<{ id: string }>();
+interface ClassicProjectViewProps {
+  /** When true, hide the duplicated header/hero/overview cards and only render the task management UI. */
+  embedded?: boolean;
+  /** When `embedded`, use this id instead of route params. */
+  projectId?: string;
+}
+
+export default function ClassicProjectView({ embedded, projectId: pid }: ClassicProjectViewProps = {}) {
+  const params = useParams<{ id: string }>();
+  const id = pid ?? params.id;
   const {
     state, addTask, updateTask, updateProject, deleteProject,
     addSection, updateSection, deleteSection, reorderSections,
