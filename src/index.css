@@ -1159,14 +1159,14 @@ html[data-atmosphere] .font-display {
   --foreground: 195 25% 18%;
   --card: 190 40% 99%;
   --popover: 190 40% 99%;
-  --primary: 175 18% 42%;
+  --primary: 175 18% 40%;
   --primary-foreground: 190 40% 98%;
   --primary-soft: 175 30% 90%;
   --secondary: 195 30% 80%;
   --accent: 35 45% 70%;
   --accent-foreground: 195 25% 18%;
   --muted: 190 20% 92%;
-  --muted-foreground: 195 12% 42%;
+  --muted-foreground: 195 12% 40%;
   --border: 190 18% 86%;
   --input: 190 18% 86%;
   --ring: 175 30% 45%;
