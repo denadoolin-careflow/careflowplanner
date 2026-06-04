@@ -190,17 +190,18 @@ export default function NoteDetail() {
           >
             <Copy className="h-4 w-4" /> Copy
           </Button>
-          {!note.coverUrl && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => coverInputRef.current?.click()}
-              disabled={coverBusy}
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
-            >
-              <ImagePlus className="h-4 w-4" /> Cover
-            </Button>
-          )}
+          <NoteIconPicker
+            value={note.icon ?? null}
+            resolved={resolvedIcon}
+            onChange={(next) => void setIcon(next)}
+          />
+          <NoteCoverPicker
+            hasCover={!!note.coverUrl || !!note.coverGradient}
+            busy={coverBusy}
+            onPickGradient={(gid) => void setGradientCover(gid)}
+            onPickImage={(f) => void setCover(f)}
+            onRemove={() => void removeCover()}
+          />
           <Button variant="ghost" size="icon" onClick={togglePin} aria-label="Pin">
             <Pin className={cn("h-4 w-4", note.pinned && "fill-current text-accent-foreground")} />
           </Button>
