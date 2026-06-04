@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import type { Task } from "@/lib/types";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
-import { useLongPressDrag } from "@/lib/long-press-drag";
 import { toast } from "sonner";
 
 type Scope = "today" | "tomorrow" | "thisWeek" | "thisMonth" | "thisYear";
@@ -81,9 +80,6 @@ export function TasksWidget({ date = new Date() }: Props) {
     if (id) await assignTo(id, scope);
   };
 
-  // Long-press / touch drag for mobile
-  const longPress = useLongPressDrag();
-
   return (
     <section className="cozy-card overflow-hidden p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -155,7 +151,6 @@ export function TasksWidget({ date = new Date() }: Props) {
               draggable
               onDragStart={(e) => onDragStart(e, t)}
               onDragEnd={onDragEnd}
-              {...longPress.bind({ type: "task", id: t.id })}
               className="group flex cursor-grab items-center gap-1.5 rounded-lg border border-border/40 bg-background/60 px-2 py-1.5 text-xs hover:border-primary/40 active:cursor-grabbing"
               title="Drag onto a bucket above or onto a calendar slot"
             >
