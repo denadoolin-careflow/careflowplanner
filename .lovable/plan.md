@@ -1,42 +1,109 @@
-## Goals
-1. On the Today view, let each planned meal expand inline to an editable ingredient checklist; tapping the meal name opens the existing recipe detail drawer.
-2. Make the hourly weather tiles in each slot's `SlotWeather` card large enough to fill the widget area evenly (no horizontal scroll on the standard mobile width).
-3. Restore the original full Weather widget and weekly weather strip to the Today sidebar, plus a combined Moon + Top‑3 priorities sidebar widget.
+# CareFlow Unified Calendar System
 
-## Changes
+Rebuild `src/pages/CalendarPage.tsx` and its supporting components into one responsive command center. Same component tree on phone, tablet, and desktop — only layout containers change via Tailwind breakpoints. No separate mobile page.
 
-### 1. Meals widget — inline ingredient checklist + detail link
-File: `src/components/today/widgets/MealsPlannedWidget.tsx`
-- Add per-slot `expanded` state. Add a chevron toggle on each filled meal row to expand/collapse an ingredient checklist beneath it.
-- Render `meal.ingredients` (array of strings) as a list of `<Checkbox>` rows. Local per-meal "checked" state is stored in `localStorage` under `careflow:meal-ingredients:<mealId>` so checks persist for the day; reset key includes the meal date so a new day starts fresh.
-- Inline editing: each ingredient row is an editable text input (commit on blur / Enter). A small "+ Add ingredient" row appends new items. Save via `updateMeal(id, { ingredients: [...] })`.
-- Tapping the meal title (existing inline input) currently edits the name; change behavior so:
-  - The meal title becomes a button that opens `RecipeDrawer` (sets `quickMeal`).
-  - A small "edit" pencil icon allows renaming inline (keeps existing rename flow).
-- The existing `BookOpen` button stays for quick access; remove only if redundant — keep for consistency.
+## Scope
 
-### 2. Hourly weather tiles — fill widget width
-File: `src/components/today/rhythm/SlotWeather.tsx`
-- Replace the horizontal-scroll `flex gap-1 overflow-x-auto` strip with a `grid` whose column count equals `slotHours.length` (e.g. `style={{ gridTemplateColumns: 'repeat(N, minmax(0, 1fr))' }}`). Tiles stretch to fill the card width.
-- Bump tile padding (`px-2 py-1.5`) and text sizes one notch (`text-[11px]`, icon `h-4 w-4`) so the larger area reads cleanly.
-- Keep the "no rain expected" footer.
+In: the `/calendar` route and the components under `src/components/calendar/*`, plus new shared widgets for the calendar rail. Reuses existing atmosphere, cycle, lunar, weather, tasks, caregiving, meals, notes, journal modules — does not rewrite them.
 
-### 3. Sidebar widgets — restore weather + add moon/priorities combo
-Files:
-- New: `src/components/today/widgets/WeatherSidebarCard.tsx` — wraps `<WeatherWidget compact />` in the standard `cozy-card` shell with a "Weather" header.
-- New: `src/components/today/widgets/WeeklyWeatherCard.tsx` — wraps the existing `WeeklyWeather` component.
-- New: `src/components/today/widgets/MoonPrioritiesCard.tsx` — single card containing:
-  - `MoonPhaseWidget` (full version) at the top.
-  - A "Top 3 today" section that reuses the same `pickTopThree` logic from `TopThreeStrip` (extract to `src/lib/top-three.ts` so both files import it) and renders 3 checkbox rows. Toggling a checkbox calls `toggleTask` and plays the existing completion chime/haptic (mirroring `TasksTodayWidget`).
-- Edit `src/pages/Today.tsx`:
-  - Add the three new widgets to `widgetRegistry`:
-    - `weather` → `<WeatherSidebarCard />`
-    - `weekly-weather` → `<WeeklyWeatherCard />`
-    - `moon-priorities` → `<MoonPrioritiesCard date={day} onTaskClick={setEditTaskId} />`
-  - Remove the standalone `moon-phase` entry (replaced by combined card). Cycle card stays.
-  - Default order: insert `weather`, `weekly-weather`, `moon-priorities` near the top of the sidebar.
+Out: backend/schema changes, sync infrastructure (already on Lovable Cloud + store), Today page, redesign of individual feature pages.
 
-### Notes
-- All changes stay frontend/presentation only. No DB schema or RLS work.
-- Existing `useSidebarOrder` will pick up the new IDs automatically (its registry is canonical-based).
-- Completion sound/visual + haptics use existing helpers (`playCompletionChime`, `haptics.success`, completion-visual settings) — no new infra.
+## Architecture
+
+```text
+CalendarPage (responsive shell)
+├── CalendarHeader            ← title, date nav, Today, view+layout toggles, search, atmosphere chip, Quick Add
+├── CalendarFilters           ← All / Tasks / Appointments / Caregiving / Meals / Birthdays / Holidays / Cycle / Moon / Journal
+├── Main grid
+│   ├── CalendarSurface       (≈100% mobile, ≈60% tablet, ≈70% desktop)
+│   │    ├── MonthView  ← day cells with event dots, moon glyph, cycle dot, birthday/holiday markers
+│   │    ├── WeekView
+│   │    ├── DayView
+│   │    ├── YearView
+│   │    └── ScheduleView (list layout for any range)
+│   ├── SummaryStrip          ← Upcoming · Birthdays · Appointments · Holidays
+│   │                            desktop 4-col, tablet 2×2, mobile horizontal swipe
+│   └── WidgetRail            (stacked mobile, 2-col tablet, single-col desktop sidebar)
+│        ├── TodaysRhythmCard (atmosphere, moon sign+element+phase, cycle phase, weather, suggested focus)
+│        ├── TasksWidget       (progress ring, due/overdue/done, quick add)
+│        ├── FamilyTimelineWidget
+│        ├── CaregivingWidget
+│        ├── MealsWidget
+│        ├── CycleWidget       (phase, fertility window, insights & reminders)
+│        ├── LunarWidget       (phase, sign, element, illumination, next phase, actions)
+│        ├── WeatherWidget
+│        ├── NotesWidget
+│        └── JournalWidget
+└── DayDetail
+     ├── desktop/tablet: right-side panel that slides in when a day is selected
+     └── mobile: bottom-sheet drawer (existing Sheet primitive)
+```
+
+Selected day, view, layout, and filter set live in `CalendarPage` state and persist via a small `useCalendarPrefs` localStorage hook so they survive across devices and route changes.
+
+## Responsive rules
+
+One component tree, layout via Tailwind breakpoints:
+
+- `< md` (mobile): single column. Calendar → SummaryStrip (swipe) → WidgetRail (stack). Day tap opens bottom sheet. FAB for Quick Add.
+- `md` (tablet): calendar full width, WidgetRail underneath as 2-col grid. Day tap opens side drawer.
+- `lg+` (desktop): two-column shell — `CalendarSurface` left (~70%), `WidgetRail` right (~30%) with independent scroll. SummaryStrip sits above the widget rail as a 4-col grid. Day selection populates an inline right-side detail panel inside the calendar column.
+
+## Atmosphere integration
+
+All colors come from existing atmosphere CSS variables (`--atmosphere-accent`, `--atmosphere-bg`, `--atmosphere-gradient`, etc., already wired in `AtmosphereAmbient`). Replace hardcoded `bg-primary-soft`, `bg-rose-100`, etc. in `CalendarPage.tsx` and `CalendarItemCard.tsx` with semantic + atmosphere tokens. Add any missing tokens to `index.css` / `tailwind.config.ts`.
+
+Category visual language uses **icon + shape**, not only color, so atmosphere swaps stay legible:
+
+| Category | Icon | Shape |
+|---|---|---|
+| Task | Check | rounded square |
+| Appointment | CalendarClock | pill |
+| Caregiving | Heart | rounded square |
+| Meals | Utensils | pill |
+| Birthday | Gift | circle |
+| Holiday | Sparkles | diamond |
+| Cycle | Flower | dot |
+| Moon | MoonGlyph | crescent |
+| Journal | Notebook | rounded tag |
+
+## Reused vs new components
+
+Reuse (wrap where needed):
+- `MoonPhaseWidget`, `WeatherWidget`, `RhythmGuidanceCard` — TodaysRhythmCard composes these.
+- `MealsPlannedWidget`, `FamilySnapshotCard`, `MoonPrioritiesCard` (today/widgets, today/rhythm) — drop into WidgetRail.
+- `LunarPhaseWidget`, `cycle-store` / `cycle.ts` for cycle data.
+- `TimeGrid`, `AppointmentEditor`, `TaskEditor`, `BirthdayHolidayEditor`, `InboxCapture`, `QuickAddCalendarPopover`.
+
+New under `src/components/calendar/`:
+- `CalendarHeader.tsx`
+- `CalendarFilters.tsx`
+- `SummaryStrip.tsx`
+- `WidgetRail.tsx`
+- `TodaysRhythmCard.tsx`
+- `TasksWidget.tsx`, `FamilyTimelineWidget.tsx`, `CaregivingWidget.tsx`, `NotesWidget.tsx`, `JournalWidget.tsx`, `CycleWidget.tsx` (where not already covered).
+- `DayDetailPanel.tsx` (renders inside a side panel on ≥md, inside a `Sheet` on mobile — single component, container chosen by parent).
+- `useCalendarPrefs.ts` for view/layout/filter persistence.
+- `useWidgetLayout.ts` for reorder/resize/collapse/hide; stored in localStorage keyed by user.
+
+## Widget customization
+
+`WidgetRail` reads ordered widget list from `useWidgetLayout`. Each widget renders inside a `WidgetFrame` with drag handle, collapse toggle, and hide menu. Edit mode toggled from header overflow menu. Layout persists per user.
+
+## Implementation steps
+
+1. Add `useCalendarPrefs` and `useWidgetLayout` hooks + atmosphere token audit (add missing soft/foreground variants).
+2. Extract current `CalendarPage.tsx` header/toolbar into `CalendarHeader` + `CalendarFilters`. Move category icon/shape mapping into one helper.
+3. Build `MonthView`, `WeekView`, `DayView`, `YearView`, `ScheduleView` as siblings under a `CalendarSurface` switch, lifting logic from the existing 1063-line page.
+4. Build `SummaryStrip` (Upcoming, Birthdays, Appointments, Holidays) reading from the store with breakpoint-aware container.
+5. Build `WidgetRail` + `WidgetFrame` and the new widget components, composing existing widgets where possible.
+6. Build `DayDetailPanel` and wire it to render inside a right-side panel on `lg+` and a `Sheet` on `< lg`.
+7. Replace `CalendarPage` body with the new responsive shell; delete dead code paths from the old page.
+8. Verify atmosphere swap visually updates header, day cells, event chips, widgets, summary strip, and detail panel.
+9. Verify mobile (375), tablet (820), desktop (1440) layouts; check filter persistence, day-detail behavior, Quick Add, and widget reorder.
+
+## Out of scope / follow-ups
+
+- Real cross-device layout sync (currently per-device via localStorage). Promoting widget layout to a Cloud table is a separate task.
+- Drag-to-reschedule on the month grid — keep current click-to-edit flow.
+- Year view heatmap density visualization beyond month thumbnails.
