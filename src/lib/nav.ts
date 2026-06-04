@@ -239,7 +239,7 @@ export const NAV_GROUPS = [
       { to: "/seasons/celebrations", label: "Celebrations", icon: PartyPopper },
       { to: "/seasons/holidays", label: "Holidays", icon: Gift },
       { to: "/seasons/traditions", label: "Traditions", icon: Repeat },
-      { to: "/seasons/memory-book", label: "Memory Book", icon: Album },
+      { to: "/memories", label: "Memory Book", icon: Album },
       { to: "/seasons/bucket-lists", label: "Bucket Lists", icon: CheckSquare },
       { to: "/seasons/remembrance", label: "Remembrance", icon: Heart },
     ],
