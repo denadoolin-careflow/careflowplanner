@@ -1,5 +1,6 @@
 import { NavLink, useLocation, Link } from "react-router-dom";
-import { NAV_GROUPS, FLOW_ACCENTS } from "@/lib/nav";
+import { NAV_GROUPS } from "@/lib/nav";
+import { useFlowAccents } from "@/lib/flow-accent";
 import { PANEL_BY_ROUTE } from "@/components/workspace/PanelRegistry";
 import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
@@ -625,6 +626,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const orderedGroups = groupOrder
     .map(id => NAV_GROUPS.find(g => g.id === id))
     .filter(Boolean) as typeof NAV_GROUPS[number][];
+  const flowAccents = useFlowAccents();
 
   const handleNavClick = (to: string) => (e: MouseEvent<HTMLAnchorElement>) => {
     const panelId = PANEL_BY_ROUTE[to];
@@ -1186,7 +1188,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           const open = !!openMap[group.id];
           const GroupIcon = group.icon;
           const hasActive = group.items.some((it) => it.to === pathname);
-          const accent = FLOW_ACCENTS[group.id] ?? FLOW_ACCENTS.settings;
+          const accent = flowAccents[group.id] ?? flowAccents.settings;
           if (collapsed) {
             return (
               <div key={group.id} className="mb-1 flex flex-col items-center gap-0.5">
@@ -1195,12 +1197,16 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                     to={`/flow/${group.id}`}
                     onClick={handleNavClick(`/flow/${group.id}`)}
                     className={({ isActive }) => cn(
-                      "grid h-10 w-10 place-items-center rounded-xl ring-1 transition-all",
-                      accent.bg, accent.ring,
+                      "grid h-10 w-10 place-items-center rounded-xl transition-all",
                       isActive && "shadow-soft",
                     )}
+                    style={{
+                      background: accent.soft,
+                      boxShadow: `inset 0 0 0 1px ${accent.ring}`,
+                      color: accent.color,
+                    }}
                   >
-                    <GroupIcon className={cn("h-4 w-4", accent.text)} />
+                    <GroupIcon className="h-4 w-4" />
                   </NavLink>
                 )}
                 {group.items.map(({ to, label, icon: Icon }) => wrapItem(label,
@@ -1255,13 +1261,15 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   )}
                 >
                   <span
-                    className={cn(
-                      "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md ring-1",
-                      accent.bg, accent.ring,
-                    )}
+                    className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md"
+                    style={{
+                      background: accent.soft,
+                      boxShadow: `inset 0 0 0 1px ${accent.ring}`,
+                      color: accent.color,
+                    }}
                     aria-hidden
                   >
-                    <GroupIcon className={cn("h-3.5 w-3.5", accent.text)} />
+                    <GroupIcon className="h-3.5 w-3.5" />
                   </span>
                   <span className="flex flex-1 flex-col gap-0.5">
                     <span className="text-[12px] font-display font-semibold tracking-tight text-sidebar-foreground">

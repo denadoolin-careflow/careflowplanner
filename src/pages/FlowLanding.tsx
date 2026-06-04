@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link, useLocation, useParams, Navigate } from "react-router-dom";
-import { NAV_GROUPS, FLOW_ACCENTS, NAV_DESCRIPTIONS } from "@/lib/nav";
+import { NAV_GROUPS, NAV_DESCRIPTIONS } from "@/lib/nav";
+import { useFlowAccent } from "@/lib/flow-accent";
 import { cn } from "@/lib/utils";
 import { ChevronRight, ArrowRight } from "lucide-react";
 
@@ -14,34 +15,34 @@ export default function FlowLanding() {
     [id],
   );
 
+  const accent = useFlowAccent(group?.id ?? "settings");
   if (!group) return <Navigate to="/" replace />;
-
-  const accent = FLOW_ACCENTS[group.id] ?? FLOW_ACCENTS.settings;
+  const GroupIcon = group.icon;
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 md:py-10">
       {/* Header banner */}
       <header
-        className={cn(
-          "relative overflow-hidden rounded-2xl border p-6 md:p-8",
-          "bg-gradient-to-br",
-          accent.gradient,
-          accent.border,
-        )}
+        className="relative overflow-hidden rounded-2xl border p-6 md:p-8"
+        style={{
+          background: `linear-gradient(135deg, ${accent.gradient}, transparent)`,
+          borderColor: accent.ring,
+        }}
       >
         <div className="flex items-start gap-4">
           <div
-            className={cn(
-              "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl ring-1",
-              accent.bg,
-              accent.ring,
-            )}
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
+            style={{
+              background: accent.soft,
+              boxShadow: `inset 0 0 0 1px ${accent.ring}`,
+              color: accent.color,
+            }}
             aria-hidden
           >
-            {group.emoji}
+            <GroupIcon className="h-7 w-7" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className={cn("text-2xl font-semibold md:text-3xl", accent.text)}>
+            <h1 className="text-2xl font-semibold md:text-3xl" style={{ color: accent.color }}>
               {group.label}
             </h1>
             {group.subtitle && (
@@ -53,12 +54,8 @@ export default function FlowLanding() {
           {group.items[0] && (
             <Link
               to={group.items[0].to}
-              className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                accent.bg,
-                accent.text,
-                "hover:opacity-80",
-              )}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-opacity hover:opacity-80"
+              style={{ background: accent.soft, color: accent.color }}
             >
               View all
               <ArrowRight className="h-4 w-4" />
@@ -83,29 +80,27 @@ export default function FlowLanding() {
                 className={cn(
                   "group relative flex h-full flex-col gap-2 rounded-xl border bg-card p-4 text-left transition-all",
                   "hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isActive
-                    ? cn("ring-2", accent.ring, accent.border)
-                    : "border-border hover:border-foreground/20",
+                  !isActive && "border-border hover:border-foreground/20",
                 )}
+                style={isActive ? { borderColor: accent.ring, boxShadow: `0 0 0 2px ${accent.ring}` } : undefined}
               >
                 <div className="flex items-center gap-3">
                   <span
-                    className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-lg ring-1",
-                      accent.bg,
-                      accent.ring,
-                    )}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg"
+                    style={{
+                      background: accent.soft,
+                      boxShadow: `inset 0 0 0 1px ${accent.ring}`,
+                      color: accent.color,
+                    }}
                   >
-                    <Icon className={cn("h-4 w-4", accent.text)} />
+                    <Icon className="h-4 w-4" />
                   </span>
                   <span className="flex-1 truncate text-sm font-medium">
                     {item.label}
                   </span>
                   <ChevronRight
-                    className={cn(
-                      "h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5",
-                      isActive && accent.text,
-                    )}
+                    className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                    style={isActive ? { color: accent.color } : undefined}
                   />
                 </div>
                 {desc && (
