@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, Gift, Heart, Flag, Mountain, Cake, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { TodaysRhythmCard } from "@/components/calendar/TodaysRhythmCard";
 import { useStore } from "@/lib/store";
-import { useCelebrations, useBucketLists, useBucketItems, useTraditions, useTraditionItems, useSeasonalGoals, useMemoryBook, useHolidayPlans } from "@/lib/seasons/hooks";
+import { useCelebrations, useBucketLists, useBucketItems, useTraditions, useTraditionItems, useSeasonalGoals, useHolidayPlans } from "@/lib/seasons/hooks";
+import { listMemories, type Memory } from "@/lib/memories";
 import { SEASON_META, seasonFor, daysLeftInSeason, daysUntilDate, ageOn } from "@/lib/seasons/season-utils";
 import { usHolidaysFor } from "@/lib/us-holidays";
 import { format, parseISO } from "date-fns";
@@ -26,7 +27,8 @@ export default function Seasons() {
   const { celebrations, add: addCeleb } = useCelebrations();
   const { lists } = useBucketLists();
   const { traditions } = useTraditions();
-  const { entries: memoryEntries } = useMemoryBook();
+  const [memoryEntries, setMemoryEntries] = useState<Memory[]>([]);
+  useEffect(() => { listMemories().then(setMemoryEntries).catch(() => setMemoryEntries([])); }, []);
   const { plans } = useHolidayPlans();
   const { goals, add: addGoal, toggle: toggleGoal } = useSeasonalGoals(season, today.getFullYear());
   const [editorOpen, setEditorOpen] = useState(false);
@@ -185,13 +187,13 @@ export default function Seasons() {
             <Card className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold">Memory Highlight</h4>
-                <Link to="/seasons/memory-book" className="text-xs text-primary">View all</Link>
+                <Link to="/memories" className="text-xs text-primary">View all</Link>
               </div>
               {memoryEntries[0] ? (
                 <div>
                   <div className="font-medium text-sm">{memoryEntries[0].title}</div>
                   <div className="text-xs text-muted-foreground mt-1">{format(parseISO(memoryEntries[0].date), "MMM d, yyyy")}</div>
-                  {memoryEntries[0].body && <p className="mt-2 text-xs line-clamp-3 text-muted-foreground">{memoryEntries[0].body}</p>}
+                  {memoryEntries[0].description && <p className="mt-2 text-xs line-clamp-3 text-muted-foreground">{memoryEntries[0].description}</p>}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">No memories yet. Add your first.</p>
