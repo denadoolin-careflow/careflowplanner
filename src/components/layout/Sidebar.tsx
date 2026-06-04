@@ -1291,40 +1291,25 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           const accent = flowAccents[group.id] ?? flowAccents.settings;
           if (collapsed) {
             return (
-              <div key={group.id} className="mb-3 flex flex-col items-center gap-1">
-                {wrapItem(`Open ${group.label}`,
-                  <NavLink
-                    to={`/flow/${group.id}`}
-                    onClick={handleNavClick(`/flow/${group.id}`)}
-                    className={({ isActive }) => cn(
-                      "relative grid h-10 w-10 place-items-center rounded-xl transition-all",
-                      "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                      isActive && "bg-primary-soft text-foreground shadow-soft",
-                    )}
-                  >
-                    <GroupIcon className="h-[18px] w-[18px]" style={{ color: accent.color }} />
-                    <span
-                      className="pointer-events-none absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full"
-                      style={{ background: accent.color }}
-                      aria-hidden
-                    />
-                  </NavLink>
-                )}
-                {group.items.map(({ to, label, icon: Icon }) => wrapItem(label,
-                  <NavLink
+              <div key={group.id} className="flex flex-col items-center gap-1.5">
+                <RailButton
+                  to={`/flow/${group.id}`}
+                  label={group.label}
+                  icon={GroupIcon}
+                  accentColor={accent.color}
+                  onClick={handleNavClick(`/flow/${group.id}`)}
+                />
+                {group.items.map(({ to, label, icon: Icon }) => (
+                  <RailButton
                     key={to}
                     to={to}
+                    label={label}
+                    icon={Icon}
                     end={to === "/"}
                     onClick={handleNavClick(to)}
-                    className={({ isActive }) => cn(
-                      "grid h-10 w-10 place-items-center rounded-xl transition-all",
-                      "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                      isActive && "bg-primary-soft text-foreground shadow-soft",
-                    )}
-                  >
-                    <Icon className="h-[18px] w-[18px]" />
-                  </NavLink>
+                  />
                 ))}
+                {idx < orderedGroups.length - 1 && <RailDivider />}
               </div>
             );
           }
