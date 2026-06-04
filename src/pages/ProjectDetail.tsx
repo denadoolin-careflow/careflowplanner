@@ -20,7 +20,6 @@ import {
   Flag, ArrowRight, Wind, Moon, Flower2, Leaf, Cloud, Trash2,
 } from "lucide-react";
 import { format, parseISO, isThisWeek } from "date-fns";
-import { ProjectCoverArt } from "@/components/projects/hub/ProjectCoverArt";
 import { STAGE_META, HEALTH_META, stageOf, healthOf, STUDIO, hsl } from "@/components/projects/hub/studio-tokens";
 import { ProjectIconGlyph, projectIconTileStyle } from "@/lib/project-icon";
 import ClassicProjectView from "@/components/projects/detail/ClassicProjectView";
@@ -337,14 +336,101 @@ function ProjectHero({
           </div>
         </div>
 
-        <div className="relative min-h-[220px] md:min-h-full" style={{ background: atmo.gradient }}>
-          <ProjectCoverArt seed={project.id} className="absolute inset-0 h-full w-full opacity-90" />
-          <div className="absolute right-4 top-4 rounded-full bg-background/80 px-3 py-1 text-[10px] font-medium tracking-wider text-muted-foreground backdrop-blur">
-            {atmo.label}
-          </div>
-        </div>
+        <AISummaryPanel project={project} atmo={atmo} onUpdate={onUpdate} />
       </div>
     </SoftCard>
+  );
+}
+
+/* ----------------------------- AI Summary Panel ----------------------------- */
+
+function AISummaryPanel({
+  project, atmo, onUpdate,
+}: { project: Project; atmo: typeof ATMOSPHERES[AtmosphereKey]; onUpdate: (p: Partial<Project>) => void }) {
+  const [busy, setBusy] = useState<"overview" | "update" | null>(null);
+
+  const run = async (mode: "overview" | "update") => {
+    setBusy(mode);
+    try {
+      const { data, error } = await aiInvoke("ai-project-overview", {
+        body: { project_id: project.id, mode },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      if ((data as any)?.overview) {
+        onUpdate({
+          aiOverview: (data as any).overview,
+          aiOverviewUpdatedAt: (data as any).updated_at ?? new Date().toISOString(),
+        });
+        haptics.success();
+        toast.success(mode === "update" ? "Status update added" : "Overview generated");
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not generate. Try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const hasOverview = !!project.aiOverview;
+
+  return (
+    <div
+      className="relative flex min-h-[220px] flex-col gap-3 border-l border-border/40 p-5 md:min-h-full"
+      style={{ background: atmo.gradient }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/70">
+          <Sparkles className="h-3.5 w-3.5" style={{ color: hsl(atmo.accent) }} />
+          AI Summary
+        </div>
+        <span className="rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-medium tracking-wider text-muted-foreground backdrop-blur">
+          {atmo.label}
+        </span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto rounded-2xl border border-border/40 bg-background/70 p-3 text-sm leading-relaxed text-foreground/85 backdrop-blur">
+        {hasOverview ? (
+          <p className="whitespace-pre-wrap">{project.aiOverview}</p>
+        ) : (
+          <p className="text-muted-foreground">
+            No summary yet. Generate one to see a quick status read on this project — what's moving, what's stuck, and what to look at next.
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-[10px] text-muted-foreground">
+          {project.aiOverviewUpdatedAt
+            ? `Updated ${format(parseISO(project.aiOverviewUpdatedAt), "MMM d, h:mm a")}`
+            : "Not generated yet"}
+        </span>
+        <div className="flex gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 gap-1 rounded-full bg-background/80 text-[11px]"
+            disabled={busy !== null}
+            onClick={() => run("overview")}
+          >
+            <Sparkles className="h-3 w-3" />
+            {busy === "overview" ? "Generating…" : hasOverview ? "Regenerate" : "Generate"}
+          </Button>
+          {hasOverview && (
+            <Button
+              size="sm"
+              className="h-7 gap-1 rounded-full text-[11px]"
+              style={{ background: hsl(atmo.accent), color: "white" }}
+              disabled={busy !== null}
+              onClick={() => run("update")}
+            >
+              <RefreshCw className={cn("h-3 w-3", busy === "update" && "animate-spin")} />
+              {busy === "update" ? "Updating…" : "Add update"}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
