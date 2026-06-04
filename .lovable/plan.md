@@ -1,55 +1,40 @@
-# Refocus navigation around 7 Flow pillars
+## Goal
 
-Reorganize the **sidebar groups** and the **bottom-nav "More" sheet** into the 7 pillars you named. No routes, pages, or features change — only how existing destinations are grouped and labeled in navigation.
+Audit and fix WCAG contrast across all 9 atmospheres × 2 modes (light/dark) defined in `src/index.css`, so text never gets washed out or too dim regardless of the active atmosphere.
 
-## 1. Group headers
+## Approach
 
-Each group shows the Flow name large with the descriptor as a subtitle:
+1. **Audit script (one-off, in `/tmp`)**
+   Parse `src/index.css` and extract every `:root[data-atmosphere=…]` and `.dark[data-atmosphere=…]` block. For each block, compute WCAG contrast ratios for the pairs that matter most:
+   - `foreground` on `background`
+   - `foreground` on `card`
+   - `foreground` on `popover`
+   - `muted-foreground` on `background` / `muted`
+   - `primary-foreground` on `primary`
+   - `accent-foreground` on `accent`
+   - `secondary-foreground` on `secondary` (when defined)
+   - `border` on `background` (≥3:1 for UI separators)
 
-```text
-📅 PlanFlow
-   Planning & Productivity
-```
+   Targets: **4.5:1** for normal text, **3:1** for large text / UI borders / icons.
+   Output a table of fails per atmosphere/mode.
 
-Emoji renders inline with the label; descriptor renders below in muted text.
+2. **Fix failing tokens in `src/index.css`**
+   For each fail, nudge only the lightness of the offending token (keep hue + saturation so the atmosphere mood is preserved). Bias direction:
+   - Light modes → darken `*-foreground`, lighten `background/card`.
+   - Dark modes → lighten `*-foreground`, darken `background/card`.
+   - `muted-foreground`: raise to ≥45% L in light, ≥68% L in dark.
+   - `border`: nudge until ≥3:1 against background.
 
-## 2. Page → pillar mapping (proposed)
+   Do not touch hue/saturation or gradient definitions unless a swatch itself is the failing surface.
 
-**📅 PlanFlow — Planning & Productivity**
-Inbox, Today, Daily Plan (/plan), Week, Month, Year, Calendar, Upcoming, Anytime, Someday, Not Today, Logbook, Projects, Focus, Automations, Reviews Timeline
+3. **Re-run the audit** to confirm zero fails, then summarize the deltas (which atmospheres changed, which tokens, before → after L%).
 
-**💚 CareFlow — Family & Caregiving**
-CARE Loop, Caregiving, Family & sharing, Mental Load
+## Out of scope
 
-**🏠 HomeFlow — Home Management**
-Home, Home Hub, Meals, Meals Library, Inventory (Pantry), Routines, Trips
+- Restructuring the atmosphere system or adding new tokens.
+- Flow-accent colors (`src/lib/flow-accent.ts`) — separate concern; only touch if a flow accent is rendered as text on a surface and fails.
+- Component-level color overrides; the fix lives in atmosphere tokens.
 
-**🌿 WellFlow — Wellness & Self-Care**
-Health, Habits, Journal, Journal & Flow
+## Deliverable
 
-**📚 GrowthFlow — Learning & Goals**
-Goals, Ideas, Notes, Whiteboards, Knowledge Graph, Tags
-
-**💰 MoneyFlow — Budgeting & Financial Wellness**
-Wealth
-
-**🌙 LunarFlow — Reflection & Intentional Living**
-Rhythm, Insights, Weekly Reset, Monthly Reset, Memories
-
-**Top-level (outside pillars)**
-Dashboard, Settings — stay pinned at the top/bottom of the sidebar as they are today.
-
-Tell me if any page should move before I build.
-
-## 3. Files changed
-
-- **`src/lib/nav.ts`** — rewrite `NAV_GROUPS` to the 7 pillars above. Each group gains `subtitle` and `emoji` fields. `NAV` and `MOBILE_NAV` are untouched (routes unchanged).
-- **`src/components/layout/Sidebar.tsx`** — group header renders `{emoji} {label}` on row 1 and `{subtitle}` muted on row 2. Existing collapse/reorder/active behavior preserved.
-- **`src/components/layout/BottomNav.tsx`** — the "More" sheet currently renders `NAV` as a flat 3-column grid. Replace with sections iterating `NAV_GROUPS`: each section shows the pillar header (emoji + name + subtitle) then a 3-col grid of its items. Theme/low-energy toggles and "Customize bottom nav" button stay.
-
-## 4. Out of scope
-
-- No new routes, no pillar landing/hub pages.
-- No URL renames.
-- Quick Add, command palette, panel picker, dashboard tiles unchanged.
-- MoneyFlow currently has only one page (Wealth); it will appear as a single-item group. Fine for now.
+Patched `src/index.css` with adjusted HSL lightness values where needed, plus a short report in chat listing every change.
