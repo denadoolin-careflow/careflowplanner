@@ -1295,6 +1295,11 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 </button>
               </div>
               <div
+                className="mx-2 mt-1 h-px"
+                style={{ background: `linear-gradient(to right, ${accent.ring}, transparent)` }}
+                aria-hidden
+              />
+              <div
                 className={cn(
                   "grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out",
                   open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
