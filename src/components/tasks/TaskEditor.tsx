@@ -118,6 +118,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   const [addingSub, setAddingSub] = useState(false);
   const [subAiLoading, setSubAiLoading] = useState(false);
   const [autoBusy, setAutoBusy] = useState(false);
+  const [notesExpanded, setNotesExpanded] = useState(() => !!(task?.notes && task.notes.trim().length > 0));
   const [nlpOn, setNlpOn] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("cf.taskedit.nlp") !== "0";
@@ -131,6 +132,11 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   };
 
   useEffect(() => { setDraft(task); }, [task]);
+  useEffect(() => {
+    if (task) {
+      setNotesExpanded(!!(task.notes && task.notes.trim().length > 0));
+    }
+  }, [task?.id]);
 
   const parsed = nlpOn && draft?.title.trim() ? parseTaskInput(draft.title) : null;
 
