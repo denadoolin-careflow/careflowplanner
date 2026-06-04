@@ -33,7 +33,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
   const snap = useWeatherSnapshot();
   const [unit] = useTempUnit();
   const tempStr = snap
-    ? `${unit === "F" ? cToF(snap.current.tempC) : Math.round(snap.current.tempC)}°`
+    ? `${unit === "F" ? cToF(snap.tempC) : Math.round(snap.tempC)}°`
     : null;
 
   const moon = MOON_INFO[getMoonPhase(date)];
@@ -68,9 +68,9 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
                   <>
                     <span className="text-muted-foreground/50">·</span>
                     <span className="tabular-nums">{tempStr}</span>
-                    {snap?.current.conditionLabel && (
+                    {snap?.conditionLabel && (
                       <span className="hidden text-muted-foreground sm:inline">
-                        {snap.current.conditionLabel}
+                        {snap.conditionLabel}
                       </span>
                     )}
                   </>
@@ -94,10 +94,10 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
               {cyclePhase && (
                 <span
                   className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-card/60 px-2 py-0.5 text-[10px] text-foreground/80 backdrop-blur"
-                  title={PHASE_META[cyclePhase.phase].description}
+                  title={PHASE_META[cyclePhase.phase].invitation}
                 >
-                  <span aria-hidden>{PHASE_META[cyclePhase.phase].emoji}</span>
-                  <span>Cycle day {cyclePhase.dayOfCycle} · {PHASE_META[cyclePhase.phase].label}</span>
+                  <span aria-hidden>{PHASE_META[cyclePhase.phase].glyph}</span>
+                  <span>Cycle day {cyclePhase.cycleDay} · {PHASE_META[cyclePhase.phase].label}</span>
                 </span>
               )}
             </div>
