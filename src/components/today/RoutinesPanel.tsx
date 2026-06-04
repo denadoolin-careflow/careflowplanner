@@ -23,6 +23,18 @@ function writePerson(p: string) {
   try { localStorage.setItem(PERSON_KEY, p); } catch { /* noop */ }
 }
 
+// Per-slot person overrides so each time-of-day column can be filtered to a
+// different person independently from the panel-wide default.
+const SLOT_PERSON_KEY = "careflow:dayextras:slot-person:v1";
+function readSlotPersons(): Partial<Record<RoutineSlot, string>> {
+  if (typeof localStorage === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem(SLOT_PERSON_KEY) ?? "{}"); }
+  catch { return {}; }
+}
+function writeSlotPersons(map: Partial<Record<RoutineSlot, string>>) {
+  try { localStorage.setItem(SLOT_PERSON_KEY, JSON.stringify(map)); } catch { /* noop */ }
+}
+
 /**
  * Today-view routines strip showing morning / afternoon / evening routines
  * for a selected person. Items are draggable to reorder, show their icon,
@@ -43,6 +55,15 @@ export function RoutinesPanel() {
     if (!person && people.length > 0) { setPerson(people[0]); writePerson(people[0]); }
   }, [people, person]);
   const updatePerson = (p: string) => { setPerson(p); writePerson(p); };
+
+  const [slotPersons, setSlotPersons] = useState<Partial<Record<RoutineSlot, string>>>(readSlotPersons);
+  const updateSlotPerson = (slot: RoutineSlot, p: string) => {
+    setSlotPersons(prev => {
+      const next = { ...prev, [slot]: p };
+      writeSlotPersons(next);
+      return next;
+    });
+  };
 
   const [open, setOpen] = useState(true);
   const [focus, setFocus] = useState<{ routine: Routine; itemId?: string } | null>(null);
@@ -81,7 +102,9 @@ export function RoutinesPanel() {
                   icon={Icon}
                   label={label}
                   slot={slot}
-                  person={person}
+                  person={slotPersons[slot] || person}
+                  people={people}
+                  onPersonChange={(p) => updateSlotPerson(slot, p)}
                   onFocus={(r, itemId) => setFocus({ routine: r, itemId })}
                 />
               ))}
@@ -102,9 +125,11 @@ export function RoutinesPanel() {
 }
 
 function RoutineSlotColumn({
-  icon: Icon, label, slot, person, onFocus,
+  icon: Icon, label, slot, person, people, onPersonChange, onFocus,
 }: {
   icon: typeof Sunrise; label: string; slot: RoutineSlot; person: string;
+  people: string[];
+  onPersonChange: (p: string) => void;
   onFocus: (r: Routine, itemId?: string) => void;
 }) {
   const current = person ? routinesApi.find(person, slot) : undefined;
@@ -128,15 +153,29 @@ function RoutineSlotColumn({
 
   return (
     <div className="flex min-h-[160px] min-w-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-3">
-      <div className="mb-2 flex items-center gap-2">
-        <span className="grid h-6 w-6 place-items-center rounded-full bg-primary/15 text-primary">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
           <Icon className="h-3 w-3" />
         </span>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-        <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+        <span className="min-w-0 break-words text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="ml-auto shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
           {done}/{items.length}
         </span>
       </div>
+      {people.length > 0 && (
+        <div className="mb-2">
+          <Select value={person} onValueChange={onPersonChange}>
+            <SelectTrigger className="h-7 w-full rounded-full border-border/60 bg-background/70 text-[11px]">
+              <SelectValue placeholder="Pick person…" />
+            </SelectTrigger>
+            <SelectContent>
+              {people.map(p => (
+                <SelectItem key={p} value={p} className="text-xs">{p}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {!person ? (
         <p className="text-[11px] italic text-muted-foreground">
           Pick a person above to load routines.
