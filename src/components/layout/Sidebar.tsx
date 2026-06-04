@@ -193,7 +193,7 @@ function useSidebarData(forceExpanded: boolean) {
       for (const g of NAV_GROUPS) {
         const has = g.items.some((it) => it.to === pathname);
         if (has && !next[g.id]) { next[g.id] = true; changed = true; }
-        if (!(g.id in next)) { next[g.id] = g.id === "overview" || g.id === "planning"; changed = true; }
+        if (!(g.id in next)) { next[g.id] = g.id === "planflow" || g.id === "careflow"; changed = true; }
       }
       return changed ? next : prev;
     });
