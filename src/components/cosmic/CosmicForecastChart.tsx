@@ -19,15 +19,15 @@ export function CosmicForecastChart({ from = new Date(), days = 7 }: { from?: Da
         <h3 className="font-display text-base">Cosmic Forecast</h3>
         <p className="text-xs text-muted-foreground">Next {days} days</p>
       </header>
-      <div className="flex h-28 items-end justify-between gap-1 sm:h-32 sm:gap-2">
+      <div className="flex items-end justify-between gap-1 sm:gap-2">
         {data.map(d => {
           const norm = (d.score - min) / range;
-          const h = Math.max(18, Math.round(norm * 100));
+          const px = Math.max(22, Math.round(norm * 96));
           return (
             <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
               <div
                 className="w-full rounded-md ring-1 ring-white/10 transition-all"
-                style={{ height: `${h}%`, background: TONE_COLOR[d.tone] }}
+                style={{ height: `${px}px`, background: TONE_COLOR[d.tone] }}
                 title={`${d.label}: ${d.tone}`}
               />
               <span className="text-[10px] sm:text-[11px] text-muted-foreground">{d.label}</span>
