@@ -7,6 +7,7 @@ import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
   PanelLeft, PanelRight, Palette, Pin, CalendarDays, SlidersHorizontal, StickyNote,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { Search as SearchIcon, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -238,6 +239,11 @@ function SectionToggleRow({
   );
 }
 
+/** Slim divider between collapsed-rail sections. */
+function RailDivider() {
+  return <div aria-hidden className="my-2 h-px w-6 rounded-full bg-sidebar-border/40" />;
+}
+
 function usePinnedNotes(enabled: boolean) {
   const [notes, setNotes] = useState<Note[]>([]);
   useEffect(() => {
@@ -286,7 +292,7 @@ function PinnedTagsSection({
 
   if (collapsed) {
     return (
-      <div className="mb-3 flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1.5">
         {tags.slice(0, 8).map(t => {
           const Icon = tagIconFor(t.icon);
           const color = t.color || fallbackColorFor(t.name);
@@ -299,18 +305,28 @@ function PinnedTagsSection({
                   to={to}
                   onClick={onNavigate}
                   className={cn(
-                    "grid h-10 w-10 place-items-center rounded-xl transition-all",
+                    "relative grid h-12 w-12 place-items-center rounded-xl transition-colors duration-150",
                     "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     active && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
-                  <Icon className="h-[18px] w-[18px]" style={{ color }} />
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full"
+                      style={{ background: color }}
+                    />
+                  )}
+                  <span className="grid h-6 w-6 place-items-center">
+                    <Icon className="h-5 w-5" style={{ color }} />
+                  </span>
                 </NavLink>
               </TooltipTrigger>
               <TooltipContent side="right">{t.name}</TooltipContent>
             </Tooltip>
           );
         })}
+        <RailDivider />
       </div>
     );
   }
@@ -391,7 +407,7 @@ function PinnedNotesSection({
 
   if (collapsed) {
     return (
-      <div className="mb-3 flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1.5">
         {notes.slice(0, 8).map(n => {
           const title = n.kind === "daily" && n.date ? n.date : (n.title || "Untitled");
           const active = pathname === `/notes/${n.id}`;
@@ -402,18 +418,27 @@ function PinnedNotesSection({
                   to={`/notes/${n.id}`}
                   onClick={onNavigate}
                   className={cn(
-                    "grid h-10 w-10 place-items-center rounded-xl transition-all",
+                    "relative grid h-12 w-12 place-items-center rounded-xl transition-colors duration-150",
                     "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     active && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
-                  <Pin className="h-[18px] w-[18px]" />
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
+                    />
+                  )}
+                  <span className="grid h-6 w-6 place-items-center">
+                    <Pin className="h-5 w-5" />
+                  </span>
                 </NavLink>
               </TooltipTrigger>
               <TooltipContent side="right">{title}</TooltipContent>
             </Tooltip>
           );
         })}
+        <RailDivider />
       </div>
     );
   }
@@ -654,6 +679,80 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     </Tooltip>
   ) : node;
 
+  // ───── Collapsed rail primitives ─────────────────────────────────────────
+  // One 48×48 button, 24px icon slot, optional accent color, left-edge active
+  // bar. Used everywhere in the collapsed sidebar so every icon sits on the
+  // exact same vertical axis with zero shift on hover/active.
+  const RailButton = ({
+    to, label, icon: Icon, accentColor, onClick, end,
+  }: {
+    to: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+    accentColor?: string;
+    onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
+    end?: boolean;
+  }) => (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>
+        <NavLink
+          to={to}
+          end={end}
+          onClick={onClick}
+          className={({ isActive }) => cn(
+            "group relative grid h-12 w-12 shrink-0 place-items-center rounded-xl transition-colors duration-150",
+            "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            isActive && "bg-primary-soft text-foreground shadow-soft",
+          )}
+        >
+          {({ isActive }) => (
+            <>
+              <span
+                aria-hidden
+                className={cn(
+                  "pointer-events-none absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full transition-opacity duration-150",
+                  isActive ? "opacity-100" : "opacity-0",
+                )}
+                style={{ background: accentColor ?? "hsl(var(--primary))" }}
+              />
+              <span className="grid h-6 w-6 place-items-center">
+                <Icon className="h-5 w-5" style={accentColor ? { color: accentColor } : undefined} />
+              </span>
+            </>
+          )}
+        </NavLink>
+      </TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+
+  const RailIconAction = ({
+    label, icon: Icon, onClick, ariaPressed,
+  }: {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    onClick: () => void;
+    ariaPressed?: boolean;
+  }) => (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          aria-pressed={ariaPressed}
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-150"
+        >
+          <span className="grid h-6 w-6 place-items-center">
+            <Icon className="h-5 w-5" />
+          </span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+
+
   const renderProjectNode = (p: typeof projects[number], depth: number, allProjects: typeof projects, areaName: string | undefined) => {
     const children = allProjects.filter(c => c.parentProjectId === p.id);
     const key = `proj:${p.id}`;
@@ -798,7 +897,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     <TooltipProvider>
     <div className={cn(
       "flex h-full flex-col gap-2 bg-sidebar transition-[width] duration-200 ease-out",
-      collapsed ? "w-14 items-center px-2 py-3" : "w-full p-3",
+      collapsed ? "w-16 items-center px-2 py-3" : "w-full p-3",
     )} ref={rootRef}>
       <div className={cn(
         "flex w-full py-2",
@@ -897,56 +996,67 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             </Popover>
           </>
         )}
-        {!forceExpanded && <button
-          type="button"
-          onClick={() => setCollapsed(c => !c)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={cn(
-            "hidden lg:grid place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            collapsed ? "h-10 w-10" : "h-7 w-7",
-          )}
-        >
-          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-        </button>}
+        {!forceExpanded && !collapsed && (
+          <button
+            type="button"
+            onClick={() => setCollapsed(c => !c)}
+            aria-label="Collapse sidebar"
+            className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
+        )}
       </div>
-      <nav className={cn("mt-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden w-full", collapsed && "items-center", !collapsed && "pr-1")}>
+      <nav className={cn(
+        "mt-1 flex flex-col overflow-y-auto overflow-x-hidden w-full",
+        collapsed ? "items-center gap-1.5 flex-1 min-h-0" : "gap-1 pr-1",
+      )}>
         {/* Things-style Lists rail */}
-        <div className={cn("mb-3 flex flex-col gap-1", collapsed && "items-center")}>
-          {LISTS.map(({ to, label, icon: Icon, paletteIndex }) => wrapItem(label,
-            <NavLink
-              key={to}
-              to={to}
-              onClick={handleNavClick(to)}
-              className={({ isActive }) => cn(
-                "group relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
-                "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                collapsed ? "justify-center h-10 w-10" : "px-2 py-2",
-                isActive && "bg-primary-soft text-foreground shadow-soft",
-              )}
-            >
-              {collapsed ? (
-                <Icon className="h-[18px] w-[18px]" style={{ color: paletteColor(atmosphere.palette, paletteIndex) }} />
-              ) : (
-                <>
-                  <span
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
-                    style={{
-                      backgroundColor: paletteColor(atmosphere.palette, paletteIndex, 0.15),
-                      color: paletteColor(atmosphere.palette, paletteIndex),
-                    }}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="flex-1">{label}</span>
-                  <span
-                    className="h-1.5 w-1.5 rounded-full opacity-60"
-                    style={{ backgroundColor: paletteColor(atmosphere.palette, paletteIndex) }}
-                  />
-                </>
-              )}
-            </NavLink>
-          ))}
-        </div>
+        {collapsed ? (
+          <div className="flex flex-col items-center gap-1.5">
+            {LISTS.map(({ to, label, icon: Icon, paletteIndex }) => (
+              <RailButton
+                key={to}
+                to={to}
+                label={label}
+                icon={Icon}
+                accentColor={paletteColor(atmosphere.palette, paletteIndex)}
+                onClick={handleNavClick(to)}
+              />
+            ))}
+            <RailDivider />
+          </div>
+        ) : (
+          <div className="mb-3 flex flex-col gap-1">
+            {LISTS.map(({ to, label, icon: Icon, paletteIndex }) => (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={handleNavClick(to)}
+                className={({ isActive }) => cn(
+                  "group relative flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-all",
+                  "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  isActive && "bg-primary-soft text-foreground shadow-soft",
+                )}
+              >
+                <span
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
+                  style={{
+                    backgroundColor: paletteColor(atmosphere.palette, paletteIndex, 0.15),
+                    color: paletteColor(atmosphere.palette, paletteIndex),
+                  }}
+                >
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="flex-1">{label}</span>
+                <span
+                  className="h-1.5 w-1.5 rounded-full opacity-60"
+                  style={{ backgroundColor: paletteColor(atmosphere.palette, paletteIndex) }}
+                />
+              </NavLink>
+            ))}
+          </div>
+        )}
 
         {/* Pinned + quick-date jump sections (live right under Logbook) */}
         {sections.pinnedNotes && (
@@ -1203,40 +1313,25 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           const accent = flowAccents[group.id] ?? flowAccents.settings;
           if (collapsed) {
             return (
-              <div key={group.id} className="mb-3 flex flex-col items-center gap-1">
-                {wrapItem(`Open ${group.label}`,
-                  <NavLink
-                    to={`/flow/${group.id}`}
-                    onClick={handleNavClick(`/flow/${group.id}`)}
-                    className={({ isActive }) => cn(
-                      "relative grid h-10 w-10 place-items-center rounded-xl transition-all",
-                      "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                      isActive && "bg-primary-soft text-foreground shadow-soft",
-                    )}
-                  >
-                    <GroupIcon className="h-[18px] w-[18px]" style={{ color: accent.color }} />
-                    <span
-                      className="pointer-events-none absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full"
-                      style={{ background: accent.color }}
-                      aria-hidden
-                    />
-                  </NavLink>
-                )}
-                {group.items.map(({ to, label, icon: Icon }) => wrapItem(label,
-                  <NavLink
+              <div key={group.id} className="flex flex-col items-center gap-1.5">
+                <RailButton
+                  to={`/flow/${group.id}`}
+                  label={group.label}
+                  icon={GroupIcon}
+                  accentColor={accent.color}
+                  onClick={handleNavClick(`/flow/${group.id}`)}
+                />
+                {group.items.map(({ to, label, icon: Icon }) => (
+                  <RailButton
                     key={to}
                     to={to}
+                    label={label}
+                    icon={Icon}
                     end={to === "/"}
                     onClick={handleNavClick(to)}
-                    className={({ isActive }) => cn(
-                      "grid h-10 w-10 place-items-center rounded-xl transition-all",
-                      "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                      isActive && "bg-primary-soft text-foreground shadow-soft",
-                    )}
-                  >
-                    <Icon className="h-[18px] w-[18px]" />
-                  </NavLink>
+                  />
                 ))}
+                {idx < orderedGroups.length - 1 && <RailDivider />}
               </div>
             );
           }
@@ -1345,6 +1440,36 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         })}
 
       </nav>
+      {collapsed && !forceExpanded && (
+        <div className="mt-auto flex w-full flex-col items-center gap-1.5 pt-2">
+          <RailDivider />
+          <RailIconAction
+            label={`Sidebar theme: ${themePref}`}
+            icon={
+              themePref === "dark" ? Moon :
+              themePref === "light" ? Sun :
+              themePref === "atmosphere" ? Palette : Sun
+            }
+            onClick={cycleTheme}
+          />
+          <RailIconAction
+            label={side === "left" ? "Move sidebar to right" : "Move sidebar to left"}
+            icon={side === "left" ? PanelRight : PanelLeft}
+            onClick={toggleSide}
+          />
+          <RailButton
+            to="/settings"
+            label="Settings"
+            icon={SettingsIcon}
+            onClick={handleNavClick("/settings")}
+          />
+          <RailIconAction
+            label="Expand sidebar"
+            icon={PanelLeftOpen}
+            onClick={() => setCollapsed(c => !c)}
+          />
+        </div>
+      )}
     </div>
     </TooltipProvider>
   );
