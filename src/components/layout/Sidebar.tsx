@@ -7,6 +7,7 @@ import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
   PanelLeft, PanelRight, Palette, Pin, CalendarDays, SlidersHorizontal, StickyNote,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { Search as SearchIcon, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -1459,7 +1460,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           <RailButton
             to="/settings"
             label="Settings"
-            icon={require("lucide-react").Settings}
+            icon={SettingsIcon}
             onClick={handleNavClick("/settings")}
           />
           <RailIconAction
