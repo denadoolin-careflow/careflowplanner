@@ -64,6 +64,7 @@ export interface Task {
   attachments?: Attachment[];
 }
 
+
 export interface AreaRecord {
   id: string;
   name: string;
