@@ -431,6 +431,49 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     void ensureDefaultAutomations(user.id).catch(() => {});
   }, [user, reload]);
 
+  /* Realtime: keep calendar data (tasks, appointments, meals, birthdays,
+     holidays) in sync across devices. Postgres changes for the signed-in
+     user are streamed in and merged into local state without a refetch,
+     so an edit on mobile shows up on desktop/tablet within a moment. */
+  useEffect(() => {
+    if (!user) return;
+    const uid = user.id;
+    const filter = `user_id=eq.${uid}`;
+    type Slice = keyof Pick<AppState, "tasks" | "appointments" | "meals" | "birthdays" | "holidays">;
+    const subs: Array<{ table: string; key: Slice; mapper: (r: any) => any }> = [
+      { table: "tasks", key: "tasks", mapper: taskFrom },
+      { table: "appointments", key: "appointments", mapper: apptFrom },
+      { table: "meals", key: "meals", mapper: mealFrom },
+      { table: "birthdays", key: "birthdays", mapper: bdayFrom },
+      { table: "holidays", key: "holidays", mapper: holidayFrom },
+    ];
+    const channel = supabase.channel(`calendar-sync-${uid}`);
+    for (const { table, key, mapper } of subs) {
+      channel.on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table, filter },
+        (payload: any) => {
+          setState(s => {
+            const list = (s[key] as any[]) ?? [];
+            if (payload.eventType === "DELETE") {
+              const id = payload.old?.id;
+              if (!id) return s;
+              return { ...s, [key]: list.filter((r: any) => r.id !== id) } as AppState;
+            }
+            const row = mapper(payload.new);
+            const idx = list.findIndex((r: any) => r.id === row.id);
+            const next = idx >= 0
+              ? list.map((r: any) => (r.id === row.id ? { ...r, ...row } : r))
+              : [row, ...list];
+            return { ...s, [key]: next } as AppState;
+          });
+        }
+      );
+    }
+    channel.subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [user]);
+
   /* helpers */
   const refreshSlice = async <K extends keyof AppState>(table: string, key: K, mapper: (r:any)=>any) => {
     const { data } = await supabase.from(table as any).select("*").order("created_at", { ascending: false } as any);
