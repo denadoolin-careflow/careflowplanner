@@ -26,6 +26,7 @@ import { ArchetypeThemeSection } from "@/components/settings/ArchetypeThemeSecti
 import { AtmosphereFeelSection } from "@/components/settings/AtmosphereFeelSection";
 import { FontSection } from "@/components/settings/FontSection";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
+import { useExhaleReminderPrefs, ensureNotificationPermission } from "@/lib/exhale-reminder";
 import { useRhythmForecastEnabled, useRecommendationTone } from "@/lib/rhythm-forecast";
 import {
   useAstrologyEnabled,
@@ -384,6 +385,8 @@ export default function Settings() {
         </div>
       </SectionCard>
 
+      <ExhaleReminderSection />
+
       <SectionCard title="Account" subtitle="Synced across your devices." accent="warm">
         <p className="text-sm text-muted-foreground">Your CareFlow data is saved to your account. Sign in on any device to see the same planner.</p>
         <Button variant="outline" className="mt-3" onClick={async () => { await signOut(); toast.success("Signed out."); }}>Sign out</Button>
@@ -392,5 +395,61 @@ export default function Settings() {
       <CycleSettingsSection />
       <WeatherPrefsSection />
     </div>
+  );
+}
+
+function ExhaleReminderSection() {
+  const { enabled, time, setEnabled, setTime } = useExhaleReminderPrefs();
+  const canNotify = typeof window !== "undefined" && "Notification" in window;
+  const permission = canNotify ? Notification.permission : "denied";
+  return (
+    <SectionCard
+      title="End-of-day Exhale reminder"
+      subtitle="A gentle nudge to wind down the day."
+      accent="sage"
+    >
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <Label className="text-sm">Daily reminder</Label>
+            <p className="text-[11px] text-muted-foreground">Prompts you once per day at the time below.</p>
+          </div>
+          <Switch checked={enabled} onCheckedChange={async (v) => {
+            setEnabled(v);
+            if (v && canNotify && Notification.permission === "default") {
+              await ensureNotificationPermission();
+            }
+          }} />
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <Label className="text-sm">Reminder time</Label>
+            <p className="text-[11px] text-muted-foreground">Default 8:00 PM.</p>
+          </div>
+          <Input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="h-8 w-32"
+            disabled={!enabled}
+          />
+        </div>
+        {canNotify && permission !== "granted" && enabled && (
+          <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
+            <p className="text-[11px] text-muted-foreground">
+              {permission === "denied"
+                ? "Browser notifications are blocked. You'll still get an in-app toast."
+                : "Allow browser notifications to get nudged even when the tab isn't focused."}
+            </p>
+            {permission !== "denied" && (
+              <Button size="sm" variant="outline" className="h-7 rounded-full text-[11px]"
+                onClick={() => void ensureNotificationPermission()}>
+                Enable
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </SectionCard>
   );
 }
