@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
-import { Users, ArrowRight, Plus } from "lucide-react";
+import { Users, ArrowRight, Plus, Check, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useRoutines } from "@/lib/routines";
 import { cn } from "@/lib/utils";
-import { RecipientEditor } from "@/components/caregiving/RecipientEditor";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const KIND_TINT: Record<string, string> = {
   child: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-100",
@@ -16,10 +17,18 @@ const KIND_TINT: Record<string, string> = {
 };
 
 export function FamilySnapshotCard({ date }: { date: Date }) {
-  const { state } = useStore();
+  const { state, addTask } = useStore();
   const { routines: allRoutines } = useRoutines();
   const iso = format(date, "yyyy-MM-dd");
-  const [addOpen, setAddOpen] = useState(false);
+  const [addingFor, setAddingFor] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+
+  const commitAdd = async (recipientId: string) => {
+    const t = draft.trim();
+    if (t) await addTask({ title: t, recipientId, dueDate: iso });
+    setDraft("");
+    setAddingFor(null);
+  };
 
   const rows = useMemo(() => {
     return state.recipients.slice(0, 6).map(r => {
@@ -50,19 +59,9 @@ export function FamilySnapshotCard({ date }: { date: Date }) {
           <Users className="h-3.5 w-3.5 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground">Family Snapshot</h3>
         </div>
-        <div className="inline-flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setAddOpen(true)}
-            className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-            aria-label="Add family member"
-          >
-            <Plus className="h-3 w-3" /> Add
-          </button>
-          <Link to="/caregiving" className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
-            View all <ArrowRight className="h-2.5 w-2.5" />
-          </Link>
-        </div>
+        <Link to="/caregiving" className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+          View all <ArrowRight className="h-2.5 w-2.5" />
+        </Link>
       </div>
       {rows.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border/50 px-2 py-3 text-center text-xs text-muted-foreground">
@@ -71,24 +70,51 @@ export function FamilySnapshotCard({ date }: { date: Date }) {
       ) : (
         <ul className="space-y-2">
           {rows.map(r => (
-            <li key={r.id}>
-              <Link
-                to={`/caregiving?recipient=${r.id}`}
-                className="flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-muted/40 transition-colors"
-              >
-                <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold", KIND_TINT[r.kind] ?? KIND_TINT.self)}>
-                  {r.name.slice(0, 2).toUpperCase()}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-foreground">{r.name}</div>
-                  <div className="truncate text-[11px] text-muted-foreground">{r.status}</div>
+            <li key={r.id} className="group">
+              <div className="flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-muted/40 transition-colors">
+                <Link to={`/caregiving?recipient=${r.id}`} className="flex min-w-0 flex-1 items-center gap-2.5">
+                  <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold", KIND_TINT[r.kind] ?? KIND_TINT.self)}>
+                    {r.name.slice(0, 2).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-foreground">{r.name}</div>
+                    <div className="truncate text-[11px] text-muted-foreground">{r.status}</div>
+                  </div>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => { setAddingFor(addingFor === r.id ? null : r.id); setDraft(""); }}
+                  className="opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+                  aria-label={`Add task for ${r.name}`}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              {addingFor === r.id && (
+                <div className="mt-1 ml-11 flex items-center gap-1">
+                  <Input
+                    autoFocus
+                    placeholder={`Add task for ${r.name}…`}
+                    value={draft}
+                    onChange={e => setDraft(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") void commitAdd(r.id);
+                      if (e.key === "Escape") { setAddingFor(null); setDraft(""); }
+                    }}
+                    className="h-7 text-xs"
+                  />
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => void commitAdd(r.id)}>
+                    <Check className="h-3 w-3" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setAddingFor(null); setDraft(""); }}>
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
-              </Link>
+              )}
             </li>
           ))}
         </ul>
       )}
-      <RecipientEditor open={addOpen} onOpenChange={setAddOpen} mode="add" />
     </section>
   );
 }
