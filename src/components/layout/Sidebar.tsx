@@ -286,7 +286,7 @@ function PinnedTagsSection({
 
   if (collapsed) {
     return (
-      <div className="mb-3 flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1.5">
         {tags.slice(0, 8).map(t => {
           const Icon = tagIconFor(t.icon);
           const color = t.color || fallbackColorFor(t.name);
@@ -299,18 +299,28 @@ function PinnedTagsSection({
                   to={to}
                   onClick={onNavigate}
                   className={cn(
-                    "grid h-10 w-10 place-items-center rounded-xl transition-all",
+                    "relative grid h-12 w-12 place-items-center rounded-xl transition-colors duration-150",
                     "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     active && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
-                  <Icon className="h-[18px] w-[18px]" style={{ color }} />
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full"
+                      style={{ background: color }}
+                    />
+                  )}
+                  <span className="grid h-6 w-6 place-items-center">
+                    <Icon className="h-5 w-5" style={{ color }} />
+                  </span>
                 </NavLink>
               </TooltipTrigger>
               <TooltipContent side="right">{t.name}</TooltipContent>
             </Tooltip>
           );
         })}
+        <RailDivider />
       </div>
     );
   }
