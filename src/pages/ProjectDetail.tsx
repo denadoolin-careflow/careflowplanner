@@ -3,7 +3,7 @@
  * Wraps the existing task management UI inside ClassicProjectView for the
  * Tasks tab so all the section/kanban/schedule logic is preserved.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ import {
   ArrowLeft, Sparkles, Search, Share2, Pencil, Plus, Star, Calendar,
   Users, CheckCircle2, Circle, ListChecks, FileText, Link2, Flame,
   Activity as ActivityIcon, ImagePlus, RefreshCw, ExternalLink, Lightbulb,
-  Flag, ArrowRight, Wind, Moon, Flower2, Leaf, Cloud, Trash2,
+  Flag, ArrowRight, Wind, Moon, Flower2, Leaf, Cloud, Trash2, History, Clock,
 } from "lucide-react";
 import { format, parseISO, isThisWeek } from "date-fns";
 import { STAGE_META, HEALTH_META, stageOf, healthOf, STUDIO, hsl } from "@/components/projects/hub/studio-tokens";
@@ -27,6 +27,7 @@ import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { ProjectJournalPanel } from "@/components/journal/ProjectJournalPanel";
 import { MilestonesCard } from "@/components/projects/MilestonesCard";
 import { ResourcesCard } from "@/components/projects/ResourcesCard";
+import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { useEntityNotes } from "@/lib/note-links";
 import { useProjectIdeas } from "@/lib/project-ideas";
 import { aiInvoke } from "@/lib/ai-invoke";
