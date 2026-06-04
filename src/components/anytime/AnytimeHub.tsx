@@ -517,15 +517,12 @@ function CapacityKanban({ tasks }: { tasks: Task[] }) {
 
   // Tasks not matched by any specialized column fall into "next" as the default holding lane.
   const cols = useMemo(() => {
+    const isBare  = (t: Task) => !t.done && estMin(t) <= 5 && inferEnergy(t) === "low";
+    const isLater = (t: Task) => !t.done && t.status === "someday";
     return CAP_COLUMNS.map(c => {
       let items: Task[];
       if (c.key === "next") {
-        items = tasks.filter(t =>
-          !t.done && t.status !== "someday" && !(estMin(t) <= 5 && inferEnergy(t) === "low") && !t.isTopThree
-            ? false
-            : c.match(t) ||
-              (!t.done && t.status !== "someday" && !(estMin(t) <= 5 && inferEnergy(t) === "low") && !CAP_COLUMNS.some(x => x.key !== "next" && x.match(t)))
-        );
+        items = tasks.filter(t => !t.done && !isBare(t) && !isLater(t));
       } else {
         items = tasks.filter(c.match);
       }
