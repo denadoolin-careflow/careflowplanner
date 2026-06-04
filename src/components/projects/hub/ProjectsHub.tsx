@@ -498,7 +498,7 @@ export default function ProjectsHub() {
     >
       <div className="mx-auto w-full max-w-7xl space-y-8 p-4 md:p-8">
         <header className="space-y-1">
-          <div className="text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plum})` }}>CareFlow</div>
+          <div className="text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plumText})` }}>CareFlow</div>
           <h1 className="font-display text-4xl tracking-tight">
             Creative Projects <Sparkles className="inline h-5 w-5" style={{ color: `hsl(${STUDIO.gold})` }} />
           </h1>
