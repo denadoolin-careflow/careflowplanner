@@ -35,6 +35,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { useCelebrations } from "@/lib/seasons/hooks";
+import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -99,7 +100,7 @@ export default function CalendarPage() {
 
   useEffect(() => { loadGoogle(); }, []);
 
-  const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task"|"care"|"meal"|"season") =>
+  const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task"|"care"|"meal"|"season"|"cosmic") =>
     k === "appt" ? "bg-primary-soft text-foreground"
     : k === "bday" ? "bg-accent-soft text-accent-foreground"
     : k === "hol" ? "bg-secondary-soft text-secondary-foreground"
@@ -107,13 +108,15 @@ export default function CalendarPage() {
     : k === "care" ? "bg-rose-100 text-rose-900 border border-rose-300/50 dark:bg-rose-900/30 dark:text-rose-100"
     : k === "meal" ? "bg-amber-100 text-amber-900 border border-amber-300/50 dark:bg-amber-900/30 dark:text-amber-100"
     : k === "season" ? "bg-pink-100 text-pink-900 border border-pink-300/50 dark:bg-pink-900/30 dark:text-pink-100"
+    : k === "cosmic" ? "bg-indigo-100 text-indigo-900 border border-indigo-300/50 dark:bg-indigo-900/30 dark:text-indigo-100"
     : "bg-muted text-foreground";
 
   const { celebrations } = useCelebrations();
+  const cosmicIndex = useMemo(() => buildCosmicCalendarIndex(addDays(cursor, -60), 180), [cursor]);
 
   // Adapter for TimeGrid which only knows about a narrower set of kinds.
   const eventsOnForGrid = (k: string) => eventsOn(k)
-    .filter(e => e.kind !== "meal" && e.kind !== "season")
+    .filter(e => e.kind !== "meal" && e.kind !== "season" && e.kind !== "cosmic")
     .map(e => ({
       ...e,
       kind: (e.kind === "care" ? "task" : e.kind) as "appt" | "bday" | "gcal" | "hol" | "task",
@@ -151,6 +154,12 @@ export default function CalendarPage() {
       label: `${c.icon ?? "🎉"} ${c.title}`,
       time: undefined,
     })),
+    ...((cosmicIndex.get(k) ?? []).map(c => ({
+      kind: "cosmic" as const,
+      id: c.id,
+      label: c.label,
+      time: undefined,
+    }))),
   ];
 
   // Filter-aware wrapper used by all layouts.
@@ -350,6 +359,7 @@ export default function CalendarPage() {
               { k: "hol" as Kind, label: "Holidays", Icon: Cake },
               { k: "gcal" as Kind, label: "Google", Icon: CalendarClock },
               { k: "season" as Kind, label: "Celebrations", Icon: Sparkles },
+              { k: "cosmic" as Kind, label: "Cosmic", Icon: Sparkles },
             ] as const).map(({ k, label, Icon }) => {
               const on = kindFilter.has(k);
               return (
@@ -462,7 +472,7 @@ export default function CalendarPage() {
   );
 }
 
-type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task" | "care" | "meal" | "season"; id?: string; label: string; time?: string; color?: string };
+type EventItem = { kind: "appt" | "bday" | "hol" | "gcal" | "task" | "care" | "meal" | "season" | "cosmic"; id?: string; label: string; time?: string; color?: string };
 type EventsFn = (k: string) => EventItem[];
 type ColorFn = (k: EventItem["kind"]) => string;
 
