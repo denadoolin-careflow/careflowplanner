@@ -53,7 +53,8 @@ export function RoutineItemRow({
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className={cn("min-w-0 flex-1 break-words text-left", item.done && "text-muted-foreground line-through")}
+              className={cn("min-w-0 flex-1 whitespace-normal break-words text-left leading-snug", item.done && "text-muted-foreground line-through")}
+              style={{ overflowWrap: 'anywhere' }}
             >
               {item.text}
             </button>
