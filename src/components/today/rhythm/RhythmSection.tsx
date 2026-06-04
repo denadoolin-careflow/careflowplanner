@@ -175,9 +175,10 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                         type="button"
                         onClick={() => onTaskClick?.(t.id)}
                         className={cn(
-                          "min-w-0 flex-1 truncate text-left text-sm",
+                          "min-w-0 flex-1 whitespace-normal break-words text-left text-sm leading-snug",
                           t.done && "text-muted-foreground line-through",
                         )}
+                        style={{ overflowWrap: "anywhere" }}
                       >
                         {t.title}
                       </button>

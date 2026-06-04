@@ -44,9 +44,9 @@ export function HomeResetWidget() {
                 checked={i.done}
                 onCheckedChange={() => void updateItem(i.id, { done: !i.done })}
               />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-xs text-foreground">{i.title}</div>
-                <div className="truncate text-[10px] text-muted-foreground">{i.listName}</div>
+              <div className="min-w-0 flex-1" style={{ overflowWrap: "anywhere" }}>
+                <div className="whitespace-normal break-words text-xs leading-snug text-foreground">{i.title}</div>
+                <div className="whitespace-normal break-words text-[10px] text-muted-foreground">{i.listName}</div>
               </div>
             </li>
           ))}
