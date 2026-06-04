@@ -4,10 +4,15 @@ import {
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF, dayPartSuggestion } from "@/lib/weather-store";
 import type { WeatherCondition } from "@/lib/weather";
+import { LocationPickerPopover } from "@/components/weather/LocationPickerPopover";
+import { UnitToggle } from "@/components/weather/UnitToggle";
 
 type Slot = "morning" | "afternoon" | "evening";
 const SLOT_TO_PART: Record<Slot, "Morning" | "Afternoon" | "Evening"> = {
   morning: "Morning", afternoon: "Afternoon", evening: "Evening",
+};
+const SLOT_HOURS: Record<Slot, [number, number]> = {
+  morning: [6, 12], afternoon: [12, 17], evening: [17, 21],
 };
 
 function ConditionIcon({ condition, isNight, className }: {
@@ -34,6 +39,10 @@ export function SlotWeather({ slot }: { slot: Slot }) {
   const dp = snap?.dayParts.find(p => p.part === partKey);
   const hasData = !!dp && dp.conditionLabel !== "—";
   const tip = hasData ? dayPartSuggestion(dp) : null;
+  const [fromH, toH] = SLOT_HOURS[slot];
+  const slotHours = (snap?.todayHourly ?? []).filter(h => h.hour >= fromH && h.hour < toH);
+  const rainyHours = slotHours.filter(h => h.precipChance >= 10);
+  const showLocationControls = slot === "morning";
 
   return (
     <div className="mx-4 mt-0 mb-3 rounded-2xl border border-border/40 bg-card/70 px-4 py-3 backdrop-blur sm:mx-5">
@@ -59,6 +68,12 @@ export function SlotWeather({ slot }: { slot: Slot }) {
             {!hasData && (
               <span className="text-xs text-muted-foreground">Forecast unavailable</span>
             )}
+            {showLocationControls && (
+              <div className="ml-auto flex items-center gap-1.5">
+                <LocationPickerPopover />
+                <UnitToggle />
+              </div>
+            )}
           </div>
           {hasData && (
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-muted-foreground">
@@ -68,6 +83,18 @@ export function SlotWeather({ slot }: { slot: Slot }) {
           )}
           {tip && (
             <p className="mt-1.5 text-[11px] italic leading-snug text-muted-foreground">{tip}</p>
+          )}
+          {hasData && slotHours.length > 0 && (
+            <div className="-mx-1 mt-2 flex gap-1 overflow-x-auto pb-0.5">
+              {rainyHours.length === 0 ? (
+                <span className="px-1 text-[11px] text-muted-foreground">No rain expected</span>
+              ) : rainyHours.map(h => (
+                <div key={h.hour} className="flex shrink-0 flex-col items-center rounded-lg bg-muted/40 px-2 py-1 text-[10px] tabular-nums text-muted-foreground">
+                  <span>{h.hour % 12 === 0 ? 12 : h.hour % 12}{h.hour < 12 ? "a" : "p"}</span>
+                  <span className="text-foreground/85">💧 {h.precipChance}%</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
