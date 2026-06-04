@@ -7,7 +7,8 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useStore } from "@/lib/store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
-import { CloudSun } from "lucide-react";
+import { Wind } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import { RhythmHeader } from "@/components/today/rhythm/RhythmHeader";
 import { DailySnapshotRow } from "@/components/today/rhythm/DailySnapshotRow";
@@ -19,6 +20,14 @@ import { CareLoopCard } from "@/components/today/rhythm/CareLoopCard";
 import { UpcomingEventsCard } from "@/components/today/rhythm/UpcomingEventsCard";
 import { EndOfDayCard } from "@/components/today/rhythm/EndOfDayCard";
 import { TasksWidget } from "@/components/today/rhythm/TasksWidget";
+import { TopThreeStrip } from "@/components/today/TopThreeStrip";
+import { ExhaleFlow } from "@/components/today/ExhaleFlow";
+import { MealsPlannedWidget } from "@/components/today/widgets/MealsPlannedWidget";
+import { GroceryWidget } from "@/components/today/widgets/GroceryWidget";
+import { NotesTodayWidget } from "@/components/today/widgets/NotesTodayWidget";
+import { JournalTodayWidget } from "@/components/today/widgets/JournalTodayWidget";
+import { MemoriesTodayWidget } from "@/components/today/widgets/MemoriesTodayWidget";
+import { HomeResetWidget } from "@/components/today/widgets/HomeResetWidget";
 
 export default function Today() {
   return (
@@ -40,17 +49,7 @@ function TodayInner() {
   const { state } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
   useEnsureWeather();
-  const [showWeather, setShowWeather] = useState<boolean>(() => {
-    if (typeof localStorage === "undefined") return true;
-    return localStorage.getItem("careflow:today:show-weather") !== "0";
-  });
-  const toggleWeather = () => {
-    setShowWeather(v => {
-      const next = !v;
-      try { localStorage.setItem("careflow:today:show-weather", next ? "1" : "0"); } catch { /* noop */ }
-      return next;
-    });
-  };
+  const [exhaleOpen, setExhaleOpen] = useState(false);
 
   const [day, setDay] = useState<Date>(() => {
     const d = searchParams.get("date");
@@ -92,30 +91,36 @@ function TodayInner() {
         {/* Main column */}
         <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
           <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
-          <div className="flex items-center justify-end">
-            <button
-              type="button"
-              onClick={toggleWeather}
-              aria-pressed={showWeather}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-[11px] uppercase tracking-wider text-muted-foreground backdrop-blur transition-colors hover:text-foreground"
-            >
-              <CloudSun className="h-3.5 w-3.5" />
-              {showWeather ? "Hide weather" : "Show weather"}
-            </button>
-          </div>
+          <TopThreeStrip date={day} onTaskClick={setEditTaskId} />
           <DailySnapshotRow date={day} />
           <WhatFitsNow date={day} onTaskClick={setEditTaskId} />
 
-          <RhythmSection slot="morning"   date={day} defaultOpen={nowSlot === "morning"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather={showWeather} />
-          <RhythmSection slot="afternoon" date={day} defaultOpen={nowSlot === "afternoon" || !isReallyToday} onTaskClick={setEditTaskId} showWeather={showWeather} />
-          <RhythmSection slot="evening"   date={day} defaultOpen={nowSlot === "evening"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather={showWeather} />
+          <RhythmSection slot="morning"   date={day} defaultOpen={nowSlot === "morning"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
+          <RhythmSection slot="afternoon" date={day} defaultOpen={nowSlot === "afternoon" || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
+          <RhythmSection slot="evening"   date={day} defaultOpen={nowSlot === "evening"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
 
           <EndOfDayCard />
+
+          <div className="cozy-card flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="min-w-0">
+              <div className="font-display text-sm font-semibold text-foreground">End-of-day exhale</div>
+              <p className="text-xs text-muted-foreground">A few quiet prompts to close the day.</p>
+            </div>
+            <Button size="sm" onClick={() => setExhaleOpen(true)} className="rounded-full">
+              <Wind className="mr-1.5 h-3.5 w-3.5" /> Begin exhale
+            </Button>
+          </div>
         </div>
 
         {/* Sidebar */}
         <aside className="min-w-0 max-w-full space-y-3 md:space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
           <TasksWidget date={day} />
+          <MealsPlannedWidget date={day} />
+          <GroceryWidget />
+          <NotesTodayWidget />
+          <JournalTodayWidget />
+          <MemoriesTodayWidget />
+          <HomeResetWidget />
           <FamilySnapshotCard date={day} />
           <GrowingSeasonCard />
           <CareLoopCard />
@@ -125,6 +130,7 @@ function TodayInner() {
 
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
+      <ExhaleFlow open={exhaleOpen} onOpenChange={setExhaleOpen} date={day} />
     </>
   );
 }
