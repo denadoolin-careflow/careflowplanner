@@ -896,7 +896,7 @@ function ActivityFeed({ project }: { project: Project }) {
 
   for (const t of state.tasks) {
     if (t.projectId !== project.id) continue;
-    if (t.done && t.updatedAt) events.push({ ts: t.updatedAt, icon: CheckCircle2, tone: STUDIO.sageDeep, label: <>Task completed · <span className="font-medium">{t.title}</span></> });
+    if (t.done) events.push({ ts: t.lastCompletedAt ?? t.createdAt, icon: CheckCircle2, tone: STUDIO.sageDeep, label: <>Task completed · <span className="font-medium">{t.title}</span></> });
     else if (t.createdAt) events.push({ ts: t.createdAt, icon: Plus, tone: STUDIO.gold, label: <>Task added · <span className="font-medium">{t.title}</span></> });
   }
   for (const m of project.milestones ?? []) {
