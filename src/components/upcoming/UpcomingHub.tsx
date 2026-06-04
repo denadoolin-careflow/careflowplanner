@@ -1056,3 +1056,127 @@ function SmartPlanPrefsPopover({ prefs, onChange }: { prefs: SmartPlanPrefs; onC
     </Popover>
   );
 }
+
+/* ---------- Smart-plan preview dialog ---------- */
+
+function SmartPlanPreviewDialog({
+  plan, prefs, onCancel, onApply, onRegenerate, onRemove, onMove,
+}: {
+  plan: { task: Task; iso: string }[] | null;
+  prefs: SmartPlanPrefs;
+  onCancel: () => void;
+  onApply: (plan: { task: Task; iso: string }[]) => void | Promise<void>;
+  onRegenerate: () => void;
+  onRemove: (taskId: string) => void;
+  onMove: (taskId: string, iso: string) => void;
+}) {
+  const open = !!plan;
+  const items = plan ?? [];
+
+  // Group by ISO date, in date order
+  const byDay = useMemo(() => {
+    const m = new Map<string, Task[]>();
+    for (const { task, iso } of items) {
+      if (!m.has(iso)) m.set(iso, []);
+      m.get(iso)!.push(task);
+    }
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [items]);
+
+  // The 7-day window we plan into
+  const windowDays = Array.from({ length: 7 }, (_, i) => format(addDays(new Date(), i), "yyyy-MM-dd"));
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <Wand2 className="h-4 w-4 text-primary" /> Preview your week
+          </DialogTitle>
+          <DialogDescription>
+            {items.length} task{items.length === 1 ? "" : "s"} · {prefs.energyBalance} pace · {prefs.perDay}/day
+            {prefs.prioritizeCaregiver ? " · caregiver first" : ""}
+          </DialogDescription>
+        </DialogHeader>
+
+        {items.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Nothing in this plan. Try changing your preferences.
+          </p>
+        ) : (
+          <div className="max-h-[55vh] space-y-3 overflow-auto pr-1">
+            {byDay.map(([iso, tasks]) => {
+              const d = parseISO(iso);
+              return (
+                <section key={iso} className="rounded-2xl border border-border/50 bg-card/60 p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="grid w-10 shrink-0 place-items-center rounded-lg bg-muted/50 py-1">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(d, "EEE")}</div>
+                      <div className="font-display text-lg leading-none">{format(d, "d")}</div>
+                    </div>
+                    <div className="font-display text-sm">{format(d, "EEEE, MMM d")}</div>
+                    <span className="ml-auto text-[11px] text-muted-foreground">
+                      {tasks.length} task{tasks.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {tasks.map(t => (
+                      <li key={t.id} className="flex items-start gap-2 rounded-lg bg-background/50 p-2">
+                        <span className="mt-0.5 text-base">{t.icon || "🌿"}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{t.title}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {t.area} · {estMin(t)} min · <span className="capitalize">{inferEnergy(t)} energy</span>
+                            {isCaregiverTask(t) && <> · 💛 caregiver</>}
+                          </div>
+                        </div>
+                        <select
+                          value={iso}
+                          onChange={(e) => onMove(t.id, e.target.value)}
+                          className="rounded-md border border-border/50 bg-background px-1.5 py-1 text-[11px]"
+                          title="Move to a different day"
+                        >
+                          {windowDays.map(w => (
+                            <option key={w} value={w}>
+                              {format(parseISO(w), "EEE M/d")}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => onRemove(t.id)}
+                          className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          title="Skip this task"
+                        >
+                          ✕
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <Button onClick={onRegenerate} size="sm" variant="ghost" className="rounded-full">
+            <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Regenerate
+          </Button>
+          <div className="flex gap-2">
+            <Button onClick={onCancel} size="sm" variant="outline" className="rounded-full">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => onApply(items)}
+              size="sm"
+              className="rounded-full"
+              disabled={items.length === 0}
+            >
+              <Check className="mr-1.5 h-3.5 w-3.5" /> Apply to calendar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
