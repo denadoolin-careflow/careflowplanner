@@ -824,19 +824,20 @@ function deriveMicroSteps(task: Task, count = 3): string[] {
 }
 
 function MicroPlanDialog({
-  open, onOpenChange, tasks, onComplete,
+  open, onOpenChange, tasks, onComplete, stepCount = 3,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   tasks: Task[];
   onComplete: (taskId: string) => void | Promise<void>;
+  stepCount?: number;
 }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [doneIds, setDoneIds] = useState<Record<string, boolean>>({});
   useEffect(() => { if (open) { setActiveIdx(0); setDoneIds({}); } }, [open]);
 
   const active = tasks[activeIdx];
-  const steps = active ? deriveMicroSteps(active) : [];
+  const steps = active ? deriveMicroSteps(active, stepCount) : [];
 
   const handleComplete = async () => {
     if (!active) return;
