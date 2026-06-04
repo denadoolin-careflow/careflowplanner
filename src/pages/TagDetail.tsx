@@ -8,6 +8,7 @@ import {
 import { useStore } from "@/lib/store";
 import { listNotes, createNote, type Note } from "@/lib/notes";
 import { TagChip } from "@/components/tags/TagChip";
+import { TagNotesPanel } from "@/components/tags/TagNotesPanel";
 import { useTags } from "@/hooks/use-tags";
 import { fallbackColorFor } from "@/lib/tags";
 import { format, parseISO } from "date-fns";
@@ -143,16 +144,11 @@ export default function TagDetail() {
           to: `/anytime?taskId=${t.id}`,
         }))}
       />
-      <CardSection
-        title="Notes" icon={FileText} accent={accent}
-        emptyLabel="No notes tagged yet" emptyCta="Add note"
-        onEmptyAdd={() => void addEntity("note")}
-        cards={taggedNotes.map(n => ({
-          key: n.id,
-          title: n.kind === "daily" && n.date ? format(parseISO(n.date), "EEEE, MMM d") : (n.title || "Untitled"),
-          meta: format(parseISO(n.updatedAt), "MMM d"),
-          to: `/notes/${n.id}`,
-        }))}
+      <TagNotesPanel
+        notes={taggedNotes}
+        tagName={tagName}
+        accent={accent}
+        onAdd={() => void addEntity("note")}
       />
       <CardSection
         title="Grocery" icon={ShoppingCart} accent={accent}
