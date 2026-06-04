@@ -21,12 +21,12 @@ function Chip({ icon: Icon, label, value, tone }: {
   icon: typeof CheckCircle2; label: string; value: string; tone: ChipTone;
 }) {
   return (
-    <div className="flex w-full items-center gap-2 rounded-2xl border border-border/50 bg-card/70 px-2.5 py-2 shadow-soft backdrop-blur-sm sm:w-auto sm:min-w-[7.5rem] sm:flex-1 sm:gap-2.5 sm:px-3 sm:py-2.5">
-      <div className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full sm:h-9 sm:w-9", TONE[tone])}>
+    <div className="flex min-w-0 max-w-full items-center gap-2 rounded-2xl border border-border/50 bg-card/70 px-2.5 py-2 shadow-soft backdrop-blur-sm sm:w-auto sm:min-w-[7.5rem] sm:flex-1 sm:gap-2.5 sm:px-3 sm:py-2.5">
+      <div className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-full sm:h-9 sm:w-9", TONE[tone])}>
         <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
       </div>
       <div className="min-w-0">
-        <div className="font-display text-base font-semibold leading-none text-foreground sm:text-lg">{value}</div>
+        <div className="truncate font-display text-sm font-semibold leading-none text-foreground sm:text-lg">{value}</div>
         <div className="mt-0.5 truncate text-[9px] uppercase tracking-wider text-muted-foreground sm:text-[10px]">{label}</div>
       </div>
     </div>
@@ -77,7 +77,7 @@ export function DailySnapshotRow({ date }: { date: Date }) {
   const energyLabel = energy === "low" ? "Low" : energy === "high" ? "Bright" : "Steady";
 
   return (
-    <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
+    <div className="grid w-full max-w-full grid-cols-2 gap-2 min-[420px]:grid-cols-3 sm:flex sm:flex-wrap sm:gap-2.5">
       <Chip icon={CheckCircle2} label={`${stats.total} planned`} value={`${stats.done}`} tone="sage" />
       <Chip icon={Star} label="Wins today" value={`${stats.wins}`} tone="gold" />
       <Chip icon={TrendingUp} label="Complete" value={`${stats.pct}%`} tone="sky" />

@@ -88,9 +88,9 @@ function TodayInner() {
 
   return (
     <>
-      <div className="mx-auto grid w-full max-w-6xl gap-4 md:gap-5 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+      <div className="mx-auto grid w-full min-w-0 max-w-6xl gap-4 overflow-x-clip md:gap-5 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
         {/* Main column */}
-        <div className="min-w-0 space-y-4 md:space-y-5">
+        <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
           <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
           <div className="flex items-center justify-end">
             <button
@@ -114,7 +114,7 @@ function TodayInner() {
         </div>
 
         {/* Sidebar */}
-        <aside className="space-y-3 md:space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
+        <aside className="min-w-0 max-w-full space-y-3 md:space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
           <TasksWidget date={day} />
           <FamilySnapshotCard date={day} />
           <GrowingSeasonCard />
