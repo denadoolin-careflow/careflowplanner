@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { listNotes, createNote, getOrCreateDailyNote, type Note } from "@/lib/notes";
+import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
+import { getNoteCoverCss } from "@/lib/note-covers";
 import { todayISO, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -240,6 +242,8 @@ function GalleryCard({ note, projectsById }: { note: Note; projectsById: Record<
     ? format(parseISO(note.date), "EEEE, MMM d")
     : (note.title || "Untitled");
   const projectName = note.projectId ? projectsById[note.projectId] : null;
+  const Icon = getLucideIcon(resolveNoteIcon(note));
+  const gradient = !note.coverUrl ? getNoteCoverCss(note.coverGradient) : null;
   return (
     <Link
       to={`/notes/${note.id}`}
@@ -248,8 +252,11 @@ function GalleryCard({ note, projectsById }: { note: Note; projectsById: Record<
         "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg",
       )}
     >
+      {gradient && (
+        <div className="h-16 w-full shrink-0" style={{ background: gradient }} />
+      )}
       <div className="flex items-start gap-2 px-4 pt-4">
-        {note.kind === "daily" ? <Sun className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> : null}
+        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
         {note.pinned ? <Pin className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-current text-accent-foreground" /> : null}
         <h3 className="line-clamp-2 flex-1 font-display text-base font-semibold leading-snug">{title}</h3>
       </div>
@@ -289,15 +296,15 @@ function ListView({ notes, group, projectsById }: { notes: Note[]; group: Group;
               const title = n.kind === "daily" && n.date
                 ? format(parseISO(n.date), "EEEE, MMM d")
                 : (n.title || "Untitled");
+              const Icon = getLucideIcon(resolveNoteIcon(n));
               return (
                 <Link
                   key={n.id}
                   to={`/notes/${n.id}`}
                   className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-muted/40"
                 >
-                  {n.kind === "daily" ? <Sun className="h-4 w-4 text-primary" /> :
-                    n.pinned ? <Pin className="h-3.5 w-3.5 fill-current text-accent-foreground" /> :
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />}
+                  <Icon className="h-4 w-4 text-primary" />
+                  {n.pinned && <Pin className="h-3 w-3 fill-current text-accent-foreground" />}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{title}</div>
                     <div className="truncate text-xs text-muted-foreground">{stripMarkdown(n.body).slice(0, 140) || "Empty"}</div>
@@ -346,18 +353,28 @@ function KanbanView({ notes, projectsById }: { notes: Note[]; projectsById: Reco
               <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px]">{c.items.length}</span>
             </div>
             <div className="space-y-2">
-              {c.items.map(n => (
-                <Link
-                  key={n.id}
-                  to={`/notes/${n.id}`}
-                  className="block rounded-xl border border-border/40 bg-background/60 p-2.5 transition hover:border-primary/40 hover:shadow-sm"
-                >
-                  <div className="truncate text-sm font-medium">
-                    {n.kind === "daily" && n.date ? format(parseISO(n.date), "EEE, MMM d") : (n.title || "Untitled")}
-                  </div>
-                  <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body || "Empty"}</div>
-                </Link>
-              ))}
+              {c.items.map(n => {
+                const Icon = getLucideIcon(resolveNoteIcon(n));
+                const gradient = !n.coverUrl ? getNoteCoverCss(n.coverGradient) : null;
+                return (
+                  <Link
+                    key={n.id}
+                    to={`/notes/${n.id}`}
+                    className="block overflow-hidden rounded-xl border border-border/40 bg-background/60 transition hover:border-primary/40 hover:shadow-sm"
+                  >
+                    {gradient && <div className="h-8 w-full" style={{ background: gradient }} />}
+                    <div className="p-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                        <div className="truncate text-sm font-medium">
+                          {n.kind === "daily" && n.date ? format(parseISO(n.date), "EEE, MMM d") : (n.title || "Untitled")}
+                        </div>
+                      </div>
+                      <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body || "Empty"}</div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         ))}

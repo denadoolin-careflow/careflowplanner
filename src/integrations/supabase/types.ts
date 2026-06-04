@@ -3261,10 +3261,12 @@ export type Database = {
         Row: {
           archived: boolean
           body: string
+          cover_gradient: string | null
           cover_position: number | null
           cover_url: string | null
           created_at: string
           date: string | null
+          icon: string | null
           id: string
           kind: string
           pinned: boolean
@@ -3278,10 +3280,12 @@ export type Database = {
         Insert: {
           archived?: boolean
           body?: string
+          cover_gradient?: string | null
           cover_position?: number | null
           cover_url?: string | null
           created_at?: string
           date?: string | null
+          icon?: string | null
           id?: string
           kind?: string
           pinned?: boolean
@@ -3295,10 +3299,12 @@ export type Database = {
         Update: {
           archived?: boolean
           body?: string
+          cover_gradient?: string | null
           cover_position?: number | null
           cover_url?: string | null
           created_at?: string
           date?: string | null
+          icon?: string | null
           id?: string
           kind?: string
           pinned?: boolean

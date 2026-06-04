@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy } from "lucide-react";
@@ -15,6 +15,10 @@ import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { NoteTOC } from "@/components/notes/NoteTOC";
 import { copyToClipboard } from "@/lib/clipboard";
+import { NoteIconPicker } from "@/components/notes/NoteIconPicker";
+import { NoteCoverPicker } from "@/components/notes/NoteCoverPicker";
+import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
+import { getNoteCoverCss } from "@/lib/note-covers";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -86,9 +90,30 @@ export default function NoteDetail() {
 
   const removeCover = async () => {
     if (!id) return;
-    setNote(n => n ? { ...n, coverUrl: null } : n);
-    await updateNote(id, { coverUrl: null, coverPosition: null });
+    setNote(n => n ? { ...n, coverUrl: null, coverGradient: null } : n);
+    await updateNote(id, { coverUrl: null, coverPosition: null, coverGradient: null });
     setRepositioning(false);
+  };
+
+  const setGradientCover = async (gradientId: string) => {
+    if (!id) return;
+    setNote(n => n ? { ...n, coverGradient: gradientId, coverUrl: null, coverPosition: null } : n);
+    try {
+      await updateNote(id, { coverGradient: gradientId, coverUrl: null, coverPosition: null });
+      toast.success("Cover updated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't save cover");
+    }
+  };
+
+  const setIcon = async (next: string | null) => {
+    if (!id) return;
+    setNote(n => n ? { ...n, icon: next } : n);
+    try {
+      await updateNote(id, { icon: next });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't save icon");
+    }
   };
 
   const setCoverPosition = (pos: number) => {
@@ -132,6 +157,9 @@ export default function NoteDetail() {
 
   const linkedOut = extractBacklinks(body);
   const headerTitle = note.kind === "daily" && note.date ? format(parseISO(note.date), "EEEE, MMMM d, yyyy") : null;
+  const resolvedIcon = resolveNoteIcon({ title, body, kind: note.kind, icon: note.icon ?? null });
+  const IconEl = getLucideIcon(resolvedIcon);
+  const gradientCss = getNoteCoverCss(note.coverGradient);
 
   return (
     <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 2xl:grid-cols-[minmax(0,1fr)_220px]">
@@ -162,17 +190,18 @@ export default function NoteDetail() {
           >
             <Copy className="h-4 w-4" /> Copy
           </Button>
-          {!note.coverUrl && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => coverInputRef.current?.click()}
-              disabled={coverBusy}
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
-            >
-              <ImagePlus className="h-4 w-4" /> Cover
-            </Button>
-          )}
+          <NoteIconPicker
+            value={note.icon ?? null}
+            resolved={resolvedIcon}
+            onChange={(next) => void setIcon(next)}
+          />
+          <NoteCoverPicker
+            hasCover={!!note.coverUrl || !!note.coverGradient}
+            busy={coverBusy}
+            onPickGradient={(gid) => void setGradientCover(gid)}
+            onPickImage={(f) => void setCover(f)}
+            onRemove={() => void removeCover()}
+          />
           <Button variant="ghost" size="icon" onClick={togglePin} aria-label="Pin">
             <Pin className={cn("h-4 w-4", note.pinned && "fill-current text-accent-foreground")} />
           </Button>
@@ -250,17 +279,33 @@ export default function NoteDetail() {
         </div>
       )}
 
+      {!note.coverUrl && gradientCss && (
+        <div className="mx-auto mt-3 w-full max-w-[920px] px-2">
+          <div
+            className="group relative h-32 overflow-hidden rounded-2xl border border-border/60 md:h-44"
+            style={{ background: gradientCss }}
+          >
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background/40 to-transparent" />
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto mt-6 w-full max-w-[760px] px-2">
-        {note.kind === "daily" ? (
-          <h1 className="note-page-title text-3xl sm:text-4xl md:text-5xl">{headerTitle}</h1>
-        ) : (
-          <Input
-            value={title}
-            onChange={(e) => { setTitle(e.target.value); save({ title: e.target.value }); }}
-            placeholder="Untitled"
-            className="note-page-title h-auto border-0 bg-transparent px-0 py-1 text-3xl shadow-none focus-visible:ring-0 sm:text-4xl md:text-5xl"
-          />
-        )}
+        <div className="flex items-center gap-3">
+          <IconEl className="h-7 w-7 shrink-0 text-primary sm:h-8 sm:w-8" />
+          <div className="min-w-0 flex-1">
+            {note.kind === "daily" ? (
+              <h1 className="note-page-title text-3xl sm:text-4xl md:text-5xl">{headerTitle}</h1>
+            ) : (
+              <Input
+                value={title}
+                onChange={(e) => { setTitle(e.target.value); save({ title: e.target.value }); }}
+                placeholder="Untitled"
+                className="note-page-title h-auto border-0 bg-transparent px-0 py-1 text-3xl shadow-none focus-visible:ring-0 sm:text-4xl md:text-5xl"
+              />
+            )}
+          </div>
+        </div>
         <p className="mt-2 text-xs text-muted-foreground">
           Updated {format(parseISO(note.updatedAt), "MMM d, h:mm a")}
         </p>
