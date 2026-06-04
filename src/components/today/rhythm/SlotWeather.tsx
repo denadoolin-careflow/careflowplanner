@@ -86,18 +86,21 @@ export function SlotWeather({ slot }: { slot: Slot }) {
           )}
           {hasData && slotHours.length > 0 && (
             <div className="mt-2 space-y-1">
-              <div className="-mx-1 flex gap-1 overflow-x-auto pb-0.5">
+              <div
+                className="grid gap-1"
+                style={{ gridTemplateColumns: `repeat(${slotHours.length}, minmax(0, 1fr))` }}
+              >
                 {slotHours.map(h => (
                   <div
                     key={h.hour}
-                    className="flex shrink-0 flex-col items-center rounded-lg bg-muted/40 px-2 py-1 text-[10px] tabular-nums text-muted-foreground"
+                    className="flex min-w-0 flex-col items-center rounded-lg bg-muted/40 px-1.5 py-1.5 text-[11px] tabular-nums text-muted-foreground"
                     title={h.conditionLabel}
                   >
                     <span>{h.hour % 12 === 0 ? 12 : h.hour % 12}{h.hour < 12 ? "a" : "p"}</span>
-                    <ConditionIcon condition={h.condition} isNight={h.isNight} className="h-3.5 w-3.5 my-0.5 text-foreground/80" />
-                    <span className="text-foreground/85">{fmt(h.tempC, unit)}</span>
+                    <ConditionIcon condition={h.condition} isNight={h.isNight} className="my-0.5 h-4 w-4 text-foreground/80" />
+                    <span className="font-medium text-foreground/90">{fmt(h.tempC, unit)}</span>
                     {h.precipChance >= 10 && (
-                      <span className="text-[9px] text-primary">💧{h.precipChance}%</span>
+                      <span className="text-[10px] text-primary">💧{h.precipChance}%</span>
                     )}
                   </div>
                 ))}
