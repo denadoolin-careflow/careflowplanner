@@ -128,6 +128,7 @@ export function UpcomingHub() {
   const [microOpen, setMicroOpen] = useState(false);
   const [spPrefs, setSpPrefs] = useState<SmartPlanPrefs>(() => loadSpPrefs());
   useEffect(() => { localStorage.setItem(SP_KEY, JSON.stringify(spPrefs)); }, [spPrefs]);
+  const [planPreview, setPlanPreview] = useState<{ task: Task; iso: string }[] | null>(null);
 
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem(VIEW_KEY) as ViewMode) || "list");
   const [tf, setTf] = useState<Timeframe>(() => (localStorage.getItem(TF_KEY) as Timeframe) || "all");
@@ -232,19 +233,18 @@ export function UpcomingHub() {
     if (e.dataTransfer.types.includes("text/careflow-task")) e.preventDefault();
   };
 
-  /* ---------- Smart planning: spread overdue + unscheduled by energy ---------- */
-  const smartPlan = async () => {
+  /* ---------- Smart planning: build proposal, preview, then apply ---------- */
+  const buildSmartPlan = (): { task: Task; iso: string }[] => {
     const candidates = state.tasks.filter(
       t => !t.done && !t.parentTaskId && t.status !== "parked" && t.status !== "someday"
         && (!t.dueDate || t.dueDate < today)
     );
-    if (candidates.length === 0) { toast("Nothing to plan — you're clear ✨"); return; }
-    // Energy weighting per balance preset
+    if (candidates.length === 0) return [];
     const baseRank: Record<Energy, number> = { low: 0, medium: 1, high: 2 };
     const balanceWeight: Record<EnergyBalance, Record<Energy, number>> = {
-      gentle:    { low: 0, medium: 2, high: 5 },   // strongly prefer low
+      gentle:    { low: 0, medium: 2, high: 5 },
       balanced:  { low: 0, medium: 1, high: 2 },
-      ambitious: { low: 1, medium: 0, high: 0 },   // tackle bigger items earlier
+      ambitious: { low: 1, medium: 0, high: 0 },
     };
     const w = balanceWeight[spPrefs.energyBalance];
     const sorted = [...candidates].sort((a, b) => {
@@ -257,14 +257,27 @@ export function UpcomingHub() {
     });
     const perDay = Math.max(1, Math.min(4, spPrefs.perDay));
     const maxItems = perDay * 7;
-    let scheduled = 0;
+    const out: { task: Task; iso: string }[] = [];
     for (let i = 0; i < sorted.length && i < maxItems; i++) {
       const dayOffset = Math.min(6, Math.floor(i / perDay));
       const iso = format(addDays(new Date(), dayOffset), "yyyy-MM-dd");
-      await updateTask(sorted[i].id, { dueDate: iso, inbox: false });
-      scheduled++;
+      out.push({ task: sorted[i], iso });
     }
-    toast.success(`Smart-planned ${scheduled} task${scheduled === 1 ? "" : "s"} (${spPrefs.energyBalance}) 🌿`);
+    return out;
+  };
+
+  const smartPlan = () => {
+    const plan = buildSmartPlan();
+    if (plan.length === 0) { toast("Nothing to plan — you're clear ✨"); return; }
+    setPlanPreview(plan);
+  };
+
+  const applySmartPlan = async (plan: { task: Task; iso: string }[]) => {
+    for (const { task, iso } of plan) {
+      await updateTask(task.id, { dueDate: iso, inbox: false });
+    }
+    toast.success(`Smart-planned ${plan.length} task${plan.length === 1 ? "" : "s"} (${spPrefs.energyBalance}) 🌿`);
+    setPlanPreview(null);
   };
 
   return (
