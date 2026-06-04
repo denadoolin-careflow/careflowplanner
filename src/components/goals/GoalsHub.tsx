@@ -569,20 +569,86 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 
 function RecentWins() {
   const { state } = useStore();
-  const wins = state.tasks
+  const [tinyWins, setTinyWins] = useState<TinyWin[]>(() => loadTinyWins());
+  useEffect(() => {
+    const h = () => setTinyWins(loadTinyWins());
+    window.addEventListener("careflow:tiny-wins", h);
+    return () => window.removeEventListener("careflow:tiny-wins", h);
+  }, []);
+  const taskWins = state.tasks
     .filter(t => t.done && t.lastCompletedAt)
-    .sort((a,b) => new Date(b.lastCompletedAt!).getTime() - new Date(a.lastCompletedAt!).getTime())
-    .slice(0, 5);
-  if (wins.length === 0) return <p className="mt-2 text-xs text-muted-foreground">Your wins will land here as you complete tasks.</p>;
+    .map(t => ({ id: `t-${t.id}`, text: t.title, at: t.lastCompletedAt!, kind: "task" as const }));
+  const items = [
+    ...tinyWins.map(w => ({ id: `w-${w.id}`, text: w.text, at: w.at, kind: "tiny" as const })),
+    ...taskWins,
+  ].sort((a,b)=> new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, 6);
+  if (items.length === 0) return <p className="mt-2 text-xs text-muted-foreground">Your wins will land here — tasks completed and tiny moments you celebrate.</p>;
   return (
     <ul className="mt-3 space-y-2">
-      {wins.map(w => (
+      {items.map(w => (
         <li key={w.id} className="flex items-center gap-2 text-sm">
-          <Trophy className="h-3.5 w-3.5 text-amber-500" />
-          <span className="truncate">{w.title}</span>
+          {w.kind === "tiny" ? <Sparkles className="h-3.5 w-3.5 text-rose-500" /> : <Trophy className="h-3.5 w-3.5 text-amber-500" />}
+          <span className="truncate">{w.text}</span>
         </li>
       ))}
     </ul>
+  );
+}
+
+function TinyWinQuickAdd() {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  return (
+    <>
+      <button onClick={()=>setOpen(true)} className="rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-muted-foreground hover:text-foreground">
+        <Plus className="mr-1 inline h-3 w-3" /> Tiny win
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle className="font-display">✨ Celebrate a tiny win</DialogTitle></DialogHeader>
+          <Input autoFocus placeholder="What went well, even a little?" value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{
+            if (e.key==="Enter" && text.trim()) { addTinyWin(text.trim()); setText(""); setOpen(false); toast.success("Win saved 🌸"); }
+          }} />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={()=>setOpen(false)}>Cancel</Button>
+            <Button onClick={()=>{ if(!text.trim()) return; addTinyWin(text.trim()); setText(""); setOpen(false); toast.success("Win saved 🌸"); }}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function WeeklyCheckInBanner({ goals, onCheckIn, onSkip, onOpen }: {
+  goals: Goal[]; onCheckIn: (id: string, tone: CheckIn) => void;
+  onSkip: (id: string) => void; onOpen: (id: string) => void;
+}) {
+  const g = goals[0];
+  const M = CAT_META[g.category];
+  return (
+    <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-rose-50/60 via-amber-50/60 to-emerald-50/60 p-5 dark:from-rose-950/20 dark:via-amber-950/20 dark:to-emerald-950/20">
+      <div className="flex items-start gap-3">
+        <span className={cn("flex h-10 w-10 items-center justify-center rounded-xl", M.tint, M.text)}>
+          <M.icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Weekly check-in</div>
+          <h3 className="font-display text-lg">How does <button onClick={()=>onOpen(g.id)} className="underline-offset-2 hover:underline">{g.title}</button> feel this week?</h3>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(Object.keys(TONE_META) as CheckIn[]).map(k => (
+              <button key={k} onClick={()=>onCheckIn(g.id, k)}
+                className={cn("rounded-full border border-border/50 bg-background/70 px-3 py-1 text-xs transition-colors hover:bg-background", TONE_META[k].tint)}>
+                {TONE_META[k].emoji} {TONE_META[k].label}
+              </button>
+            ))}
+            <button onClick={()=>onSkip(g.id)} className="ml-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Not now</button>
+          </div>
+          {goals.length > 1 && (
+            <p className="mt-2 text-[11px] text-muted-foreground">{goals.length - 1} more goal{goals.length > 2 ? "s" : ""} waiting for a gentle check-in.</p>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
