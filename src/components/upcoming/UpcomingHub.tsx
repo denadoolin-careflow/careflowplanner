@@ -187,6 +187,42 @@ export function UpcomingHub() {
 
   const toggleCollapsed = (k: string) => setCollapsed(p => ({ ...p, [k]: !p[k] }));
 
+  /* ---------- Drag to reschedule (HTML5 DnD) ---------- */
+  const onDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData("text/careflow-task", taskId);
+    e.dataTransfer.effectAllowed = "move";
+  };
+  const rescheduleDrop = async (e: React.DragEvent, iso: string) => {
+    const id = e.dataTransfer.getData("text/careflow-task");
+    if (!id) return;
+    e.preventDefault();
+    await updateTask(id, { dueDate: iso, inbox: false });
+    toast.success(`Moved to ${format(parseISO(iso), "EEE MMM d")}`);
+  };
+  const allowDrop = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("text/careflow-task")) e.preventDefault();
+  };
+
+  /* ---------- Smart planning: spread overdue + unscheduled by energy ---------- */
+  const smartPlan = async () => {
+    const candidates = state.tasks.filter(
+      t => !t.done && !t.parentTaskId && t.status !== "parked" && t.status !== "someday"
+        && (!t.dueDate || t.dueDate < today)
+    );
+    if (candidates.length === 0) { toast("Nothing to plan — you're clear ✨"); return; }
+    // sort by energy: low first (easy wins), then medium, then high
+    const rank: Record<Energy, number> = { low: 0, medium: 1, high: 2 };
+    const sorted = [...candidates].sort((a, b) => rank[inferEnergy(a)] - rank[inferEnergy(b)]);
+    let scheduled = 0;
+    for (let i = 0; i < sorted.length && i < 14; i++) {
+      const dayOffset = Math.min(6, Math.floor(i / 2)); // 2 per day across 7 days
+      const iso = format(addDays(new Date(), dayOffset), "yyyy-MM-dd");
+      await updateTask(sorted[i].id, { dueDate: iso, inbox: false });
+      scheduled++;
+    }
+    toast.success(`Smart-planned ${scheduled} task${scheduled === 1 ? "" : "s"} across the week 🌿`);
+  };
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* HEADER */}
