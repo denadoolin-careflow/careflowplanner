@@ -9,26 +9,28 @@ const TONE_COLOR: Record<string, string> = {
 
 export function CosmicForecastChart({ from = new Date(), days = 7 }: { from?: Date; days?: number }) {
   const data = useMemo(() => getForecast(from, days), [from, days]);
-  const max = Math.max(...data.map(d => d.score), 3);
-  const min = Math.min(...data.map(d => d.score), -3);
+  const scores = data.map(d => d.score);
+  const max = Math.max(...scores, 3);
+  const min = Math.min(...scores, -3);
+  const range = Math.max(1, max - min);
   return (
-    <section className="cozy-card flex flex-col gap-3 p-5" aria-label="Cosmic forecast">
+    <section className="cozy-card flex flex-col gap-3 p-4 sm:p-5" aria-label="Cosmic forecast">
       <header>
         <h3 className="font-display text-base">Cosmic Forecast</h3>
         <p className="text-xs text-muted-foreground">Next {days} days</p>
       </header>
-      <div className="flex h-32 items-end justify-between gap-2">
+      <div className="flex items-end justify-between gap-1 sm:gap-2">
         {data.map(d => {
-          const norm = (d.score - min) / Math.max(1, max - min);
-          const h = Math.max(8, Math.round(norm * 100));
+          const norm = (d.score - min) / range;
+          const px = Math.max(22, Math.round(norm * 96));
           return (
             <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
               <div
-                className="w-full rounded-md transition-all"
-                style={{ height: `${h}%`, background: TONE_COLOR[d.tone] }}
+                className="w-full rounded-md ring-1 ring-white/10 transition-all"
+                style={{ height: `${px}px`, background: TONE_COLOR[d.tone] }}
                 title={`${d.label}: ${d.tone}`}
               />
-              <span className="text-[11px] text-muted-foreground">{d.label}</span>
+              <span className="text-[10px] sm:text-[11px] text-muted-foreground">{d.label}</span>
             </div>
           );
         })}

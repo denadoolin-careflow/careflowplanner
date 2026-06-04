@@ -32,33 +32,34 @@ export default function CosmicFlowTimeline() {
   }, [filtered]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 p-3 sm:p-6">
+    <div className="mx-auto w-full max-w-3xl space-y-4 p-3 pb-28 sm:p-6 sm:pb-6">
       <header className="flex items-start justify-between gap-2">
         <div>
-          <h1 className="font-display text-2xl">Transit Timeline</h1>
+          <h1 className="font-display text-xl sm:text-2xl">Transit Timeline</h1>
           <p className="text-sm text-muted-foreground">The next {days} days of cosmic events.</p>
         </div>
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/cosmic-flow" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" />Dashboard</Link>
+        <Button asChild variant="ghost" size="sm" className="shrink-0">
+          <Link to="/cosmic-flow" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" /><span className="hidden sm:inline">Dashboard</span></Link>
         </Button>
       </header>
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
         {FILTERS.map(f => (
           <Button
             key={f.value}
             size="sm"
             variant={filter === f.value ? "default" : "outline"}
-            className="h-7 text-xs"
+            className="h-7 shrink-0 text-xs"
             onClick={() => setFilter(f.value)}
           >
             {f.label}
           </Button>
         ))}
-        <div className="ml-auto flex items-center gap-1">
-          {[30, 60, 90].map(d => (
-            <Button key={d} variant={days === d ? "default" : "ghost"} size="sm" className="h-7 text-xs" onClick={() => setDays(d)}>{d}d</Button>
-          ))}
-        </div>
+      </div>
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-muted-foreground mr-1">Range:</span>
+        {[30, 60, 90].map(d => (
+          <Button key={d} variant={days === d ? "default" : "ghost"} size="sm" className="h-7 text-xs" onClick={() => setDays(d)}>{d}d</Button>
+        ))}
       </div>
 
       {groups.length === 0 ? (
