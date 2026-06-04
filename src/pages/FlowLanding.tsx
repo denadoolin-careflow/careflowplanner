@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import { Link, useLocation, useParams, Navigate } from "react-router-dom";
 import { NAV_GROUPS, FLOW_ACCENTS, NAV_DESCRIPTIONS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ArrowRight } from "lucide-react";
+
 
 export default function FlowLanding() {
   const { id } = useParams<{ id: string }>();
