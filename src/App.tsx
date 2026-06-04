@@ -85,6 +85,10 @@ import SeasonsTraditions from "./pages/SeasonsTraditions";
 import SeasonsMemoryBook from "./pages/SeasonsMemoryBook";
 import SeasonsBucketLists from "./pages/SeasonsBucketLists";
 import SeasonsRemembrance from "./pages/SeasonsRemembrance";
+import CosmicFlow from "./pages/CosmicFlow";
+import CosmicFlowTimeline from "./pages/CosmicFlowTimeline";
+import CosmicFlowEventDetail from "./pages/CosmicFlowEventDetail";
+import CosmicFlowBirthChart from "./pages/CosmicFlowBirthChart";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -194,6 +198,10 @@ const App = () => (
                 <Route path="/seasons/memory-book" element={<SeasonsMemoryBook />} />
                 <Route path="/seasons/bucket-lists" element={<SeasonsBucketLists />} />
                 <Route path="/seasons/remembrance" element={<SeasonsRemembrance />} />
+                <Route path="/cosmic-flow" element={<CosmicFlow />} />
+                <Route path="/cosmic-flow/timeline" element={<CosmicFlowTimeline />} />
+                <Route path="/cosmic-flow/event/:id" element={<CosmicFlowEventDetail />} />
+                <Route path="/cosmic-flow/birth-chart" element={<CosmicFlowBirthChart />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -74,6 +74,9 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/seasons/traditions": "Reusable family traditions.",
   "/seasons/bucket-lists": "Seasonal bucket lists.",
   "/seasons/remembrance": "Quiet space to remember loved ones.",
+  "/cosmic-flow": "Astrology-aware planning: moon, transits, journal prompts.",
+  "/cosmic-flow/timeline": "Upcoming cosmic events.",
+  "/cosmic-flow/birth-chart": "Personalize Cosmic Flow with your birth info.",
   "/": "Your home dashboard.",
   "/settings": "Preferences, account, and integrations.",
 };
