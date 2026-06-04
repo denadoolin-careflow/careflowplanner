@@ -807,18 +807,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (data) setState(s => ({ ...s, meals: [mealFrom(data), ...s.meals] }));
     },
     updateMeal: async (id, patch) => {
-      setState(s => ({ ...s, meals: s.meals.map(m => m.id === id ? { ...m, ...patch } : m) }));
+      const localTs = nowIso();
+      setState(s => ({ ...s, meals: s.meals.map(m => m.id === id ? { ...m, ...patch, updatedAt: localTs } : m) }));
       const dbPatch: any = {};
       if (patch.name !== undefined) dbPatch.name = patch.name;
       if (patch.slot !== undefined) dbPatch.slot = patch.slot;
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
       if (patch.kidSafe !== undefined) dbPatch.kid_safe = patch.kidSafe;
-      await supabase.from("meals").update(dbPatch).eq("id", id);
+      await syncOp({ kind: "update", table: "meals", id, values: dbPatch, localTs });
     },
     deleteMeal: async (id) => {
       setState(s => ({ ...s, meals: s.meals.filter(m => m.id !== id) }));
-      await supabase.from("meals").delete().eq("id", id);
+      await syncOp({ kind: "delete", table: "meals", id });
     },
 
     addGrocery: async (name, category) => {
@@ -897,7 +898,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // Fire push BEFORE deleting the row so the edge function can read it.
         await pushAppointmentToGoogle(id, "delete").catch(() => {});
       }
-      await supabase.from("appointments").delete().eq("id", id);
+      await syncOp({ kind: "delete", table: "appointments", id });
     },
     updateAppointment: async (id, patch) => {
       const prevAppt = state.appointments.find(a => a.id === id);
@@ -918,8 +919,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.areaName !== undefined) dbPatch.area_name = patch.areaName ?? null;
       if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
       if (patch.recipientId !== undefined) dbPatch.recipient_id = patch.recipientId ?? null;
-      setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch } : a) }));
-      await supabase.from("appointments").update(dbPatch).eq("id", id);
+      const localTs = nowIso();
+      setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch, updatedAt: localTs } : a) }));
+      await syncOp({ kind: "update", table: "appointments", id, values: dbPatch, localTs });
       const next = { ...(state.appointments.find(a => a.id === id) ?? {}), ...patch } as Appointment;
       if (next.syncToGoogle) void pushAppointmentToGoogle(id);
       if (patch.date !== undefined && patch.date && patch.date !== prevAppt?.date) {
@@ -935,7 +937,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     deleteBirthday: async (id) => {
       setState(s => ({ ...s, birthdays: s.birthdays.filter(b => b.id !== id) }));
-      await supabase.from("birthdays").delete().eq("id", id);
+      await syncOp({ kind: "delete", table: "birthdays", id });
     },
     updateBirthday: async (id, patch) => {
       const dbPatch: any = {};
@@ -943,8 +945,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.relation !== undefined) dbPatch.relation = patch.relation ?? null;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
-      setState(s => ({ ...s, birthdays: s.birthdays.map(b => b.id === id ? { ...b, ...patch } : b) }));
-      await supabase.from("birthdays").update(dbPatch).eq("id", id);
+      const localTs = nowIso();
+      setState(s => ({ ...s, birthdays: s.birthdays.map(b => b.id === id ? { ...b, ...patch, updatedAt: localTs } : b) }));
+      await syncOp({ kind: "update", table: "birthdays", id, values: dbPatch, localTs });
     },
     addHoliday: async (h) => {
       if (!uid) return;
@@ -954,15 +957,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     deleteHoliday: async (id) => {
       setState(s => ({ ...s, holidays: s.holidays.filter(h => h.id !== id) }));
-      await supabase.from("holidays").delete().eq("id", id);
+      await syncOp({ kind: "delete", table: "holidays", id });
     },
     updateHoliday: async (id, patch) => {
       const dbPatch: any = {};
       if (patch.name !== undefined) dbPatch.name = patch.name;
       if (patch.date !== undefined) dbPatch.date = patch.date;
       if (patch.notes !== undefined) dbPatch.notes = patch.notes ?? null;
-      setState(s => ({ ...s, holidays: s.holidays.map(h => h.id === id ? { ...h, ...patch } : h) }));
-      await supabase.from("holidays").update(dbPatch).eq("id", id);
+      const localTs = nowIso();
+      setState(s => ({ ...s, holidays: s.holidays.map(h => h.id === id ? { ...h, ...patch, updatedAt: localTs } : h) }));
+      await syncOp({ kind: "update", table: "holidays", id, values: dbPatch, localTs });
     },
 
     addRecipient: async (r) => {
