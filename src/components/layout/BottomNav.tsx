@@ -1,6 +1,7 @@
 import { NavLink, Link } from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
-import { MOBILE_NAV, NAV, NAV_GROUPS, FLOW_ACCENTS } from "@/lib/nav";
+import { MOBILE_NAV, NAV, NAV_GROUPS } from "@/lib/nav";
+import { useFlowAccents } from "@/lib/flow-accent";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight } from "lucide-react";
@@ -58,6 +59,7 @@ export function BottomNav() {
   const [open, setOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [navIds, setNavIds] = useNavOrder();
+  const flowAccents = useFlowAccents();
   const primary = useMemo(() => {
     return navIds
       .map(id => ALL_DESTINATIONS.find(d => d.to === id))
@@ -180,7 +182,7 @@ export function BottomNav() {
                 <div className="mt-4 space-y-5 pb-4">
                   {NAV_GROUPS.map((group) => {
                     const GroupIcon = group.icon;
-                    const accent = FLOW_ACCENTS[group.id] ?? FLOW_ACCENTS.settings;
+                    const accent = flowAccents[group.id] ?? flowAccents.settings;
                     return (
                     <section key={group.id}>
                       <Link
@@ -188,18 +190,22 @@ export function BottomNav() {
                         onClick={() => setOpen(false)}
                         className="mb-2 flex items-center gap-2 rounded-lg px-1 py-1 -mx-1 hover:bg-muted/60 transition-colors"
                       >
-                        <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-md ring-1", accent.bg, accent.ring)} aria-hidden>
-                          <GroupIcon className={cn("h-4 w-4", accent.text)} />
+                        <span
+                          className="grid h-7 w-7 shrink-0 place-items-center rounded-md"
+                          style={{ background: accent.soft, boxShadow: `inset 0 0 0 1px ${accent.ring}`, color: accent.color }}
+                          aria-hidden
+                        >
+                          <GroupIcon className="h-4 w-4" />
                         </span>
                         <div className="flex flex-1 flex-col">
-                          <h3 className={cn("font-display text-sm font-semibold tracking-tight", accent.text)}>{group.label}</h3>
+                          <h3 className="font-display text-sm font-semibold tracking-tight" style={{ color: accent.color }}>{group.label}</h3>
                           {(group as any).subtitle && (
                             <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                               {(group as any).subtitle}
                             </span>
                           )}
                         </div>
-                        <ArrowRight className={cn("h-4 w-4", accent.text)} />
+                        <ArrowRight className="h-4 w-4" style={{ color: accent.color }} />
                       </Link>
                       <ul className="grid grid-cols-3 gap-2">
                         {group.items.map(({ to, label, icon: Icon }) => (
