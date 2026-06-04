@@ -341,6 +341,8 @@ export function UpcomingHub() {
             pinnedTitle={pinnedFocus[0]?.title}
             accent={accent}
             onSmartPlan={smartPlan}
+            prefs={spPrefs}
+            onPrefsChange={setSpPrefs}
           />
 
           {/* QUICK ADD */}
