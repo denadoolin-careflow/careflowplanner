@@ -23,6 +23,8 @@ import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { RhythmJournalPrompt } from "@/components/rhythm/RhythmJournalPrompt";
 import { JournalProjectPicker } from "@/components/journal/JournalProjectPicker";
+import { JournalRecipientPicker } from "@/components/journal/JournalRecipientPicker";
+import { recipientTagHandle } from "@/lib/person-memories";
 import { AttachmentsField } from "@/components/attachments/AttachmentsField";
 import type { Attachment } from "@/lib/types";
 import { startOfWeek, endOfWeek, startOfYear, getYear } from "date-fns";
@@ -178,6 +180,10 @@ export default function Journal() {
   const [searchParams, setSearchParams] = useSearchParams();
   const linkProjectId = searchParams.get("linkProject");
   const linkProjectLabel = searchParams.get("label") ?? undefined;
+  const linkRecipientId = searchParams.get("recipient");
+  const linkRecipient = linkRecipientId
+    ? state.recipients.find((r) => r.id === linkRecipientId)
+    : null;
 
   const switchTemplate = (k: TemplateKey) => {
     setTemplate(k);
@@ -226,6 +232,11 @@ export default function Journal() {
       if (list.length) finalBody = list.map((g, i) => `${i + 1}. ${g}`).join("\n") + (finalBody ? `\n\n${finalBody}` : "");
     }
     if (!finalBody) { toast.error("Write a sentence first"); return; }
+    const baseLinkedIds: { type: string; id: string; label?: string }[] = [];
+    if (linkProjectId) baseLinkedIds.push({ type: "project", id: linkProjectId, label: linkProjectLabel });
+    if (linkRecipient) baseLinkedIds.push({ type: "recipient", id: linkRecipient.id, label: linkRecipient.name });
+    const handle = linkRecipient ? recipientTagHandle(linkRecipient.name) : "";
+    const finalTags = handle && !tags.includes(handle) ? [...tags, handle] : tags;
     await addJournal({
       body: finalBody,
       type: tpl.type,
@@ -235,14 +246,17 @@ export default function Journal() {
       energy: energy || undefined,
       prompts: activePrompts,
       gratitudeItems: template === "gratitude" ? gratitudeItems.filter(Boolean) : undefined,
-      tags,
-      linkedIds: linkProjectId
-        ? [{ type: "project", id: linkProjectId, label: linkProjectLabel }]
-        : undefined,
+      tags: finalTags,
+      linkedIds: baseLinkedIds.length ? baseLinkedIds : undefined,
       attachments: draftAttachments.length ? draftAttachments : undefined,
     } as any);
     setBody(""); setTitle(""); setMood(""); setEnergy(""); setGratitudeItems(["", "", ""]); setTags([]); setDraftAttachments([]);
     toast.success("Saved to your journal");
+    if (linkRecipientId) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("recipient");
+      setSearchParams(next, { replace: true });
+    }
   };
 
   // streak: consecutive days back from today with at least one entry
@@ -708,6 +722,9 @@ function EntryCard({ e, onPin, onDelete, timeline }: { e: JournalEntry; onPin: (
           />
           <div className="pt-1">
             <JournalProjectPicker entry={e} />
+          </div>
+          <div>
+            <JournalRecipientPicker entry={e} />
           </div>
         </div>
       )}
