@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useStore, todayISO } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,10 @@ import { PersonMonthlyReport } from "@/components/caregiving/PersonMonthlyReport
 
 export default function Caregiving() {
   const { state, addCareNote, deleteCareNote } = useStore();
-  const [recipientId, setRecipientId] = useState(state.recipients[0]?.id ?? "");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [recipientId, setRecipientId] = useState(
+    () => searchParams.get("recipient") ?? state.recipients[0]?.id ?? "",
+  );
   const [body, setBody] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<"add" | "edit">("add");
@@ -30,6 +34,18 @@ export default function Caregiving() {
       setRecipientId(state.recipients[0].id);
     }
   }, [state.recipients, recipientId]);
+
+  // Honor ?recipient= deep links once the list is populated.
+  useEffect(() => {
+    const target = searchParams.get("recipient");
+    if (target && state.recipients.find(r => r.id === target) && target !== recipientId) {
+      setRecipientId(target);
+      const next = new URLSearchParams(searchParams);
+      next.delete("recipient");
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, state.recipients]);
 
   const recipient = state.recipients.find(r => r.id === recipientId);
   const notes = state.careNotes.filter(n => n.recipientId === recipientId).sort((a,b) => b.date.localeCompare(a.date));
