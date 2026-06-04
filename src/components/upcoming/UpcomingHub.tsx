@@ -95,8 +95,10 @@ function dayBucket(t: Task): { key: string; label: string; icon: any; order: num
 /* ---------------- Hub ---------------- */
 
 export function UpcomingHub() {
-  const { state, addTask } = useStore();
+  const { state, addTask, updateTask, toggleTask } = useStore();
   const navigate = useNavigate();
+  const accent = useFlowAccent("planflow");
+  const [microOpen, setMicroOpen] = useState(false);
 
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem(VIEW_KEY) as ViewMode) || "list");
   const [tf, setTf] = useState<Timeframe>(() => (localStorage.getItem(TF_KEY) as Timeframe) || "all");
