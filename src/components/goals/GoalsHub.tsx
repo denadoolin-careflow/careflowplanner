@@ -16,6 +16,7 @@ import {
   Sparkles, Plus, Sprout, Flame, TrendingUp, Trophy, Heart, Home, Briefcase,
   Palette, Wallet, Users, Moon, HandHeart, Target, Calendar, CheckCircle2,
   Circle, ArrowRight, Edit3, Trash2, Compass, Leaf, Mountain, Flower2,
+  Share2, Link2, ListChecks,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +36,34 @@ type GoalExtras = {
 const EXTRAS_KEY = "careflow:goal-extras:v1";
 const SEASON_KEY = "careflow:goal-season:v1";
 const TOP3_KEY = "careflow:goal-top3:v1";
+const TINY_WINS_KEY = "careflow:tiny-wins:v1";
+
+type TinyWin = { id: string; text: string; at: string; goalId?: string };
+function loadTinyWins(): TinyWin[] {
+  try { return JSON.parse(localStorage.getItem(TINY_WINS_KEY) || "[]"); } catch { return []; }
+}
+function saveTinyWins(w: TinyWin[]) {
+  try { localStorage.setItem(TINY_WINS_KEY, JSON.stringify(w)); } catch {}
+}
+function addTinyWin(text: string, goalId?: string) {
+  const wins = loadTinyWins();
+  wins.unshift({ id: crypto.randomUUID(), text, goalId, at: new Date().toISOString() });
+  saveTinyWins(wins.slice(0, 100));
+  window.dispatchEvent(new Event("careflow:tiny-wins"));
+}
+
+const CHECKIN_STALE_DAYS = 7;
+function checkInIsStale(at?: string) {
+  if (!at) return true;
+  return (Date.now() - new Date(at).getTime()) / 86400000 >= CHECKIN_STALE_DAYS;
+}
+
+const TONE_META: Record<CheckIn, { label: string; emoji: string; tint: string }> = {
+  energizing: { label: "Energizing", emoji: "😊", tint: "bg-emerald-100/70 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+  steady:     { label: "Steady",     emoji: "😌", tint: "bg-sky-100/70 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300" },
+  neutral:    { label: "Neutral",    emoji: "😐", tint: "bg-stone-100/70 text-stone-700 dark:bg-stone-900/40 dark:text-stone-300" },
+  heavy:      { label: "Heavy",      emoji: "😓", tint: "bg-rose-100/70 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" },
+};
 
 function loadExtras(): Record<string, GoalExtras> {
   try { return JSON.parse(localStorage.getItem(EXTRAS_KEY) || "{}"); } catch { return {}; }
@@ -73,12 +102,13 @@ function currentQuarter() {
 /* ---------------- Hub ---------------- */
 
 export function GoalsHub() {
-  const { state, addGoal, updateGoal, deleteGoal } = useStore();
+  const { state, addGoal, updateGoal, deleteGoal, addTask, updateTask } = useStore();
   const [extras, setExtras] = useState<Record<string, GoalExtras>>(() => loadExtras());
   const [openId, setOpenId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [areaFilter, setAreaFilter] = useState<Goal["category"] | "all">("all");
   const [view, setView] = useState<"vision" | "list" | "board" | "journey">("vision");
+  const [checkInQueueDismissed, setCheckInQueueDismissed] = useState<string[]>([]);
 
   useEffect(() => { saveExtras(extras); }, [extras]);
 
@@ -117,6 +147,15 @@ export function GoalsHub() {
   const togglePin = (id: string) =>
     setTop3Ids(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id].slice(-3));
 
+  // Weekly gentle check-in queue: pinned + active goals with stale/missing check-ins
+  const needsCheckIn = useMemo(
+    () => active
+      .filter(g => checkInIsStale(extras[g.id]?.lastCheckIn?.at))
+      .filter(g => !checkInQueueDismissed.includes(g.id))
+      .slice(0, 5),
+    [active, extras, checkInQueueDismissed]
+  );
+
   return (
     <div className="space-y-6">
       {/* HERO */}
@@ -149,6 +188,20 @@ export function GoalsHub() {
           </div>
         </div>
       </section>
+
+      {/* Weekly gentle check-in */}
+      {needsCheckIn.length > 0 && (
+        <WeeklyCheckInBanner
+          goals={needsCheckIn}
+          onCheckIn={(id, tone) => {
+            setExtra(id, { lastCheckIn: { tone, at: new Date().toISOString() } });
+            if (tone === "heavy") toast("This one feels heavy — try giving it more space.", { description: "Open the goal to pause or stretch it." });
+            else toast.success(`Saved · ${TONE_META[tone].label}`);
+          }}
+          onSkip={(id) => setCheckInQueueDismissed(prev => [...prev, id])}
+          onOpen={(id) => setOpenId(id)}
+        />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* MAIN COLUMN */}
@@ -281,8 +334,11 @@ export function GoalsHub() {
 
           {/* Recent wins */}
           <div className="rounded-2xl border border-border/60 bg-card/60 p-5">
+          <div className="flex items-center justify-between">
             <h3 className="font-display text-lg">Recent Wins</h3>
-            <RecentWins />
+            <TinyWinQuickAdd />
+          </div>
+          <RecentWins />
           </div>
         </aside>
       </div>
@@ -308,6 +364,7 @@ export function GoalsHub() {
             const g = goals.find(x => x.id === openId);
             if (!g) return null;
             const ex = extras[g.id] || {};
+            const linkedTasks = state.tasks.filter(t => t.goalId === g.id);
             return (
               <JourneyDetail
                 goal={g}
@@ -317,6 +374,10 @@ export function GoalsHub() {
                 onPatch={(p)=>updateGoal(g.id, p)}
                 onExtra={(p)=>setExtra(g.id, p)}
                 onDelete={async ()=>{ await deleteGoal(g.id); setOpenId(null); toast.success("Goal released gently"); }}
+                linkedTasks={linkedTasks}
+                onAddTask={(title)=>addTask({ title, goalId: g.id, area: "Personal", priority: "medium" } as any)}
+                onToggleTask={(id, done)=>updateTask(id, { done, lastCompletedAt: done ? new Date().toISOString() : undefined })}
+                onUnlinkTask={(id)=>updateTask(id, { goalId: undefined })}
               />
             );
           })()}
@@ -508,20 +569,99 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
 
 function RecentWins() {
   const { state } = useStore();
-  const wins = state.tasks
+  const [tinyWins, setTinyWins] = useState<TinyWin[]>(() => loadTinyWins());
+  useEffect(() => {
+    const h = () => setTinyWins(loadTinyWins());
+    window.addEventListener("careflow:tiny-wins", h);
+    return () => window.removeEventListener("careflow:tiny-wins", h);
+  }, []);
+  const taskWins = state.tasks
     .filter(t => t.done && t.lastCompletedAt)
-    .sort((a,b) => new Date(b.lastCompletedAt!).getTime() - new Date(a.lastCompletedAt!).getTime())
-    .slice(0, 5);
-  if (wins.length === 0) return <p className="mt-2 text-xs text-muted-foreground">Your wins will land here as you complete tasks.</p>;
+    .map(t => ({ id: `t-${t.id}`, text: t.title, at: t.lastCompletedAt!, kind: "task" as const }));
+  const items = [
+    ...tinyWins.map(w => ({ id: `w-${w.id}`, text: w.text, at: w.at, kind: "tiny" as const })),
+    ...taskWins,
+  ].sort((a,b)=> new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, 6);
+  if (items.length === 0) return <p className="mt-2 text-xs text-muted-foreground">Your wins will land here — tasks completed and tiny moments you celebrate.</p>;
   return (
     <ul className="mt-3 space-y-2">
-      {wins.map(w => (
+      {items.map(w => (
         <li key={w.id} className="flex items-center gap-2 text-sm">
-          <Trophy className="h-3.5 w-3.5 text-amber-500" />
-          <span className="truncate">{w.title}</span>
+          {w.kind === "tiny" ? <Sparkles className="h-3.5 w-3.5 text-rose-500" /> : <Trophy className="h-3.5 w-3.5 text-amber-500" />}
+          <span className="truncate">{w.text}</span>
         </li>
       ))}
     </ul>
+  );
+}
+
+function TinyWinQuickAdd() {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  return (
+    <>
+      <button onClick={()=>setOpen(true)} className="rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-muted-foreground hover:text-foreground">
+        <Plus className="mr-1 inline h-3 w-3" /> Tiny win
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle className="font-display">✨ Celebrate a tiny win</DialogTitle></DialogHeader>
+          <Input autoFocus placeholder="What went well, even a little?" value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{
+            if (e.key==="Enter" && text.trim()) { addTinyWin(text.trim()); setText(""); setOpen(false); toast.success("Win saved 🌸"); }
+          }} />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={()=>setOpen(false)}>Cancel</Button>
+            <Button onClick={()=>{ if(!text.trim()) return; addTinyWin(text.trim()); setText(""); setOpen(false); toast.success("Win saved 🌸"); }}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function WeeklyCheckInBanner({ goals, onCheckIn, onSkip, onOpen }: {
+  goals: Goal[]; onCheckIn: (id: string, tone: CheckIn) => void;
+  onSkip: (id: string) => void; onOpen: (id: string) => void;
+}) {
+  const g = goals[0];
+  const M = CAT_META[g.category];
+  return (
+    <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-rose-50/60 via-amber-50/60 to-emerald-50/60 p-5 dark:from-rose-950/20 dark:via-amber-950/20 dark:to-emerald-950/20">
+      <div className="flex items-start gap-3">
+        <span className={cn("flex h-10 w-10 items-center justify-center rounded-xl", M.tint, M.text)}>
+          <M.icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Weekly check-in</div>
+          <h3 className="font-display text-lg">How does <button onClick={()=>onOpen(g.id)} className="underline-offset-2 hover:underline">{g.title}</button> feel this week?</h3>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(Object.keys(TONE_META) as CheckIn[]).map(k => (
+              <button key={k} onClick={()=>onCheckIn(g.id, k)}
+                className={cn("rounded-full border border-border/50 bg-background/70 px-3 py-1 text-xs transition-colors hover:bg-background", TONE_META[k].tint)}>
+                {TONE_META[k].emoji} {TONE_META[k].label}
+              </button>
+            ))}
+            <button onClick={()=>onSkip(g.id)} className="ml-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Not now</button>
+          </div>
+          {goals.length > 1 && (
+            <p className="mt-2 text-[11px] text-muted-foreground">{goals.length - 1} more goal{goals.length > 2 ? "s" : ""} waiting for a gentle check-in.</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TinyWinInline({ goalId }: { goalId: string }) {
+  const [text, setText] = useState("");
+  return (
+    <div className="mt-2 flex gap-2">
+      <Input placeholder="A little something to honor…" value={text} onChange={e=>setText(e.target.value)}
+        onKeyDown={e=>{ if(e.key==="Enter" && text.trim()) { addTinyWin(text.trim(), goalId); setText(""); toast.success("Win saved 🌸"); } }} />
+      <Button variant="outline" size="sm" onClick={()=>{ if(!text.trim()) return; addTinyWin(text.trim(), goalId); setText(""); toast.success("Win saved 🌸"); }}>
+        <Sparkles className="h-4 w-4" />
+      </Button>
+    </div>
   );
 }
 
@@ -590,14 +730,20 @@ function CreateGoalDialog({
 
 function JourneyDetail({
   goal, extras, pinned, onPin, onPatch, onExtra, onDelete,
+  linkedTasks, onAddTask, onToggleTask, onUnlinkTask,
 }: {
   goal: Goal; extras: GoalExtras; pinned: boolean; onPin: () => void;
   onPatch: (p: Partial<Goal>) => void;
   onExtra: (p: Partial<GoalExtras>) => void;
   onDelete: () => void;
+  linkedTasks: import("@/lib/types").Task[];
+  onAddTask: (title: string) => void;
+  onToggleTask: (id: string, done: boolean) => void;
+  onUnlinkTask: (id: string) => void;
 }) {
   const M = CAT_META[goal.category];
   const [newMs, setNewMs] = useState("");
+  const [newTask, setNewTask] = useState("");
   const milestones = extras.milestones || [];
   const addMilestone = () => {
     if (!newMs.trim()) return;
@@ -615,6 +761,37 @@ function JourneyDetail({
     else toast.success("Check-in saved");
   };
 
+  const msDone = milestones.filter(m => m.done).length;
+  const msPct = milestones.length ? Math.round((msDone / milestones.length) * 100) : 0;
+  const syncProgressToMilestones = () => { onPatch({ progress: msPct }); toast.success(`Progress synced · ${msPct}%`); };
+
+  const shareGoal = async () => {
+    const lines = [
+      `🌱 ${goal.title}`,
+      `Category: ${goal.category}  ·  Progress: ${goal.progress}%`,
+      extras.why ? `Why: ${extras.why}` : "",
+      extras.nextStep ? `Next: ${extras.nextStep}` : "",
+      extras.targetDate ? `Target: ${extras.targetDate}` : "",
+      milestones.length ? `\nMilestones (${msDone}/${milestones.length}):` : "",
+      ...milestones.map(m => ` ${m.done ? "✓" : "○"} ${m.label}`),
+    ].filter(Boolean).join("\n");
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `Goal: ${goal.title}`, text: lines });
+      } else {
+        await navigator.clipboard.writeText(lines);
+        toast.success("Goal copied to clipboard");
+      }
+    } catch { /* user cancelled */ }
+  };
+
+  const addLinkedTask = () => {
+    if (!newTask.trim()) return;
+    onAddTask(newTask.trim());
+    setNewTask("");
+    toast.success("Task added & linked");
+  };
+
   return (
     <>
       <SheetHeader>
@@ -624,6 +801,9 @@ function JourneyDetail({
             <div className={cn("text-[10px] uppercase tracking-wider", M.text)}>{goal.category}</div>
             <SheetTitle className="font-display text-xl leading-tight">{goal.title}</SheetTitle>
           </div>
+          <Button variant="outline" size="sm" onClick={shareGoal} title="Share goal">
+            <Share2 className="h-3.5 w-3.5" />
+          </Button>
           <Button variant={pinned ? "default" : "outline"} size="sm" onClick={onPin}>
             <Sparkles className="mr-1 h-3.5 w-3.5" /> {pinned ? "Pinned" : "Pin"}
           </Button>
@@ -662,7 +842,15 @@ function JourneyDetail({
 
         {/* milestones */}
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Milestones</div>
+          <div className="flex items-center justify-between">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Milestones</div>
+            {milestones.length > 0 && (
+              <button onClick={syncProgressToMilestones} className="text-[11px] text-primary hover:underline">
+                Sync progress · {msDone}/{milestones.length} ({msPct}%)
+              </button>
+            )}
+          </div>
+          {milestones.length > 0 && <Progress value={msPct} className="mt-2 h-1" />}
           <ul className="mt-2 space-y-1.5">
             {milestones.map(m => (
               <li key={m.id} className="group flex items-center gap-2">
@@ -683,10 +871,50 @@ function JourneyDetail({
           </div>
         </div>
 
+        {/* linked tasks */}
+        <div>
+          <div className="flex items-center justify-between">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Linked tasks</div>
+            <span className="text-[11px] text-muted-foreground">
+              {linkedTasks.filter(t=>t.done).length}/{linkedTasks.length} done
+            </span>
+          </div>
+          <ul className="mt-2 space-y-1.5">
+            {linkedTasks.length === 0 && <li className="text-xs text-muted-foreground">No tasks linked yet. Add a small next move below.</li>}
+            {linkedTasks.map(t => (
+              <li key={t.id} className="group flex items-center gap-2">
+                <button onClick={()=>onToggleTask(t.id, !t.done)}>
+                  {t.done ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
+                </button>
+                <span className={cn("flex-1 text-sm", t.done && "line-through text-muted-foreground")}>{t.title}</span>
+                <button onClick={()=>onUnlinkTask(t.id)} className="opacity-0 group-hover:opacity-100" title="Unlink">
+                  <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-2 flex gap-2">
+            <Input placeholder="Add a task for this goal…" value={newTask} onChange={e=>setNewTask(e.target.value)}
+              onKeyDown={e=>e.key==="Enter" && addLinkedTask()} />
+            <Button onClick={addLinkedTask} variant="outline" size="sm"><ListChecks className="h-4 w-4" /></Button>
+          </div>
+        </div>
+
+        {/* tiny win for this goal */}
+        <div className="rounded-2xl border border-border/50 bg-rose-50/40 p-4 dark:bg-rose-950/20">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Celebrate a tiny win</div>
+          <TinyWinInline goalId={goal.id} />
+        </div>
+
         {/* gentle check-in */}
         <div className="rounded-2xl border border-border/50 bg-muted/30 p-4">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">Gentle check-in</div>
           <p className="mt-1 text-sm">How does this goal feel right now?</p>
+          {extras.lastCheckIn && (
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Last: {TONE_META[extras.lastCheckIn.tone].emoji} {TONE_META[extras.lastCheckIn.tone].label} · {new Date(extras.lastCheckIn.at).toLocaleDateString()}
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap gap-2">
             {([
               { k: "energizing", label: "😊 Energizing" },
