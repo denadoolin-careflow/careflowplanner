@@ -1,47 +1,51 @@
 ## Goal
 
-Let each flow's landing page (`/flow/{id}`) be pinned as a navigable icon in the three nav surfaces — bottom nav, More sheet, and sidebar — so users can jump straight to a flow's hub.
+Replace the current vector `<CareFlowMark>` with the uploaded CareFlow icon image, place it in the **top-right of the app header**, and have it auto-retint to follow the active atmosphere + light/dark mode.
 
 ## Approach
 
-### 1. Expose flow landings as nav destinations
+### 1. Host the logo as a Lovable Asset
 
-In `src/components/layout/BottomNav.tsx`, extend `ALL_DESTINATIONS` to include one synthetic entry per `NAV_GROUPS` item:
+Upload `user-uploads://5166074C-C19F-4A49-9FAB-014E1B9DBA4C.png` (icon-only — cleaner in small sizes than the variant with the CareFlow wordmark) via the `lovable-assets` CLI and write the pointer to `src/assets/careflow-logo.png.asset.json`. The first uploaded image (with text + tagline) is the brand asset; we'll save it too as `careflow-logo-full.png.asset.json` for marketing / future use, but the in-app logo will use the icon-only one.
+
+### 2. New `CareFlowLogo` component
+
+Create `src/components/widgets/CareFlowLogo.tsx`:
 
 ```
-{ to: `/flow/${group.id}`, label: group.label, icon: group.icon }
+<span className="grid place-items-center rounded-xl overflow-hidden ring-1 ring-border/40 shadow-soft"
+      style={{ background: 'hsl(var(--primary))' }}>
+  <img src={logo.url} alt="CareFlow"
+       style={{ mixBlendMode: 'luminosity' }}
+       className="h-full w-full object-cover" />
+</span>
 ```
 
-These show up automatically in the existing **Customize bottom nav** picker, so the user can pin any flow into one of the 6 bottom-bar slots and reorder it like any other destination. Bottom-bar tiles render with the flow's accent color (via `flowAccents`).
+`mix-blend-mode: luminosity` keeps the icon's brightness/shape but pulls its hue + saturation from the underlying primary color, which already shifts per atmosphere and light/dark mode (we just retuned all atmosphere primaries). Result: the green plate retints to sage in Sage Sanctuary, dusty plum in Moonlit Plum, terracotta in Dawn, etc. — automatically.
 
-### 2. More sheet: per-flow "Pin" toggle
+Props: `size` (default 28), `className`, `tint` ("primary" | "accent" | "auto", default "primary"), `rounded` ("md" | "lg" | "xl", default "xl").
 
-In the More sheet's flow sections (BottomNav `NAV_GROUPS.map`), add a small bookmark/pin button on the right of each flow header (next to `ArrowRight`). Tapping it pins/unpins `/flow/${id}` in `navIds` (cap at 6, toast when full). Visual state: filled icon when pinned, outline when not.
+### 3. Place in top-right of the header
 
-### 3. Sidebar: pin flow to top rail
+In `src/components/layout/AppLayout.tsx`, add `<CareFlowLogo size={32} />` as the rightmost element in the header's right-side cluster, after `<ThemeToggle />`. Wrap with a `<Link to="/">` so tapping it returns home.
 
-Add a new persisted preference `careflow:sidebar:pinned-flows` (string[] of group ids). In `src/components/layout/Sidebar.tsx`:
+### 4. Replace the sidebar mark
 
-- Collapsed rail: render the pinned flows' icons as 40px tiles in a dedicated section above the existing flow groups (same tile style as Lists/pinned-tags rail, with the accent dot we already added).
-- Expanded rail: render compact rows (icon + label) above the group list.
-- Each flow group header gets a tiny pin toggle button (visible on hover) that adds/removes the group from the pinned list.
+Swap the `<CareFlowMark>` in `src/components/layout/Sidebar.tsx` (top-left brand tile) for `<CareFlowLogo>` at sizes `40` (collapsed) / `36` (expanded). The wrapping tile div is removed — the new logo already has its own rounded plate. Keep `CareFlowMark.tsx` in the codebase but unreferenced (future inline-SVG fallback if needed).
 
-State syncs across mounts with the same custom-event pattern used for `mobile-nav-order` and `sidebar:prefs`.
+### 5. No atmosphere changes needed
 
-### 4. Storage & defaults
-
-- Bottom nav: no schema change — picker now lists flow entries by default.
-- Sidebar: new key `careflow:sidebar:pinned-flows` defaults to `[]`.
-- Both stores listen for their own `storage`/custom events so all open tabs/components stay in sync.
+Atmosphere primary tokens already drive the tint; nothing in `src/index.css` needs editing.
 
 ## Out of scope
 
-- New flow landing page content.
-- Reordering flow groups themselves (already drag-drop in sidebar).
-- Cross-surface sync between the bottom-nav pinned set and the sidebar pinned set — they stay independent so mobile and desktop can be configured separately.
+- Replacing the favicon / PWA icons.
+- Animated brand mark, splash screen, marketing pages.
+- Wordmark text in the header (sidebar's "CareFlow / Care · Plan · Grow" caption stays as-is).
 
 ## Deliverable
 
-- BottomNav: flow landings appear in the customize picker; pin toggle in More sheet.
-- Sidebar: pinned-flow rail (collapsed + expanded) with per-group pin toggle.
-- All choices persisted in localStorage and synced across mounted instances.
+- 2 asset pointers in `src/assets/`.
+- New `CareFlowLogo` component.
+- Updated `AppLayout.tsx` header (logo top-right, links home).
+- Updated `Sidebar.tsx` brand tile.

@@ -31,6 +31,7 @@ import { useNavigate } from "react-router-dom";
 import { AstrologySection } from "./AstrologySection";
 import { Sparkles } from "lucide-react";
 import { CareFlowMark } from "@/components/widgets/CareFlowMark";
+import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon, tint: "bg-indigo-500/15 text-indigo-500", dot: "bg-indigo-500" },
@@ -796,12 +797,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         "flex w-full py-2",
         collapsed ? "flex-col items-center gap-1" : "items-center gap-1.5 px-1",
       )}>
-        <div className={cn(
-          "grid shrink-0 place-items-center rounded-xl bg-sidebar-accent/60 text-sidebar-foreground ring-1 ring-sidebar-border/60",
-          collapsed ? "h-10 w-10" : "h-9 w-9",
-        )}>
-          <CareFlowMark size={collapsed ? 22 : 20} />
-        </div>
+        <CareFlowLogo size={collapsed ? 40 : 36} />
         {!collapsed && (
           <div className="min-w-0 flex-1">
             <div className="font-display text-[15px] font-semibold leading-none truncate">CareFlow</div>

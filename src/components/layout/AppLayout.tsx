@@ -27,6 +27,8 @@ import { useEffect } from "react";
 import { applyAnimIntensity, readAnimIntensity } from "@/components/settings/AtmosphereFeelSection";
 import { applyFontPrefs } from "@/lib/font-prefs";
 import { installGlobalHaptics } from "@/lib/haptics";
+import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
+import { Link } from "react-router-dom";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
@@ -78,6 +80,9 @@ export function AppLayout() {
                 <AtmospherePicker />
               </div>
               <ThemeToggle />
+              <Link to="/" aria-label="CareFlow home" className="ml-1 inline-flex">
+                <CareFlowLogo size={32} />
+              </Link>
             </div>
           </header>
           <RoutinesStrip />
