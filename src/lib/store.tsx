@@ -914,7 +914,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addBirthday: async (b) => {
       if (!uid) return;
-      const { data } = await supabase.from("birthdays").insert({ user_id: uid, ...b }).select().single();
+      const { updatedAt: _bu, ...bRest } = b as any;
+      const { data } = await supabase.from("birthdays").insert({ user_id: uid, ...bRest }).select().single();
       if (data) setState(s => ({ ...s, birthdays: [bdayFrom(data), ...s.birthdays] }));
     },
     deleteBirthday: async (id) => {
@@ -932,7 +933,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     addHoliday: async (h) => {
       if (!uid) return;
-      const { data } = await supabase.from("holidays").insert({ user_id: uid, ...h }).select().single();
+      const { updatedAt: _hu, ...hRest } = h as any;
+      const { data } = await supabase.from("holidays").insert({ user_id: uid, ...hRest }).select().single();
       if (data) setState(s => ({ ...s, holidays: [holidayFrom(data), ...s.holidays] }));
     },
     deleteHoliday: async (id) => {
