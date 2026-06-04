@@ -238,6 +238,11 @@ function SectionToggleRow({
   );
 }
 
+/** Slim divider between collapsed-rail sections. */
+function RailDivider() {
+  return <div aria-hidden className="my-2 h-px w-6 rounded-full bg-sidebar-border/40" />;
+}
+
 function usePinnedNotes(enabled: boolean) {
   const [notes, setNotes] = useState<Note[]>([]);
   useEffect(() => {
