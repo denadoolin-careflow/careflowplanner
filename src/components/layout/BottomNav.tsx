@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
-import { MOBILE_NAV, NAV } from "@/lib/nav";
+import { MOBILE_NAV, NAV, NAV_GROUPS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check } from "lucide-react";
@@ -177,26 +177,41 @@ export function BottomNav() {
                     />
                   </div>
                 </div>
-                <ul className="mt-4 grid grid-cols-3 gap-2 pb-4">
-                  {NAV.map(({ to, label, icon: Icon }) => (
-                    <li key={to}>
-                      <NavLink
-                        to={to}
-                        end={to === "/"}
-                        onClick={() => setOpen(false)}
-                        className={({ isActive }) =>
-                          cn(
-                            "flex flex-col items-center gap-1 rounded-xl border border-border/60 bg-card/60 px-2 py-3 text-xs font-medium",
-                            isActive ? "text-primary border-primary/40" : "text-muted-foreground"
-                          )
-                        }
-                      >
-                        <Icon className="h-5 w-5" />
-                        <span className="text-center leading-tight">{label}</span>
-                      </NavLink>
-                    </li>
+                <div className="mt-4 space-y-5 pb-4">
+                  {NAV_GROUPS.map((group) => (
+                    <section key={group.id}>
+                      <header className="mb-2 flex items-baseline gap-2 px-1">
+                        <span className="text-base leading-none" aria-hidden>{(group as any).emoji ?? ""}</span>
+                        <h3 className="font-display text-sm font-semibold tracking-tight">{group.label}</h3>
+                        {(group as any).subtitle && (
+                          <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                            {(group as any).subtitle}
+                          </span>
+                        )}
+                      </header>
+                      <ul className="grid grid-cols-3 gap-2">
+                        {group.items.map(({ to, label, icon: Icon }) => (
+                          <li key={to}>
+                            <NavLink
+                              to={to}
+                              end={to === "/"}
+                              onClick={() => setOpen(false)}
+                              className={({ isActive }) =>
+                                cn(
+                                  "flex flex-col items-center gap-1 rounded-xl border border-border/60 bg-card/60 px-2 py-3 text-xs font-medium",
+                                  isActive ? "text-primary border-primary/40" : "text-muted-foreground"
+                                )
+                              }
+                            >
+                              <Icon className="h-5 w-5" />
+                              <span className="text-center leading-tight">{label}</span>
+                            </NavLink>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
                   ))}
-                </ul>
+                </div>
               </SheetContent>
             </Sheet>
           </li>
