@@ -505,6 +505,7 @@ export function BlockEditor({
   goal,
   onGoalChange,
   showFooter = true,
+  minHeight,
 }: {
   body: string;
   onChange: (markdown: string, html: string) => void;
@@ -513,6 +514,7 @@ export function BlockEditor({
   goal?: number | null;
   onGoalChange?: (next: number | null) => void;
   showFooter?: boolean;
+  minHeight?: string;
 }) {
   const { state, addTask } = useStore();
   const navigate = useNavigate();
