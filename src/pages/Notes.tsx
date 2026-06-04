@@ -17,6 +17,7 @@ import { todayISO, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
+import { NotesHub } from "@/components/notes/NotesHub";
 
 /** Strip markdown markers so list previews show plain text. */
 function stripMarkdown(s: string): string {
@@ -90,21 +91,7 @@ export default function Notes() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 p-4 md:p-6">
-      <header className="flex flex-wrap items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary">
-          <BookOpen className="h-5 w-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">Notes</h1>
-          <p className="text-sm text-muted-foreground">A second brain — link with <code className="rounded bg-muted px-1">[[title]]</code> and <code className="rounded bg-muted px-1">@project</code>.</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={openToday} className="gap-1.5">
-          <Sun className="h-4 w-4" /> Today's note
-        </Button>
-        <Button size="sm" onClick={newNote} className="gap-1.5">
-          <Plus className="h-4 w-4" /> New
-        </Button>
-      </header>
+      <NotesHub notes={notes} projectsById={projectsById} onOpenToday={openToday} onNew={newNote} />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">
