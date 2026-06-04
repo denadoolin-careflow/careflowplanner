@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import { Link, useLocation, useParams, Navigate } from "react-router-dom";
 import { NAV_GROUPS, FLOW_ACCENTS, NAV_DESCRIPTIONS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ArrowRight } from "lucide-react";
+
 
 export default function FlowLanding() {
   const { id } = useParams<{ id: string }>();
@@ -39,7 +40,7 @@ export default function FlowLanding() {
           >
             {group.emoji}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className={cn("text-2xl font-semibold md:text-3xl", accent.text)}>
               {group.label}
             </h1>
@@ -49,6 +50,20 @@ export default function FlowLanding() {
               </p>
             )}
           </div>
+          {group.items[0] && (
+            <Link
+              to={group.items[0].to}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                accent.bg,
+                accent.text,
+                "hover:opacity-80",
+              )}
+            >
+              View all
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
         </div>
       </header>
 
