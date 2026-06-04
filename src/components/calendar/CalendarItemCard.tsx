@@ -8,7 +8,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { Energy } from "@/lib/types";
 
-export type CardKind = "appt" | "bday" | "hol" | "gcal" | "task" | "care" | "meal";
+export type CardKind = "appt" | "bday" | "hol" | "gcal" | "task" | "care" | "meal" | "season";
 
 const KIND_META: Record<CardKind, { Icon: LucideIcon; label: string; color: string }> = {
   task: { Icon: CheckSquare,     label: "Task",      color: "bg-warm-soft text-warm-foreground border-warm-foreground/30" },
@@ -18,6 +18,7 @@ const KIND_META: Record<CardKind, { Icon: LucideIcon; label: string; color: stri
   bday: { Icon: Cake,            label: "Birthday",  color: "bg-accent-soft text-accent-foreground border-accent-foreground/20" },
   hol:  { Icon: Sparkles,        label: "Holiday",   color: "bg-secondary-soft text-secondary-foreground border-secondary-foreground/20" },
   gcal: { Icon: CalendarClock,   label: "Google",    color: "bg-muted text-foreground border-border/60" },
+  season: { Icon: Sparkles,       label: "Celebration", color: "bg-pink-100/80 text-pink-900 border-pink-300/60 dark:bg-pink-900/30 dark:text-pink-100" },
 };
 
 const ENERGY_STYLE: Record<Energy, { label: string; dot: string; chip: string }> = {
