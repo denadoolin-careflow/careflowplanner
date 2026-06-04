@@ -26,6 +26,7 @@ import { ArchetypeThemeSection } from "@/components/settings/ArchetypeThemeSecti
 import { AtmosphereFeelSection } from "@/components/settings/AtmosphereFeelSection";
 import { FontSection } from "@/components/settings/FontSection";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
+import { useExhaleReminderPrefs, ensureNotificationPermission } from "@/lib/exhale-reminder";
 import { useRhythmForecastEnabled, useRecommendationTone } from "@/lib/rhythm-forecast";
 import {
   useAstrologyEnabled,
@@ -383,6 +384,8 @@ export default function Settings() {
           </div>
         </div>
       </SectionCard>
+
+      <ExhaleReminderSection />
 
       <SectionCard title="Account" subtitle="Synced across your devices." accent="warm">
         <p className="text-sm text-muted-foreground">Your CareFlow data is saved to your account. Sign in on any device to see the same planner.</p>
