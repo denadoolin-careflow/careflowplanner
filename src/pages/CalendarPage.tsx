@@ -210,7 +210,7 @@ export default function CalendarPage() {
         : format(cursor, "yyyy");
 
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col gap-6 lg:flex-row">
       <div className="min-w-0 flex-1 space-y-6">
       <div className="cozy-card gradient-calm p-6">
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">CareFlow</div>
@@ -436,7 +436,9 @@ export default function CalendarPage() {
         </ul>
       </SectionCard>
       </div>
-      <WidgetRail date={cursor} />
+      <div className="w-full shrink-0 lg:w-[320px] xl:w-[360px]">
+        <WidgetRail date={cursor} />
+      </div>
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <BirthdayHolidayEditor kind="birthday" item={editingBday} open={!!editingBday} onOpenChange={(o) => !o && setEditBdayId(null)} />
