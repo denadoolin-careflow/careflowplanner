@@ -20,6 +20,7 @@ import { useAtmosphere } from "@/lib/atmospheres";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { listPinnedNotes, type Note } from "@/lib/notes";
+import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { addMonths, addWeeks, format, startOfMonth, startOfWeek } from "date-fns";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { listPinnedTags, type Tag } from "@/lib/tags";
