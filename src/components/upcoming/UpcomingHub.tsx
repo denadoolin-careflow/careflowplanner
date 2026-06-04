@@ -472,13 +472,22 @@ function ViewToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMo
   );
 }
 
-function FocusHero({ done, total, energy, pinned, pinnedTitle }: { done: number; total: number; energy: Energy; pinned: number; pinnedTitle?: string }) {
+function FocusHero({ done, total, energy, pinned, pinnedTitle, accent, onSmartPlan }: { done: number; total: number; energy: Energy; pinned: number; pinnedTitle?: string; accent?: { color: string; soft: string; gradient: string }; onSmartPlan?: () => void }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
+  const tintStyle = accent
+    ? { background: `linear-gradient(135deg, ${accent.gradient}, ${accent.soft} 60%, transparent)` }
+    : undefined;
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-border/40 bg-gradient-to-br from-emerald-50/80 via-amber-50/60 to-rose-50/60 p-5 dark:from-emerald-950/30 dark:via-amber-950/20 dark:to-rose-950/20 sm:p-6">
+    <section
+      className="relative overflow-hidden rounded-3xl border border-border/40 bg-gradient-to-br from-emerald-50/80 via-amber-50/60 to-rose-50/60 p-5 dark:from-emerald-950/30 dark:via-amber-950/20 dark:to-rose-950/20 sm:p-6"
+      style={tintStyle}
+    >
       <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-4">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-background/70 text-emerald-700 shadow-sm">
+          <span
+            className="grid h-12 w-12 place-items-center rounded-2xl bg-background/70 shadow-sm"
+            style={accent ? { color: accent.color } : undefined}
+          >
             <Sparkles className="h-6 w-6" />
           </span>
           <div>
@@ -491,7 +500,17 @@ function FocusHero({ done, total, energy, pinned, pinnedTitle }: { done: number;
             </div>
             {total > 0 && (
               <div className="mt-3 h-1.5 w-full max-w-md overflow-hidden rounded-full bg-background/50">
-                <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${pct}%`, background: accent?.color ?? "hsl(var(--primary))" }}
+                />
+              </div>
+            )}
+            {onSmartPlan && (
+              <div className="mt-4">
+                <Button onClick={onSmartPlan} size="sm" variant="outline" className="rounded-full bg-background/70">
+                  <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Smart-plan my week
+                </Button>
               </div>
             )}
           </div>
