@@ -15,7 +15,7 @@ import { openTaskEditor } from "@/lib/open-task-editor";
 import { toast } from "sonner";
 import { pickAffirmation } from "@/lib/affirmations";
 import { TaskRow } from "@/components/cards/TaskRow";
-import { KanbanBoard } from "@/components/tasks/KanbanBoard";
+import { haptics } from "@/lib/haptics";
 
 type Capacity = "bare" | "low" | "normal" | "high";
 type View = "cards" | "list" | "gallery" | "kanban";
@@ -251,7 +251,7 @@ export function AnytimeHub() {
             {filtered.map(t => <TaskRow key={t.id} task={t} />)}
           </div>
         ) : view === "kanban" ? (
-          <KanbanBoard tasks={filtered} groupBy="status" />
+          <CapacityKanban tasks={filtered} />
         ) : view === "gallery" ? (
           <GalleryGrid tasks={filtered} onDo={(t) => doIt(t, toggleTask)} />
         ) : (
