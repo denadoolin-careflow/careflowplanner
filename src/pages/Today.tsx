@@ -23,6 +23,7 @@ import { TasksWidget } from "@/components/today/rhythm/TasksWidget";
 import { TopThreeStrip } from "@/components/today/TopThreeStrip";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { MealsPlannedWidget } from "@/components/today/widgets/MealsPlannedWidget";
+import { ScheduledTodayWidget } from "@/components/today/widgets/ScheduledTodayWidget";
 import { GroceryWidget } from "@/components/today/widgets/GroceryWidget";
 import { NotesTodayWidget } from "@/components/today/widgets/NotesTodayWidget";
 import { JournalTodayWidget } from "@/components/today/widgets/JournalTodayWidget";
@@ -114,6 +115,7 @@ function TodayInner() {
 
         {/* Sidebar */}
         <aside className="min-w-0 max-w-full space-y-3 md:space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
+          <ScheduledTodayWidget date={day} />
           <TasksWidget date={day} />
           <MealsPlannedWidget date={day} />
           <GroceryWidget />

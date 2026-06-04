@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { UtensilsCrossed, ArrowRight, Plus } from "lucide-react";
+import { UtensilsCrossed, ArrowRight, Plus, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import type { Meal } from "@/lib/types";
+import { RecipeDrawer } from "@/components/meals/RecipeDrawer";
 
 const SLOTS: Meal["slot"][] = ["Breakfast", "Lunch", "Dinner"];
 
@@ -17,6 +18,7 @@ export function MealsPlannedWidget({ date }: { date: Date }) {
   ) as Partial<Record<Meal["slot"], Meal>>;
 
   const [draft, setDraft] = useState<Record<string, string>>({});
+  const [quickMeal, setQuickMeal] = useState<Meal | null>(null);
 
   const submit = async (slot: Meal["slot"]) => {
     const name = (draft[slot] ?? "").trim();
@@ -45,14 +47,26 @@ export function MealsPlannedWidget({ date }: { date: Date }) {
               <div className="flex items-center gap-2">
                 <span className="w-16 shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">{slot}</span>
                 {m ? (
-                  <input
-                    defaultValue={m.name}
-                    onBlur={(e) => {
-                      const v = e.target.value.trim();
-                      if (v && v !== m.name) void updateMeal(m.id, { name: v });
-                    }}
-                    className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none"
-                  />
+                  <>
+                    <input
+                      defaultValue={m.name}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v && v !== m.name) void updateMeal(m.id, { name: v });
+                      }}
+                      className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none"
+                    />
+                    {((m.ingredients?.length ?? 0) > 0 || (m.steps?.length ?? 0) > 0) && (
+                      <button
+                        type="button"
+                        onClick={() => setQuickMeal(m)}
+                        title="View recipe"
+                        className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      >
+                        <BookOpen className="h-3 w-3" />
+                      </button>
+                    )}
+                  </>
                 ) : (
                   <form
                     onSubmit={(e) => { e.preventDefault(); void submit(slot); }}
@@ -72,6 +86,7 @@ export function MealsPlannedWidget({ date }: { date: Date }) {
           );
         })}
       </ul>
+      <RecipeDrawer meal={quickMeal} onClose={() => setQuickMeal(null)} onChanged={() => {}} />
     </section>
   );
 }

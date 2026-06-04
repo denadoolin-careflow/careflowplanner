@@ -54,6 +54,9 @@ export function HeaderNowStrip({ className }: { className?: string }) {
             >
               <CondIcon c={snap.condition} isNight={snap.isNight} />
               <span className="tabular-nums">{tempStr}</span>
+              {snap.conditionLabel && (
+                <span className="hidden truncate text-foreground/70 lg:inline">· {snap.conditionLabel}</span>
+              )}
               <span className="max-w-[100px] truncate text-foreground/60">· {snap.locationLabel}</span>
             </button>
           }

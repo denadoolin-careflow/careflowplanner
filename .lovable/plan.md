@@ -1,77 +1,67 @@
-# Collapsed sidebar polish — consistent 48×48 rail with calm rhythm
+# Today page upgrades — header conditions, scheduled tasks, person filter, meal quick view
 
-The collapsed rail today mixes 40×40 buttons, 18px icons, a floating dot indicator in the top-right of group heads, and inconsistent gaps. The goal is one disciplined 4px grid: every collapsed control is the same square, every icon the same size, every group separated the same way, and the rail behaves the same on mobile, tablet, and desktop.
+Four focused additions, each isolated to a small set of files.
 
-## 1. One shared collapsed button
+## 1. Show conditions text in the static header
 
-Add a single `CollapsedIconButton` helper (defined inline in `Sidebar.tsx`) used everywhere in the collapsed rail:
+`HeaderNowStrip` already pulls `WeatherSnapshot.conditionLabel` but only exposes it via the button `title`. Add a visible label next to the temp pill (e.g. "72° · Partly cloudy") on `md:` and up; keep the existing icon + temp combo on smaller screens.
 
-- `48×48` square, `rounded-xl`, `grid place-items-center`.
-- Icon slot is a fixed `24×24` inner span, `<Icon className="h-5 w-5" />` (20px stroke icon centered in a 24px box reads as the 24px target without overpowering a 48px button — matches Linear/Things).
-- Hover: `bg-sidebar-accent` only; no scale, no translate, no padding change — zero shift.
-- Active: `bg-primary-soft text-foreground shadow-soft` + a 3×16 rounded accent bar absolutely positioned on the leading edge (`left-0 top-1/2 -translate-y-1/2`); the bar uses the item's accent color so the dot-in-corner indicator disappears (which is what currently causes the visual wobble on group heads).
-- Optional `accentColor` prop tints the icon itself for the Things-style LISTS row.
+- Edit `src/components/layout/HeaderNowStrip.tsx:47-61` to render `snap.conditionLabel` in a sibling `<span>` with `hidden lg:inline text-sidebar-foreground/70`.
+- Keep tooltip + location label unchanged.
 
-Replace the inline `cn(... "h-10 w-10" ... "h-[18px] w-[18px]" ...)` blocks in:
+## 2. "Scheduled today" panel on the right of the Today page
 
-- LISTS rail (lines ~915–948)
-- Group-head NavLink (lines ~1207–1224) — drop the absolute corner dot
-- Group child NavLinks (lines ~1225–1239)
-- `PinnedNotesSection` collapsed branch (lines ~392–417)
-- `PinnedTagsSection` collapsed branch (lines ~287–315)
-- Header "expand sidebar" toggle (lines ~900–910)
-- Logo wrapper (becomes a 48×48 mark cell)
+New widget `ScheduledTodayWidget` mounted as the first child in the Today aside (`src/pages/Today.tsx:117`, above `TasksWidget`).
 
-## 2. Fixed rail width on a 4px grid
+- Source: `useStore()` tasks where `t.dueDate === todayISO && !!t.startTime && !t.completedAt`, sorted by `startTime` (string compare is fine — all "HH:MM" 24h).
+- Render: ordered list of rows with `startTime` chip, title, optional `endTime`, area dot. Empty state: "Nothing scheduled · drag a task to a time."
+- Click row → `openTaskEditor(task.id)` (reuse `src/lib/open-task-editor.ts`).
+- File: `src/components/today/widgets/ScheduledTodayWidget.tsx` (new).
+- Mount: insert before `<TasksWidget />` in `Today.tsx`.
 
-`w-14` (56px) currently leaves 8px around a 40px button. Change collapsed rail to `w-16` (64px) with `px-2 py-3`, giving exactly 8px on either side of a 48px button so every icon sits on the same vertical axis. Update both the inline class on line 801 and the `aside` so the outer width matches (the outer `style={{ width }}` is already skipped when collapsed, so the inner `w-16` governs).
+No data-model changes; uses existing `Task.startTime`/`endTime`/`dueDate`.
 
-Center wrapper for collapsed nav: `flex flex-col items-center gap-1.5 w-full`.
+## 3. Per-person routine dropdown per reset section
 
-## 3. Visual rhythm — sections + dividers
+`RhythmSection` already reads `PERSON_KEY` from localStorage but has no UI to change it. Add a `<Select>` in each section's Routines column header.
 
-Keep the existing `NAV_GROUPS` taxonomy (PlanFlow, CareFlow, HomeFlow, …) — they're already grouped semantically. In the collapsed branch only:
+- Edit `src/components/today/rhythm/RhythmSection.tsx:263-273` (routine column header).
+- Use `routines.people()` for options + an "All people" option (empty string).
+- Local state: `const [person, setPerson] = useState(readPerson())`. On change, write to `localStorage` and `setPerson(next)`.
+- Also dispatch a `window` event (`careflow:routine-person-changed`) so the other two `RhythmSection` instances (morning/afternoon/evening) update without a manual refresh — subscribe via a small `usePersonFilter()` hook colocated in `RhythmSection.tsx`.
+- Routine list filter stays driven by the same `person` value already used downstream.
 
-- Replace the per-group `mb-3` with a uniform `gap-1.5` between buttons and an explicit `<SidebarRailDivider />` between groups (`h-px w-6 mx-auto my-2 bg-sidebar-border/40`).
-- Insert the same divider once between (a) the LISTS rail and the first group, and (b) before the settings group at the end.
-- Drop the per-group accent-tinted top-right dot — accent now lives on the active bar so groups don't visually compete.
+Selection persists across reloads via the existing localStorage key. No schema work.
 
-No change to `NAV_GROUPS` content or order.
+## 4. Meal quick view with ingredients per timeframe
 
-## 4. Top + bottom anchoring
+For each meal slot in `RhythmSection`'s meal column, show the ingredient preview (already partially there) and add a "Recipe" trigger that opens the existing `RecipeDrawer`.
 
-The outer `SidebarBody` flex container already has `h-full flex-col`. Wrap the nav contents in two regions:
-
-- `<div className="flex-1 min-h-0 overflow-y-auto">` — logo + LISTS + pinned + groups.
-- `<div className="mt-auto pt-2 flex flex-col items-center gap-1.5">` — collapsed-only footer with: theme cycle button, side-swap button, settings link, and the collapse/expand toggle, each rendered through `CollapsedIconButton`.
-
-When expanded, the footer block remains the existing inline header controls (no change). The split only activates `if (collapsed)`.
-
-## 5. Mobile & tablet
-
-The collapsed rail is desktop only (`hidden lg:flex` on the outer `<aside>`). The mobile drawer (`MobileSidebarTrigger`) renders `<SidebarBody forceExpanded />`, so the collapsed math never touches mobile — no regression risk there. Verify by inspection only; no code change required for mobile.
-
-## 6. Hover/animation contract
-
-- All collapsed buttons: `transition-colors duration-150` only. No `transition-all`, no width/transform animations.
-- Tooltips stay `delayDuration={150}`, side="right".
-- The active accent bar fades in via `transition-opacity` so route changes don't snap.
+- Edit `src/components/today/rhythm/RhythmSection.tsx:236-260` (meal column).
+- Keep the existing `meal.ingredients.slice(0,3)` preview; add "+N more" when longer.
+- Add a button (icon + "Recipe") next to the meal name that sets `quickMeal` state and opens `<RecipeDrawer meal={quickMeal} onClose={() => setQuickMeal(null)} onChanged={() => {}} />` mounted once per `RhythmSection`.
+- Also do the same in `MealsPlannedWidget` so the sidebar widget can open the drawer.
+- Guard: only show the Recipe button when `meal.ingredients?.length > 0 || meal.steps?.length > 0` (otherwise the drawer is empty).
+- Reuse `RecipeDrawer` as-is — no changes needed there.
 
 ## Out of scope
 
-- No changes to expanded sidebar styling.
-- No restructure of `NAV_GROUPS` or the area/project tree (already hidden when collapsed).
-- No new pref toggles.
-- Astrology/quick-dates sections continue to be hidden when collapsed.
+- No new tables, edge functions, or store changes.
+- No fuzzy match to `LibraryMeal` (no `library_id` exists; `RecipeDrawer` works directly off the `Meal` copy).
+- No changes to `TasksWidget` behavior (the new widget is additive).
+- No global person store — stays in localStorage + a window event for cross-section sync.
 
 ## Files
 
-- edit only: `src/components/layout/Sidebar.tsx`
+- edit: `src/components/layout/HeaderNowStrip.tsx`
+- edit: `src/pages/Today.tsx`
+- edit: `src/components/today/rhythm/RhythmSection.tsx`
+- edit: `src/components/today/widgets/MealsPlannedWidget.tsx`
+- new:  `src/components/today/widgets/ScheduledTodayWidget.tsx`
 
-## Acceptance checks
+## Acceptance
 
-- All collapsed buttons measure 48×48 in DevTools; every icon centers on the same x-axis.
-- No layout shift between hover and active states (verified by toggling routes).
-- Group heads no longer show a floating top-right dot; active state reads as a left-edge bar.
-- Footer (theme, side, settings, collapse) is anchored to the bottom of the rail.
-- Rail width is exactly `64px` collapsed.
+- Header shows "72° · Partly cloudy · City" on desktop; condition icon stays on narrow screens.
+- A "Scheduled today" card sits at the top of the Today right column listing timed tasks in chronological order.
+- Each reset section's Routines column has a person picker; choosing a person filters that section immediately and the other two sections follow on next render.
+- Each meal slot shows ingredients preview and a Recipe button that opens the existing drawer; same in the sidebar Meals widget.
