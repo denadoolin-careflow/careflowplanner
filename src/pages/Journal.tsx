@@ -458,6 +458,22 @@ export default function Journal() {
         )}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
+          {linkRecipient && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] text-accent-foreground">
+              ✍️ Linking to {linkRecipient.name}
+              <button
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams);
+                  next.delete("recipient");
+                  setSearchParams(next, { replace: true });
+                }}
+                aria-label="Remove person link"
+                className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-accent/20"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
           {tags.map(t => (
             <span key={t} className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-xs">
               #{t}
