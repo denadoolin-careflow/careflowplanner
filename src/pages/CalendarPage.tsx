@@ -571,31 +571,27 @@ function MonthView({
                   const clickable = editable && !!onItemClick;
                   const draggable = editable && !!onItemReschedule;
                   return (
-                    <button
-                      key={i}
-                      type="button"
-                      title={e.label}
-                      disabled={!clickable && !draggable}
-                      onClick={(ev2) => { ev2.stopPropagation(); if (clickable) onItemClick!(e); }}
-                      draggable={draggable}
-                      onDragStart={(ev2) => {
-                        if (!draggable) return;
-                        ev2.dataTransfer.effectAllowed = "move";
-                        ev2.dataTransfer.setData(ITEM_DRAG_MIME, JSON.stringify({ sourceISO: k }));
-                        setDraggingItem({ item: e, sourceISO: k });
-                      }}
-                      onDragEnd={() => setDraggingItem(null)}
-                      className={cn(
-                        "w-full rounded-md px-1.5 py-1 text-left text-[11px] leading-snug break-words whitespace-normal transition-transform",
-                        colorOf(e.kind),
-                        clickable && "hover:-translate-y-0.5 hover:shadow-sm cursor-pointer",
-                        draggable && "active:cursor-grabbing",
-                        draggingItem?.item.id === e.id && "opacity-50",
-                      )}
-                    >
-                      {e.time && <span className="mr-1 font-medium opacity-80">{e.time}</span>}
-                      {e.label}
-                    </button>
+                    <div key={i} onClick={(ev2) => ev2.stopPropagation()}>
+                      <CalendarItemCard
+                        kind={e.kind}
+                        id={e.id}
+                        label={e.label}
+                        time={e.time}
+                        color={e.color}
+                        variant="compact"
+                        disabled={!clickable && !draggable}
+                        onClick={clickable ? () => onItemClick!(e) : undefined}
+                        draggable={draggable}
+                        onDragStart={(ev2) => {
+                          if (!draggable) return;
+                          ev2.dataTransfer.effectAllowed = "move";
+                          ev2.dataTransfer.setData(ITEM_DRAG_MIME, JSON.stringify({ sourceISO: k }));
+                          setDraggingItem({ item: e, sourceISO: k });
+                        }}
+                        onDragEnd={() => setDraggingItem(null)}
+                        className={cn(draggingItem?.item.id === e.id && "opacity-50")}
+                      />
+                    </div>
                   );
                 })}
               </div>
