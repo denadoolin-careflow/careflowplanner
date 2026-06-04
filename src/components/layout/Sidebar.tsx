@@ -34,12 +34,12 @@ import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
 
 const LISTS = [
-  { to: "/inbox", label: "Inbox", icon: InboxIcon, tint: "bg-indigo-500/15 text-indigo-500", dot: "bg-indigo-500" },
-  { to: "/today", label: "Today", icon: Sun, tint: "bg-amber-500/15 text-amber-600", dot: "bg-amber-500" },
-  { to: "/upcoming", label: "Upcoming", icon: CalendarRange, tint: "bg-violet-500/15 text-violet-500", dot: "bg-violet-500" },
-  { to: "/anytime", label: "Anytime", icon: Layers, tint: "bg-teal-500/15 text-teal-600", dot: "bg-teal-500" },
-  { to: "/someday", label: "Someday", icon: Moon, tint: "bg-slate-500/15 text-slate-500", dot: "bg-slate-500" },
-  { to: "/logbook", label: "Logbook", icon: Archive, tint: "bg-stone-500/15 text-stone-500", dot: "bg-stone-500" },
+  { to: "/inbox", label: "Inbox", icon: InboxIcon, paletteIndex: 0 },
+  { to: "/today", label: "Today", icon: Sun, paletteIndex: 3 },
+  { to: "/upcoming", label: "Upcoming", icon: CalendarRange, paletteIndex: 1 },
+  { to: "/anytime", label: "Anytime", icon: Layers, paletteIndex: 2 },
+  { to: "/someday", label: "Someday", icon: Moon, paletteIndex: 4 },
+  { to: "/logbook", label: "Logbook", icon: Archive, paletteIndex: 5 },
 ] as const;
 
 const STORAGE_KEY = "careflow:sidebar:open-groups";
@@ -88,6 +88,12 @@ function hexToHsl(hex: string): { h: number; s: number; l: number } {
     h *= 60;
   }
   return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+function paletteColor(palette: string[], index: number, alpha?: number): string {
+  const hex = palette[index % palette.length];
+  if (alpha == null || alpha === 1) return hex;
+  return `color-mix(in srgb, ${hex} ${Math.round(alpha * 100)}%, transparent)`;
 }
 
 function buildAtmosphereSidebarStyle(palette: string[]): React.CSSProperties {
@@ -535,6 +541,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const { updateProject, addProject } = useStore();
   const { openPanel } = useWorkspaceLayout();
   const navigate = useNavigate();
+  const { atmosphere } = useAtmosphere();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [compact, setCompact] = useState(false);
   useEffect(() => {
@@ -905,7 +912,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
       <nav className={cn("mt-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden w-full", collapsed && "items-center", !collapsed && "pr-1")}>
         {/* Things-style Lists rail */}
         <div className={cn("mb-3 flex flex-col gap-1", collapsed && "items-center")}>
-          {LISTS.map(({ to, label, icon: Icon, tint, dot }) => wrapItem(label,
+          {LISTS.map(({ to, label, icon: Icon, paletteIndex }) => wrapItem(label,
             <NavLink
               key={to}
               to={to}
@@ -918,14 +925,23 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
               )}
             >
               {collapsed ? (
-                <Icon className="h-[18px] w-[18px]" />
+                <Icon className="h-[18px] w-[18px]" style={{ color: paletteColor(atmosphere.palette, paletteIndex) }} />
               ) : (
                 <>
-                  <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-lg", tint)}>
+                  <span
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg"
+                    style={{
+                      backgroundColor: paletteColor(atmosphere.palette, paletteIndex, 0.15),
+                      color: paletteColor(atmosphere.palette, paletteIndex),
+                    }}
+                  >
                     <Icon className="h-4 w-4" />
                   </span>
                   <span className="flex-1">{label}</span>
-                  <span className={cn("h-1.5 w-1.5 rounded-full opacity-60", dot)} />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full opacity-60"
+                    style={{ backgroundColor: paletteColor(atmosphere.palette, paletteIndex) }}
+                  />
                 </>
               )}
             </NavLink>
