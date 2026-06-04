@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import { PersonProgressSection } from "@/components/caregiving/PersonProgressSection";
 import { PersonCheckinsSection } from "@/components/caregiving/PersonCheckinsSection";
 import { PersonTrendsSection } from "@/components/caregiving/PersonTrendsSection";
+import { PersonMemoriesSection } from "@/components/caregiving/PersonMemoriesSection";
 
 function ageFrom(birth?: string): number | null {
   if (!birth) return null;
@@ -84,6 +85,8 @@ export function PersonDashboard({ recipient }: { recipient: CareRecipient }) {
       </div>
 
       <PersonTrendsSection recipient={recipient} />
+
+      <PersonMemoriesSection recipient={recipient} />
 
       {loading ? (
         <div className="grid gap-4 lg:grid-cols-2">
