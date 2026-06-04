@@ -467,6 +467,7 @@ function WaitingOnShelf({ projects }: { projects: Project[] }) {
 
 export default function ProjectsHub() {
   const { state, addProject } = useStore();
+  const { atmosphere } = useAtmosphere();
   const projects = (state.projects ?? []).filter((p) => p.status !== "done");
   const metrics = useProjectMetrics();
   const ideasApi = useProjectIdeas();
@@ -504,15 +505,38 @@ export default function ProjectsHub() {
   return (
     <div
       className="min-h-screen"
-      style={{ background: `radial-gradient(60rem 30rem at 0% -10%, hsl(${STUDIO.sage} / 0.25), transparent), radial-gradient(50rem 30rem at 100% 0%, hsl(${STUDIO.blush} / 0.3), transparent), hsl(${STUDIO.cream})` }}
+      style={{
+        background: `
+          radial-gradient(70rem 36rem at 0% -10%, ${atmosphere.palette[0] ?? `hsl(${STUDIO.sage})`}33, transparent 60%),
+          radial-gradient(60rem 34rem at 100% 0%, ${atmosphere.palette[3] ?? atmosphere.palette[1] ?? `hsl(${STUDIO.blush})`}33, transparent 60%),
+          radial-gradient(50rem 30rem at 50% 100%, ${atmosphere.palette[4] ?? atmosphere.palette[2] ?? `hsl(${STUDIO.goldSoft})`}26, transparent 60%),
+          hsl(${STUDIO.cream})
+        `,
+      }}
     >
       <div className="mx-auto w-full max-w-7xl space-y-8 p-4 md:p-8">
-        <header className="space-y-1">
-          <div className="text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plumText})` }}>CareFlow</div>
-          <h1 className="font-display text-4xl tracking-tight">
+        <header
+          className="relative overflow-hidden rounded-3xl border px-6 py-7 md:px-10 md:py-10"
+          style={{
+            borderColor: `hsl(${STUDIO.sageDeep} / 0.12)`,
+            background: `linear-gradient(115deg, ${atmosphere.palette[0] ?? `hsl(${STUDIO.sage})`}26 0%, hsl(${STUDIO.cream} / 0.85) 55%, ${atmosphere.palette[3] ?? `hsl(${STUDIO.blush})`}26 100%)`,
+          }}
+        >
+          <div className="text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plumText})` }}>
+            {greetingFor()} · CareFlow
+          </div>
+          <h1 className="mt-2 font-display text-4xl tracking-tight md:text-5xl">
             Creative Projects <Sparkles className="inline h-5 w-5" style={{ color: `hsl(${STUDIO.gold})` }} />
           </h1>
-          <p className="text-sm text-muted-foreground">Turning ideas into impact, one small step at a time.</p>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+            A calm space for {projects.length} {projects.length === 1 ? "project" : "projects"} —
+            turning ideas into impact, one small step at a time.
+          </p>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl"
+            style={{ background: `${atmosphere.palette[4] ?? atmosphere.palette[1] ?? `hsl(${STUDIO.gold})`}40` }}
+          />
         </header>
 
         <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
@@ -525,7 +549,13 @@ export default function ProjectsHub() {
 
         <section className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-2xl">Projects</h2>
+            <div className="flex items-center gap-3">
+              <span className="h-7 w-1.5 rounded-full" style={{ background: `hsl(${STUDIO.sageDeep})` }} />
+              <div>
+                <h2 className="font-display text-2xl leading-none">Projects</h2>
+                <p className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">All your creative work</p>
+              </div>
+            </div>
             <ToggleGroup
               type="single"
               value={view}
@@ -617,10 +647,19 @@ export default function ProjectsHub() {
           )}
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <IdeasInboxShelf />
-          <RecentlyUpdatedShelf projects={projects} metrics={metrics} />
-          <WaitingOnShelf projects={projects} />
+        <section className="space-y-3">
+          <div className="flex items-center gap-3">
+            <span className="h-7 w-1.5 rounded-full" style={{ background: `hsl(${STUDIO.gold})` }} />
+            <div>
+              <h2 className="font-display text-2xl leading-none">Studio Shelves</h2>
+              <p className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">Ideas, momentum, what's waiting</p>
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <IdeasInboxShelf />
+            <RecentlyUpdatedShelf projects={projects} metrics={metrics} />
+            <WaitingOnShelf projects={projects} />
+          </div>
         </section>
       </div>
     </div>
