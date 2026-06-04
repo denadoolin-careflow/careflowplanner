@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Leaf, Sparkles, Heart } from "lucide-react";
+import { Sparkles, Heart } from "lucide-react";
 import { WaitlistForm } from "@/components/waitlist/WaitlistForm";
+import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 
 export default function Waitlist() {
   useEffect(() => {
@@ -21,12 +22,10 @@ export default function Waitlist() {
     >
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-5">
         <Link to="/" className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[hsl(145_30%_28%)] text-[hsl(36_50%_96%)] shadow-sm">
-            <Leaf className="h-4 w-4" />
-          </span>
+          <CareFlowMark size={36} />
           <span className="leading-tight">
             <span className="font-display text-lg font-semibold text-foreground">CareFlow</span>
-            <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">plan, care, grow</span>
+            <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Plan · Care · Grow</span>
           </span>
         </Link>
         <Link to="/auth" className="rounded-full border border-border/60 bg-card/70 px-4 py-2 text-sm text-foreground/90 hover:bg-card">
