@@ -10,8 +10,9 @@ const roundedMap: Record<Rounded, string> = {
 };
 
 /**
- * CareFlow brand mark — the sage-green app icon. Use anywhere the brand
- * lockup needs the full-color logo (landing, auth, waitlist headers/CTAs).
+ * CareFlow brand mark — the sage-green app icon, wrapped in a cream
+ * backplate so it always reads on light backgrounds, dark backgrounds,
+ * and dark-green CTA fills without losing contrast with its own sage tile.
  */
 export function CareFlowMark({
   size = 36,
@@ -24,20 +25,26 @@ export function CareFlowMark({
   rounded?: Rounded;
   decorative?: boolean;
 }) {
+  // Inner image is inset slightly so the cream plate frames the sage tile.
+  const pad = Math.max(1, Math.round(size * 0.06));
   return (
-    <img
-      src={icon.url}
-      alt={decorative ? "" : "CareFlow"}
+    <span
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : "CareFlow"}
       aria-hidden={decorative || undefined}
-      draggable={false}
-      width={size}
-      height={size}
       className={cn(
-        "inline-block shrink-0 select-none object-cover shadow-sm ring-1 ring-border/40",
+        "relative inline-grid shrink-0 place-items-center overflow-hidden bg-[hsl(36_50%_96%)] shadow-sm ring-1 ring-[hsl(36_25%_82%)]",
         roundedMap[rounded],
         className,
       )}
-      style={{ width: size, height: size }}
-    />
+      style={{ width: size, height: size, padding: pad }}
+    >
+      <img
+        src={icon.url}
+        alt=""
+        draggable={false}
+        className={cn("h-full w-full select-none object-cover", roundedMap[rounded])}
+      />
+    </span>
   );
 }
