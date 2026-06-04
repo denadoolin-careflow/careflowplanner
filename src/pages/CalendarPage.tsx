@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { CalendarRail, CalendarMobileWidgets } from "@/components/calendar/CalendarRail";
 import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
+import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -210,8 +211,6 @@ export default function CalendarPage() {
           <AtmosphereChip />
         </div>
       </div>
-
-      <CalendarMobileWidgets />
 
       <InboxCapture defaultDate={cursor} />
 
