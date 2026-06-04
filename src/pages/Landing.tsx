@@ -1,13 +1,14 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  Sparkles, Leaf, Moon, Heart, Calendar, Brain, Utensils,
-  Wallet, NotebookPen, Sun, Mountain, Flower2, Waves,
+  Sparkles, Moon, Heart, Calendar, Brain, Utensils,
+  Wallet, NotebookPen, Sun, Mountain, Flower2, Waves, Sprout, Home,
   Cloud, Sunrise, Trees, Coffee, ArrowRight, Check, Quote,
 } from "lucide-react";
 import botanical from "@/assets/landing-botanical.png";
 import storyImg from "@/assets/landing-story.jpg";
 import { CaregiverArchetypeQuiz } from "@/components/quiz/CaregiverArchetypeQuiz";
+import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 
 /* ---------- Local presentational helpers ---------- */
 
@@ -151,7 +152,7 @@ function HeroMockup() {
           <div className="mt-2 space-y-1">
             {["Capture","Anchor","Rhythm","Exhale"].map(l => (
               <div key={l} className="flex items-center gap-1.5 rounded-md bg-secondary-soft/60 px-1.5 py-1 text-[9px]">
-                <Leaf className="h-2.5 w-2.5 text-secondary-foreground/70" /> {l}
+                <Check className="h-2.5 w-2.5 text-secondary-foreground/70" /> {l}
               </div>
             ))}
           </div>
@@ -164,7 +165,7 @@ function HeroMockup() {
 /* ---------- Section data ---------- */
 
 const careLoop = [
-  { k: "C", title: "Capture", lead: "Get it out of your head.", icon: Leaf,
+  { k: "C", title: "Capture", lead: "Get it out of your head.", icon: Sparkles,
     bullets: ["tasks", "groceries", "appointments", "mental load", "notes & reminders"],
     glow: "bg-secondary/40", ink: "text-secondary-foreground/80" },
   { k: "A", title: "Anchor", lead: "Choose what matters today.", icon: Heart,
@@ -179,7 +180,7 @@ const careLoop = [
 ] as const;
 
 const features = [
-  { icon: Leaf, title: "Home Reset", body: "Cleaning zones, routines, recurring resets." },
+  { icon: Home, title: "Home Reset", body: "Cleaning zones, routines, recurring resets." },
   { icon: Brain, title: "Mental Load Support", body: "Brain dump + prioritization." },
   { icon: Utensils, title: "Meal Planning", body: "AI meal plans + grocery sync." },
   { icon: Moon, title: "Moon + Energy Planning", body: "Track energy, lunar cycles, emotional pacing." },
@@ -192,7 +193,7 @@ const features = [
 
 const atmospheres = [
   // Ordered by hue family, light → dark within each family
-  { name: "Sage Sanctuary", tone: "Grounded",  icon: Leaf,    bg: "linear-gradient(135deg,hsl(145 32% 84%),hsl(36 45% 94%))", dark: false, accent: "145 30% 28%" },
+  { name: "Sage Sanctuary", tone: "Grounded",  icon: Sprout,  bg: "linear-gradient(135deg,hsl(145 32% 84%),hsl(36 45% 94%))", dark: false, accent: "145 30% 28%" },
   { name: "Forest",         tone: "Focused",   icon: Trees,   bg: "linear-gradient(135deg,hsl(150 30% 30%),hsl(150 25% 18%))", dark: true,  accent: "145 40% 70%" },
   { name: "Dark Sage Glass",tone: "Held",      icon: Mountain,bg: "linear-gradient(135deg,hsl(150 18% 22%),hsl(150 15% 12%))", dark: true,  accent: "150 25% 75%" },
   { name: "Soft Linen",     tone: "Warm",      icon: Sun,     bg: "linear-gradient(135deg,hsl(36 55% 92%),hsl(32 45% 86%))", dark: false, accent: "28 55% 38%" },
@@ -325,12 +326,10 @@ export default function Landing() {
       <header className="sticky top-0 z-30 border-b border-border/30 bg-[hsl(36_50%_97%)]/70 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
           <Link to="/" className="flex items-center gap-2 sm:gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-[hsl(145_30%_28%)] text-[hsl(36_50%_96%)] shadow-sm sm:h-9 sm:w-9">
-              <Leaf className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </span>
+            <CareFlowMark size={36} className="h-8 w-8 sm:h-9 sm:w-9" />
             <span className="leading-tight">
               <span className="font-display text-base font-semibold text-foreground sm:text-lg">CareFlow</span>
-              <span className="hidden text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:block">plan, care, grow</span>
+              <span className="hidden text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:block">Plan · Care · Grow</span>
             </span>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-foreground/80 md:flex">
@@ -376,7 +375,7 @@ export default function Landing() {
             CareFlow is the emotionally intelligent planning system for caregivers, overwhelmed minds, neurodivergent users, and busy households — without pressure, guilt, or perfectionism.
           </p>
           <div className="mt-6 flex flex-col items-stretch gap-2.5 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 lg:justify-start">
-            <PrimaryCTA><Leaf className="h-4 w-4" /> Start Your CareFlow</PrimaryCTA>
+            <PrimaryCTA><CareFlowMark size={18} rounded="md" /> Start Your CareFlow</PrimaryCTA>
             <SecondaryCTA><Sparkles className="h-4 w-4" /> Find Your Archetype</SecondaryCTA>
           </div>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground lg:justify-start">
@@ -458,7 +457,7 @@ export default function Landing() {
         <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-5 sm:py-20">
           <div className="flex flex-col items-center justify-between gap-6 text-center sm:flex-row sm:items-end sm:text-left">
             <div className="max-w-xl">
-              <Pill><Leaf className="h-3 w-3" /> App features</Pill>
+              <Pill><Sparkles className="h-3 w-3" /> App features</Pill>
               <h2 className="mt-4 font-display text-2xl tracking-tight text-foreground sm:text-4xl">
                 Everything you need. All in one beautiful space.
               </h2>
@@ -563,7 +562,7 @@ export default function Landing() {
               This isn't just productivity. <em className="text-[hsl(28_70%_45%)] not-italic">It's support.</em>
             </p>
             <div className="mt-6 flex justify-center gap-3 lg:justify-start">
-              <PrimaryCTA><Leaf className="h-4 w-4" /> Start Your CareFlow</PrimaryCTA>
+              <PrimaryCTA><CareFlowMark size={18} rounded="md" /> Start Your CareFlow</PrimaryCTA>
             </div>
           </div>
         </div>
@@ -649,7 +648,7 @@ export default function Landing() {
                   to="/auth"
                   className="inline-flex items-center gap-2 rounded-full bg-[hsl(36_50%_96%)] px-6 py-3 text-sm font-medium text-[hsl(150_30%_18%)] transition-transform hover:scale-[1.02]"
                 >
-                  <Leaf className="h-4 w-4" /> Start Your CareFlow
+                  <CareFlowMark size={18} rounded="md" /> Start Your CareFlow
                 </Link>
                 <Link
                   to="/quiz"
@@ -674,12 +673,10 @@ export default function Landing() {
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 sm:gap-10 sm:px-5 sm:py-12 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2.5">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[hsl(145_30%_28%)] text-[hsl(36_50%_96%)]">
-                <Leaf className="h-4 w-4" />
-              </span>
+              <CareFlowMark size={36} />
               <span className="leading-tight">
                 <span className="font-display text-lg font-semibold">CareFlow</span>
-                <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">plan, care, grow</span>
+                <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Plan · Care · Grow</span>
               </span>
             </Link>
             <p className="mt-4 max-w-sm text-sm italic text-muted-foreground">
