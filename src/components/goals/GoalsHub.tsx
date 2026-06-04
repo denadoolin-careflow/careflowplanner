@@ -717,14 +717,20 @@ function CreateGoalDialog({
 
 function JourneyDetail({
   goal, extras, pinned, onPin, onPatch, onExtra, onDelete,
+  linkedTasks, onAddTask, onToggleTask, onUnlinkTask,
 }: {
   goal: Goal; extras: GoalExtras; pinned: boolean; onPin: () => void;
   onPatch: (p: Partial<Goal>) => void;
   onExtra: (p: Partial<GoalExtras>) => void;
   onDelete: () => void;
+  linkedTasks: import("@/lib/types").Task[];
+  onAddTask: (title: string) => void;
+  onToggleTask: (id: string, done: boolean) => void;
+  onUnlinkTask: (id: string) => void;
 }) {
   const M = CAT_META[goal.category];
   const [newMs, setNewMs] = useState("");
+  const [newTask, setNewTask] = useState("");
   const milestones = extras.milestones || [];
   const addMilestone = () => {
     if (!newMs.trim()) return;
@@ -742,6 +748,37 @@ function JourneyDetail({
     else toast.success("Check-in saved");
   };
 
+  const msDone = milestones.filter(m => m.done).length;
+  const msPct = milestones.length ? Math.round((msDone / milestones.length) * 100) : 0;
+  const syncProgressToMilestones = () => { onPatch({ progress: msPct }); toast.success(`Progress synced · ${msPct}%`); };
+
+  const shareGoal = async () => {
+    const lines = [
+      `🌱 ${goal.title}`,
+      `Category: ${goal.category}  ·  Progress: ${goal.progress}%`,
+      extras.why ? `Why: ${extras.why}` : "",
+      extras.nextStep ? `Next: ${extras.nextStep}` : "",
+      extras.targetDate ? `Target: ${extras.targetDate}` : "",
+      milestones.length ? `\nMilestones (${msDone}/${milestones.length}):` : "",
+      ...milestones.map(m => ` ${m.done ? "✓" : "○"} ${m.label}`),
+    ].filter(Boolean).join("\n");
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `Goal: ${goal.title}`, text: lines });
+      } else {
+        await navigator.clipboard.writeText(lines);
+        toast.success("Goal copied to clipboard");
+      }
+    } catch { /* user cancelled */ }
+  };
+
+  const addLinkedTask = () => {
+    if (!newTask.trim()) return;
+    onAddTask(newTask.trim());
+    setNewTask("");
+    toast.success("Task added & linked");
+  };
+
   return (
     <>
       <SheetHeader>
@@ -751,6 +788,9 @@ function JourneyDetail({
             <div className={cn("text-[10px] uppercase tracking-wider", M.text)}>{goal.category}</div>
             <SheetTitle className="font-display text-xl leading-tight">{goal.title}</SheetTitle>
           </div>
+          <Button variant="outline" size="sm" onClick={shareGoal} title="Share goal">
+            <Share2 className="h-3.5 w-3.5" />
+          </Button>
           <Button variant={pinned ? "default" : "outline"} size="sm" onClick={onPin}>
             <Sparkles className="mr-1 h-3.5 w-3.5" /> {pinned ? "Pinned" : "Pin"}
           </Button>
@@ -789,7 +829,15 @@ function JourneyDetail({
 
         {/* milestones */}
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Milestones</div>
+          <div className="flex items-center justify-between">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Milestones</div>
+            {milestones.length > 0 && (
+              <button onClick={syncProgressToMilestones} className="text-[11px] text-primary hover:underline">
+                Sync progress · {msDone}/{milestones.length} ({msPct}%)
+              </button>
+            )}
+          </div>
+          {milestones.length > 0 && <Progress value={msPct} className="mt-2 h-1" />}
           <ul className="mt-2 space-y-1.5">
             {milestones.map(m => (
               <li key={m.id} className="group flex items-center gap-2">
@@ -810,10 +858,50 @@ function JourneyDetail({
           </div>
         </div>
 
+        {/* linked tasks */}
+        <div>
+          <div className="flex items-center justify-between">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Linked tasks</div>
+            <span className="text-[11px] text-muted-foreground">
+              {linkedTasks.filter(t=>t.done).length}/{linkedTasks.length} done
+            </span>
+          </div>
+          <ul className="mt-2 space-y-1.5">
+            {linkedTasks.length === 0 && <li className="text-xs text-muted-foreground">No tasks linked yet. Add a small next move below.</li>}
+            {linkedTasks.map(t => (
+              <li key={t.id} className="group flex items-center gap-2">
+                <button onClick={()=>onToggleTask(t.id, !t.done)}>
+                  {t.done ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
+                </button>
+                <span className={cn("flex-1 text-sm", t.done && "line-through text-muted-foreground")}>{t.title}</span>
+                <button onClick={()=>onUnlinkTask(t.id)} className="opacity-0 group-hover:opacity-100" title="Unlink">
+                  <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-2 flex gap-2">
+            <Input placeholder="Add a task for this goal…" value={newTask} onChange={e=>setNewTask(e.target.value)}
+              onKeyDown={e=>e.key==="Enter" && addLinkedTask()} />
+            <Button onClick={addLinkedTask} variant="outline" size="sm"><ListChecks className="h-4 w-4" /></Button>
+          </div>
+        </div>
+
+        {/* tiny win for this goal */}
+        <div className="rounded-2xl border border-border/50 bg-rose-50/40 p-4 dark:bg-rose-950/20">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Celebrate a tiny win</div>
+          <TinyWinInline goalId={goal.id} />
+        </div>
+
         {/* gentle check-in */}
         <div className="rounded-2xl border border-border/50 bg-muted/30 p-4">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">Gentle check-in</div>
           <p className="mt-1 text-sm">How does this goal feel right now?</p>
+          {extras.lastCheckIn && (
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Last: {TONE_META[extras.lastCheckIn.tone].emoji} {TONE_META[extras.lastCheckIn.tone].label} · {new Date(extras.lastCheckIn.at).toLocaleDateString()}
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap gap-2">
             {([
               { k: "energizing", label: "😊 Energizing" },
