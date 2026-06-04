@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
-import { Users, ArrowRight, Plus, Check, X } from "lucide-react";
+import { Users, ArrowRight, Plus, Check, X, HeartPulse, CalendarClock, Bell, Repeat } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useRoutines } from "@/lib/routines";
 import { cn } from "@/lib/utils";
@@ -16,16 +16,39 @@ const KIND_TINT: Record<string, string> = {
   self: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-100",
 };
 
+type QuickKind = "care" | "appointment" | "reminder" | "habit";
+const KIND_OPTIONS: { value: QuickKind; label: string; icon: typeof HeartPulse }[] = [
+  { value: "care", label: "Care", icon: HeartPulse },
+  { value: "appointment", label: "Appt", icon: CalendarClock },
+  { value: "reminder", label: "Reminder", icon: Bell },
+  { value: "habit", label: "Habit", icon: Repeat },
+];
+
 export function FamilySnapshotCard({ date }: { date: Date }) {
-  const { state, addTask } = useStore();
+  const { state, addTask, addAppointment, addHabit } = useStore();
   const { routines: allRoutines } = useRoutines();
   const iso = format(date, "yyyy-MM-dd");
   const [addingFor, setAddingFor] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [kind, setKind] = useState<QuickKind>("care");
 
   const commitAdd = async (recipientId: string) => {
     const t = draft.trim();
-    if (t) await addTask({ title: t, recipientId, dueDate: iso });
+    if (t) {
+      if (kind === "appointment") {
+        await addAppointment({ title: t, date: iso, recipientId });
+      } else if (kind === "habit") {
+        await addHabit({ title: t });
+      } else {
+        await addTask({
+          title: t,
+          recipientId,
+          dueDate: iso,
+          tags: [kind],
+          ...(kind === "care" ? { area: "Care" as any } : {}),
+        });
+      }
+    }
     setDraft("");
     setAddingFor(null);
   };
@@ -91,10 +114,33 @@ export function FamilySnapshotCard({ date }: { date: Date }) {
                 </button>
               </div>
               {addingFor === r.id && (
-                <div className="mt-1 ml-11 flex items-center gap-1">
+                <div className="mt-1 ml-11 space-y-1">
+                  <div className="flex flex-wrap gap-1">
+                    {KIND_OPTIONS.map(opt => {
+                      const Icon = opt.icon;
+                      const active = kind === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setKind(opt.value)}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors",
+                            active
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground hover:bg-muted/70",
+                          )}
+                        >
+                          <Icon className="h-2.5 w-2.5" />
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-1">
                   <Input
                     autoFocus
-                    placeholder={`Add task for ${r.name}…`}
+                    placeholder={`Add ${kind} for ${r.name}…`}
                     value={draft}
                     onChange={e => setDraft(e.target.value)}
                     onKeyDown={e => {
@@ -109,6 +155,7 @@ export function FamilySnapshotCard({ date }: { date: Date }) {
                   <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setAddingFor(null); setDraft(""); }}>
                     <X className="h-3 w-3" />
                   </Button>
+                  </div>
                 </div>
               )}
             </li>
