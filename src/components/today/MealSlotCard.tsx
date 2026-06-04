@@ -52,7 +52,12 @@ export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
           {slot}
         </span>
         {meal ? (
-          <span className="ml-1 min-w-0 flex-1 truncate font-medium text-foreground/90">{meal.name}</span>
+          <span
+            className="ml-1 min-w-0 flex-1 whitespace-normal break-words font-medium leading-snug text-foreground/90"
+            style={{ overflowWrap: "anywhere" }}
+          >
+            {meal.name}
+          </span>
         ) : (
           <span className="ml-1 flex-1 italic text-muted-foreground">No {slot.toLowerCase()} planned</span>
         )}
