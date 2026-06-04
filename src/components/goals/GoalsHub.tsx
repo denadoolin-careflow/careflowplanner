@@ -652,6 +652,19 @@ function WeeklyCheckInBanner({ goals, onCheckIn, onSkip, onOpen }: {
   );
 }
 
+function TinyWinInline({ goalId }: { goalId: string }) {
+  const [text, setText] = useState("");
+  return (
+    <div className="mt-2 flex gap-2">
+      <Input placeholder="A little something to honor…" value={text} onChange={e=>setText(e.target.value)}
+        onKeyDown={e=>{ if(e.key==="Enter" && text.trim()) { addTinyWin(text.trim(), goalId); setText(""); toast.success("Win saved 🌸"); } }} />
+      <Button variant="outline" size="sm" onClick={()=>{ if(!text.trim()) return; addTinyWin(text.trim(), goalId); setText(""); toast.success("Win saved 🌸"); }}>
+        <Sparkles className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 /* ---------------- Create dialog ---------------- */
 
 function CreateGoalDialog({
