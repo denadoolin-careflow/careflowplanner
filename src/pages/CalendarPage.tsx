@@ -34,6 +34,7 @@ import { Globe2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
+import { useCelebrations } from "@/lib/seasons/hooks";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -107,9 +108,11 @@ export default function CalendarPage() {
     : k === "meal" ? "bg-amber-100 text-amber-900 border border-amber-300/50 dark:bg-amber-900/30 dark:text-amber-100"
     : "bg-muted text-foreground";
 
+  const { items: celebrations } = useCelebrations();
+
   // Adapter for TimeGrid which only knows about a narrower set of kinds.
   const eventsOnForGrid = (k: string) => eventsOn(k)
-    .filter(e => e.kind !== "meal")
+    .filter(e => e.kind !== "meal" && e.kind !== "season")
     .map(e => ({
       ...e,
       kind: (e.kind === "care" ? "task" : e.kind) as "appt" | "bday" | "gcal" | "hol" | "task",
@@ -135,6 +138,16 @@ export default function CalendarPage() {
       kind: "meal" as const,
       id: m.id,
       label: `${m.slot}: ${m.name}`,
+      time: undefined,
+    })),
+    ...celebrations.filter(c => {
+      if (c.date === k) return true;
+      if (c.recursYearly && c.date.slice(5) === k.slice(5)) return true;
+      return false;
+    }).map(c => ({
+      kind: "season" as const,
+      id: c.id,
+      label: `${c.icon ?? "🎉"} ${c.title}`,
       time: undefined,
     })),
   ];
