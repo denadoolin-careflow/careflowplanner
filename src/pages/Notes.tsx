@@ -296,15 +296,15 @@ function ListView({ notes, group, projectsById }: { notes: Note[]; group: Group;
               const title = n.kind === "daily" && n.date
                 ? format(parseISO(n.date), "EEEE, MMM d")
                 : (n.title || "Untitled");
+              const Icon = getLucideIcon(resolveNoteIcon(n));
               return (
                 <Link
                   key={n.id}
                   to={`/notes/${n.id}`}
                   className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-muted/40"
                 >
-                  {n.kind === "daily" ? <Sun className="h-4 w-4 text-primary" /> :
-                    n.pinned ? <Pin className="h-3.5 w-3.5 fill-current text-accent-foreground" /> :
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />}
+                  <Icon className="h-4 w-4 text-primary" />
+                  {n.pinned && <Pin className="h-3 w-3 fill-current text-accent-foreground" />}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{title}</div>
                     <div className="truncate text-xs text-muted-foreground">{stripMarkdown(n.body).slice(0, 140) || "Empty"}</div>
