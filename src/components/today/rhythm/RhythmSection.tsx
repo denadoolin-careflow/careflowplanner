@@ -16,6 +16,7 @@ import type { Task } from "@/lib/types";
 import { SlotWeather } from "./SlotWeather";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { toast } from "sonner";
+import { Plus as PlusIcon } from "lucide-react";
 
 type Slot = "morning" | "afternoon" | "evening";
 
@@ -52,8 +53,10 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
   const Icon = meta.icon;
   const [open, setOpen] = useState(defaultOpen);
   const [dropHover, setDropHover] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [adding, setAdding] = useState(false);
 
-  const { state, toggleTask, updateTask } = useStore();
+  const { state, toggleTask, updateTask, addTask } = useStore();
   const iso = format(date, "yyyy-MM-dd");
 
   const tasks = useMemo(
@@ -91,6 +94,17 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
     if (!t) return;
     await updateTask(id, { dueDate: iso, dayPart: meta.dayPart, inbox: false });
     toast.success(`Scheduled “${t.title}” → ${meta.label}`);
+  };
+
+  const submitAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const title = draft.trim();
+    if (!title) return;
+    setAdding(true);
+    try {
+      await addTask({ title, dueDate: iso, dayPart: meta.dayPart });
+      setDraft("");
+    } finally { setAdding(false); }
   };
 
   return (
@@ -174,6 +188,25 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
                   ))}
                 </ul>
               )}
+              <form
+                onSubmit={submitAdd}
+                className="mt-2 flex items-center gap-1 rounded-lg border border-dashed border-border/60 bg-background/50 px-2 py-1"
+              >
+                <PlusIcon className="h-3 w-3 shrink-0 text-muted-foreground" />
+                <input
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder={`Add a ${meta.label.toLowerCase()} task…`}
+                  className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/70"
+                />
+                <button
+                  type="submit"
+                  disabled={!draft.trim() || adding}
+                  className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary disabled:opacity-40"
+                >
+                  Add
+                </button>
+              </form>
             </div>
 
             {/* Meal column */}

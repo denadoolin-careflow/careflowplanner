@@ -120,19 +120,21 @@ export function WhatFitsNow({ date, onTaskClick }: Props) {
           </div>
         )}
 
+      </div>
+
+      <div className="mt-2 flex justify-end">
         <button
           type="button"
           onClick={doOneThing}
           className={cn(
-            "group flex flex-col items-center justify-center gap-1 rounded-2xl",
-            "bg-gradient-to-br from-primary/90 to-primary px-3 py-4 text-primary-foreground shadow-soft",
+            "inline-flex items-center gap-1.5 rounded-full",
+            "bg-gradient-to-r from-primary/90 to-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground shadow-soft",
             "transition-all hover:from-primary hover:to-primary/90",
-            "lg:col-span-1",
           )}
+          title="Complete top pick"
         >
-          <Sparkles className="h-5 w-5" />
-          <span className="text-sm font-semibold">Do One Thing</span>
-          <span className="text-[10px] uppercase tracking-wider opacity-80">complete top pick</span>
+          <Sparkles className="h-3 w-3" />
+          Do One Thing
         </button>
       </div>
     </section>
