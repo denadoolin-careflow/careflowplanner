@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { format, parseISO, isBefore, addDays, startOfDay } from "date-fns";
-import { Sparkles, RefreshCw, Loader2, CalendarClock, AlertCircle, Star, Pencil } from "lucide-react";
+import { Sparkles, RefreshCw, Loader2, CalendarClock, AlertCircle, Star, Pencil, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/lib/store";
 import { getRhythmForecast } from "@/lib/rhythm-forecast";
@@ -137,6 +139,10 @@ export function DailyBrief({ date }: { date: Date }) {
           await toggleTask(id);
           try { playCompletionChime(); } catch {}
           toast.success(`Completed “${title}”`);
+        }}
+        onReschedule={async (id, title, newDate) => {
+          await useStore.getState().updateTask(id, { dueDate: format(newDate, "yyyy-MM-dd") });
+          toast.success(`Rescheduled “${title}” to ${format(newDate, "EEE MMM d")}`);
         }}
       />
     </section>
