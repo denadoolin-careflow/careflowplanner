@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { PageHeader } from "@/components/cards/PageHeader";
 import { Button } from "@/components/ui/button";
 import { format, parseISO } from "date-fns";
 import { upcomingEvents } from "@/lib/cosmic/events";
@@ -34,15 +33,15 @@ export default function CosmicFlowTimeline() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 p-3 sm:p-6">
-      <PageHeader
-        title="Transit Timeline"
-        subtitle={`The next ${days} days of cosmic events.`}
-        actions={
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/cosmic-flow" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" />Dashboard</Link>
-          </Button>
-        }
-      />
+      <header className="flex items-start justify-between gap-2">
+        <div>
+          <h1 className="font-display text-2xl">Transit Timeline</h1>
+          <p className="text-sm text-muted-foreground">The next {days} days of cosmic events.</p>
+        </div>
+        <Button asChild variant="ghost" size="sm">
+          <Link to="/cosmic-flow" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" />Dashboard</Link>
+        </Button>
+      </header>
       <div className="flex flex-wrap items-center gap-1.5">
         {FILTERS.map(f => (
           <Button

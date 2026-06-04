@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { PageHeader } from "@/components/cards/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Sparkles, User } from "lucide-react";
 import { CosmicWeatherCard } from "@/components/cosmic/CosmicWeatherCard";
@@ -22,18 +21,20 @@ export default function CosmicFlow() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 p-3 sm:p-6">
-      <PageHeader
-        title={<span className="flex items-center gap-2">Cosmic Flow <Sparkles className="h-5 w-5 text-primary" /></span>}
-        subtitle="Align your plans with the rhythms of the sky."
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/cosmic-flow/birth-chart" className="flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5" />
-              {natal ? "Birth Chart" : "Add Birth Chart"}
-            </Link>
-          </Button>
-        }
-      />
+      <header className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h1 className="font-display text-2xl flex items-center gap-2">
+            Cosmic Flow <Sparkles className="h-5 w-5 text-primary" />
+          </h1>
+          <p className="text-sm text-muted-foreground">Align your plans with the rhythms of the sky.</p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/cosmic-flow/birth-chart" className="flex items-center gap-1.5">
+            <User className="h-3.5 w-3.5" />
+            {natal ? "Birth Chart" : "Add Birth Chart"}
+          </Link>
+        </Button>
+      </header>
 
       {natal && (
         <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, Trash2 } from "lucide-react";
-import { PageHeader } from "@/components/cards/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,15 +52,15 @@ export default function CosmicFlowBirthChart() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 p-3 sm:p-6">
-      <PageHeader
-        title="Birth Chart"
-        subtitle="Add your birth info to personalize Cosmic Flow."
-        actions={
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/cosmic-flow" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" />Dashboard</Link>
-          </Button>
-        }
-      />
+      <header className="flex items-start justify-between gap-2">
+        <div>
+          <h1 className="font-display text-2xl">Birth Chart</h1>
+          <p className="text-sm text-muted-foreground">Add your birth info to personalize Cosmic Flow.</p>
+        </div>
+        <Button asChild variant="ghost" size="sm">
+          <Link to="/cosmic-flow" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" />Dashboard</Link>
+        </Button>
+      </header>
 
       {natal && <NatalSummaryCard natal={natal} />}
 

@@ -4,7 +4,6 @@ import { parseISO, format } from "date-fns";
 import { ChevronLeft, BookHeart, Bell, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PageHeader } from "@/components/cards/PageHeader";
 import { decodeEventId } from "@/lib/cosmic/event-id";
 import { eventsOnDay } from "@/lib/cosmic/events";
 import {
@@ -108,15 +107,15 @@ export default function CosmicFlowEventDetail() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 p-3 sm:p-6">
-      <PageHeader
-        title={<span className="flex items-center gap-2"><span aria-hidden>{glyph}</span> {title}</span>}
-        subtitle={format(date, "EEEE, MMMM d, yyyy")}
-        actions={
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/cosmic-flow/timeline" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" />Timeline</Link>
-          </Button>
-        }
-      />
+      <header className="flex items-start justify-between gap-2">
+        <div>
+          <h1 className="font-display text-2xl flex items-center gap-2"><span aria-hidden>{glyph}</span> {title}</h1>
+          <p className="text-sm text-muted-foreground">{format(date, "EEEE, MMMM d, yyyy")}</p>
+        </div>
+        <Button asChild variant="ghost" size="sm">
+          <Link to="/cosmic-flow/timeline" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" />Timeline</Link>
+        </Button>
+      </header>
 
       <section className="cozy-card space-y-3 p-5">
         <div>
