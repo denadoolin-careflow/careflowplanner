@@ -1,3 +1,2 @@
-import { Layers } from "lucide-react";
-import { TaskListPage } from "./TaskListPage";
-export default function Anytime() { return <TaskListPage variant="anytime" icon={Layers} />; }
+import { AnytimeHub } from "@/components/anytime/AnytimeHub";
+export default function Anytime() { return <AnytimeHub />; }
