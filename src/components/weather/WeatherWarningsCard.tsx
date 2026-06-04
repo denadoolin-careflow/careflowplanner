@@ -1,6 +1,6 @@
 import { AlertTriangle, Info, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useWeatherSnapshot } from "@/lib/weather-store";
+import { useWeatherSnapshot, useTempUnit } from "@/lib/weather-store";
 import { useWeatherPrefs } from "@/lib/weather-prefs";
 import { computeWarnings, type WarningSeverity } from "@/lib/weather-warnings";
 
@@ -13,6 +13,8 @@ const STYLES: Record<WarningSeverity, { wrap: string; icon: typeof Info }> = {
 export function WeatherWarningsCard({ className }: { className?: string }) {
   const snap = useWeatherSnapshot();
   const [prefs] = useWeatherPrefs();
+  // Subscribe to unit so warning detail strings re-render when the user toggles °F/°C.
+  useTempUnit();
   const warnings = computeWarnings(snap, prefs);
   if (warnings.length === 0) return null;
 
