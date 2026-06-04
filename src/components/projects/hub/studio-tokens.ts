@@ -3,15 +3,21 @@
 export const STUDIO = {
   sage:   "140 25% 70%",
   sageDeep: "140 28% 38%",
-  cream:  "40 50% 96%",
-  creamDeep: "36 35% 90%",
+  /** Text-safe sage-deep that flips for dark mode. Use for labels/headings. */
+  sageDeepText: "var(--studio-sage-deep-text)",
+  /** Theme-aware cream surface — light cream in light mode, dark surface in dark mode. */
+  cream:  "var(--studio-cream)",
+  creamDeep: "var(--studio-cream-deep)",
   plum:   "330 30% 35%",
+  /** Text-safe plum that flips for dark mode. Use for labels/headings, not solid backgrounds. */
+  plumText: "var(--studio-plum-text)",
   plumSoft: "330 30% 92%",
   blush:  "15 60% 88%",
   blushDeep: "15 55% 65%",
   gold:   "40 80% 65%",
   goldSoft: "40 80% 92%",
-  ink:    "260 12% 22%",
+  /** Theme-aware ink — dark text on light surfaces, light text on dark surfaces. */
+  ink:    "var(--studio-ink)",
 } as const;
 
 export const hsl = (token: string, alpha?: number) =>
