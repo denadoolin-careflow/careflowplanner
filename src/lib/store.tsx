@@ -11,6 +11,10 @@ import { AREAS } from "./types";
 import { toast } from "sonner";
 import { runAutomations, ensureDefaultAutomations, PANTRY_TAG } from "./automations/engine";
 import { emitScheduleEvent } from "./cycle-prefs";
+import { syncOp, flushQueue, subscribeSync, isOnline as syncIsOnline, pendingCount } from "./sync-queue";
+import { lww } from "./calendar-conflict";
+
+const nowIso = () => new Date().toISOString();
 
 /* Fire-and-forget push of one CareFlow appointment to Google Calendar.
    Failures are silent — the local DB is the source of truth and the cron
