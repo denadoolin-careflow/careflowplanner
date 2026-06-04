@@ -13,7 +13,7 @@ import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
 import { TimeGrid } from "@/components/calendar/TimeGrid";
-import { CalendarRail, AtmosphereChip } from "@/components/calendar/CalendarRail";
+import { CalendarRail, CalendarMobileWidgets, AtmosphereChip } from "@/components/calendar/CalendarRail";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -211,6 +211,8 @@ export default function CalendarPage() {
           <AtmosphereChip />
         </div>
       </div>
+
+      <CalendarMobileWidgets />
 
       <InboxCapture defaultDate={cursor} />
 
