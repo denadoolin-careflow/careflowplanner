@@ -13,6 +13,7 @@ import { MealSlotCard } from "@/components/today/MealSlotCard";
 import { RoutineItemRow } from "@/components/routines/RoutineItemRow";
 import { Link } from "react-router-dom";
 import type { Task } from "@/lib/types";
+import { SlotWeather } from "./SlotWeather";
 
 type Slot = "morning" | "afternoon" | "evening";
 
@@ -41,9 +42,10 @@ interface Props {
   date: Date;
   defaultOpen?: boolean;
   onTaskClick?: (id: string) => void;
+  showWeather?: boolean;
 }
 
-export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick }: Props) {
+export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, showWeather = false }: Props) {
   const meta = SLOT_META[slot];
   const Icon = meta.icon;
   const [open, setOpen] = useState(defaultOpen);
@@ -103,6 +105,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick }: P
         </div>
 
         <CollapsibleContent>
+          {showWeather && <SlotWeather slot={slot} />}
           <div className="grid gap-3 p-4 sm:p-5 md:grid-cols-3">
             {/* Tasks column */}
             <div className="rounded-2xl border border-border/40 bg-background/60 p-3">
