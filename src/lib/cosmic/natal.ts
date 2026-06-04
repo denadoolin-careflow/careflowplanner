@@ -5,7 +5,7 @@
  * transiting and natal planets are computed by ecliptic longitude with a
  * small orb.
  */
-import { getMoonSign as getMoonSignNamed } from "@/lib/zodiac";
+import { getMoonSign } from "@/lib/zodiac";
 import { planetSign, type Sign, type Planet } from "@/lib/transits";
 
 export interface BirthInfo {
@@ -39,7 +39,7 @@ export function computeNatal(birth: BirthInfo): NatalSnapshot {
   const ps: Planet[] = ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"];
   for (const p of ps) planets[p] = planetSign(p, date);
   const sun = planetSign("Sun", date);
-  const moon = (getMoonSignNamed(date)?.name ?? "Aries") as Sign;
+  const moon = (getMoonSign(date)?.name ?? "Aries") as Sign;
 
   // Ascendant approx: sidereal time at birth + 90° (rough). Only meaningful
   // when birth time + lng provided; otherwise omitted.
