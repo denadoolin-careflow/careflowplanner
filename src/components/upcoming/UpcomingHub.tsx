@@ -464,6 +464,7 @@ export function UpcomingHub() {
         onOpenChange={setMicroOpen}
         tasks={recommendations}
         onComplete={async (id) => { await toggleTask(id); }}
+        stepCount={spPrefs.microSteps}
       />
     </div>
   );
