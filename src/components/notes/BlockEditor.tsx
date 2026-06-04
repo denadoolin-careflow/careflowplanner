@@ -505,6 +505,7 @@ export function BlockEditor({
   goal,
   onGoalChange,
   showFooter = true,
+  minHeight,
 }: {
   body: string;
   onChange: (markdown: string, html: string) => void;
@@ -513,6 +514,7 @@ export function BlockEditor({
   goal?: number | null;
   onGoalChange?: (next: number | null) => void;
   showFooter?: boolean;
+  minHeight?: string;
 }) {
   const { state, addTask } = useStore();
   const navigate = useNavigate();
@@ -861,7 +863,10 @@ export function BlockEditor({
     content: bodyToHtml(body),
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none min-h-[40vh] prose-headings:font-display prose-headings:font-semibold prose-a:text-primary dark:prose-invert",
+        class: cn(
+          "prose prose-sm max-w-none focus:outline-none prose-headings:font-display prose-headings:font-semibold prose-a:text-primary dark:prose-invert",
+          minHeight ?? "min-h-[40vh]"
+        ),
       },
       handlePaste: (_view, event) => {
         const files = Array.from(event.clipboardData?.files ?? []).filter(f => f.type.startsWith("image/"));

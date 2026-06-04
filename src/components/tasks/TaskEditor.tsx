@@ -11,6 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   CalendarIcon, X, Tag, Flag, Zap, Clock, Repeat, FolderKanban, Target,
   Star, Trash2, FileText, Link2, AlignLeft, Paperclip, ListTree, User, FolderTree,
+  ChevronDown, ChevronRight,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -117,6 +118,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   const [addingSub, setAddingSub] = useState(false);
   const [subAiLoading, setSubAiLoading] = useState(false);
   const [autoBusy, setAutoBusy] = useState(false);
+  const [notesExpanded, setNotesExpanded] = useState(() => !!(task?.notes && task.notes.trim().length > 0));
   const [nlpOn, setNlpOn] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("cf.taskedit.nlp") !== "0";
@@ -130,6 +132,11 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   };
 
   useEffect(() => { setDraft(task); }, [task]);
+  useEffect(() => {
+    if (task) {
+      setNotesExpanded(!!(task.notes && task.notes.trim().length > 0));
+    }
+  }, [task?.id]);
 
   const parsed = nlpOn && draft?.title.trim() ? parseTaskInput(draft.title) : null;
 
@@ -319,25 +326,44 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
 
             {/* Notes */}
             <div className="min-w-0 space-y-1">
-              <div className="flex items-center justify-between gap-2">
-                <Label className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => setNotesExpanded(v => !v)}
+                className="flex w-full items-center justify-between gap-2 rounded-lg py-1 transition hover:bg-muted/40"
+              >
+                <Label className="flex cursor-pointer items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
                   <AlignLeft className="h-3 w-3" />
                   Notes
+                  {draft.notes && draft.notes.trim().length > 0 && (
+                    <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-px text-[10px] text-primary">
+                      {draft.notes.trim().split(/\s+/).filter(Boolean).length} words
+                    </span>
+                  )}
                 </Label>
-                <NoteAIButton
-                  title={draft.title}
-                  body={draft.notes ?? ""}
-                  onApply={(next) => set("notes", next)}
-                />
-              </div>
-              <div className="rounded-xl border border-border/60 bg-background/40 p-2">
-                <BlockEditor
-                  body={draft.notes ?? ""}
-                  onChange={(markdown) => set("notes", markdown)}
-                  placeholder="Anything to remember… press / for blocks"
-                  showFooter={false}
-                />
-              </div>
+                <div className="flex items-center gap-1">
+                  <NoteAIButton
+                    title={draft.title}
+                    body={draft.notes ?? ""}
+                    onApply={(next) => set("notes", next)}
+                  />
+                  {notesExpanded ? (
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                </div>
+              </button>
+              {notesExpanded && (
+                <div className="rounded-xl border border-border/60 bg-background/40 p-2">
+                  <BlockEditor
+                    body={draft.notes ?? ""}
+                    onChange={(markdown) => set("notes", markdown)}
+                    placeholder="Anything to remember… press / for blocks"
+                    showFooter={false}
+                    minHeight="min-h-[80px]"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Tags */}
