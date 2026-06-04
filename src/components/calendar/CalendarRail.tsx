@@ -17,7 +17,7 @@ import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail
 
 export function CalendarRail() {
   return (
-    <aside className="hidden w-[300px] shrink-0 space-y-4 xl:block">
+    <aside className="hidden w-[280px] shrink-0 space-y-4 md:block lg:w-[300px]">
       <GoalsThisMonthCard />
       <IntentionCard />
       <AreasToGrowCard />
@@ -32,7 +32,7 @@ export function CalendarRail() {
 /** Mobile/tablet swipeable widgets, rendered at the top of the inner column. */
 export function CalendarMobileWidgets() {
   return (
-    <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 xl:hidden">
+    <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 md:hidden">
       <Swipe><GoalsThisMonthCard /></Swipe>
       <Swipe><IntentionCard /></Swipe>
       <Swipe><AreasToGrowCard /></Swipe>
