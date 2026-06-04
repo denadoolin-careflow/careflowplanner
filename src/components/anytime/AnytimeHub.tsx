@@ -459,3 +459,173 @@ function GalleryGrid({ tasks, onDo }: { tasks: Task[]; onDo: (t: Task) => void }
     </div>
   );
 }
+
+/* ---------- Capacity Kanban ---------- */
+
+type CapCol = {
+  key: "bare" | "next" | "later" | "done";
+  label: string;
+  hint: string;
+  emoji: string;
+  tone: keyof typeof TONE;
+  match: (t: Task) => boolean;
+  patch: (t: Task) => Partial<Task>;
+};
+
+const CAP_COLUMNS: CapCol[] = [
+  {
+    key: "bare",
+    label: "Bare Minimum",
+    hint: "≤ 5 min · low energy",
+    emoji: "😴",
+    tone: "emerald",
+    match: (t) => !t.done && estMin(t) <= 5 && inferEnergy(t) === "low",
+    patch: () => ({ estMinutes: 5, energy: "low", isTopThree: false, status: "active", done: false }),
+  },
+  {
+    key: "next",
+    label: "Do Next",
+    hint: "Top picks for right now",
+    emoji: "✨",
+    tone: "violet",
+    match: (t) => !t.done && t.isTopThree === true,
+    patch: () => ({ isTopThree: true, status: "active", done: false }),
+  },
+  {
+    key: "later",
+    label: "Later",
+    hint: "Park gently for another day",
+    emoji: "🌙",
+    tone: "plum",
+    match: (t) => !t.done && t.status === "someday",
+    patch: () => ({ status: "someday", isTopThree: false, done: false }),
+  },
+  {
+    key: "done",
+    label: "Done",
+    hint: "Already complete — nice work",
+    emoji: "🌿",
+    tone: "amber",
+    match: (t) => t.done,
+    patch: () => ({ done: true, lastCompletedAt: new Date().toISOString() }),
+  },
+];
+
+function CapacityKanban({ tasks }: { tasks: Task[] }) {
+  const { state, updateTask } = useStore();
+  const [hover, setHover] = useState<string | null>(null);
+
+  // Tasks not matched by any specialized column fall into "next" as the default holding lane.
+  const cols = useMemo(() => {
+    return CAP_COLUMNS.map(c => {
+      let items: Task[];
+      if (c.key === "next") {
+        items = tasks.filter(t =>
+          !t.done && t.status !== "someday" && !(estMin(t) <= 5 && inferEnergy(t) === "low") && !t.isTopThree
+            ? false
+            : c.match(t) ||
+              (!t.done && t.status !== "someday" && !(estMin(t) <= 5 && inferEnergy(t) === "low") && !CAP_COLUMNS.some(x => x.key !== "next" && x.match(t)))
+        );
+      } else {
+        items = tasks.filter(c.match);
+      }
+      return { ...c, items };
+    });
+  }, [tasks]);
+
+  // Include all anytime tasks (not just filtered) so the board still shows "Done" history.
+  const allBoardTasks = state.tasks.filter(t => !t.parentTaskId && !t.dueDate && !t.inbox);
+
+  const onDrop = async (e: React.DragEvent, col: CapCol) => {
+    e.preventDefault();
+    setHover(null);
+    const id = e.dataTransfer.getData("application/x-careflow-task");
+    if (!id) return;
+    const t = allBoardTasks.find(x => x.id === id) ?? tasks.find(x => x.id === id);
+    if (!t) return;
+    haptics.snap?.();
+    await updateTask(id, col.patch(t));
+    toast.success(`Moved to ${col.label}`);
+  };
+
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
+      {cols.map(col => {
+        const t = TONE[col.tone];
+        const active = hover === col.key;
+        return (
+          <div
+            key={col.key}
+            onDragOver={(e) => {
+              if (!Array.from(e.dataTransfer.types).includes("application/x-careflow-task")) return;
+              e.preventDefault(); e.dataTransfer.dropEffect = "move"; setHover(col.key);
+            }}
+            onDragLeave={() => setHover(p => p === col.key ? null : p)}
+            onDrop={(e) => onDrop(e, col)}
+            className={cn(
+              "flex w-72 shrink-0 flex-col rounded-2xl border bg-gradient-to-b p-2 snap-start transition-all",
+              t.wrap,
+              active && "ring-2 ring-foreground/30 scale-[1.01]",
+            )}
+          >
+            <div className="mb-2 flex items-center justify-between rounded-xl bg-card/70 px-3 py-2">
+              <div className="flex items-center gap-2">
+                <span className={cn("grid h-7 w-7 place-items-center rounded-lg text-base", t.tile)}>{col.emoji}</span>
+                <div>
+                  <div className="text-xs font-semibold">{col.label}</div>
+                  <div className="text-[10px] text-muted-foreground">{col.hint}</div>
+                </div>
+              </div>
+              <span className="text-[11px] font-medium text-muted-foreground tabular-nums">{col.items.length}</span>
+            </div>
+            <div className="flex-1 min-h-32 space-y-1.5">
+              {col.items.length === 0 ? (
+                <div className="grid place-items-center rounded-xl border border-dashed border-border/50 py-6 text-[11px] text-muted-foreground">
+                  Drop a task here
+                </div>
+              ) : (
+                col.items.slice(0, 40).map(task => <CapacityCard key={task.id} task={task} />)
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CapacityCard({ task }: { task: Task }) {
+  const Icon = inferTaskIcon(task.title, task.notes);
+  const m = areaMeta(task.area);
+  const energy = inferEnergy(task);
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("application/x-careflow-task", task.id);
+        e.dataTransfer.setData("text/plain", task.title);
+        e.dataTransfer.effectAllowed = "move";
+        haptics.pickup?.();
+      }}
+      onClick={() => openTaskEditor(task.id)}
+      className="group cursor-grab active:cursor-grabbing rounded-xl border border-border/60 bg-card/90 p-2.5 transition hover:shadow-md hover:border-foreground/20"
+    >
+      <div className="flex items-start gap-2">
+        <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-lg", m.tint)}>
+          <Icon className="h-3.5 w-3.5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className={cn("line-clamp-2 text-sm font-medium leading-snug", task.done && "line-through text-muted-foreground")}>{task.title}</div>
+          <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
+            <span className="inline-flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" /> {estMin(task)}min</span>
+            <span className="inline-flex items-center gap-0.5 capitalize">
+              {energy === "low" ? <Leaf className="h-2.5 w-2.5 text-emerald-500" /> : energy === "high" ? <Zap className="h-2.5 w-2.5 text-amber-500" /> : <Sparkles className="h-2.5 w-2.5 text-violet-500" />}
+              {energy}
+            </span>
+            <span className="truncate">· {task.area}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
