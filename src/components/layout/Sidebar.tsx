@@ -384,7 +384,7 @@ function PinnedNotesSection({
 
   if (collapsed) {
     return (
-      <div className="mb-1 flex flex-col items-center gap-0.5">
+      <div className="mb-3 flex flex-col items-center gap-1">
         {notes.slice(0, 8).map(n => {
           const title = n.kind === "daily" && n.date ? n.date : (n.title || "Untitled");
           const active = pathname === `/notes/${n.id}`;
@@ -400,7 +400,7 @@ function PinnedNotesSection({
                     active && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
-                  <Pin className="h-4 w-4" />
+                  <Pin className="h-[18px] w-[18px]" />
                 </NavLink>
               </TooltipTrigger>
               <TooltipContent side="right">{title}</TooltipContent>
