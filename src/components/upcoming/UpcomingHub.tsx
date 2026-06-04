@@ -20,8 +20,11 @@ import {
   CalendarRange, LayoutList, CalendarDays, LayoutGrid, Grid3x3,
   Sparkles, Plus, CalendarPlus, ListChecks, Sprout, Zap, Flame,
   Sun, Cloud, Moon, ChevronDown, ChevronUp, ArrowRight, Target,
-  AlertCircle, Compass, Heart,
+  AlertCircle, Compass, Heart, Settings2, Heart as HeartIcon,
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 /* ---------------- Types & persistence ---------------- */
 
@@ -33,6 +36,30 @@ const VIEW_KEY = "careflow:upcoming:view";
 const TF_KEY = "careflow:upcoming:tf";
 const EN_KEY = "careflow:upcoming:energy";
 const COLLAPSE_KEY = "careflow:upcoming:collapsed";
+const SP_KEY = "careflow:upcoming:smartplan";
+
+type EnergyBalance = "gentle" | "balanced" | "ambitious";
+type SmartPlanPrefs = {
+  energyBalance: EnergyBalance;
+  microSteps: number;          // 2–5
+  prioritizeCaregiver: boolean;
+  perDay: number;              // 1–4 tasks scheduled per day
+};
+const DEFAULT_SP_PREFS: SmartPlanPrefs = {
+  energyBalance: "balanced",
+  microSteps: 3,
+  prioritizeCaregiver: true,
+  perDay: 2,
+};
+function loadSpPrefs(): SmartPlanPrefs {
+  try { return { ...DEFAULT_SP_PREFS, ...JSON.parse(localStorage.getItem(SP_KEY) || "{}") }; }
+  catch { return DEFAULT_SP_PREFS; }
+}
+function isCaregiverTask(t: Task): boolean {
+  const a = (t.area || "").toLowerCase();
+  if (a.includes("care")) return true;
+  return (t.tags ?? []).some(tag => /care|caregiv|loved/i.test(tag));
+}
 
 const TIMEFRAMES: { key: Timeframe; label: string }[] = [
   { key: "all", label: "All" },
@@ -99,6 +126,8 @@ export function UpcomingHub() {
   const navigate = useNavigate();
   const accent = useFlowAccent("planflow");
   const [microOpen, setMicroOpen] = useState(false);
+  const [spPrefs, setSpPrefs] = useState<SmartPlanPrefs>(() => loadSpPrefs());
+  useEffect(() => { localStorage.setItem(SP_KEY, JSON.stringify(spPrefs)); }, [spPrefs]);
 
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem(VIEW_KEY) as ViewMode) || "list");
   const [tf, setTf] = useState<Timeframe>(() => (localStorage.getItem(TF_KEY) as Timeframe) || "all");
@@ -210,17 +239,32 @@ export function UpcomingHub() {
         && (!t.dueDate || t.dueDate < today)
     );
     if (candidates.length === 0) { toast("Nothing to plan — you're clear ✨"); return; }
-    // sort by energy: low first (easy wins), then medium, then high
-    const rank: Record<Energy, number> = { low: 0, medium: 1, high: 2 };
-    const sorted = [...candidates].sort((a, b) => rank[inferEnergy(a)] - rank[inferEnergy(b)]);
+    // Energy weighting per balance preset
+    const baseRank: Record<Energy, number> = { low: 0, medium: 1, high: 2 };
+    const balanceWeight: Record<EnergyBalance, Record<Energy, number>> = {
+      gentle:    { low: 0, medium: 2, high: 5 },   // strongly prefer low
+      balanced:  { low: 0, medium: 1, high: 2 },
+      ambitious: { low: 1, medium: 0, high: 0 },   // tackle bigger items earlier
+    };
+    const w = balanceWeight[spPrefs.energyBalance];
+    const sorted = [...candidates].sort((a, b) => {
+      if (spPrefs.prioritizeCaregiver) {
+        const ca = isCaregiverTask(a) ? -1 : 0;
+        const cb = isCaregiverTask(b) ? -1 : 0;
+        if (ca !== cb) return ca - cb;
+      }
+      return (w[inferEnergy(a)] - w[inferEnergy(b)]) || (baseRank[inferEnergy(a)] - baseRank[inferEnergy(b)]);
+    });
+    const perDay = Math.max(1, Math.min(4, spPrefs.perDay));
+    const maxItems = perDay * 7;
     let scheduled = 0;
-    for (let i = 0; i < sorted.length && i < 14; i++) {
-      const dayOffset = Math.min(6, Math.floor(i / 2)); // 2 per day across 7 days
+    for (let i = 0; i < sorted.length && i < maxItems; i++) {
+      const dayOffset = Math.min(6, Math.floor(i / perDay));
       const iso = format(addDays(new Date(), dayOffset), "yyyy-MM-dd");
       await updateTask(sorted[i].id, { dueDate: iso, inbox: false });
       scheduled++;
     }
-    toast.success(`Smart-planned ${scheduled} task${scheduled === 1 ? "" : "s"} across the week 🌿`);
+    toast.success(`Smart-planned ${scheduled} task${scheduled === 1 ? "" : "s"} (${spPrefs.energyBalance}) 🌿`);
   };
 
   return (
@@ -297,6 +341,8 @@ export function UpcomingHub() {
             pinnedTitle={pinnedFocus[0]?.title}
             accent={accent}
             onSmartPlan={smartPlan}
+            prefs={spPrefs}
+            onPrefsChange={setSpPrefs}
           />
 
           {/* QUICK ADD */}
@@ -418,6 +464,7 @@ export function UpcomingHub() {
         onOpenChange={setMicroOpen}
         tasks={recommendations}
         onComplete={async (id) => { await toggleTask(id); }}
+        stepCount={spPrefs.microSteps}
       />
     </div>
   );
@@ -472,7 +519,7 @@ function ViewToggle({ value, onChange }: { value: ViewMode; onChange: (v: ViewMo
   );
 }
 
-function FocusHero({ done, total, energy, pinned, pinnedTitle, accent, onSmartPlan }: { done: number; total: number; energy: Energy; pinned: number; pinnedTitle?: string; accent?: { color: string; soft: string; gradient: string }; onSmartPlan?: () => void }) {
+function FocusHero({ done, total, energy, pinned, pinnedTitle, accent, onSmartPlan, prefs, onPrefsChange }: { done: number; total: number; energy: Energy; pinned: number; pinnedTitle?: string; accent?: { color: string; soft: string; gradient: string }; onSmartPlan?: () => void; prefs?: SmartPlanPrefs; onPrefsChange?: (p: SmartPlanPrefs) => void }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
   const tintStyle = accent
     ? { background: `linear-gradient(135deg, ${accent.gradient}, ${accent.soft} 60%, transparent)` }
@@ -507,10 +554,13 @@ function FocusHero({ done, total, energy, pinned, pinnedTitle, accent, onSmartPl
               </div>
             )}
             {onSmartPlan && (
-              <div className="mt-4">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Button onClick={onSmartPlan} size="sm" variant="outline" className="rounded-full bg-background/70">
                   <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Smart-plan my week
                 </Button>
+                {prefs && onPrefsChange && (
+                  <SmartPlanPrefsPopover prefs={prefs} onChange={onPrefsChange} />
+                )}
               </div>
             )}
           </div>
@@ -761,30 +811,34 @@ function CalendarStrip({ groups, onDropTask, allowDrop }: {
 
 /* ---------- Micro-plan dialog ---------- */
 
-function deriveMicroSteps(task: Task): string[] {
+function deriveMicroSteps(task: Task, count = 3): string[] {
   const title = task.title.trim();
-  // Lightweight heuristic: 3 atomic sub-steps from the task title.
-  return [
-    `Set a 2-minute timer and start: ${title}`,
+  const all = [
+    `Take one slow breath, then begin: ${title}`,
+    `Set a 2-minute timer to start small`,
     `Do the smallest visible piece (just one bite)`,
     `Pause, breathe, decide: keep going or mark done`,
+    `Celebrate the start — momentum matters more than finish`,
   ];
+  const n = Math.max(2, Math.min(5, count));
+  return all.slice(0, n);
 }
 
 function MicroPlanDialog({
-  open, onOpenChange, tasks, onComplete,
+  open, onOpenChange, tasks, onComplete, stepCount = 3,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   tasks: Task[];
   onComplete: (taskId: string) => void | Promise<void>;
+  stepCount?: number;
 }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [doneIds, setDoneIds] = useState<Record<string, boolean>>({});
   useEffect(() => { if (open) { setActiveIdx(0); setDoneIds({}); } }, [open]);
 
   const active = tasks[activeIdx];
-  const steps = active ? deriveMicroSteps(active) : [];
+  const steps = active ? deriveMicroSteps(active, stepCount) : [];
 
   const handleComplete = async () => {
     if (!active) return;
@@ -883,5 +937,95 @@ function EmptyBreathingRoom({ onPlan, onAnytime, onGoals }: { onPlan: () => void
         <Button onClick={onGoals} variant="outline" className="rounded-full"><Target className="mr-1.5 h-3.5 w-3.5" /> Review Goals</Button>
       </div>
     </div>
+  );
+}
+
+/* ---------- Smart-plan preferences popover ---------- */
+
+function SmartPlanPrefsPopover({ prefs, onChange }: { prefs: SmartPlanPrefs; onChange: (p: SmartPlanPrefs) => void }) {
+  const balances: { k: EnergyBalance; label: string; sub: string }[] = [
+    { k: "gentle",    label: "Gentle",    sub: "Mostly low-energy wins" },
+    { k: "balanced",  label: "Balanced",  sub: "A healthy mix" },
+    { k: "ambitious", label: "Ambitious", sub: "Front-load bigger items" },
+  ];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="ghost" className="rounded-full" title="Smart-plan preferences">
+          <Settings2 className="mr-1.5 h-3.5 w-3.5" /> Preferences
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 space-y-4 p-4">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Smart planning</div>
+          <h4 className="font-display text-base">How should I plan for you?</h4>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs">Energy balance</Label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {balances.map(b => {
+              const active = prefs.energyBalance === b.k;
+              return (
+                <button
+                  key={b.k}
+                  onClick={() => onChange({ ...prefs, energyBalance: b.k })}
+                  className={cn(
+                    "rounded-xl border px-2 py-2 text-left transition-colors",
+                    active ? "border-primary bg-primary/10" : "border-border/50 hover:bg-muted/50"
+                  )}
+                >
+                  <div className="text-xs font-medium">{b.label}</div>
+                  <div className="text-[10px] leading-tight text-muted-foreground">{b.sub}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">Tiny steps per task</Label>
+            <span className="text-xs text-muted-foreground">{prefs.microSteps}</span>
+          </div>
+          <Slider
+            min={2}
+            max={5}
+            step={1}
+            value={[prefs.microSteps]}
+            onValueChange={(v) => onChange({ ...prefs, microSteps: v[0] })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">Tasks per day</Label>
+            <span className="text-xs text-muted-foreground">{prefs.perDay}</span>
+          </div>
+          <Slider
+            min={1}
+            max={4}
+            step={1}
+            value={[prefs.perDay]}
+            onValueChange={(v) => onChange({ ...prefs, perDay: v[0] })}
+          />
+        </div>
+
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-border/50 bg-card/60 p-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-xs font-medium">
+              <HeartIcon className="h-3.5 w-3.5 text-rose-500" /> Prioritize caregiver tasks
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Schedule care-related items first when planning.
+            </p>
+          </div>
+          <Switch
+            checked={prefs.prioritizeCaregiver}
+            onCheckedChange={(v) => onChange({ ...prefs, prioritizeCaregiver: !!v })}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
