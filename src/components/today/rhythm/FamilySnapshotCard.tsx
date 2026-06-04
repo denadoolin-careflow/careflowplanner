@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
-import { Users, ArrowRight } from "lucide-react";
+import { Users, ArrowRight, Plus } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useRoutines } from "@/lib/routines";
 import { cn } from "@/lib/utils";
+import { RecipientEditor } from "@/components/caregiving/RecipientEditor";
 
 const KIND_TINT: Record<string, string> = {
   child: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-100",
@@ -18,6 +19,7 @@ export function FamilySnapshotCard({ date }: { date: Date }) {
   const { state } = useStore();
   const { routines: allRoutines } = useRoutines();
   const iso = format(date, "yyyy-MM-dd");
+  const [addOpen, setAddOpen] = useState(false);
 
   const rows = useMemo(() => {
     return state.recipients.slice(0, 6).map(r => {
@@ -48,9 +50,19 @@ export function FamilySnapshotCard({ date }: { date: Date }) {
           <Users className="h-3.5 w-3.5 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground">Family Snapshot</h3>
         </div>
-        <Link to="/caregiving" className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
-          View all <ArrowRight className="h-2.5 w-2.5" />
-        </Link>
+        <div className="inline-flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            aria-label="Add family member"
+          >
+            <Plus className="h-3 w-3" /> Add
+          </button>
+          <Link to="/caregiving" className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground">
+            View all <ArrowRight className="h-2.5 w-2.5" />
+          </Link>
+        </div>
       </div>
       {rows.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border/50 px-2 py-3 text-center text-xs text-muted-foreground">
@@ -59,18 +71,24 @@ export function FamilySnapshotCard({ date }: { date: Date }) {
       ) : (
         <ul className="space-y-2">
           {rows.map(r => (
-            <li key={r.id} className="flex items-center gap-2.5">
-              <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold", KIND_TINT[r.kind] ?? KIND_TINT.self)}>
-                {r.name.slice(0, 2).toUpperCase()}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium text-foreground">{r.name}</div>
-                <div className="truncate text-[11px] text-muted-foreground">{r.status}</div>
-              </div>
+            <li key={r.id}>
+              <Link
+                to={`/caregiving?recipient=${r.id}`}
+                className="flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-muted/40 transition-colors"
+              >
+                <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold", KIND_TINT[r.kind] ?? KIND_TINT.self)}>
+                  {r.name.slice(0, 2).toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-foreground">{r.name}</div>
+                  <div className="truncate text-[11px] text-muted-foreground">{r.status}</div>
+                </div>
+              </Link>
             </li>
           ))}
         </ul>
       )}
+      <RecipientEditor open={addOpen} onOpenChange={setAddOpen} mode="add" />
     </section>
   );
 }
