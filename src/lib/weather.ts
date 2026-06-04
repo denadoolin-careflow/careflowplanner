@@ -45,6 +45,7 @@ export interface WeatherSnapshot {
   fetchedAt: string;
   todayHourly: HourlyForecast[];
   dayParts: DayPartForecast[];
+  windMaxKph: number;
 }
 
 export interface GeoPlace {
@@ -116,7 +117,7 @@ export async function fetchWeather(lat: number, lon: number, locationLabel: stri
   url.searchParams.set("longitude", String(lon));
   url.searchParams.set("current", "temperature_2m,weather_code,is_day");
   url.searchParams.set("hourly", "temperature_2m,weather_code,is_day,precipitation_probability");
-  url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,weather_code");
+  url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,weather_code,wind_speed_10m_max");
   url.searchParams.set("timezone", "auto");
   url.searchParams.set("forecast_days", "2");
 
@@ -170,6 +171,7 @@ export async function fetchWeather(lat: number, lon: number, locationLabel: stri
     fetchedAt: new Date().toISOString(),
     todayHourly,
     dayParts,
+    windMaxKph: Math.round(data?.daily?.wind_speed_10m_max?.[0] ?? 0),
   };
 }
 
