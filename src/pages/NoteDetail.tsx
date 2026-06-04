@@ -90,9 +90,30 @@ export default function NoteDetail() {
 
   const removeCover = async () => {
     if (!id) return;
-    setNote(n => n ? { ...n, coverUrl: null } : n);
-    await updateNote(id, { coverUrl: null, coverPosition: null });
+    setNote(n => n ? { ...n, coverUrl: null, coverGradient: null } : n);
+    await updateNote(id, { coverUrl: null, coverPosition: null, coverGradient: null });
     setRepositioning(false);
+  };
+
+  const setGradientCover = async (gradientId: string) => {
+    if (!id) return;
+    setNote(n => n ? { ...n, coverGradient: gradientId, coverUrl: null, coverPosition: null } : n);
+    try {
+      await updateNote(id, { coverGradient: gradientId, coverUrl: null, coverPosition: null });
+      toast.success("Cover updated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't save cover");
+    }
+  };
+
+  const setIcon = async (next: string | null) => {
+    if (!id) return;
+    setNote(n => n ? { ...n, icon: next } : n);
+    try {
+      await updateNote(id, { icon: next });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't save icon");
+    }
   };
 
   const setCoverPosition = (pos: number) => {
