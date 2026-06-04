@@ -654,6 +654,83 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     </Tooltip>
   ) : node;
 
+  // ───── Collapsed rail primitives ─────────────────────────────────────────
+  // One 48×48 button, 24px icon slot, optional accent color, left-edge active
+  // bar. Used everywhere in the collapsed sidebar so every icon sits on the
+  // exact same vertical axis with zero shift on hover/active.
+  const RailButton = ({
+    to, label, icon: Icon, accentColor, onClick, end,
+  }: {
+    to: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+    accentColor?: string;
+    onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
+    end?: boolean;
+  }) => (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>
+        <NavLink
+          to={to}
+          end={end}
+          onClick={onClick}
+          className={({ isActive }) => cn(
+            "group relative grid h-12 w-12 shrink-0 place-items-center rounded-xl transition-colors duration-150",
+            "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            isActive && "bg-primary-soft text-foreground shadow-soft",
+          )}
+        >
+          {({ isActive }) => (
+            <>
+              <span
+                aria-hidden
+                className={cn(
+                  "pointer-events-none absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full transition-opacity duration-150",
+                  isActive ? "opacity-100" : "opacity-0",
+                )}
+                style={{ background: accentColor ?? "hsl(var(--primary))" }}
+              />
+              <span className="grid h-6 w-6 place-items-center">
+                <Icon className="h-5 w-5" style={accentColor ? { color: accentColor } : undefined} />
+              </span>
+            </>
+          )}
+        </NavLink>
+      </TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+
+  const RailIconAction = ({
+    label, icon: Icon, onClick, ariaPressed,
+  }: {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    onClick: () => void;
+    ariaPressed?: boolean;
+  }) => (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          aria-pressed={ariaPressed}
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-150"
+        >
+          <span className="grid h-6 w-6 place-items-center">
+            <Icon className="h-5 w-5" />
+          </span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+
+  const RailDivider = () => (
+    <div aria-hidden className="my-2 h-px w-6 rounded-full bg-sidebar-border/40" />
+  );
+
   const renderProjectNode = (p: typeof projects[number], depth: number, allProjects: typeof projects, areaName: string | undefined) => {
     const children = allProjects.filter(c => c.parentProjectId === p.id);
     const key = `proj:${p.id}`;
