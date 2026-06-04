@@ -600,26 +600,74 @@ function EnergyGuide({ counts, active, onSelect }: { counts: Record<Energy, numb
   );
 }
 
-function WhatFits({ items, onDoOne }: { items: Task[]; onDoOne: () => void }) {
+function WhatFits({ items, onDoOne, goals, accent, onLinkGoal }: {
+  items: Task[];
+  onDoOne: () => void;
+  goals?: Goal[];
+  accent?: { color: string; soft: string; gradient: string };
+  onLinkGoal?: (taskId: string, goalId: string) => void;
+}) {
+  const tintStyle = accent
+    ? { background: `linear-gradient(135deg, ${accent.soft}, transparent 70%)` }
+    : undefined;
   return (
-    <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-violet-50/60 via-rose-50/40 to-amber-50/40 p-4 dark:from-violet-950/20 dark:via-rose-950/15 dark:to-amber-950/15">
+    <div
+      className="rounded-2xl border border-border/50 bg-gradient-to-br from-violet-50/60 via-rose-50/40 to-amber-50/40 p-4 dark:from-violet-950/20 dark:via-rose-950/15 dark:to-amber-950/15"
+      style={tintStyle}
+    >
       <div className="mb-1">
         <h3 className="font-display text-base">What fits right now?</h3>
         <p className="text-[11px] text-muted-foreground">Based on your energy and time.</p>
       </div>
       <ul className="mt-2 space-y-2">
         {items.length === 0 && <li className="text-xs text-muted-foreground">Nothing matches yet — try adding a small task.</li>}
-        {items.map(t => (
-          <li key={t.id} className="flex items-start gap-2.5">
-            <span className="mt-0.5 text-base">{t.icon || "🌿"}</span>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">{t.title}</div>
-              <div className="text-[11px] text-muted-foreground">
-                {t.area} · {estMin(t)} min · <span className="capitalize">{inferEnergy(t)} energy</span>
+        {items.map(t => {
+          const linkedGoal = goals?.find(g => g.id === t.goalId);
+          return (
+            <li key={t.id} className="flex items-start gap-2.5">
+              <span className="mt-0.5 text-base">{t.icon || "🌿"}</span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{t.title}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {t.area} · {estMin(t)} min · <span className="capitalize">{inferEnergy(t)} energy</span>
+                  {linkedGoal && <> · 🎯 {linkedGoal.title}</>}
+                </div>
               </div>
-            </div>
-          </li>
-        ))}
+              {goals && goals.length > 0 && onLinkGoal && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="mt-0.5 rounded-full p-1 text-muted-foreground hover:bg-background/60 hover:text-foreground"
+                      title={linkedGoal ? "Linked to goal" : "Link to a goal"}
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-56 p-1">
+                    <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Connect to a goal
+                    </div>
+                    <div className="max-h-60 overflow-auto">
+                      {goals.map(g => (
+                        <button
+                          key={g.id}
+                          onClick={() => onLinkGoal(t.id, g.id)}
+                          className={cn(
+                            "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted",
+                            g.id === t.goalId && "bg-muted"
+                          )}
+                        >
+                          <Target className="h-3 w-3 text-emerald-600" />
+                          <span className="truncate">{g.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </li>
+          );
+        })}
       </ul>
       {items.length > 0 && (
         <Button onClick={onDoOne} size="sm" className="mt-3 w-full rounded-xl">
@@ -661,7 +709,11 @@ function ComingUpNext({ items, onAll }: { items: Appointment[]; onAll: () => voi
   );
 }
 
-function CalendarStrip({ groups }: { groups: { label: string; date: string; tasks: Task[] }[] }) {
+function CalendarStrip({ groups, onDropTask, allowDrop }: {
+  groups: { label: string; date: string; tasks: Task[] }[];
+  onDropTask?: (e: React.DragEvent, iso: string) => void;
+  allowDrop?: (e: React.DragEvent) => void;
+}) {
   // 14-day strip
   const days = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
   const tasksByDate = new Map<string, Task[]>();
@@ -677,10 +729,16 @@ function CalendarStrip({ groups }: { groups: { label: string; date: string; task
           const iso = format(d, "yyyy-MM-dd");
           const list = tasksByDate.get(iso) || [];
           return (
-            <div key={iso} className={cn(
-              "min-h-[110px] rounded-xl border p-2",
-              isToday(d) ? "border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-border/40 bg-background/40"
-            )}>
+            <div
+              key={iso}
+              onDragOver={allowDrop}
+              onDrop={(e) => onDropTask?.(e, iso)}
+              className={cn(
+                "min-h-[110px] rounded-xl border p-2 transition-colors",
+                isToday(d) ? "border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-border/40 bg-background/40",
+                "hover:border-primary/40"
+              )}
+            >
               <div className="mb-1 flex items-baseline justify-between">
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(d, "EEE")}</span>
                 <span className={cn("font-display text-base", isToday(d) && "text-emerald-700")}>{format(d, "d")}</span>
@@ -698,6 +756,118 @@ function CalendarStrip({ groups }: { groups: { label: string; date: string; task
         })}
       </div>
     </div>
+  );
+}
+
+/* ---------- Micro-plan dialog ---------- */
+
+function deriveMicroSteps(task: Task): string[] {
+  const title = task.title.trim();
+  // Lightweight heuristic: 3 atomic sub-steps from the task title.
+  return [
+    `Set a 2-minute timer and start: ${title}`,
+    `Do the smallest visible piece (just one bite)`,
+    `Pause, breathe, decide: keep going or mark done`,
+  ];
+}
+
+function MicroPlanDialog({
+  open, onOpenChange, tasks, onComplete,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  tasks: Task[];
+  onComplete: (taskId: string) => void | Promise<void>;
+}) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [doneIds, setDoneIds] = useState<Record<string, boolean>>({});
+  useEffect(() => { if (open) { setActiveIdx(0); setDoneIds({}); } }, [open]);
+
+  const active = tasks[activeIdx];
+  const steps = active ? deriveMicroSteps(active) : [];
+
+  const handleComplete = async () => {
+    if (!active) return;
+    await onComplete(active.id);
+    setDoneIds(p => ({ ...p, [active.id]: true }));
+    toast.success(`Nice. “${active.title}” complete ✨`);
+    if (activeIdx + 1 < tasks.length) setActiveIdx(activeIdx + 1);
+    else onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" /> Your tiny micro-plan
+          </DialogTitle>
+          <DialogDescription>
+            Three small steps. You only need to do one to feel momentum.
+          </DialogDescription>
+        </DialogHeader>
+
+        {tasks.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            No recommendations yet — add a small task to get started.
+          </p>
+        ) : !active ? null : (
+          <div className="space-y-4">
+            {/* Task chooser pills */}
+            <div className="flex flex-wrap gap-1.5">
+              {tasks.map((t, i) => (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveIdx(i)}
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-[11px] transition-colors",
+                    i === activeIdx
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border/50 text-muted-foreground hover:bg-muted/50",
+                    doneIds[t.id] && "line-through opacity-60"
+                  )}
+                >
+                  {i + 1}. {t.title.length > 18 ? t.title.slice(0, 18) + "…" : t.title}
+                </button>
+              ))}
+            </div>
+
+            <div className="rounded-2xl border border-border/50 bg-card/60 p-4">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                Chosen step
+              </div>
+              <div className="mt-1 font-display text-lg">{active.title}</div>
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                {active.area} · {estMin(active)} min · <span className="capitalize">{inferEnergy(active)} energy</span>
+              </div>
+
+              <ol className="mt-3 space-y-2">
+                {steps.map((s, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+                      {i + 1}
+                    </span>
+                    <span className="text-foreground/90">{s}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <button
+                onClick={() => setActiveIdx((activeIdx + 1) % tasks.length)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Skip — show me another
+              </button>
+              <Button onClick={handleComplete} size="sm" className="rounded-full">
+                <Check className="mr-1.5 h-3.5 w-3.5" /> Mark this complete
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
