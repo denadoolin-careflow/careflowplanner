@@ -626,6 +626,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const orderedGroups = groupOrder
     .map(id => NAV_GROUPS.find(g => g.id === id))
     .filter(Boolean) as typeof NAV_GROUPS[number][];
+  const flowAccents = useFlowAccents();
 
   const handleNavClick = (to: string) => (e: MouseEvent<HTMLAnchorElement>) => {
     const panelId = PANEL_BY_ROUTE[to];
