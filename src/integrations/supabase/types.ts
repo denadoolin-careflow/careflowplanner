@@ -424,6 +424,101 @@ export type Database = {
         }
         Relationships: []
       }
+      bucket_items: {
+        Row: {
+          created_at: string
+          done: boolean
+          done_at: string | null
+          due_date: string | null
+          id: string
+          list_id: string
+          notes: string | null
+          photo_url: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          done_at?: string | null
+          due_date?: string | null
+          id?: string
+          list_id: string
+          notes?: string | null
+          photo_url?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          done_at?: string | null
+          due_date?: string | null
+          id?: string
+          list_id?: string
+          notes?: string | null
+          photo_url?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bucket_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "bucket_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bucket_lists: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_shared: boolean
+          season: Database["public"]["Enums"]["bucket_season"]
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+          year: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_shared?: boolean
+          season?: Database["public"]["Enums"]["bucket_season"]
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+          year?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_shared?: boolean
+          season?: Database["public"]["Enums"]["bucket_season"]
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
       budget_categories: {
         Row: {
           color: string | null
@@ -798,6 +893,128 @@ export type Database = {
           updated_at?: string
           user_id?: string
           zone?: string | null
+        }
+        Relationships: []
+      }
+      celebration_tasks: {
+        Row: {
+          category: Database["public"]["Enums"]["celebration_task_category"]
+          celebration_id: string
+          created_at: string
+          done: boolean
+          due_offset_days: number | null
+          id: string
+          linked_task_id: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["celebration_task_category"]
+          celebration_id: string
+          created_at?: string
+          done?: boolean
+          due_offset_days?: number | null
+          id?: string
+          linked_task_id?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["celebration_task_category"]
+          celebration_id?: string
+          created_at?: string
+          done?: boolean
+          due_offset_days?: number | null
+          id?: string
+          linked_task_id?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "celebration_tasks_celebration_id_fkey"
+            columns: ["celebration_id"]
+            isOneToOne: false
+            referencedRelation: "celebrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      celebrations: {
+        Row: {
+          budget_cents: number | null
+          color: string | null
+          cover_url: string | null
+          created_at: string
+          date: string
+          end_date: string | null
+          icon: string | null
+          id: string
+          kind: Database["public"]["Enums"]["celebration_kind"]
+          linked_money_category: string | null
+          notes: string | null
+          parent_celebration_id: string | null
+          person_age_anchor: number | null
+          recipient_id: string | null
+          recurs_yearly: boolean
+          spent_cents: number | null
+          status: Database["public"]["Enums"]["celebration_status"]
+          theme: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_cents?: number | null
+          color?: string | null
+          cover_url?: string | null
+          created_at?: string
+          date: string
+          end_date?: string | null
+          icon?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["celebration_kind"]
+          linked_money_category?: string | null
+          notes?: string | null
+          parent_celebration_id?: string | null
+          person_age_anchor?: number | null
+          recipient_id?: string | null
+          recurs_yearly?: boolean
+          spent_cents?: number | null
+          status?: Database["public"]["Enums"]["celebration_status"]
+          theme?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_cents?: number | null
+          color?: string | null
+          cover_url?: string | null
+          created_at?: string
+          date?: string
+          end_date?: string | null
+          icon?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["celebration_kind"]
+          linked_money_category?: string | null
+          notes?: string | null
+          parent_celebration_id?: string | null
+          person_age_anchor?: number | null
+          recipient_id?: string | null
+          recurs_yearly?: boolean
+          spent_cents?: number | null
+          status?: Database["public"]["Enums"]["celebration_status"]
+          theme?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1988,6 +2205,112 @@ export type Database = {
         }
         Relationships: []
       }
+      holiday_plans: {
+        Row: {
+          budget_cents: number | null
+          category: Database["public"]["Enums"]["holiday_plan_category"]
+          color: string | null
+          created_at: string
+          custom_date: string | null
+          custom_name: string | null
+          holiday_id: string | null
+          icon: string | null
+          id: string
+          notes: string | null
+          spent_cents: number | null
+          status: Database["public"]["Enums"]["celebration_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_cents?: number | null
+          category?: Database["public"]["Enums"]["holiday_plan_category"]
+          color?: string | null
+          created_at?: string
+          custom_date?: string | null
+          custom_name?: string | null
+          holiday_id?: string | null
+          icon?: string | null
+          id?: string
+          notes?: string | null
+          spent_cents?: number | null
+          status?: Database["public"]["Enums"]["celebration_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_cents?: number | null
+          category?: Database["public"]["Enums"]["holiday_plan_category"]
+          color?: string | null
+          created_at?: string
+          custom_date?: string | null
+          custom_name?: string | null
+          holiday_id?: string | null
+          icon?: string | null
+          id?: string
+          notes?: string | null
+          spent_cents?: number | null
+          status?: Database["public"]["Enums"]["celebration_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holiday_plans_holiday_id_fkey"
+            columns: ["holiday_id"]
+            isOneToOne: false
+            referencedRelation: "holidays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      holiday_timeline_steps: {
+        Row: {
+          created_at: string
+          days_before: number
+          done: boolean
+          holiday_plan_id: string
+          id: string
+          notes: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_before: number
+          done?: boolean
+          holiday_plan_id: string
+          id?: string
+          notes?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          days_before?: number
+          done?: boolean
+          holiday_plan_id?: string
+          id?: string
+          notes?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holiday_timeline_steps_holiday_plan_id_fkey"
+            columns: ["holiday_plan_id"]
+            isOneToOne: false
+            referencedRelation: "holiday_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holidays: {
         Row: {
           created_at: string
@@ -2861,6 +3184,82 @@ export type Database = {
           voice_note_path?: string | null
         }
         Relationships: []
+      }
+      memory_book_entries: {
+        Row: {
+          body: string | null
+          cover_url: string | null
+          created_at: string
+          date: string
+          group_key: string
+          group_type: Database["public"]["Enums"]["memory_group_type"]
+          id: string
+          linked_celebration_id: string | null
+          linked_holiday_id: string | null
+          linked_memory_id: string | null
+          media: Json
+          mood: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          cover_url?: string | null
+          created_at?: string
+          date?: string
+          group_key: string
+          group_type?: Database["public"]["Enums"]["memory_group_type"]
+          id?: string
+          linked_celebration_id?: string | null
+          linked_holiday_id?: string | null
+          linked_memory_id?: string | null
+          media?: Json
+          mood?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          cover_url?: string | null
+          created_at?: string
+          date?: string
+          group_key?: string
+          group_type?: Database["public"]["Enums"]["memory_group_type"]
+          id?: string
+          linked_celebration_id?: string | null
+          linked_holiday_id?: string | null
+          linked_memory_id?: string | null
+          media?: Json
+          mood?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_book_entries_linked_celebration_id_fkey"
+            columns: ["linked_celebration_id"]
+            isOneToOne: false
+            referencedRelation: "celebrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_book_entries_linked_holiday_id_fkey"
+            columns: ["linked_holiday_id"]
+            isOneToOne: false
+            referencedRelation: "holidays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memory_book_entries_linked_memory_id_fkey"
+            columns: ["linked_memory_id"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mental_health_logs: {
         Row: {
@@ -4276,6 +4675,48 @@ export type Database = {
         }
         Relationships: []
       }
+      remembrances: {
+        Row: {
+          birth_date: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["remembrance_kind"]
+          name: string
+          photo_url: string | null
+          remembrance_date: string | null
+          show_prompts: boolean
+          story: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["remembrance_kind"]
+          name: string
+          photo_url?: string | null
+          remembrance_date?: string | null
+          show_prompts?: boolean
+          story?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["remembrance_kind"]
+          name?: string
+          photo_url?: string | null
+          remembrance_date?: string | null
+          show_prompts?: boolean
+          story?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reset_checklists: {
         Row: {
           auto_reset: boolean
@@ -4619,6 +5060,45 @@ export type Database = {
           target_date?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      seasonal_goals: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          notes: string | null
+          season: Database["public"]["Enums"]["bucket_season"]
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          notes?: string | null
+          season: Database["public"]["Enums"]["bucket_season"]
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          notes?: string | null
+          season?: Database["public"]["Enums"]["bucket_season"]
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
         }
         Relationships: []
       }
@@ -4987,6 +5467,139 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tradition_instances: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          item_state: Json
+          notes: string | null
+          started_at: string | null
+          tradition_id: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          item_state?: Json
+          notes?: string | null
+          started_at?: string | null
+          tradition_id: string
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          item_state?: Json
+          notes?: string | null
+          started_at?: string | null
+          tradition_id?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tradition_instances_tradition_id_fkey"
+            columns: ["tradition_id"]
+            isOneToOne: false
+            referencedRelation: "traditions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tradition_items: {
+        Row: {
+          created_at: string
+          id: string
+          sort_order: number
+          title: string
+          tradition_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sort_order?: number
+          title: string
+          tradition_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sort_order?: number
+          title?: string
+          tradition_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tradition_items_tradition_id_fkey"
+            columns: ["tradition_id"]
+            isOneToOne: false
+            referencedRelation: "traditions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      traditions: {
+        Row: {
+          active: boolean
+          anchor: Database["public"]["Enums"]["tradition_anchor"]
+          anchor_date: string | null
+          category: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          recurs_yearly: boolean
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          anchor?: Database["public"]["Enums"]["tradition_anchor"]
+          anchor_date?: string | null
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          recurs_yearly?: boolean
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          anchor?: Database["public"]["Enums"]["tradition_anchor"]
+          anchor_date?: string | null
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          recurs_yearly?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       transactions: {
         Row: {
@@ -5569,6 +6182,59 @@ export type Database = {
         }
         Relationships: []
       }
+      wishlist_items: {
+        Row: {
+          celebration_id: string | null
+          claimed_by: string | null
+          created_at: string
+          done: boolean
+          id: string
+          notes: string | null
+          price_cents: number | null
+          recipient_id: string | null
+          title: string
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          celebration_id?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          done?: boolean
+          id?: string
+          notes?: string | null
+          price_cents?: number | null
+          recipient_id?: string | null
+          title: string
+          updated_at?: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          celebration_id?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          done?: boolean
+          id?: string
+          notes?: string | null
+          price_cents?: number | null
+          recipient_id?: string | null
+          title?: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_items_celebration_id_fkey"
+            columns: ["celebration_id"]
+            isOneToOne: false
+            referencedRelation: "celebrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -5617,7 +6283,46 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      bucket_season: "spring" | "summer" | "autumn" | "winter" | "all"
+      celebration_kind:
+        | "birthday"
+        | "anniversary"
+        | "graduation"
+        | "family_milestone"
+        | "care_milestone"
+        | "therapy_win"
+        | "adoption"
+        | "special_event"
+        | "custom"
+      celebration_status: "planning" | "in_progress" | "done"
+      celebration_task_category:
+        | "decor"
+        | "cake"
+        | "gifts"
+        | "food"
+        | "invitations"
+        | "other"
+      holiday_plan_category:
+        | "federal"
+        | "religious"
+        | "family"
+        | "seasonal"
+        | "custom"
       household_role: "owner" | "editor" | "viewer"
+      memory_group_type:
+        | "season"
+        | "holiday"
+        | "birthday"
+        | "celebration"
+        | "year"
+      remembrance_kind: "person" | "pet" | "date"
+      tradition_anchor:
+        | "christmas_eve"
+        | "thanksgiving"
+        | "first_snow"
+        | "birthday"
+        | "custom_date"
+        | "season"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5746,7 +6451,51 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      bucket_season: ["spring", "summer", "autumn", "winter", "all"],
+      celebration_kind: [
+        "birthday",
+        "anniversary",
+        "graduation",
+        "family_milestone",
+        "care_milestone",
+        "therapy_win",
+        "adoption",
+        "special_event",
+        "custom",
+      ],
+      celebration_status: ["planning", "in_progress", "done"],
+      celebration_task_category: [
+        "decor",
+        "cake",
+        "gifts",
+        "food",
+        "invitations",
+        "other",
+      ],
+      holiday_plan_category: [
+        "federal",
+        "religious",
+        "family",
+        "seasonal",
+        "custom",
+      ],
       household_role: ["owner", "editor", "viewer"],
+      memory_group_type: [
+        "season",
+        "holiday",
+        "birthday",
+        "celebration",
+        "year",
+      ],
+      remembrance_kind: ["person", "pet", "date"],
+      tradition_anchor: [
+        "christmas_eve",
+        "thanksgiving",
+        "first_snow",
+        "birthday",
+        "custom_date",
+        "season",
+      ],
     },
   },
 } as const
