@@ -1,20 +1,18 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useStore } from "@/lib/store";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, LayoutGrid, List as ListIcon, Columns3 } from "lucide-react";
-import { AREAS } from "@/lib/types";
-import { toast } from "sonner";
-import { AreaIconColorPicker, getAreaIcon } from "@/components/areas/AreaIconColorPicker";
-import { AreaDetailDialog } from "@/components/areas/AreaDetailDialog";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useSearchParams } from "react-router-dom";
 import { AllTasksViews } from "@/components/tasks/AllTasksViews";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { cn } from "@/lib/utils";
-import { ProjectsAISummary } from "@/components/projects/ProjectsAISummary";
-import { formatRelativeDate } from "@/lib/date-format";
+import ProjectsHub from "@/components/projects/hub/ProjectsHub";
+
+export default function Projects() {
+  const [params] = useSearchParams();
+  if (params.get("tab") === "tasks") {
+    return (
+      <div className="mx-auto w-full max-w-5xl space-y-4 p-4 md:p-6">
+        <AllTasksViews />
+      </div>
+    );
+  }
+  return <ProjectsHub />;
+}
 
 type ProjectsView = "grid" | "list" | "board";
 const VIEW_KEY = "projects.view";
