@@ -102,12 +102,13 @@ function currentQuarter() {
 /* ---------------- Hub ---------------- */
 
 export function GoalsHub() {
-  const { state, addGoal, updateGoal, deleteGoal } = useStore();
+  const { state, addGoal, updateGoal, deleteGoal, addTask, updateTask } = useStore();
   const [extras, setExtras] = useState<Record<string, GoalExtras>>(() => loadExtras());
   const [openId, setOpenId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [areaFilter, setAreaFilter] = useState<Goal["category"] | "all">("all");
   const [view, setView] = useState<"vision" | "list" | "board" | "journey">("vision");
+  const [checkInQueueDismissed, setCheckInQueueDismissed] = useState<string[]>([]);
 
   useEffect(() => { saveExtras(extras); }, [extras]);
 
@@ -146,6 +147,15 @@ export function GoalsHub() {
   const togglePin = (id: string) =>
     setTop3Ids(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id].slice(-3));
 
+  // Weekly gentle check-in queue: pinned + active goals with stale/missing check-ins
+  const needsCheckIn = useMemo(
+    () => active
+      .filter(g => checkInIsStale(extras[g.id]?.lastCheckIn?.at))
+      .filter(g => !checkInQueueDismissed.includes(g.id))
+      .slice(0, 5),
+    [active, extras, checkInQueueDismissed]
+  );
+
   return (
     <div className="space-y-6">
       {/* HERO */}
@@ -178,6 +188,20 @@ export function GoalsHub() {
           </div>
         </div>
       </section>
+
+      {/* Weekly gentle check-in */}
+      {needsCheckIn.length > 0 && (
+        <WeeklyCheckInBanner
+          goals={needsCheckIn}
+          onCheckIn={(id, tone) => {
+            setExtra(id, { lastCheckIn: { tone, at: new Date().toISOString() } });
+            if (tone === "heavy") toast("This one feels heavy — try giving it more space.", { description: "Open the goal to pause or stretch it." });
+            else toast.success(`Saved · ${TONE_META[tone].label}`);
+          }}
+          onSkip={(id) => setCheckInQueueDismissed(prev => [...prev, id])}
+          onOpen={(id) => setOpenId(id)}
+        />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* MAIN COLUMN */}
