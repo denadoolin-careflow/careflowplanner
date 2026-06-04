@@ -285,8 +285,11 @@ function CelebrationsCard() {
     }
     for (const a of state.appointments ?? []) {
       const tag = (a.type || "").toLowerCase();
-      if (a.date >= today && a.date <= horizon && /(event|celebration|party|trip)/.test(tag)) {
-        out.push({ id: `a-${a.id}`, label: a.title, date: a.date, kind: tag.includes("trip") ? "trip" : "event" });
+      const title = (a.title || "").toLowerCase();
+      const isCelebratory = /(family|school)/.test(tag) || /(trip|vacation|party|celebration|event)/.test(title);
+      if (a.date >= today && a.date <= horizon && isCelebratory) {
+        const kind: "event" | "trip" = /(trip|vacation)/.test(title) ? "trip" : "event";
+        out.push({ id: `a-${a.id}`, label: a.title, date: a.date, kind });
       }
     }
     return out.sort((x, y) => x.date.localeCompare(y.date)).slice(0, 4);
