@@ -171,12 +171,10 @@ export default function Auth() {
       }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
-        <Link to="/" className="mb-6 flex items-center gap-2.5">
-          <CareFlowMark size={40} />
-          <span className="leading-tight">
-            <span className="font-display text-lg font-semibold text-foreground">CareFlow</span>
-            <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Plan · Care · Grow</span>
-          </span>
+        <Link to="/" className="mb-6 flex flex-col items-center gap-2 text-center">
+          <CareFlowMark size={72} />
+          <span className="font-brand text-3xl font-semibold text-foreground">CareFlow</span>
+          <span className="text-sm tracking-[0.12em] text-muted-foreground">Plan · Care · Grow</span>
         </Link>
 
         <div className="w-full rounded-3xl border border-border/50 bg-card/85 p-6 shadow-cozy backdrop-blur-md sm:p-8">
