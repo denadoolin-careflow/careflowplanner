@@ -506,7 +506,7 @@ export function DailyPlanningDashboard({ day }: { day: Date }) {
           {weather ? (
             <div className="flex items-baseline gap-3">
               <span className="font-display text-2xl font-semibold">
-                {Math.round(weather.tempC)}°
+                {formatTemp(weather.tempC, tempUnit)}
               </span>
               <span className="text-sm text-muted-foreground">{weather.conditionLabel}</span>
               <span className="text-xs text-muted-foreground">{weather.locationLabel}</span>
