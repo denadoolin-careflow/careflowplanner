@@ -30,7 +30,6 @@ import { JournalTodayWidget } from "@/components/today/widgets/JournalTodayWidge
 import { MemoriesTodayWidget } from "@/components/today/widgets/MemoriesTodayWidget";
 import { HomeResetWidget } from "@/components/today/widgets/HomeResetWidget";
 import { BrainDumpWidget } from "@/components/today/widgets/BrainDumpWidget";
-import { MoonPhaseSidebarCard } from "@/components/today/widgets/MoonPhaseSidebarCard";
 import { CycleSidebarCard } from "@/components/today/widgets/CycleSidebarCard";
 import { MoonPrioritiesCard } from "@/components/today/widgets/MoonPrioritiesCard";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
