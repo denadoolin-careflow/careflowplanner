@@ -14,6 +14,7 @@ import { RoutineItemRow } from "@/components/routines/RoutineItemRow";
 import { Link } from "react-router-dom";
 import type { Task } from "@/lib/types";
 import { SlotWeather } from "./SlotWeather";
+import { WeatherWarningsCard } from "@/components/weather/WeatherWarningsCard";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { toast } from "sonner";
 import { Plus as PlusIcon } from "lucide-react";
@@ -133,7 +134,16 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
         </div>
 
         <CollapsibleContent>
-          {showWeather && <SlotWeather slot={slot} />}
+          {showWeather && (
+            <>
+              {slot === "morning" && (
+                <div className="mx-4 mt-3 sm:mx-5">
+                  <WeatherWarningsCard />
+                </div>
+              )}
+              <SlotWeather slot={slot} />
+            </>
+          )}
           <div className="grid gap-3 p-4 sm:p-5 md:grid-cols-3">
             {/* Tasks column */}
             <div
