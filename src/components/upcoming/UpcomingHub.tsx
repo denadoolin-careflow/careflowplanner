@@ -939,3 +939,93 @@ function EmptyBreathingRoom({ onPlan, onAnytime, onGoals }: { onPlan: () => void
     </div>
   );
 }
+
+/* ---------- Smart-plan preferences popover ---------- */
+
+function SmartPlanPrefsPopover({ prefs, onChange }: { prefs: SmartPlanPrefs; onChange: (p: SmartPlanPrefs) => void }) {
+  const balances: { k: EnergyBalance; label: string; sub: string }[] = [
+    { k: "gentle",    label: "Gentle",    sub: "Mostly low-energy wins" },
+    { k: "balanced",  label: "Balanced",  sub: "A healthy mix" },
+    { k: "ambitious", label: "Ambitious", sub: "Front-load bigger items" },
+  ];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="ghost" className="rounded-full" title="Smart-plan preferences">
+          <Settings2 className="mr-1.5 h-3.5 w-3.5" /> Preferences
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 space-y-4 p-4">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Smart planning</div>
+          <h4 className="font-display text-base">How should I plan for you?</h4>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs">Energy balance</Label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {balances.map(b => {
+              const active = prefs.energyBalance === b.k;
+              return (
+                <button
+                  key={b.k}
+                  onClick={() => onChange({ ...prefs, energyBalance: b.k })}
+                  className={cn(
+                    "rounded-xl border px-2 py-2 text-left transition-colors",
+                    active ? "border-primary bg-primary/10" : "border-border/50 hover:bg-muted/50"
+                  )}
+                >
+                  <div className="text-xs font-medium">{b.label}</div>
+                  <div className="text-[10px] leading-tight text-muted-foreground">{b.sub}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">Tiny steps per task</Label>
+            <span className="text-xs text-muted-foreground">{prefs.microSteps}</span>
+          </div>
+          <Slider
+            min={2}
+            max={5}
+            step={1}
+            value={[prefs.microSteps]}
+            onValueChange={(v) => onChange({ ...prefs, microSteps: v[0] })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">Tasks per day</Label>
+            <span className="text-xs text-muted-foreground">{prefs.perDay}</span>
+          </div>
+          <Slider
+            min={1}
+            max={4}
+            step={1}
+            value={[prefs.perDay]}
+            onValueChange={(v) => onChange({ ...prefs, perDay: v[0] })}
+          />
+        </div>
+
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-border/50 bg-card/60 p-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-xs font-medium">
+              <HeartIcon className="h-3.5 w-3.5 text-rose-500" /> Prioritize caregiver tasks
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Schedule care-related items first when planning.
+            </p>
+          </div>
+          <Switch
+            checked={prefs.prioritizeCaregiver}
+            onCheckedChange={(v) => onChange({ ...prefs, prioritizeCaregiver: !!v })}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
