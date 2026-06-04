@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
+import { useAtmosphere } from "@/lib/atmospheres";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -23,6 +24,15 @@ const VIEW_KEY = "projects.hub.view";
 
 const ALL_STAGES: Array<ProjectStage | "all"> = ["all", "idea", "planning", "building", "launching", "maintaining"];
 const ALL_HEALTH: Array<ProjectHealth | "all"> = ["all", "active", "waiting", "blocked"];
+
+function greetingFor(date = new Date()) {
+  const h = date.getHours();
+  if (h < 5) return "Still up";
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 21) return "Good evening";
+  return "Winding down";
+}
 
 function useProjectMetrics() {
   const { state } = useStore();
