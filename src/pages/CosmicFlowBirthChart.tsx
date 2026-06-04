@@ -51,14 +51,14 @@ export default function CosmicFlowBirthChart() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-4 p-3 sm:p-6">
+    <div className="mx-auto w-full max-w-2xl space-y-4 p-3 pb-28 sm:p-6 sm:pb-6">
       <header className="flex items-start justify-between gap-2">
-        <div>
-          <h1 className="font-display text-2xl">Birth Chart</h1>
-          <p className="text-sm text-muted-foreground">Add your birth info to personalize Cosmic Flow.</p>
+        <div className="min-w-0">
+          <h1 className="font-display text-xl sm:text-2xl">Birth Chart</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Add your birth info to personalize Cosmic Flow.</p>
         </div>
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/cosmic-flow" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" />Dashboard</Link>
+        <Button asChild variant="ghost" size="sm" className="shrink-0">
+          <Link to="/cosmic-flow" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" /><span className="hidden sm:inline">Dashboard</span></Link>
         </Button>
       </header>
 
@@ -92,10 +92,10 @@ export default function CosmicFlowBirthChart() {
         <p className="text-[12px] text-muted-foreground">
           Birth time and location are optional, but adding them lets us compute your rising sign.
         </p>
-        <div className="flex justify-between">
-          <Button type="submit" disabled={busy || loading}>{busy ? "Saving…" : "Save birth chart"}</Button>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+          <Button type="submit" disabled={busy || loading} className="w-full sm:w-auto">{busy ? "Saving…" : "Save birth chart"}</Button>
           {row && (
-            <Button type="button" variant="ghost" onClick={async () => { await clear(); toast("Birth chart removed"); }}>
+            <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={async () => { await clear(); toast("Birth chart removed"); }}>
               <Trash2 className="mr-1 h-4 w-4" />Remove
             </Button>
           )}

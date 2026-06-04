@@ -20,18 +20,19 @@ export default function CosmicFlow() {
   const { natal } = useBirthChart();
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-4 p-3 sm:p-6">
-      <header className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h1 className="font-display text-2xl flex items-center gap-2">
-            Cosmic Flow <Sparkles className="h-5 w-5 text-primary" />
+    <div className="mx-auto w-full max-w-7xl space-y-3 p-3 pb-28 sm:space-y-4 sm:p-6 sm:pb-6">
+      <header className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="font-display text-xl sm:text-2xl flex items-center gap-1.5">
+            Cosmic Flow <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           </h1>
-          <p className="text-sm text-muted-foreground">Align your plans with the rhythms of the sky.</p>
+          <p className="hidden sm:block text-sm text-muted-foreground">Align your plans with the rhythms of the sky.</p>
         </div>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="sm" className="h-8 shrink-0 px-2.5 text-xs">
           <Link to="/cosmic-flow/birth-chart" className="flex items-center gap-1.5">
             <User className="h-3.5 w-3.5" />
-            {natal ? "Birth Chart" : "Add Birth Chart"}
+            <span className="hidden xs:inline">{natal ? "Birth Chart" : "Add Birth Chart"}</span>
+            <span className="xs:hidden">{natal ? "Chart" : "Add chart"}</span>
           </Link>
         </Button>
       </header>
@@ -43,11 +44,11 @@ export default function CosmicFlow() {
         </p>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-3 sm:space-y-4">
           <CosmicWeatherCard date={date} />
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
             <section className="cozy-card flex flex-col gap-3 p-5">
               <h3 className="font-display text-base">Cosmic Journal Prompt</h3>
               <p className="text-[14px] italic text-muted-foreground">
@@ -77,7 +78,7 @@ export default function CosmicFlow() {
           <CosmicForecastChart from={date} />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <MoonCycleCard date={date} />
           <ActiveTransitsList date={date} />
           <UpcomingEventsList from={date} />

@@ -106,14 +106,14 @@ export default function CosmicFlowEventDetail() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 p-3 sm:p-6">
+    <div className="mx-auto w-full max-w-3xl space-y-4 p-3 pb-28 sm:p-6 sm:pb-6">
       <header className="flex items-start justify-between gap-2">
-        <div>
-          <h1 className="font-display text-2xl flex items-center gap-2"><span aria-hidden>{glyph}</span> {title}</h1>
-          <p className="text-sm text-muted-foreground">{format(date, "EEEE, MMMM d, yyyy")}</p>
+        <div className="min-w-0">
+          <h1 className="font-display text-xl sm:text-2xl flex items-center gap-2"><span aria-hidden>{glyph}</span> <span className="truncate">{title}</span></h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">{format(date, "EEE, MMM d, yyyy")}</p>
         </div>
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/cosmic-flow/timeline" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" />Timeline</Link>
+        <Button asChild variant="ghost" size="sm" className="shrink-0">
+          <Link to="/cosmic-flow/timeline" className="flex items-center gap-1"><ChevronLeft className="h-4 w-4" /><span className="hidden sm:inline">Timeline</span></Link>
         </Button>
       </header>
 
@@ -142,14 +142,14 @@ export default function CosmicFlowEventDetail() {
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={onSaveJournal} disabled={saving} className="gap-1.5">
+      <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+        <Button onClick={onSaveJournal} disabled={saving} className="w-full gap-1.5 sm:w-auto">
           <BookHeart className="h-4 w-4" />Save to journal
         </Button>
-        <Button onClick={onAddReminder} variant="outline" className="gap-1.5">
+        <Button onClick={onAddReminder} variant="outline" className="w-full gap-1.5 sm:w-auto">
           <Bell className="h-4 w-4" />Add reminder
         </Button>
-        <Button onClick={onCreateTask} variant="outline" className="gap-1.5">
+        <Button onClick={onCreateTask} variant="outline" className="w-full gap-1.5 sm:w-auto">
           <ListChecks className="h-4 w-4" />Create a task
         </Button>
       </div>

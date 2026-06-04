@@ -60,7 +60,7 @@ export function CosmicWeatherCard({ date }: { date: Date }) {
 
   return (
     <section
-      className="cozy-card relative overflow-hidden p-5 sm:p-7"
+      className="cozy-card relative overflow-hidden p-4 sm:p-7"
       style={{
         background: "linear-gradient(135deg, hsl(258 45% 18%) 0%, hsl(280 35% 24%) 50%, hsl(220 32% 22%) 100%)",
         color: "hsl(36 30% 92%)",
@@ -69,46 +69,46 @@ export function CosmicWeatherCard({ date }: { date: Date }) {
     >
       <div className="relative flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="font-display text-lg sm:text-xl flex items-center gap-1.5">
+          <h2 className="font-display text-base sm:text-xl flex items-center gap-1.5">
             Today's Cosmic Weather
             <Info className="h-3.5 w-3.5 opacity-60" />
           </h2>
         </div>
-        <p className="text-right text-[12px] opacity-80">
-          {format(date, "MMMM d, yyyy")}<br />{format(date, "EEEE")}
+        <p className="text-right text-[11px] sm:text-[12px] opacity-80 leading-tight">
+          {format(date, "MMM d, yyyy")}<br />{format(date, "EEEE")}
         </p>
       </div>
 
-      <div className="relative mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <MoonGlyph date={date} size={92} className="shrink-0" />
+      <div className="relative mt-3 flex items-center gap-3 sm:mt-4 sm:gap-4">
+        <MoonGlyph date={date} size={64} className="shrink-0 sm:!w-[92px] sm:!h-[92px]" />
         <div className="min-w-0">
-          <p className="font-display text-2xl sm:text-3xl">
+          <p className="font-display text-xl sm:text-3xl leading-tight">
             Moon in {sign.name} <span className="opacity-80">{SIGN_EMOJI[sign.name]}</span>
           </p>
-          <p className="mt-1 text-sm opacity-90">{moonInfo.label} ({getIllumination(date)}%)</p>
-          <p className="mt-0.5 text-sm opacity-80">{ELEMENT_EMOJI[sign.element]} {sign.element} Element</p>
+          <p className="mt-1 text-[13px] sm:text-sm opacity-90">{moonInfo.label} · {getIllumination(date)}%</p>
+          <p className="mt-0.5 text-[12px] sm:text-sm opacity-80">{ELEMENT_EMOJI[sign.element]} {sign.element}</p>
         </div>
       </div>
 
-      <div className="relative mt-5 grid gap-4 sm:grid-cols-3">
+      <div className="relative mt-4 grid gap-3 sm:mt-5 sm:gap-4 sm:grid-cols-3">
         <div>
           <p className="text-[10px] uppercase tracking-[0.22em] opacity-70">Theme</p>
-          <p className="mt-1 font-medium">{payload?.theme ?? (loading ? "…" : moonInfo.label)}</p>
-          <p className="mt-0.5 text-[12.5px] italic opacity-85">{moonInfo.invitation}</p>
+          <p className="mt-1 text-sm font-medium">{payload?.theme ?? (loading ? "…" : moonInfo.label)}</p>
+          <p className="mt-0.5 text-[12px] italic opacity-85">{moonInfo.invitation}</p>
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-[0.22em] opacity-70">Good for</p>
-          <ul className="mt-1 space-y-0.5 text-[13px]">
+          <div className="mt-1 flex flex-wrap gap-1 sm:block sm:space-y-0.5">
             {(payload?.good_for ?? ["Planning", "Brainstorming", "Organizing", "Connecting"]).slice(0, 5).map(g => (
-              <li key={g} className="flex items-center gap-1.5">
+              <span key={g} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] sm:bg-transparent sm:px-0 sm:py-0 sm:text-[13px]">
                 <Sparkles className="h-3 w-3 opacity-70" />{g}
-              </li>
+              </span>
             ))}
-          </ul>
+          </div>
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-[0.22em] opacity-70">Gentle reminder</p>
-          <p className="mt-1 max-w-[26ch] text-[13px] italic opacity-90">
+          <p className="mt-1 max-w-[40ch] text-[12.5px] italic opacity-90">
             {payload?.gentle_reminder ?? moonInfo.affirmation}
           </p>
         </div>
