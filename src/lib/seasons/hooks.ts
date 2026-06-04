@@ -78,12 +78,13 @@ function useRealtimeList<T extends { id: string }>(
   useEffect(() => { void refresh(); }, [refresh]);
 
   useEffect(() => {
-    let uid: string | null = null;
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     supabase.auth.getUser().then(({ data }) => {
-      uid = data.user?.id ?? null;
-      if (!uid) return;
+      const uid = data.user?.id ?? null;
+      if (!uid || cancelled) return;
       const ch = supabase
-        .channel(`seasons-${table}-${uid}`)
+        .channel(`seasons-${table}-${uid}-${Math.random().toString(36).slice(2, 8)}`)
         .on("postgres_changes" as any, { event: "*", schema: "public", table, filter: `user_id=eq.${uid}` }, (p: any) => {
           if (p.eventType === "DELETE") {
             const id = p.old?.id; if (id) setItems(prev => prev.filter(x => x.id !== id));
@@ -96,8 +97,10 @@ function useRealtimeList<T extends { id: string }>(
           });
         })
         .subscribe();
-      return () => { void supabase.removeChannel(ch); };
+      channel = ch;
+      if (cancelled) void supabase.removeChannel(ch);
     });
+    return () => { cancelled = true; if (channel) void supabase.removeChannel(channel); };
   }, [table, mapper]);
 
   return { items, loading, refresh };

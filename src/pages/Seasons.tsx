@@ -13,6 +13,7 @@ import { SEASON_META, seasonFor, daysLeftInSeason, daysUntilDate, ageOn } from "
 import { usHolidaysFor } from "@/lib/us-holidays";
 import { format, parseISO } from "date-fns";
 import { CelebrationEditor } from "@/components/seasons/CelebrationEditor";
+import { SeasonGenerator } from "@/components/seasons/SeasonGenerator";
 
 const ICONS: Record<string, any> = { birthday: Cake, anniversary: Heart, special_event: Sparkles, family_milestone: Mountain, care_milestone: Heart, therapy_win: Sparkles, adoption: Heart, graduation: Flag, custom: Sparkles };
 
@@ -100,6 +101,8 @@ export default function Seasons() {
           </Card>
 
           {/* Upcoming Highlights carousel */}
+          <SeasonGenerator />
+
           <section>
             <h3 className="mb-3 text-sm font-semibold">Upcoming Highlights</h3>
             <ScrollArea className="w-full whitespace-nowrap">
