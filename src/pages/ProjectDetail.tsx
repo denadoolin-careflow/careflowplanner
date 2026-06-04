@@ -20,7 +20,6 @@ import {
   Flag, ArrowRight, Wind, Moon, Flower2, Leaf, Cloud, Trash2,
 } from "lucide-react";
 import { format, parseISO, isThisWeek } from "date-fns";
-import { ProjectCoverArt } from "@/components/projects/hub/ProjectCoverArt";
 import { STAGE_META, HEALTH_META, stageOf, healthOf, STUDIO, hsl } from "@/components/projects/hub/studio-tokens";
 import { ProjectIconGlyph, projectIconTileStyle } from "@/lib/project-icon";
 import ClassicProjectView from "@/components/projects/detail/ClassicProjectView";
