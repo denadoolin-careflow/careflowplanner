@@ -9,14 +9,9 @@ import { useLocation } from "react-router-dom";
 export function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const reduce = typeof window !== "undefined"
-      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    try {
-      window.scrollTo({ top: 0, left: 0, behavior: reduce ? "auto" : "smooth" });
-    } catch {
-      window.scrollTo(0, 0);
-    }
-    // Also reset the main element in case scroll is owned by a container.
+    // Instant scroll avoids the visual "blink" of a smooth animation
+    // racing with the route transition fade.
+    try { window.scrollTo(0, 0); } catch {}
     const main = document.querySelector("main");
     if (main) main.scrollTop = 0;
   }, [pathname]);
