@@ -1,40 +1,47 @@
 ## Goal
 
-Audit and fix WCAG contrast across all 9 atmospheres × 2 modes (light/dark) defined in `src/index.css`, so text never gets washed out or too dim regardless of the active atmosphere.
+Let each flow's landing page (`/flow/{id}`) be pinned as a navigable icon in the three nav surfaces — bottom nav, More sheet, and sidebar — so users can jump straight to a flow's hub.
 
 ## Approach
 
-1. **Audit script (one-off, in `/tmp`)**
-   Parse `src/index.css` and extract every `:root[data-atmosphere=…]` and `.dark[data-atmosphere=…]` block. For each block, compute WCAG contrast ratios for the pairs that matter most:
-   - `foreground` on `background`
-   - `foreground` on `card`
-   - `foreground` on `popover`
-   - `muted-foreground` on `background` / `muted`
-   - `primary-foreground` on `primary`
-   - `accent-foreground` on `accent`
-   - `secondary-foreground` on `secondary` (when defined)
-   - `border` on `background` (≥3:1 for UI separators)
+### 1. Expose flow landings as nav destinations
 
-   Targets: **4.5:1** for normal text, **3:1** for large text / UI borders / icons.
-   Output a table of fails per atmosphere/mode.
+In `src/components/layout/BottomNav.tsx`, extend `ALL_DESTINATIONS` to include one synthetic entry per `NAV_GROUPS` item:
 
-2. **Fix failing tokens in `src/index.css`**
-   For each fail, nudge only the lightness of the offending token (keep hue + saturation so the atmosphere mood is preserved). Bias direction:
-   - Light modes → darken `*-foreground`, lighten `background/card`.
-   - Dark modes → lighten `*-foreground`, darken `background/card`.
-   - `muted-foreground`: raise to ≥45% L in light, ≥68% L in dark.
-   - `border`: nudge until ≥3:1 against background.
+```
+{ to: `/flow/${group.id}`, label: group.label, icon: group.icon }
+```
 
-   Do not touch hue/saturation or gradient definitions unless a swatch itself is the failing surface.
+These show up automatically in the existing **Customize bottom nav** picker, so the user can pin any flow into one of the 6 bottom-bar slots and reorder it like any other destination. Bottom-bar tiles render with the flow's accent color (via `flowAccents`).
 
-3. **Re-run the audit** to confirm zero fails, then summarize the deltas (which atmospheres changed, which tokens, before → after L%).
+### 2. More sheet: per-flow "Pin" toggle
+
+In the More sheet's flow sections (BottomNav `NAV_GROUPS.map`), add a small bookmark/pin button on the right of each flow header (next to `ArrowRight`). Tapping it pins/unpins `/flow/${id}` in `navIds` (cap at 6, toast when full). Visual state: filled icon when pinned, outline when not.
+
+### 3. Sidebar: pin flow to top rail
+
+Add a new persisted preference `careflow:sidebar:pinned-flows` (string[] of group ids). In `src/components/layout/Sidebar.tsx`:
+
+- Collapsed rail: render the pinned flows' icons as 40px tiles in a dedicated section above the existing flow groups (same tile style as Lists/pinned-tags rail, with the accent dot we already added).
+- Expanded rail: render compact rows (icon + label) above the group list.
+- Each flow group header gets a tiny pin toggle button (visible on hover) that adds/removes the group from the pinned list.
+
+State syncs across mounts with the same custom-event pattern used for `mobile-nav-order` and `sidebar:prefs`.
+
+### 4. Storage & defaults
+
+- Bottom nav: no schema change — picker now lists flow entries by default.
+- Sidebar: new key `careflow:sidebar:pinned-flows` defaults to `[]`.
+- Both stores listen for their own `storage`/custom events so all open tabs/components stay in sync.
 
 ## Out of scope
 
-- Restructuring the atmosphere system or adding new tokens.
-- Flow-accent colors (`src/lib/flow-accent.ts`) — separate concern; only touch if a flow accent is rendered as text on a surface and fails.
-- Component-level color overrides; the fix lives in atmosphere tokens.
+- New flow landing page content.
+- Reordering flow groups themselves (already drag-drop in sidebar).
+- Cross-surface sync between the bottom-nav pinned set and the sidebar pinned set — they stay independent so mobile and desktop can be configured separately.
 
 ## Deliverable
 
-Patched `src/index.css` with adjusted HSL lightness values where needed, plus a short report in chat listing every change.
+- BottomNav: flow landings appear in the customize picker; pin toggle in More sheet.
+- Sidebar: pinned-flow rail (collapsed + expanded) with per-group pin toggle.
+- All choices persisted in localStorage and synced across mounted instances.

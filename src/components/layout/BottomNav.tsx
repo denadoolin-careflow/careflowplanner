@@ -4,7 +4,7 @@ import { MOBILE_NAV, NAV, NAV_GROUPS } from "@/lib/nav";
 import { useFlowAccents } from "@/lib/flow-accent";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight } from "lucide-react";
+import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight, Pin, PinOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useStore } from "@/lib/store";
 import { haptics } from "@/lib/haptics";
+import { toast } from "sonner";
 
 const NAV_ORDER_KEY = "careflow:mobile-nav-order";
 const DEFAULT_NAV_IDS = MOBILE_NAV.slice(0, 6).map(n => n.to);
@@ -52,6 +53,11 @@ const ALL_DESTINATIONS = (() => {
   const seen = new Map<string, { to: string; label: string; icon: any }>();
   for (const item of MOBILE_NAV) seen.set(item.to, item);
   for (const item of NAV) if (!seen.has(item.to)) seen.set(item.to, item);
+  // Flow landing pages — one per group, jumps straight to the flow hub.
+  for (const g of NAV_GROUPS) {
+    const to = `/flow/${g.id}`;
+    if (!seen.has(to)) seen.set(to, { to, label: g.label, icon: g.icon });
+  }
   return Array.from(seen.values());
 })();
 
@@ -183,6 +189,21 @@ export function BottomNav() {
                   {NAV_GROUPS.map((group) => {
                     const GroupIcon = group.icon;
                     const accent = flowAccents[group.id] ?? flowAccents.settings;
+                    const flowTo = `/flow/${group.id}`;
+                    const isPinned = navIds.includes(flowTo);
+                    const togglePin = (e: React.MouseEvent) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      haptics.tap();
+                      if (isPinned) {
+                        setNavIds(navIds.filter(x => x !== flowTo));
+                      } else if (navIds.length >= 6) {
+                        toast.message("Bottom nav is full", { description: "Remove a destination first or open Customize." });
+                      } else {
+                        setNavIds([...navIds, flowTo]);
+                        toast.success(`${group.label} pinned to bottom nav`);
+                      }
+                    };
                     return (
                     <section key={group.id}>
                       <Link
@@ -205,6 +226,18 @@ export function BottomNav() {
                             </span>
                           )}
                         </div>
+                        <button
+                          type="button"
+                          onClick={togglePin}
+                          aria-label={isPinned ? `Unpin ${group.label} from bottom nav` : `Pin ${group.label} to bottom nav`}
+                          aria-pressed={isPinned}
+                          className={cn(
+                            "grid h-8 w-8 place-items-center rounded-lg transition-colors",
+                            isPinned ? "bg-primary-soft text-foreground" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                          )}
+                        >
+                          {isPinned ? <Pin className="h-4 w-4 fill-current" /> : <PinOff className="h-4 w-4" />}
+                        </button>
                         <ArrowRight className="h-4 w-4" style={{ color: accent.color }} />
                       </Link>
                       <ul className="grid grid-cols-3 gap-2">
