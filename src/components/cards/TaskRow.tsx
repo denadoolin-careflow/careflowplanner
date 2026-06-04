@@ -3,8 +3,8 @@ import { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
-  Trash2, GripVertical, Timer, ChevronRight, Sparkle,
-  Pencil, CalendarClock, Snowflake, Star, FolderInput, MoreHorizontal,
+  Trash2, GripVertical, ChevronRight, Sparkle,
+  Pencil, Snowflake, Star, FolderInput,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
