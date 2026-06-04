@@ -1,5 +1,6 @@
 import type { WeatherSnapshot } from "./weather";
 import type { WeatherPrefs } from "./weather-prefs";
+import { getTempUnit, formatTemp } from "./weather-store";
 
 export type WarningSeverity = "info" | "caution" | "alert";
 export interface WeatherWarning {
@@ -38,8 +39,9 @@ export function computeWarnings(snap: WeatherSnapshot | null, prefs: WeatherPref
   if (hours.length) {
     const minT = Math.min(...hours.map(h => h.tempC));
     const maxT = Math.max(...hours.map(h => h.tempC));
-    if (minT <= prefs.coldC) out.push({ id: "cold", severity: "info", label: "Cold snap", detail: `Low near ${minT}°C — bundle up with a warm layer.` });
-    if (maxT >= prefs.hotC) out.push({ id: "heat", severity: "caution", label: "Heat advisory", detail: `Up to ${maxT}°C — hydrate and find shade.` });
+    const u = getTempUnit();
+    if (minT <= prefs.coldC) out.push({ id: "cold", severity: "info", label: "Cold snap", detail: `Low near ${formatTemp(minT, u)}${u} — bundle up with a warm layer.` });
+    if (maxT >= prefs.hotC) out.push({ id: "heat", severity: "caution", label: "Heat advisory", detail: `Up to ${formatTemp(maxT, u)}${u} — hydrate and find shade.` });
   }
 
   const fog = hours.slice(0, 6).find(h => h.condition === "fog");
