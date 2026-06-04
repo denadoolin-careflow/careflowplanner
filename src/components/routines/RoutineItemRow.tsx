@@ -23,7 +23,7 @@ export function RoutineItemRow({
 
   return (
     <div className={cn(
-      "group flex min-w-0 items-center gap-2 overflow-hidden rounded-xl bg-muted/30 px-2 py-2 text-xs transition-colors hover:bg-muted/50",
+      "group flex min-w-0 flex-wrap items-center gap-2 rounded-xl bg-muted/30 px-2 py-2 text-xs transition-colors hover:bg-muted/50",
       compact && "py-1.5",
     )}>
       <Checkbox
@@ -53,8 +53,10 @@ export function RoutineItemRow({
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className={cn("min-w-0 flex-1 whitespace-normal break-words text-left leading-snug", item.done && "text-muted-foreground line-through")}
-              style={{ overflowWrap: 'anywhere' }}
+              className={cn(
+                "min-w-0 flex-1 basis-full whitespace-normal break-words text-left leading-snug sm:basis-auto",
+                item.done && "text-muted-foreground line-through",
+              )}
             >
               {item.text}
             </button>
@@ -73,7 +75,10 @@ export function RoutineItemRow({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="rounded-full p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            className={cn(
+              "rounded-full p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              compact && "hidden sm:inline-flex",
+            )}
             aria-label="Set step time"
             title="Set start time"
           >

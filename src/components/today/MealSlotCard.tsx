@@ -46,20 +46,17 @@ export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
 
   return (
     <div className="mt-2 rounded-xl border border-border/50 bg-background/60 px-2 py-1.5 text-xs">
-      <div className="flex items-center gap-1.5">
-        <Icon className="h-3 w-3 text-accent" />
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Icon className="h-3 w-3 shrink-0 text-accent" />
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {slot}
         </span>
         {meal ? (
-          <span
-            className="ml-1 min-w-0 flex-1 whitespace-normal break-words font-medium leading-snug text-foreground/90"
-            style={{ overflowWrap: "anywhere" }}
-          >
+          <span className="ml-1 min-w-0 flex-1 basis-full whitespace-normal break-words font-medium leading-snug text-foreground/90 sm:basis-auto">
             {meal.name}
           </span>
         ) : (
-          <span className="ml-1 flex-1 italic text-muted-foreground">No {slot.toLowerCase()} planned</span>
+          <span className="ml-1 min-w-0 flex-1 basis-full whitespace-normal italic text-muted-foreground sm:basis-auto">No {slot.toLowerCase()} planned</span>
         )}
         {meal && (
           <button
