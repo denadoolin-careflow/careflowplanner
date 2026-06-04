@@ -875,7 +875,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     <TooltipProvider>
     <div className={cn(
       "flex h-full flex-col gap-2 bg-sidebar transition-[width] duration-200 ease-out",
-      collapsed ? "w-14 items-center px-2 py-3" : "w-full p-3",
+      collapsed ? "w-16 items-center px-2 py-3" : "w-full p-3",
     )} ref={rootRef}>
       <div className={cn(
         "flex w-full py-2",
