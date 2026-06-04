@@ -3919,6 +3919,47 @@ export type Database = {
           },
         ]
       }
+      project_ideas: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          promoted_project_id: string | null
+          source: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          promoted_project_id?: string | null
+          source?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          promoted_project_id?: string | null
+          source?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_ideas_promoted_project_id_fkey"
+            columns: ["promoted_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_sections: {
         Row: {
           color: string | null
@@ -3965,6 +4006,7 @@ export type Database = {
           created_at: string
           deadline: string | null
           end_date: string | null
+          health: string | null
           icon: string | null
           id: string
           is_favorite: boolean
@@ -3977,10 +4019,12 @@ export type Database = {
           notes: string | null
           parent_project_id: string | null
           sort_order: number
+          stage: string | null
           start_date: string | null
           status: string
           updated_at: string
           user_id: string
+          waiting_on: string | null
         }
         Insert: {
           ai_overview?: string | null
@@ -3994,6 +4038,7 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           end_date?: string | null
+          health?: string | null
           icon?: string | null
           id?: string
           is_favorite?: boolean
@@ -4006,10 +4051,12 @@ export type Database = {
           notes?: string | null
           parent_project_id?: string | null
           sort_order?: number
+          stage?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
           user_id: string
+          waiting_on?: string | null
         }
         Update: {
           ai_overview?: string | null
@@ -4023,6 +4070,7 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           end_date?: string | null
+          health?: string | null
           icon?: string | null
           id?: string
           is_favorite?: boolean
@@ -4035,10 +4083,12 @@ export type Database = {
           notes?: string | null
           parent_project_id?: string | null
           sort_order?: number
+          stage?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
           user_id?: string
+          waiting_on?: string | null
         }
         Relationships: [
           {
