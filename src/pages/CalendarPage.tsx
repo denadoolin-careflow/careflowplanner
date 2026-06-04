@@ -30,7 +30,6 @@ import { getKeyPhaseInfo, isKeyPhaseDay } from "@/lib/lunar-phases";
 import { Globe2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { formatTime12 } from "@/lib/routines";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 
 type View = "day" | "week" | "month" | "year";
