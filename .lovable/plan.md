@@ -1,66 +1,55 @@
-## Goal
-Give every note a quick visual identity:
-1. An **auto-suggested Lucide icon** (with a search-driven picker to override) that shows on the sidebar's Pinned Notes list, in the Notes gallery/list, and in the note's own header.
-2. An optional **gradient cover** built from the project's atmosphere palettes — choose from a curated set (one per atmosphere) instead of (or alongside) uploading an image.
+# Refocus navigation around 7 Flow pillars
 
-## Schema (single migration)
-Add two columns to `public.notes`:
-- `icon TEXT NULL` — Lucide icon name (e.g. `"BookHeart"`). `null` means "auto".
-- `cover_gradient TEXT NULL` — gradient preset id (e.g. `"sage-sanctuary"`, `"moonlit-plum"`, etc.). Mutually visual-exclusive with `cover_url`: if both set, `cover_url` (image) wins.
+Reorganize the **sidebar groups** and the **bottom-nav "More" sheet** into the 7 pillars you named. No routes, pages, or features change — only how existing destinations are grouped and labeled in navigation.
 
-No RLS changes — existing policies on `notes` already cover the new columns.
+## 1. Group headers
 
-## Code changes
+Each group shows the Flow name large with the descriptor as a subtitle:
 
-### 1. Note type + persistence (`src/lib/notes.ts`)
-- Extend `Note` interface with `icon?: string | null` and `coverGradient?: string | null`.
-- Map columns in `fromRow` and `updateNote`/`createNote`.
+```text
+📅 PlanFlow
+   Planning & Productivity
+```
 
-### 2. Icon catalog + auto-suggest (`src/lib/note-icons.ts` — new)
-- Curate ~80 high-signal Lucide icons grouped into categories (Writing, Life, Work, Care, Health, Home, Travel, Money, Ideas, Nature, Symbols).
-- `suggestIconForNote(note)` heuristic: scan title (and first 200 chars of body) for keyword matches → return icon name (e.g. "recipe" → `ChefHat`, "doctor" → `Stethoscope`, "trip" → `Plane`, "moon"/"journal" → `BookHeart`, "idea" → `Lightbulb`, `kind === "daily"` → `Sun`, fallback → `StickyNote`).
-- `resolveNoteIcon(note)` returns the user override (if set) or the suggested icon.
-- `getLucideIcon(name)` looks the icon up from the `icons` map exported by `lucide-react` with a safe fallback.
+Emoji renders inline with the label; descriptor renders below in muted text.
 
-### 3. Icon picker component (`src/components/notes/NoteIconPicker.tsx` — new)
-- `Popover` trigger renders the current icon (button).
-- Inside: search `Input` (filters by name + tag), category tabs/sections, scrollable grid of icon tiles (28-32px), "Auto" option to clear override, "None" option to suppress.
-- Recently-used icons stored in `localStorage` (`careflow:note-icons:recent`).
-- ~80 curated icons keep the list fast and on-brand; users still get search across the full curated set.
+## 2. Page → pillar mapping (proposed)
 
-### 4. Gradient cover catalog (`src/lib/note-covers.ts` — new)
-- One preset per atmosphere, derived from its `palette` (`ATMOSPHERES`).
-- Each preset: `{ id, name, css }` where `css` is a multi-stop linear/radial gradient using 3-4 palette swatches (e.g. for Dawn: warm peach → cream → coral wash).
-- Helper `getNoteCoverCss(id)` and `NOTE_COVER_PRESETS` list for the picker.
+**📅 PlanFlow — Planning & Productivity**
+Inbox, Today, Daily Plan (/plan), Week, Month, Year, Calendar, Upcoming, Anytime, Someday, Not Today, Logbook, Projects, Focus, Automations, Reviews Timeline
 
-### 5. Gradient cover picker
-- In `NoteDetail.tsx`, when no image cover is set, the existing "Cover" button becomes a `Popover` with two tabs: **Gradient** (grid of palette swatches showing the gradient + atmosphere name) and **Upload** (existing image flow).
-- Selecting a gradient writes `coverGradient`. Selecting "Remove" clears both.
-- Render: if `coverUrl` exists → image (unchanged); else if `coverGradient` → a 180-220px-tall block with the preset's CSS gradient and a subtle bottom fade into the page bg.
+**💚 CareFlow — Family & Caregiving**
+CARE Loop, Caregiving, Family & sharing, Mental Load
 
-### 6. Icon + cover display surfaces
-- **Note header** (`NoteDetail.tsx`): render the resolved icon next to the title (24px), and an "Icon" button (the `NoteIconPicker`) right next to the existing Cover/Pin/Delete cluster.
-- **Sidebar Pinned Notes** (`PinnedNotesSection` in `src/components/layout/Sidebar.tsx`): replace the generic `StickyNote` icon with `resolveNoteIcon(note)` rendered via `getLucideIcon`.
-- **Notes page**:
-  - `GalleryCard`: replace the conditional `Sun`/no-icon block with the resolved icon (16px). When `coverGradient` is set and `coverUrl` isn't, render a 64px gradient strip at the top of the card.
-  - `ListView` row: prepend the resolved icon (14px) before the title.
-  - `KanbanView` card and `CalendarView` chip: same icon prefix.
+**🏠 HomeFlow — Home Management**
+Home, Home Hub, Meals, Meals Library, Inventory (Pantry), Routines, Trips
 
-### 7. Auto-icon refresh
-- Whenever `title` is saved (debounced in `NoteDetail`) AND the user hasn't manually set `icon`, recompute the suggestion locally for instant preview. No DB write needed — `resolveNoteIcon` always derives at render time when `icon` is null.
+**🌿 WellFlow — Wellness & Self-Care**
+Health, Habits, Journal, Journal & Flow
 
-## Non-goals
-- No changes to project covers, area covers, or task icons.
-- No AI call for icon suggestion — the keyword heuristic is fast, free, and predictable.
-- No new dependency (Lucide icons map already ships with `lucide-react`).
+**📚 GrowthFlow — Learning & Goals**
+Goals, Ideas, Notes, Whiteboards, Knowledge Graph, Tags
 
-## Files touched
-- `supabase/migrations/<new>.sql` — add `icon`, `cover_gradient` columns
-- `src/lib/notes.ts` — type + mapping
-- `src/lib/note-icons.ts` (new) — catalog, suggester, resolver, getter
-- `src/lib/note-covers.ts` (new) — gradient presets from atmospheres
-- `src/components/notes/NoteIconPicker.tsx` (new)
-- `src/components/notes/NoteCoverPicker.tsx` (new)
-- `src/pages/NoteDetail.tsx` — header icon, picker wiring, gradient cover render
-- `src/pages/Notes.tsx` — icons + gradient strip in Gallery/List/Kanban/Calendar
-- `src/components/layout/Sidebar.tsx` — icon in `PinnedNotesSection`
+**💰 MoneyFlow — Budgeting & Financial Wellness**
+Wealth
+
+**🌙 LunarFlow — Reflection & Intentional Living**
+Rhythm, Insights, Weekly Reset, Monthly Reset, Memories
+
+**Top-level (outside pillars)**
+Dashboard, Settings — stay pinned at the top/bottom of the sidebar as they are today.
+
+Tell me if any page should move before I build.
+
+## 3. Files changed
+
+- **`src/lib/nav.ts`** — rewrite `NAV_GROUPS` to the 7 pillars above. Each group gains `subtitle` and `emoji` fields. `NAV` and `MOBILE_NAV` are untouched (routes unchanged).
+- **`src/components/layout/Sidebar.tsx`** — group header renders `{emoji} {label}` on row 1 and `{subtitle}` muted on row 2. Existing collapse/reorder/active behavior preserved.
+- **`src/components/layout/BottomNav.tsx`** — the "More" sheet currently renders `NAV` as a flat 3-column grid. Replace with sections iterating `NAV_GROUPS`: each section shows the pillar header (emoji + name + subtitle) then a 3-col grid of its items. Theme/low-energy toggles and "Customize bottom nav" button stay.
+
+## 4. Out of scope
+
+- No new routes, no pillar landing/hub pages.
+- No URL renames.
+- Quick Add, command palette, panel picker, dashboard tiles unchanged.
+- MoneyFlow currently has only one page (Wealth); it will appear as a single-item group. Fine for now.
