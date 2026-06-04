@@ -63,9 +63,9 @@ export function ScheduledTodayWidget({ date = new Date() }: { date?: Date }) {
                 <span className="min-w-0 flex-1 break-words text-xs leading-snug text-foreground">
                   {t.title}
                 </span>
-                {t.areaName && (
+                {t.area && (
                   <span className="mt-1 hidden truncate text-[10px] text-muted-foreground sm:inline">
-                    {t.areaName}
+                    {t.area}
                   </span>
                 )}
               </button>
