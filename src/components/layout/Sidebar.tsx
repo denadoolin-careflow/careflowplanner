@@ -974,17 +974,16 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             </Popover>
           </>
         )}
-        {!forceExpanded && <button
-          type="button"
-          onClick={() => setCollapsed(c => !c)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={cn(
-            "hidden lg:grid place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            collapsed ? "h-10 w-10" : "h-7 w-7",
-          )}
-        >
-          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-        </button>}
+        {!forceExpanded && !collapsed && (
+          <button
+            type="button"
+            onClick={() => setCollapsed(c => !c)}
+            aria-label="Collapse sidebar"
+            className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
+        )}
       </div>
       <nav className={cn("mt-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden w-full", collapsed && "items-center", !collapsed && "pr-1")}>
         {/* Things-style Lists rail */}
