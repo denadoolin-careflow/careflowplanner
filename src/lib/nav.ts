@@ -4,7 +4,7 @@ import {
   Timer, Settings as SettingsIcon, BookOpen, HeartPulse, Wallet, Home,
   ShoppingBasket, Compass, Leaf, Flower2, Inbox, FolderOpen, NotebookPen, BadgeCheck, Repeat,
   Wind, PenLine, Coffee, Share2,
-  Zap, Plane, Users,
+  Zap, Plane, Users, PartyPopper, Gift, CheckSquare, Heart, Album,
 } from "lucide-react";
 
 /** Per-flow accent classes for tints and gradients. */
@@ -19,6 +19,7 @@ export const FLOW_ACCENTS: Record<
   growthflow: { text: "text-sky-500",     bg: "bg-sky-500/15",     ring: "ring-sky-500/40",     border: "border-sky-500/40",     gradient: "from-sky-500/25 via-sky-500/5 to-transparent" },
   moneyflow:  { text: "text-lime-600",    bg: "bg-lime-500/15",    ring: "ring-lime-500/40",    border: "border-lime-500/40",    gradient: "from-lime-500/25 via-lime-500/5 to-transparent" },
   lunarflow:  { text: "text-violet-500",  bg: "bg-violet-500/15",  ring: "ring-violet-500/40",  border: "border-violet-500/40",  gradient: "from-violet-500/25 via-violet-500/5 to-transparent" },
+  seasonsflow:{ text: "text-pink-500",    bg: "bg-pink-500/15",    ring: "ring-pink-500/40",    border: "border-pink-500/40",    gradient: "from-pink-500/25 via-pink-500/5 to-transparent" },
   settings:   { text: "text-muted-foreground", bg: "bg-muted",     ring: "ring-border",         border: "border-border",         gradient: "from-muted/40 via-muted/10 to-transparent" },
 };
 
@@ -67,6 +68,13 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/reset/week": "Close the week and prep the next.",
   "/reset/month": "Close the month and reset.",
   "/memories": "Moments worth remembering.",
+  "/seasons": "Seasons, celebrations, and family rhythms.",
+  "/seasons/celebrations": "Birthdays, anniversaries, and milestones.",
+  "/seasons/holidays": "Holiday plans and prep timelines.",
+  "/seasons/traditions": "Reusable family traditions.",
+  "/seasons/memory-book": "Scrapbook of family moments.",
+  "/seasons/bucket-lists": "Seasonal bucket lists.",
+  "/seasons/remembrance": "Quiet space to remember loved ones.",
   "/": "Your home dashboard.",
   "/settings": "Preferences, account, and integrations.",
 };
@@ -98,6 +106,7 @@ export const NAV = [
   { to: "/memories", label: "Memories", icon: Flower2 },
   { to: "/ideas", label: "Ideas", icon: Lightbulb },
   { to: "/calendar", label: "Calendar", icon: CalendarCheck },
+  { to: "/seasons", label: "Seasons & Celebrations", icon: PartyPopper },
   { to: "/focus", label: "Focus", icon: Timer },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
@@ -217,6 +226,22 @@ export const NAV_GROUPS = [
       { to: "/reset/week", label: "Weekly Reset", icon: CalendarRange },
       { to: "/reset/month", label: "Monthly Reset", icon: CalendarDays },
       { to: "/memories", label: "Memories", icon: Flower2 },
+    ],
+  },
+  {
+    id: "seasonsflow",
+    label: "Seasons & Celebrations",
+    subtitle: "Plan, celebrate, remember",
+    emoji: "✨",
+    icon: PartyPopper,
+    items: [
+      { to: "/seasons", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/seasons/celebrations", label: "Celebrations", icon: PartyPopper },
+      { to: "/seasons/holidays", label: "Holidays", icon: Gift },
+      { to: "/seasons/traditions", label: "Traditions", icon: Repeat },
+      { to: "/seasons/memory-book", label: "Memory Book", icon: Album },
+      { to: "/seasons/bucket-lists", label: "Bucket Lists", icon: CheckSquare },
+      { to: "/seasons/remembrance", label: "Remembrance", icon: Heart },
     ],
   },
   {
