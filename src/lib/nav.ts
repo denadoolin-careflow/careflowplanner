@@ -20,6 +20,7 @@ export const FLOW_ACCENTS: Record<
   moneyflow:  { text: "text-lime-600",    bg: "bg-lime-500/15",    ring: "ring-lime-500/40",    border: "border-lime-500/40",    gradient: "from-lime-500/25 via-lime-500/5 to-transparent" },
   lunarflow:  { text: "text-violet-500",  bg: "bg-violet-500/15",  ring: "ring-violet-500/40",  border: "border-violet-500/40",  gradient: "from-violet-500/25 via-violet-500/5 to-transparent" },
   seasonsflow:{ text: "text-pink-500",    bg: "bg-pink-500/15",    ring: "ring-pink-500/40",    border: "border-pink-500/40",    gradient: "from-pink-500/25 via-pink-500/5 to-transparent" },
+  cosmicflow: { text: "text-indigo-400",  bg: "bg-indigo-500/15",  ring: "ring-indigo-500/40",  border: "border-indigo-500/40",  gradient: "from-indigo-500/25 via-violet-500/10 to-transparent" },
   settings:   { text: "text-muted-foreground", bg: "bg-muted",     ring: "ring-border",         border: "border-border",         gradient: "from-muted/40 via-muted/10 to-transparent" },
 };
 
@@ -109,6 +110,7 @@ export const NAV = [
   { to: "/ideas", label: "Ideas", icon: Lightbulb },
   { to: "/calendar", label: "Calendar", icon: CalendarCheck },
   { to: "/seasons", label: "Seasons & Celebrations", icon: PartyPopper },
+  { to: "/cosmic-flow", label: "Cosmic Flow", icon: Sparkles },
   { to: "/focus", label: "Focus", icon: Timer },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
@@ -244,6 +246,18 @@ export const NAV_GROUPS = [
       { to: "/memories", label: "Memory Book", icon: Album },
       { to: "/seasons/bucket-lists", label: "Bucket Lists", icon: CheckSquare },
       { to: "/seasons/remembrance", label: "Remembrance", icon: Heart },
+    ],
+  },
+  {
+    id: "cosmicflow",
+    label: "Cosmic Flow",
+    subtitle: "Astrology-aware planning",
+    emoji: "✨",
+    icon: Sparkles,
+    items: [
+      { to: "/cosmic-flow", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/cosmic-flow/timeline", label: "Transit Timeline", icon: CalendarDays },
+      { to: "/cosmic-flow/birth-chart", label: "Birth Chart", icon: Sparkle },
     ],
   },
   {
