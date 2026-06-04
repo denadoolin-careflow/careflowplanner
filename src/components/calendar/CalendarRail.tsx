@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { addDays, differenceInCalendarDays, format, parseISO, setYear, isAfter, isBefore } from "date-fns";
+import { addDays, differenceInCalendarDays, format, parseISO, setYear, isBefore } from "date-fns";
 import { useStore, todayISO } from "@/lib/store";
 import type { Goal } from "@/lib/types";
 import { Button } from "@/components/ui/button";
