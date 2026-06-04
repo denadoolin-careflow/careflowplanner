@@ -35,6 +35,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { useCelebrations } from "@/lib/seasons/hooks";
+import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
 
 type View = "day" | "week" | "month" | "year";
 
