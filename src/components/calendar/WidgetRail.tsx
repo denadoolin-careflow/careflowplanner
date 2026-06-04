@@ -138,7 +138,7 @@ function renderWidget(id: WidgetId, date: Date): React.ReactNode {
     case "family": return <FamilySnapshotCard date={date} />;
     case "meals": return <MealsPlannedWidget date={date} />;
     case "cycle": return <CycleSidebarCard date={date} />;
-    case "moon": return <MoonPhaseSidebarCard date={date} />;
+    case "moon": return <MoonPhaseSidebarCard />;
     case "weather": return <WeatherWidget />;
     case "notes": return <NotesTodayWidget />;
     case "journal": return <JournalTodayWidget />;
