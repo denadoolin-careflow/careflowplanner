@@ -185,6 +185,15 @@ const App = () => (
                 <Route path="/family/requests" element={<FamilyRequests />} />
                 <Route path="/flow/:id" element={<FlowLanding />} />
                 <Route path="/settings/flow-colors" element={<FlowColorsPreview />} />
+                <Route path="/seasons" element={<Seasons />} />
+                <Route path="/seasons/celebrations" element={<SeasonsCelebrations />} />
+                <Route path="/seasons/celebrations/:id" element={<SeasonsCelebrationDetail />} />
+                <Route path="/seasons/holidays" element={<SeasonsHolidays />} />
+                <Route path="/seasons/holidays/:id" element={<SeasonsHolidayDetail />} />
+                <Route path="/seasons/traditions" element={<SeasonsTraditions />} />
+                <Route path="/seasons/memory-book" element={<SeasonsMemoryBook />} />
+                <Route path="/seasons/bucket-lists" element={<SeasonsBucketLists />} />
+                <Route path="/seasons/remembrance" element={<SeasonsRemembrance />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
