@@ -1439,6 +1439,36 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         })}
 
       </nav>
+      {collapsed && !forceExpanded && (
+        <div className="mt-auto flex w-full flex-col items-center gap-1.5 pt-2">
+          <RailDivider />
+          <RailIconAction
+            label={`Sidebar theme: ${themePref}`}
+            icon={
+              themePref === "dark" ? Moon :
+              themePref === "light" ? Sun :
+              themePref === "atmosphere" ? Palette : Sun
+            }
+            onClick={cycleTheme}
+          />
+          <RailIconAction
+            label={side === "left" ? "Move sidebar to right" : "Move sidebar to left"}
+            icon={side === "left" ? PanelRight : PanelLeft}
+            onClick={toggleSide}
+          />
+          <RailButton
+            to="/settings"
+            label="Settings"
+            icon={require("lucide-react").Settings}
+            onClick={handleNavClick("/settings")}
+          />
+          <RailIconAction
+            label="Expand sidebar"
+            icon={PanelLeftOpen}
+            onClick={() => setCollapsed(c => !c)}
+          />
+        </div>
+      )}
     </div>
     </TooltipProvider>
   );
