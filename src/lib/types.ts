@@ -76,6 +76,18 @@ export interface AreaRecord {
 
 export type ProjectStatus = "active" | "paused" | "done" | "someday";
 
+export type ProjectStage = "idea" | "planning" | "building" | "launching" | "maintaining";
+export type ProjectHealth = "active" | "waiting" | "blocked";
+
+export interface ProjectIdea {
+  id: string;
+  title: string;
+  note?: string;
+  source?: string;
+  promotedProjectId?: string;
+  createdAt: string;
+}
+
 export interface ProjectMilestone {
   id: string;
   title: string;
@@ -116,6 +128,9 @@ export interface Project {
   linkedTransactionIds?: string[];
   /** IDs of wealth-hub savings goals tied to this project. */
   linkedSavingsGoalIds?: string[];
+  stage?: ProjectStage;
+  health?: ProjectHealth;
+  waitingOn?: string;
 }
 
 export interface Goal {

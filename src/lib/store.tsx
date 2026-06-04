@@ -199,6 +199,9 @@ const projectFrom = (r: any): Project => ({
   milestones: Array.isArray(r.milestones) ? r.milestones : [],
   linkedTransactionIds: Array.isArray(r.linked_transaction_ids) ? r.linked_transaction_ids : [],
   linkedSavingsGoalIds: Array.isArray(r.linked_savings_goal_ids) ? r.linked_savings_goal_ids : [],
+  stage: r.stage ?? undefined,
+  health: r.health ?? undefined,
+  waitingOn: r.waiting_on ?? undefined,
 });
 const sectionFrom = (r: any): ProjectSection => ({
   id: r.id, projectId: r.project_id, name: r.name,
@@ -526,6 +529,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         status: p.status ?? "active",
         deadline: p.deadline ?? null,
         sort_order: p.sortOrder ?? 0,
+        stage: (p as any).stage ?? null,
+        health: (p as any).health ?? null,
+        waiting_on: (p as any).waitingOn ?? null,
       };
       const { data } = await supabase.from("projects").insert(dbRow).select().single();
       if (!data) return null;
@@ -558,6 +564,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.milestones !== undefined) dbPatch.milestones = patch.milestones ?? [];
       if (patch.linkedTransactionIds !== undefined) dbPatch.linked_transaction_ids = patch.linkedTransactionIds ?? [];
       if (patch.linkedSavingsGoalIds !== undefined) dbPatch.linked_savings_goal_ids = patch.linkedSavingsGoalIds ?? [];
+      if ((patch as any).stage !== undefined) dbPatch.stage = (patch as any).stage ?? null;
+      if ((patch as any).health !== undefined) dbPatch.health = (patch as any).health ?? null;
+      if ((patch as any).waitingOn !== undefined) dbPatch.waiting_on = (patch as any).waitingOn ?? null;
       await supabase.from("projects").update(dbPatch).eq("id", id);
     },
     deleteProject: async (id) => {

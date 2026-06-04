@@ -1,95 +1,118 @@
 ## Goal
 
-Three connected refinements:
-1. Make the Home page (HomeHub) feel like a polished sibling of Home Reset — same gradient header language, same iconography vocabulary, same warm visual rhythm — and remove the duplicate "Home Reset" title that appears when you switch to the Reset tab.
-2. Make the **checklist zones** strip on Home a row of expressive, icon-led tiles (not just text chips).
-3. Turn **Maintenance** and **Notes** into intelligent, visually appealing hubs instead of utilitarian lists.
+Replace the current Projects page (a status-tab + tasks-list shell) with a **visual Project Hub** modeled after the attached CareFlow Creative Projects mock — warm sage / cream / plum / blush / gold palette, big editorial cards, hero "Focus This Week" panel, sidebar shelves for Ideas Inbox / Recently Updated / Waiting On, and Cards / List / Gallery views. Projects become first-class containers for tasks, notes, resources, inspirations, and milestones — not a wrapper around a task table.
 
-Out of scope: data model changes, new routes, AI provider changes, mobile-nav/sidebar work.
+The All-tasks tab on the existing page is preserved (moved to `/projects/all-tasks` or kept as a secondary view) so nothing is lost.
 
----
+## Visual language
 
-## 1. Home page (HomeHub) — visual revamp + double-title fix
+Reference: attached mockup. Tokens applied across the page:
 
-**Header & background**
-- Replace the current emerald/amber header block with a softer, warmer hero card that mirrors HomeReset's language: rounded-3xl gradient panel (rose → amber → emerald wash), 12×12 icon tile, greeting + date eyebrow + rhythm chips inline.
-- Add a subtle ambient background (radial gradient + grain) behind the page so the whole Home view feels unified, not a tab-strip floating on neutral.
+- **Sage** `hsl(140 25% 70%)` — primary calm accent, active projects, progress fills
+- **Cream** `hsl(40 50% 96%)` — page background washes & card surfaces
+- **Plum** `hsl(330 30% 35%)` — primary CTA (Continue Project), headline accents
+- **Blush** `hsl(15 60% 88%)` — warm secondary tiles, ideas
+- **Gold** `hsl(40 80% 65%)` — highlights, stars, "Focus This Week" sparkle
 
-**Tab strip**
-- Keep the existing 6 tabs but restyle as soft pill cards (matching the "Quick Resets" card style on HomeReset) with a small icon tile + label. Active tab gets the gradient ring/glow treatment HomeReset uses for the current reset card.
+These are added as semantic tokens (`--studio-sage`, `--studio-cream`, etc.) in `index.css` and `tailwind.config.ts` alongside the existing tokens — no replacement of the global theme.
 
-**Dashboard hero (default tab)**
-- Rework `DashboardHero` to use the exact same gradient/ring/inner-white-card pattern as `CurrentResetHero` for visual continuity. Reuse `HeroStat` styling but reduce to two clean stats + a "next thing" panel.
+## Data model additions
 
-**Reset tab — double title fix**
-- `HomeReset` currently renders its own full header ("Home Reset" + tagline + stat chips + AI/History/New buttons). When embedded inside HomeHub's Reset tab, that header is redundant with the HomeHub greeting header.
-- Add an `embedded?: boolean` prop to `HomeReset`. When `embedded`, skip the `<header>` block and instead surface the action buttons (AI generate, History, New reset) as a slim toolbar above the Current Reset hero. HomeHub passes `embedded`.
-- Standalone `/home-reset` route (if reachable) still renders the full header — but per `App.tsx` both routes already point to HomeHub, so the standalone path is gone; the prop is for safety + clarity only.
+Two new optional fields on `projects`:
 
-**Checklist zones with icons**
-- Promote the existing 6-zone strip (Bedroom/Kitchen/Bathroom/Laundry/Entryway/Living) to a primary section on the dashboard tab as well (not only inside the Reset tab).
-- Each tile: gradient background per zone (reuse `KIND_ACCENT`-style palette from HomeReset), 14×14 icon tile, zone label, and a small progress hint ("3 of 5 done today" pulled from the matching `Zone: <label>` checklist when one exists). Tile click opens `/home-areas` (existing behavior) or the zone's checklist sheet if present.
-- Extract this into `src/components/home-hub/ZoneTiles.tsx` so HomeHub dashboard + the Reset tab + Zones tab can all share one component.
+- `stage TEXT` — one of `idea | planning | building | launching | maintaining` (nullable, defaults to `planning`)
+- `health TEXT` — one of `active | waiting | blocked` (nullable, defaults to `active`)
 
----
+Plus a tiny new table for the Ideas Inbox so ideas aren't full Projects yet:
 
-## 2. Maintenance hub — intelligent + visually appealing
+- `project_ideas (id, user_id, title, note, source, created_at)` with full RLS + GRANTs.
 
-Rework `src/components/home-hub/MaintenanceTab.tsx`:
+`Project` interface in `src/lib/types.ts` gains `stage?` and `health?`. The store's project upsert logic includes the new columns. Existing projects without a value render as `planning` / `active`.
 
-**Top: status hero**
-- Gradient card matching HomeReset language showing: overdue count (rose), due-this-month count (amber), upcoming count (sky), and one-line smart prompt ("2 tasks are overdue — start with the HVAC filter, it's the quickest").
-- Inline "Next up" CTA that completes the single most-urgent overdue/due-soon item.
+Tasks, notes, resources, milestones already link to projects via existing columns — no schema change there. "Inspirations" reuse `resources` with a `kind = 'inspiration'` filter (the resources table already supports a kind/category field — if not, the resource card stores them as a tagged group via existing tag field).
 
-**Middle: category grid**
-- Replace flat filter pills with a 2–4 column grid of category cards, each with an inferred icon (HVAC → Wind, Lawn → Trees, Plumbing → Droplets, Appliances → WashingMachine, Vehicles → Car, etc. via a small `category-icons.ts` map with a sensible default). Each card shows category name + counts per bucket (overdue/due-soon/upcoming) with the same color language. Clicking a card filters.
+## Page architecture
 
-**Lists: bucket cards stay, polished**
-- Keep the four bucket sections (Overdue / Due Soon / Upcoming / Unscheduled) but render items as compact, icon-led rows with category icon, title, relative due ("in 5 days", "3 days late"), and quick actions (Done, Snooze 1mo, Delete). Add Snooze via `update({ next_due: <+1mo> })`.
+`src/pages/Projects.tsx` becomes a thin shell. New components under `src/components/projects/hub/`:
 
-**AI panel: smarter framing**
-- Keep `useAiSuggest` but move the panel to a collapsed-by-default expandable "Suggest tasks for my home" card under the hero (not the very top), with a one-line teaser when collapsed.
+```text
+ProjectsHub.tsx          ← top-level layout (hero row + projects grid + bottom shelves)
+HeroFocusCard.tsx        ← left "Focus This Week" panel with Continue Project CTA
+HeroStatsGrid.tsx        ← right 4-tile grid: Active / In Progress / Ready to Launch / On Hold
+QuickCaptureRow.tsx      ← chips: New Idea · New Task · New Note · Resource · Inspiration
+ProjectCard.tsx          ← cover-art card with icon, stage, health, %, next action, remaining
+ProjectsToolbar.tsx      ← Cards / List / Gallery switcher + filters
+ProjectsListView.tsx     ← compact list rows (existing list view, restyled)
+ProjectsGalleryView.tsx  ← Pinterest-style mosaic with large covers
+IdeasInboxShelf.tsx      ← bottom-left: list of `project_ideas` + "Capture a new idea"
+RecentlyUpdatedShelf.tsx ← bottom-middle: projects by updated_at desc, with stage dot
+WaitingOnShelf.tsx       ← bottom-right: projects with `health = waiting` + per-row "owner"
+```
 
-**Add form**
-- Collapse into a single "+ Add task" button that opens a compact `Sheet` instead of an always-visible 5-column form, freeing vertical space.
+### Hero row
 
----
+Two columns on desktop, stacked on mobile:
 
-## 3. Notes — intelligent hub
+- **Left (60%)** — `HeroFocusCard`. Picks the user's "focus" project (most-recently-active with an open top task). Shows: cover art (gradient + leaf SVG when no cover), project name, % complete with sage progress bar, "Next up" + the open top task, and a big plum "Continue Project →" button that links to `/projects/:id`.
+- **Right (40%)** — `HeroStatsGrid` (2×2 tiles): Active Projects, In Progress, Ready to Launch, On Hold. Each tile uses a small soft icon, the count, and a one-line label.
 
-Rework the top of `src/pages/Notes.tsx` (keep list/gallery/kanban/calendar views intact):
+### Quick Capture row
 
-**Hero strip (above the current toolbar)**
-- Gradient hero (paper/ink palette to differentiate from Home rose-amber) with: total notes, notes this week, current writing streak (if `DailyWritingGoal` data is available), and "Today's note" CTA (`getOrCreateDailyNote`).
+Five soft chips: New Idea (gold), New Task (sage), New Note (cream), Resource (plum-outline), Inspiration (blush). Each opens an inline mini-form (`Popover`) and writes to the appropriate table.
 
-**Smart shelves (horizontal scroll rows)**
-- "Pinned" — pinned notes (already supported via `Pin` icon import).
-- "Recent" — last 6 by `updated_at`.
-- "Daily notes" — last 7 daily-kind notes.
-- "By project" — chips → filters the main view.
-Each shelf uses a small note card with cover/icon + title + 2-line preview (via `stripMarkdown`).
+### Projects grid (Cards view, default)
 
-**AI quick actions row**
-- "Summarize this week", "Suggest a journal prompt", "Find related notes for…" — wired to existing `aiInvoke`. Results render inline in a dismissable card.
+Responsive grid: 1 / 2 / 3 / 4 columns. Each `ProjectCard`:
 
-The existing search/view/group toolbar, filtered list, and all four view modes remain unchanged below the new hub strip.
+- Top: cover image OR a gradient SVG mood scene derived from project color
+- Floating icon tile in lower-left of cover
+- Health pill in top-right (`Active` / `Waiting` / `Blocked`) with color coding
+- Title (large display font)
+- Progress bar in sage with **percent** on the right
+- "**N** tasks remaining" subtitle
+- Footer: stage chip (`Planning` / `Building` / etc.) + collaborator avatars stack
+- Hover: lift + plum ring
 
----
+### Cards / List / Gallery
+
+- **Cards** — described above.
+- **List** — compact rows (icon · name · stage chip · health pill · % bar · next due). Re-uses styling vocabulary.
+- **Gallery** — mosaic of cover art only, big visual feel, name overlay on hover. Good for browsing creative work.
+
+### Bottom shelves
+
+Three columns, each a soft card with header + "View all":
+
+1. **Ideas Inbox** — recent `project_ideas` rows; inline "+ Capture a new idea" input.
+2. **Recently Updated** — projects sorted by `updated_at` desc, last 5, colored dot per stage.
+3. **Waiting On** — projects with `health = waiting`; right column shows free-text "owner/blocker" field (stored in `projects.notes` JSON? **No** — use the existing `notes` column as a single `waiting_on` text via a new optional `waiting_on TEXT` column in the migration).
+
+(Adding `waiting_on TEXT` keeps semantics clean; same migration as `stage` / `health`.)
+
+## Filters / Empty states
+
+- Filter bar: stage chips (Idea / Planning / Building / Launching / Maintaining / All), health chips (Active / Waiting / Blocked / All), and area dropdown.
+- Empty hub: warm full-bleed illustration card with "Plant your first project" plum CTA → opens the create dialog.
 
 ## Technical details
 
-**New / modified files**
-- `src/pages/HomeHub.tsx` — new header & background, pill tab strip, redesigned `DashboardHero`, pass `embedded` to `<HomeReset />`, render `<ZoneTiles />` on dashboard.
-- `src/pages/HomeReset.tsx` — accept `embedded?: boolean`; when true, hide header block and render only the AI/History/New buttons in a slim toolbar.
-- `src/components/home-hub/ZoneTiles.tsx` *(new)* — reusable icon zone grid, reads `reset.lists` to compute per-zone progress.
-- `src/components/home-hub/MaintenanceTab.tsx` — new hero, category grid, snooze action, collapsed AI panel, sheet-based add form.
-- `src/lib/category-icons.ts` *(new)* — maps category strings → Lucide icon + tone.
-- `src/pages/Notes.tsx` — new hero + shelves + AI actions row; existing logic untouched below.
-- `src/components/notes/NotesHub.tsx` *(new)* — the hero/shelves component, kept separate so Notes.tsx stays readable.
+**New / changed files**
 
-**Design tokens**
-- All colors via existing Tailwind utilities already in use across HomeReset (rose/emerald/amber/violet/sky/stone at /70 + /40 opacity). No new global tokens; everything stays themed and works in dark mode via existing `bg-card`/`text-foreground` patterns where applicable.
+- `supabase/migrations/<ts>_projects_hub.sql` — `ALTER TABLE projects ADD COLUMN stage`, `health`, `waiting_on`; `CREATE TABLE project_ideas` with full GRANTs + RLS.
+- `src/lib/types.ts` — extend `Project`, add `ProjectStage`, `ProjectHealth`, `ProjectIdea`.
+- `src/lib/project-ideas.ts` *(new)* — small CRUD module (list/add/promote-to-project/remove).
+- `src/lib/store.ts` (or wherever projects are persisted) — read/write the new fields.
+- `src/pages/Projects.tsx` — rewritten as the hub shell + a small `/?tab=tasks` fallback link to the existing AllTasksViews (kept reachable so power users don't lose it).
+- `src/components/projects/hub/*` — new components listed above.
+- `index.css` + `tailwind.config.ts` — add `--studio-sage / cream / plum / blush / gold` semantic tokens and Tailwind utilities (`bg-studio-sage`, etc.).
 
-**Risk**
-- `HomeReset`'s embedded mode is a pure render change — the `useResetChecklists` hook and all handlers stay identical, so functionality on the Reset tab is unaffected.
-- Notes hero is additive; nothing existing is removed.
+**Preserved behavior**
+
+- `/projects/:id` (ProjectDetail) is untouched in this round — already supports tasks/notes/resources/milestones. We only link to it from the new cards.
+- `addProject`, project status, area grouping, ProjectsAISummary — all reused. Stage replaces the visual emphasis on status but `status` continues to drive archive/done logic.
+
+**Out of scope for this round**
+
+- Cover-art uploader (cards use gradient placeholders that respect project color when no `coverUrl`).
+- Reordering inside Cards view via drag-and-drop.
+- ProjectDetail page redesign (separate effort).
