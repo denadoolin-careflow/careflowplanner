@@ -10,6 +10,7 @@ export default {
       fontFamily: {
         display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        brand: ['Syne', 'Fraunces', 'ui-serif', 'Georgia', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
