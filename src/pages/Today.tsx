@@ -6,6 +6,8 @@ import { BulkActionBar } from "@/components/tasks/BulkActionBar";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useStore } from "@/lib/store";
+import { useEnsureWeather } from "@/lib/use-ensure-weather";
+import { CloudSun } from "lucide-react";
 
 import { RhythmHeader } from "@/components/today/rhythm/RhythmHeader";
 import { DailySnapshotRow } from "@/components/today/rhythm/DailySnapshotRow";
@@ -37,6 +39,18 @@ function currentSlot(d: Date): "morning" | "afternoon" | "evening" {
 function TodayInner() {
   const { state } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
+  useEnsureWeather();
+  const [showWeather, setShowWeather] = useState<boolean>(() => {
+    if (typeof localStorage === "undefined") return true;
+    return localStorage.getItem("careflow:today:show-weather") !== "0";
+  });
+  const toggleWeather = () => {
+    setShowWeather(v => {
+      const next = !v;
+      try { localStorage.setItem("careflow:today:show-weather", next ? "1" : "0"); } catch { /* noop */ }
+      return next;
+    });
+  };
 
   const [day, setDay] = useState<Date>(() => {
     const d = searchParams.get("date");
@@ -74,22 +88,33 @@ function TodayInner() {
 
   return (
     <>
-      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+      <div className="grid gap-4 md:gap-5 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
         {/* Main column */}
-        <div className="min-w-0 space-y-5">
+        <div className="min-w-0 space-y-4 md:space-y-5">
           <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              onClick={toggleWeather}
+              aria-pressed={showWeather}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-[11px] uppercase tracking-wider text-muted-foreground backdrop-blur transition-colors hover:text-foreground"
+            >
+              <CloudSun className="h-3.5 w-3.5" />
+              {showWeather ? "Hide weather" : "Show weather"}
+            </button>
+          </div>
           <DailySnapshotRow date={day} />
           <WhatFitsNow date={day} onTaskClick={setEditTaskId} />
 
-          <RhythmSection slot="morning"   date={day} defaultOpen={nowSlot === "morning"   || !isReallyToday} onTaskClick={setEditTaskId} />
-          <RhythmSection slot="afternoon" date={day} defaultOpen={nowSlot === "afternoon" || !isReallyToday} onTaskClick={setEditTaskId} />
-          <RhythmSection slot="evening"   date={day} defaultOpen={nowSlot === "evening"   || !isReallyToday} onTaskClick={setEditTaskId} />
+          <RhythmSection slot="morning"   date={day} defaultOpen={nowSlot === "morning"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather={showWeather} />
+          <RhythmSection slot="afternoon" date={day} defaultOpen={nowSlot === "afternoon" || !isReallyToday} onTaskClick={setEditTaskId} showWeather={showWeather} />
+          <RhythmSection slot="evening"   date={day} defaultOpen={nowSlot === "evening"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather={showWeather} />
 
           <EndOfDayCard />
         </div>
 
         {/* Sidebar */}
-        <aside className="space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
+        <aside className="space-y-3 md:space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
           <TasksWidget date={day} />
           <FamilySnapshotCard date={day} />
           <GrowingSeasonCard />
