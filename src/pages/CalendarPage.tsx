@@ -116,7 +116,7 @@ export default function CalendarPage() {
 
   // Adapter for TimeGrid which only knows about a narrower set of kinds.
   const eventsOnForGrid = (k: string) => eventsOn(k)
-    .filter(e => e.kind !== "meal" && e.kind !== "season")
+    .filter(e => e.kind !== "meal" && e.kind !== "season" && e.kind !== "cosmic")
     .map(e => ({
       ...e,
       kind: (e.kind === "care" ? "task" : e.kind) as "appt" | "bday" | "gcal" | "hol" | "task",
