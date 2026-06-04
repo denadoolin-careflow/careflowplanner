@@ -30,8 +30,10 @@ import { JournalTodayWidget } from "@/components/today/widgets/JournalTodayWidge
 import { MemoriesTodayWidget } from "@/components/today/widgets/MemoriesTodayWidget";
 import { HomeResetWidget } from "@/components/today/widgets/HomeResetWidget";
 import { BrainDumpWidget } from "@/components/today/widgets/BrainDumpWidget";
-import { MoonPhaseSidebarCard } from "@/components/today/widgets/MoonPhaseSidebarCard";
 import { CycleSidebarCard } from "@/components/today/widgets/CycleSidebarCard";
+import { MoonPrioritiesCard } from "@/components/today/widgets/MoonPrioritiesCard";
+import { WeatherWidget } from "@/components/widgets/WeatherWidget";
+import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
 import { useSidebarOrder } from "@/lib/today-sidebar-order";
 import { cn } from "@/lib/utils";
 
@@ -106,11 +108,13 @@ function TodayInner() {
 
   const widgetRegistry: { id: string; label: string; render: () => JSX.Element | null }[] = [
     { id: "brain-dump",       label: "Brain dump",       render: () => <BrainDumpWidget /> },
+    { id: "weather",          label: "Weather",          render: () => <WeatherWidget /> },
+    { id: "weekly-weather",   label: "Weekly weather",   render: () => <WeeklyWeather /> },
+    { id: "moon-priorities",  label: "Moon & Top 3",     render: () => <MoonPrioritiesCard date={day} onTaskClick={setEditTaskId} /> },
     { id: "tasks-today",      label: "Tasks",            render: () => <TasksTodayWidget date={day} /> },
     { id: "tasks",            label: "Tasks",            render: () => <TasksWidget date={day} /> },
     { id: "meals-planned",    label: "Meals planned",    render: () => <MealsPlannedWidget date={day} /> },
     { id: "grocery",          label: "Grocery",          render: () => <GroceryWidget /> },
-    { id: "moon-phase",       label: "Moon phase",       render: () => <MoonPhaseSidebarCard /> },
     { id: "cycle",            label: "Cycle",            render: () => <CycleSidebarCard date={day} /> },
     { id: "notes-today",      label: "Notes today",      render: () => <NotesTodayWidget /> },
     { id: "journal-today",    label: "Journal today",    render: () => <JournalTodayWidget /> },
