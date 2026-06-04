@@ -1,97 +1,62 @@
-# Project Detail → Project Hub Redesign
+# Tag Detail — Notes views with inline context
 
-Transform `src/pages/ProjectDetail.tsx` (currently a 920-line task-DB style page) into a calm, inspiring single-project workspace matching the new Projects Hub aesthetic and the attached mockup.
+Redesign the **Notes** section on `/tags/:name` (`src/pages/TagDetail.tsx`) so a tag page becomes a real lens into how that tag shows up across your notes — not just a list of titles.
 
-## Scope
+## What changes for the user
 
-- Rebuild the Overview surface (hero + 3-column dashboard + Ideas Inbox).
-- Restyle tabs and wrap existing task/notes/resources components in the new visual shell.
-- Add lightweight UI-only concepts: Atmosphere, Project Energy, Next Best Step AI card.
-- Reuse existing data: `projects`, `tasks`, `project_sections`, `project_ideas`, notes, resources, milestones.
+When you open a tag, the Notes block gets a view switcher with four modes:
 
-Out of scope: changing task data model, kanban internals, file upload backend, real journal/atmosphere persistence beyond a single new column.
+1. **List** (default — current behavior, refined)
+2. **Gallery** — visual cards with a larger snippet excerpt
+3. **Kanban** — columns grouped by note `kind` (Daily, Quick, Standard, Meeting, etc.) or by status
+4. **Date** — timeline grouped by month/week, newest first
 
-## New Components (`src/components/projects/detail/`)
+In every view, each note shows an **inline context snippet**: the sentence(s) around where `#tagname` appears in the body, with the hashtag highlighted in the tag's accent color. If the tag is only in metadata (not body), we show a subtle "tagged" pill plus the first line of the note instead of the title alone.
 
-- `ProjectHubHeader.tsx` — back link, project icon, title, description, avatars, Share, Edit Project, quick search.
-- `ProjectHero.tsx` — cover (reuses `ProjectCoverArt`), status + stage chips, % progress bar, stat tiles (Team / Tasks remaining / Target date), inline Focus-this-week card with Update Focus.
-- `NextUpCard.tsx` — top priority task with due, assignee, energy, est. minutes.
-- `MilestonesTimelineCard.tsx` — wraps existing `MilestonesCard` content in the new soft card style.
-- `ProgressRingCard.tsx` — donut for Completed / In Progress / Not Started / Blocked.
-- `ThisWeekCard.tsx` — current-week tasks with checkboxes.
-- `NotesPreviewCard.tsx` — last 3 notes (uses `useEntityNotes`).
-- `ProjectLinksCard.tsx` — links from existing resources (filter `type=link`), grouped by inferred provider (Figma/Notion/Miro/Docs/Lovable).
-- `IdeasInboxStrip.tsx` — uses `useProjectIdeas` filtered to this project (add `project_id` filter); cards + Capture Idea.
-- `AtmospherePicker.tsx` — chip picker (Sage Sanctuary, Moonlit Focus, Blossom, Quiet Morning, Momentum); updates CSS vars on hero.
-- `NextBestStepCard.tsx` — calls existing `aiInvoke` with project context; returns one suggestion.
-- `ProjectEnergyCard.tsx` — derived (avg task energy) + recommended action label.
+Tasks, Grocery, and Projects sections stay as-is.
 
 ## Layout
 
 ```text
-[ Back · Title · Icon · Search · Avatars · Share · Edit ]
-[ ───────── Hero (cover + status/stage/% + stats + Focus) ───────── ]
-[ Tabs: Overview | Tasks | Milestones | Notes | Resources | Files | Activity ]
-
-Overview:
-  ┌ Col 1 ───────────┐ ┌ Col 2 ───────────┐ ┌ Col 3 ───────────┐
-  │ Next Up          │ │ Progress Ring    │ │ Notes preview    │
-  │ Milestones       │ │ This Week        │ │ Project Links    │
-  └──────────────────┘ └──────────────────┘ └──────────────────┘
-  [ Ideas Inbox strip ]
-  [ Atmosphere · Energy · Next Best Step row ]
+┌─ Notes · 12 ────────────────[ List | Gallery | Kanban | Date ]─┐
+│                                                                 │
+│  Gallery example:                                               │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ Tue, Jun 3   │  │ Garden ideas │  │ Meeting w/ M │          │
+│  │ …watered the │  │ …plant more  │  │ …discussed   │          │
+│  │ #sage and …  │  │ #sage near…  │  │ the #sage …  │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Tabs
+## Technical details
 
-- **Overview**: new dashboard above.
-- **Tasks**: keep existing list/kanban/schedule logic from current `ProjectDetail` extracted into `ProjectTasksTab.tsx`; add a 4th view stub "Timeline" (reuses `ProjectProgressTimeline`).
-- **Milestones**: full `MilestonesCard` view.
-- **Notes**: existing `LinkedNotesPanel` + `ProjectJournalPanel`.
-- **Resources**: existing `ResourcesCard`.
-- **Files**: filter resources where `type=file`, render as gallery grid (existing data, new presentation).
-- **Activity**: simple chronological merge of task completions, notes added, milestone toggles (client-side from store, no new tables).
+**New file:** `src/components/tags/TagNotesPanel.tsx`
+- Props: `{ notes: Note[]; tagName: string; accent: string; onAdd: () => void }`
+- Internal `view` state: `"list" | "gallery" | "kanban" | "date"`, persisted to `localStorage` key `tag-notes-view`
+- View switcher: shadcn `Tabs` styled as a compact segmented control in the section header
+- Helper `extractTagContext(body, tagName)`:
+  - Strip markdown, find first case-insensitive match of `#tagName`
+  - Return ~140 chars of surrounding text with the match index, so the renderer can wrap the hashtag in a `<mark style={{ color: accent, background: 'transparent' }}>` span
+  - Fallback to first non-empty line if no body match
+- Title resolver reuses existing logic (`kind === "daily"` → formatted date, else `title || "Untitled"`)
 
-## Data Changes
+**Views:**
+- `ListView` — refined version of today's card grid, snippet under title
+- `GalleryView` — `grid-cols-2 md:grid-cols-3 lg:grid-cols-4`, taller cards with 3-line snippet clamp, soft gradient header using `accent`
+- `KanbanView` — horizontal scroll, one column per `Note.kind` (or "Other"); column header shows count; cards are compact
+- `DateView` — flat list grouped by `format(updatedAt, "MMMM yyyy")` then sorted desc; each entry shows day chip + snippet
 
-One small migration:
+All cards remain `<Link to={"/notes/" + n.id}>` and keep current hover/lift styling and the accent left-bar.
 
-- `ALTER TABLE public.projects ADD COLUMN atmosphere TEXT, ADD COLUMN focus_this_week TEXT, ADD COLUMN target_date DATE;`
-- `ALTER TABLE public.project_ideas ADD COLUMN project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE;` (nullable — inbox stays global; project-scoped when set).
+**Edits in `src/pages/TagDetail.tsx`:**
+- Replace the existing `<CardSection title="Notes" …>` invocation with `<TagNotesPanel notes={taggedNotes} tagName={tagName} accent={accent} onAdd={() => void addEntity("note")} />`
+- Keep `CardSection` for Tasks / Grocery / Projects unchanged
 
-No new tables, no new RLS — covered by existing policies. Update `types.ts`, `store.tsx` mapping, and `project-ideas.ts` to accept optional `projectId`.
+**No data or schema changes.** Uses existing `Note` shape (`id`, `title`, `body`, `kind`, `date`, `updatedAt`, `tags`).
 
-## Files
+## Out of scope
 
-**Created**
-- `src/components/projects/detail/ProjectHubHeader.tsx`
-- `src/components/projects/detail/ProjectHero.tsx`
-- `src/components/projects/detail/NextUpCard.tsx`
-- `src/components/projects/detail/MilestonesTimelineCard.tsx`
-- `src/components/projects/detail/ProgressRingCard.tsx`
-- `src/components/projects/detail/ThisWeekCard.tsx`
-- `src/components/projects/detail/NotesPreviewCard.tsx`
-- `src/components/projects/detail/ProjectLinksCard.tsx`
-- `src/components/projects/detail/IdeasInboxStrip.tsx`
-- `src/components/projects/detail/AtmospherePicker.tsx`
-- `src/components/projects/detail/NextBestStepCard.tsx`
-- `src/components/projects/detail/ProjectEnergyCard.tsx`
-- `src/components/projects/detail/ProjectTasksTab.tsx` (extracted)
-- `src/components/projects/detail/ProjectActivityTab.tsx`
-- `src/components/projects/detail/ProjectFilesTab.tsx`
-- `supabase/migrations/<ts>_project_detail_hub.sql`
-
-**Rewritten**
-- `src/pages/ProjectDetail.tsx` — slim shell composing header + hero + tabs.
-
-**Edited**
-- `src/lib/types.ts`, `src/lib/store.tsx`, `src/lib/project-ideas.ts`.
-
-## Visual System
-
-Reuses `studio-tokens.ts` (sage/cream/plum/blush/gold). Rounded `2xl` cards, soft shadows (`shadow-sm` + tinted blur), botanical hero gradients from `ProjectCoverArt`. Atmosphere selection swaps the hero gradient and accent CSS vars locally — no global theme change.
-
-## Preserved
-
-- `addProject`, `ProjectsAISummary`, all task/section CRUD, kanban/schedule logic, journal panel, resources, milestones data.
-- `/projects` hub (already redesigned).
+- Drag-to-reorder on Kanban (notes have no status field to persist into)
+- View switchers for Tasks / Grocery / Projects sections
+- Editing snippets inline
