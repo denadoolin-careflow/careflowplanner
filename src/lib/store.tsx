@@ -199,6 +199,9 @@ const projectFrom = (r: any): Project => ({
   milestones: Array.isArray(r.milestones) ? r.milestones : [],
   linkedTransactionIds: Array.isArray(r.linked_transaction_ids) ? r.linked_transaction_ids : [],
   linkedSavingsGoalIds: Array.isArray(r.linked_savings_goal_ids) ? r.linked_savings_goal_ids : [],
+  stage: r.stage ?? undefined,
+  health: r.health ?? undefined,
+  waitingOn: r.waiting_on ?? undefined,
 });
 const sectionFrom = (r: any): ProjectSection => ({
   id: r.id, projectId: r.project_id, name: r.name,
