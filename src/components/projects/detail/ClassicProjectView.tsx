@@ -126,10 +126,13 @@ export default function ClassicProjectView({ embedded, projectId: pid }: Classic
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-6">
+      {!embedded && (
       <Link to="/projects" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-3.5 w-3.5" /> All projects
       </Link>
+      )}
 
+      {!embedded && (
       <header className="rounded-2xl border border-border/60 bg-gradient-to-br from-card to-card/40 p-5 space-y-3">
         <div className="flex items-start gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/15 text-primary">
@@ -177,15 +180,18 @@ export default function ClassicProjectView({ embedded, projectId: pid }: Classic
           rows={2}
         />
       </header>
+      )}
 
-      <GoalsHabitsStrip project={project} />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <TimelineCard project={project} doneCount={done} totalCount={total} />
-        <MilestonesCard project={project} />
-      </div>
-      <ResourcesCard project={project} />
-      <AIOverviewCard project={project} />
-      <NotesGallery project={project} />
+      {!embedded && <GoalsHabitsStrip project={project} />}
+      {!embedded && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TimelineCard project={project} doneCount={done} totalCount={total} />
+          <MilestonesCard project={project} />
+        </div>
+      )}
+      {!embedded && <ResourcesCard project={project} />}
+      {!embedded && <AIOverviewCard project={project} />}
+      {!embedded && <NotesGallery project={project} />}
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-1">
         <ToggleGroup
@@ -291,11 +297,15 @@ export default function ClassicProjectView({ embedded, projectId: pid }: Classic
         )}
       </div>
 
-      {/* notes-as-gallery is rendered above; keep this for compact linked-notes management */}
-      <LinkedNotesPanel entityType="project" entityId={project.id} contextTitle={project.name} compact />
-      <ProjectProgressTimeline projectId={project.id} />
-      <ProjectJournalPanel projectId={project.id} projectName={project.name} />
-      <WhiteboardsPanel projectId={project.id} projectName={project.name} />
+      {!embedded && (
+        <>
+          {/* notes-as-gallery is rendered above; keep this for compact linked-notes management */}
+          <LinkedNotesPanel entityType="project" entityId={project.id} contextTitle={project.name} compact />
+          <ProjectProgressTimeline projectId={project.id} />
+          <ProjectJournalPanel projectId={project.id} projectName={project.name} />
+          <WhiteboardsPanel projectId={project.id} projectName={project.name} />
+        </>
+      )}
 
       <ProjectScheduleSidebar
         open={scheduleOpen}
