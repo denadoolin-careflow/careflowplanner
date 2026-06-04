@@ -126,6 +126,8 @@ export function UpcomingHub() {
   const navigate = useNavigate();
   const accent = useFlowAccent("planflow");
   const [microOpen, setMicroOpen] = useState(false);
+  const [spPrefs, setSpPrefs] = useState<SmartPlanPrefs>(() => loadSpPrefs());
+  useEffect(() => { localStorage.setItem(SP_KEY, JSON.stringify(spPrefs)); }, [spPrefs]);
 
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem(VIEW_KEY) as ViewMode) || "list");
   const [tf, setTf] = useState<Timeframe>(() => (localStorage.getItem(TF_KEY) as Timeframe) || "all");
@@ -237,17 +239,32 @@ export function UpcomingHub() {
         && (!t.dueDate || t.dueDate < today)
     );
     if (candidates.length === 0) { toast("Nothing to plan — you're clear ✨"); return; }
-    // sort by energy: low first (easy wins), then medium, then high
-    const rank: Record<Energy, number> = { low: 0, medium: 1, high: 2 };
-    const sorted = [...candidates].sort((a, b) => rank[inferEnergy(a)] - rank[inferEnergy(b)]);
+    // Energy weighting per balance preset
+    const baseRank: Record<Energy, number> = { low: 0, medium: 1, high: 2 };
+    const balanceWeight: Record<EnergyBalance, Record<Energy, number>> = {
+      gentle:    { low: 0, medium: 2, high: 5 },   // strongly prefer low
+      balanced:  { low: 0, medium: 1, high: 2 },
+      ambitious: { low: 1, medium: 0, high: 0 },   // tackle bigger items earlier
+    };
+    const w = balanceWeight[spPrefs.energyBalance];
+    const sorted = [...candidates].sort((a, b) => {
+      if (spPrefs.prioritizeCaregiver) {
+        const ca = isCaregiverTask(a) ? -1 : 0;
+        const cb = isCaregiverTask(b) ? -1 : 0;
+        if (ca !== cb) return ca - cb;
+      }
+      return (w[inferEnergy(a)] - w[inferEnergy(b)]) || (baseRank[inferEnergy(a)] - baseRank[inferEnergy(b)]);
+    });
+    const perDay = Math.max(1, Math.min(4, spPrefs.perDay));
+    const maxItems = perDay * 7;
     let scheduled = 0;
-    for (let i = 0; i < sorted.length && i < 14; i++) {
-      const dayOffset = Math.min(6, Math.floor(i / 2)); // 2 per day across 7 days
+    for (let i = 0; i < sorted.length && i < maxItems; i++) {
+      const dayOffset = Math.min(6, Math.floor(i / perDay));
       const iso = format(addDays(new Date(), dayOffset), "yyyy-MM-dd");
       await updateTask(sorted[i].id, { dueDate: iso, inbox: false });
       scheduled++;
     }
-    toast.success(`Smart-planned ${scheduled} task${scheduled === 1 ? "" : "s"} across the week 🌿`);
+    toast.success(`Smart-planned ${scheduled} task${scheduled === 1 ? "" : "s"} (${spPrefs.energyBalance}) 🌿`);
   };
 
   return (
