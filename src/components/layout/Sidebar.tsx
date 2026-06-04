@@ -1,5 +1,5 @@
-import { NavLink, useLocation } from "react-router-dom";
-import { NAV_GROUPS } from "@/lib/nav";
+import { NavLink, useLocation, Link } from "react-router-dom";
+import { NAV_GROUPS, FLOW_ACCENTS } from "@/lib/nav";
 import { PANEL_BY_ROUTE } from "@/components/workspace/PanelRegistry";
 import { useWorkspaceLayout } from "@/components/workspace/useWorkspaceLayout";
 import {
@@ -1186,9 +1186,23 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           const open = !!openMap[group.id];
           const GroupIcon = group.icon;
           const hasActive = group.items.some((it) => it.to === pathname);
+          const accent = FLOW_ACCENTS[group.id] ?? FLOW_ACCENTS.settings;
           if (collapsed) {
             return (
               <div key={group.id} className="mb-1 flex flex-col items-center gap-0.5">
+                {wrapItem(`Open ${group.label}`,
+                  <NavLink
+                    to={`/flow/${group.id}`}
+                    onClick={handleNavClick(`/flow/${group.id}`)}
+                    className={({ isActive }) => cn(
+                      "grid h-10 w-10 place-items-center rounded-xl ring-1 transition-all",
+                      accent.bg, accent.ring,
+                      isActive && "shadow-soft",
+                    )}
+                  >
+                    <GroupIcon className={cn("h-4 w-4", accent.text)} />
+                  </NavLink>
+                )}
                 {group.items.map(({ to, label, icon: Icon }) => wrapItem(label,
                   <NavLink
                     key={to}
@@ -1230,32 +1244,47 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 });
               }}
             >
-              <button
-                type="button"
-                onClick={() => toggle(group.id)}
-                className={cn(
-                  "flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left",
-                  "text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors",
-                  hasActive && "text-sidebar-foreground/90",
-                )}
-              >
-                <span className="mt-0.5 text-sm leading-none" aria-hidden>
-                  {("emoji" in group && (group as any).emoji) || null}
-                </span>
-                <span className="flex flex-1 flex-col gap-0.5">
-                  <span className="text-[12px] font-display font-semibold tracking-tight text-sidebar-foreground">
-                    {group.label}
+              <div className="flex w-full items-start gap-1">
+                <Link
+                  to={`/flow/${group.id}`}
+                  onClick={handleNavClick(`/flow/${group.id}`)}
+                  className={cn(
+                    "flex flex-1 items-start gap-2 rounded-lg px-2 py-1.5 text-left",
+                    "text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors",
+                    hasActive && "text-sidebar-foreground/90",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md ring-1",
+                      accent.bg, accent.ring,
+                    )}
+                    aria-hidden
+                  >
+                    <GroupIcon className={cn("h-3.5 w-3.5", accent.text)} />
                   </span>
-                  {"subtitle" in group && (group as any).subtitle ? (
-                    <span className="text-[10px] uppercase tracking-[0.14em] text-sidebar-foreground/55">
-                      {(group as any).subtitle}
+                  <span className="flex flex-1 flex-col gap-0.5">
+                    <span className="text-[12px] font-display font-semibold tracking-tight text-sidebar-foreground">
+                      {group.label}
                     </span>
-                  ) : null}
-                </span>
-                <ChevronDown
-                  className={cn("mt-1 h-3.5 w-3.5 shrink-0 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")}
-                />
-              </button>
+                    {"subtitle" in group && (group as any).subtitle ? (
+                      <span className="text-[10px] uppercase tracking-[0.14em] text-sidebar-foreground/55">
+                        {(group as any).subtitle}
+                      </span>
+                    ) : null}
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => toggle(group.id)}
+                  aria-label={open ? `Collapse ${group.label}` : `Expand ${group.label}`}
+                  className="mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                >
+                  <ChevronDown
+                    className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")}
+                  />
+                </button>
+              </div>
               <div
                 className={cn(
                   "grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out",

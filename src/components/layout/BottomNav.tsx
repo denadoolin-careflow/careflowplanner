@@ -1,9 +1,9 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
-import { MOBILE_NAV, NAV, NAV_GROUPS } from "@/lib/nav";
+import { MOBILE_NAV, NAV, NAV_GROUPS, FLOW_ACCENTS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check } from "lucide-react";
+import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -178,17 +178,29 @@ export function BottomNav() {
                   </div>
                 </div>
                 <div className="mt-4 space-y-5 pb-4">
-                  {NAV_GROUPS.map((group) => (
+                  {NAV_GROUPS.map((group) => {
+                    const GroupIcon = group.icon;
+                    const accent = FLOW_ACCENTS[group.id] ?? FLOW_ACCENTS.settings;
+                    return (
                     <section key={group.id}>
-                      <header className="mb-2 flex items-baseline gap-2 px-1">
-                        <span className="text-base leading-none" aria-hidden>{(group as any).emoji ?? ""}</span>
-                        <h3 className="font-display text-sm font-semibold tracking-tight">{group.label}</h3>
-                        {(group as any).subtitle && (
-                          <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                            {(group as any).subtitle}
-                          </span>
-                        )}
-                      </header>
+                      <Link
+                        to={`/flow/${group.id}`}
+                        onClick={() => setOpen(false)}
+                        className="mb-2 flex items-center gap-2 rounded-lg px-1 py-1 -mx-1 hover:bg-muted/60 transition-colors"
+                      >
+                        <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-md ring-1", accent.bg, accent.ring)} aria-hidden>
+                          <GroupIcon className={cn("h-4 w-4", accent.text)} />
+                        </span>
+                        <div className="flex flex-1 flex-col">
+                          <h3 className={cn("font-display text-sm font-semibold tracking-tight", accent.text)}>{group.label}</h3>
+                          {(group as any).subtitle && (
+                            <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                              {(group as any).subtitle}
+                            </span>
+                          )}
+                        </div>
+                        <ArrowRight className={cn("h-4 w-4", accent.text)} />
+                      </Link>
                       <ul className="grid grid-cols-3 gap-2">
                         {group.items.map(({ to, label, icon: Icon }) => (
                           <li key={to}>
@@ -210,7 +222,8 @@ export function BottomNav() {
                         ))}
                       </ul>
                     </section>
-                  ))}
+                    );
+                  })}
                 </div>
               </SheetContent>
             </Sheet>
