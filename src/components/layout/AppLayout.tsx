@@ -29,6 +29,7 @@ import { applyFontPrefs } from "@/lib/font-prefs";
 import { installGlobalHaptics } from "@/lib/haptics";
 import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
 import { Link } from "react-router-dom";
+import { HeaderNowStrip } from "./HeaderNowStrip";
 
 export function AppLayout() {
   const { state, setLowEnergyMode } = useStore();
@@ -56,6 +57,7 @@ export function AppLayout() {
             </div>
             {/* Mobile: keep only search + theme. Secondary actions live in sidebar / bottom-nav "More". */}
             <div className="flex items-center gap-1 sm:gap-3">
+              <HeaderNowStrip />
               <UniversalSearchBar />
               <div className="hidden items-center gap-2 sm:flex sm:gap-3">
                 <NotificationCenter />
