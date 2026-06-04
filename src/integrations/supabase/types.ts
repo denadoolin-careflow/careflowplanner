@@ -1167,6 +1167,155 @@ export type Database = {
           },
         ]
       }
+      cosmic_birth_chart: {
+        Row: {
+          birth_date: string
+          birth_lat: number | null
+          birth_lng: number | null
+          birth_place: string | null
+          birth_time: string | null
+          birth_tz: string | null
+          created_at: string
+          natal_json: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          birth_date: string
+          birth_lat?: number | null
+          birth_lng?: number | null
+          birth_place?: string | null
+          birth_time?: string | null
+          birth_tz?: string | null
+          created_at?: string
+          natal_json?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          birth_date?: string
+          birth_lat?: number | null
+          birth_lng?: number | null
+          birth_place?: string | null
+          birth_time?: string | null
+          birth_tz?: string | null
+          created_at?: string
+          natal_json?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cosmic_event_saves: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_id: string
+          event_kind: string
+          id: string
+          payload: Json | null
+          reminder_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_date: string
+          event_id: string
+          event_kind: string
+          id?: string
+          payload?: Json | null
+          reminder_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_id?: string
+          event_kind?: string
+          id?: string
+          payload?: Json | null
+          reminder_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cosmic_journal_entries: {
+        Row: {
+          created_at: string
+          event_date: string | null
+          event_id: string | null
+          event_kind: string | null
+          id: string
+          journal_entry_id: string | null
+          phase: string | null
+          planet: string | null
+          sign: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_date?: string | null
+          event_id?: string | null
+          event_kind?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          phase?: string | null
+          planet?: string | null
+          sign?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string | null
+          event_id?: string | null
+          event_kind?: string | null
+          id?: string
+          journal_entry_id?: string | null
+          phase?: string | null
+          planet?: string | null
+          sign?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cosmic_journal_entries_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cosmic_settings: {
+        Row: {
+          atmosphere: string | null
+          created_at: string
+          enabled_event_kinds: string[]
+          show_in_calendar: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          atmosphere?: string | null
+          created_at?: string
+          enabled_event_kinds?: string[]
+          show_in_calendar?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          atmosphere?: string | null
+          created_at?: string
+          enabled_event_kinds?: string[]
+          show_in_calendar?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cycle_day_logs: {
         Row: {
           bbt: number | null
@@ -5269,6 +5418,7 @@ export type Database = {
           area: string
           attachments: Json
           auto_reset: boolean
+          cosmic_tag: string | null
           cover_url: string | null
           created_at: string
           day_part: string | null
@@ -5310,6 +5460,7 @@ export type Database = {
           area?: string
           attachments?: Json
           auto_reset?: boolean
+          cosmic_tag?: string | null
           cover_url?: string | null
           created_at?: string
           day_part?: string | null
@@ -5351,6 +5502,7 @@ export type Database = {
           area?: string
           attachments?: Json
           auto_reset?: boolean
+          cosmic_tag?: string | null
           cover_url?: string | null
           created_at?: string
           day_part?: string | null
