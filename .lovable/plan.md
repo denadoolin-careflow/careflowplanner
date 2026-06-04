@@ -1,84 +1,77 @@
-# Weather upgrades — location picker, unit toggle, auto-refresh, hourly precip, warnings
+# Collapsed sidebar polish — consistent 48×48 rail with calm rhythm
 
-Bring the Today weather cards under user control: pick a saved city/ZIP, toggle °C/°F inline, auto-refresh on a cadence, surface hourly rain probability, and call out any active weather warnings.
+The collapsed rail today mixes 40×40 buttons, 18px icons, a floating dot indicator in the top-right of group heads, and inconsistent gaps. The goal is one disciplined 4px grid: every collapsed control is the same square, every icon the same size, every group separated the same way, and the rail behaves the same on mobile, tablet, and desktop.
 
-## 1. Location picker (city / ZIP)
+## 1. One shared collapsed button
 
-New component `src/components/weather/LocationPickerPopover.tsx` (trigger = small "📍 {city}" chip):
-- Search input that calls `geocodeCity(query)` from `src/lib/weather.ts` (already supports city + ZIP via Open-Meteo geocoding).
-- Renders up to 5 results (name · admin1 · country); click saves via `savePlace()` and immediately refetches via `fetchWeather()` → `setWeatherSnapshot()`.
-- "Use my location" button: `navigator.geolocation` + `reverseLabel()`, same save+refetch path.
-- "Clear saved location" → removes localStorage key and falls back to auto-detect.
+Add a single `CollapsedIconButton` helper (defined inline in `Sidebar.tsx`) used everywhere in the collapsed rail:
 
-Wire the chip into:
-- `SlotWeather.tsx` (header row of the per-slot card — only render on the first slot to avoid duplicates), and
-- `HeaderNowStrip.tsx` (the temp pill becomes the trigger).
+- `48×48` square, `rounded-xl`, `grid place-items-center`.
+- Icon slot is a fixed `24×24` inner span, `<Icon className="h-5 w-5" />` (20px stroke icon centered in a 24px box reads as the 24px target without overpowering a 48px button — matches Linear/Things).
+- Hover: `bg-sidebar-accent` only; no scale, no translate, no padding change — zero shift.
+- Active: `bg-primary-soft text-foreground shadow-soft` + a 3×16 rounded accent bar absolutely positioned on the leading edge (`left-0 top-1/2 -translate-y-1/2`); the bar uses the item's accent color so the dot-in-corner indicator disappears (which is what currently causes the visual wobble on group heads).
+- Optional `accentColor` prop tints the icon itself for the Things-style LISTS row.
 
-No changes to `weather.ts` data layer.
+Replace the inline `cn(... "h-10 w-10" ... "h-[18px] w-[18px]" ...)` blocks in:
 
-## 2. Inline °C / °F toggle
+- LISTS rail (lines ~915–948)
+- Group-head NavLink (lines ~1207–1224) — drop the absolute corner dot
+- Group child NavLinks (lines ~1225–1239)
+- `PinnedNotesSection` collapsed branch (lines ~392–417)
+- `PinnedTagsSection` collapsed branch (lines ~287–315)
+- Header "expand sidebar" toggle (lines ~900–910)
+- Logo wrapper (becomes a 48×48 mark cell)
 
-Tiny segmented control reusing the existing `useTempUnit()` store (already global):
-- New `src/components/weather/UnitToggle.tsx` — same visual as the one in `WeatherPrefsSection`.
-- Placed beside the location chip in the SlotWeather header and in `HeaderNowStrip`.
+## 2. Fixed rail width on a 4px grid
 
-No new state, no migration — `setTempUnit()` already persists to localStorage and broadcasts.
+`w-14` (56px) currently leaves 8px around a 40px button. Change collapsed rail to `w-16` (64px) with `px-2 py-3`, giving exactly 8px on either side of a 48px button so every icon sits on the same vertical axis. Update both the inline class on line 801 and the `aside` so the outer width matches (the outer `style={{ width }}` is already skipped when collapsed, so the inner `w-16` governs).
 
-## 3. Auto-refresh
+Center wrapper for collapsed nav: `flex flex-col items-center gap-1.5 w-full`.
 
-Extend `src/lib/use-ensure-weather.ts`:
-- After initial load, set an interval (default 15 min) that re-calls `fetchWeather()` for the saved place and `setWeatherSnapshot()`.
-- Also refresh on `document.visibilitychange` when the tab becomes visible and the snapshot is older than 10 min (`snap.fetchedAt`).
-- Cleared on unmount.
+## 3. Visual rhythm — sections + dividers
 
-No new pref UI — interval is a constant; the existing `autoLocate` pref still governs first-load geolocation.
+Keep the existing `NAV_GROUPS` taxonomy (PlanFlow, CareFlow, HomeFlow, …) — they're already grouped semantically. In the collapsed branch only:
 
-## 4. Hourly rain chance
+- Replace the per-group `mb-3` with a uniform `gap-1.5` between buttons and an explicit `<SidebarRailDivider />` between groups (`h-px w-6 mx-auto my-2 bg-sidebar-border/40`).
+- Insert the same divider once between (a) the LISTS rail and the first group, and (b) before the settings group at the end.
+- Drop the per-group accent-tinted top-right dot — accent now lives on the active bar so groups don't visually compete.
 
-Today's hourly data is already in `snap.todayHourly` (each entry has `precipChance`). Add a compact strip inside `SlotWeather`:
-- Filter `todayHourly` to the slot's hour range (reuse the same ranges as `bucketHourly` in `weather.ts` — export `PART_RANGES` or duplicate the constant in the component).
-- Render a horizontal row of small cells: hour label (`ha`), tiny rain-drop icon, `precipChance%`.
-- Only show hours with `precipChance >= 10` to keep it calm; if none, show "No rain expected".
+No change to `NAV_GROUPS` content or order.
 
-Renders below the existing tip line; mobile scrolls horizontally.
+## 4. Top + bottom anchoring
 
-## 5. Weather warnings
+The outer `SidebarBody` flex container already has `h-full flex-col`. Wrap the nav contents in two regions:
 
-New helper `src/lib/weather-warnings.ts`:
-- Pure function `computeWarnings(snap, prefs)` returning `{ id, severity: 'info'|'caution'|'alert', label, detail }[]`.
-- Rules driven by existing `WeatherPrefs` (`coldC`, `hotC`, `rainAlerts`, `snowAlerts`, `windAlerts`):
-  - Thunderstorm anywhere today → alert.
-  - Any hour ≥70% precip + rainAlerts → caution ("Heavy rain around 3 PM").
-  - Snow in dayParts + snowAlerts → caution.
-  - Min hourly temp ≤ `coldC` → info ("Cold snap — bundle up").
-  - Max hourly temp ≥ `hotC` → caution ("Heat — hydrate & shade").
-  - Fog in next 6 hours → info.
-  - (Wind: Open-Meteo `wind_speed_10m` not currently fetched; add `wind_speed_10m_max` to the daily query in `fetchWeather` and gate on `windAlerts` ≥ 40 km/h.)
+- `<div className="flex-1 min-h-0 overflow-y-auto">` — logo + LISTS + pinned + groups.
+- `<div className="mt-auto pt-2 flex flex-col items-center gap-1.5">` — collapsed-only footer with: theme cycle button, side-swap button, settings link, and the collapse/expand toggle, each rendered through `CollapsedIconButton`.
 
-Render in a new `WeatherWarningsCard` placed above the three SlotWeather cards in `RhythmSection.tsx`. Each warning is a pill row with an icon + label + short detail. Empty list = component renders nothing.
+When expanded, the footer block remains the existing inline header controls (no change). The split only activates `if (collapsed)`.
 
-## Technical notes
+## 5. Mobile & tablet
 
-- `weather.ts`: extend the `fetchWeather` query string with `wind_speed_10m_max` (daily) only; add `windMaxKph` to `WeatherSnapshot`. No other data-layer changes.
-- All temps continue to render through `useTempUnit()` + `cToF()`.
-- No DB / edge function changes. Pure client.
-- No changes to `WeatherPrefsSection` other than (optional) wording — the picker is now also reachable from Today, but Settings keeps the full pref panel.
+The collapsed rail is desktop only (`hidden lg:flex` on the outer `<aside>`). The mobile drawer (`MobileSidebarTrigger`) renders `<SidebarBody forceExpanded />`, so the collapsed math never touches mobile — no regression risk there. Verify by inspection only; no code change required for mobile.
+
+## 6. Hover/animation contract
+
+- All collapsed buttons: `transition-colors duration-150` only. No `transition-all`, no width/transform animations.
+- Tooltips stay `delayDuration={150}`, side="right".
+- The active accent bar fades in via `transition-opacity` so route changes don't snap.
 
 ## Out of scope
 
-- Multi-location saving (only one active place).
-- 7-day forecast UI.
-- Push notifications for warnings (in-app banners only).
-- Replacing the weather provider.
+- No changes to expanded sidebar styling.
+- No restructure of `NAV_GROUPS` or the area/project tree (already hidden when collapsed).
+- No new pref toggles.
+- Astrology/quick-dates sections continue to be hidden when collapsed.
 
 ## Files
 
-- new: `src/components/weather/LocationPickerPopover.tsx`
-- new: `src/components/weather/UnitToggle.tsx`
-- new: `src/components/weather/WeatherWarningsCard.tsx`
-- new: `src/lib/weather-warnings.ts`
-- edit: `src/lib/weather.ts` (add `windMaxKph` to snapshot + query)
-- edit: `src/lib/use-ensure-weather.ts` (interval + visibility refresh)
-- edit: `src/components/today/rhythm/SlotWeather.tsx` (header chips + hourly precip strip)
-- edit: `src/components/today/rhythm/RhythmSection.tsx` (mount warnings card)
-- edit: `src/components/layout/HeaderNowStrip.tsx` (chip becomes picker trigger + unit toggle)
+- edit only: `src/components/layout/Sidebar.tsx`
+
+## Acceptance checks
+
+- All collapsed buttons measure 48×48 in DevTools; every icon centers on the same x-axis.
+- No layout shift between hover and active states (verified by toggling routes).
+- Group heads no longer show a floating top-right dot; active state reads as a left-edge bar.
+- Footer (theme, side, settings, collapse) is anchored to the bottom of the rail.
+- Rail width is exactly `64px` collapsed.
