@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { toast } from "sonner";
 import { useResetChecklists } from "@/lib/reset-checklists";
+import { ZoneTiles } from "@/components/home-hub/ZoneTiles";
 import {
   getDefaultHomeHubTab, setDefaultHomeHubTab, type HomeHubTabId,
 } from "@/lib/home-hub-prefs";
@@ -75,11 +76,23 @@ export default function HomeHub() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="relative space-y-5">
+      {/* Ambient warm background to unify the page */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 opacity-70"
+        style={{
+          background:
+            "radial-gradient(60% 50% at 20% 10%, hsl(var(--primary) / 0.08) 0%, transparent 60%)," +
+            "radial-gradient(50% 40% at 90% 0%, rgba(251, 191, 165, 0.25) 0%, transparent 65%)," +
+            "radial-gradient(50% 50% at 50% 100%, rgba(167, 243, 208, 0.18) 0%, transparent 65%)",
+        }}
+      />
       {/* ============ HEADER (Home Reset visual language) ============ */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-100/70 via-amber-50/60 to-emerald-100/50 p-5 ring-1 ring-rose-200/50 shadow-soft sm:p-6">
+       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-amber-100/80 text-emerald-700 shadow-soft ring-1 ring-emerald-200/60">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-rose-700 shadow-sm ring-1 ring-white/60">
             <HomeIcon className="h-6 w-6" />
           </span>
           <div className="min-w-0">
@@ -117,6 +130,7 @@ export default function HomeHub() {
             <Badge className="rounded-full bg-moon-soft text-moon-foreground hover:bg-moon-soft">Low-energy mode on</Badge>
           )}
         </div>
+       </div>
       </header>
 
       {/* Sticky tab strip — mobile-first, scrollable */}
@@ -130,17 +144,22 @@ export default function HomeHub() {
               <div
                 key={t.id}
                 className={cn(
-                  "group flex shrink-0 items-center gap-1 rounded-full border px-1 pl-3.5 pr-1 py-1 text-xs font-medium transition-all",
+                  "group flex shrink-0 items-center gap-1 rounded-2xl border px-1 pl-2 pr-1 py-1 text-xs font-medium transition-all",
                   active
-                    ? "border-primary/45 bg-primary/15 text-primary shadow-[0_0_12px_-2px_hsl(var(--primary)/0.45)]"
+                    ? "border-rose-300/60 bg-gradient-to-br from-rose-100/80 to-amber-50/60 text-rose-700 shadow-[0_4px_18px_-6px_rgba(244,114,182,0.45)]"
                     : "border-border/60 bg-card/70 text-muted-foreground hover:bg-card",
                 )}
               >
                 <button
                   onClick={() => setTab(t.id)}
-                  className="flex items-center gap-1.5 py-0.5"
+                  className="flex items-center gap-1.5 py-0.5 pl-1.5 pr-1"
                 >
-                  <Icon className="h-3.5 w-3.5" />
+                  <span className={cn(
+                    "grid h-6 w-6 place-items-center rounded-lg",
+                    active ? "bg-white/70 text-rose-700 ring-1 ring-white/60" : "bg-muted/60 text-foreground/70",
+                  )}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
                   {t.label}
                   {pinned && <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-primary" aria-label="default tab" />}
                 </button>
@@ -161,16 +180,30 @@ export default function HomeHub() {
       </div>
 
       {tab === "dashboard" && (
-        <CustomizableGrid
-          pageKey="home-hub"
-          sectionTitle="Your widgets"
-          hero={<DashboardHero onOpenReset={() => setTab("reset")} />}
-        />
+        <>
+          <CustomizableGrid
+            pageKey="home-hub"
+            sectionTitle="Your widgets"
+            hero={<DashboardHero onOpenReset={() => setTab("reset")} />}
+          />
+          <section>
+            <div className="mb-3 flex items-end justify-between">
+              <h2 className="font-display text-xl font-semibold tracking-tight">Checklist zones</h2>
+              <button
+                onClick={() => setTab("zones")}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                View all zones →
+              </button>
+            </div>
+            <ZoneTiles onOpenZonesTab={() => setTab("zones")} />
+          </section>
+        </>
       )}
 
       {tab === "rhythm" && <RhythmTab />}
 
-      {tab === "reset" && <HomeReset />}
+      {tab === "reset" && <HomeReset embedded />}
 
       {tab === "zones" && <ZonesTab />}
 
