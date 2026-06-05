@@ -38,6 +38,45 @@ export type Database = {
         }
         Relationships: []
       }
+      anchors: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          key: string
+          label: string
+          pillar: string | null
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          key: string
+          label: string
+          pillar?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          key?: string
+          label?: string
+          pillar?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           all_day: boolean
@@ -2083,6 +2122,7 @@ export type Database = {
       }
       goals: {
         Row: {
+          anchor_key: string | null
           category: string
           created_at: string
           description: string | null
@@ -2095,6 +2135,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          anchor_key?: string | null
           category?: string
           created_at?: string
           description?: string | null
@@ -2107,6 +2148,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          anchor_key?: string | null
           category?: string
           created_at?: string
           description?: string | null
@@ -2455,6 +2497,7 @@ export type Database = {
       }
       habits: {
         Row: {
+          anchor_key: string | null
           cadence: string
           category: string
           created_at: string
@@ -2466,6 +2509,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          anchor_key?: string | null
           cadence?: string
           category?: string
           created_at?: string
@@ -2477,6 +2521,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          anchor_key?: string | null
           cadence?: string
           category?: string
           created_at?: string
@@ -3042,6 +3087,7 @@ export type Database = {
       }
       journal_entries: {
         Row: {
+          anchor_key: string | null
           attachments: Json
           body: string
           created_at: string
@@ -3061,6 +3107,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          anchor_key?: string | null
           attachments?: Json
           body: string
           created_at?: string
@@ -3080,6 +3127,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          anchor_key?: string | null
           attachments?: Json
           body?: string
           created_at?: string
@@ -3273,6 +3321,7 @@ export type Database = {
       }
       meals: {
         Row: {
+          anchor_key: string | null
           created_at: string
           date: string
           id: string
@@ -3288,6 +3337,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          anchor_key?: string | null
           created_at?: string
           date: string
           id?: string
@@ -3303,6 +3353,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          anchor_key?: string | null
           created_at?: string
           date?: string
           id?: string
@@ -4020,6 +4071,7 @@ export type Database = {
       }
       notes: {
         Row: {
+          anchor_key: string | null
           archived: boolean
           body: string
           cover_gradient: string | null
@@ -4039,6 +4091,7 @@ export type Database = {
           word_goal: number | null
         }
         Insert: {
+          anchor_key?: string | null
           archived?: boolean
           body?: string
           cover_gradient?: string | null
@@ -4058,6 +4111,7 @@ export type Database = {
           word_goal?: number | null
         }
         Update: {
+          anchor_key?: string | null
           archived?: boolean
           body?: string
           cover_gradient?: string | null
@@ -5319,6 +5373,7 @@ export type Database = {
       }
       routines: {
         Row: {
+          anchor_key: string | null
           cadence: string
           created_at: string
           id: string
@@ -5334,6 +5389,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          anchor_key?: string | null
           cadence?: string
           created_at?: string
           id?: string
@@ -5349,6 +5405,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          anchor_key?: string | null
           cadence?: string
           created_at?: string
           id?: string
@@ -5628,6 +5685,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          anchor_key: string | null
           area: string
           attachments: Json
           auto_reset: boolean
@@ -5670,6 +5728,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          anchor_key?: string | null
           area?: string
           attachments?: Json
           auto_reset?: boolean
@@ -5712,6 +5771,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          anchor_key?: string | null
           area?: string
           attachments?: Json
           auto_reset?: boolean
