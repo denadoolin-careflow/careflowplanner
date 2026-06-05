@@ -29,8 +29,17 @@ Deno.serve(async (req) => {
     natalLine, houseLine,
     "",
     "Return JSON with EXACTLY these keys:",
-    `{"technical":string,"meaning":string,"emotional":string,"practical":string,"growth":string,"careflow":{"tasks":string[],"habits":string[],"routines":string[],"journaling":string[]}}`,
-    "Each text field is 1-2 short sentences. careflow arrays contain 1-3 short concrete suggestions each. " + COSMIC_TONE_REMINDER,
+    `{"why_matters":string,"growth":string,"challenges":string,"action":string,"affirmation":string,"reflection":string,"technical":string,"meaning":string,"emotional":string,"practical":string,"careflow":{"tasks":string[],"habits":string[],"routines":string[],"journaling":string[]}}`,
+    "Field guide:",
+    "- why_matters: 2 sentences on why this transit matters for THIS person right now (use natal/house context if given).",
+    "- growth: 1-2 sentences naming the growth opportunity this energy invites.",
+    "- challenges: 1-2 sentences naming a real, compassionate potential challenge to watch for.",
+    "- action: ONE concrete, specific thing they can actually do today (start with a verb).",
+    "- affirmation: a short first-person 'I am / I trust / I allow' affirmation, max 14 words.",
+    "- reflection: a single open journaling question, max 20 words.",
+    "- technical/meaning/emotional/practical: 1-2 sentences each (kept for backwards compatibility).",
+    "- careflow arrays: 1-3 short concrete suggestions each.",
+    COSMIC_TONE_REMINDER,
   ].filter(Boolean).join("\n");
 
   try {

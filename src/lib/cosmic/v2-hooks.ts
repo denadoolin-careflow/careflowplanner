@@ -198,6 +198,11 @@ export async function fetchTransitInterpretation(eventId: string, payload: any) 
   if (err || !ai) return null;
   const row = {
     user_id: u.user.id, event_id: eventId,
+    why_matters: (ai as any).why_matters ?? "",
+    challenges: (ai as any).challenges ?? "",
+    action: (ai as any).action ?? "",
+    affirmation: (ai as any).affirmation ?? "",
+    reflection: (ai as any).reflection ?? "",
     technical: (ai as any).technical ?? "",
     meaning: (ai as any).meaning ?? "",
     emotional: (ai as any).emotional ?? "",
