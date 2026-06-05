@@ -11,7 +11,8 @@ import { nextSolarReturn, nextLunarReturn, nextSaturnReturn, nextJupiterReturn }
 import { computeProfection, houseTopics } from "@/lib/cosmic/astro/profections";
 import { eclipseActivations } from "@/lib/cosmic/astro/eclipses";
 import { getTransitsForDate } from "@/lib/transits";
-import { getMoonPhase, MOON_INFO } from "@/lib/moon";
+import { getMoonPhase, getIllumination } from "@/lib/moon";
+import { bodySign } from "@/lib/cosmic/astro/bodies";
 
 /* ---------- Chart (cached) ---------- */
 export function useNatalChart(birth: BirthInputV2 | null) {
@@ -60,14 +61,14 @@ export function useDailyGuidance(chart: NatalChartV2 | null, date: Date = new Da
         if (existing) { setData(existing as any); setLoading(false); return; }
       }
       const phase = getMoonPhase(date);
-      const minfo = MOON_INFO[phase];
+      const moonSign = bodySign("Moon", date);
       const transits = getTransitsForDate(date).map(t => ({ kind: t.kind, planet: t.planet, sign: t.sign, detail: t.detail }));
       const profection = chart?.houses ? computeProfection(new Date(chart.birth.date), chart.houses.ascendantSign, date) : null;
       const prog = chart?.birth ? computeProgressions(new Date(chart.birth.date), date) : null;
       const payload = {
         date: iso,
         active: transits,
-        moon: { phase, sign: minfo.sign ?? undefined, illumination: minfo.illumination },
+        moon: { phase, sign: moonSign, illumination: Math.round(getIllumination(date) * 100) },
         natal: chart ? { sun: chart.planets.find(p => p.body === "Sun")?.sign, moon: chart.planets.find(p => p.body === "Moon")?.sign, ascendant: chart.houses?.ascendantSign, chartRuler: chart.chartRuler } : undefined,
         progressed: prog ? { moonSign: prog.progressedMoon.sign, moonPhase: prog.progressedMoon.lunarPhase, sunSign: prog.progressedSun.sign } : undefined,
         profection: profection ? { house: profection.house, sign: profection.profectedSign, timeLord: profection.timeLord, topics: houseTopics(profection.house) } : undefined,
