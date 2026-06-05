@@ -198,6 +198,11 @@ export async function fetchTransitInterpretation(eventId: string, payload: any) 
   if (err || !ai) return null;
   const row = {
     user_id: u.user.id, event_id: eventId,
+    why_matters: (ai as any).why_matters ?? "",
+    challenges: (ai as any).challenges ?? "",
+    action: (ai as any).action ?? "",
+    affirmation: (ai as any).affirmation ?? "",
+    reflection: (ai as any).reflection ?? "",
     technical: (ai as any).technical ?? "",
     meaning: (ai as any).meaning ?? "",
     emotional: (ai as any).emotional ?? "",
@@ -205,7 +210,9 @@ export async function fetchTransitInterpretation(eventId: string, payload: any) 
     growth: (ai as any).growth ?? "",
     careflow: (ai as any).careflow ?? { tasks: [], habits: [], routines: [], journaling: [] },
   };
-  await (supabase as any).from("cosmic_transit_interpretations").upsert(row, { onConflict: "user_id,event_id" });
+  // `action` is not a column — strip from upsert payload but keep on returned row.
+  const { action: _action, ...persist } = row as any;
+  await (supabase as any).from("cosmic_transit_interpretations").upsert(persist, { onConflict: "user_id,event_id" });
   return row;
 }
 
