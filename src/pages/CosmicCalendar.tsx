@@ -2,69 +2,122 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { buildMonthEvents, type AstroEvent } from "@/lib/cosmic/astro/calendar";
+import { format, isSameDay } from "date-fns";
+import { cachedSnapshot, type DaySnapshot } from "@/lib/cosmic/event-meta";
+import { ELEMENT_VAR, type Element } from "@/lib/cosmic/glyphs";
+import { CosmicDaySheet } from "@/components/cosmic/CosmicDaySheet";
+import { cn } from "@/lib/utils";
 
-const KIND_COLOR: Record<string, string> = {
-  "new-moon": "bg-slate-200 dark:bg-slate-700",
-  "first-quarter": "bg-blue-200 dark:bg-blue-900",
-  "full-moon": "bg-amber-200 dark:bg-amber-900",
-  "last-quarter": "bg-purple-200 dark:bg-purple-900",
-  "ingress": "bg-emerald-200 dark:bg-emerald-900",
-  "retrograde-start": "bg-rose-200 dark:bg-rose-900",
-  "direct-station": "bg-teal-200 dark:bg-teal-900",
-  "voc": "bg-zinc-200 dark:bg-zinc-700",
-  "solstice": "bg-orange-200 dark:bg-orange-900",
-  "equinox": "bg-lime-200 dark:bg-lime-900",
-};
+function cellStyle(el: Element | null, intensity: number): React.CSSProperties {
+  if (!el) return {};
+  const v = ELEMENT_VAR[el];
+  const alpha = Math.min(0.32, 0.08 + intensity * 0.04);
+  return { background: `hsl(var(${v}) / ${alpha})`, borderColor: `hsl(var(${v}) / 0.35)` };
+}
+
+function DayCell({ snap, onClick }: { snap: DaySnapshot; onClick: () => void }) {
+  const today = isSameDay(snap.date, new Date());
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "relative flex min-h-[78px] flex-col rounded-lg border p-1.5 text-left transition-colors hover:opacity-90",
+        today && "ring-2 ring-primary/60",
+      )}
+      style={cellStyle(snap.dominantElement, snap.intensity)}
+    >
+      <div className="flex items-start justify-between">
+        <span className="text-[12px] font-medium">{snap.date.getDate()}</span>
+        <span className="text-[14px] leading-none" aria-hidden>{snap.moonGlyph}</span>
+      </div>
+
+      <div className="mt-auto flex flex-wrap items-center gap-1">
+        {snap.hasEclipse && (
+          <span className="rounded-sm bg-amber-500/20 px-1 text-[9px] font-medium text-amber-700 dark:text-amber-300">ECL</span>
+        )}
+        {snap.hasRetro && (
+          <span className="rounded-sm bg-rose-500/20 px-1 text-[9px] font-medium text-rose-700 dark:text-rose-300">℞</span>
+        )}
+        {snap.events.some(e => e.kind === "ingress") && (
+          <span className="rounded-sm bg-emerald-500/20 px-1 text-[9px] font-medium text-emerald-700 dark:text-emerald-300">→</span>
+        )}
+      </div>
+
+      {/* Intensity bar */}
+      {snap.intensity > 0 && (
+        <span
+          className="absolute inset-x-1 bottom-0.5 h-[2px] rounded-full bg-foreground/30"
+          style={{ width: `${Math.min(100, snap.intensity * 14)}%` }}
+        />
+      )}
+    </button>
+  );
+}
+
+function LegendDot({ varName, label }: { varName: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+      <span className="h-2 w-2 rounded-full" style={{ background: `hsl(var(${varName}))` }} />
+      {label}
+    </span>
+  );
+}
 
 export default function CosmicCalendar() {
   const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
-  const events = useMemo(() => buildMonthEvents(month.getFullYear(), month.getMonth()), [month]);
+  const [openDate, setOpenDate] = useState<Date | null>(null);
 
-  const byDate: Record<string, AstroEvent[]> = {};
-  for (const e of events) (byDate[e.date] ||= []).push(e);
+  const days = useMemo(() => {
+    const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    return Array.from({ length: daysInMonth }, (_, i) =>
+      cachedSnapshot(new Date(month.getFullYear(), month.getMonth(), i + 1)),
+    );
+  }, [month]);
 
-  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const firstDow = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-3 pb-28 sm:p-6">
       <header className="flex items-center justify-between">
-        <Button asChild variant="ghost" size="sm" className="h-8 px-2"><Link to="/cosmic-flow"><ArrowLeft className="h-4 w-4 mr-1" />Back</Link></Button>
+        <Button asChild variant="ghost" size="sm" className="h-8 px-2">
+          <Link to="/cosmic-flow"><ArrowLeft className="h-4 w-4 mr-1" />Back</Link>
+        </Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
-          <h1 className="font-display text-lg w-32 text-center">{month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</h1>
-          <Button variant="ghost" size="icon" onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="font-display text-lg w-36 text-center">
+            {month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+          </h1>
+          <Button variant="ghost" size="icon" onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
         <div className="w-12" />
       </header>
 
       <div className="cozy-card p-3">
-        <div className="grid grid-cols-7 text-center text-[10px] text-muted-foreground mb-1">
-          {["S","M","T","W","T","F","S"].map(d => <div key={d}>{d}</div>)}
+        <div className="grid grid-cols-7 mb-1 text-center text-[10px] text-muted-foreground">
+          {["S","M","T","W","T","F","S"].map((d, i) => <div key={`${d}-${i}`}>{d}</div>)}
         </div>
         <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: firstDow }).map((_, i) => <div key={`p-${i}`} />)}
-          {Array.from({ length: daysInMonth }).map((_, i) => {
-            const day = i + 1;
-            const iso = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const dayEvents = byDate[iso] ?? [];
-            return (
-              <div key={iso} className="min-h-[64px] rounded border border-border/40 p-1 text-[10px]">
-                <div className="font-medium">{day}</div>
-                <div className="mt-0.5 space-y-0.5">
-                  {dayEvents.slice(0, 3).map((e, idx) => (
-                    <div key={idx} className={`truncate rounded px-1 py-0.5 ${KIND_COLOR[e.kind] ?? "bg-muted"}`} title={e.label}>
-                      {e.label}
-                    </div>
-                  ))}
-                  {dayEvents.length > 3 && <p className="text-muted-foreground">+{dayEvents.length - 3} more</p>}
-                </div>
-              </div>
-            );
-          })}
+          {days.map(snap => (
+            <DayCell key={snap.date.toISOString()} snap={snap} onClick={() => setOpenDate(snap.date)} />
+          ))}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <LegendDot varName="--element-fire" label="Fire" />
+          <LegendDot varName="--element-earth" label="Earth" />
+          <LegendDot varName="--element-air" label="Air" />
+          <LegendDot varName="--element-water" label="Water" />
+          <span className="text-[10px] text-muted-foreground">·</span>
+          <span className="text-[10px] text-muted-foreground">℞ retrograde · ECL eclipse · → ingress</span>
         </div>
       </div>
+
+      <CosmicDaySheet open={!!openDate} onOpenChange={o => !o && setOpenDate(null)} date={openDate} />
     </div>
   );
 }
