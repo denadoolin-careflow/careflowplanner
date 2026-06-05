@@ -36,6 +36,7 @@ import Health from "./pages/Health";
 import WealthHub from "./pages/WealthHub";
 import HomeAreas from "./pages/HomeAreas";
 import AreaPage from "./pages/AreaPage";
+import AreasManager from "./pages/AreasManager";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Inbox from "./pages/Inbox";
@@ -149,6 +150,7 @@ const App = () => (
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/areas/:name" element={<AreaPage />} />
+                <Route path="/areas" element={<AreasManager />} />
                 <Route path="/today" element={<Today />} />
                 <Route path="/rhythm" element={<RhythmOverview />} />
                 <Route path="/insights" element={<Insights />} />
