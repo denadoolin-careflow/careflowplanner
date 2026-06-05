@@ -564,7 +564,6 @@ function QuickDatesSection({
 function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: boolean; onNavigate?: () => void }) {
   const { pathname, openMap, toggle, setOpenMap, collapsed, setCollapsed, areas, projects, updateArea } = useSidebarData(forceExpanded);
   const { updateProject, addProject, addArea } = useStore();
-  const navigate = useNavigate();
   const { openPanel } = useWorkspaceLayout();
   const navigate = useNavigate();
   const { atmosphere } = useAtmosphere();
