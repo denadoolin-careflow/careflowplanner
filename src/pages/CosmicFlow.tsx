@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sparkles, User, Calendar, BookOpen, TrendingUp } from "lucide-react";
-import { MoonCycleCard } from "@/components/cosmic/MoonCycleCard";
-import { ActiveTransitsList } from "@/components/cosmic/ActiveTransitsList";
-import { UpcomingEventsList } from "@/components/cosmic/UpcomingEventsList";
+import { Sparkles, User, Calendar } from "lucide-react";
 import { useBirthChart } from "@/lib/cosmic/hooks";
-import { useNatalChart, useCurrentChapter, useDailyGuidance } from "@/lib/cosmic/v2-hooks";
-import { ChapterCard } from "@/components/cosmic/ChapterCard";
-import { DailyGuidanceCard } from "@/components/cosmic/DailyGuidanceCard";
-import { PredictiveSnapshotCard } from "@/components/cosmic/PredictiveSnapshotCard";
-import { Badge } from "@/components/ui/badge";
+import { useNatalChart, useDailyGuidance } from "@/lib/cosmic/v2-hooks";
+import { DailyOverviewCard } from "@/components/cosmic/DailyOverviewCard";
+import { MoonCycleCard } from "@/components/cosmic/MoonCycleCard";
+import { CurrentTransitsTable } from "@/components/cosmic/CurrentTransitsTable";
+import { JournalWithTheSkyCard } from "@/components/cosmic/JournalWithTheSkyCard";
+import { CosmicTimelineTabs } from "@/components/cosmic/CosmicTimelineTabs";
+import { PredictiveSnapshotList } from "@/components/cosmic/PredictiveSnapshotList";
+import { PersonalGuidanceGrid } from "@/components/cosmic/PersonalGuidanceGrid";
+import { SuggestedCareflowActions } from "@/components/cosmic/SuggestedCareflowActions";
+import { AdvancedAstrologyRow } from "@/components/cosmic/AdvancedAstrologyRow";
 
 export default function CosmicFlow() {
   const [date] = useState<Date>(new Date());
@@ -20,13 +22,13 @@ export default function CosmicFlow() {
     lat: row.birth_lat, lng: row.birth_lng, place: row.birth_place,
     house_system: "whole-sign",
   } : null);
-  const { chapter, loading: chapterLoading, refresh: refreshChapter } = useCurrentChapter(chart);
   const { data: daily, loading: dailyLoading, refresh: refreshDaily } = useDailyGuidance(chart, date);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-3 p-3 pb-28 sm:space-y-4 sm:p-6 sm:pb-6">
       <header className="flex items-center justify-between gap-2">
         <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">CareFlow</p>
           <h1 className="font-display text-xl sm:text-2xl flex items-center gap-1.5">
             Cosmic Flow <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           </h1>
@@ -42,13 +44,6 @@ export default function CosmicFlow() {
         </div>
       </header>
 
-      {chart && (
-        <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline" className="font-normal">Personalized</Badge>
-          Sun in {chart.planets.find(p => p.body === "Sun")?.sign} · Moon in {chart.planets.find(p => p.body === "Moon")?.sign}{chart.houses ? ` · ${chart.houses.ascendantSign} rising` : ""}
-        </p>
-      )}
-
       {!row && (
         <section className="cozy-card p-4 flex items-center justify-between gap-2">
           <div>
@@ -61,26 +56,26 @@ export default function CosmicFlow() {
 
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-          <ChapterCard chapter={chapter} loading={chapterLoading} onRefresh={() => refreshChapter(true)} compact />
-          <DailyGuidanceCard data={daily} loading={dailyLoading} onRefresh={refreshDaily} />
-          <PredictiveSnapshotCard chart={chart} />
+          <DailyOverviewCard date={date} />
+          <CurrentTransitsTable date={date} />
+          <CosmicTimelineTabs from={date} />
         </div>
 
         <div className="space-y-3 sm:space-y-4">
           <MoonCycleCard date={date} />
-          <ActiveTransitsList date={date} />
-          <UpcomingEventsList from={date} />
-          <section className="cozy-card p-4">
-            <h3 className="font-display text-sm mb-2">Explore</h3>
-            <div className="grid gap-1.5">
-              <Button asChild variant="ghost" size="sm" className="justify-start"><Link to="/cosmic-flow/chapter"><BookOpen className="h-3.5 w-3.5 mr-2" />Your Current Chapter</Link></Button>
-              <Button asChild variant="ghost" size="sm" className="justify-start"><Link to="/cosmic-flow/predictive"><TrendingUp className="h-3.5 w-3.5 mr-2" />Predictive view</Link></Button>
-              <Button asChild variant="ghost" size="sm" className="justify-start"><Link to="/cosmic-flow/calendar"><Calendar className="h-3.5 w-3.5 mr-2" />Astro calendar</Link></Button>
-              <Button asChild variant="ghost" size="sm" className="justify-start"><Link to="/cosmic-flow/timeline"><Sparkles className="h-3.5 w-3.5 mr-2" />Transit timeline</Link></Button>
-            </div>
-          </section>
+          <JournalWithTheSkyCard date={date} />
+          <PredictiveSnapshotList from={date} />
         </div>
       </div>
+
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <PersonalGuidanceGrid data={daily} loading={dailyLoading} onRefresh={refreshDaily} date={date} />
+        </div>
+        <SuggestedCareflowActions data={daily} />
+      </div>
+
+      <AdvancedAstrologyRow chart={chart} today={date} />
     </div>
   );
 }
