@@ -184,11 +184,13 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         notes: draft.notes,
         areas: state.areas,
         projects: state.projects,
+        recipients: state.recipients,
       });
       const next: Partial<Task> = {};
       if (guess.area && guess.area !== draft.area) next.area = guess.area as Task["area"];
       if (guess.projectId && guess.projectId !== draft.projectId) next.projectId = guess.projectId;
-      if (!next.area && !next.projectId) {
+      if (guess.recipientId && guess.recipientId !== draft.recipientId) next.recipientId = guess.recipientId;
+      if (!next.area && !next.projectId && !next.recipientId) {
         toast("No confident match — set them manually.");
         return;
       }
@@ -196,6 +198,10 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
       const bits: string[] = [];
       if (next.area) bits.push(`Area → ${next.area}`);
       if (guess.projectName && next.projectId) bits.push(`Project → ${guess.projectName}`);
+      if (next.recipientId) {
+        const r = state.recipients?.find(x => x.id === next.recipientId);
+        if (r) bits.push(`For → ${r.name}`);
+      }
       toast.success("Auto-detected", { description: bits.join(" · ") });
     } finally {
       setAutoBusy(false);
