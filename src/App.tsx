@@ -90,6 +90,10 @@ import CosmicFlow from "./pages/CosmicFlow";
 import CosmicFlowTimeline from "./pages/CosmicFlowTimeline";
 import CosmicFlowEventDetail from "./pages/CosmicFlowEventDetail";
 import CosmicFlowBirthChart from "./pages/CosmicFlowBirthChart";
+import CosmicChapter from "./pages/CosmicChapter";
+import CosmicNatal from "./pages/CosmicNatal";
+import CosmicPredictive from "./pages/CosmicPredictive";
+import CosmicCalendar from "./pages/CosmicCalendar";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { FloatingPomodoro } from "@/components/tasks/FloatingPomodoro";
 import { PomodoroToastsBridge } from "@/components/tasks/PomodoroTimer";
@@ -204,6 +208,10 @@ const App = () => (
                 <Route path="/cosmic-flow/timeline" element={<CosmicFlowTimeline />} />
                 <Route path="/cosmic-flow/event/:id" element={<CosmicFlowEventDetail />} />
                 <Route path="/cosmic-flow/birth-chart" element={<CosmicFlowBirthChart />} />
+                <Route path="/cosmic-flow/chapter" element={<CosmicChapter />} />
+                <Route path="/cosmic-flow/natal" element={<CosmicNatal />} />
+                <Route path="/cosmic-flow/predictive" element={<CosmicPredictive />} />
+                <Route path="/cosmic-flow/calendar" element={<CosmicCalendar />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
