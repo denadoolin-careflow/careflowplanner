@@ -10,6 +10,7 @@ import { LOCATIONS, LOCATION_META, seedInventory, type Location } from "@/lib/in
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
+import { EcosystemHealthCards } from "@/components/meals/EcosystemHealthCards";
 
 type View = "list" | "kanban";
 const KEY = "pantry.view";
@@ -52,9 +53,10 @@ export default function Pantry() {
 
   return (
     <div className="space-y-4">
+      <EcosystemHealthCards />
       <SectionCard
-        title="Inventory"
-        subtitle="Track what's in your fridge, freezer, pantry and cabinets — and what to restock on repeat."
+        title="Home Inventory"
+        subtitle="Know what you have, what you need, and what you can make."
         accent="warm"
         action={
           <div className="flex flex-wrap items-center gap-2">
