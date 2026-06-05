@@ -1,4 +1,4 @@
-import type { Area, AreaRecord, Project } from "./types";
+import type { Area, AreaRecord, CareRecipient, Project } from "./types";
 import { AREAS } from "./types";
 
 /** Aliases mirror nlp-task.ts so plain words also match an Area. */
@@ -21,6 +21,27 @@ const AREA_ALIASES: Record<string, Area> = {
   holiday: "Holidays & Birthdays", holidays: "Holidays & Birthdays", gift: "Holidays & Birthdays",
 };
 
+/** Verb / action lexicon — used as a weak signal when nothing stronger matched. */
+const VERB_AREA: Record<string, Area> = {
+  // Kids
+  bath: "Kids", bathe: "Kids", diaper: "Kids", pickup: "Kids", dropoff: "Kids",
+  homework: "Kids", playdate: "Kids", nap: "Kids", stroller: "Kids", bottle: "Kids",
+  // Caregiving
+  refill: "Caregiving", pharmacy: "Caregiving", meds: "Caregiving", medication: "Caregiving",
+  prescription: "Caregiving", checkup: "Caregiving", visit: "Caregiving",
+  // Meals
+  cook: "Meals", prep: "Meals", defrost: "Meals", marinate: "Meals", bake: "Meals",
+  snack: "Meals", brunch: "Meals",
+  // Money
+  transfer: "Money", deposit: "Money", refund: "Money", statement: "Money", reimburse: "Money",
+  // Appointments
+  therapy: "Appointments", vet: "Appointments",
+  // Holidays & Birthdays
+  card: "Holidays & Birthdays", wrap: "Holidays & Birthdays", party: "Holidays & Birthdays",
+  // Home
+  dishes: "Home", vacuum: "Home", mop: "Home", trash: "Home", mow: "Home", declutter: "Home",
+};
+
 function tokenize(s: string): string[] {
   return (s || "")
     .toLowerCase()
@@ -34,12 +55,14 @@ export interface DetectInput {
   notes?: string;
   areas?: AreaRecord[];
   projects?: Project[];
+  recipients?: CareRecipient[];
 }
 
 export interface DetectResult {
   area?: string;
   projectId?: string;
   projectName?: string;
+  recipientId?: string;
   matchedOn: string[];
 }
 
@@ -47,7 +70,7 @@ export interface DetectResult {
  * Infer an Area and Project from a task title + notes by matching project
  * names first (most specific), then area aliases / area names.
  */
-export function detectAreaAndProject({ title, notes, areas, projects }: DetectInput): DetectResult {
+export function detectAreaAndProject({ title, notes, areas, projects, recipients }: DetectInput): DetectResult {
   const haystack = `${title} ${notes ?? ""}`.toLowerCase();
   const tokens = new Set(tokenize(haystack));
   const result: DetectResult = { matchedOn: [] };
@@ -77,7 +100,31 @@ export function detectAreaAndProject({ title, notes, areas, projects }: DetectIn
     }
   }
 
-  // 2) Area — only set if not already pulled from a project.
+  // 2) Care recipient — match by first name. Maps recipient.kind → Area.
+  const KIND_AREA: Record<CareRecipient["kind"], Area> = {
+    child: "Kids",
+    elder: "Caregiving",
+    pet: "Caregiving",
+    partner: "Family",
+    self: "Personal",
+  };
+  for (const r of recipients ?? []) {
+    const full = (r.name || "").toLowerCase().trim();
+    if (!full) continue;
+    const first = full.split(/\s+/)[0];
+    if (first.length < 2) continue;
+    if (tokens.has(first) || (full.length >= 3 && haystack.includes(full))) {
+      result.recipientId = r.id;
+      result.matchedOn.push(`recipient:${r.name}`);
+      if (!result.area) {
+        const a = KIND_AREA[r.kind];
+        if (a) { result.area = a; result.matchedOn.push(`area-from-recipient:${a}`); }
+      }
+      break;
+    }
+  }
+
+  // 3) Area — only set if not already pulled from a project or recipient.
   if (!result.area) {
     // Custom user-defined area names first.
     for (const a of areas ?? []) {
@@ -104,6 +151,12 @@ export function detectAreaAndProject({ title, notes, areas, projects }: DetectIn
     for (const tok of tokens) {
       const a = AREA_ALIASES[tok];
       if (a) { result.area = a; result.matchedOn.push(`alias:${tok}→${a}`); break; }
+    }
+  }
+  if (!result.area) {
+    for (const tok of tokens) {
+      const a = VERB_AREA[tok];
+      if (a) { result.area = a; result.matchedOn.push(`verb:${tok}→${a}`); break; }
     }
   }
 
