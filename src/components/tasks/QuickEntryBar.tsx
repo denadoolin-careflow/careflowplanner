@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { Input } from "@/components/ui/input";
 import { Sparkles } from "lucide-react";
 import type { Task } from "@/lib/types";
@@ -27,14 +28,24 @@ export function QuickEntryBar({
     const projectId = p.projectName
       ? state.projects?.find(pr => pr.name.toLowerCase() === p.projectName!.toLowerCase())?.id
       : undefined;
+    // Fallback auto-detection when the user didn't tag an explicit @area / +project.
+    const guess = (!p.area || !projectId)
+      ? detectAreaAndProject({
+          title: p.title || raw,
+          areas: state.areas,
+          projects: state.projects,
+          recipients: state.recipients,
+        })
+      : { area: undefined, projectId: undefined, recipientId: undefined, matchedOn: [] as string[] };
     await addTask({
       title: p.title || raw,
       dueDate: p.dueDate ?? defaults?.dueDate,
-      area: (p.area as any) ?? defaults?.area,
+      area: (p.area as any) ?? (guess.area as any) ?? defaults?.area,
       energy: p.energy ?? defaults?.energy,
       tags: p.tags,
       estMinutes: p.estMinutes ?? defaults?.estMinutes,
-      projectId,
+      projectId: projectId ?? guess.projectId,
+      recipientId: guess.recipientId,
       ...(defaults?.status ? { status: defaults.status } : {}),
       ...(defaults?.inbox ? { inbox: defaults.inbox } : {}),
     });
