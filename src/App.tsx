@@ -21,6 +21,7 @@ import Habits from "./pages/Habits";
 import Meals from "./pages/Meals";
 import MealsLibrary from "./pages/MealsLibrary";
 import Pantry from "./pages/Pantry";
+import HomeGroceries from "./pages/HomeGroceries";
 import Caregiving from "./pages/Caregiving";
 import HomeReset from "./pages/HomeReset";
 import HomeHub from "./pages/HomeHub";
@@ -172,6 +173,7 @@ const App = () => (
                 <Route path="/caregiving" element={<Caregiving />} />
                 <Route path="/home-reset" element={<HomeHub />} />
                 <Route path="/home" element={<HomeHub />} />
+                <Route path="/home/groceries" element={<HomeGroceries />} />
                 <Route path="/health" element={<Health />} />
                 <Route path="/wealth" element={<WealthHub />} />
                 <Route path="/mental-load" element={<MentalLoad />} />

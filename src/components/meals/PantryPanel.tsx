@@ -276,7 +276,7 @@ export function PantryPanel({ location }: { location?: Location | "All" } = {}) 
             {activeItem ? (
               <div className="flex w-72 rotate-1 items-center gap-2 rounded-lg border border-primary/40 bg-background px-3 py-2 shadow-2xl">
                 <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="truncate text-sm font-medium">{activeItem.name}</span>
+                <span className="whitespace-normal break-words leading-snug text-sm font-medium">{activeItem.name}</span>
               </div>
             ) : null}
           </DragOverlay>
@@ -340,7 +340,7 @@ function SortablePantryItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group flex items-center gap-2 rounded-lg px-2 py-1 text-sm transition",
+        "group flex items-start gap-2 rounded-lg px-2 py-1 text-sm transition",
         isDragging
           ? "border border-dashed border-primary/40 bg-muted/40 opacity-40"
           : "hover:bg-muted/40",
@@ -351,13 +351,13 @@ function SortablePantryItem({
         {...attributes}
         {...listeners}
         aria-label="Drag handle"
-        className="touch-none -ml-1 grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded text-muted-foreground/60 opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100 active:cursor-grabbing"
+        className="touch-none -ml-1 mt-0.5 grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded text-muted-foreground/60 opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100 active:cursor-grabbing"
       >
         <GripVertical className="h-3.5 w-3.5" />
       </button>
-      <Checkbox checked={item.in_stock} onCheckedChange={onToggle} />
-      <span className={item.in_stock ? "" : "text-muted-foreground line-through"}>{item.name}</span>
-      <div className="ml-auto flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+      <Checkbox checked={item.in_stock} onCheckedChange={onToggle} className="mt-0.5" />
+      <span className={cn("min-w-0 flex-1 whitespace-normal break-words leading-snug", !item.in_stock && "text-muted-foreground line-through")}>{item.name}</span>
+      <div className="ml-auto flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
         <Select value={(item.category as PantryCategory) ?? "Other"} onValueChange={(v) => onChangeCategory(v as PantryCategory)}>
           <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>

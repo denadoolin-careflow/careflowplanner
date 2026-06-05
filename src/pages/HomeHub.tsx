@@ -15,7 +15,7 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Sparkles, ListChecks, Sprout, Wrench, BarChart3, Home as HomeIcon,
-  Pin, ArrowRight,
+  Pin, ArrowRight, ShoppingCart, Package,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/cards/SectionCard";
@@ -181,6 +181,44 @@ export default function HomeHub() {
 
       {tab === "dashboard" && (
         <>
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Link to="/home/groceries" className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-100/70 to-amber-50/50 p-4 ring-1 ring-emerald-200/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/70 text-emerald-700 ring-1 ring-white/60">
+                  <ShoppingCart className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/60">Groceries</p>
+                  <p className="font-display text-base font-semibold leading-tight">Shopping list</p>
+                </div>
+                <ArrowRight className="ml-auto h-4 w-4 text-emerald-700 transition group-hover:translate-x-0.5" />
+              </div>
+            </Link>
+            <Link to="/pantry" className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-100/70 to-amber-50/50 p-4 ring-1 ring-rose-200/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/70 text-rose-700 ring-1 ring-white/60">
+                  <Package className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/60">Inventory</p>
+                  <p className="font-display text-base font-semibold leading-tight">Home Inventory</p>
+                </div>
+                <ArrowRight className="ml-auto h-4 w-4 text-rose-700 transition group-hover:translate-x-0.5" />
+              </div>
+            </Link>
+            <Link to="/meals" className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-100/70 to-rose-50/40 p-4 ring-1 ring-violet-200/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/70 text-violet-700 ring-1 ring-white/60">
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/60">Meals</p>
+                  <p className="font-display text-base font-semibold leading-tight">Meal planner</p>
+                </div>
+                <ArrowRight className="ml-auto h-4 w-4 text-violet-700 transition group-hover:translate-x-0.5" />
+              </div>
+            </Link>
+          </section>
           <CustomizableGrid
             pageKey="home-hub"
             sectionTitle="Your widgets"
