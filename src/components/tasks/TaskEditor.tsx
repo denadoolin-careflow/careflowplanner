@@ -815,6 +815,13 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         </div>
       </DialogContent>
     </Dialog>
+    <PomodoroDialog
+      open={timerOpen}
+      onOpenChange={setTimerOpen}
+      title={draft.title}
+      subtitle={draft.estMinutes ? `Estimated ${draft.estMinutes} min` : undefined}
+    />
+    </>
   );
 }
 
