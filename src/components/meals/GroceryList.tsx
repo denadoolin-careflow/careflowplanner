@@ -179,7 +179,7 @@ export function GroceryList() {
           </div>
         ) : (
           <>
-            <span className={cn("min-w-0 flex-1 break-words", item.bought && "text-muted-foreground line-through")}>
+            <span className={cn("min-w-0 flex-1 whitespace-normal break-words leading-snug", item.bought && "text-muted-foreground line-through")}>
               {item.name}
               {item.qty && <span className="ml-1 text-[11px] text-muted-foreground">· {item.qty}</span>}
             </span>
