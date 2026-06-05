@@ -845,7 +845,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     addGrocery: async (name, category) => {
       if (!uid) return;
-      const { data } = await supabase.from("grocery_items").insert({ user_id: uid, name, category }).select().single();
+      const { categorizeGroceryItem } = await import("./grocery-categorize");
+      const finalCategory = category && category.trim() ? category : categorizeGroceryItem(name);
+      const { data } = await supabase.from("grocery_items").insert({ user_id: uid, name, category: finalCategory }).select().single();
       if (data) setState(s => ({ ...s, grocery: [groceryFrom(data), ...s.grocery] }));
     },
     toggleGrocery: async (id) => {
