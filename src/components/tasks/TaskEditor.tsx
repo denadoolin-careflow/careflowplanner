@@ -253,6 +253,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex max-h-[92vh] w-[min(96vw,60rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-h-[88vh]"
