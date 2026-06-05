@@ -2,8 +2,8 @@
  * Astro calendar — month view of moon phases, ingresses, retrogrades,
  * VoC moon, solstices/equinoxes, cross-quarter shifts.
  */
-import { bodySign, bodyLongitude, type ExtPlanet } from "./bodies";
-import { isRetrograde, isIngressDay, isVoidOfCourse, planetSign, type Planet } from "@/lib/transits";
+import { bodySign, bodyLongitude, bodyRetrograde, type ExtPlanet } from "./bodies";
+import { isIngressDay, isVoidOfCourse, planetSign, type Planet } from "@/lib/transits";
 
 export type AstroEventKind =
   | "new-moon" | "first-quarter" | "full-moon" | "last-quarter"
@@ -37,9 +37,7 @@ export function buildMonthEvents(year: number, month0: number): AstroEvent[] {
   let prevRetro: Record<string, boolean> = {};
   for (const p of [...PLANETS_OUT, ...PLANETS_EXT]) {
     prevSign[p] = bodySign(p as ExtPlanet, new Date(year, month0, 1)) as string;
-    prevRetro[p] = PLANETS_OUT.includes(p as Planet)
-      ? isRetrograde(p as Planet, new Date(year, month0, 1))
-      : false;
+    prevRetro[p] = bodyRetrograde(p as ExtPlanet, new Date(year, month0, 1));
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
