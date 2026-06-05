@@ -5,17 +5,43 @@ import { useGroceryPrefs } from "@/lib/grocery-prefs";
 import { RETAILER_LABEL, retailerSearchUrl } from "@/lib/retailer-links";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
-import { ArrowLeft, ExternalLink, ShoppingCart } from "lucide-react";
+import { ArrowLeft, ExternalLink, ShoppingCart, Sparkles } from "lucide-react";
+import { applySmartGroceryFill } from "@/lib/smart-grocery";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export default function HomeGroceries() {
   const { prefs, loading } = useGroceryPrefs();
-  const { state } = useStore();
+  const { state, user, reloadAll } = useStore();
+  const [filling, setFilling] = useState(false);
   const unbought = state.grocery.filter(g => !g.bought);
 
   const openInStore = () => {
     if (!unbought.length) return;
     const url = retailerSearchUrl(prefs.preferred_store, unbought.map(i => i.name));
     window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const onSmartFill = async () => {
+    if (!user) return;
+    setFilling(true);
+    try {
+      const r = await applySmartGroceryFill(user.id);
+      if (r.inserted === 0) {
+        toast.info("Nothing new to add — pantry, meal plan, and recurring items are covered.");
+      } else {
+        const parts: string[] = [];
+        if (r.bySource.low_stock) parts.push(`${r.bySource.low_stock} low-stock`);
+        if (r.bySource.meal_plan) parts.push(`${r.bySource.meal_plan} from meal plan`);
+        if (r.bySource.recurring) parts.push(`${r.bySource.recurring} recurring`);
+        toast.success(`Added ${r.inserted} item${r.inserted === 1 ? "" : "s"}${parts.length ? " · " + parts.join(", ") : ""}.`);
+        await reloadAll();
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't auto-fill list.");
+    } finally {
+      setFilling(false);
+    }
   };
 
   return (
@@ -39,6 +65,15 @@ export default function HomeGroceries() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={onSmartFill}
+              disabled={filling || !user}
+              variant="outline"
+              className="rounded-full"
+            >
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+              {filling ? "Filling…" : "Smart fill"}
+            </Button>
             <Button
               onClick={openInStore}
               disabled={loading || !unbought.length}
