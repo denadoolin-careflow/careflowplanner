@@ -57,7 +57,7 @@ const TITLE_VERB: Record<AspectKind, string> = {
 /** Per pair-and-aspect meaning copy. Falls back to a generic warm line. */
 function copyFor(a: Planet, b: Planet, aspect: AspectKind): { meaning: string; affects: string; action: string } {
   const pair = [a, b].sort().join("-");
-  const map: Record<string, Record<AspectKind, { meaning: string; affects: string; action: string } | undefined>> = {
+  const map: Record<string, Partial<Record<AspectKind, { meaning: string; affects: string; action: string }>>> = {
     "Jupiter-Venus": {
       trine: { meaning: "Expansion through relationships and creativity.", affects: "Partnerships, Creativity", action: "Reach out" },
       conjunction: { meaning: "A generous, lucky window for connection.", affects: "Love, Money", action: "Say yes" },
