@@ -988,3 +988,101 @@ function Row({ label, value, swatch }: { label: string; value: React.ReactNode; 
     </div>
   );
 }
+
+/* ─────────── time-of-day & project pills ─────────── */
+
+const TIME_OF_DAY: Array<{ key: "morning" | "afternoon" | "evening" | "night"; label: string; time: string; icon: React.ComponentType<{ className?: string }> }> = [
+  { key: "morning", label: "Morning", time: "09:00", icon: Sunrise },
+  { key: "afternoon", label: "Afternoon", time: "13:00", icon: Sun },
+  { key: "evening", label: "Evening", time: "18:00", icon: Sunset },
+  { key: "night", label: "Night", time: "21:00", icon: Moon },
+];
+
+function bucketForTime(t?: string): typeof TIME_OF_DAY[number] | null {
+  if (!t) return null;
+  const h = parseInt(t.slice(0, 2), 10);
+  if (Number.isNaN(h)) return null;
+  if (h < 12) return TIME_OF_DAY[0];
+  if (h < 17) return TIME_OF_DAY[1];
+  if (h < 21) return TIME_OF_DAY[2];
+  return TIME_OF_DAY[3];
+}
+
+function TimeOfDayPill({
+  startTime, onSelect, onClear,
+}: {
+  startTime?: string;
+  onSelect: (time: string) => void;
+  onClear: () => void;
+}) {
+  const bucket = bucketForTime(startTime);
+  const Icon = bucket?.icon ?? Sun;
+  return (
+    <PillPopover
+      icon={<Icon className="h-3.5 w-3.5" />}
+      label={bucket?.label ?? "Time of day"}
+      active={!!bucket}
+      onClear={bucket ? onClear : undefined}
+    >
+      <div className="w-44 p-1">
+        {TIME_OF_DAY.map(t => {
+          const TIcon = t.icon;
+          const active = bucket?.key === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => onSelect(t.time)}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                active && "bg-muted"
+              )}
+            >
+              <TIcon className="h-3.5 w-3.5 text-primary/80" />
+              <span className="flex-1 text-left">{t.label}</span>
+              <span className="text-[11px] text-muted-foreground">{t.time}</span>
+            </button>
+          );
+        })}
+      </div>
+    </PillPopover>
+  );
+}
+
+function ProjectPill({
+  value, projects, onSelect, onClear,
+}: {
+  value?: string;
+  projects: Array<{ id: string; name: string }>;
+  onSelect: (id: string) => void;
+  onClear: () => void;
+}) {
+  const current = projects.find(p => p.id === value);
+  return (
+    <PillPopover
+      icon={<FolderKanban className="h-3.5 w-3.5" />}
+      label={current?.name ?? "Project"}
+      active={!!current}
+      onClear={current ? onClear : undefined}
+    >
+      <div className="w-56 max-h-72 overflow-y-auto p-1">
+        {projects.length === 0 ? (
+          <div className="px-2 py-2 text-xs text-muted-foreground">No projects yet.</div>
+        ) : projects.map(p => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => onSelect(p.id)}
+            className={cn(
+              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+              value === p.id && "bg-muted"
+            )}
+          >
+            <FolderKanban className="h-3.5 w-3.5 text-primary/70" />
+            <span className="truncate">{p.name}</span>
+          </button>
+        ))}
+      </div>
+    </PillPopover>
+  );
+}
