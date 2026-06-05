@@ -210,9 +210,7 @@ export async function fetchTransitInterpretation(eventId: string, payload: any) 
     growth: (ai as any).growth ?? "",
     careflow: (ai as any).careflow ?? { tasks: [], habits: [], routines: [], journaling: [] },
   };
-  // `action` is not a column — strip from upsert payload but keep on returned row.
-  const { action: _action, ...persist } = row as any;
-  await (supabase as any).from("cosmic_transit_interpretations").upsert(persist, { onConflict: "user_id,event_id" });
+  await (supabase as any).from("cosmic_transit_interpretations").upsert(row, { onConflict: "user_id,event_id" });
   return row;
 }
 
