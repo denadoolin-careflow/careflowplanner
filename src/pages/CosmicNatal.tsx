@@ -6,11 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { useBirthChart } from "@/lib/cosmic/hooks";
 import { useNatalChart } from "@/lib/cosmic/v2-hooks";
 import { NatalWheel } from "@/components/cosmic/NatalWheel";
+import { PlacementDetailDialog } from "@/components/cosmic/PlacementDetailDialog";
+import { RetrogradeBadge } from "@/components/cosmic/RetrogradeBadge";
+import type { NatalPlanet } from "@/lib/cosmic/chart";
 
 export default function CosmicNatal() {
   const { row } = useBirthChart();
   const chart = useNatalChart(row ? { date: row.birth_date, time: row.birth_time, tz: row.birth_tz, lat: row.birth_lat, lng: row.birth_lng, place: row.birth_place, house_system: "whole-sign" } : null);
-  const [selected, setSelected] = useState<{ kind: string; id: string } | null>(null);
+  const [selected, setSelected] = useState<NatalPlanet | null>(null);
+  const [open, setOpen] = useState(false);
 
   if (!row) {
     return (
@@ -32,10 +36,11 @@ export default function CosmicNatal() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <section className="cozy-card p-4">
-          <NatalWheel chart={chart} onSelect={(kind, id) => setSelected({ kind, id })} />
-          {selected && (
-            <p className="mt-2 text-center text-xs text-muted-foreground">Selected: {selected.kind} — {selected.id}</p>
-          )}
+          <NatalWheel
+            chart={chart}
+            onSelectPlanet={(p) => { setSelected(p); setOpen(true); }}
+          />
+          <p className="mt-2 text-center text-[11px] text-muted-foreground">Tap a planet to learn more.</p>
         </section>
 
         <section className="space-y-3">
@@ -68,7 +73,7 @@ export default function CosmicNatal() {
                 {chart.planets.map(p => (
                   <tr key={p.body} className="border-b border-border/40 last:border-0">
                     <td className="py-1 w-6">{p.glyph}</td>
-                    <td className="py-1">{p.body}</td>
+                    <td className="py-1 flex items-center gap-1.5">{p.body}{p.retrograde && <RetrogradeBadge />}</td>
                     <td className="py-1 text-right">{Math.floor(p.degreeInSign)}° {p.sign}</td>
                     <td className="py-1 text-right text-muted-foreground">{p.house ? `H${p.house}` : ""}</td>
                   </tr>
@@ -101,6 +106,7 @@ export default function CosmicNatal() {
           ))}
         </div>
       </section>
+      <PlacementDetailDialog chart={chart} planet={selected} open={open} onOpenChange={setOpen} />
     </div>
   );
 }
