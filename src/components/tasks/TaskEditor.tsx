@@ -251,18 +251,47 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex max-h-[90vh] w-[min(94vw,40rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-h-[85vh]"
+        className="flex max-h-[92vh] w-[min(96vw,60rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-h-[88vh]"
       >
         {/* Sticky header */}
         <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-primary" />
-            <DialogTitle className="font-display text-base font-semibold">Edit task</DialogTitle>
+          <div className="flex items-center gap-2.5">
+            <Checkbox
+              checked={draft.done}
+              onCheckedChange={() => toggleTask(draft.id)}
+              className="h-5 w-5 shrink-0"
+              aria-label="Mark complete"
+            />
+            <LucideIconPicker
+              value={draft.icon?.startsWith("lc:") ? draft.icon : undefined}
+              onChange={v => set("icon", v)}
+              fallbackIcon={inferTaskIcon(draft.title, draft.notes)}
+            />
+            <Input
+              value={draft.title}
+              onChange={e => set("title", e.target.value)}
+              onBlur={() => { if (nlpOn && parsed && parsed.chips.length) applyNlp(); }}
+              placeholder="Task title"
+              className="h-10 flex-1 border-0 bg-transparent px-0 text-[17px] font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn("h-8 w-8 shrink-0", draft.isTopThree ? "text-amber-500" : "text-muted-foreground hover:text-foreground")}
+              onClick={() => set("isTopThree", !draft.isTopThree)}
+              aria-label="Favorite / Top three"
+              title="Top three today"
+            >
+              <Star className={cn("h-4 w-4", draft.isTopThree && "fill-current")} />
+            </Button>
+            <div className="mx-1 hidden h-5 w-px bg-border/60 sm:block" />
+            <DialogTitle className="sr-only">Edit task</DialogTitle>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="ml-auto gap-1.5 text-muted-foreground hover:text-foreground"
+              className="hidden gap-1.5 text-muted-foreground hover:text-foreground sm:inline-flex"
               onClick={async () => {
                 const proj = state.projects?.find(p => p.id === draft.projectId);
                 const subs = (state.tasks ?? []).filter(t => t.parentTaskId === draft.id);
@@ -277,414 +306,431 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             >
               <Copy className="h-3.5 w-3.5" /> Copy
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="hidden gap-1.5 text-muted-foreground hover:text-foreground sm:inline-flex"
+              onClick={async () => {
+                await addTask({
+                  title: draft.title,
+                  notes: draft.notes,
+                  area: draft.area,
+                  projectId: draft.projectId,
+                  priority: draft.priority,
+                  tags: draft.tags,
+                  dueDate: draft.dueDate,
+                  estMinutes: draft.estMinutes,
+                  energy: draft.energy,
+                } as any);
+                toast.success("Duplicated");
+              }}
+            >
+              <FileText className="h-3.5 w-3.5" /> Duplicate
+            </Button>
           </div>
+
+          {/* Quick details bar — pills */}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <PillPopover
+              icon={<CalendarIcon className="h-3.5 w-3.5" />}
+              label={draft.dueDate ? format(parseISO(draft.dueDate), "EEE, MMM d") : "Today"}
+              active={!!draft.dueDate}
+              onClear={draft.dueDate ? () => set("dueDate", undefined) : undefined}
+            >
+              <Calendar
+                mode="single"
+                selected={draft.dueDate ? parseISO(draft.dueDate) : undefined}
+                onSelect={(d) => set("dueDate", d ? format(d, "yyyy-MM-dd") : undefined)}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PillPopover>
+
+            <PillPopover
+              icon={<Clock className="h-3.5 w-3.5" />}
+              label={draft.startTime ? draft.startTime : "No time"}
+              active={!!draft.startTime}
+              onClear={draft.startTime ? () => set("startTime", undefined) : undefined}
+            >
+              <div className="space-y-2 p-3">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Start time</Label>
+                <Input
+                  type="time"
+                  value={draft.startTime ?? ""}
+                  onChange={(e) => set("startTime", e.target.value || undefined)}
+                />
+                <Label className="pt-1 text-[11px] uppercase tracking-wider text-muted-foreground">End time</Label>
+                <Input
+                  type="time"
+                  value={draft.endTime ?? ""}
+                  onChange={(e) => set("endTime", e.target.value || undefined)}
+                />
+              </div>
+            </PillPopover>
+
+            <PillPopover
+              icon={<Flag className={cn("h-3.5 w-3.5", PRIORITY_TONE[draft.priority ?? "medium"])} />}
+              label={(draft.priority ?? "medium").replace(/^\w/, c => c.toUpperCase())}
+              active={!!draft.priority}
+            >
+              <div className="w-44 p-1">
+                {(["low", "medium", "high"] as Priority[]).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => set("priority", p)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                      draft.priority === p && "bg-muted"
+                    )}
+                  >
+                    <Flag className={cn("h-3.5 w-3.5", PRIORITY_TONE[p])} />
+                    <span className="capitalize">{p}</span>
+                  </button>
+                ))}
+              </div>
+            </PillPopover>
+
+            <PillPopover
+              icon={<Repeat className="h-3.5 w-3.5" />}
+              label={draft.recurrenceType && draft.recurrenceType !== "none"
+                ? `Repeats ${draft.recurrenceType}`
+                : "No repeat"}
+              active={!!draft.recurrenceType && draft.recurrenceType !== "none"}
+              onClear={draft.recurrenceType && draft.recurrenceType !== "none" ? () => set("recurrenceType", "none" as RecurrenceType) : undefined}
+            >
+              <div className="w-44 p-1">
+                {(["none", "daily", "weekly", "monthly"] as const).map(r => (
+                  <button
+                    key={r}
+                    onClick={() => set("recurrenceType", r as RecurrenceType)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm capitalize hover:bg-muted",
+                      (draft.recurrenceType ?? "none") === r && "bg-muted"
+                    )}
+                  >
+                    <Repeat className="h-3.5 w-3.5" />
+                    {r === "none" ? "Doesn't repeat" : r}
+                  </button>
+                ))}
+              </div>
+            </PillPopover>
+
+            <PillPopover
+              icon={<Timer className="h-3.5 w-3.5" />}
+              label={draft.estMinutes ? `${draft.estMinutes} min` : "Estimate"}
+              active={!!draft.estMinutes}
+              onClear={draft.estMinutes ? () => set("estMinutes", undefined) : undefined}
+            >
+              <div className="w-52 space-y-2 p-3">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Estimated minutes</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="—"
+                  value={draft.estMinutes ?? ""}
+                  onChange={e => set("estMinutes", e.target.value ? Number(e.target.value) : undefined)}
+                />
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {[5, 15, 30, 45, 60, 90].map(n => (
+                    <button key={n} type="button" onClick={() => set("estMinutes", n)}
+                      className="rounded-full border border-border/60 px-2 py-0.5 text-[11px] hover:bg-muted">
+                      {n}m
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </PillPopover>
+
+            <PillPopover
+              icon={<Tag className="h-3.5 w-3.5" />}
+              label={draft.area ?? "Area"}
+              active={!!draft.area}
+            >
+              <div className="w-44 p-1">
+                {AREAS.map(a => (
+                  <button
+                    key={a}
+                    onClick={() => set("area", a as any)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                      draft.area === a && "bg-muted"
+                    )}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </PillPopover>
+          </div>
+
+          {/* NLP chips inline */}
+          {nlpOn && parsed && parsed.chips.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <Sparkles className="h-3 w-3 text-primary" />
+              {parsed.chips.map((c, i) => (
+                <span key={i} className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">{c.label}</span>
+              ))}
+              <button type="button" onClick={applyNlp}
+                className="ml-1 rounded-full border border-border/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted">
+                Apply
+              </button>
+              <button type="button" onClick={toggleNlp}
+                className="ml-auto text-[10px] text-muted-foreground hover:text-foreground">NLP off</button>
+            </div>
+          )}
         </DialogHeader>
 
         {/* Scrollable body */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
-          <div className="space-y-5">
-            {/* Title — big and prominent */}
-            <div className="flex items-center gap-2">
-              <LucideIconPicker
-                value={draft.icon?.startsWith("lc:") ? draft.icon : undefined}
-                onChange={v => set("icon", v)}
-                fallbackIcon={inferTaskIcon(draft.title, draft.notes)}
-              />
-              <Input
-                value={draft.title}
-                onChange={e => set("title", e.target.value)}
-                onBlur={() => { if (nlpOn && parsed && parsed.chips.length) applyNlp(); }}
-                placeholder="Task title"
-                className="h-11 flex-1 border-0 bg-transparent px-0 text-lg font-medium shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
-
-            {/* NLP row */}
-            <div className="-mt-2 flex flex-wrap items-center gap-1.5 pl-9">
-              <button
-                type="button"
-                onClick={toggleNlp}
-                title={nlpOn ? "NLP on — click to disable" : "NLP off — click to enable"}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] transition-colors",
-                  nlpOn
-                    ? "border-primary/30 bg-primary/10 text-primary"
-                    : "border-border/60 text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <Sparkles className="h-3 w-3" /> NLP {nlpOn ? "on" : "off"}
-              </button>
-              {parsed && parsed.chips.length > 0 && (
-                <>
-                  {parsed.chips.map((c, i) => (
-                    <span key={i} className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
-                      {c.label}
-                    </span>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={applyNlp}
-                    className="ml-1 inline-flex items-center rounded-full border border-border/60 px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
-                  >
-                    Apply
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Notes */}
-            <div className="min-w-0 space-y-1">
-              <button
-                type="button"
-                onClick={() => setNotesExpanded(v => !v)}
-                className="flex w-full items-center justify-between gap-2 rounded-lg py-1 transition hover:bg-muted/40"
-              >
-                <Label className="flex cursor-pointer items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
-                  <AlignLeft className="h-3 w-3" />
-                  Notes
-                  {draft.notes && draft.notes.trim().length > 0 && (
-                    <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-px text-[10px] text-primary">
-                      {draft.notes.trim().split(/\s+/).filter(Boolean).length} words
-                    </span>
-                  )}
-                </Label>
-                <div className="flex items-center gap-1">
-                  <NoteAIButton
-                    title={draft.title}
-                    body={draft.notes ?? ""}
-                    onApply={(next) => set("notes", next)}
-                  />
-                  {notesExpanded ? (
-                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                  )}
-                </div>
-              </button>
-              {notesExpanded && (
-                <div className="rounded-xl border border-border/60 bg-background/40 p-2">
-                  <BlockEditor
-                    body={draft.notes ?? ""}
-                    onChange={(markdown) => set("notes", markdown)}
-                    placeholder="Anything to remember… press / for blocks"
-                    showFooter={false}
-                    minHeight="min-h-[80px]"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Tags */}
-            <Field icon={Tag} label="Tags">
-              <TagPicker
-                value={draft.tags ?? []}
-                onChange={(next) => set("tags", next)}
-              />
-            </Field>
-
-            {/* Subtasks */}
-            <Section title={undefined}>
-              <div className="flex items-center justify-between gap-2 pb-1">
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
-                  <ListTree className="h-3 w-3" /> Subtasks
-                  {realSubtasks.length > 0 && (
-                    <span className="ml-1 rounded-full bg-muted px-1.5 py-px text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
-                      {realSubtasks.filter(s => s.done).length}/{realSubtasks.length}
-                    </span>
-                  )}
-                </div>
-                <SubtaskAddMenu
-                  size="md"
-                  onAddManual={() => setAddingSub(true)}
-                  onAddWithAI={generateSubtasksAI}
-                  aiLoading={subAiLoading}
-                />
-              </div>
-              <div className="mb-1 flex items-center justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 gap-1.5 px-2 text-[11px] text-muted-foreground hover:text-foreground"
-                  onClick={async () => {
-                    const name = window.prompt("Section name (e.g. Prep, Cook, Cleanup)");
-                    const trimmed = name?.trim();
-                    if (!trimmed) return;
-                    await addTask({ title: `## ${trimmed}`, area: draft.area, parentTaskId: draft.id, projectId: draft.projectId });
-                  }}
-                >
-                  <FolderTree className="h-3 w-3" /> Add section
-                </Button>
-              </div>
-              <div className="space-y-1">
-                {subtasks.map(s => {
-                  const sectionMatch = s.title.match(/^##\s+(.+)$/);
-                  if (sectionMatch) {
-                    return (
-                      <div
-                        key={s.id}
-                        className="group mt-2 flex items-center gap-2 border-b border-border/50 pb-1 pl-1 pt-1 first:mt-0"
-                      >
-                        <FolderTree className="h-3 w-3 shrink-0 text-primary/70" />
-                        <span className="flex-1 truncate text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/70">
-                          {sectionMatch[1]}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                          onClick={() => deleteTask(s.id)}
-                          aria-label="Delete section"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div key={s.id} className="group ml-1 flex items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2 py-1.5">
-                      <Checkbox checked={s.done} onCheckedChange={() => toggleTask(s.id)} />
-                      <span className={cn("flex-1 truncate text-sm", s.done && "text-muted-foreground line-through")}>{s.title}</span>
+          <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
+            {/* ─────────── Left column: work surface ─────────── */}
+            <div className="space-y-4">
+              {/* Checklist */}
+              <Card>
+                <CardHeader
+                  icon={<ListChecks className="h-3.5 w-3.5" />}
+                  title="Checklist"
+                  count={realSubtasks.length > 0 ? `${realSubtasks.filter(s => s.done).length}/${realSubtasks.length}` : undefined}
+                  right={
+                    <div className="flex items-center gap-1">
                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                        onClick={() => deleteTask(s.id)}
-                        aria-label="Delete subtask"
+                        type="button" size="sm" variant="ghost"
+                        className="h-7 gap-1 px-2 text-[11px] text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={generateSubtasksAI}
+                        disabled={subAiLoading || !draft.title.trim()}
                       >
-                        <X className="h-3.5 w-3.5" />
+                        <Sparkles className="h-3 w-3" /> {subAiLoading ? "Thinking…" : "AI: Break into steps"}
                       </Button>
+                      <SubtaskAddMenu
+                        size="sm"
+                        onAddManual={() => setAddingSub(true)}
+                        onAddWithAI={generateSubtasksAI}
+                        aiLoading={subAiLoading}
+                      />
                     </div>
-                  );
-                })}
-                {addingSub && (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      autoFocus
-                      value={subDraft}
-                      onChange={(e) => setSubDraft(e.target.value)}
-                      placeholder="Subtask…"
-                      className="h-8 text-sm"
-                      onBlur={() => { if (!subDraft.trim()) setAddingSub(false); }}
-                      onKeyDown={async (e) => {
-                        if (e.key === "Enter" && subDraft.trim()) {
-                          await addSubtaskNow(subDraft);
-                        } else if (e.key === "Escape") {
-                          setSubDraft("");
-                          setAddingSub(false);
+                  }
+                >
+                  <div className="space-y-1">
+                    {subtasks.map(s => {
+                      const sectionMatch = s.title.match(/^##\s+(.+)$/);
+                      if (sectionMatch) {
+                        return (
+                          <div key={s.id} className="group mt-2 flex items-center gap-2 border-b border-border/50 pb-1 pl-1 pt-1 first:mt-0">
+                            <FolderTree className="h-3 w-3 shrink-0 text-primary/70" />
+                            <span className="flex-1 truncate text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/70">
+                              {sectionMatch[1]}
+                            </span>
+                            <Button variant="ghost" size="icon"
+                              className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                              onClick={() => deleteTask(s.id)} aria-label="Delete section">
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={s.id} className="group flex items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2 py-1.5">
+                          <Checkbox checked={s.done} onCheckedChange={() => toggleTask(s.id)} />
+                          <span className={cn("flex-1 truncate text-sm", s.done && "text-muted-foreground line-through")}>{s.title}</span>
+                          <Button variant="ghost" size="icon"
+                            className="h-6 w-6 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                            onClick={() => deleteTask(s.id)} aria-label="Delete subtask">
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                    {addingSub && (
+                      <Input
+                        autoFocus value={subDraft}
+                        onChange={(e) => setSubDraft(e.target.value)}
+                        placeholder="Step…"
+                        className="h-8 text-sm"
+                        onBlur={() => { if (!subDraft.trim()) setAddingSub(false); }}
+                        onKeyDown={async (e) => {
+                          if (e.key === "Enter" && subDraft.trim()) { await addSubtaskNow(subDraft); }
+                          else if (e.key === "Escape") { setSubDraft(""); setAddingSub(false); }
+                        }}
+                      />
+                    )}
+                    {!addingSub && (
+                      <button type="button" onClick={() => setAddingSub(true)}
+                        className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border/60 px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted/30 hover:text-foreground">
+                        <ListTree className="h-3.5 w-3.5" /> Add step
+                      </button>
+                    )}
+                  </div>
+                </CardHeader>
+              </Card>
+
+              {/* Notes — always visible */}
+              <Card>
+                <CardHeader
+                  icon={<AlignLeft className="h-3.5 w-3.5" />}
+                  title="Notes"
+                  count={draft.notes && draft.notes.trim().length > 0
+                    ? `${draft.notes.trim().split(/\s+/).filter(Boolean).length} words` : undefined}
+                  right={<NoteAIButton title={draft.title} body={draft.notes ?? ""} onApply={(next) => set("notes", next)} />}
+                >
+                  <div className="rounded-lg border border-border/40 bg-background/30 p-2">
+                    <BlockEditor
+                      body={draft.notes ?? ""}
+                      onChange={(markdown) => set("notes", markdown)}
+                      placeholder="Capture thoughts, links, and context…"
+                      showFooter={false}
+                      minHeight="min-h-[100px]"
+                    />
+                  </div>
+                </CardHeader>
+              </Card>
+
+              {/* Attachments & Links */}
+              <Card>
+                <CardHeader icon={<Paperclip className="h-3.5 w-3.5" />} title="Attachments & Links">
+                  <AttachmentsField
+                    scope="task"
+                    ownerId={draft.id}
+                    value={draft.attachments}
+                    onChange={(next) => {
+                      set("attachments", next);
+                      void updateTask(draft.id, { attachments: next });
+                    }}
+                  />
+                  <div className="mt-3 border-t border-border/40 pt-3">
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Linked notes</p>
+                    <LinkedNotesPanel entityType="task" entityId={draft.id} contextTitle={draft.title} compact />
+                  </div>
+                </CardHeader>
+              </Card>
+
+              {/* Activity — collapsible */}
+              <Collapsible>
+                <Card>
+                  <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left">
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      <History className="h-3.5 w-3.5" /> Activity
+                    </span>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-t border-border/40 px-3 py-2.5">
+                    <ul className="space-y-1.5 text-xs text-muted-foreground">
+                      {(draft as any).createdAt && (
+                        <li className="flex items-center justify-between gap-2"><span>Created</span><span>{format(new Date((draft as any).createdAt), "MMM d, yyyy · p")}</span></li>
+                      )}
+                      {(draft as any).updatedAt && (
+                        <li className="flex items-center justify-between gap-2"><span>Last modified</span><span>{format(new Date((draft as any).updatedAt), "MMM d, yyyy · p")}</span></li>
+                      )}
+                      {draft.done && (
+                        <li className="flex items-center justify-between gap-2"><span>Completed</span><span>{(draft as any).completedAt ? format(new Date((draft as any).completedAt), "MMM d, yyyy · p") : "Today"}</span></li>
+                      )}
+                      {!(draft as any).createdAt && !(draft as any).updatedAt && (
+                        <li className="italic">No activity recorded yet.</li>
+                      )}
+                    </ul>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+            </div>
+
+            {/* ─────────── Right column: context & assist ─────────── */}
+            <div className="space-y-4">
+              <FlowContextCard draft={draft} set={set} />
+
+              {/* AI Assistant card */}
+              <Card>
+                <CardHeader icon={<Sparkles className="h-3.5 w-3.5 text-primary" />} title="AI Assistant">
+                  <p className="-mt-1 mb-2 text-[11px] text-muted-foreground">Let AI help you refine and organize.</p>
+                  <div className="space-y-1.5">
+                    <AIQuickAction
+                      icon={<ListChecks className="h-3.5 w-3.5" />}
+                      label="Break into steps"
+                      busy={subAiLoading}
+                      onClick={generateSubtasksAI}
+                    />
+                    <AIQuickAction
+                      icon={<Hash className="h-3.5 w-3.5" />}
+                      label="Auto-detect area & project"
+                      busy={autoBusy}
+                      onClick={runAutoDetect}
+                    />
+                    <AIQuickAction
+                      icon={<Tag className="h-3.5 w-3.5" />}
+                      label="Suggest tags"
+                      onClick={() => {
+                        if (parsed?.tags?.length) {
+                          const merged = Array.from(new Set([...(draft.tags ?? []), ...parsed.tags]));
+                          set("tags", merged);
+                          toast.success(`Added ${parsed.tags.length} tag${parsed.tags.length === 1 ? "" : "s"}`);
+                        } else {
+                          toast("No obvious tags — try editing the title.");
                         }
                       }}
                     />
-                  </div>
-                )}
-                {!addingSub && subtasks.length === 0 && (
-                  <p className="text-xs text-muted-foreground">No subtasks yet — break this down with the + menu.</p>
-                )}
-              </div>
-            </Section>
-
-            {/* Schedule */}
-            <Section title="Schedule">
-              <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
-                <Field icon={CalendarIcon} label="Due date">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start gap-2 px-3 font-normal",
-                          !draft.dueDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="h-4 w-4 shrink-0 opacity-60" />
-                        <span className="flex-1 truncate text-left">
-                          {draft.dueDate ? format(parseISO(draft.dueDate), "MMM d, yyyy") : "Pick a date"}
-                        </span>
-                        {draft.dueDate && (
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            aria-label="Clear date"
-                            onClick={(e) => { e.stopPropagation(); set("dueDate", undefined); }}
-                            onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); set("dueDate", undefined); } }}
-                            className="rounded p-0.5 opacity-60 hover:opacity-100"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="z-[60] w-auto p-0"
-                      align="start"
-                      collisionPadding={12}
-                    >
-                      <Calendar
-                        mode="single"
-                        selected={draft.dueDate ? parseISO(draft.dueDate) : undefined}
-                        onSelect={(d) => set("dueDate", d ? format(d, "yyyy-MM-dd") : undefined)}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </Field>
-                <Field icon={CalendarIcon} label="Start date">
-                  <Input
-                    type="date"
-                    value={draft.startDate ?? ""}
-                    onChange={(e) => set("startDate", e.target.value || undefined)}
-                  />
-                </Field>
-                <Field icon={Clock} label="Start time">
-                  <Input
-                    type="time"
-                    value={draft.startTime ?? ""}
-                    onChange={(e) => set("startTime", e.target.value || undefined)}
-                  />
-                </Field>
-                <Field icon={CalendarIcon} label="End date">
-                  <Input
-                    type="date"
-                    value={draft.endDate ?? ""}
-                    min={draft.startDate || undefined}
-                    onChange={(e) => set("endDate", e.target.value || undefined)}
-                  />
-                </Field>
-                <Field icon={Clock} label="End time">
-                  <Input
-                    type="time"
-                    value={draft.endTime ?? ""}
-                    onChange={(e) => set("endTime", e.target.value || undefined)}
-                  />
-                </Field>
-                <Field icon={Repeat} label="Repeats">
-                  <Select value={draft.recurrenceType ?? "none"} onValueChange={v => set("recurrenceType", v as RecurrenceType)}>
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent className="z-[60]" position="popper" sideOffset={6} collisionPadding={12}>
-                      <SelectItem value="none">Doesn't repeat</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-                {draft.recurrenceType && draft.recurrenceType !== "none" && (
-                  <Field icon={Repeat} label="Every (interval)" className="sm:col-span-2">
-                    <Input
-                      type="number"
-                      min={1}
-                      value={draft.recurrenceInterval ?? 1}
-                      onChange={e => set("recurrenceInterval", Number(e.target.value) || 1)}
-                      className="w-full"
+                    <AIQuickAction
+                      icon={<Wand2 className="h-3.5 w-3.5" />}
+                      label="Rewrite from NLP"
+                      onClick={applyNlp}
                     />
-                  </Field>
-                )}
-              </div>
-            </Section>
+                  </div>
+                </CardHeader>
+              </Card>
 
-            {/* Attributes */}
-            <Section title="Attributes">
-              <div className="-mt-2 flex justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={runAutoDetect}
-                  disabled={autoBusy || !draft.title.trim()}
-                  className="h-7 gap-1 px-2 text-[11px] text-primary hover:bg-primary/10 hover:text-primary"
-                  title="Auto-detect area and project from the title and notes"
-                >
-                  <Sparkles className="h-3 w-3" />
-                  Auto-detect area & project
-                </Button>
-              </div>
-              <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
-                <Field icon={Tag} label="Area">
-                  <Select value={draft.area} onValueChange={v => set("area", v as any)}>
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
-                      {AREAS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field icon={Flag} label="Priority">
-                  <Select value={draft.priority} onValueChange={v => set("priority", v as Priority)}>
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent className="z-[60]" position="popper" sideOffset={6} collisionPadding={12}>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field icon={Zap} label="Energy">
-                  <Select value={draft.energy ?? "none"} onValueChange={v => set("energy", v === "none" ? undefined : v as Energy)}>
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent className="z-[60]" position="popper" sideOffset={6} collisionPadding={12}>
-                      <SelectItem value="none">—</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field icon={Clock} label="Est. minutes">
-                  <Input
-                    type="number"
-                    min={0}
-                    placeholder="—"
-                    value={draft.estMinutes ?? ""}
-                    onChange={e => set("estMinutes", e.target.value ? Number(e.target.value) : undefined)}
-                    className="w-full"
-                  />
-                </Field>
-              </div>
-            </Section>
+              {/* Tags */}
+              <Card>
+                <CardHeader icon={<Tag className="h-3.5 w-3.5" />} title="Tags">
+                  <TagPicker value={draft.tags ?? []} onChange={(next) => set("tags", next)} />
+                </CardHeader>
+              </Card>
 
-            {/* Links */}
-            <Section title="Links">
-              <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
-                <ProjectGoalLinks draft={draft} set={set} />
-              </div>
-            </Section>
+              {/* Project / Goal / Person */}
+              <Card>
+                <CardHeader icon={<FolderKanban className="h-3.5 w-3.5" />} title="Links">
+                  <div className="grid grid-cols-1 gap-3">
+                    <ProjectGoalLinks draft={draft} set={set} />
+                  </div>
+                </CardHeader>
+              </Card>
 
-            {/* Top three */}
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5">
-              <div className="flex min-w-0 items-center gap-2">
-                <Star className="h-4 w-4 shrink-0 text-primary" />
-                <div className="min-w-0">
-                  <div className="text-sm font-medium">Top three today</div>
-                  <div className="truncate text-xs text-muted-foreground">Hold space for what matters most.</div>
-                </div>
-              </div>
-              <Switch checked={!!draft.isTopThree} onCheckedChange={v => set("isTopThree", v)} />
+              {/* Advanced — schedule + dates */}
+              <Collapsible>
+                <Card>
+                  <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left">
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      <CalendarIcon className="h-3.5 w-3.5" /> Advanced schedule
+                    </span>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-3 border-t border-border/40 px-3 py-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field icon={CalendarIcon} label="Start date">
+                        <Input type="date" value={draft.startDate ?? ""} onChange={(e) => set("startDate", e.target.value || undefined)} />
+                      </Field>
+                      <Field icon={CalendarIcon} label="End date">
+                        <Input type="date" value={draft.endDate ?? ""} min={draft.startDate || undefined} onChange={(e) => set("endDate", e.target.value || undefined)} />
+                      </Field>
+                    </div>
+                    {draft.recurrenceType && draft.recurrenceType !== "none" && (
+                      <Field icon={Repeat} label="Every (interval)">
+                        <Input type="number" min={1} value={draft.recurrenceInterval ?? 1}
+                          onChange={e => set("recurrenceInterval", Number(e.target.value) || 1)} />
+                      </Field>
+                    )}
+                    <Field icon={Zap} label="Energy">
+                      <Select value={draft.energy ?? "none"} onValueChange={v => set("energy", v === "none" ? undefined : v as Energy)}>
+                        <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                        <SelectContent className="z-[60]" position="popper" sideOffset={6} collisionPadding={12}>
+                          <SelectItem value="none">—</SelectItem>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
             </div>
-
-            {/* Linked notes */}
-            <Section title={undefined}>
-              <div className="flex items-center gap-1.5 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
-                <Link2 className="h-3 w-3" /> Linked notes
-              </div>
-              <LinkedNotesPanel entityType="task" entityId={draft.id} contextTitle={draft.title} compact />
-            </Section>
-
-            {/* Attachments */}
-            <Section title={undefined}>
-              <div className="flex items-center gap-1.5 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
-                <Paperclip className="h-3 w-3" /> Attachments
-              </div>
-              <AttachmentsField
-                scope="task"
-                ownerId={draft.id}
-                value={draft.attachments}
-                onChange={(next) => {
-                  set("attachments", next);
-                  // Persist immediately so files survive cancel.
-                  void updateTask(draft.id, { attachments: next });
-                }}
-              />
-            </Section>
           </div>
         </div>
 
