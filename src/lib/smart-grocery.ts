@@ -33,16 +33,20 @@ export interface SmartGroceryResult {
 
 const norm = (s: string) => s.toLowerCase().trim().replace(/\s+/g, " ");
 
-/** Strip qty markers like "2 cups flour" → "flour". */
-function cleanIngredient(raw: string): string {
-  if (!raw) return "";
-  return raw
-    .replace(/^\s*[-*]\s*/, "")
-    .replace(/^\s*\d+[\d/.\s]*\s*(cups?|tbsp|tsp|tablespoons?|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|g|kg|ml|l|cloves?|pieces?|slices?)\b\.?\s*/i, "")
-    .replace(/^\s*\d+\s+/, "")
-    .replace(/\(.*?\)/g, "")
-    .replace(/,.*$/, "")
-    .trim();
+/** Split an ingredient string into a qty hint and the bare item name. */
+function splitIngredient(raw: string): { name: string; qty: string | null } {
+  if (!raw) return { name: "", qty: null };
+  const stripped = raw.replace(/^\s*[-*]\s*/, "").replace(/\(.*?\)/g, "").trim();
+  const qtyRe = /^\s*(\d+(?:\s+\d+\/\d+)?(?:\.\d+)?(?:\/\d+)?)\s*(cups?|tbsp|tsp|tablespoons?|teaspoons?|oz|ounces?|lb|lbs|pounds?|grams?|g|kg|ml|l|cloves?|pieces?|slices?|cans?|pkg|packages?|bunch(?:es)?|sticks?)?\b\.?\s*/i;
+  const m = stripped.match(qtyRe);
+  let qty: string | null = null;
+  let rest = stripped;
+  if (m) {
+    qty = (m[1] + (m[2] ? " " + m[2] : "")).trim();
+    rest = stripped.slice(m[0].length);
+  }
+  rest = rest.replace(/,.*$/, "").trim();
+  return { name: rest, qty };
 }
 
 export async function collectSmartCandidates(
@@ -62,7 +66,7 @@ export async function collectSmartCandidates(
       .eq("user_id", userId)
       .neq("restock_cadence", "none"),
     supabase.from("meals")
-      .select("name,date")
+      .select("name,date,ingredients")
       .eq("user_id", userId)
       .gte("date", today)
       .lte("date", end),
@@ -77,7 +81,7 @@ export async function collectSmartCandidates(
 
   const pantry = (pantryRes.data ?? []) as Array<{ name: string; stock_status?: string | null; in_stock?: boolean | null; location?: string | null }>;
   const recurring = (recurringRes.data ?? []) as Array<{ name: string; in_stock?: boolean | null; location?: string | null }>;
-  const meals = (mealsRes.data ?? []) as Array<{ name: string; date: string }>;
+  const meals = (mealsRes.data ?? []) as Array<{ name: string; date: string; ingredients?: any }>;
   const library = (libRes.data ?? []) as Array<{ title: string; ingredients: string[] | null }>;
   const existing = (existingRes.data ?? []) as Array<{ name: string }>;
 
@@ -110,10 +114,13 @@ export async function collectSmartCandidates(
   const libByTitle = new Map<string, string[]>();
   for (const m of library) libByTitle.set(norm(m.title), (m.ingredients ?? []));
   for (const meal of meals) {
-    const ings = libByTitle.get(norm(meal.name));
+    // Prefer ingredients stored on the meal itself (planner-linked recipe),
+    // fall back to matching the title against the user's recipe library.
+    const direct = Array.isArray(meal.ingredients) ? (meal.ingredients as any[]).map(String) : [];
+    const ings = direct.length ? direct : libByTitle.get(norm(meal.name));
     if (!ings?.length) continue;
     for (const raw of ings) {
-      const cleaned = cleanIngredient(raw);
+      const { name: cleaned, qty } = splitIngredient(raw);
       if (!cleaned) continue;
       if (inStockPantry.has(norm(cleaned))) continue; // reserved from pantry
       push({
@@ -121,6 +128,7 @@ export async function collectSmartCandidates(
         category: categorizeGroceryItem(cleaned),
         source: "meal_plan",
         sourceLabel: `For ${meal.name}`,
+        qty,
       });
     }
   }
@@ -149,6 +157,7 @@ export async function applySmartGroceryFill(userId: string): Promise<SmartGrocer
     return {
       user_id: userId,
       name: c.name,
+      qty: c.qty ?? null,
       category: c.category,
       stock_status: "out",
       bought: false,
