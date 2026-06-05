@@ -1,62 +1,65 @@
+## Phase 1: Quick Fixes + Ecosystem Shell
 
-# Cosmic Flow — Accuracy + Polish Pass
+Three fixes the user asked for now, plus the agreed Phase 1 ecosystem shell (rename + 6 dashboard cards).
 
-The current engine uses hand-rolled mean-longitude approximations (±0.3–1°) and a Placidus implementation that falls back to equal-house, which is why the rising sign and planet placements feel off. Lunar Life solved this with `astronomy-engine` (true geocentric tropical positions, retrograde detection, correct ASC/MC). This plan ports that accuracy and Lunar Life's interactive wheel + visual language into CareFlow's Cosmic Flow without changing CareFlow's information architecture.
+---
 
-## 1. Accurate astronomy engine
+### 1. Wrap text on inventory items
 
-- Add `astronomy-engine` dependency.
-- Rewrite `src/lib/cosmic/astro/bodies.ts` to use `Astronomy.GeoVector` + `Ecliptic` for Sun, Moon, Mercury…Pluto. Keep current approximations only for Chiron/Ceres (good enough for sign), and use Meeus polynomial for Mean Lunar Node + South Node + Lilith.
-- Add proper retrograde detection (sample longitude ±12h, sign of delta) — fixes the earlier `a0` crash and the "always direct" outer planets.
-- Rewrite `src/lib/cosmic/astro/houses.ts` Ascendant/MC using the standard spherical formula with quadrant correction (matches Lunar Life). Whole-sign remains default; Placidus gets a real semi-arc solver (or is hidden until correct).
-- Update `chart.ts` to expose `retrograde`, `speed`, and `house` per body; recompute aspects against accurate longitudes.
+Today, `PantryKanban` and `PantryPanel` use `truncate` on the item name (e.g. `src/components/meals/PantryKanban.tsx:409, 411, 462` and `src/components/meals/PantryPanel.tsx:279, 359`), so long names like "Frozen Veggies, mixed family pack" get cut off.
 
-## 2. Natal chart wheel — interactive + accurate
+- Replace `truncate` on the name span with wrap classes (`break-words leading-snug whitespace-normal`) and remove fixed widths on the row so the card grows in height instead of clipping.
+- Keep the row's right-side action cluster aligned to the top so the wrapped title flows underneath.
+- Same treatment on the subtitle line (qty + unit).
 
-Replace `src/components/cosmic/NatalWheel.tsx` with a wheel modeled on Lunar Life's `ChartWheel`:
+### 2. Save Kroger as preferred store (global default)
 
-- Ascendant anchored at 9 o'clock, houses run counter-clockwise (traditional layout).
-- Concentric rings: sign band (colored by element token), house numbers, natal planet ring, optional transit ring (outlined markers).
-- Aspect lines drawn inside inner circle, color/weight by aspect type.
-- Element-colored sign slices using semantic tokens `--element-fire/earth/air/water` (add to `index.css`).
-- Glyph hit-targets with hover tooltip + click → opens a `PlacementDetailDialog` (port a slim version) showing sign, house, degree (DMS), retrograde, aspects, and a 1-paragraph meaning.
-- Pinch-zoom / tap-to-focus on mobile; ASC/DSC/MC/IC axis pointers.
-- Toggle: Natal only ↔ Natal + Today's transits (bi-wheel).
+- Change `DEFAULT_GROCERY_PREFS.preferred_store` from `"instacart"` to `"kroger"` in `src/lib/grocery-prefs.ts` so new users default to Kroger.
+- For the current user, set their saved preference to `kroger` (data update via insert/upsert into `grocery_prefs`).
+- Add a "Preferred store" selector in Settings → Household/Grocery (uses `RETAILERS` from `src/lib/retailer-links.ts`), so the user can change it later.
+- `ShopMenu` and `RestockPanel` already read `useGroceryPrefs()`, so they will automatically prefer Kroger links once this lands. No per-item override in this phase.
 
-## 3. Icons & visual system
+### 3. Full-page Grocery List under HomeFlow
 
-- Add `SIGN_GLYPH`, `PLANET_GLYPH`, `ASPECT_GLYPH` maps centrally in `src/lib/cosmic/glyphs.ts` (single source of truth; replaces scattered records).
-- Add `RetrogradeBadge` component (small ℞ pill) used in wheel, transit list, and chapter chips.
-- Add element + modality color tokens to `index.css` and `tailwind.config.ts`. All wheel colors use HSL semantic tokens (no hard-coded colors).
-- Replace generic `Sparkles` placeholders on cards with sign/planet/phase glyphs.
-- Lottie-free subtle moon-phase SVG (computed from current illumination) in header.
+- Add a new route `/home/groceries` in `src/App.tsx` rendering a new page `src/pages/HomeGroceries.tsx`.
+- The page reuses the existing `GroceryList` component (`src/components/meals/GroceryList.tsx`) but as the primary surface — full width, sections (Produce / Dairy / Frozen / Pantry / Household / Pets), header with item counts and "Open in Kroger" action sourced from `useGroceryPrefs`.
+- Fix wrap on grocery rows: in `GroceryList.tsx` the item name span currently relies on default flex behavior and uses `truncate` on adjacent badges (line 201). Update the name to `break-words whitespace-normal leading-snug` and remove flex `min-w-0`/truncate that clips it; keep checkbox + actions top-aligned.
+- Add a HomeHub entry point: a "Groceries" tile/link in the HomeHub dashboard that navigates to `/home/groceries`. (Not adding it as a HomeHub tab yet — keeping HomeHub tabs untouched.)
 
-## 4. Transits & guidance polish
+### 4. Ecosystem Phase 1 shell (no data wiring yet)
 
-- New `ActiveTransitsList`: groups by planet, shows aspect glyph + orb + applying/separating arrow + days-to-exact, tap → `TransitLayersSheet` (existing 6-layer view) prefilled.
-- `DailyGuidanceCard`: surface today's Moon sign/phase, void-of-course window (port `void-of-course.ts`), and one "cosmic weather" line. Confirm-tap to add suggested actions (already user-approved pattern).
-- `PredictiveSnapshotCard`: add profection year ruler glyph + current Lord-of-Year highlight; show solar-return countdown.
-- Add `TodaysSkyCard` (port from Lunar Life) to home: Sun/Moon sign, Moon phase %, next ingress, next aspect.
+- Rename the existing Inventory page header to "Home Inventory" with subtitle "Know what you have, what you need, and what you can make." in `src/pages/Pantry.tsx`.
+- Add an "Ecosystem health" row above the existing tabs, with 6 cards reading from already-available data where possible, placeholders otherwise:
+  - Pantry Health (% in_stock from `pantry_items`)
+  - Inventory Value (placeholder "—" for now)
+  - Meals Available (count from `meals_library` matching pantry; placeholder "—" if too slow)
+  - Restock Soon (count of `pantry_items` with `stock_status='low'`)
+  - Expiring This Week (count of `pantry_items.expires_at` in next 7 days, if column exists; else hidden)
+  - Grocery Budget (placeholder until budget wiring lands)
+- Cards use existing atmosphere/semantic tokens (no new colors), live as a new `src/components/meals/EcosystemHealthCards.tsx`.
 
-## 5. Calendar & predictive views
+Explicitly **not** in this phase: ecosystem-wide tabs, automatic ingredient reservation, Dinner Tonight AI, Pantry Coach, budget projections, mobile bottom nav, recipe ↔ inventory linking. Those become later phases.
 
-- `CosmicCalendar`: month grid with dots colored by event type (ingress, aspect, retrograde station, eclipse, lunation). Tap day → event sheet.
-- `CosmicPredictive`: add progressed Moon sign, current profected house, next planetary return date — using new accurate engine.
+---
 
-## 6. Birth chart entry UX
+### Technical details
 
-- Reuse current `CosmicFlowBirthChart` form but add: place autocomplete already exists → ensure lat/lng/tz captured; show a live mini-wheel preview as user fills the form; validation hints for missing time (explain whole-sign still works without exact time, but ASC may be off).
+**Files to edit**
+- `src/components/meals/PantryKanban.tsx` — replace `truncate` on name/subtitle with `break-words whitespace-normal leading-snug`; align actions `items-start`.
+- `src/components/meals/PantryPanel.tsx` — same wrap treatment on item rows.
+- `src/components/meals/GroceryList.tsx` — same wrap treatment on item name; keep badge truncation as-is.
+- `src/lib/grocery-prefs.ts` — `DEFAULT_GROCERY_PREFS.preferred_store = "kroger"`.
+- `src/pages/Settings.tsx` — add Preferred Store select bound to `useGroceryPrefs`.
+- `src/pages/Pantry.tsx` — title/subtitle change + render `EcosystemHealthCards`.
+- `src/pages/HomeHub.tsx` — add a Groceries link/tile in the dashboard view that routes to `/home/groceries`.
+- `src/App.tsx` — register `/home/groceries`.
 
-## Technical notes
+**Files to create**
+- `src/pages/HomeGroceries.tsx` — full-page grocery list shell.
+- `src/components/meals/EcosystemHealthCards.tsx` — 6-card health strip.
 
-- New deps: `astronomy-engine` (MIT, ~80kb, no native bindings).
-- Files touched: `src/lib/cosmic/astro/{bodies,houses,aspects,calendar,returns,progressions}.ts`, `src/lib/cosmic/chart.ts`, `src/components/cosmic/*`, `src/pages/Cosmic*.tsx`, `src/index.css`, `tailwind.config.ts`.
-- New files: `src/lib/cosmic/glyphs.ts`, `src/lib/cosmic/void-of-course.ts`, `src/components/cosmic/{RetrogradeBadge,PlacementDetailDialog,TodaysSkyCard,ChartWheel}.tsx`.
-- No DB migrations needed (cache tables already exist); bump `hashBirth` to invalidate stale cached charts after engine swap.
-- No changes to AI edge functions' contracts; they consume the same `NatalChartV2` shape.
+**Data**
+- One-time upsert into `grocery_prefs` for the current user to set `preferred_store='kroger'`. No schema migration required (`grocery_prefs` already has those columns).
 
-## Out of scope (defer)
-
-- Synastry (two-chart overlay) — schema exists in Lunar Life but is a bigger build.
-- Tarot/I-Ching — separate product surface.
-- Custom orb settings UI (engine supports it; UI later).
+**Out of scope for this plan**
+- The broader unified ecosystem rebuild (Meals ↔ Inventory ↔ Recipes ↔ Budget auto-flow, Kitchen Flow AI, mobile bottom nav). Tracked for a future phase.
