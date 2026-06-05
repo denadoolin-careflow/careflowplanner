@@ -1217,7 +1217,23 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           <div className="mb-2">
             <div className="flex items-center justify-between px-2 py-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60">Areas</span>
-              <NavLink to="/projects" onClick={onNavigate} className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground">All</NavLink>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  aria-label="Add area"
+                  className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                  onClick={async () => {
+                    const name = window.prompt("New area name")?.trim();
+                    if (!name) return;
+                    if ((areas ?? []).some(a => a.name.toLowerCase() === name.toLowerCase())) {
+                      return;
+                    }
+                    const created = await addArea({ name });
+                    if (created) navigate(`/areas/${encodeURIComponent(created.name)}`);
+                  }}
+                >+ Add</button>
+                <NavLink to="/projects" onClick={onNavigate} className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground">All</NavLink>
+              </div>
             </div>
             <div className="flex flex-col gap-0.5">
               {areas.map(area => {
