@@ -275,6 +275,31 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               placeholder="Task title"
               className="h-10 flex-1 border-0 bg-transparent px-0 text-[17px] font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
+            <TaskAIAssistPopover
+              title={draft.title}
+              notes={draft.notes}
+              area={draft.area as string | undefined}
+              currentEstMinutes={draft.estMinutes}
+              currentTags={draft.tags ?? []}
+              onAcceptTitle={(next) => set("title", next)}
+              onAcceptEstimate={(m) => set("estMinutes", m)}
+              onAcceptSubtask={async (t) => {
+                await addTask({ title: t, area: draft.area, parentTaskId: draft.id, projectId: draft.projectId });
+              }}
+              onAcceptAllSubtasks={async (titles) => {
+                for (const t of titles) {
+                  await addTask({ title: t, area: draft.area, parentTaskId: draft.id, projectId: draft.projectId });
+                }
+              }}
+              onAcceptTag={(tag) => {
+                const merged = Array.from(new Set([...(draft.tags ?? []), tag]));
+                set("tags", merged);
+              }}
+              onAcceptAllTags={(tags) => {
+                const merged = Array.from(new Set([...(draft.tags ?? []), ...tags]));
+                set("tags", merged);
+              }}
+            />
             <Button
               type="button"
               variant="ghost"
