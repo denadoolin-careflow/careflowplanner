@@ -244,6 +244,8 @@ interface Ctx {
   reorderSections: (projectId: string, orderedIds: string[]) => Promise<void>;
 
   updateArea: (id: string, patch: Partial<AreaRecord>) => Promise<void>;
+  addArea: (patch: Partial<AreaRecord> & { name: string }) => Promise<AreaRecord | null>;
+  deleteArea: (id: string) => Promise<void>;
 
   addGoal: (g: Partial<Goal> & { title: string }) => Promise<void>;
   updateGoal: (id: string, patch: Partial<Goal>) => Promise<void>;
@@ -691,6 +693,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.sortOrder !== undefined) dbPatch.sort_order = patch.sortOrder;
       if (patch.isArchived !== undefined) dbPatch.is_archived = patch.isArchived;
       await supabase.from("areas").update(dbPatch).eq("id", id);
+    },
+    addArea: async (patch) => {
+      if (!uid) return null;
+      const maxSort = (state.areas ?? []).reduce((m, a) => Math.max(m, a.sortOrder ?? 0), 0);
+      const { data, error } = await supabase.from("areas").insert({
+        user_id: uid,
+        name: patch.name,
+        icon: patch.icon ?? null,
+        color: patch.color ?? null,
+        sort_order: patch.sortOrder ?? maxSort + 1,
+      } as any).select().single();
+      if (error || !data) return null;
+      const rec = areaFrom(data);
+      setState(s => ({ ...s, areas: [...(s.areas ?? []), rec] }));
+      return rec;
+    },
+    deleteArea: async (id) => {
+      setState(s => ({ ...s, areas: (s.areas ?? []).filter(a => a.id !== id) }));
+      await supabase.from("areas").delete().eq("id", id);
     },
 
     addGoal: async (g) => {
