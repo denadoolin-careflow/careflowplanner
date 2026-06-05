@@ -63,6 +63,7 @@ import MentalLoad from "./pages/MentalLoad";
 import Onboarding from "./pages/Onboarding";
 import Memories from "./pages/Memories";
 import CareLoop from "./pages/CareLoop";
+import CareHub from "./pages/CareHub";
 import Automations from "./pages/Automations";
 import Trips from "./pages/Trips";
 import TripDetail from "./pages/TripDetail";
@@ -177,7 +178,8 @@ const App = () => (
                 <Route path="/health" element={<Health />} />
                 <Route path="/wealth" element={<WealthHub />} />
                 <Route path="/mental-load" element={<MentalLoad />} />
-                <Route path="/care" element={<CareLoop />} />
+                <Route path="/care" element={<CareHub />} />
+                <Route path="/care-loop" element={<CareLoop />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/home-areas" element={<HomeAreas />} />
                 <Route path="/journal" element={<Journal />} />

@@ -84,7 +84,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
 
 export const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/care", label: "CARE Loop", icon: Flower2 },
+  { to: "/care", label: "CARE Hub", icon: Flower2 },
   { to: "/inbox", label: "Inbox", icon: Inbox },
   { to: "/projects", label: "Projects", icon: FolderOpen },
   { to: "/today", label: "Today", icon: Sun },
@@ -158,7 +158,7 @@ export const NAV_GROUPS = [
     emoji: "💚",
     icon: HeartHandshake,
     items: [
-      { to: "/care", label: "CARE Loop", icon: Flower2 },
+      { to: "/care", label: "CARE Hub", icon: Flower2 },
       { to: "/caregiving", label: "Caregiving", icon: HeartHandshake },
       { to: "/family", label: "Family & sharing", icon: Users },
       { to: "/mental-load", label: "Mental Load", icon: Leaf },
