@@ -89,6 +89,15 @@
     --studio-ink: 260 12% 22%;
     --studio-plum-text: 330 30% 35%;
     --studio-sage-deep-text: 140 28% 30%;
+
+    /* Astrology — element + aspect tones */
+    --element-fire: 12 75% 58%;
+    --element-earth: 90 30% 42%;
+    --element-air: 200 60% 60%;
+    --element-water: 220 55% 55%;
+    --aspect-harmonious: 145 50% 45%;
+    --aspect-dynamic: 0 65% 55%;
+    --aspect-neutral: 260 30% 55%;
   }
 
   .dark {
@@ -157,6 +166,14 @@
     --studio-ink: 36 30% 92%;
     --studio-plum-text: 330 55% 80%;
     --studio-sage-deep-text: 140 35% 72%;
+
+    --element-fire: 12 80% 68%;
+    --element-earth: 90 35% 60%;
+    --element-air: 200 70% 72%;
+    --element-water: 220 60% 68%;
+    --aspect-harmonious: 145 55% 65%;
+    --aspect-dynamic: 0 65% 68%;
+    --aspect-neutral: 260 40% 75%;
 
     --shadow-soft: 0 2px 12px -4px hsl(0 0% 0% / 0.4), 0 1px 3px hsl(0 0% 0% / 0.2);
     --shadow-cozy: 0 8px 30px -12px hsl(0 0% 0% / 0.55);

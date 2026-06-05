@@ -1,7 +1,7 @@
 /**
  * Full natal chart assembly + caching helpers.
  */
-import { ALL_BODIES, bodyLongitude, bodySign, type ExtPlanet, BODY_GLYPHS } from "@/lib/cosmic/astro/bodies";
+import { ALL_BODIES, bodyLongitude, bodySign, bodyRetrograde, type ExtPlanet, BODY_GLYPHS } from "@/lib/cosmic/astro/bodies";
 import { computeHouses, houseOf, chartRulerOf, type HouseSystem, type HouseCusps } from "@/lib/cosmic/astro/houses";
 import { aspectGrid, type NamedPoint } from "@/lib/cosmic/astro/aspects";
 import { computeDominants, type Dominants } from "@/lib/cosmic/astro/dignities";
@@ -54,6 +54,7 @@ export function computeNatalV2(b: BirthInputV2): NatalChartV2 {
       longitude,
       sign: bodySign(body, date),
       degreeInSign: longitude % 30,
+      retrograde: bodyRetrograde(body, date),
     };
   });
   const houses = computeHouses(date, b.lat ?? null, b.lng ?? null, b.house_system ?? "whole-sign");
@@ -88,6 +89,6 @@ export function computeNatalV2(b: BirthInputV2): NatalChartV2 {
 
 export function hashBirth(b: BirthInputV2): string {
   return [
-    b.date, b.time ?? "", b.tz ?? "", b.lat ?? "", b.lng ?? "", b.house_system ?? "whole-sign",
+    "v2", b.date, b.time ?? "", b.tz ?? "", b.lat ?? "", b.lng ?? "", b.house_system ?? "whole-sign",
   ].join("|");
 }

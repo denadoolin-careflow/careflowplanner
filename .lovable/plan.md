@@ -1,110 +1,62 @@
-## Cosmic Flow v2: AI-Powered Astrology Guidance
 
-Goal: turn the existing Cosmic Flow hub into a richer, AI-narrated astrology companion centered on **Your Current Chapter** — one synthesized life-season narrative instead of raw event lists. Everything ladders up to CareFlow's mission (plan, care, grow).
+# Cosmic Flow — Accuracy + Polish Pass
 
----
+The current engine uses hand-rolled mean-longitude approximations (±0.3–1°) and a Placidus implementation that falls back to equal-house, which is why the rising sign and planet placements feel off. Lunar Life solved this with `astronomy-engine` (true geocentric tropical positions, retrograde detection, correct ASC/MC). This plan ports that accuracy and Lunar Life's interactive wheel + visual language into CareFlow's Cosmic Flow without changing CareFlow's information architecture.
 
-### 1. Astrology engine (calculations)
+## 1. Accurate astronomy engine
 
-Extend `src/lib/transits.ts` and add new modules under `src/lib/cosmic/astro/`:
+- Add `astronomy-engine` dependency.
+- Rewrite `src/lib/cosmic/astro/bodies.ts` to use `Astronomy.GeoVector` + `Ecliptic` for Sun, Moon, Mercury…Pluto. Keep current approximations only for Chiron/Ceres (good enough for sign), and use Meeus polynomial for Mean Lunar Node + South Node + Lilith.
+- Add proper retrograde detection (sample longitude ±12h, sign of delta) — fixes the earlier `a0` crash and the "always direct" outer planets.
+- Rewrite `src/lib/cosmic/astro/houses.ts` Ascendant/MC using the standard spherical formula with quadrant correction (matches Lunar Life). Whole-sign remains default; Placidus gets a real semi-arc solver (or is hidden until correct).
+- Update `chart.ts` to expose `retrograde`, `speed`, and `house` per body; recompute aspects against accurate longitudes.
 
-- **`bodies.ts`** — add Moon (already partial), Uranus, Neptune, Pluto, Chiron, Ceres, True/Mean Lunar Nodes, Black Moon Lilith (mean), and a curated fixed-star list (Regulus, Spica, Algol, Sirius, Antares, Aldebaran, Fomalhaut). Outer bodies + Chiron/Ceres use VSOP87-trimmed series or low-order analytic series — accurate to ≤0.2° for sign/house placement.
-- **`houses.ts`** — Placidus + Whole Sign (user-selectable), needs birth time + lat/lng. Returns 12 cusps, MC, IC, ASC, DSC, plus chart ruler (ruler of ASC sign).
-- **`aspects.ts`** — major + minor aspects (conj, opp, sq, tri, sex, quin, semisextile, sesquiquadrate, semisquare) with configurable orbs and applying/separating flag.
-- **`dignities.ts`** — dominant element/modality counts, hemispheres, chart shape (bowl/bundle/locomotive/seesaw), chart ruler placement.
-- **`progressions.ts`** — secondary progressions ("day-for-a-year"), progressed Moon sign + lunation phase, solar arc directions.
-- **`returns.ts`** — solar return, lunar return, Saturn/Jupiter return dates and ingress charts.
-- **`profections.ts`** — annual profections: profected sign + house + time-lord planet for current age.
-- **`eclipses.ts`** — pre-computed eclipse table 1990-2050 (JSON) with type, sign, degree; flag activations when a transit/natal point is within 3° of eclipse degree.
-- **`calendar.ts`** — moon phases, ingresses, retrogrades/direct stations, VoC, solstices/equinoxes, cross-quarter seasonal shifts.
+## 2. Natal chart wheel — interactive + accurate
 
-Engine is pure-functional and runs locally. Heavy ephemeris constants kept in JSON to keep bundle small.
+Replace `src/components/cosmic/NatalWheel.tsx` with a wheel modeled on Lunar Life's `ChartWheel`:
 
-### 2. Data model (Lovable Cloud)
+- Ascendant anchored at 9 o'clock, houses run counter-clockwise (traditional layout).
+- Concentric rings: sign band (colored by element token), house numbers, natal planet ring, optional transit ring (outlined markers).
+- Aspect lines drawn inside inner circle, color/weight by aspect type.
+- Element-colored sign slices using semantic tokens `--element-fire/earth/air/water` (add to `index.css`).
+- Glyph hit-targets with hover tooltip + click → opens a `PlacementDetailDialog` (port a slim version) showing sign, house, degree (DMS), retrograde, aspects, and a 1-paragraph meaning.
+- Pinch-zoom / tap-to-focus on mobile; ASC/DSC/MC/IC axis pointers.
+- Toggle: Natal only ↔ Natal + Today's transits (bi-wheel).
 
-New tables (all `user_id` scoped, RLS on, grants per project conventions):
+## 3. Icons & visual system
 
-- `cosmic_chart_cache` — stores computed natal snapshot v2 (planets, houses, aspects, dignities) keyed by birth-info hash so we don't recompute on every load.
-- `cosmic_chapters` — AI-generated narrative: `chapter_theme`, `characters` (planets), `lessons`, `practices`, `valid_from`, `valid_to`, `source_signals` (jsonb of transits/progressions/profection/journal themes used).
-- `cosmic_daily_guidance` — daily AI snapshot: `date`, `headline`, `body`, `suggested_actions` (jsonb), `mood_tags`.
-- `cosmic_journal_themes` — rolling AI analysis of journal entries: `period_start`, `period_end`, `themes`, `patterns`, `breakthroughs`.
+- Add `SIGN_GLYPH`, `PLANET_GLYPH`, `ASPECT_GLYPH` maps centrally in `src/lib/cosmic/glyphs.ts` (single source of truth; replaces scattered records).
+- Add `RetrogradeBadge` component (small ℞ pill) used in wheel, transit list, and chapter chips.
+- Add element + modality color tokens to `index.css` and `tailwind.config.ts`. All wheel colors use HSL semantic tokens (no hard-coded colors).
+- Replace generic `Sparkles` placeholders on cards with sign/planet/phase glyphs.
+- Lottie-free subtle moon-phase SVG (computed from current illumination) in header.
 
-Extend `cosmic_birth_chart` with optional `house_system`, `chart_settings_json`.
+## 4. Transits & guidance polish
 
-### 3. AI interpretation layer
+- New `ActiveTransitsList`: groups by planet, shows aspect glyph + orb + applying/separating arrow + days-to-exact, tap → `TransitLayersSheet` (existing 6-layer view) prefilled.
+- `DailyGuidanceCard`: surface today's Moon sign/phase, void-of-course window (port `void-of-course.ts`), and one "cosmic weather" line. Confirm-tap to add suggested actions (already user-approved pattern).
+- `PredictiveSnapshotCard`: add profection year ruler glyph + current Lord-of-Year highlight; show solar-return countdown.
+- Add `TodaysSkyCard` (port from Lunar Life) to home: Sun/Moon sign, Moon phase %, next ingress, next aspect.
 
-Replace single `ai-cosmic-themes` with a small family of edge functions sharing tone guardrails:
+## 5. Calendar & predictive views
 
-- **`ai-cosmic-daily`** — input: today's transits + active progressions + profection lord + moon phase + natal highlights. Output JSON: `headline`, `body`, `suggested_actions[]`, `gentle_reminder`, `journal_prompt`.
-- **`ai-cosmic-transit`** — per-event multi-layer interpretation: `technical`, `meaning`, `emotional`, `practical`, `growth`, `careflow` (tasks/habits/routines/journaling suggestions). Cached by event id.
-- **`ai-cosmic-chapter`** — synthesizes transits + progressions + returns + profection + recent journal themes into one **Your Current Chapter** narrative. Runs on-demand and weekly via user action.
-- **`ai-cosmic-journal-insights`** — analyzes last 30/90 days of journal entries; cross-references active transits to produce recurring themes, patterns, reflection prompts.
+- `CosmicCalendar`: month grid with dots colored by event type (ingress, aspect, retrograde station, eclipse, lunation). Tap day → event sheet.
+- `CosmicPredictive`: add progressed Moon sign, current profected house, next planetary return date — using new accurate engine.
 
-All functions:
-- Use Lovable AI gateway (`google/gemini-3-flash-preview` default; chapter uses `gemini-2.5-pro`).
-- Share a system prompt enforcing warm, non-deterministic, non-fear-based language ("may invite", "you might notice", "this is an opportunity to").
-- Reuse existing `meterRequest` / `aiInvoke` quota plumbing.
+## 6. Birth chart entry UX
 
-### 4. UI changes
+- Reuse current `CosmicFlowBirthChart` form but add: place autocomplete already exists → ensure lat/lng/tz captured; show a live mini-wheel preview as user fills the form; validation hints for missing time (explain whole-sign still works without exact time, but ASC may be off).
 
-Restructure `/cosmic-flow` around the chapter narrative:
+## Technical notes
 
-```text
-┌─ Your Current Chapter (hero card) ──────────┐
-│ Chapter Theme · Major Characters · Lessons  │
-│ Helpful Practices · "Read full chapter →"   │
-└─────────────────────────────────────────────┘
-┌─ Today's Cosmic Guidance (AI) ──────────────┐
-│ Plain-language headline + body              │
-│ Suggested CareFlow Actions (✓ tappable)     │
-└─────────────────────────────────────────────┘
-┌─ Moon ─┐ ┌─ Active Transits ─┐ ┌─ Upcoming ─┐
-└────────┘ └───────────────────┘ └────────────┘
-┌─ Predictive Snapshot ───────────────────────┐
-│ Progressed Moon · Profection Year · Next    │
-│ Return · Eclipse Activations                │
-└─────────────────────────────────────────────┘
-```
+- New deps: `astronomy-engine` (MIT, ~80kb, no native bindings).
+- Files touched: `src/lib/cosmic/astro/{bodies,houses,aspects,calendar,returns,progressions}.ts`, `src/lib/cosmic/chart.ts`, `src/components/cosmic/*`, `src/pages/Cosmic*.tsx`, `src/index.css`, `tailwind.config.ts`.
+- New files: `src/lib/cosmic/glyphs.ts`, `src/lib/cosmic/void-of-course.ts`, `src/components/cosmic/{RetrogradeBadge,PlacementDetailDialog,TodaysSkyCard,ChartWheel}.tsx`.
+- No DB migrations needed (cache tables already exist); bump `hashBirth` to invalidate stale cached charts after engine swap.
+- No changes to AI edge functions' contracts; they consume the same `NatalChartV2` shape.
 
-New pages/components:
-- `src/pages/CosmicChapter.tsx` — full chapter view with sources expanded.
-- `src/pages/CosmicNatal.tsx` — expanded natal: wheel SVG, planets table, houses, aspects grid, dominants, chart ruler, Chiron/Ceres/Nodes/Lilith/fixed-star contacts.
-- `src/pages/CosmicPredictive.tsx` — progressions, solar arc, returns, profections, eclipse activations.
-- `src/pages/CosmicCalendar.tsx` — month grid of phases, ingresses, retrogrades, VoC, solstices.
-- `src/components/cosmic/ChapterCard.tsx`, `DailyGuidanceCard.tsx`, `TransitLayersSheet.tsx` (modal showing 6-layer interpretation), `NatalWheel.tsx` (SVG), `ProgressedMoonCard.tsx`, `ProfectionCard.tsx`, `EclipseActivationCard.tsx`.
+## Out of scope (defer)
 
-Tap any transit/event → opens `TransitLayersSheet` with all six layers + "Add suggested tasks to CareFlow" button that creates tasks/habits via existing store actions.
-
-### 5. CareFlow integration
-
-- **Tasks / habits / routines**: Suggested actions from AI become one-tap creators (reuses `addTask`, area auto-detect already in place). Cosmic-origin items get a subtle moon-tag.
-- **Journal**: existing `logCosmicJournal` extended; chapter + daily prompts deep-link to `/journal` with prefilled prompt.
-- **Cycle tracking**: cross-reference progressed Moon + menstrual cycle phase in journal insights.
-- **Calendar feed**: existing `calendar-feed.ts` extended to include eclipses, returns, profection birthdays.
-- **Mood tracking + goals + seasonal planning**: chapter "Helpful Practices" link to goal/season pages.
-
-### 6. Rollout / scope
-
-- v2.0 (this plan): engine extensions, chart cache, daily guidance, chapter (manual refresh), expanded natal page, predictive snapshot, transit layers sheet, journal insights surfaced on chapter page.
-- Out of scope for now: full Placidus wheel interactivity (clickable houses), synastry/composite, horary, custom orb editor — flagged as future.
-
-### Technical notes
-
-- All new ephemeris math lives client-side; no extra API costs for calculations.
-- AI calls are cached per (user, date) or per (user, week) to limit credit burn; chapter regenerates weekly or on user demand.
-- Fixed-star + eclipse JSONs (~30KB total) loaded lazily on `/cosmic-flow/natal` and `/cosmic-flow/predictive`.
-- Tone guardrails enforced in a single shared system prompt constant in `supabase/functions/_shared/cosmic-tone.ts`.
-
-### Files (high-level)
-
-- New: `src/lib/cosmic/astro/{bodies,houses,aspects,dignities,progressions,returns,profections,eclipses,calendar,fixed-stars}.ts` + JSON data, `src/lib/cosmic/chapter.ts`, `src/pages/Cosmic{Chapter,Natal,Predictive,Calendar}.tsx`, multiple components under `src/components/cosmic/`.
-- Edited: `src/pages/CosmicFlow.tsx` (new layout), `src/lib/cosmic/hooks.ts` (new hooks), `src/App.tsx` (routes), `src/lib/cosmic/calendar-feed.ts`.
-- Edge functions: `ai-cosmic-daily`, `ai-cosmic-transit`, `ai-cosmic-chapter`, `ai-cosmic-journal-insights`, shared `cosmic-tone.ts`. Keep existing `ai-cosmic-themes` as deprecated shim or remove.
-- Migrations: new tables above + extension of `cosmic_birth_chart`.
-
-### Open questions (please confirm before build)
-
-1. House system default — **Placidus** or **Whole Sign**?
-2. Chapter refresh cadence — **weekly auto + manual refresh button**, or **manual only** to conserve AI credits?
-3. Should suggested CareFlow actions auto-create tasks tagged "Cosmic", or always require a confirm tap?
-4. Scope check: OK to defer synastry, full interactive wheel, and custom orbs to a later pass?
+- Synastry (two-chart overlay) — schema exists in Lunar Life but is a bigger build.
+- Tarot/I-Ching — separate product surface.
+- Custom orb settings UI (engine supports it; UI later).

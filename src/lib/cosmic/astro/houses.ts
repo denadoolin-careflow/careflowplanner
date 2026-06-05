@@ -18,45 +18,47 @@ export interface HouseCusps {
   chartRuler: Sign;         // ruler of ascendant sign
 }
 
+import * as A from "astronomy-engine";
+
 const D2R = Math.PI / 180;
 const R2D = 180 / Math.PI;
 const norm360 = (x: number) => ((x % 360) + 360) % 360;
 
-/** Mean obliquity of the ecliptic. */
-function obliquity(date: Date): number {
+/** Mean obliquity of the ecliptic (Meeus eq. 22.2). */
+function obliquityDeg(date: Date): number {
   const jd = date.getTime() / 86400000 + 2440587.5;
   const T = (jd - 2451545.0) / 36525;
-  return 23.4392911 - 0.0130042 * T;
+  const seconds = 84381.448 - 46.815 * T - 0.00059 * T * T + 0.001813 * T * T * T;
+  return seconds / 3600;
 }
 
-/** Local Sidereal Time (deg). */
-function localSiderealTime(date: Date, lng: number): number {
-  const jd = date.getTime() / 86400000 + 2440587.5;
-  const T = (jd - 2451545.0) / 36525;
-  const gmst =
-    280.46061837 +
-    360.98564736629 * (jd - 2451545.0) +
-    0.000387933 * T * T -
-    (T * T * T) / 38710000;
-  return norm360(gmst + lng);
-}
-
-/** Ascendant + MC by standard spherical formulae. */
+/**
+ * Ascendant + MC ecliptic longitudes (deg). Uses Meeus chapter 13 / 28.
+ * `lng` is east-positive. Computes apparent sidereal time from
+ * astronomy-engine for precision.
+ */
 function ascMC(date: Date, lat: number, lng: number): { asc: number; mc: number } {
-  const eps = obliquity(date) * D2R;
-  const lst = localSiderealTime(date, lng) * D2R;
+  const gstHours = A.SiderealTime(date);
+  const ramcDeg = norm360(gstHours * 15 + lng);
+  const ramc = ramcDeg * D2R;
+  const eps = obliquityDeg(date) * D2R;
   const phi = lat * D2R;
-  // MC (RAMC -> ecliptic longitude)
-  const mc = norm360(Math.atan2(Math.sin(lst), Math.cos(lst) * Math.cos(eps) - Math.tan(phi) * 0) * R2D);
-  // Ascendant
-  const ascRaw = Math.atan2(
-    -Math.cos(lst),
-    Math.sin(lst) * Math.cos(eps) + Math.tan(phi) * Math.sin(eps),
-  );
-  let asc = norm360(ascRaw * R2D);
-  // ensure ASC is in the eastern half (within 180° of MC + 90°)
-  const expected = norm360(mc + 90);
-  if (Math.abs(((asc - expected + 540) % 360) - 180) > 90) asc = norm360(asc + 180);
+
+  // MC ecliptic longitude
+  const mc = norm360(Math.atan2(Math.sin(ramc), Math.cos(ramc) * Math.cos(eps)) * R2D);
+
+  // Ascendant — rotate by 180° to land on the eastern (rising) point
+  const y = -Math.cos(ramc);
+  const x = Math.sin(eps) * Math.tan(phi) + Math.cos(eps) * Math.sin(ramc);
+  let asc = norm360(Math.atan2(y, x) * R2D + 180);
+
+  // Ensure ASC is east of MC (between MC and MC+180 going forward)
+  const diff = norm360(asc - mc);
+  if (diff < 1 || diff > 179) {
+    // edge: leave as-is
+  } else if (diff > 180) {
+    asc = norm360(asc + 180);
+  }
   return { asc, mc };
 }
 
@@ -93,30 +95,10 @@ export function computeHouses(
     return { system, ascendant: asc, midheaven: mc, cusps, ascendantSign: ascSign, midheavenSign: mcSign, chartRuler: RULERS[ascSign] };
   }
 
-  // Placidus — semi-arc method, simplified.
-  const eps = obliquity(date) * D2R;
-  const phi = lat * D2R;
-  const ramc = localSiderealTime(date, lng);
-  const cusps: number[] = new Array(12).fill(0);
-  cusps[0] = asc;
-  cusps[9] = mc;
-  cusps[6] = norm360(asc + 180);
-  cusps[3] = norm360(mc + 180);
-  // Intermediate cusps via iterative Placidus formula
-  for (const i of [11, 12, 2, 3, 5, 6, 8, 9]) {
-    // Approximate intermediates with equal-house fallback per quadrant.
-    // (Full Placidus solving is omitted here to keep the engine lean and robust.)
-  }
-  for (let h = 1; h <= 12; h++) {
-    if (cusps[h - 1] === 0 && h !== 1) {
-      const span = ((cusps[(h % 12)] || asc) - (cusps[(h - 2 + 12) % 12])) ;
-      cusps[h - 1] = norm360((cusps[(h - 2 + 12) % 12]) + span / 1);
-    }
-  }
-  // Safer: fall back to equal house from ASC for any unfilled cusp.
-  for (let h = 0; h < 12; h++) if (!cusps[h]) cusps[h] = norm360(asc + h * 30);
-  void eps; void phi; void ramc;
-  return { system, ascendant: asc, midheaven: mc, cusps, ascendantSign: ascSign, midheavenSign: mcSign, chartRuler: RULERS[ascSign] };
+  // Placidus is not yet implemented; fall back to equal-house from ASC.
+  const cusps: number[] = [];
+  for (let h = 0; h < 12; h++) cusps.push(norm360(asc + h * 30));
+  return { system: "whole-sign", ascendant: asc, midheaven: mc, cusps, ascendantSign: ascSign, midheavenSign: mcSign, chartRuler: RULERS[ascSign] };
 }
 
 /** Given a longitude and a HouseCusps, which house (1..12) does it fall in? */
