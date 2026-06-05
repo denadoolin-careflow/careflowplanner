@@ -38,6 +38,7 @@ import { Copy } from "lucide-react";
 import { useAtmosphere } from "@/lib/atmospheres";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TaskAIAssistPopover } from "@/components/tasks/TaskAIAssistPopover";
+import { PomodoroDialog } from "@/components/routines/PomodoroDialog";
 
 type Props = {
   open: boolean;
@@ -122,6 +123,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   const [addingSub, setAddingSub] = useState(false);
   const [subAiLoading, setSubAiLoading] = useState(false);
   const [autoBusy, setAutoBusy] = useState(false);
+  const [timerOpen, setTimerOpen] = useState(false);
   const [notesExpanded, setNotesExpanded] = useState(() => !!(task?.notes && task.notes.trim().length > 0));
   const [nlpOn, setNlpOn] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
@@ -251,6 +253,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex max-h-[92vh] w-[min(96vw,60rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-h-[88vh]"
@@ -311,6 +314,17 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               title="Top three today"
             >
               <Star className={cn("h-4 w-4", draft.isTopThree && "fill-current")} />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary"
+              onClick={() => setTimerOpen(true)}
+              aria-label="Start timer"
+              title="Start focus timer"
+            >
+              <Timer className="h-4 w-4" />
             </Button>
             <div className="mx-1 hidden h-5 w-px bg-border/60 sm:block" />
             <DialogTitle className="sr-only">Edit task</DialogTitle>
@@ -802,6 +816,13 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         </div>
       </DialogContent>
     </Dialog>
+    <PomodoroDialog
+      open={timerOpen}
+      onOpenChange={setTimerOpen}
+      title={draft.title}
+      subtitle={draft.estMinutes ? `Estimated ${draft.estMinutes} min` : undefined}
+    />
+    </>
   );
 }
 

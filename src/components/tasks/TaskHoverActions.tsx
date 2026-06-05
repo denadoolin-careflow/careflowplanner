@@ -3,13 +3,14 @@ import { format, addDays } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
-  CalendarClock, Pencil, Snowflake, FolderInput, MoreHorizontal,
+  CalendarClock, Pencil, Snowflake, FolderInput, MoreHorizontal, Timer,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { Task } from "@/lib/types";
 import { toast } from "sonner";
 import { haptics } from "@/lib/haptics";
 import { ProjectQuickJump } from "@/components/tasks/ProjectQuickJump";
+import { PomodoroDialog } from "@/components/routines/PomodoroDialog";
 
 type Props = {
   task: Task;
@@ -26,6 +27,7 @@ export function TaskHoverActions({ task, onEdit, onDetails }: Props) {
   const [planOpen, setPlanOpen] = useState(false);
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
+  const [timerOpen, setTimerOpen] = useState(false);
 
   const setDue = async (d: Date, label: string) => {
     const iso = format(d, "yyyy-MM-dd");
@@ -52,7 +54,19 @@ export function TaskHoverActions({ task, onEdit, onDetails }: Props) {
   };
 
   return (
+    <>
     <div className="hidden items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 sm:flex">
+      {/* Start timer */}
+      <Button
+        variant="ghost" size="icon"
+        className="h-7 w-7 text-muted-foreground/70 hover:text-primary"
+        onClick={(e) => { e.stopPropagation(); setTimerOpen(true); }}
+        title="Start timer"
+        aria-label="Start timer"
+      >
+        <Timer className="h-3.5 w-3.5" />
+      </Button>
+
       {/* Plan */}
       <Popover open={planOpen} onOpenChange={setPlanOpen}>
         <PopoverTrigger asChild>
@@ -142,6 +156,13 @@ export function TaskHoverActions({ task, onEdit, onDetails }: Props) {
         <MoreHorizontal className="h-3.5 w-3.5" />
       </Button>
     </div>
+    <PomodoroDialog
+      open={timerOpen}
+      onOpenChange={setTimerOpen}
+      title={task.title}
+      subtitle={task.estMinutes ? `Estimated ${task.estMinutes} min` : undefined}
+    />
+    </>
   );
 }
 
