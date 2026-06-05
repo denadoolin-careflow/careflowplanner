@@ -1,8 +1,11 @@
 import { useMemo } from "react";
-import { Loader2, RefreshCw, Target, Heart, Home, Leaf, TrendingUp, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Loader2, RefreshCw, Target, Heart, Home, Leaf, TrendingUp, Sparkles, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { DailyGuidance } from "@/lib/cosmic/v2-hooks";
 import { getMoonSign } from "@/lib/zodiac";
+import { useStore } from "@/lib/store";
+import { useToast } from "@/hooks/use-toast";
 
 type Category = { key: string; label: string; tone: string; icon: React.ReactNode };
 const CATS: Category[] = [
@@ -48,6 +51,16 @@ export function PersonalGuidanceGrid({ data, loading, onRefresh, date = new Date
   data: DailyGuidance | null; loading: boolean; onRefresh: (force?: boolean) => void; date?: Date;
 }) {
   const sign = getMoonSign(date).name;
+  const { addTask } = useStore() as any;
+  const { toast } = useToast();
+  const [added, setAdded] = useState<Record<string, boolean>>({});
+
+  function addAction(category: string, title: string) {
+    addTask?.({ title, area: undefined, cosmic_tag: `guidance-${category}` });
+    setAdded(s => ({ ...s, [category]: true }));
+    toast({ title: "Added to CareFlow", description: title });
+  }
+
   const tiles = useMemo(() => {
     // Map AI suggested_actions onto categories — fill the rest with fallback.
     const assigned: Record<string, { body: string; action: string }> = {};
@@ -87,9 +100,22 @@ export function PersonalGuidanceGrid({ data, loading, onRefresh, date = new Date
               {t.icon}{t.label}
             </p>
             <p className="min-h-[64px] text-[11.5px] leading-snug">{t.body}</p>
-            <p className="mt-2 border-t border-border/40 pt-1.5 text-[10.5px] text-muted-foreground">
-              Action: <span className="text-foreground/80">{t.action}</span>
-            </p>
+            <div className="mt-2 border-t border-border/40 pt-1.5">
+              <p className="text-[10.5px] text-muted-foreground mb-1">Suggested task</p>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => addAction(t.key, t.action)}
+                disabled={!!added[t.key]}
+                className="h-auto w-full justify-start gap-1.5 whitespace-normal px-1.5 py-1 text-left text-[11.5px] leading-tight hover:bg-background/60"
+                aria-label={`Add "${t.action}" to CareFlow`}
+              >
+                {added[t.key]
+                  ? <Check className="h-3 w-3 shrink-0 text-primary" />
+                  : <Plus className="h-3 w-3 shrink-0 text-primary" />}
+                <span className="flex-1">{t.action}</span>
+              </Button>
+            </div>
           </div>
         ))}
       </div>
