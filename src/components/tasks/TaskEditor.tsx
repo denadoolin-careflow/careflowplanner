@@ -36,6 +36,7 @@ import { copyToClipboard, formatTaskForCopy } from "@/lib/clipboard";
 import { Copy } from "lucide-react";
 import { useAtmosphere } from "@/lib/atmospheres";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { TaskAIAssistPopover } from "@/components/tasks/TaskAIAssistPopover";
 
 type Props = {
   open: boolean;
