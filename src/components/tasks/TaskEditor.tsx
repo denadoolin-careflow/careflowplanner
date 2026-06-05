@@ -764,3 +764,187 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     </Dialog>
   );
 }
+
+/* ─────────── helper components ─────────── */
+
+const PRIORITY_TONE: Record<string, string> = {
+  low: "text-muted-foreground",
+  medium: "text-amber-500",
+  high: "text-rose-500",
+};
+
+function PillPopover({
+  icon, label, active, onClear, children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+  onClear?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "group inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[12px] transition-colors",
+            active
+              ? "border-primary/40 bg-primary/10 text-foreground hover:bg-primary/15"
+              : "border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          )}
+        >
+          {icon}
+          <span className="truncate">{label}</span>
+          {onClear && (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label="Clear"
+              onClick={(e) => { e.stopPropagation(); onClear(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); onClear(); } }}
+              className="ml-0.5 rounded-full opacity-60 hover:opacity-100"
+            >
+              <X className="h-3 w-3" />
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="z-[60] w-auto p-0" align="start" collisionPadding={12}>
+        {children}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <section className={cn("rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm", className)}>
+      {children}
+    </section>
+  );
+}
+
+function CardHeader({
+  icon, title, count, right, children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  count?: string;
+  right?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="p-3.5">
+      <header className="mb-2.5 flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="text-foreground/80">{icon}</span>
+          {title}
+          {count && (
+            <span className="ml-1 rounded-full bg-muted px-1.5 py-px text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
+              {count}
+            </span>
+          )}
+        </h3>
+        {right}
+      </header>
+      {children}
+    </div>
+  );
+}
+
+function AIQuickAction({
+  icon, label, onClick, busy,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void | Promise<void>;
+  busy?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={onClick}
+      className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-background/50 px-2.5 py-2 text-left text-[13px] transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:opacity-60"
+    >
+      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-primary">{icon}</span>
+      <span className="flex-1 truncate">{label}</span>
+      {busy && <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />}
+    </button>
+  );
+}
+
+function FlowContextCard({
+  draft, set,
+}: {
+  draft: Task;
+  set: <K extends keyof Task>(k: K, v: Task[K]) => void;
+}) {
+  const { atmosphere } = useAtmosphere();
+  const bestTime = (() => {
+    if (draft.startTime) {
+      const h = parseInt(draft.startTime.slice(0, 2), 10);
+      if (h < 12) return "Morning";
+      if (h < 17) return "Afternoon";
+      if (h < 21) return "Evening";
+      return "Night";
+    }
+    if (draft.energy === "high") return "Morning";
+    if (draft.energy === "low") return "Evening";
+    return "Afternoon";
+  })();
+  const energyLabel = draft.energy
+    ? draft.energy.charAt(0).toUpperCase() + draft.energy.slice(1)
+    : "Moderate";
+  const swatch = atmosphere?.palette?.[0] ?? "hsl(var(--primary))";
+
+  return (
+    <Card className="overflow-hidden">
+      <div
+        className="px-3.5 pt-3.5"
+        style={{
+          backgroundImage: `linear-gradient(135deg, ${swatch}33, transparent 65%)`,
+        }}
+      >
+        <header className="mb-2.5 flex items-center justify-between gap-2">
+          <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: swatch }} />
+            Flow Context
+          </h3>
+        </header>
+      </div>
+      <div className="space-y-2.5 px-3.5 pb-3.5">
+        <Row label="Atmosphere" value={atmosphere?.name ?? "Sage Sanctuary"} swatch={swatch} />
+        <Row
+          label="Energy level"
+          value={
+            <Select value={draft.energy ?? "medium"} onValueChange={v => set("energy", v as Energy)}>
+              <SelectTrigger className="h-7 w-[120px] border-0 bg-transparent px-1 text-[13px] font-medium hover:bg-muted/40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-[60]" position="popper" sideOffset={6}>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Moderate</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </SelectContent>
+            </Select>
+          }
+        />
+        <Row label="Best time" value={bestTime} />
+      </div>
+    </Card>
+  );
+}
+
+function Row({ label, value, swatch }: { label: string; value: React.ReactNode; swatch?: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2 text-[13px]">
+      <span className="flex items-center gap-1.5 text-muted-foreground">
+        {swatch && <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: swatch }} />}
+        {label}
+      </span>
+      <span className="font-medium text-foreground">{value}</span>
+    </div>
+  );
+}
