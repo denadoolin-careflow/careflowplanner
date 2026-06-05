@@ -180,7 +180,7 @@ export function GroceryKanban() {
             <ul className="mt-2 grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
               {pantryItems.map(i => (
                 <li key={i.id} className="group flex items-center gap-1.5 rounded-md bg-background/60 px-2 py-1 text-xs">
-                  <span className="flex-1 truncate text-muted-foreground line-through">{i.name}</span>
+                  <span className="min-w-0 flex-1 whitespace-normal break-words leading-snug text-muted-foreground line-through">{i.name}</span>
                   <Badge variant="secondary" className="rounded-full bg-primary/15 px-1.5 text-[9px] uppercase tracking-wider text-primary">In stock</Badge>
                   <button onClick={() => toggleGrocery(i.id)} title="Move back to list"
                     className="opacity-0 transition hover:text-primary group-hover:opacity-70">
@@ -243,7 +243,7 @@ function KanbanItem({ item, onToggle, onDelete, onStock, onRename, shoppingMode 
         <IngredientPopover ingredient={item.name} mealName={item.sourceMealName ?? undefined}
           trigger={
             <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { if (e.detail === 2) { setEditing(true); e.stopPropagation(); } }}
-              className={`flex-1 truncate text-left ${item.bought ? "text-muted-foreground line-through" : ""}`}
+            className={`min-w-0 flex-1 whitespace-normal break-words leading-snug text-left ${item.bought ? "text-muted-foreground line-through" : ""}`}
               title="Click for details · double-click to rename">
               {item.name}
               {item.qty && <span className="ml-1 text-[10px] text-muted-foreground">· {item.qty}</span>}
