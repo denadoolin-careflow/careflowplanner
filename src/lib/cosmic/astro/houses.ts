@@ -95,30 +95,10 @@ export function computeHouses(
     return { system, ascendant: asc, midheaven: mc, cusps, ascendantSign: ascSign, midheavenSign: mcSign, chartRuler: RULERS[ascSign] };
   }
 
-  // Placidus — semi-arc method, simplified.
-  const eps = obliquity(date) * D2R;
-  const phi = lat * D2R;
-  const ramc = localSiderealTime(date, lng);
-  const cusps: number[] = new Array(12).fill(0);
-  cusps[0] = asc;
-  cusps[9] = mc;
-  cusps[6] = norm360(asc + 180);
-  cusps[3] = norm360(mc + 180);
-  // Intermediate cusps via iterative Placidus formula
-  for (const i of [11, 12, 2, 3, 5, 6, 8, 9]) {
-    // Approximate intermediates with equal-house fallback per quadrant.
-    // (Full Placidus solving is omitted here to keep the engine lean and robust.)
-  }
-  for (let h = 1; h <= 12; h++) {
-    if (cusps[h - 1] === 0 && h !== 1) {
-      const span = ((cusps[(h % 12)] || asc) - (cusps[(h - 2 + 12) % 12])) ;
-      cusps[h - 1] = norm360((cusps[(h - 2 + 12) % 12]) + span / 1);
-    }
-  }
-  // Safer: fall back to equal house from ASC for any unfilled cusp.
-  for (let h = 0; h < 12; h++) if (!cusps[h]) cusps[h] = norm360(asc + h * 30);
-  void eps; void phi; void ramc;
-  return { system, ascendant: asc, midheaven: mc, cusps, ascendantSign: ascSign, midheavenSign: mcSign, chartRuler: RULERS[ascSign] };
+  // Placidus is not yet implemented; fall back to equal-house from ASC.
+  const cusps: number[] = [];
+  for (let h = 0; h < 12; h++) cusps.push(norm360(asc + h * 30));
+  return { system: "whole-sign", ascendant: asc, midheaven: mc, cusps, ascendantSign: ascSign, midheavenSign: mcSign, chartRuler: RULERS[ascSign] };
 }
 
 /** Given a longitude and a HouseCusps, which house (1..12) does it fall in? */

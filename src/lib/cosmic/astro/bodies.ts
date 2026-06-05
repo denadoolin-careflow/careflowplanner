@@ -127,7 +127,8 @@ export function bodySpeed(body: ExtPlanet, date: Date = new Date()): number {
   let d = b - a; if (d > 180) d -= 360; if (d < -180) d += 360;
   return d;
 }
-void InnerPlanet;
+// InnerPlanet remains exported as a type only.
+export type { InnerPlanet };
 
 export function bodySign(body: ExtPlanet, date: Date = new Date()): Sign {
   const lon = bodyLongitude(body, date);

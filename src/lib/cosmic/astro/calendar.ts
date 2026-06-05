@@ -67,8 +67,8 @@ export function buildMonthEvents(year: number, month0: number): AstroEvent[] {
         events.push({ date: iso, kind: "ingress", label: `${p} enters ${sign}`, planet: p, sign });
         prevSign[p] = sign;
       }
-      if (p !== "Sun" && PLANETS_OUT.includes(p as Planet)) {
-        const rx = isRetrograde(p as Planet, date);
+      if (p !== "Sun") {
+        const rx = bodyRetrograde(p as ExtPlanet, date);
         if (rx !== prevRetro[p]) {
           events.push({
             date: iso,
