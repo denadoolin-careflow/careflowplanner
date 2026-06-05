@@ -395,6 +395,12 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               </div>
             </PillPopover>
 
+            <TimeOfDayPill
+              startTime={draft.startTime}
+              onSelect={(time) => set("startTime", time)}
+              onClear={() => set("startTime", undefined)}
+            />
+
             <PillPopover
               icon={<Flag className={cn("h-3.5 w-3.5", PRIORITY_TONE[draft.priority ?? "medium"])} />}
               label={(draft.priority ?? "medium").replace(/^\w/, c => c.toUpperCase())}
@@ -488,6 +494,13 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                 ))}
               </div>
             </PillPopover>
+
+            <ProjectPill
+              value={draft.projectId}
+              projects={state.projects ?? []}
+              onSelect={(id) => set("projectId", id)}
+              onClear={() => set("projectId", undefined)}
+            />
           </div>
 
           {/* NLP chips inline */}
