@@ -399,16 +399,16 @@ function SortablePantryCard({
         {...attributes}
         {...listeners}
         aria-label="Drag handle"
-        className="touch-none -ml-1 grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded text-muted-foreground/60 opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100 active:cursor-grabbing md:opacity-0"
+        className="touch-none -ml-1 mt-0.5 grid h-7 w-5 shrink-0 cursor-grab place-items-center self-start rounded text-muted-foreground/60 opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100 active:cursor-grabbing md:opacity-0"
         onClick={(e) => e.stopPropagation()}
       >
         <GripVertical className="h-3.5 w-3.5" />
       </button>
       <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: accent }} />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">{row.name}</div>
+      <div className="min-w-0 flex-1 self-start">
+        <div className="whitespace-normal break-words leading-snug text-sm font-medium">{row.name}</div>
         {(row.qty || row.unit || row.category) && (
-          <div className="truncate text-[10px] text-muted-foreground">
+          <div className="whitespace-normal break-words text-[10px] leading-snug text-muted-foreground">
             {[row.qty, row.unit, row.category].filter(Boolean).join(" · ")}
           </div>
         )}
@@ -459,7 +459,7 @@ function FloatingCard({ row, count, column }: { row: PantryRow; count: number; c
       >
         <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: accent }} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium">{row.name}</div>
+          <div className="whitespace-normal break-words leading-snug text-sm font-medium">{row.name}</div>
           {count > 1 && (
             <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: accent }}>
               + {count - 1} more

@@ -9,7 +9,7 @@ export interface GroceryPrefs {
 }
 
 export const DEFAULT_GROCERY_PREFS: GroceryPrefs = {
-  preferred_store: "instacart",
+  preferred_store: "kroger",
   backup_store: null,
   delivery_mode: "delivery",
 };
@@ -29,7 +29,7 @@ export function useGroceryPrefs() {
       .maybeSingle();
     if (data) {
       setPrefs({
-        preferred_store: (data as any).preferred_store ?? "instacart",
+        preferred_store: (data as any).preferred_store ?? "kroger",
         backup_store: (data as any).backup_store ?? null,
         delivery_mode: (data as any).delivery_mode ?? "delivery",
       });
