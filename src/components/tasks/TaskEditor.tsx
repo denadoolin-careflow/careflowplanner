@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   CalendarIcon, X, Tag, Flag, Zap, Clock, Repeat, FolderKanban, Target,
   Star, Trash2, FileText, Link2, AlignLeft, Paperclip, ListTree, User, FolderTree,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, Wand2, Hash, ListChecks, Timer, History,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -34,6 +34,8 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { copyToClipboard, formatTaskForCopy } from "@/lib/clipboard";
 import { Copy } from "lucide-react";
+import { useAtmosphere } from "@/lib/atmospheres";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 type Props = {
   open: boolean;
