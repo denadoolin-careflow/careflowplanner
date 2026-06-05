@@ -1175,7 +1175,9 @@ export type Database = {
           birth_place: string | null
           birth_time: string | null
           birth_tz: string | null
+          chart_settings: Json
           created_at: string
+          house_system: string
           natal_json: Json | null
           updated_at: string
           user_id: string
@@ -1187,7 +1189,9 @@ export type Database = {
           birth_place?: string | null
           birth_time?: string | null
           birth_tz?: string | null
+          chart_settings?: Json
           created_at?: string
+          house_system?: string
           natal_json?: Json | null
           updated_at?: string
           user_id: string
@@ -1199,8 +1203,133 @@ export type Database = {
           birth_place?: string | null
           birth_time?: string | null
           birth_tz?: string | null
+          chart_settings?: Json
           created_at?: string
+          house_system?: string
           natal_json?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cosmic_chapters: {
+        Row: {
+          chapter_theme: string
+          characters: Json
+          created_at: string
+          generated_at: string
+          id: string
+          lessons: Json
+          practices: Json
+          reflection_prompt: string | null
+          source_signals: Json | null
+          summary: string
+          updated_at: string
+          user_id: string
+          valid_from: string
+          valid_to: string
+        }
+        Insert: {
+          chapter_theme: string
+          characters?: Json
+          created_at?: string
+          generated_at?: string
+          id?: string
+          lessons?: Json
+          practices?: Json
+          reflection_prompt?: string | null
+          source_signals?: Json | null
+          summary: string
+          updated_at?: string
+          user_id: string
+          valid_from: string
+          valid_to: string
+        }
+        Update: {
+          chapter_theme?: string
+          characters?: Json
+          created_at?: string
+          generated_at?: string
+          id?: string
+          lessons?: Json
+          practices?: Json
+          reflection_prompt?: string | null
+          source_signals?: Json | null
+          summary?: string
+          updated_at?: string
+          user_id?: string
+          valid_from?: string
+          valid_to?: string
+        }
+        Relationships: []
+      }
+      cosmic_chart_cache: {
+        Row: {
+          birth_hash: string
+          chart: Json
+          computed_at: string
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          birth_hash: string
+          chart: Json
+          computed_at?: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          birth_hash?: string
+          chart?: Json
+          computed_at?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cosmic_daily_guidance: {
+        Row: {
+          body: string
+          created_at: string
+          gentle_reminder: string | null
+          guidance_date: string
+          headline: string
+          id: string
+          journal_prompt: string | null
+          mood_tags: string[]
+          source_signals: Json | null
+          suggested_actions: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          gentle_reminder?: string | null
+          guidance_date: string
+          headline: string
+          id?: string
+          journal_prompt?: string | null
+          mood_tags?: string[]
+          source_signals?: Json | null
+          suggested_actions?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          gentle_reminder?: string | null
+          guidance_date?: string
+          headline?: string
+          id?: string
+          journal_prompt?: string | null
+          mood_tags?: string[]
+          source_signals?: Json | null
+          suggested_actions?: Json
           updated_at?: string
           user_id?: string
         }
@@ -1289,6 +1418,48 @@ export type Database = {
           },
         ]
       }
+      cosmic_journal_themes: {
+        Row: {
+          breakthroughs: Json
+          created_at: string
+          entry_count: number
+          id: string
+          patterns: Json
+          period_end: string
+          period_start: string
+          reflection_prompt: string | null
+          themes: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          breakthroughs?: Json
+          created_at?: string
+          entry_count?: number
+          id?: string
+          patterns?: Json
+          period_end: string
+          period_start: string
+          reflection_prompt?: string | null
+          themes?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          breakthroughs?: Json
+          created_at?: string
+          entry_count?: number
+          id?: string
+          patterns?: Json
+          period_end?: string
+          period_start?: string
+          reflection_prompt?: string | null
+          themes?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cosmic_settings: {
         Row: {
           atmosphere: string | null
@@ -1311,6 +1482,48 @@ export type Database = {
           created_at?: string
           enabled_event_kinds?: string[]
           show_in_calendar?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cosmic_transit_interpretations: {
+        Row: {
+          careflow: Json | null
+          created_at: string
+          emotional: string | null
+          event_id: string
+          growth: string | null
+          id: string
+          meaning: string | null
+          practical: string | null
+          technical: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          careflow?: Json | null
+          created_at?: string
+          emotional?: string | null
+          event_id: string
+          growth?: string | null
+          id?: string
+          meaning?: string | null
+          practical?: string | null
+          technical?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          careflow?: Json | null
+          created_at?: string
+          emotional?: string | null
+          event_id?: string
+          growth?: string | null
+          id?: string
+          meaning?: string | null
+          practical?: string | null
+          technical?: string | null
           updated_at?: string
           user_id?: string
         }
