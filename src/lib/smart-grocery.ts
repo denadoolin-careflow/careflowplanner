@@ -62,7 +62,7 @@ export async function collectSmartCandidates(
       .eq("user_id", userId)
       .neq("restock_cadence", "none"),
     supabase.from("meals")
-      .select("name,date")
+      .select("name,date,ingredients")
       .eq("user_id", userId)
       .gte("date", today)
       .lte("date", end),
@@ -77,7 +77,7 @@ export async function collectSmartCandidates(
 
   const pantry = (pantryRes.data ?? []) as Array<{ name: string; stock_status?: string | null; in_stock?: boolean | null; location?: string | null }>;
   const recurring = (recurringRes.data ?? []) as Array<{ name: string; in_stock?: boolean | null; location?: string | null }>;
-  const meals = (mealsRes.data ?? []) as Array<{ name: string; date: string }>;
+  const meals = (mealsRes.data ?? []) as Array<{ name: string; date: string; ingredients?: any }>;
   const library = (libRes.data ?? []) as Array<{ title: string; ingredients: string[] | null }>;
   const existing = (existingRes.data ?? []) as Array<{ name: string }>;
 
@@ -110,7 +110,10 @@ export async function collectSmartCandidates(
   const libByTitle = new Map<string, string[]>();
   for (const m of library) libByTitle.set(norm(m.title), (m.ingredients ?? []));
   for (const meal of meals) {
-    const ings = libByTitle.get(norm(meal.name));
+    // Prefer ingredients stored on the meal itself (planner-linked recipe),
+    // fall back to matching the title against the user's recipe library.
+    const direct = Array.isArray(meal.ingredients) ? (meal.ingredients as any[]).map(String) : [];
+    const ings = direct.length ? direct : libByTitle.get(norm(meal.name));
     if (!ings?.length) continue;
     for (const raw of ings) {
       const cleaned = cleanIngredient(raw);
