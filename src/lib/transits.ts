@@ -135,6 +135,22 @@ export function planetSign(planet: Planet, date: Date = new Date()): Sign {
   return SIGNS[Math.floor(lon / 30)];
 }
 
+/** Geocentric ecliptic longitude in degrees (0–360) for inner-system planets. */
+export function planetLongitude(planet: Planet, date: Date = new Date()): number {
+  return cachedLon(planet, date);
+}
+
+/** Daily motion (deg/day) — positive = direct, negative = retrograde. */
+export function planetSpeed(planet: Planet, date: Date = new Date()): number {
+  if (planet === "Sun") return 0.9856;
+  const before = cachedLon(planet, new Date(date.getTime() - 86400000));
+  const after = cachedLon(planet, new Date(date.getTime() + 86400000));
+  let delta = after - before;
+  if (delta > 180) delta -= 360;
+  if (delta < -180) delta += 360;
+  return delta / 2;
+}
+
 /** Returns true if planet's geocentric longitude is decreasing (retrograde). */
 export function isRetrograde(planet: Planet, date: Date = new Date()): boolean {
   if (planet === "Sun") return false;
