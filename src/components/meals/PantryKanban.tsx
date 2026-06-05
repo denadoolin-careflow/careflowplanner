@@ -387,7 +387,7 @@ function SortablePantryCard({
       style={style}
       onClick={onSelectClick}
       className={cn(
-        "group relative flex items-center gap-1.5 rounded-lg border bg-background px-2 py-1.5 shadow-sm transition",
+        "group relative flex items-start gap-1.5 rounded-lg border bg-background px-2 py-1.5 shadow-sm transition",
         isDragging
           ? "border-dashed border-primary/40 bg-muted/40 opacity-40"
           : "border-border/40 hover:-translate-y-0.5 hover:shadow",
