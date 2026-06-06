@@ -185,6 +185,7 @@ function CommandPalette({
     const projectId = await resolveProject();
     const status = effectiveStatus;
     const inboxBound = !parsed.dueDate && !projectId && status === "active";
+    const anchorGuess = suggestAnchorForText(`${parsed.title} ${value}`);
     await addTask({
       title: parsed.title,
       area: effectiveArea as any,
@@ -198,6 +199,7 @@ function CommandPalette({
       projectId,
       inbox: inboxBound,
       status,
+      anchorKey: anchorGuess,
     });
     const destLabel = projectId
       ? (effectiveProject?.name ?? "project")
@@ -205,7 +207,12 @@ function CommandPalette({
       : parsed.dueDate === todayISO() ? "Today"
       : parsed.dueDate ? "Upcoming"
       : "Inbox";
-    toast.success(`Added to ${destLabel}`, { description: parsed.title });
+    const anchorMeta = getAnchor(anchorGuess);
+    toast.success(`Added to ${destLabel}`, {
+      description: anchorMeta
+        ? `${parsed.title}  ·  Anchored to ${anchorMeta.label}`
+        : parsed.title,
+    });
     haptics.tap();
     routeAfterCapture({ projectId, status, dueDate: parsed.dueDate });
     onClose();
