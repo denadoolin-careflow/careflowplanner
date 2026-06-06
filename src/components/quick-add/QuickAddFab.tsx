@@ -22,6 +22,8 @@ import { useQuickAddPresets, type QuickAddKind, type QuickAddPreset } from "@/li
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { supabase } from "@/integrations/supabase/client";
 import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
+import { suggestAnchorForText } from "@/lib/anchor-suggest";
+import { getAnchor } from "@/lib/anchors";
 
 type Mode = QuickAddKind | "command" | "braindump" | "voice";
 
