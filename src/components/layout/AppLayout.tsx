@@ -116,6 +116,7 @@ export function AppLayout() {
       <FocusPanel />
       <GlobalTaskEditor />
       <UpgradePromptHost />
+      <AICaptureDialog />
     </div>
   );
 }
