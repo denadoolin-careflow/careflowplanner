@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { PhaseCard } from "@/components/care/PhaseCard";
 import { AnchorFlowCard } from "@/components/care/AnchorFlowCard";
+import { AICaptureDialog } from "@/components/care/AICaptureDialog";
 import { useCareProfile, careHeaderForSeason, SEASON_META } from "@/lib/care-methodology";
 
 /**
@@ -50,11 +51,11 @@ export default function CareHub() {
       {/* The four phases */}
       <div className="grid gap-4 sm:grid-cols-2">
         <PhaseCard
-          to="/inbox"
+          onClick={() => window.dispatchEvent(new Event("careflow:ai-capture"))}
           letter="C"
           title="Capture"
           tagline="Capture"
-          description="Get it out of your head — notes, tasks, voice, groceries, ideas."
+          description="Brain-dump anything — AI sorts it into a task, idea, grocery, or journal."
           icon={Inbox}
           tint="from-sky-400/20 via-sky-300/5 to-transparent"
           iconTint="bg-sky-500/15 text-sky-600"
@@ -117,6 +118,7 @@ export default function CareHub() {
           </ul>
         </SectionCard>
       )}
+      <AICaptureDialog />
     </div>
   );
 }
