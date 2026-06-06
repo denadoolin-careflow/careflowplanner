@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { PhaseCard } from "@/components/care/PhaseCard";
 import { AnchorFlowCard } from "@/components/care/AnchorFlowCard";
-import { AICaptureDialog } from "@/components/care/AICaptureDialog";
 import { useCareProfile, careHeaderForSeason, SEASON_META } from "@/lib/care-methodology";
 
 /**
@@ -118,7 +117,6 @@ export default function CareHub() {
           </ul>
         </SectionCard>
       )}
-      <AICaptureDialog />
     </div>
   );
 }
