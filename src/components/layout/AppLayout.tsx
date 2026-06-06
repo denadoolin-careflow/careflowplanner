@@ -9,6 +9,7 @@ import { useAutoAtmosphereResolver, useAtmosphere } from "@/lib/atmospheres";
 import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
 import { AIAssistantFab } from "@/components/ai/AIAssistantFab";
 import { CombinedFab } from "@/components/quick-add/CombinedFab";
+import { AICaptureDialog } from "@/components/care/AICaptureDialog";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -116,6 +117,7 @@ export function AppLayout() {
       <FocusPanel />
       <GlobalTaskEditor />
       <UpgradePromptHost />
+      <AICaptureDialog />
     </div>
   );
 }

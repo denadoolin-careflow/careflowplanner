@@ -65,6 +65,7 @@ const taskFrom = (r: any): Task => ({
   snoozedUntil: r.snoozed_until ?? undefined,
   attachments: Array.isArray(r.attachments) ? r.attachments : [],
   updatedAt: r.updated_at ?? undefined,
+  anchorKey: r.anchor_key ?? undefined,
 });
 const taskTo = (t: Partial<Task>) => ({
   title: t.title, notes: t.notes ?? null, icon: t.icon ?? null,
@@ -92,6 +93,7 @@ const taskTo = (t: Partial<Task>) => ({
   // unpark a task. Use `null` explicitly via patch to clear.
   snoozed_until: t.snoozedUntil === undefined ? undefined : t.snoozedUntil,
   attachments: (t.attachments ?? []) as any,
+  anchor_key: t.anchorKey === undefined ? undefined : (t.anchorKey ?? null),
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
 const habitFrom = (r: any): Habit => {

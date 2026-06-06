@@ -64,6 +64,8 @@ export interface Task {
   attachments?: Attachment[];
   /** Server-side last-modified timestamp; used for LWW conflict resolution. */
   updatedAt?: string;
+  /** CARE anchor link (default-anchor key or custom anchor key). */
+  anchorKey?: string;
 }
 
 
