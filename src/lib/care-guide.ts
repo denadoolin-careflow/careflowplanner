@@ -47,7 +47,7 @@ export function useCareGuide() {
           .eq("user_id", user.id)
           .eq("brief_date", today)
           .maybeSingle();
-        if (cached?.brief) { setBrief(cached.brief as CareGuideBrief); return; }
+        if (cached?.brief) { setBrief(cached.brief as unknown as CareGuideBrief); return; }
       }
 
       // Build small context payload
