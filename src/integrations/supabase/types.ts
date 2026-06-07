@@ -624,6 +624,36 @@ export type Database = {
         }
         Relationships: []
       }
+      care_guide_briefs: {
+        Row: {
+          atmosphere: string | null
+          brief: Json
+          brief_date: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          atmosphere?: string | null
+          brief?: Json
+          brief_date: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          atmosphere?: string | null
+          brief?: Json
+          brief_date?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       care_notes: {
         Row: {
           body: string

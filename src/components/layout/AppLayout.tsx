@@ -7,7 +7,7 @@ import { AtmospherePicker } from "@/components/atmospheres/AtmospherePicker";
 import { AtmosphereAmbient } from "@/components/atmospheres/AtmosphereAmbient";
 import { useAutoAtmosphereResolver, useAtmosphere } from "@/lib/atmospheres";
 import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
-import { AIAssistantFab } from "@/components/ai/AIAssistantFab";
+import { CareGuideFab } from "@/components/care/CareGuideFab";
 import { CombinedFab } from "@/components/quick-add/CombinedFab";
 import { AICaptureDialog } from "@/components/care/AICaptureDialog";
 import { useStore } from "@/lib/store";
@@ -110,7 +110,7 @@ export function AppLayout() {
         </div>
       </div>
       <QuickAddFab hideButton />
-      <AIAssistantFab hideButton />
+      <CareGuideFab hideButton />
       <CombinedFab />
       <BottomNav />
       <CommandPalette />

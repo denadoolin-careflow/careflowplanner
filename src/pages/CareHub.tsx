@@ -72,7 +72,7 @@ export default function CareHub() {
           delay={0.05}
         />
         <PhaseCard
-          to="/routines"
+          to="/care/rhythm"
           letter="R"
           title="Rhythm"
           tagline="Rhythm"
