@@ -64,6 +64,7 @@ import Onboarding from "./pages/Onboarding";
 import Memories from "./pages/Memories";
 import CareLoop from "./pages/CareLoop";
 import CareHub from "./pages/CareHub";
+import CareRhythm from "./pages/CareRhythm";
 import Automations from "./pages/Automations";
 import Trips from "./pages/Trips";
 import TripDetail from "./pages/TripDetail";
