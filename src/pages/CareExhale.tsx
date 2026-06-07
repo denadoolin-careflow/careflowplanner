@@ -40,7 +40,7 @@ export default function CareExhale() {
   const [checks, setChecks] = useState<Record<number, boolean>>({});
 
   const completed = useMemo(
-    () => state.tasks.filter((t) => t.status === "done" && t.completedAt?.startsWith(today)),
+    () => state.tasks.filter((t) => t.status === "done" && (t.dueDate === today || !t.dueDate)),
     [state.tasks, today],
   );
   const remaining = useMemo(
