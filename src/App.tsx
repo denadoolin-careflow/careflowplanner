@@ -180,6 +180,7 @@ const App = () => (
                 <Route path="/wealth" element={<WealthHub />} />
                 <Route path="/mental-load" element={<MentalLoad />} />
                 <Route path="/care" element={<CareHub />} />
+                <Route path="/care/rhythm" element={<CareRhythm />} />
                 <Route path="/care-loop" element={<CareLoop />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/home-areas" element={<HomeAreas />} />
