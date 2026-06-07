@@ -83,7 +83,7 @@ export default function CareHub() {
           delay={0.1}
         />
         <PhaseCard
-          to="/journal"
+          to="/care/exhale"
           letter="E"
           title="Exhale"
           tagline="Exhale"
