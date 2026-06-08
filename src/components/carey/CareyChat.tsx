@@ -41,13 +41,25 @@ export function CareyChat() {
   // Listen for global open events.
   useEffect(() => {
     const onOpen = () => setOpen(true);
+    const onAsk = (e: Event) => {
+      const prompt = (e as CustomEvent).detail?.prompt;
+      if (!prompt) return;
+      setOpen(true);
+      // start a fresh thread so the proactive prompt is the first turn
+      setActiveId(null);
+      setMessages([]);
+      setTimeout(() => { void send(prompt); }, 150);
+    };
     window.addEventListener("careflow:carey:open", onOpen);
     window.addEventListener("careflow:open-ai-assistant", onOpen); // legacy
+    window.addEventListener("careflow:carey:ask", onAsk as EventListener);
     return () => {
       window.removeEventListener("careflow:carey:open", onOpen);
       window.removeEventListener("careflow:open-ai-assistant", onOpen);
+      window.removeEventListener("careflow:carey:ask", onAsk as EventListener);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshot]);
 
   // Load thread list when opening
   useEffect(() => {
