@@ -123,6 +123,8 @@ export default function Insights() {
         </div>
       </header>
 
+      <CareyInsightsWidget />
+
       {/* Today donut */}
       <SectionCard title="Where today went" subtitle="Focus time by session type" accent="warm">
         {todayDonut.length === 0 ? (
