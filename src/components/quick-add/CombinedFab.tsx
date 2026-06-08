@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Sparkles, X, Zap } from "lucide-react";
+import { Plus, X, Zap } from "lucide-react";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
+import { CareyAvatar } from "@/components/carey/CareyAvatar";
 
 /**
  * One floating action button that expands into two actions:
@@ -29,9 +30,9 @@ export function CombinedFab() {
     window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } }));
     haptics.tap();
   };
-  const openAI = () => {
+  const openCarey = () => {
     setExpanded(false);
-    window.dispatchEvent(new Event("careflow:open-ai-assistant"));
+    window.dispatchEvent(new Event("careflow:carey:open"));
     haptics.tap();
   };
 
@@ -64,15 +65,15 @@ export function CombinedFab() {
         </button>
         <button
           type="button"
-          onClick={openAI}
-          aria-label="AI planning assistant"
+          onClick={openCarey}
+          aria-label="Ask Carey"
+          title="Ask Carey"
           className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-full text-primary-foreground shadow-[var(--shadow-glow)]",
-            "bg-gradient-to-br from-primary to-accent",
+            "flex h-12 w-12 items-center justify-center rounded-full bg-card shadow-[var(--shadow-glow)] ring-1 ring-border/60",
             "transition-transform hover:scale-105 active:scale-95",
           )}
         >
-          <Sparkles className="h-5 w-5" />
+          <CareyAvatar size={28} />
         </button>
       </div>
 
