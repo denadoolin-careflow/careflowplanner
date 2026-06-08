@@ -4,7 +4,7 @@ import { MOBILE_NAV, NAV, NAV_GROUPS } from "@/lib/nav";
 import { useFlowAccents } from "@/lib/flow-accent";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight, Pin, PinOff } from "lucide-react";
+import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight, Pin, PinOff, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -64,6 +64,9 @@ const ALL_DESTINATIONS = (() => {
 export function BottomNav() {
   const [open, setOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [openGroupId, setOpenGroupId] = useState<string | null>(null);
+  // Auto-close all groups whenever the sheet closes.
+  useEffect(() => { if (!open) setOpenGroupId(null); }, [open]);
   const [navIds, setNavIds] = useNavOrder();
   const flowAccents = useFlowAccents();
   const primary = useMemo(() => {
