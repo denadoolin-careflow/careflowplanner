@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CareyAvatar } from "@/components/carey/CareyAvatar";
 import { DailyBriefing } from "@/components/carey/DailyBriefing";
+import { CareyInsightsWidget } from "@/components/carey/CareyInsightsWidget";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -168,6 +169,7 @@ export default function Carey() {
             {!threadId && messages.length === 0 && (
               <div className="mx-auto max-w-2xl space-y-6">
                 <DailyBriefing onAsk={send} />
+                <CareyInsightsWidget />
                 <div className="flex flex-col items-center gap-3 pt-2 text-center">
                   <CareyAvatar size={56} />
                   <h3 className="font-display text-xl font-semibold">How can I help right now?</h3>
