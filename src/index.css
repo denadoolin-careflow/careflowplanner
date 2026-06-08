@@ -24,6 +24,11 @@
     --primary-foreground: 36 50% 98%;
     --primary-soft: 258 60% 92%;
 
+    /* Carey — warm companion accent */
+    --carey: 30 75% 62%;
+    --carey-foreground: 30 40% 16%;
+    --carey-soft: 30 80% 94%;
+
     /* Secondary — sage */
     --secondary: 145 22% 78%;
     --secondary-foreground: 145 30% 20%;
