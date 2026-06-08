@@ -37,11 +37,11 @@ export function HeaderNowStrip({ className }: { className?: string }) {
   const tempStr = snap ? `${unit === "F" ? cToF(snap.tempC) : Math.round(snap.tempC)}°` : null;
 
   return (
-    <div className={cn("hidden items-center gap-1.5 text-[11px] md:flex", className)}>
-      <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 tabular-nums text-foreground/85">
+    <div className={cn("hidden items-center gap-2 text-sm md:flex", className)}>
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 tabular-nums font-medium text-foreground/85">
         {time}
       </span>
-      <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85">
         {date}
       </span>
       {snap && tempStr && (
