@@ -55,7 +55,19 @@ export function CareyInsightsWidget({ className }: { className?: string }) {
         body: JSON.stringify({
           contextType: "insights-weekly",
           contextSnapshot: snapshot,
-          message: `Summarize my week and recommend 3 next actions based on my tasks, goals, and recent journaling.
+          message: `Summarize my week and recommend 3 next actions. Use the LIVE CONTEXT above carefully — it includes:
+- \`overdue\` (with \`daysLate\`, \`priority\`, \`energy\`)
+- \`todayTasks\` and \`soon\` (next 3 days) with \`priority\` and \`energy\`
+- \`canWait\` (low-priority / far-out — safe to defer)
+- \`habits\` and \`habitsAtRisk\` (streak >= 3 but missed 2+ days — protect these first)
+- \`currentEnergy\` and \`energyMixToday\` (match recommendations to my available energy)
+- \`activeGoals\`, \`recentJournal\` (mood / themes)
+
+Rules for the 3 recommended actions:
+1. Prioritize overdue + high-priority items, but only if they match my current energy. Otherwise pick a smaller win toward the same goal.
+2. If any habit is in \`habitsAtRisk\`, ONE of the 3 actions must be a tiny rescue for the longest streak at risk.
+3. Never recommend something from \`canWait\`. Call out 1-2 of those explicitly as "safe to skip" in the Momentum section.
+4. Each action must be doable in <= 30 minutes and reference a real item from context (use its title).
 
 Format STRICTLY as:
 
@@ -63,14 +75,14 @@ Format STRICTLY as:
 - one bullet per major theme (max 3)
 
 ### Momentum
-- 1-2 short observations about goals & habits
+- 1-2 short observations about goals & habits (mention any at-risk streaks and what can wait)
 
 ### Recommended next actions
-1. **Action title** — one sentence why
-2. **Action title** — one sentence why
-3. **Action title** — one sentence why
+1. **Action title** — one sentence why, anchored to a real task/goal/habit and my energy
+2. **Action title** — same
+3. **Action title** — same
 
-Keep it warm, specific, and under 180 words.`,
+Keep it warm, specific, and under 200 words.`,
         }),
       });
       const data = await res.json().catch(() => ({}));
