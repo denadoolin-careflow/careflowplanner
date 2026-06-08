@@ -18,6 +18,7 @@ import { FamilySnapshotCard } from "@/components/today/rhythm/FamilySnapshotCard
 import { GrowingSeasonCard } from "@/components/today/rhythm/GrowingSeasonCard";
 import { CareLoopCard } from "@/components/today/rhythm/CareLoopCard";
 import { UpcomingEventsCard } from "@/components/today/rhythm/UpcomingEventsCard";
+import { CareyProactiveCards } from "@/components/carey/CareyProactiveCards";
 import { EndOfDayCard } from "@/components/today/rhythm/EndOfDayCard";
 import { TasksWidget } from "@/components/today/rhythm/TasksWidget";
 import { TopThreeStrip } from "@/components/today/TopThreeStrip";
