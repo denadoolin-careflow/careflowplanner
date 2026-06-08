@@ -23,8 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileCaptureCard } from "@/components/tasks/mobile/MobileCaptureCard";
 import { MobileFilterChips, type InboxFilter } from "@/components/tasks/mobile/MobileFilterChips";
 import { MobileTaskCard } from "@/components/tasks/mobile/MobileTaskCard";
-import { Menu, Search as SearchIcon, Moon, Sun, ChevronDown } from "lucide-react";
-import { useTheme } from "next-themes";
+import { ChevronDown } from "lucide-react";
 import { isToday, isFuture, isPast, parseISO } from "date-fns";
 
 interface Suggestion {
@@ -397,7 +396,6 @@ function MobileInbox() {
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [tagsOpen, setTagsOpen] = useState(false);
   const { tags } = useTags();
-  const { theme, setTheme } = useTheme();
 
   const base = useMemo(
     () => state.tasks.filter(t => t.inbox && !t.done && !t.parentTaskId && t.status !== "parked"),
@@ -428,22 +426,7 @@ function MobileInbox() {
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/85 backdrop-blur px-4 pt-3 pb-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => window.dispatchEvent(new CustomEvent("careflow:open-sidebar"))} aria-label="Menu" className="grid h-10 w-10 place-items-center rounded-xl bg-card border border-border/60">
-            <Menu className="h-4 w-4" />
-          </button>
           <h1 className="text-[22px] font-display tracking-tight">Inbox</h1>
-          <div className="ml-auto flex items-center gap-2">
-            <Link to="/search" className="grid h-10 w-10 place-items-center rounded-xl bg-card border border-border/60" aria-label="Search">
-              <SearchIcon className="h-4 w-4" />
-            </Link>
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              aria-label="Toggle theme"
-              className="grid h-10 w-10 place-items-center rounded-xl bg-card border border-border/60"
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-          </div>
         </div>
       </header>
 
