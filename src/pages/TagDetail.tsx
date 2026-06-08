@@ -19,9 +19,11 @@ export default function TagDetail() {
   const { name = "" } = useParams();
   const tagName = decodeURIComponent(name);
   const { state, addTask, addGrocery, addProject } = useStore();
-  const { resolve, byName, ensure, setPinned } = useTags();
+  const { resolve, byName, ensure, setPinned, setDescription } = useTags();
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
+  const [descDraft, setDescDraft] = useState<string>("");
+  const [descEditing, setDescEditing] = useState(false);
 
   const reloadNotes = () => { void listNotes().then(setNotes).catch(() => {}); };
   useEffect(() => { reloadNotes(); }, []);
@@ -31,6 +33,21 @@ export default function TagDetail() {
   const accent = meta.color || fallbackColorFor(tagName);
   const existing = byName(tagName);
   const isPinned = !!existing?.pinned;
+
+  useEffect(() => {
+    setDescDraft(existing?.description ?? "");
+  }, [existing?.description, existing?.id]);
+
+  const saveDescription = async () => {
+    try {
+      const t = existing ?? await ensure(tagName);
+      await setDescription(t.id, descDraft.trim() || null);
+      toast.success("Description saved");
+      setDescEditing(false);
+    } catch {
+      toast.error("Could not save description");
+    }
+  };
 
   const togglePin = async () => {
     try {
@@ -133,6 +150,36 @@ export default function TagDetail() {
           </DropdownMenu>
         </div>
       </header>
+
+      {/* Description */}
+      <section className="rounded-2xl border border-border/60 bg-card/50 p-3">
+        {descEditing ? (
+          <div className="space-y-2">
+            <textarea
+              value={descDraft}
+              onChange={(e) => setDescDraft(e.target.value)}
+              placeholder="What is this tag for? A short description helps you and your collaborators."
+              rows={2}
+              className="w-full resize-none rounded-lg border border-border/60 bg-background/60 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={() => { setDescDraft(existing?.description ?? ""); setDescEditing(false); }}>Cancel</Button>
+              <Button size="sm" onClick={() => void saveDescription()}>Save</Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setDescEditing(true)}
+            className="block w-full text-left text-sm text-muted-foreground hover:text-foreground"
+          >
+            {existing?.description?.trim()
+              ? <span className="text-foreground">{existing.description}</span>
+              : <span className="italic">Add a description for #{tagName}…</span>}
+          </button>
+        )}
+      </section>
 
       <CardSection
         title="Tasks" icon={CheckCircle2} accent={accent}

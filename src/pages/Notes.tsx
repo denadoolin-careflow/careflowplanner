@@ -1,76 +1,120 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import {
   format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval,
   startOfWeek, endOfWeek, isSameDay, isSameMonth, addMonths, subMonths,
 } from "date-fns";
 import {
-  BookOpen, Plus, Search, Sun, Pin, Sparkles, LayoutGrid, List as ListIcon,
-  KanbanSquare, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Folder,
+  Plus, Search, Sun, Sparkles, LayoutGrid, List as ListIcon,
+  KanbanSquare, Calendar as CalendarIcon, ChevronLeft, ChevronRight,
+  Filter as FilterIcon, ArrowDownUp, Network, Clock3, ChevronDown,
+  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { listNotes, createNote, getOrCreateDailyNote, type Note } from "@/lib/notes";
-import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
-import { getNoteCoverCss } from "@/lib/note-covers";
+import { listTags, fallbackColorFor, type Tag } from "@/lib/tags";
 import { todayISO, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
-import { NotesHub } from "@/components/notes/NotesHub";
+import { NoteCardV2 } from "@/components/notes/NoteCardV2";
+import { NotesSideNav, applyCollection, type SmartCollectionId } from "@/components/notes/NotesSideNav";
+import { NoteContextRail } from "@/components/notes/NoteContextRail";
+import { NotesStatsRow } from "@/components/notes/NotesStatsRow";
+import { TagManagerDialog } from "@/components/tags/TagManagerDialog";
+import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 
-/** Strip markdown markers so list previews show plain text. */
-function stripMarkdown(s: string): string {
-  if (!s) return "";
-  return s
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`([^`]*)`/g, "$1")
-    .replace(/!\[[^\]]*]\([^)]+\)/g, "")
-    .replace(/\[([^\]]+)]\([^)]+\)/g, "$1")
-    .replace(/\[\[([^\]]+)]]/g, "$1")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/^[-*+]\s+\[[ xX]]\s+/gm, "")
-    .replace(/^[-*+]\s+/gm, "")
-    .replace(/^\d+\.\s+/gm, "")
-    .replace(/^>\s?/gm, "")
-    .replace(/[*_~]{1,3}([^*_~]+)[*_~]{1,3}/g, "$1")
-    .replace(/^---+$/gm, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-type View = "list" | "gallery" | "kanban" | "calendar";
-type Group = "none" | "kind" | "project" | "month";
+type View = "list" | "grid" | "board" | "timeline" | "calendar";
+type Sort = "updated" | "created" | "title" | "words";
 
 const VIEW_KEY = "careflow.notes.view";
-const GROUP_KEY = "careflow.notes.group";
+const COLLECTION_KEY = "careflow.notes.collection";
+const SIDE_NAV_KEY = "careflow.notes.sidenav";
+
+const VIEW_TABS: { id: View; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "list",      label: "All notes", icon: ListIcon },
+  { id: "grid",      label: "Grid",      icon: LayoutGrid },
+  { id: "board",     label: "Board",     icon: KanbanSquare },
+  { id: "timeline",  label: "Timeline",  icon: Clock3 },
+  { id: "calendar",  label: "Calendar",  icon: CalendarIcon },
+];
 
 export default function Notes() {
-  const [params] = useSearchParams();
-  const initialQ = params.get("q") ?? "";
+  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const { state } = useStore();
+
+  const initialQ = params.get("q") ?? "";
+  const noteParam = params.get("note");
+
   const [notes, setNotes] = useState<Note[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState(initialQ);
-  const [view, setView] = useState<View>(() => (typeof window !== "undefined" && (localStorage.getItem(VIEW_KEY) as View)) || "gallery");
-  const [group, setGroup] = useState<Group>(() => (typeof window !== "undefined" && (localStorage.getItem(GROUP_KEY) as Group)) || "none");
+  const [view, setView] = useState<View>(() => {
+    const fromUrl = params.get("view") as View | null;
+    if (fromUrl) return fromUrl;
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(VIEW_KEY) as View | null;
+      if (stored) return stored;
+    }
+    return "grid";
+  });
+  const [collection, setCollection] = useState<SmartCollectionId>(() => {
+    const fromUrl = params.get("collection") as SmartCollectionId | null;
+    if (fromUrl) return fromUrl;
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(COLLECTION_KEY) as SmartCollectionId | null;
+      if (stored) return stored;
+    }
+    return "all";
+  });
+  const [activeTag, setActiveTag] = useState<string | null>(params.get("tag"));
+  const [sort, setSort] = useState<Sort>("updated");
+  const [pinnedOnly, setPinnedOnly] = useState(false);
+  const [kindFilter, setKindFilter] = useState<"all" | "note" | "daily">("all");
+  const [sideOpen, setSideOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem(SIDE_NAV_KEY) !== "0";
+  });
+  const [tagManagerOpen, setTagManagerOpen] = useState(false);
 
   useEffect(() => { localStorage.setItem(VIEW_KEY, view); }, [view]);
-  useEffect(() => { localStorage.setItem(GROUP_KEY, group); }, [group]);
+  useEffect(() => { localStorage.setItem(COLLECTION_KEY, collection); }, [collection]);
+  useEffect(() => { localStorage.setItem(SIDE_NAV_KEY, sideOpen ? "1" : "0"); }, [sideOpen]);
+
+  // Sync key state to URL
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    next.set("view", view);
+    next.set("collection", collection);
+    if (activeTag) next.set("tag", activeTag); else next.delete("tag");
+    if (q) next.set("q", q); else next.delete("q");
+    if (noteParam) next.set("note", noteParam); else next.delete("note");
+    setParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, collection, activeTag, q]);
 
   const refresh = async () => {
     setLoading(true);
-    try { setNotes(await listNotes()); } finally { setLoading(false); }
+    try {
+      const [n, t] = await Promise.all([listNotes(), listTags().catch(() => [] as Tag[])]);
+      setNotes(n);
+      setTags(t);
+    } finally { setLoading(false); }
   };
   useEffect(() => { void refresh(); }, []);
 
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return notes;
-    return notes.filter(n =>
-      n.title.toLowerCase().includes(term) || n.body.toLowerCase().includes(term),
-    );
-  }, [notes, q]);
+  const tagsByName = useMemo(() => {
+    const m = new Map<string, Tag>();
+    for (const t of tags) m.set(t.name.toLowerCase(), t);
+    return m;
+  }, [tags]);
 
   const projectsById = useMemo(() => {
     const m: Record<string, string> = {};
@@ -78,290 +122,402 @@ export default function Notes() {
     return m;
   }, [state.projects]);
 
+  // Apply collection, tag filter, search, kind, pinned, sort.
+  const filtered = useMemo(() => {
+    let arr = applyCollection(collection, notes);
+    if (activeTag) {
+      const lc = activeTag.toLowerCase();
+      arr = arr.filter(n => (n.tags ?? []).some(t => t.toLowerCase() === lc));
+    }
+    if (kindFilter !== "all") arr = arr.filter(n => n.kind === kindFilter);
+    if (pinnedOnly) arr = arr.filter(n => n.pinned);
+    const term = q.trim().toLowerCase();
+    if (term) {
+      arr = arr.filter(n =>
+        n.title.toLowerCase().includes(term) ||
+        n.body.toLowerCase().includes(term) ||
+        (n.tags ?? []).some(t => t.toLowerCase().includes(term))
+      );
+    }
+    const sorted = [...arr];
+    if (sort === "updated") sorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    else if (sort === "created") sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    else if (sort === "title") sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    else if (sort === "words") sorted.sort((a, b) => (b.body?.length ?? 0) - (a.body?.length ?? 0));
+    return sorted;
+  }, [notes, collection, activeTag, q, kindFilter, pinnedOnly, sort]);
+
+  const pinnedStrip = useMemo(() => notes.filter(n => n.pinned).slice(0, 8), [notes]);
+
+  const selectNote = (id: string) => {
+    const next = new URLSearchParams(params);
+    next.set("note", id);
+    setParams(next, { replace: true });
+  };
+  const closeNote = () => {
+    const next = new URLSearchParams(params);
+    next.delete("note");
+    setParams(next, { replace: true });
+  };
+
   const newNote = async () => {
     const n = await createNote({ title: "Untitled" });
-    window.location.href = `/notes/${n.id}`;
+    navigate(`/notes/${n.id}`);
   };
-  const openToday = async () => {
+  const newDaily = async () => {
     try {
       const n = await getOrCreateDailyNote(todayISO());
-      window.location.href = `/notes/${n.id}`;
+      navigate(`/notes/${n.id}`);
     } catch { toast.error("Could not open today's note"); }
   };
 
+  const activeTitle = activeTag
+    ? `#${activeTag}`
+    : VIEW_TABS.find(v => v.id === view)?.label;
+
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5 p-4 md:p-6">
-      <NotesHub notes={notes} projectsById={projectsById} onOpenToday={openToday} onNew={newNote} />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search notes…" className="pl-9 rounded-full border-none bg-muted/40 focus-visible:ring-1 focus-visible:ring-primary/40" />
-        </div>
-        <ViewSwitcher view={view} onChange={setView} />
-        {(view === "gallery" || view === "list") && (
-          <GroupSwitcher group={group} onChange={setGroup} />
-        )}
-      </div>
-
-      {loading ? (
-        <div className="rounded-2xl border border-border/60 bg-card/50 p-8 text-center text-sm text-muted-foreground">Loading…</div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border/60 bg-card/50 p-10 text-center text-sm text-muted-foreground">
-          <Sparkles className="mx-auto mb-2 h-5 w-5 opacity-60" />
-          No notes yet. Create your first one — try a daily note for today.
-        </div>
-      ) : view === "gallery" ? (
-        <GalleryView notes={filtered} group={group} projectsById={projectsById} />
-      ) : view === "list" ? (
-        <ListView notes={filtered} group={group} projectsById={projectsById} />
-      ) : view === "kanban" ? (
-        <KanbanView notes={filtered} projectsById={projectsById} />
-      ) : (
-        <CalendarView notes={filtered} />
-      )}
-    </div>
-  );
-}
-
-/* -------------------- switchers -------------------- */
-
-function ViewSwitcher({ view, onChange }: { view: View; onChange: (v: View) => void }) {
-  const tabs: { id: View; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: "list", label: "List", icon: ListIcon },
-    { id: "gallery", label: "Gallery", icon: LayoutGrid },
-    { id: "kanban", label: "Kanban", icon: KanbanSquare },
-    { id: "calendar", label: "Calendar", icon: CalendarIcon },
-  ];
-  return (
-    <div className="inline-flex rounded-lg border border-border/60 bg-card/50 p-0.5">
-      {tabs.map(t => (
-        <button
-          key={t.id}
-          onClick={() => onChange(t.id)}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition",
-            view === t.id ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-          )}
-          aria-pressed={view === t.id}
-        >
-          <t.icon className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">{t.label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function GroupSwitcher({ group, onChange }: { group: Group; onChange: (g: Group) => void }) {
-  const opts: { id: Group; label: string }[] = [
-    { id: "none", label: "No group" },
-    { id: "kind", label: "Kind" },
-    { id: "project", label: "Project" },
-    { id: "month", label: "Month" },
-  ];
-  return (
-    <select
-      value={group}
-      onChange={(e) => onChange(e.target.value as Group)}
-      className="h-8 rounded-md border border-border/60 bg-card/50 px-2 text-xs text-foreground focus-visible:ring-1 focus-visible:ring-ring"
-      aria-label="Group notes"
-    >
-      {opts.map(o => <option key={o.id} value={o.id}>Group: {o.label}</option>)}
-    </select>
-  );
-}
-
-/* -------------------- grouping helper -------------------- */
-
-function groupNotes(notes: Note[], group: Group, projectsById: Record<string, string>) {
-  if (group === "none") {
-    const pinned = notes.filter(n => n.pinned);
-    const rest = notes.filter(n => !n.pinned);
-    const groups: { key: string; label: string; items: Note[] }[] = [];
-    if (pinned.length) groups.push({ key: "pinned", label: "Pinned", items: pinned });
-    if (rest.length) groups.push({ key: "all", label: "All notes", items: rest });
-    return groups;
-  }
-  const buckets: Record<string, { label: string; items: Note[] }> = {};
-  for (const n of notes) {
-    let key = "other", label = "Other";
-    if (group === "kind") {
-      key = n.kind; label = n.kind === "daily" ? "Daily notes" : "Notes";
-    } else if (group === "project") {
-      key = n.projectId ?? "_none";
-      label = n.projectId ? (projectsById[n.projectId] ?? "Unknown project") : "Unassigned";
-    } else if (group === "month") {
-      const d = parseISO(n.updatedAt);
-      key = format(d, "yyyy-MM");
-      label = format(d, "MMMM yyyy");
-    }
-    buckets[key] = buckets[key] ?? { label, items: [] };
-    buckets[key].items.push(n);
-  }
-  return Object.entries(buckets)
-    .sort(([a], [b]) => (a < b ? 1 : -1))
-    .map(([key, v]) => ({ key, label: v.label, items: v.items }));
-}
-
-/* -------------------- gallery -------------------- */
-
-function GalleryView({ notes, group, projectsById }: { notes: Note[]; group: Group; projectsById: Record<string, string> }) {
-  const groups = groupNotes(notes, group, projectsById);
-  return (
-    <div className="space-y-7">
-      {groups.map(g => (
-        <section key={g.key}>
-          <h2 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {g.label} <span className="ml-1 text-muted-foreground/60">· {g.items.length}</span>
-          </h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {g.items.map(n => <GalleryCard key={n.id} note={n} projectsById={projectsById} />)}
+    <div className="mx-auto w-full max-w-[1600px] p-3 md:p-5">
+      {/* HEADER */}
+      <header className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSideOpen(s => !s)}
+            className="hidden h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground md:grid"
+            aria-label={sideOpen ? "Hide side nav" : "Show side nav"}
+          >
+            {sideOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+          </button>
+          <BookOpen className="h-5 w-5 text-primary" />
+          <div>
+            <h1 className="font-display text-xl font-semibold leading-tight sm:text-2xl">Notes</h1>
+            <p className="text-[11px] text-muted-foreground">Your second brain</p>
           </div>
-        </section>
-      ))}
+        </div>
+
+        <div className="relative ml-auto w-full sm:w-72">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search notes, tags…"
+            className="h-9 pl-8 rounded-full border-border/60 bg-muted/40 focus-visible:ring-1 focus-visible:ring-primary/40"
+          />
+        </div>
+
+        {/* Filter */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-full">
+              <FilterIcon className="h-3.5 w-3.5" /> Filter
+              {(pinnedOnly || kindFilter !== "all") && <span className="ml-0.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" />}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-56 p-2 text-sm">
+            <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Kind</div>
+            <div className="grid grid-cols-3 gap-1 px-1 pb-2">
+              {(["all", "note", "daily"] as const).map(k => (
+                <button
+                  key={k}
+                  onClick={() => setKindFilter(k)}
+                  className={cn(
+                    "rounded-md px-2 py-1 text-xs capitalize",
+                    kindFilter === k ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted/60",
+                  )}
+                >{k}</button>
+              ))}
+            </div>
+            <label className="flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50">
+              <span>Pinned only</span>
+              <input type="checkbox" checked={pinnedOnly} onChange={e => setPinnedOnly(e.target.checked)} />
+            </label>
+          </PopoverContent>
+        </Popover>
+
+        {/* Sort */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-full">
+              <ArrowDownUp className="h-3.5 w-3.5" /> Sort
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {([
+              { id: "updated", label: "Recently updated" },
+              { id: "created", label: "Recently created" },
+              { id: "title",   label: "Title (A→Z)" },
+              { id: "words",   label: "Word count" },
+            ] as const).map(o => (
+              <DropdownMenuItem
+                key={o.id}
+                onClick={() => setSort(o.id)}
+                className={cn(sort === o.id && "bg-primary/10 text-foreground")}
+              >{o.label}</DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* New */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" className="h-9 gap-1.5 rounded-full">
+              <Plus className="h-3.5 w-3.5" /> New <ChevronDown className="h-3 w-3 opacity-70" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={newNote}><Plus className="mr-2 h-3.5 w-3.5" /> New note</DropdownMenuItem>
+            <DropdownMenuItem onClick={newDaily}><Sun className="mr-2 h-3.5 w-3.5" /> Today's daily note</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </header>
+
+      {/* View switcher row */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-full border border-border/60 bg-card/50 p-0.5">
+          {VIEW_TABS.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setView(t.id)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition",
+                view === t.id ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
+              aria-pressed={view === t.id}
+            >
+              <t.icon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{t.label}</span>
+            </button>
+          ))}
+          <Link
+            to="/graph?focus=notes"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+            title="Open notes in the Graph view"
+          >
+            <Network className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Connections</span>
+          </Link>
+        </div>
+
+        {activeTag && (
+          <button
+            type="button"
+            onClick={() => setActiveTag(null)}
+            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+          >
+            #{activeTag} ×
+          </button>
+        )}
+
+        <div className="ml-auto text-[11px] text-muted-foreground">{filtered.length} notes</div>
+      </div>
+
+      {/* MAIN SPLIT */}
+      <div className={cn(
+        "grid gap-4",
+        sideOpen ? "md:grid-cols-[220px_1fr]" : "md:grid-cols-[1fr]",
+        noteParam ? "lg:grid-cols-[220px_minmax(0,1fr)_320px]" : "",
+        // Recompute when sideOpen is closed AND a note is selected.
+        !sideOpen && noteParam ? "lg:grid-cols-[minmax(0,1fr)_320px]" : "",
+      )}>
+        {/* Side nav */}
+        {sideOpen && (
+          <div className="hidden md:block">
+            <NotesSideNav
+              notes={notes}
+              tags={tags}
+              activeCollection={collection}
+              onCollectionChange={setCollection}
+              activeTag={activeTag}
+              onTagChange={setActiveTag}
+              onNewTag={() => setTagManagerOpen(true)}
+            />
+          </div>
+        )}
+
+        {/* Main area */}
+        <div className="min-w-0 space-y-4">
+          <NotesStatsRow notes={notes} tags={tags} />
+
+          {pinnedStrip.length > 0 && (
+            <section>
+              <h2 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Pinned · {pinnedStrip.length}
+              </h2>
+              <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
+                {pinnedStrip.map(n => (
+                  <div key={n.id} className="w-64 shrink-0">
+                    <NoteCardV2 note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} compact />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section>
+            <h2 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              {activeTitle}
+            </h2>
+
+            {loading ? (
+              <div className="rounded-2xl border border-border/60 bg-card/50 p-10 text-center text-sm text-muted-foreground">Loading…</div>
+            ) : filtered.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border/60 bg-card/50 p-10 text-center text-sm text-muted-foreground">
+                <Sparkles className="mx-auto mb-2 h-5 w-5 opacity-60" />
+                No notes match. Try clearing filters or create your first one.
+              </div>
+            ) : view === "grid" ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filtered.map(n => (
+                  <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} />
+                ))}
+              </div>
+            ) : view === "list" ? (
+              <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} />
+            ) : view === "board" ? (
+              <BoardView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} />
+            ) : view === "timeline" ? (
+              <TimelineView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} />
+            ) : (
+              <CalendarView notes={filtered} onSelectNote={selectNote} />
+            )}
+          </section>
+        </div>
+
+        {/* Right context rail */}
+        {noteParam && (
+          <div className="hidden lg:block">
+            <NoteContextRail
+              noteId={noteParam}
+              onClose={closeNote}
+              projectsById={projectsById}
+              tagsByName={tagsByName}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Mobile: bottom sheet for context */}
+      {noteParam && (
+        <div className="fixed inset-x-0 bottom-0 z-40 max-h-[70vh] overflow-y-auto rounded-t-3xl border-t border-border/60 bg-background/95 shadow-2xl backdrop-blur lg:hidden">
+          <NoteContextRail
+            noteId={noteParam}
+            onClose={closeNote}
+            projectsById={projectsById}
+            tagsByName={tagsByName}
+          />
+        </div>
+      )}
+
+      <TagManagerDialog open={tagManagerOpen} onOpenChange={setTagManagerOpen} />
     </div>
   );
 }
 
-function GalleryCard({ note, projectsById }: { note: Note; projectsById: Record<string, string> }) {
-  const title = note.kind === "daily" && note.date
-    ? format(parseISO(note.date), "EEEE, MMM d")
-    : (note.title || "Untitled");
-  const projectName = note.projectId ? projectsById[note.projectId] : null;
-  const Icon = getLucideIcon(resolveNoteIcon(note));
-  const gradient = !note.coverUrl ? getNoteCoverCss(note.coverGradient) : null;
-  return (
-    <Link
-      to={`/notes/${note.id}`}
-      className={cn(
-        "group relative flex h-64 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/70 transition-all",
-        "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg",
-      )}
-    >
-      {gradient && (
-        <div className="h-16 w-full shrink-0" style={{ background: gradient }} />
-      )}
-      <div className="flex items-start gap-2 px-4 pt-4">
-        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-        {note.pinned ? <Pin className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-current text-accent-foreground" /> : null}
-        <h3 className="line-clamp-2 flex-1 font-display text-base font-semibold leading-snug">{title}</h3>
-      </div>
-      <div className="relative mt-2 flex-1 overflow-hidden px-4">
-        <div className="gallery-preview text-[12.5px] leading-relaxed text-muted-foreground">
-          {note.body
-            ? <NoteMarkdown body={note.body} />
-            : <p className="italic">Empty note</p>}
-        </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card/95 to-transparent" />
-      </div>
-      <div className="flex items-center justify-between gap-2 border-t border-border/40 bg-background/30 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span>{format(parseISO(note.updatedAt), "MMM d, h:mm a")}</span>
-        {projectName && (
-          <span className="inline-flex max-w-[50%] items-center gap-1 truncate rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] normal-case text-primary">
-            <Folder className="h-2.5 w-2.5" /> {projectName}
-          </span>
-        )}
-      </div>
-    </Link>
-  );
-}
+/* -------------------- list view -------------------- */
 
-/* -------------------- list -------------------- */
-
-function ListView({ notes, group, projectsById }: { notes: Note[]; group: Group; projectsById: Record<string, string> }) {
-  const groups = groupNotes(notes, group, projectsById);
+function ListView({
+  notes, selectedId, onSelect, tagsByName,
+}: {
+  notes: Note[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  tagsByName: Map<string, Tag>;
+}) {
   return (
-    <div className="space-y-5">
-      {groups.map(g => (
-        <section key={g.key}>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {g.label} <span className="ml-1 text-muted-foreground/60">· {g.items.length}</span>
-          </h2>
-          <div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/60 bg-card/60">
-            {g.items.map(n => {
-              const title = n.kind === "daily" && n.date
-                ? format(parseISO(n.date), "EEEE, MMM d")
-                : (n.title || "Untitled");
-              const Icon = getLucideIcon(resolveNoteIcon(n));
+    <div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/60 bg-card/60">
+      {notes.map(n => {
+        const Icon = getLucideIcon(resolveNoteIcon(n));
+        const title = n.kind === "daily" && n.date
+          ? format(parseISO(n.date), "EEEE, MMM d")
+          : (n.title || "Untitled");
+        return (
+          <button
+            key={n.id}
+            type="button"
+            onClick={() => onSelect(n.id)}
+            className={cn(
+              "flex w-full items-center gap-3 px-4 py-2.5 text-left transition",
+              selectedId === n.id ? "bg-primary/10" : "hover:bg-muted/40",
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-medium">{title}</div>
+              <div className="truncate text-xs text-muted-foreground">
+                {n.body?.slice(0, 140) || "Empty"}
+              </div>
+            </div>
+            {n.tags?.slice(0, 2).map(t => {
+              const c = tagsByName.get(t.toLowerCase())?.color || fallbackColorFor(t);
               return (
-                <Link
-                  key={n.id}
-                  to={`/notes/${n.id}`}
-                  className="flex items-center gap-3 px-4 py-2.5 transition hover:bg-muted/40"
-                >
-                  <Icon className="h-4 w-4 text-primary" />
-                  {n.pinned && <Pin className="h-3 w-3 fill-current text-accent-foreground" />}
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{title}</div>
-                    <div className="truncate text-xs text-muted-foreground">{stripMarkdown(n.body).slice(0, 140) || "Empty"}</div>
-                  </div>
-                  <span className="hidden text-[11px] text-muted-foreground sm:inline">
-                    {format(parseISO(n.updatedAt), "MMM d")}
-                  </span>
-                </Link>
+                <span key={t} className="hidden rounded-full px-1.5 py-0.5 text-[10px] sm:inline-block" style={{ background: `${c}26`, color: c }}>{t}</span>
               );
             })}
-          </div>
-        </section>
-      ))}
+            <span className="hidden text-[11px] text-muted-foreground sm:inline">
+              {format(parseISO(n.updatedAt), "MMM d")}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-/* -------------------- kanban -------------------- */
+/* -------------------- board view (by tag) -------------------- */
 
-function KanbanView({ notes, projectsById }: { notes: Note[]; projectsById: Record<string, string> }) {
-  // Columns: Daily, Pinned, Unassigned, then one per project (alpha)
-  const cols: { key: string; label: string; items: Note[] }[] = [];
-  const daily = notes.filter(n => n.kind === "daily");
-  const pinned = notes.filter(n => n.kind !== "daily" && n.pinned);
-  const byProject: Record<string, Note[]> = {};
+function BoardView({
+  notes, tagsByName, onSelect, selectedId,
+}: {
+  notes: Note[];
+  tagsByName: Map<string, Tag>;
+  onSelect: (id: string) => void;
+  selectedId: string | null;
+}) {
+  // Build one column per tag in use, plus "Untagged".
+  const byTag = new Map<string, Note[]>();
+  const untagged: Note[] = [];
   for (const n of notes) {
-    if (n.kind === "daily" || n.pinned) continue;
-    const k = n.projectId ?? "_none";
-    (byProject[k] ??= []).push(n);
+    if (!n.tags || n.tags.length === 0) { untagged.push(n); continue; }
+    for (const t of n.tags) {
+      const k = t.toLowerCase();
+      const list = byTag.get(k) ?? [];
+      list.push(n);
+      byTag.set(k, list);
+    }
   }
-  if (daily.length) cols.push({ key: "daily", label: "Daily", items: daily });
-  if (pinned.length) cols.push({ key: "pinned", label: "Pinned", items: pinned });
-  if (byProject._none?.length) cols.push({ key: "_none", label: "Unassigned", items: byProject._none });
-  Object.entries(byProject)
-    .filter(([k]) => k !== "_none")
-    .sort(([a], [b]) => (projectsById[a] ?? "").localeCompare(projectsById[b] ?? ""))
-    .forEach(([k, items]) => cols.push({ key: k, label: projectsById[k] ?? "Project", items }));
+  const cols: { key: string; label: string; color: string; items: Note[] }[] = [];
+  Array.from(byTag.entries())
+    .sort((a, b) => b[1].length - a[1].length)
+    .forEach(([key, items]) => {
+      const name = items[0]?.tags?.find(t => t.toLowerCase() === key) || key;
+      cols.push({
+        key, label: name, color: tagsByName.get(key)?.color || fallbackColorFor(name), items,
+      });
+    });
+  if (untagged.length) cols.push({ key: "_none", label: "Untagged", color: "#94a3b8", items: untagged });
+
+  if (cols.length === 0) {
+    return <p className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-6 text-center text-sm text-muted-foreground">Add tags to your notes to see a board.</p>;
+  }
 
   return (
     <div className="-mx-2 overflow-x-auto px-2">
       <div className="flex min-w-max gap-3 pb-2">
         {cols.map(c => (
           <div key={c.key} className="flex w-72 shrink-0 flex-col rounded-2xl border border-border/60 bg-card/40 p-2">
-            <div className="mb-2 flex items-center justify-between px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <span>{c.label}</span>
-              <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px]">{c.items.length}</span>
+            <div className="mb-2 flex items-center justify-between px-1 text-xs font-semibold">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
+                <span style={{ color: c.color }}>{c.label}</span>
+              </span>
+              <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">{c.items.length}</span>
             </div>
             <div className="space-y-2">
-              {c.items.map(n => {
-                const Icon = getLucideIcon(resolveNoteIcon(n));
-                const gradient = !n.coverUrl ? getNoteCoverCss(n.coverGradient) : null;
-                return (
-                  <Link
-                    key={n.id}
-                    to={`/notes/${n.id}`}
-                    className="block overflow-hidden rounded-xl border border-border/40 bg-background/60 transition hover:border-primary/40 hover:shadow-sm"
-                  >
-                    {gradient && <div className="h-8 w-full" style={{ background: gradient }} />}
-                    <div className="p-2.5">
-                      <div className="flex items-center gap-1.5">
-                        <Icon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                        <div className="truncate text-sm font-medium">
-                          {n.kind === "daily" && n.date ? format(parseISO(n.date), "EEE, MMM d") : (n.title || "Untitled")}
-                        </div>
-                      </div>
-                      <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body || "Empty"}</div>
-                    </div>
-                  </Link>
-                );
-              })}
+              {c.items.map(n => (
+                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} compact />
+              ))}
             </div>
           </div>
         ))}
@@ -370,9 +526,46 @@ function KanbanView({ notes, projectsById }: { notes: Note[]; projectsById: Reco
   );
 }
 
-/* -------------------- calendar -------------------- */
+/* -------------------- timeline view -------------------- */
 
-function CalendarView({ notes }: { notes: Note[] }) {
+function TimelineView({
+  notes, tagsByName, onSelect, selectedId,
+}: {
+  notes: Note[];
+  tagsByName: Map<string, Tag>;
+  onSelect: (id: string) => void;
+  selectedId: string | null;
+}) {
+  const byDay: Record<string, Note[]> = {};
+  for (const n of notes) {
+    const key = n.kind === "daily" && n.date
+      ? n.date
+      : format(parseISO(n.updatedAt), "yyyy-MM-dd");
+    (byDay[key] ??= []).push(n);
+  }
+  const days = Object.keys(byDay).sort().reverse();
+  return (
+    <div className="space-y-5">
+      {days.map(d => (
+        <div key={d} className="grid grid-cols-[88px_1fr] gap-3">
+          <div className="pt-1 text-right">
+            <div className="font-display text-sm font-semibold">{format(parseISO(d), "MMM d")}</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(parseISO(d), "EEEE")}</div>
+          </div>
+          <div className="space-y-2 border-l border-border/50 pl-4">
+            {byDay[d].map(n => (
+              <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} compact />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* -------------------- calendar view -------------------- */
+
+function CalendarView({ notes, onSelectNote }: { notes: Note[]; onSelectNote: (id: string) => void }) {
   const [anchor, setAnchor] = useState(new Date());
   const monthStart = startOfMonth(anchor);
   const monthEnd = endOfMonth(anchor);
@@ -421,14 +614,14 @@ function CalendarView({ notes }: { notes: Note[] }) {
               </div>
               <div className="space-y-1">
                 {items.slice(0, 3).map(n => (
-                  <Link
+                  <button
                     key={n.id}
-                    to={`/notes/${n.id}`}
-                    className="block truncate rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary hover:bg-primary/20"
+                    onClick={() => onSelectNote(n.id)}
+                    className="block w-full truncate rounded-md bg-primary/10 px-1.5 py-0.5 text-left text-[11px] text-primary hover:bg-primary/20"
                     title={n.title || "Untitled"}
                   >
                     {n.kind === "daily" ? "● " : ""}{n.title || "Untitled"}
-                  </Link>
+                  </button>
                 ))}
                 {items.length > 3 && (
                   <div className="px-1 text-[10px] text-muted-foreground">+{items.length - 3} more</div>

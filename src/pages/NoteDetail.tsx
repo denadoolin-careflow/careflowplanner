@@ -19,6 +19,7 @@ import { NoteIconPicker } from "@/components/notes/NoteIconPicker";
 import { NoteCoverPicker } from "@/components/notes/NoteCoverPicker";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { getNoteCoverCss } from "@/lib/note-covers";
+import { buildDailyNoteTemplate, isEmptyBody } from "@/lib/daily-note-template";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -38,7 +39,14 @@ export default function NoteDetail() {
     if (!id) return;
     void getNote(id).then(n => {
       if (!n) { toast.error("Note not found"); nav("/notes"); return; }
-      setNote(n); setTitle(n.title); setBody(n.body); setTags(n.tags ?? []);
+      // Daily notes get a structured template auto-scaffolded on first open.
+      let initialBody = n.body;
+      if (n.kind === "daily" && n.date && isEmptyBody(initialBody)) {
+        initialBody = buildDailyNoteTemplate(n.date);
+        // Persist the scaffold so we don't re-insert on every open.
+        void updateNote(n.id, { body: initialBody }).catch(() => {});
+      }
+      setNote(n); setTitle(n.title); setBody(initialBody); setTags(n.tags ?? []);
     });
   }, [id, nav]);
 
