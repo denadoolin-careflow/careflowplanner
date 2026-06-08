@@ -15,6 +15,7 @@ import { moonPhaseFor } from "@/lib/moon-phase";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { CareyInsightsWidget } from "@/components/carey/CareyInsightsWidget";
 
 interface DayDatum {
   date: string;
@@ -122,6 +123,8 @@ export default function Insights() {
           <span className="flex items-center gap-1"><Moon className="h-3 w-3" />{fullMoonDays.length} full · {newMoonDays.length} new</span>
         </div>
       </header>
+
+      <CareyInsightsWidget />
 
       {/* Today donut */}
       <SectionCard title="Where today went" subtitle="Focus time by session type" accent="warm">
