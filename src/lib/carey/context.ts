@@ -5,7 +5,7 @@ export function buildCareySnapshot(state: any): Record<string, unknown> {
   const goals: any[] = state?.goals ?? [];
   const habits: any[] = state?.habits ?? [];
   const projects: any[] = state?.projects ?? [];
-  const journals: any[] = state?.journals ?? state?.journalEntries ?? [];
+  const journals: any[] = (state as any)?.journal ?? [];
 
   const todayTasks = tasks
     .filter(t => t.dueDate === today && t.status !== "done")
