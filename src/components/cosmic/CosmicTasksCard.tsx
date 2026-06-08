@@ -3,7 +3,8 @@ import { Loader2, Plus } from "lucide-react";
 import { getActiveAspects } from "@/lib/cosmic/active-aspects";
 import { interpretPlanetInSign } from "@/lib/cosmic/interpretations";
 import { useStore } from "@/lib/store";
-import { suggestAnchor } from "@/lib/anchor-suggest";
+import { suggestAnchorForText } from "@/lib/anchor-suggest";
+import { DEFAULT_ANCHORS } from "@/lib/anchors";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -44,8 +45,9 @@ export function CosmicTasksCard({ date }: { date: Date }) {
   async function handleAdd(title: string) {
     setAdding(title);
     try {
-      const anchor = suggestAnchor(title);
-      await addTask({ title, anchorKey: anchor?.key });
+      const anchorKey = suggestAnchorForText(title);
+      const anchor = anchorKey ? DEFAULT_ANCHORS.find((a) => a.key === anchorKey) : undefined;
+      await addTask({ title, anchorKey });
       setDone((d) => ({ ...d, [title]: true }));
       toast.success(`Added "${title}" to your tasks${anchor ? ` · ${anchor.label}` : ""}`);
     } catch (e: any) {
