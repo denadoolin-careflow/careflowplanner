@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
-import type { HourlyForecast, WeatherCondition } from "@/lib/weather";
+import type { HourlyForecast, WeatherCondition, WeatherSnapshot } from "@/lib/weather";
 import { weatherTheme } from "@/lib/weather-theme";
 
 type Tone = "rain" | "snow" | "storm" | "fog" | "heat" | "cold" | "wind" | "sun" | "clear";
@@ -76,10 +76,7 @@ function whenLabel(h: HourlyForecast): string {
   return `around ${format(h.dateObj, "h a")}`;
 }
 
-function buildReminders(
-  snap: ReturnType<typeof useWeatherSnapshot> & object,
-  unit: "C" | "F",
-): Reminder[] {
+function buildReminders(snap: WeatherSnapshot, unit: "C" | "F"): Reminder[] {
   const out: Reminder[] = [];
   const fmtT = (c: number) => `${unit === "F" ? cToF(c) : Math.round(c)}°`;
 
