@@ -31,6 +31,7 @@ import { startOfWeek, endOfWeek, startOfYear, getYear } from "date-fns";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyWritingGoal } from "@/components/notes/DailyWritingGoal";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { CareyButton } from "@/components/carey/CareyButton";
 
 type TemplateKey =
   | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
