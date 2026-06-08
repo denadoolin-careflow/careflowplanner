@@ -75,13 +75,65 @@ turndown.addRule("taskItem", {
     return `- [${checked ? "x" : " "}] ${content.trim()}\n`;
   },
 });
+// Fallback: GFM-style checkboxes rendered by marked use <input type="checkbox">.
+// Without this rule, turndown would drop the checkbox state when round-tripping
+// content that hasn't been re-normalized into TipTap's taskItem form yet.
+turndown.addRule("gfmCheckboxItem", {
+  filter: (node) => {
+    if (node.nodeName !== "LI") return false;
+    const el = node as HTMLElement;
+    if (el.getAttribute("data-type") === "taskItem") return false;
+    const input = el.querySelector(":scope > input[type='checkbox'], :scope > p > input[type='checkbox']");
+    return !!input;
+  },
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const input = el.querySelector("input[type='checkbox']") as HTMLInputElement | null;
+    const checked = !!input?.hasAttribute("checked") || input?.getAttribute("checked") === "checked";
+    // Strip the checkbox before extracting text so it doesn't appear twice.
+    input?.remove();
+    const text = (el.textContent ?? "").trim();
+    return `- [${checked ? "x" : " "}] ${text}\n`;
+  },
+});
+
+/**
+ * Marked emits GFM task lists as <ul><li><input type="checkbox" .../> text</li></ul>.
+ * TipTap's TaskList extension expects <ul data-type="taskList">
+ * <li data-type="taskItem" data-checked="true|false">…</li></ul>.
+ * Normalize so reopened notes keep their checkboxes (and stay editable).
+ */
+function normalizeTaskListsForTipTap(html: string): string {
+  if (!html || typeof document === "undefined") return html;
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = html;
+  const lists = wrapper.querySelectorAll("ul");
+  lists.forEach((ul) => {
+    const items = Array.from(ul.children).filter((c) => c.tagName === "LI") as HTMLLIElement[];
+    if (!items.length) return;
+    const checkboxItems = items.filter((li) =>
+      li.querySelector(":scope > input[type='checkbox'], :scope > p > input[type='checkbox']")
+    );
+    if (checkboxItems.length === 0) return;
+    ul.setAttribute("data-type", "taskList");
+    checkboxItems.forEach((li) => {
+      const input = li.querySelector("input[type='checkbox']") as HTMLInputElement | null;
+      const checked = !!input?.hasAttribute("checked") || input?.getAttribute("checked") === "checked";
+      input?.remove();
+      li.setAttribute("data-type", "taskItem");
+      li.setAttribute("data-checked", checked ? "true" : "false");
+    });
+  });
+  return wrapper.innerHTML;
+}
 
 export function bodyToHtml(body: string): string {
   if (!body) return "";
   const trimmed = body.trim();
   // Heuristic: if it starts with an HTML tag, treat as HTML already.
-  if (/^<[a-zA-Z!]/.test(trimmed)) return trimmed;
-  return marked.parse(body, { async: false, gfm: true, breaks: false }) as string;
+  if (/^<[a-zA-Z!]/.test(trimmed)) return normalizeTaskListsForTipTap(trimmed);
+  const html = marked.parse(body, { async: false, gfm: true, breaks: false }) as string;
+  return normalizeTaskListsForTipTap(html);
 }
 export function htmlToMarkdown(html: string): string {
   if (!html || html === "<p></p>") return "";
