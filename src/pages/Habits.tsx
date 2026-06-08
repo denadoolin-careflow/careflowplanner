@@ -12,6 +12,7 @@ import { LinkedNotesPanel } from "@/components/notes/LinkedNotesPanel";
 import { HabitGarden } from "@/components/habits/HabitGarden";
 import { HabitDetailSheet } from "@/components/habits/HabitDetailSheet";
 import { HabitWeeklyAnalytics } from "@/components/habits/HabitWeeklyAnalytics";
+import { CareyButton } from "@/components/carey/CareyButton";
 
 const CATS: Habit["category"][] = ["self-care","home","family","caregiving","health","creative","spiritual"];
 
@@ -31,6 +32,17 @@ export default function Habits() {
             <h2 className="font-display text-3xl font-semibold">Gentle habits</h2>
             <p className="mt-1 text-sm text-muted-foreground">Tend each plant. Streaks here are kind — missing a day doesn't erase you.</p>
           </div>
+          <div className="flex items-center gap-2">
+            <CareyButton
+              label="Ask Carey"
+              context={{ habits: state.habits.map(h => ({ title: h.title, category: h.category, streak: (h as any).streak })) }}
+              actions={[
+                { label: "Which habit to focus on?", prompt: "From my habits, which one should I focus on this week and why? Suggest one tiny version." },
+                { label: "Suggest habit stacking", prompt: "Suggest habit-stacking ideas: which of my habits could I pair together?" },
+                { label: "I'm losing consistency", prompt: "I'm losing consistency on some habits. Gently help me restart without guilt." },
+                { label: "Make habits easier", prompt: "For each of my habits, suggest an easier 2-minute version I could fall back on." },
+              ]}
+            />
           <div className="inline-flex rounded-full border border-border/60 bg-card/60 p-0.5">
             <button
               onClick={() => setView("garden")}
@@ -50,6 +62,7 @@ export default function Habits() {
             >
               <ListChecks className="h-3 w-3" /> List
             </button>
+          </div>
           </div>
         </div>
       </div>
