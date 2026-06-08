@@ -73,7 +73,7 @@ export function CombinedFab() {
             "transition-transform hover:scale-105 active:scale-95",
           )}
         >
-          <CareyAvatar size={28} />
+          <CareyAvatar size={36} />
         </button>
       </div>
 

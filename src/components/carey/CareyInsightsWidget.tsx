@@ -104,7 +104,7 @@ Keep it warm, specific, and under 200 words.`,
       className,
     )}>
       <header className="flex items-center gap-2">
-        <CareyAvatar size={28} />
+        <CareyAvatar size={36} />
         <div className="min-w-0 flex-1">
           <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Carey's insights</p>
           <h3 className="font-display text-lg font-semibold leading-tight">This week, at a glance</h3>

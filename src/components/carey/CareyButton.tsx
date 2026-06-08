@@ -79,7 +79,7 @@ export function CareyButton({
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[360px] p-0">
         <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
-          <CareyAvatar size={22} />
+          <CareyAvatar size={28} />
           <span className="text-sm font-medium">Carey</span>
         </div>
         {!result && !loading && (
