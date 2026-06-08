@@ -14,6 +14,9 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { NoteTOC } from "@/components/notes/NoteTOC";
+import { NoteContextRail } from "@/components/notes/NoteContextRail";
+import { useTags } from "@/hooks/use-tags";
+import { useStore } from "@/lib/store";
 import { copyToClipboard } from "@/lib/clipboard";
 import { NoteIconPicker } from "@/components/notes/NoteIconPicker";
 import { NoteCoverPicker } from "@/components/notes/NoteCoverPicker";
@@ -24,6 +27,18 @@ import { buildDailyNoteTemplate, isEmptyBody } from "@/lib/daily-note-template";
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
+  const { state } = useStore();
+  const { tags: allTags } = useTags();
+  const projectsById = useMemo(() => {
+    const m: Record<string, string> = {};
+    (state.projects ?? []).forEach(p => { m[p.id] = p.name; });
+    return m;
+  }, [state.projects]);
+  const tagsByName = useMemo(() => {
+    const m = new Map<string, typeof allTags[number]>();
+    for (const t of allTags) m.set(t.name.toLowerCase(), t);
+    return m;
+  }, [allTags]);
   const [note, setNote] = useState<Note | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -170,7 +185,7 @@ export default function NoteDetail() {
   const gradientCss = getNoteCoverCss(note.coverGradient);
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 2xl:grid-cols-[minmax(0,1fr)_220px]">
+    <div className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 lg:grid-cols-[minmax(0,1fr)_300px]">
       <div className="min-w-0">
       <header className="mx-auto flex w-full max-w-[760px] flex-wrap items-center gap-2 px-2">
         <Button variant="ghost" size="sm" onClick={() => nav("/notes")} className="gap-1.5">
@@ -381,8 +396,14 @@ export default function NoteDetail() {
         <NoteLinksSidebar noteId={note.id} />
       </div>
       </div>
-      <div className="hidden 2xl:block">
-        <div className="sticky top-20">
+      <div className="hidden lg:block">
+        <div className="sticky top-20 space-y-3">
+          <NoteContextRail
+            noteId={note.id}
+            onClose={() => nav("/notes")}
+            projectsById={projectsById}
+            tagsByName={tagsByName}
+          />
           <NoteTOC body={body} />
         </div>
       </div>
