@@ -150,9 +150,7 @@ export default function Notes() {
   const pinnedStrip = useMemo(() => notes.filter(n => n.pinned).slice(0, 8), [notes]);
 
   const selectNote = (id: string) => {
-    const next = new URLSearchParams(params);
-    next.set("note", id);
-    setParams(next, { replace: true });
+    navigate(`/notes/${id}`);
   };
   const closeNote = () => {
     const next = new URLSearchParams(params);
@@ -316,6 +314,34 @@ export default function Notes() {
         <div className="min-w-0 space-y-4">
           <NotesStatsRow notes={notes} tags={tags} />
 
+          {/* View switcher row — sits between the stats and the notes */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-full border border-border/60 bg-card/50 p-0.5">
+              {VIEW_TABS.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setView(t.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition",
+                    view === t.id ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:text-foreground",
+                  )}
+                  aria-pressed={view === t.id}
+                >
+                  <t.icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{t.label}</span>
+                </button>
+              ))}
+              <Link
+                to="/graph?focus=notes"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                title="Open notes in the Graph view"
+              >
+                <Network className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Connections</span>
+              </Link>
+            </div>
+          </div>
+
           {pinnedStrip.length > 0 && (
             <section>
               <h2 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -359,34 +385,6 @@ export default function Notes() {
               <CalendarView notes={filtered} onSelectNote={selectNote} />
             )}
           </section>
-
-          {/* View switcher row — sits below the cards */}
-          <div className="flex flex-wrap items-center gap-2 pt-2">
-            <div className="inline-flex rounded-full border border-border/60 bg-card/50 p-0.5">
-              {VIEW_TABS.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setView(t.id)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition",
-                    view === t.id ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:text-foreground",
-                  )}
-                  aria-pressed={view === t.id}
-                >
-                  <t.icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{t.label}</span>
-                </button>
-              ))}
-              <Link
-                to="/graph?focus=notes"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
-                title="Open notes in the Graph view"
-              >
-                <Network className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Connections</span>
-              </Link>
-            </div>
-          </div>
         </div>
 
         {/* Right context rail */}
