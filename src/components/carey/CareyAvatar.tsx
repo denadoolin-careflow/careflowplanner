@@ -1,4 +1,4 @@
-import careyAvatarSrc from "@/assets/carey-avatar.png";
+import careyAvatarSrc from "@/assets/carey-icon-sage.png";
 import { cn } from "@/lib/utils";
 
 export function CareyAvatar({ size = 28, className }: { size?: number; className?: string }) {
