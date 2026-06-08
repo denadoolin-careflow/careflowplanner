@@ -10,6 +10,7 @@ export interface Tag {
   color: string;       // hex (e.g. #f59e0b)
   icon: string;        // lucide icon name (kebab case ok, we normalize)
   pinned?: boolean;
+  description?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,6 +21,7 @@ const fromRow = (r: any): Tag => ({
   color: r.color ?? DEFAULT_COLOR,
   icon: r.icon ?? DEFAULT_ICON,
   pinned: !!r.pinned,
+  description: r.description ?? null,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 });
@@ -118,12 +120,13 @@ export async function createTag(patch: { name: string; color?: string; icon?: st
   return fromRow(data);
 }
 
-export async function updateTag(id: string, patch: Partial<Pick<Tag, "name" | "color" | "icon" | "pinned">>): Promise<void> {
+export async function updateTag(id: string, patch: Partial<Pick<Tag, "name" | "color" | "icon" | "pinned" | "description">>): Promise<void> {
   const row: any = {};
   if (patch.name !== undefined) row.name = normalizeTagName(patch.name);
   if (patch.color !== undefined) row.color = patch.color;
   if (patch.icon !== undefined) row.icon = patch.icon;
   if (patch.pinned !== undefined) row.pinned = patch.pinned;
+  if (patch.description !== undefined) row.description = patch.description;
   const { error } = await supabase.from("tags" as any).update(row).eq("id", id);
   if (error) throw error;
   try { window.dispatchEvent(new Event("careflow:tags:pinned-changed")); } catch {}
