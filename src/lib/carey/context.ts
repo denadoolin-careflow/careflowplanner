@@ -1,5 +1,3 @@
-import type { StoreState } from "@/lib/store";
-
 /** Build a compact live snapshot to give Carey current awareness of the user's life. */
 export function buildCareySnapshot(state: any): Record<string, unknown> {
   const today = new Date().toISOString().slice(0, 10);
