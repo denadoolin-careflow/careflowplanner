@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { NoteAIButton } from "@/components/notes/NoteAIButton";
+import { CareyButton } from "@/components/carey/CareyButton";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
@@ -196,6 +197,19 @@ export default function NoteDetail() {
             title={title}
             body={body}
             onApply={(next) => { setBody(next); save({ body: next }); }}
+          />
+          <CareyButton
+            label="Carey"
+            contextType="note"
+            contextId={id}
+            context={{ title, body: body.slice(0, 4000) }}
+            actions={[
+              { label: "Summarize this note", prompt: `Summarize this note in 3-5 bullets, then one sentence on what to do next.\n\nTitle: ${title}\n\n${body}` },
+              { label: "Extract action items", prompt: `From this note, extract concrete action items as a checklist. Group by area when obvious.\n\nTitle: ${title}\n\n${body}` },
+              { label: "Suggest tags", prompt: `Suggest 3-6 short tags for this note and briefly explain why.\n\nTitle: ${title}\n\n${body}` },
+              { label: "Turn into a project plan", prompt: `Turn this note into a lightweight project plan: 1-line goal, 3 milestones, first 5 tasks.\n\nTitle: ${title}\n\n${body}` },
+              { label: "Find what's missing", prompt: `What's missing or unclear in this note? Ask me clarifying questions.\n\nTitle: ${title}\n\n${body}` },
+            ]}
           />
           <EditorPrefsMenu />
           <Button
