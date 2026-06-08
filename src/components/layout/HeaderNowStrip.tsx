@@ -9,7 +9,7 @@ import { LocationPickerPopover } from "@/components/weather/LocationPickerPopove
 import { UnitToggle } from "@/components/weather/UnitToggle";
 
 function CondIcon({ c, isNight, className }: { c: WeatherCondition; isNight?: boolean; className?: string }) {
-  const cls = cn("h-3.5 w-3.5", className);
+  const cls = cn("h-5 w-5", className);
   if (c === "clear") return isNight ? <Moon className={cls} /> : <Sun className={cls} />;
   if (c === "partly-cloudy") return <CloudSun className={cls} />;
   if (c === "cloudy") return <Cloud className={cls} />;
@@ -37,11 +37,11 @@ export function HeaderNowStrip({ className }: { className?: string }) {
   const tempStr = snap ? `${unit === "F" ? cToF(snap.tempC) : Math.round(snap.tempC)}°` : null;
 
   return (
-    <div className={cn("hidden items-center gap-1.5 text-[11px] md:flex", className)}>
-      <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 tabular-nums text-foreground/85">
+    <div className={cn("hidden items-center gap-2 text-sm md:flex", className)}>
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 tabular-nums font-medium text-foreground/85">
         {time}
       </span>
-      <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85">
         {date}
       </span>
       {snap && tempStr && (
@@ -49,11 +49,11 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           trigger={
             <button
               type="button"
-              className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85 hover:bg-muted/70 transition"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85 hover:bg-muted/70 transition"
               title={snap.conditionLabel ?? undefined}
             >
               <CondIcon c={snap.condition} isNight={snap.isNight} />
-              <span className="tabular-nums">{tempStr}</span>
+              <span className="tabular-nums font-medium">{tempStr}</span>
               {snap.conditionLabel && (
                 <span className="hidden truncate text-foreground/70 lg:inline">· {snap.conditionLabel}</span>
               )}
