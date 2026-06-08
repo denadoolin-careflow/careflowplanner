@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  Clock3, Pin, Sun, Link2, Tag as TagIcon, Archive, Plus, FileQuestion, FolderOpen, List,
+  Clock3, Pin, Sun, Link2, Tag as TagIcon, Archive, Plus, FileQuestion, FolderOpen, List, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fallbackColorFor, type Tag } from "@/lib/tags";
@@ -57,6 +57,17 @@ export function NotesSideNav({
   onTagChange: (tag: string | null) => void;
   onNewTag?: () => void;
 }) {
+  const [openCollections, setOpenCollections] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("careflow.notes.sidenav.collections") !== "0";
+  });
+  const [openTags, setOpenTags] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("careflow.notes.sidenav.tags") !== "0";
+  });
+  useEffect(() => { localStorage.setItem("careflow.notes.sidenav.collections", openCollections ? "1" : "0"); }, [openCollections]);
+  useEffect(() => { localStorage.setItem("careflow.notes.sidenav.tags", openTags ? "1" : "0"); }, [openTags]);
+
   // Compute tag usage counts from loaded notes.
   const tagCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -97,9 +108,16 @@ export function NotesSideNav({
     <aside className="flex h-full w-full flex-col gap-5 overflow-y-auto pr-1">
       {/* Smart collections */}
       <section>
-        <h3 className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Collections
-        </h3>
+        <button
+          type="button"
+          onClick={() => setOpenCollections(o => !o)}
+          aria-expanded={openCollections}
+          className="mb-1.5 flex w-full items-center gap-1 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground"
+        >
+          <ChevronDown className={cn("h-3 w-3 transition-transform", !openCollections && "-rotate-90")} />
+          <span className="flex-1 text-left">Collections</span>
+        </button>
+        {openCollections && (
         <ul className="space-y-0.5">
           {COLLECTIONS.filter(c => c.id === "all" || collectionCount(c.id, notes) > 0).map(c => {
             const active = activeCollection === c.id && !activeTag;
@@ -124,14 +142,21 @@ export function NotesSideNav({
             );
           })}
         </ul>
+        )}
       </section>
 
       {/* Tags */}
       <section>
         <div className="mb-1.5 flex items-center justify-between px-2">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <button
+            type="button"
+            onClick={() => setOpenTags(o => !o)}
+            aria-expanded={openTags}
+            className="flex flex-1 items-center gap-1 text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground"
+          >
+            <ChevronDown className={cn("h-3 w-3 transition-transform", !openTags && "-rotate-90")} />
             Tags
-          </h3>
+          </button>
           {onNewTag && (
             <button
               type="button"
@@ -143,7 +168,7 @@ export function NotesSideNav({
             </button>
           )}
         </div>
-        {sortedTags.length === 0 ? (
+        {openTags && (sortedTags.length === 0 ? (
           <p className="px-2 text-xs italic text-muted-foreground/70">No tags yet.</p>
         ) : (
           <ul className="space-y-0.5">
@@ -179,7 +204,7 @@ export function NotesSideNav({
               );
             })}
           </ul>
-        )}
+        ))}
       </section>
     </aside>
   );
