@@ -136,6 +136,7 @@ function TodayInner() {
         {/* Main column */}
         <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
           <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
+          {isReallyToday && <CareyProactiveCards />}
           <TopThreeStrip date={day} onTaskClick={setEditTaskId} />
           <DailySnapshotRow date={day} />
           {isReallyToday && <WeatherRemindersCard />}
