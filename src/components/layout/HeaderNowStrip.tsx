@@ -49,11 +49,11 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           trigger={
             <button
               type="button"
-              className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85 hover:bg-muted/70 transition"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85 hover:bg-muted/70 transition"
               title={snap.conditionLabel ?? undefined}
             >
               <CondIcon c={snap.condition} isNight={snap.isNight} />
-              <span className="tabular-nums">{tempStr}</span>
+              <span className="tabular-nums font-medium">{tempStr}</span>
               {snap.conditionLabel && (
                 <span className="hidden truncate text-foreground/70 lg:inline">· {snap.conditionLabel}</span>
               )}
