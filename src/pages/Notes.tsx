@@ -273,45 +273,21 @@ export default function Notes() {
         </DropdownMenu>
       </header>
 
-      {/* View switcher row */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-full border border-border/60 bg-card/50 p-0.5">
-          {VIEW_TABS.map(t => (
+      {/* Active-tag chip + count row (kept above so users can clear filters quickly) */}
+      {(activeTag || filtered.length > 0) && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {activeTag && (
             <button
-              key={t.id}
-              onClick={() => setView(t.id)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition",
-                view === t.id ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:text-foreground",
-              )}
-              aria-pressed={view === t.id}
+              type="button"
+              onClick={() => setActiveTag(null)}
+              className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20"
             >
-              <t.icon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{t.label}</span>
+              #{activeTag} ×
             </button>
-          ))}
-          <Link
-            to="/graph?focus=notes"
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
-            title="Open notes in the Graph view"
-          >
-            <Network className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Connections</span>
-          </Link>
+          )}
+          <div className="ml-auto text-[11px] text-muted-foreground">{filtered.length} notes</div>
         </div>
-
-        {activeTag && (
-          <button
-            type="button"
-            onClick={() => setActiveTag(null)}
-            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20"
-          >
-            #{activeTag} ×
-          </button>
-        )}
-
-        <div className="ml-auto text-[11px] text-muted-foreground">{filtered.length} notes</div>
-      </div>
+      )}
 
       {/* MAIN SPLIT */}
       <div className={cn(
@@ -383,6 +359,34 @@ export default function Notes() {
               <CalendarView notes={filtered} onSelectNote={selectNote} />
             )}
           </section>
+
+          {/* View switcher row — sits below the cards */}
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            <div className="inline-flex rounded-full border border-border/60 bg-card/50 p-0.5">
+              {VIEW_TABS.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setView(t.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition",
+                    view === t.id ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:text-foreground",
+                  )}
+                  aria-pressed={view === t.id}
+                >
+                  <t.icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{t.label}</span>
+                </button>
+              ))}
+              <Link
+                to="/graph?focus=notes"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                title="Open notes in the Graph view"
+              >
+                <Network className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Connections</span>
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Right context rail */}
