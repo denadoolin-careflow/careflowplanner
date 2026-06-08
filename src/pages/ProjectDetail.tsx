@@ -33,6 +33,7 @@ import { useProjectIdeas } from "@/lib/project-ideas";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { haptics } from "@/lib/haptics";
 import type { Project, ProjectStage } from "@/lib/types";
+import { CareyButton } from "@/components/carey/CareyButton";
 
 /* ----------------------------- Atmospheres ----------------------------- */
 
@@ -200,6 +201,18 @@ function HubHeader({ project, onUpdate }: { project: Project; onUpdate: (p: Part
       <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Quick search">
         <Search className="h-4 w-4" />
       </Button>
+      <CareyButton
+        label="Carey"
+        contextType="project"
+        contextId={project.id}
+        context={{ name: project.name, status: project.status, description: (project as any).description, area: (project as any).area }}
+        actions={[
+          { label: "Draft a project plan", prompt: `Draft a lightweight plan for this project: 1-line goal, 3-5 milestones with dates, first 7 tasks.\n\nProject: ${project.name}` },
+          { label: "Suggest next milestones", prompt: `Suggest the next 3 milestones for this project, with rough timing.\n\nProject: ${project.name}` },
+          { label: "Why has this stalled?", prompt: `If this project feels stalled, what's likely blocking it? Give one tiny restart action.\n\nProject: ${project.name}` },
+          { label: "Summarize status", prompt: `Summarize the current status of this project in 3 short bullets I can share.\n\nProject: ${project.name}` },
+        ]}
+      />
       <Button
         variant="ghost" size="icon"
         className={cn("h-9 w-9 rounded-full", project.isFavorite && "text-amber-400")}

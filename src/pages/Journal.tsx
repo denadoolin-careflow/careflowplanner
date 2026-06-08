@@ -31,6 +31,7 @@ import { startOfWeek, endOfWeek, startOfYear, getYear } from "date-fns";
 import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyWritingGoal } from "@/components/notes/DailyWritingGoal";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { CareyButton } from "@/components/carey/CareyButton";
 
 type TemplateKey =
   | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
@@ -343,6 +344,19 @@ export default function Journal() {
             )}
           </div>
           <div className="flex items-center gap-4">
+            <CareyButton
+              label="Ask Carey"
+              context={{
+                recent: state.journal.slice(-7).map(j => ({ date: j.date, mood: (j as any).mood, snippet: String((j as any).body ?? "").slice(0, 240) })),
+                streak,
+              }}
+              actions={[
+                { label: "Summarize my recent entries", prompt: "Summarize my recent journal entries in 3 short paragraphs. What patterns do you see?" },
+                { label: "Spot emotional themes", prompt: "What emotional themes show up in my recent journaling? Be honest and gentle." },
+                { label: "Celebrate my wins", prompt: "Pull the wins, however small, from my recent entries and reflect them back to me." },
+                { label: "Give me a reflection prompt", prompt: "Based on what I've been writing lately, give me one reflection prompt I could write on today." },
+              ]}
+            />
             <div className="flex items-center gap-2 rounded-full bg-background/60 px-3 py-1.5 text-sm shadow-sm">
               <Flame className="h-4 w-4 text-primary" />
               <span className="font-medium">{streak}</span>
