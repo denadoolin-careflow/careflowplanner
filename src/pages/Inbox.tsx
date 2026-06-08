@@ -396,7 +396,6 @@ function MobileInbox() {
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [tagsOpen, setTagsOpen] = useState(false);
   const { tags } = useTags();
-  const { theme, setTheme } = useTheme();
 
   const base = useMemo(
     () => state.tasks.filter(t => t.inbox && !t.done && !t.parentTaskId && t.status !== "parked"),
