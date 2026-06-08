@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useStore } from "@/lib/store";
-import { CalendarDays, Flame, Heart, ListTodo, Target } from "lucide-react";
+import { CalendarDays, Compass, Flame, Heart, ListTodo, Sparkles, Sunrise, Target, Wind } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function Stat({ icon: Icon, label, value, tone }: { icon: any; label: string; value: string | number; tone?: string }) {
@@ -39,6 +39,33 @@ export function DailyBriefing({ onAsk }: { onAsk: (q: string) => void }) {
     "Reflect on this week",
   ];
 
+  const actions = [
+    {
+      label: "Plan my day",
+      icon: Sunrise,
+      prompt:
+        "Plan my day. Look at my today's tasks and overdue items, and propose a realistic schedule with morning, midday, and evening blocks. Honor my capacity — don't overload me. End with the single most important thing.",
+    },
+    {
+      label: "What to skip today",
+      icon: Wind,
+      prompt:
+        "Look at my today's tasks. Be honest: which 2-3 can I skip, defer, or drop without harm? Briefly explain each. Then tell me what's actually worth doing.",
+    },
+    {
+      label: "One next action",
+      icon: Compass,
+      prompt:
+        "Give me ONE concrete next action I can do in the next 15 minutes that will move something meaningful forward. Pick from my goals, today's tasks, or anything I'm avoiding. Explain why in one sentence.",
+    },
+    {
+      label: "Reflect on this week",
+      icon: Sparkles,
+      prompt:
+        "Reflect on my week so far. Note 1-2 wins, 1 pattern you notice, and 1 gentle suggestion for the next few days. Warm tone.",
+    },
+  ];
+
   return (
     <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-card/80 to-card/40 p-5">
       <header className="flex items-baseline justify-between">
@@ -55,7 +82,20 @@ export function DailyBriefing({ onAsk }: { onAsk: (q: string) => void }) {
         <Stat icon={Flame} label="Top streak" value={data.habitStreak} />
         <Stat icon={Heart} label="Last mood" value={data.lastMood ?? "—"} />
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {actions.map(a => (
+          <button
+            key={a.label}
+            onClick={() => onAsk(a.prompt)}
+            className="group flex items-start gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-background"
+          >
+            <a.icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <span className="text-sm font-medium leading-tight">{a.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
         {chips.map(c => (
           <button
             key={c}
