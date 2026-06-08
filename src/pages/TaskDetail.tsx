@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import type { Area, Energy, Priority, RecurrenceType, Task } from "@/lib/types";
 import { toast } from "sonner";
 import { useAstrologyEnabled } from "@/lib/astrology-prefs";
+import { CareyButton } from "@/components/carey/CareyButton";
 import { moonPhaseFor } from "@/lib/moon-phase";
 import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
 import { haptics } from "@/lib/haptics";
