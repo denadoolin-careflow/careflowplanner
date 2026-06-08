@@ -126,6 +126,24 @@ export default function TaskDetail() {
           <button onClick={() => navigate(-1)} className="grid h-10 w-10 place-items-center rounded-full bg-card border border-border/60" aria-label="Back">
             <ArrowLeft className="h-4 w-4" />
           </button>
+          <div className="flex items-center gap-2">
+          <CareyButton
+            label="Carey"
+            contextType="task"
+            contextId={task.id}
+            context={{
+              title: task.title, area: task.area, priority: task.priority,
+              dueDate: task.dueDate, estMinutes: task.estMinutes, notes: task.notes,
+              subtasks: subtasks.map(s => ({ title: s.title, done: s.done })),
+              project: proj?.name,
+            }}
+            actions={[
+              { label: "Break into subtasks", prompt: `Break this task into 3-6 concrete subtasks. Be specific and actionable.\n\nTask: ${task.title}\nNotes: ${task.notes ?? ""}` },
+              { label: "Estimate effort & time", prompt: `Estimate effort (low/medium/high) and realistic minutes for this task. Briefly explain.\n\nTask: ${task.title}\nNotes: ${task.notes ?? ""}` },
+              { label: "What's blocking me?", prompt: `What might be blocking me on this task? Suggest one tiny first step I can do in under 5 minutes.\n\nTask: ${task.title}\nNotes: ${task.notes ?? ""}` },
+              { label: "Can I delegate or drop this?", prompt: `Given my full load, help me decide: do, delegate, defer, or drop this task? Be honest.\n\nTask: ${task.title}\nNotes: ${task.notes ?? ""}` },
+            ]}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="grid h-10 w-10 place-items-center rounded-full bg-card border border-border/60" aria-label="More">
@@ -149,6 +167,7 @@ export default function TaskDetail() {
               <DropdownMenuItem className="text-destructive" onClick={async () => { await deleteTask(task.id); navigate(-1); }}><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
       </div>
 
