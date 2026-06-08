@@ -19,6 +19,7 @@ import {
   Share2, Link2, ListChecks,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CareyButton } from "@/components/carey/CareyButton";
 
 /* ---------------- Types & local persistence ---------------- */
 
