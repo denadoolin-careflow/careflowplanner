@@ -182,9 +182,27 @@ export function GoalsHub() {
           </div>
           <div className="flex flex-col items-end gap-3">
             <season.illo className="hidden h-24 w-24 text-foreground/30 sm:block" strokeWidth={1.2} />
-            <Button onClick={()=>setCreateOpen(true)} size="lg" className="rounded-full shadow-sm">
-              <Plus className="mr-1 h-4 w-4" /> Create Goal
-            </Button>
+            <div className="flex items-center gap-2">
+              <CareyButton
+                label="Ask Carey"
+                variant="outline"
+                context={{
+                  active: active.slice(0, 12).map((g: any) => ({ title: g.title, progress: g.progress, area: g.area })),
+                  momentum,
+                  tinyWins,
+                  needsCheckIn: needsCheckIn.map((g: any) => g.title),
+                }}
+                actions={[
+                  { label: "Pick one goal to focus on this week", prompt: "From my active goals, which one deserves my focus this week? Suggest 3 tiny actions for it." },
+                  { label: "Which goals am I neglecting?", prompt: "Which of my goals have I been neglecting? Be kind — suggest a gentle restart for one of them." },
+                  { label: "Suggest weekly actions for each goal", prompt: "For each active goal, suggest 1-2 small actions I could do this week." },
+                  { label: "Help me reflect on momentum", prompt: "Help me reflect on my current momentum across goals. What's working? What needs space?" },
+                ]}
+              />
+              <Button onClick={()=>setCreateOpen(true)} size="lg" className="rounded-full shadow-sm">
+                <Plus className="mr-1 h-4 w-4" /> Create Goal
+              </Button>
+            </div>
           </div>
         </div>
       </section>
