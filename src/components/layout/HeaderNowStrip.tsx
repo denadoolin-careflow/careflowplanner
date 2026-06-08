@@ -86,9 +86,9 @@ export function HeaderNowStrip({ className }: { className?: string }) {
         </button>
       </div>
 
-      {/* Mobile expanded row — overlays underneath the header */}
+      {/* Mobile expanded row — drops under the header */}
       {mobileExpanded && (
-        <div className="absolute inset-x-0 top-full z-10 mt-1 border-b border-border/50 bg-background/95 px-3 py-2 backdrop-blur-md md:hidden">
+        <div className="fixed inset-x-0 top-[52px] z-30 border-b border-border/50 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-md md:hidden">
           <div className="mx-auto flex max-w-screen-sm flex-wrap items-center gap-1.5 text-xs">
             <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85">
               {shortDate}
