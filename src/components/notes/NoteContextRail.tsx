@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowUpRight, ExternalLink, FileText, Folder, Hash, Link2, X } from "lucide-react";
+import { ArrowUpRight, ExternalLink, FileText, Folder, Hash, Link2, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/lib/notes";
 import { fallbackColorFor, type Tag } from "@/lib/tags";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
+import { suggestRelatedNotes, type NoteSuggestion } from "@/lib/note-suggestions";
 
 function stripMd(s: string): string {
   return (s || "")
@@ -28,6 +29,8 @@ export function NoteContextRail({
 }) {
   const [note, setNote] = useState<Note | null>(null);
   const [backlinks, setBacklinks] = useState<Note[]>([]);
+  const [suggestions, setSuggestions] = useState<NoteSuggestion[]>([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -43,6 +46,17 @@ export function NoteContextRail({
     void findBacklinksTo(t)
       .then(arr => { if (alive) setBacklinks(arr.filter(n => n.id !== note.id)); })
       .catch(() => {});
+    return () => { alive = false; };
+  }, [note]);
+
+  useEffect(() => {
+    if (!note) { setSuggestions([]); return; }
+    let alive = true;
+    setSuggestLoading(true);
+    void suggestRelatedNotes(note, { limit: 5 })
+      .then(arr => { if (alive) setSuggestions(arr); })
+      .catch(() => { if (alive) setSuggestions([]); })
+      .finally(() => { if (alive) setSuggestLoading(false); });
     return () => { alive = false; };
   }, [note]);
 
@@ -148,6 +162,39 @@ export function NoteContextRail({
                   </Link>
                 </li>
               ))}
+            </ul>
+          )}
+        </Section>
+
+        {/* AI-suggested related notes */}
+        <Section title="Suggested">
+          {suggestLoading && suggestions.length === 0 ? (
+            <p className="text-xs italic text-muted-foreground/70">Finding related notes…</p>
+          ) : suggestions.length === 0 ? (
+            <p className="text-xs italic text-muted-foreground/70">No related notes yet. Add tags or links to surface connections.</p>
+          ) : (
+            <ul className="space-y-1">
+              {suggestions.map(s => {
+                const title = s.note.kind === "daily" && s.note.date
+                  ? format(parseISO(s.note.date), "EEE, MMM d")
+                  : (s.note.title || "Untitled");
+                return (
+                  <li key={s.note.id}>
+                    <Link
+                      to={`/notes?note=${s.note.id}`}
+                      className="group flex items-start gap-1.5 rounded-md px-1 py-1 text-xs hover:bg-muted/50"
+                    >
+                      <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary/70" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-foreground group-hover:text-foreground">{title}</span>
+                        <span className="block truncate text-[10px] text-muted-foreground/80">
+                          {s.reasons.join(" · ")}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Section>
