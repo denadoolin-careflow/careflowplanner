@@ -23,7 +23,7 @@ export function DailyBriefing({ onAsk }: { onAsk: (q: string) => void }) {
     const tasks: any[] = state?.tasks ?? [];
     const goals: any[] = state?.goals ?? [];
     const habits: any[] = state?.habits ?? [];
-    const journals: any[] = state?.journals ?? state?.journalEntries ?? [];
+    const journals: any[] = (state as any)?.journal ?? [];
     const todayTasks = tasks.filter(t => t.dueDate === today && t.status !== "done");
     const overdue = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== "done");
     const activeGoals = goals.filter(g => (g.progress ?? 0) < 100);
