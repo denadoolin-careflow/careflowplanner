@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
 import { CareyAvatar } from "@/components/carey/CareyAvatar";
 import { DailyBriefing } from "@/components/carey/DailyBriefing";
 import { Button } from "@/components/ui/button";
@@ -118,9 +117,10 @@ export default function Carey() {
     void loadThreads();
   }
 
+  useEffect(() => { document.title = "Carey — your life companion"; }, []);
+
   return (
     <>
-      <Helmet><title>Carey — your life companion</title></Helmet>
       <div className="mx-auto flex h-[calc(100vh-7rem)] w-full max-w-6xl gap-4 p-4 sm:p-6">
         {/* Sidebar */}
         <aside className="hidden w-64 shrink-0 flex-col rounded-2xl border border-border/60 bg-card/40 md:flex">
