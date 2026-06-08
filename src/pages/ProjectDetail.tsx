@@ -33,6 +33,7 @@ import { useProjectIdeas } from "@/lib/project-ideas";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { haptics } from "@/lib/haptics";
 import type { Project, ProjectStage } from "@/lib/types";
+import { CareyButton } from "@/components/carey/CareyButton";
 
 /* ----------------------------- Atmospheres ----------------------------- */
 
