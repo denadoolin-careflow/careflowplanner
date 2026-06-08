@@ -200,9 +200,16 @@ function useSidebarData(forceExpanded: boolean) {
       const next = { ...prev };
       let changed = false;
       for (const g of NAV_GROUPS) {
-        const has = g.items.some((it) => it.to === pathname);
-        if (has && !next[g.id]) { next[g.id] = true; changed = true; }
-        if (!(g.id in next)) { next[g.id] = g.id === "planflow" || g.id === "careflow"; changed = true; }
+        const has = g.items.some((it) => it.to === pathname) || pathname === `/flow/${g.id}`;
+        if (has) {
+          // Accordion: open this group, close all other NAV_GROUPS.
+          for (const other of NAV_GROUPS) {
+            const want = other.id === g.id;
+            if (!!next[other.id] !== want) { next[other.id] = want; changed = true; }
+          }
+          return changed ? next : prev;
+        }
+        if (!(g.id in next)) { next[g.id] = false; changed = true; }
       }
       return changed ? next : prev;
     });
@@ -212,7 +219,19 @@ function useSidebarData(forceExpanded: boolean) {
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(openMap)); } catch {}
   }, [openMap]);
 
-  const toggle = (id: string) => setOpenMap((p) => ({ ...p, [id]: !p[id] }));
+  const toggle = (id: string) => setOpenMap((p) => {
+    const isNavGroup = NAV_GROUPS.some(g => g.id === id);
+    if (!isNavGroup) return { ...p, [id]: !p[id] };
+    // Accordion behavior for Flow groups: opening one closes the others.
+    const willOpen = !p[id];
+    const next = { ...p };
+    if (willOpen) {
+      for (const g of NAV_GROUPS) next[g.id] = g.id === id;
+    } else {
+      next[id] = false;
+    }
+    return next;
+  });
 
   // Auto-expand the area containing the active project.
   useEffect(() => {

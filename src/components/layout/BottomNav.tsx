@@ -4,7 +4,7 @@ import { MOBILE_NAV, NAV, NAV_GROUPS } from "@/lib/nav";
 import { useFlowAccents } from "@/lib/flow-accent";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight, Pin, PinOff } from "lucide-react";
+import { Menu, Moon, Sun, MoonStar, Settings2, GripVertical, Check, ArrowRight, Pin, PinOff, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -64,6 +64,9 @@ const ALL_DESTINATIONS = (() => {
 export function BottomNav() {
   const [open, setOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [openGroupId, setOpenGroupId] = useState<string | null>(null);
+  // Auto-close all groups whenever the sheet closes.
+  useEffect(() => { if (!open) setOpenGroupId(null); }, [open]);
   const [navIds, setNavIds] = useNavOrder();
   const flowAccents = useFlowAccents();
   const primary = useMemo(() => {
@@ -206,11 +209,12 @@ export function BottomNav() {
                     };
                     return (
                     <section key={group.id}>
-                      <Link
-                        to={`/flow/${group.id}`}
-                        onClick={() => setOpen(false)}
-                        className="mb-2 flex items-center gap-2 rounded-lg px-1 py-1 -mx-1 hover:bg-muted/60 transition-colors"
-                      >
+                      <div className="mb-2 flex items-center gap-2 rounded-lg px-1 py-1 -mx-1 hover:bg-muted/60 transition-colors">
+                        <Link
+                          to={`/flow/${group.id}`}
+                          onClick={() => setOpen(false)}
+                          className="flex flex-1 items-center gap-2 min-w-0"
+                        >
                         <span
                           className="grid h-7 w-7 shrink-0 place-items-center rounded-md"
                           style={{ background: accent.soft, boxShadow: `inset 0 0 0 1px ${accent.ring}`, color: accent.color }}
@@ -218,7 +222,7 @@ export function BottomNav() {
                         >
                           <GroupIcon className="h-4 w-4" />
                         </span>
-                        <div className="flex flex-1 flex-col">
+                        <div className="flex flex-1 flex-col min-w-0">
                           <h3 className="font-display text-sm font-semibold tracking-tight" style={{ color: accent.color }}>{group.label}</h3>
                           {(group as any).subtitle && (
                             <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
@@ -226,6 +230,7 @@ export function BottomNav() {
                             </span>
                           )}
                         </div>
+                        </Link>
                         <button
                           type="button"
                           onClick={togglePin}
@@ -238,9 +243,28 @@ export function BottomNav() {
                         >
                           {isPinned ? <Pin className="h-4 w-4 fill-current" /> : <PinOff className="h-4 w-4" />}
                         </button>
-                        <ArrowRight className="h-4 w-4" style={{ color: accent.color }} />
-                      </Link>
-                      <ul className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            haptics.tap();
+                            setOpenGroupId(prev => prev === group.id ? null : group.id);
+                          }}
+                          aria-expanded={openGroupId === group.id}
+                          aria-label={openGroupId === group.id ? `Collapse ${group.label}` : `Expand ${group.label}`}
+                          className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors"
+                        >
+                          <ChevronDown
+                            className={cn("h-4 w-4 transition-transform duration-200", openGroupId === group.id ? "rotate-0" : "-rotate-90")}
+                            style={{ color: accent.color }}
+                          />
+                        </button>
+                      </div>
+                      <div className={cn(
+                        "grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out",
+                        openGroupId === group.id ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                      )}>
+                        <div className="min-h-0 overflow-hidden">
+                      <ul className="grid grid-cols-3 gap-2 pb-1">
                         {group.items.map(({ to, label, icon: Icon }) => (
                           <li key={to}>
                             <NavLink
@@ -260,6 +284,8 @@ export function BottomNav() {
                           </li>
                         ))}
                       </ul>
+                        </div>
+                      </div>
                     </section>
                     );
                   })}
