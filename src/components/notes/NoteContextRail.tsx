@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowUpRight, ExternalLink, FileText, Folder, Hash, Link2, Sparkles, X } from "lucide-react";
+import { ArrowUpRight, ExternalLink, FileText, Folder, Hash, Link2, Pin, Sparkles, Target, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
-  extractBacklinks, findBacklinksTo, getNote, type Note,
+  extractBacklinks, findBacklinksTo, getNote, updateNote, type Note,
 } from "@/lib/notes";
 import { fallbackColorFor, type Tag } from "@/lib/tags";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { suggestRelatedNotes, type NoteSuggestion } from "@/lib/note-suggestions";
+import { TagPicker } from "@/components/tags/TagPicker";
+import { toast } from "sonner";
 
 function stripMd(s: string): string {
   return (s || "")
@@ -20,21 +26,29 @@ function stripMd(s: string): string {
 }
 
 export function NoteContextRail({
-  noteId, onClose, projectsById, tagsByName,
+  noteId, onClose, projectsById, tagsByName, projects, onUpdated,
 }: {
   noteId: string;
   onClose: () => void;
   projectsById: Record<string, string>;
   tagsByName: Map<string, Tag>;
+  projects?: { id: string; name: string }[];
+  onUpdated?: (patch: Partial<Note>) => void;
 }) {
   const [note, setNote] = useState<Note | null>(null);
   const [backlinks, setBacklinks] = useState<Note[]>([]);
   const [suggestions, setSuggestions] = useState<NoteSuggestion[]>([]);
   const [suggestLoading, setSuggestLoading] = useState(false);
+  const [goalDraft, setGoalDraft] = useState<string>("");
+  const [editingGoal, setEditingGoal] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    void getNote(noteId).then(n => { if (alive) setNote(n); });
+    void getNote(noteId).then(n => {
+      if (!alive) return;
+      setNote(n);
+      setGoalDraft(n?.wordGoal ? String(n.wordGoal) : "");
+    });
     return () => { alive = false; };
   }, [noteId]);
 
@@ -77,6 +91,23 @@ export function NoteContextRail({
   const outgoing = Array.from(new Set(extractBacklinks(note.body || "")));
   const projectName = note.projectId ? projectsById[note.projectId] : null;
 
+  const apply = async (patch: Partial<Note>) => {
+    setNote(n => (n ? { ...n, ...patch } : n));
+    try {
+      await updateNote(noteId, patch);
+      onUpdated?.(patch);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't save");
+    }
+  };
+
+  const commitGoal = () => {
+    setEditingGoal(false);
+    const n = goalDraft.trim() === "" ? null : Math.max(0, parseInt(goalDraft, 10) || 0);
+    if ((n ?? null) === (note.wordGoal ?? null)) return;
+    void apply({ wordGoal: n });
+  };
+
   return (
     <aside className="flex h-full w-full flex-col overflow-y-auto rounded-2xl border border-border/60 bg-card/60 backdrop-blur">
       <header className="sticky top-0 z-10 flex items-start gap-2 border-b border-border/40 bg-card/95 px-4 py-3 backdrop-blur">
@@ -91,6 +122,18 @@ export function NoteContextRail({
         </div>
         <button
           type="button"
+          onClick={() => void apply({ pinned: !note.pinned })}
+          aria-label={note.pinned ? "Unpin" : "Pin"}
+          title={note.pinned ? "Unpin" : "Pin"}
+          className={cn(
+            "grid h-7 w-7 place-items-center rounded-md hover:bg-muted/60",
+            note.pinned ? "text-primary" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Pin className={cn("h-3.5 w-3.5", note.pinned && "fill-current")} />
+        </button>
+        <button
+          type="button"
           onClick={onClose}
           aria-label="Close context"
           className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground"
@@ -103,40 +146,71 @@ export function NoteContextRail({
         {/* Properties */}
         <Section title="Properties">
           <Prop label="Kind">{note.kind === "daily" ? "Daily" : "Note"}</Prop>
-          {projectName && (
-            <Prop label="Project">
-              <Link to={`/projects/${note.projectId}`} className="inline-flex items-center gap-1 text-primary hover:underline">
-                <Folder className="h-3 w-3" /> {projectName}
-              </Link>
-            </Prop>
-          )}
+          <Prop label="Project">
+            <Select
+              value={note.projectId ?? "__none__"}
+              onValueChange={(v) => void apply({ projectId: v === "__none__" ? null : v })}
+            >
+              <SelectTrigger className="h-7 w-full justify-end gap-1 border-0 bg-transparent px-1 py-0 text-xs shadow-none hover:bg-muted/50 focus:ring-0 focus-visible:ring-0">
+                <SelectValue placeholder="None">
+                  {projectName ? (
+                    <span className="inline-flex items-center gap-1 text-primary">
+                      <Folder className="h-3 w-3" /> {projectName}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground/70">None</span>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent align="end" className="max-h-72">
+                <SelectItem value="__none__">No project</SelectItem>
+                {(projects ?? []).map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Prop>
           <Prop label="Created">{format(parseISO(note.createdAt), "MMM d, yyyy")}</Prop>
           <Prop label="Updated">{format(parseISO(note.updatedAt), "MMM d, yyyy · h:mm a")}</Prop>
           <Prop label="Words">{words}</Prop>
           <Prop label="Reading">{readingMin} min</Prop>
+          <Prop label="Word goal">
+            {editingGoal ? (
+              <Input
+                autoFocus
+                type="number"
+                min={0}
+                value={goalDraft}
+                onChange={(e) => setGoalDraft(e.target.value)}
+                onBlur={commitGoal}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { e.preventDefault(); commitGoal(); }
+                  if (e.key === "Escape") { setGoalDraft(note.wordGoal ? String(note.wordGoal) : ""); setEditingGoal(false); }
+                }}
+                placeholder="e.g. 500"
+                className="h-6 w-20 px-1.5 py-0 text-right text-xs"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditingGoal(true)}
+                className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs hover:bg-muted/50"
+                title="Click to edit"
+              >
+                <Target className="h-3 w-3 text-muted-foreground" />
+                {note.wordGoal ? `${note.wordGoal} words` : <span className="text-muted-foreground/70">Set goal</span>}
+              </button>
+            )}
+          </Prop>
         </Section>
 
         {/* Tags */}
         <Section title="Tags">
-          {note.tags && note.tags.length > 0 ? (
-            <div className="flex flex-wrap gap-1">
-              {note.tags.map(t => {
-                const c = tagsByName.get(t.toLowerCase())?.color || fallbackColorFor(t);
-                return (
-                  <Link
-                    key={t}
-                    to={`/tags/${encodeURIComponent(t)}`}
-                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80"
-                    style={{ background: `${c}26`, color: c }}
-                  >
-                    <Hash className="h-2.5 w-2.5" /> {t}
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-xs italic text-muted-foreground/70">No tags. Add some in the full editor.</p>
-          )}
+          <TagPicker
+            value={note.tags ?? []}
+            onChange={(next) => void apply({ tags: next })}
+            triggerLabel={(note.tags?.length ?? 0) === 0 ? "Add tag" : "Add"}
+          />
         </Section>
 
         {/* Linked content */}
