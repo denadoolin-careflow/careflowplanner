@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CareyAvatar } from "./CareyAvatar";
-import { Loader2, MessageSquarePlus, Send, X } from "lucide-react";
+import { Loader2, Maximize2, MessageSquarePlus, Send, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/lib/store";
@@ -12,6 +12,7 @@ import { buildCareySnapshot } from "@/lib/carey/context";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useNavigate } from "react-router-dom";
 
 type Thread = { id: string; title: string; last_message_at: string };
 type Msg = { id: string; role: "user" | "assistant"; text: string };
@@ -25,6 +26,7 @@ const STARTERS = [
 
 export function CareyChat() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -166,6 +168,14 @@ export function CareyChat() {
           </div>
           <Button variant="ghost" size="sm" onClick={newThread} className="gap-1.5">
             <MessageSquarePlus className="h-4 w-4" /> New
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setOpen(false); navigate(activeId ? `/carey/${activeId}` : "/carey"); }}
+            className="gap-1.5"
+          >
+            <Maximize2 className="h-4 w-4" /> Open workspace
           </Button>
           <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
             <X className="h-4 w-4" />
