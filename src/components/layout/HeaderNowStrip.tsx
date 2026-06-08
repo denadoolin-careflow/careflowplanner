@@ -9,7 +9,7 @@ import { LocationPickerPopover } from "@/components/weather/LocationPickerPopove
 import { UnitToggle } from "@/components/weather/UnitToggle";
 
 function CondIcon({ c, isNight, className }: { c: WeatherCondition; isNight?: boolean; className?: string }) {
-  const cls = cn("h-3.5 w-3.5", className);
+  const cls = cn("h-5 w-5", className);
   if (c === "clear") return isNight ? <Moon className={cls} /> : <Sun className={cls} />;
   if (c === "partly-cloudy") return <CloudSun className={cls} />;
   if (c === "cloudy") return <Cloud className={cls} />;
