@@ -3,7 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NatalWheel } from "./NatalWheel";
 import { PlacementDetailDialog } from "./PlacementDetailDialog";
 import { HOUSE_THEMES } from "@/lib/cosmic/house-themes";
-import { SIGN_GLYPH, ELEMENT_VAR, SIGN_ELEMENT } from "@/lib/cosmic/glyphs";
+import { SIGN_GLYPH, ELEMENT_VAR } from "@/lib/cosmic/glyphs";
 import { shortAspectMeaning, aspectTone } from "@/lib/cosmic/interpretations";
 import type { NatalChartV2, NatalPlanet } from "@/lib/cosmic/chart";
 import type { AspectKind } from "@/lib/cosmic/active-aspects";
@@ -142,7 +142,6 @@ export function NatalChartTabs({ chart }: { chart: NatalChartV2 }) {
             </div>
           </div>
           <p className="text-[11.5px] text-muted-foreground">Chart shape: {chart.dominants.chartShape}</p>
-          {void SIGN_ELEMENT}
         </TabsContent>
       </Tabs>
 
