@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, isToday } from "date-fns";
-import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Moon, Sun, Zap } from "lucide-react";
+import {
+  ChevronDown, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
+  Moon, Sun, Zap,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
@@ -32,9 +35,11 @@ export function HeaderNowStrip({ className }: { className?: string }) {
 
   const snap = useWeatherSnapshot();
   const [unit] = useTempUnit();
+  const [mobileExpanded, setMobileExpanded] = useState(false);
 
   const time = useMemo(() => format(now, "h:mm a"), [now]);
   const date = useMemo(() => format(now, "EEE, MMM d"), [now]);
+  const shortDate = useMemo(() => format(now, "EEE, MMM d"), [now]);
   const tempStr = snap ? `${unit === "F" ? cToF(snap.tempC) : Math.round(snap.tempC)}°` : null;
   const fmtT = (c: number) => `${unit === "F" ? cToF(c) : Math.round(c)}°`;
   const rangeStr = snap ? `${fmtT(snap.highC)} / ${fmtT(snap.lowC)}` : null;
@@ -43,8 +48,84 @@ export function HeaderNowStrip({ className }: { className?: string }) {
     [snap],
   );
 
+  const ring = snap ? weatherTheme(snap.condition, snap.isNight).ring : "";
+
   return (
-    <div className={cn("hidden items-center gap-2 text-sm md:flex", className)}>
+    <div className={cn("flex items-center gap-2 text-sm", className)}>
+      {/* ───── Mobile (compact + toggle) ───── */}
+      <div className="flex items-center gap-1.5 md:hidden">
+        <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 tabular-nums text-xs font-medium text-foreground/85">
+          {time}
+        </span>
+        {snap && tempStr && (
+          <WeatherDetailPopover
+            trigger={
+              <button
+                type="button"
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-xs text-foreground/85 hover:bg-muted/70 transition ring-1 ring-transparent",
+                  ring,
+                )}
+                title={snap.conditionLabel ?? undefined}
+                aria-label={`Weather: ${snap.conditionLabel ?? "unknown"} ${tempStr}`}
+              >
+                <CondIcon c={snap.condition} isNight={snap.isNight} className="h-4 w-4" />
+                <span className="tabular-nums font-medium">{tempStr}</span>
+              </button>
+            }
+          />
+        )}
+        <button
+          type="button"
+          onClick={() => setMobileExpanded(v => !v)}
+          aria-expanded={mobileExpanded}
+          aria-label={mobileExpanded ? "Hide date and forecast" : "Show date and forecast"}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-muted/40 text-foreground/70 hover:bg-muted/70 transition"
+        >
+          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", mobileExpanded && "rotate-180")} />
+        </button>
+      </div>
+
+      {/* Mobile expanded row — overlays underneath the header */}
+      {mobileExpanded && (
+        <div className="absolute inset-x-0 top-full z-10 mt-1 border-b border-border/50 bg-background/95 px-3 py-2 backdrop-blur-md md:hidden">
+          <div className="mx-auto flex max-w-screen-sm flex-wrap items-center gap-1.5 text-xs">
+            <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85">
+              {shortDate}
+            </span>
+            {snap && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/75">
+                <span className="tabular-nums">{rangeStr}</span>
+                {snap.conditionLabel && <span className="text-foreground/55">· {snap.conditionLabel}</span>}
+              </span>
+            )}
+            {upcoming.length > 0 && (
+              <WeatherDetailPopover
+                trigger={
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-1.5 py-1 text-foreground/80 hover:bg-muted/70 transition"
+                  >
+                    {upcoming.map(d => (
+                      <span key={d.date} className="inline-flex items-center gap-0.5 px-1">
+                        <span className="text-[10px] uppercase tracking-wide text-foreground/55">
+                          {format(d.dateObj, "EEE")}
+                        </span>
+                        <CondIcon c={d.condition} className="h-3.5 w-3.5" />
+                        <span className="tabular-nums text-[11px] font-medium">{fmtT(d.highC)}</span>
+                      </span>
+                    ))}
+                  </button>
+                }
+              />
+            )}
+            <UnitToggle />
+          </div>
+        </div>
+      )}
+
+      {/* ───── Desktop / tablet (inline full strip) ───── */}
+      <div className="hidden items-center gap-2 md:flex">
       <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 tabular-nums font-medium text-foreground/85">
         {time}
       </span>
@@ -101,6 +182,7 @@ export function HeaderNowStrip({ className }: { className?: string }) {
         />
       )}
       <UnitToggle />
+      </div>
     </div>
   );
 }
