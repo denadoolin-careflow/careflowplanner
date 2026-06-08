@@ -10,6 +10,7 @@ import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
 import { CareGuideFab } from "@/components/care/CareGuideFab";
 import { CombinedFab } from "@/components/quick-add/CombinedFab";
 import { AICaptureDialog } from "@/components/care/AICaptureDialog";
+import { CareyChat } from "@/components/carey/CareyChat";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -118,6 +119,7 @@ export function AppLayout() {
       <GlobalTaskEditor />
       <UpgradePromptHost />
       <AICaptureDialog />
+      <CareyChat />
     </div>
   );
 }

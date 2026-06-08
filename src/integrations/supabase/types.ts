@@ -965,6 +965,143 @@ export type Database = {
         }
         Relationships: []
       }
+      carey_insights: {
+        Row: {
+          created_at: string
+          dismissed_at: string | null
+          id: string
+          kind: string
+          payload: Json
+          surfaced_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          kind: string
+          payload?: Json
+          surfaced_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          kind?: string
+          payload?: Json
+          surfaced_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      carey_memory: {
+        Row: {
+          confidence: number
+          created_at: string
+          id: string
+          key: string
+          kind: string
+          source: string | null
+          updated_at: string
+          user_id: string
+          value: Json
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          id?: string
+          key: string
+          kind: string
+          source?: string | null
+          updated_at?: string
+          user_id: string
+          value?: Json
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          id?: string
+          key?: string
+          kind?: string
+          source?: string | null
+          updated_at?: string
+          user_id?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      carey_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string | null
+          parts: Json
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          parts?: Json
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          parts?: Json
+          role?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carey_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "carey_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carey_threads: {
+        Row: {
+          context_id: string | null
+          context_type: string | null
+          created_at: string
+          id: string
+          last_message_at: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context_id?: string | null
+          context_type?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context_id?: string | null
+          context_type?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       celebration_tasks: {
         Row: {
           category: Database["public"]["Enums"]["celebration_task_category"]
