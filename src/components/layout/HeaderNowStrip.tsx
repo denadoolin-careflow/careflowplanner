@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Moon, Sun, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
@@ -35,6 +35,12 @@ export function HeaderNowStrip({ className }: { className?: string }) {
   const time = useMemo(() => format(now, "h:mm a"), [now]);
   const date = useMemo(() => format(now, "EEE, MMM d"), [now]);
   const tempStr = snap ? `${unit === "F" ? cToF(snap.tempC) : Math.round(snap.tempC)}°` : null;
+  const fmtT = (c: number) => `${unit === "F" ? cToF(c) : Math.round(c)}°`;
+  const rangeStr = snap ? `${fmtT(snap.highC)} / ${fmtT(snap.lowC)}` : null;
+  const upcoming = useMemo(
+    () => (snap?.daily ?? []).filter(d => !isToday(d.dateObj)).slice(0, 4),
+    [snap],
+  );
 
   return (
     <div className={cn("hidden items-center gap-2 text-sm md:flex", className)}>
@@ -54,6 +60,9 @@ export function HeaderNowStrip({ className }: { className?: string }) {
             >
               <CondIcon c={snap.condition} isNight={snap.isNight} />
               <span className="tabular-nums font-medium">{tempStr}</span>
+              {rangeStr && (
+                <span className="tabular-nums text-foreground/60">· {rangeStr}</span>
+              )}
               {snap.conditionLabel && (
                 <span className="hidden truncate text-foreground/70 lg:inline">· {snap.conditionLabel}</span>
               )}
@@ -61,6 +70,24 @@ export function HeaderNowStrip({ className }: { className?: string }) {
             </button>
           }
         />
+      )}
+      {upcoming.length > 0 && (
+        <span className="hidden items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/80 xl:inline-flex">
+          {upcoming.map(d => (
+            <span
+              key={d.date}
+              className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5"
+              title={`${format(d.dateObj, "EEEE")} · ${d.conditionLabel} · ${fmtT(d.highC)} / ${fmtT(d.lowC)}`}
+            >
+              <span className="text-[11px] uppercase tracking-wide text-foreground/60">
+                {format(d.dateObj, "EEE")}
+              </span>
+              <CondIcon c={d.condition} className="h-4 w-4" />
+              <span className="tabular-nums text-xs font-medium">{fmtT(d.highC)}</span>
+              <span className="tabular-nums text-xs text-foreground/55">{fmtT(d.lowC)}</span>
+            </span>
+          ))}
+        </span>
       )}
       <UnitToggle />
     </div>
