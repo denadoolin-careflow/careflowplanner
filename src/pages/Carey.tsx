@@ -126,7 +126,7 @@ export default function Carey() {
         {/* Sidebar */}
         <aside className="hidden w-64 shrink-0 flex-col rounded-2xl border border-border/60 bg-card/40 md:flex">
           <div className="flex items-center gap-2 border-b border-border/60 px-3 py-3">
-            <CareyAvatar size={28} />
+            <CareyAvatar size={36} />
             <span className="font-display text-base font-semibold">Carey</span>
             <Button size="sm" variant="ghost" className="ml-auto gap-1" onClick={newThread}>
               <MessageSquarePlus className="h-4 w-4" /> New
@@ -171,7 +171,7 @@ export default function Carey() {
                 <DailyBriefing onAsk={send} />
                 <CareyInsightsWidget />
                 <div className="flex flex-col items-center gap-3 pt-2 text-center">
-                  <CareyAvatar size={56} />
+                  <CareyAvatar size={72} />
                   <h3 className="font-display text-xl font-semibold">How can I help right now?</h3>
                   <p className="max-w-md text-sm text-muted-foreground">
                     I know your goals, today's tasks, journal, and routines. Ask anything — plan, reflect, prioritize, or just talk.

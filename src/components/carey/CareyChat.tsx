@@ -173,7 +173,7 @@ export function CareyChat() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-4xl p-0 overflow-hidden h-[80vh] flex flex-col gap-0">
         <div className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
-          <CareyAvatar size={32} />
+          <CareyAvatar size={40} />
           <div className="min-w-0 flex-1">
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Your companion</p>
             <h2 className="font-display text-lg font-semibold leading-tight">Carey</h2>
@@ -233,7 +233,7 @@ export function CareyChat() {
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
               {messages.length === 0 && !loadingThread && (
                 <div className="mx-auto flex max-w-xl flex-col items-center gap-4 py-10 text-center">
-                  <CareyAvatar size={64} />
+                  <CareyAvatar size={84} />
                   <div>
                     <h3 className="font-display text-xl font-semibold">Hi, I'm Carey.</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
