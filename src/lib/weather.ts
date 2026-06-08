@@ -31,6 +31,17 @@ export interface DayPartForecast {
   isNight: boolean;
 }
 
+export interface DailyForecast {
+  date: string;       // YYYY-MM-DD
+  dateObj: Date;
+  highC: number;
+  lowC: number;
+  code: number;
+  condition: WeatherCondition;
+  conditionLabel: string;
+  precipChance: number;
+}
+
 export interface WeatherSnapshot {
   locationLabel: string;
   lat: number;
@@ -46,6 +57,7 @@ export interface WeatherSnapshot {
   todayHourly: HourlyForecast[];
   dayParts: DayPartForecast[];
   windMaxKph: number;
+  daily: DailyForecast[];
 }
 
 export interface GeoPlace {
@@ -117,9 +129,9 @@ export async function fetchWeather(lat: number, lon: number, locationLabel: stri
   url.searchParams.set("longitude", String(lon));
   url.searchParams.set("current", "temperature_2m,weather_code,is_day");
   url.searchParams.set("hourly", "temperature_2m,weather_code,is_day,precipitation_probability");
-  url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,weather_code,wind_speed_10m_max");
+  url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,weather_code,wind_speed_10m_max,precipitation_probability_max");
   url.searchParams.set("timezone", "auto");
-  url.searchParams.set("forecast_days", "2");
+  url.searchParams.set("forecast_days", "5");
 
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`Weather request failed (${res.status})`);
@@ -157,6 +169,26 @@ export async function fetchWeather(lat: number, lon: number, locationLabel: stri
 
   const dayParts = bucketHourly(todayHourly);
 
+  const dTimes: string[] = data?.daily?.time ?? [];
+  const dMax: number[] = data?.daily?.temperature_2m_max ?? [];
+  const dMin: number[] = data?.daily?.temperature_2m_min ?? [];
+  const dCodes: number[] = data?.daily?.weather_code ?? [];
+  const dPrecip: number[] = data?.daily?.precipitation_probability_max ?? [];
+  const daily: DailyForecast[] = dTimes.map((d, i) => {
+    const [yy, mm, dd] = d.split("-").map(n => parseInt(n, 10));
+    const m = mapWmoCode(dCodes[i] ?? 3);
+    return {
+      date: d,
+      dateObj: new Date(yy, (mm ?? 1) - 1, dd ?? 1),
+      highC: Math.round(dMax[i] ?? 0),
+      lowC: Math.round(dMin[i] ?? 0),
+      code: dCodes[i] ?? 3,
+      condition: m.condition,
+      conditionLabel: m.label,
+      precipChance: Math.round(dPrecip[i] ?? 0),
+    };
+  });
+
   return {
     locationLabel,
     lat: Math.round(lat * 100) / 100,
@@ -172,6 +204,7 @@ export async function fetchWeather(lat: number, lon: number, locationLabel: stri
     todayHourly,
     dayParts,
     windMaxKph: Math.round(data?.daily?.wind_speed_10m_max?.[0] ?? 0),
+    daily,
   };
 }
 
