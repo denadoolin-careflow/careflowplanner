@@ -23,8 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileCaptureCard } from "@/components/tasks/mobile/MobileCaptureCard";
 import { MobileFilterChips, type InboxFilter } from "@/components/tasks/mobile/MobileFilterChips";
 import { MobileTaskCard } from "@/components/tasks/mobile/MobileTaskCard";
-import { Menu, Search as SearchIcon, Moon, Sun, ChevronDown } from "lucide-react";
-import { useTheme } from "next-themes";
+import { ChevronDown } from "lucide-react";
 import { isToday, isFuture, isPast, parseISO } from "date-fns";
 
 interface Suggestion {
