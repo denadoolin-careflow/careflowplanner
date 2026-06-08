@@ -140,10 +140,10 @@ export function BottomNav() {
                   haptics.longPress();
                   setCustomizeOpen(true);
                 }}
-                className="flex min-h-[44px] w-full flex-col items-center gap-0.5 rounded-xl py-2 text-[9.5px] font-medium text-muted-foreground hover:text-foreground"
+                className="flex min-h-[44px] flex-col items-center gap-0.5 rounded-xl py-2 text-[9.5px] font-medium text-muted-foreground hover:text-foreground"
               >
-                <span className="grid h-8 w-8 place-items-center rounded-2xl">
-                  <Menu className="h-4 w-4" />
+                <span className="grid h-7 w-7 place-items-center rounded-xl">
+                  <Menu className="h-[18px] w-[18px]" />
                 </span>
                 <span className="leading-none">More</span>
               </SheetTrigger>
