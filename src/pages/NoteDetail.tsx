@@ -403,6 +403,11 @@ export default function NoteDetail() {
             onClose={() => nav("/notes")}
             projectsById={projectsById}
             tagsByName={tagsByName}
+            projects={(state.projects ?? []).map(p => ({ id: p.id, name: p.name }))}
+            onUpdated={(patch) => {
+              setNote(n => (n ? { ...n, ...patch } : n));
+              if (patch.tags !== undefined) setTags(patch.tags ?? []);
+            }}
           />
           <NoteTOC body={body} />
         </div>
