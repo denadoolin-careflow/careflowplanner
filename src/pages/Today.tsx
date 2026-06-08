@@ -22,6 +22,7 @@ import { EndOfDayCard } from "@/components/today/rhythm/EndOfDayCard";
 import { TasksWidget } from "@/components/today/rhythm/TasksWidget";
 import { TopThreeStrip } from "@/components/today/TopThreeStrip";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
+import { WeatherRemindersCard } from "@/components/today/WeatherRemindersCard";
 import { MealsPlannedWidget } from "@/components/today/widgets/MealsPlannedWidget";
 import { TasksTodayWidget } from "@/components/today/widgets/TasksTodayWidget";
 import { GroceryWidget } from "@/components/today/widgets/GroceryWidget";
@@ -137,6 +138,7 @@ function TodayInner() {
           <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
           <TopThreeStrip date={day} onTaskClick={setEditTaskId} />
           <DailySnapshotRow date={day} />
+          {isReallyToday && <WeatherRemindersCard />}
           <WhatFitsNow date={day} onTaskClick={setEditTaskId} />
 
           <RhythmSection slot="morning"   date={day} defaultOpen={nowSlot === "morning"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
