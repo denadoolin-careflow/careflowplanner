@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { Trash2, Sparkles } from "lucide-react";
+import { Trash2, Sparkles, Smile, Meh, Frown, Annoyed, Cloud, CloudRain, CloudLightning, Zap, BatteryLow, ArrowDown, ArrowUp, Equal, Beef, Apple, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { HealthHero } from "@/components/health/HealthHero";
 import { HealthDashboard } from "@/components/health/HealthDashboard";
@@ -52,13 +52,19 @@ function CheckInPanel({ uid }: { uid: string }) {
         <div><Label>Mood</Label>
           <Select value={row.mood || ""} onValueChange={v => setRow({ ...row, mood: v })}>
             <SelectTrigger><SelectValue placeholder="Pick…" /></SelectTrigger>
-            <SelectContent>{["great","good","ok","low","rough"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+          <SelectContent>{["great","good","ok","low","rough"].map(m => {
+            const MoodIcon = m === "great" ? Smile : m === "good" ? Smile : m === "ok" ? Meh : m === "low" ? Annoyed : Frown;
+            return <SelectItem key={m} value={m} icon={<MoodIcon className="h-4 w-4 text-muted-foreground" />}>{m}</SelectItem>;
+          })}</SelectContent>
           </Select>
         </div>
         <div><Label>Stress</Label>
           <Select value={row.stress || ""} onValueChange={v => setRow({ ...row, stress: v })}>
             <SelectTrigger><SelectValue placeholder="Pick…" /></SelectTrigger>
-            <SelectContent>{["calm","mild","tense","high"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+          <SelectContent>{["calm","mild","tense","high"].map(m => {
+            const StressIcon = m === "calm" ? Cloud : m === "mild" ? CloudRain : CloudLightning;
+            return <SelectItem key={m} value={m} icon={<StressIcon className="h-4 w-4 text-muted-foreground" />}>{m}</SelectItem>;
+          })}</SelectContent>
           </Select>
         </div>
         <div><Label>Mindfulness (min)</Label><Input type="number" value={row.mindfulness_minutes} onChange={e => setRow({ ...row, mindfulness_minutes: e.target.value })} /></div>
@@ -98,7 +104,10 @@ function MovementPanel({ uid }: { uid: string }) {
         <Input type="number" placeholder="Min" value={form.minutes} onChange={e => setForm({ ...form, minutes: e.target.value })} />
         <Select value={form.intensity} onValueChange={v => setForm({ ...form, intensity: v })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>{["light","moderate","vigorous"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+          <SelectContent>{["light","moderate","vigorous"].map(m => {
+            const IntensityIcon = m === "light" ? BatteryLow : Zap;
+            return <SelectItem key={m} value={m} icon={<IntensityIcon className="h-4 w-4 text-muted-foreground" />}>{m}</SelectItem>;
+          })}</SelectContent>
         </Select>
         <Button onClick={add}>Add</Button>
       </div>
@@ -169,7 +178,10 @@ function GoalsPanel({ uid }: { uid: string }) {
         <div><Label>Goal</Label>
           <Select value={g.goal_type} onValueChange={v => setG({ ...g, goal_type: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{["lose","maintain","gain","high-protein","low-carb","heart-healthy","energy"].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+            <SelectContent>{["lose","maintain","gain","high-protein","low-carb","heart-healthy","energy"].map(m => {
+              const GoalIcon = m === "lose" ? ArrowDown : m === "maintain" ? Equal : m === "gain" ? ArrowUp : m === "high-protein" ? Beef : m === "low-carb" ? Apple : m === "heart-healthy" ? Heart : Zap;
+              return <SelectItem key={m} value={m} icon={<GoalIcon className="h-4 w-4 text-muted-foreground" />}>{m}</SelectItem>;
+            })}</SelectContent>
           </Select>
         </div>
         <div><Label>Target weight (lbs)</Label><Input type="number" value={g.target_weight_lb} onChange={e => setG({ ...g, target_weight_lb: e.target.value })} /></div>

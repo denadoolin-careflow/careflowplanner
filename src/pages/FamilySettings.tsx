@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Copy, Trash2, UserPlus, Users } from "lucide-react";
+import { Copy, Trash2, UserPlus, Users, ShieldCheck, Eye, Pencil } from "lucide-react";
 
 export default function FamilySettings() {
   const { user } = useStore();
@@ -135,8 +135,8 @@ export default function FamilySettings() {
                   <Select value={inviteRole} onValueChange={v => setInviteRole(v as any)}>
                     <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="editor">Editor</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
+                      <SelectItem value="editor" icon={<Pencil className="h-4 w-4 text-muted-foreground" />}>Editor</SelectItem>
+                      <SelectItem value="viewer" icon={<Eye className="h-4 w-4 text-muted-foreground" />}>Viewer</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button onClick={handleInvite} disabled={busy || !inviteEmail.trim()}>Invite</Button>
@@ -194,9 +194,9 @@ function MemberRow({ member, ownerView, selfId, onChanged }: { member: Household
           <Select value={member.role} onValueChange={async (v) => { await updateMember(member.id, { role: v as any }); onChanged(); }}>
             <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="owner">Owner</SelectItem>
-              <SelectItem value="editor">Editor</SelectItem>
-              <SelectItem value="viewer">Viewer</SelectItem>
+              <SelectItem value="owner" icon={<ShieldCheck className="h-4 w-4 text-muted-foreground" />}>Owner</SelectItem>
+              <SelectItem value="editor" icon={<Pencil className="h-4 w-4 text-muted-foreground" />}>Editor</SelectItem>
+              <SelectItem value="viewer" icon={<Eye className="h-4 w-4 text-muted-foreground" />}>Viewer</SelectItem>
             </SelectContent>
           </Select>
         ) : (

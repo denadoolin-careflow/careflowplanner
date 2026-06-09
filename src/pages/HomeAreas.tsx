@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Download, Pin, ChevronDown, Plus, Sparkles } from "lucide-react";
+import { Trash2, Download, Pin, ChevronDown, Plus, Sparkles, Shield, FileCheck, BookOpen, Activity, DollarSign, File } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link } from "react-router-dom";
@@ -286,7 +286,10 @@ function DocumentsPanel({ uid }: { uid: string }) {
         <Input placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
         <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>{["Insurance","Warranties","Manuals","Medical","Financial","Other"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          <SelectContent>{["Insurance","Warranties","Manuals","Medical","Financial","Other"].map(c => {
+            const CatIcon = c === "Insurance" ? Shield : c === "Warranties" ? FileCheck : c === "Manuals" ? BookOpen : c === "Medical" ? Activity : c === "Financial" ? DollarSign : File;
+            return <SelectItem key={c} value={c} icon={<CatIcon className="h-4 w-4 text-muted-foreground" />}>{c}</SelectItem>;
+          })}</SelectContent>
         </Select>
         <Input id="doc-file" type="file" onChange={e => setForm({ ...form, file: e.target.files?.[0] ?? null })} />
         <Input type="date" value={form.expires_on} onChange={e => setForm({ ...form, expires_on: e.target.value })} />

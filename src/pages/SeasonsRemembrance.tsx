@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Heart, Plus, Trash2 } from "lucide-react";
+import { Heart, Plus, Trash2, User, Dog, Calendar } from "lucide-react";
 import { useRemembrances } from "@/lib/seasons/hooks";
 import { format, parseISO } from "date-fns";
 
@@ -66,9 +66,9 @@ export default function SeasonsRemembrance() {
                 <Select value={kind} onValueChange={(v: any) => setKind(v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="person">Person</SelectItem>
-                    <SelectItem value="pet">Pet</SelectItem>
-                    <SelectItem value="date">Date</SelectItem>
+                    <SelectItem value="person" icon={<User className="h-4 w-4 text-muted-foreground" />}>Person</SelectItem>
+                    <SelectItem value="pet" icon={<Dog className="h-4 w-4 text-muted-foreground" />}>Pet</SelectItem>
+                    <SelectItem value="date" icon={<Calendar className="h-4 w-4 text-muted-foreground" />}>Date</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

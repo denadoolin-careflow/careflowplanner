@@ -3,7 +3,7 @@ import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { startOfWeek, addDays, format, parseISO, isSameDay } from "date-fns";
-import { Sparkles, Settings2, RotateCcw, BookOpen, Wand2, ChevronDown, ChevronLeft, ChevronRight, Library as LibraryIcon, CalendarIcon, Users } from "lucide-react";
+import { Sparkles, Settings2, RotateCcw, BookOpen, Wand2, ChevronDown, ChevronLeft, ChevronRight, Library as LibraryIcon, CalendarIcon, Users, Package, Coins, Shield, BatteryLow } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -310,10 +310,10 @@ export default function Meals() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => { setSuggesting(true); onPlanWeek("use_pantry"); }}>Use ingredients in stock</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setSuggesting(true); onPlanWeek("low_budget"); }}>Low-budget meals</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setSuggesting(true); onPlanWeek("sensory_safe"); }}>Sensory-safe meals</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setSuggesting(true); onPlanWeek("low_energy"); }}>Low-energy meals</DropdownMenuItem>
+              <DropdownMenuItem icon={<Package className="h-4 w-4" />} onClick={() => { setSuggesting(true); onPlanWeek("use_pantry"); }}>Use ingredients in stock</DropdownMenuItem>
+              <DropdownMenuItem icon={<Coins className="h-4 w-4" />} onClick={() => { setSuggesting(true); onPlanWeek("low_budget"); }}>Low-budget meals</DropdownMenuItem>
+              <DropdownMenuItem icon={<Shield className="h-4 w-4" />} onClick={() => { setSuggesting(true); onPlanWeek("sensory_safe"); }}>Sensory-safe meals</DropdownMenuItem>
+              <DropdownMenuItem icon={<BatteryLow className="h-4 w-4" />} onClick={() => { setSuggesting(true); onPlanWeek("low_energy"); }}>Low-energy meals</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>

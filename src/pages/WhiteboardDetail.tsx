@@ -13,7 +13,7 @@ import ReactFlow, {
   type Node,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { ArrowLeft, Plus, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, Save, Sparkles, FolderKanban, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -110,9 +110,9 @@ function WhiteboardCanvas({ board }: { board: Whiteboard }) {
             <SelectValue placeholder="Link to project…" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__none__">No project</SelectItem>
+            <SelectItem value="__none__" icon={<XCircle className="h-4 w-4 text-muted-foreground" />}>No project</SelectItem>
             {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              <SelectItem key={p.id} value={p.id} icon={<FolderKanban className="h-4 w-4 text-muted-foreground" />}>{p.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>

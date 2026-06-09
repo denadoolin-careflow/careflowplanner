@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Flame, Check } from "lucide-react";
+import { Trash2, Flame, Check, Calendar, CalendarDays, CalendarRange, Sparkles, Home, Users, Heart, Activity, Palette, Moon } from "lucide-react";
 import { useStore, todayISO } from "@/lib/store";
 import type { Habit } from "@/lib/types";
 import { HabitPlant } from "./HabitPlant";
@@ -95,14 +95,17 @@ export function HabitDetailSheet({ habitId, open, onOpenChange }: { habitId: str
             <Select value={habit.cadence} onValueChange={(v: any) => updateHabit(habit.id, { cadence: v })}>
               <SelectTrigger className="h-8 w-32 rounded-full"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="daily" icon={<Calendar className="h-4 w-4 text-muted-foreground" />}>Daily</SelectItem>
+                <SelectItem value="weekly" icon={<CalendarDays className="h-4 w-4 text-muted-foreground" />}>Weekly</SelectItem>
+                <SelectItem value="monthly" icon={<CalendarRange className="h-4 w-4 text-muted-foreground" />}>Monthly</SelectItem>
               </SelectContent>
             </Select>
             <Select value={habit.category} onValueChange={(v: any) => updateHabit(habit.id, { category: v })}>
               <SelectTrigger className="h-8 w-40 rounded-full"><SelectValue /></SelectTrigger>
-              <SelectContent>{CATS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              <SelectContent>{CATS.map(c => {
+                const CatIcon = c === "self-care" ? Sparkles : c === "home" ? Home : c === "family" ? Users : c === "caregiving" ? Heart : c === "health" ? Activity : c === "creative" ? Palette : Moon;
+                return <SelectItem key={c} value={c} icon={<CatIcon className="h-4 w-4 text-muted-foreground" />}>{c}</SelectItem>;
+              })}</SelectContent>
             </Select>
             <Button size="sm" variant="ghost" className="ml-auto text-destructive" onClick={() => { deleteHabit(habit.id); onOpenChange(false); }}>
               <Trash2 className="mr-1 h-3 w-3" /> Delete
