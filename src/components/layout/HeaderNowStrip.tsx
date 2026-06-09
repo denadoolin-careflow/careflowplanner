@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, isToday } from "date-fns";
+import { Link } from "react-router-dom";
 import {
   ChevronDown, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
   Moon, Sun, Zap,
@@ -40,6 +41,13 @@ export function HeaderNowStrip({ className }: { className?: string }) {
   const time = useMemo(() => format(now, "h:mm a"), [now]);
   const date = useMemo(() => format(now, "EEE, MMM d"), [now]);
   const shortDate = useMemo(() => format(now, "EEE, MMM d"), [now]);
+  const currentSlot = useMemo<"morning" | "afternoon" | "evening">(() => {
+    const h = now.getHours();
+    if (h < 12) return "morning";
+    if (h < 17) return "afternoon";
+    return "evening";
+  }, [now]);
+  const slotLabel = currentSlot[0].toUpperCase() + currentSlot.slice(1);
   const tempStr = snap ? `${unit === "F" ? cToF(snap.tempC) : Math.round(snap.tempC)}°` : null;
   const fmtT = (c: number) => `${unit === "F" ? cToF(c) : Math.round(c)}°`;
   const rangeStr = snap ? `${fmtT(snap.highC)} / ${fmtT(snap.lowC)}` : null;
