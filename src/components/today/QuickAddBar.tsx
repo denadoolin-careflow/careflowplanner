@@ -129,7 +129,7 @@ export function QuickAddBar({ date }: { date: Date }) {
         })}
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-border/50 bg-background/60 px-2.5 py-1.5">
+      <div className="order-2 flex min-w-[12rem] flex-1 basis-full items-center gap-1.5 rounded-full border border-border/50 bg-background/60 px-2.5 py-1.5 sm:order-none sm:basis-0">
         <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <input
           value={text}
