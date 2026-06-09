@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Map as MapIcon, ChevronUp, Check, KanbanSquare, CalendarRange, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
-import { format, parseISO, startOfMonth, addMonths } from "date-fns";
+import { format, parseISO, startOfMonth } from "date-fns";
 
 type Status = "planned" | "in_progress" | "shipped" | "cancelled";
 type Category = "new" | "improved" | "fixed" | "announcement";
@@ -28,13 +28,6 @@ const columns: { key: Status; label: string }[] = [
   { key: "in_progress", label: "In progress" },
   { key: "shipped", label: "Shipped" },
 ];
-
-const statusLabel: Record<Status, string> = {
-  planned: "Planned",
-  in_progress: "In progress",
-  shipped: "Shipped",
-  cancelled: "Cancelled",
-};
 
 // Sort quarters like "Q1 2026" chronologically; unknowns last.
 function quarterSortKey(q: string | null): number {
