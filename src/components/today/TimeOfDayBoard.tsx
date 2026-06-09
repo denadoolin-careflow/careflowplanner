@@ -8,6 +8,8 @@ import { MealSlotCard } from "@/components/today/MealSlotCard";
 import { SlotWeather } from "@/components/today/rhythm/SlotWeather";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { toast } from "sonner";
+import type { Task } from "@/lib/types";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 
 type Slot = "morning" | "afternoon" | "evening";
 type DayPart = "Morning" | "Afternoon" | "Evening" | "Anytime";
