@@ -63,7 +63,15 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
               <div className="mt-2 rounded-xl border border-border/40 bg-background/60 p-2">
                 <MealSlotCard date={date} slot={s.meal} />
               </div>
-              <div className="mt-3 flex-1">
+
+              {/* Quick-add directly inside the card */}
+              <QuickAddSlot
+                onAdd={async (title) => {
+                  await addTask({ title, dueDate: iso, dayPart: s.dayPart as "Morning" | "Afternoon" | "Evening" });
+                }}
+              />
+
+              <div className="mt-2 flex-1">
                 <TaskGroup
                   label={s.dayPart}
                   date={date}
