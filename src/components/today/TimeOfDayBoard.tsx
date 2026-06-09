@@ -88,7 +88,7 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
               onDrop={async (id) => {
                 const t = state.tasks.find(x => x.id === id);
                 if (!t) return;
-                await updateTask(id, { dueDate: iso, dayPart: part === "Anytime" ? null : part, inbox: false });
+                await updateTask(id, { dueDate: iso, dayPart: part === "Anytime" ? undefined : part, inbox: false });
                 toast.success(`Scheduled "${t.title}" → ${part}`);
               }}
               onAdd={async (title) => {
