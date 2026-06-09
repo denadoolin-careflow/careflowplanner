@@ -300,6 +300,19 @@ function TodayInner() {
         )}
       </div>
 
+      {/* Show-widgets pill when sidebar is collapsed */}
+      {sidebarHidden && (
+        <button
+          type="button"
+          onClick={() => setSidebarHidden(false)}
+          className="fixed right-0 top-24 z-40 hidden md:inline-flex items-center gap-1 rounded-l-full border border-r-0 border-border/60 bg-card/90 px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
+          title="Show widgets"
+        >
+          <PanelRightOpen className="h-3 w-3" />
+          <span className="hidden lg:inline">Widgets</span>
+        </button>
+      )}
+
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <ExhaleFlow open={exhaleOpen} onOpenChange={setExhaleOpen} date={day} />
