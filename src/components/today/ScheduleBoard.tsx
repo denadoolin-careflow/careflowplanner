@@ -6,6 +6,8 @@ import { DailySnapshotRow } from "@/components/today/rhythm/DailySnapshotRow";
 import { WhatFitsNow } from "@/components/today/rhythm/WhatFitsNow";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import type { Task } from "@/lib/types";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 
 /** Appointment-first vertical schedule view. */
 export function ScheduleBoard({ date, onTaskClick, onApptClick }: {
