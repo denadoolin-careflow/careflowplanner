@@ -9,10 +9,13 @@ import { NatalWheel } from "@/components/cosmic/NatalWheel";
 import { PlacementDetailDialog } from "@/components/cosmic/PlacementDetailDialog";
 import { SignDetailDialog } from "@/components/cosmic/SignDetailDialog";
 import { HouseDetailDialog, HOUSE_TITLE } from "@/components/cosmic/HouseDetailDialog";
+import { AspectDetailDialog } from "@/components/cosmic/AspectDetailDialog";
 import { RetrogradeBadge } from "@/components/cosmic/RetrogradeBadge";
-import type { NatalPlanet } from "@/lib/cosmic/chart";
+import type { NatalPlanet, NatalChartV2 } from "@/lib/cosmic/chart";
 import type { Sign } from "@/lib/transits";
-import { SIGN_GLYPH } from "@/lib/cosmic/glyphs";
+import { SIGN_GLYPH, ASPECT_GLYPH } from "@/lib/cosmic/glyphs";
+
+type AspectRow = NatalChartV2["aspects"][number];
 
 export default function CosmicNatal() {
   const { row } = useBirthChart();
@@ -23,6 +26,11 @@ export default function CosmicNatal() {
   const [signOpen, setSignOpen] = useState(false);
   const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
   const [houseOpen, setHouseOpen] = useState(false);
+  const [selectedAspect, setSelectedAspect] = useState<AspectRow | null>(null);
+  const [aspectOpen, setAspectOpen] = useState(false);
+
+  const openPlanet = (p: NatalPlanet) => { setSelected(p); setOpen(true); };
+  const openAspect = (a: AspectRow) => { setSelectedAspect(a); setAspectOpen(true); };
 
   if (!row) {
     return (
@@ -46,7 +54,7 @@ export default function CosmicNatal() {
         <section className="cozy-card p-4">
           <NatalWheel
             chart={chart}
-            onSelectPlanet={(p) => { setSelected(p); setOpen(true); }}
+            onSelectPlanet={openPlanet}
             onSelectSign={(s) => { setSelectedSign(s); setSignOpen(true); }}
             onSelectHouse={(h) => { setSelectedHouse(h); setHouseOpen(true); }}
           />
@@ -109,10 +117,17 @@ export default function CosmicNatal() {
         <p className="text-xs text-muted-foreground mb-2">Major aspects ({chart.aspects.length})</p>
         <div className="grid gap-1.5 sm:grid-cols-2 text-[12.5px] max-h-72 overflow-y-auto">
           {chart.aspects.slice(0, 60).map((a, i) => (
-            <div key={i} className="flex items-center justify-between rounded border border-border/40 px-2 py-1">
-              <span>{a.a} <span className="text-muted-foreground">{a.aspect.name}</span> {a.b}</span>
+            <button
+              key={i}
+              onClick={() => openAspect(a)}
+              className="flex items-center justify-between rounded border border-border/40 px-2 py-1 text-left hover:border-primary/40 hover:bg-card transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <span className="text-sm">{ASPECT_GLYPH[a.aspect.name] ?? ""}</span>
+                {a.a} <span className="text-muted-foreground">{a.aspect.name}</span> {a.b}
+              </span>
               <span className="text-muted-foreground">{a.aspect.orb.toFixed(1)}°</span>
-            </div>
+            </button>
           ))}
         </div>
       </section>
@@ -146,9 +161,29 @@ export default function CosmicNatal() {
         </div>
       </section>
 
-      <PlacementDetailDialog chart={chart} planet={selected} open={open} onOpenChange={setOpen} />
+      <PlacementDetailDialog
+        chart={chart}
+        planet={selected}
+        open={open}
+        onOpenChange={setOpen}
+        onSelectPlanet={(p) => { setOpen(false); setTimeout(() => openPlanet(p), 120); }}
+        onSelectAspect={(a) => { setOpen(false); setTimeout(() => openAspect(a), 120); }}
+      />
       <SignDetailDialog chart={chart} sign={selectedSign} open={signOpen} onOpenChange={setSignOpen} />
-      <HouseDetailDialog chart={chart} house={selectedHouse} open={houseOpen} onOpenChange={setHouseOpen} />
+      <HouseDetailDialog
+        chart={chart}
+        house={selectedHouse}
+        open={houseOpen}
+        onOpenChange={setHouseOpen}
+        onSelectPlanet={(p) => { setHouseOpen(false); setTimeout(() => openPlanet(p), 120); }}
+      />
+      <AspectDetailDialog
+        chart={chart}
+        aspect={selectedAspect}
+        open={aspectOpen}
+        onOpenChange={setAspectOpen}
+        onSelectPlanet={(p) => setTimeout(() => openPlanet(p), 120)}
+      />
     </div>
   );
 }
