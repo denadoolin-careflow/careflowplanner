@@ -25,6 +25,31 @@ type Entry = {
   created_at: string;
 };
 
+function computeNextPullAt(freq: Frequency, lastPulledAt: string | null): Date | null {
+  if (freq === "off") return null;
+  const now = new Date();
+  if (freq === "hourly") {
+    const d = new Date(now);
+    d.setUTCMinutes(0, 0, 0);
+    d.setUTCHours(d.getUTCHours() + 1);
+    return d;
+  }
+  if (freq === "daily") {
+    const d = new Date(now);
+    d.setUTCHours(6, 0, 0, 0);
+    if (d <= now) d.setUTCDate(d.getUTCDate() + 1);
+    return d;
+  }
+  // weekly Mon 6am UTC
+  const d = new Date(now);
+  d.setUTCHours(6, 0, 0, 0);
+  const day = d.getUTCDay(); // 0=Sun,1=Mon
+  let add = (1 - day + 7) % 7;
+  if (add === 0 && d <= now) add = 7;
+  d.setUTCDate(d.getUTCDate() + add);
+  return d;
+}
+
 export default function AdminUpdates() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
