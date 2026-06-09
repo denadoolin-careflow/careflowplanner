@@ -187,6 +187,21 @@ export function GlobalSearchDialog({
     if (!lc) return [];
     const out: SearchResult[] = [];
 
+    // Pages — always searched, so users can jump anywhere
+    for (const p of PAGE_INDEX) {
+      const kw = (p.keywords ?? []).join(" ");
+      if (m(p.label) || m(p.description) || m(p.group) || m(p.to) || m(kw)) {
+        out.push({
+          id: `page:${p.to}`,
+          kind: "page",
+          title: p.label,
+          subtitle: [p.group, p.description].filter(Boolean).join(" · ") || undefined,
+          to: p.to,
+          raw: p,
+        });
+      }
+    }
+
     // Tags
     for (const t of tags) {
       if (m(t.name) || m(t.description)) {
