@@ -68,7 +68,9 @@ export function MobileCaptureCard({ defaultArea }: { defaultArea?: Area }) {
     <div
       className="cf-card p-4 transition-shadow duration-500"
       style={{
-        boxShadow: `0 0 0 1px ${atmoColor(atmosphere.palette, 0, 0.22)}, 0 6px 32px -6px ${atmoColor(atmosphere.palette, 0, 0.38)}`,
+        boxShadow: focused || title.trim()
+          ? `0 0 0 1.5px ${atmoColor(atmosphere.palette, 0, 0.45)}, 0 8px 40px -6px ${atmoColor(atmosphere.palette, 0, 0.55)}`
+          : `0 0 0 1px ${atmoColor(atmosphere.palette, 0, 0.22)}, 0 6px 32px -6px ${atmoColor(atmosphere.palette, 0, 0.38)}`,
       }}
     >
       <div className="flex items-center gap-3">
