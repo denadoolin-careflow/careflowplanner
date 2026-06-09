@@ -39,6 +39,7 @@ interface Props {
 
 export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "Add a task…", initialDate, defaultTags }: Props) {
   const { state, addTask } = useStore();
+  const { atmosphere } = useAtmosphere();
   const [text, setText] = useState("");
   const [notes, setNotes] = useState("");
   const [notesOpen, setNotesOpen] = useState(false);
