@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { MealSlotCard } from "@/components/today/MealSlotCard";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 
 /** Condensed single-card planner: meals + all tasks grouped by day part. */
 export function DayPlanBoard({ date, onTaskClick }: { date: Date; onTaskClick?: (id: string) => void }) {
