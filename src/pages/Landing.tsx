@@ -162,6 +162,108 @@ function HeroMockup() {
   );
 }
 
+/* ---------- Hero Today Preview card (animated) ---------- */
+
+function PreviewPanel() {
+  return (
+    <div className="relative mt-8 w-full max-w-sm mx-auto sm:mx-0 sm:w-auto">
+      {/* Glow */}
+      <div
+        aria-hidden
+        className="absolute -inset-4 -z-10 rounded-[2rem] opacity-60 blur-2xl"
+        style={{ background: "radial-gradient(50% 50% at 50% 50%, hsl(145 35% 80% / 0.45), transparent 70%)" }}
+      />
+
+      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-[0_20px_50px_-20px_hsl(258_30%_40%/0.35)] backdrop-blur-xl">
+        {/* Header bar */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-rose-300/70" />
+            <div className="h-2 w-2 rounded-full bg-amber-300/70" />
+            <div className="h-2 w-2 rounded-full bg-emerald-300/70" />
+          </div>
+          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Sun className="h-3 w-3 text-warm" />
+            72°
+            <span className="ml-1 rounded-full bg-secondary-soft/60 px-1.5 py-0.5 text-[9px] text-secondary-foreground">
+              9:14 AM
+            </span>
+          </div>
+        </div>
+
+        <div className="p-3 space-y-2.5">
+          {/* Date */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Today</div>
+              <div className="font-display text-sm text-foreground">June 9, 2026</div>
+            </div>
+            <div className="flex items-center gap-1 rounded-full bg-moon/10 px-2 py-1 text-[10px] text-moon-foreground">
+              <Moon className="h-3 w-3" /> Waxing Gibbous
+            </div>
+          </div>
+
+          {/* Mini Rhythm pills */}
+          <div className="flex gap-1.5">
+            {["Morning", "Afternoon", "Evening"].map((t, i) => (
+              <div
+                key={t}
+                className={`flex-1 rounded-lg px-1.5 py-1 text-[10px] text-center transition-all duration-700 ${
+                  i === 0 ? "bg-warm/15 text-warm-foreground font-medium" : "bg-muted/40 text-muted-foreground"
+                }`}
+              >
+                {t}
+              </div>
+            ))}
+          </div>
+
+          {/* Animated tasks */}
+          <div className="space-y-1.5">
+            {[
+              { label: "Pack lunches", tag: "Morning", done: true, glow: "bg-secondary/30" },
+              { label: "Call dentist for kids", tag: "Morning", done: false, glow: "bg-accent/20" },
+              { label: "Grocery run — veggies", tag: "Afternoon", done: false, glow: "bg-moon/20" },
+              { label: "15-min reset tidy", tag: "Evening", done: false, glow: "bg-warm/20" },
+            ].map((task, idx) => (
+              <div
+                key={task.label}
+                className={`group flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-2 py-1.5 text-[11px] transition-all duration-500 hover:shadow-sm`}
+                style={{ animationDelay: `${idx * 180}ms` }}
+              >
+                <span
+                  className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border transition-colors duration-300 ${
+                    task.done
+                      ? "border-secondary bg-secondary text-white"
+                      : "border-muted-foreground/30"
+                  }`}
+                >
+                  {task.done && <Check className="h-2.5 w-2.5" />}
+                </span>
+                <span className={`flex-1 ${task.done ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                  {task.label}
+                </span>
+                <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${task.glow} text-foreground/80`}>
+                  {task.tag}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Meal preview */}
+          <div className="flex items-center gap-2 rounded-lg bg-secondary-soft/40 px-2 py-1.5 text-[10px]">
+            <Utensils className="h-3 w-3 text-secondary" />
+            <span className="text-muted-foreground">Dinner:</span>
+            <span className="text-foreground">Roasted chicken + veggies</span>
+          </div>
+        </div>
+
+        {/* Bottom gradient fade */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-card/80 to-transparent" />
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Section data ---------- */
 
 const careLoop = [
