@@ -3,7 +3,7 @@ import { format, isToday } from "date-fns";
 import { Link } from "react-router-dom";
 import {
   ChevronDown, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
-  Moon, Sun, Zap,
+  Moon, Sun, Zap, CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
@@ -12,6 +12,10 @@ import type { WeatherCondition } from "@/lib/weather";
 import { UnitToggle } from "@/components/weather/UnitToggle";
 import { WeatherDetailPopover } from "@/components/weather/WeatherDetailPopover";
 import { weatherTheme } from "@/lib/weather-theme";
+import { useStore } from "@/lib/store";
+import { todayISO } from "@/lib/store";
+import type { Task } from "@/lib/types";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 function CondIcon({ c, isNight, className }: { c: WeatherCondition; isNight?: boolean; className?: string }) {
   const cls = cn("h-5 w-5", className);
