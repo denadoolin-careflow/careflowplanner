@@ -162,19 +162,23 @@ function HeroMockup() {
   );
 }
 
-/* ---------- Hero Today Preview card (animated) ---------- */
+/* ---------- Hero Today Preview card (animated + interactive) ---------- */
 
 function PreviewPanel() {
   return (
-    <div className="relative mt-8 w-full max-w-sm mx-auto sm:mx-0 sm:w-auto">
+    <Link
+      to="/today"
+      className="group relative mt-8 block w-full max-w-sm mx-auto sm:mx-0 sm:w-auto"
+      aria-label="Open Today dashboard demo"
+    >
       {/* Glow */}
       <div
         aria-hidden
-        className="absolute -inset-4 -z-10 rounded-[2rem] opacity-60 blur-2xl"
+        className="absolute -inset-4 -z-10 rounded-[2rem] opacity-60 blur-2xl transition-opacity duration-500 group-hover:opacity-90"
         style={{ background: "radial-gradient(50% 50% at 50% 50%, hsl(145 35% 80% / 0.45), transparent 70%)" }}
       />
 
-      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-[0_20px_50px_-20px_hsl(258_30%_40%/0.35)] backdrop-blur-xl">
+      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-[0_20px_50px_-20px_hsl(258_30%_40%/0.35)] backdrop-blur-xl transition-all duration-500 group-hover:shadow-[0_30px_60px_-15px_hsl(258_30%_40%/0.45)] group-hover:scale-[1.01]">
         {/* Header bar */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
           <div className="flex items-center gap-1.5">
@@ -208,8 +212,8 @@ function PreviewPanel() {
             {["Morning", "Afternoon", "Evening"].map((t, i) => (
               <div
                 key={t}
-                className={`flex-1 rounded-lg px-1.5 py-1 text-[10px] text-center transition-all duration-700 ${
-                  i === 0 ? "bg-warm/15 text-warm-foreground font-medium" : "bg-muted/40 text-muted-foreground"
+                className={`flex-1 rounded-lg px-1.5 py-1 text-[10px] text-center transition-all duration-500 cursor-default ${
+                  i === 0 ? "bg-warm/15 text-warm-foreground font-medium" : "bg-muted/40 text-muted-foreground hover:bg-muted/60"
                 }`}
               >
                 {t}
@@ -227,14 +231,14 @@ function PreviewPanel() {
             ].map((task, idx) => (
               <div
                 key={task.label}
-                className={`group flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-2 py-1.5 text-[11px] transition-all duration-500 hover:shadow-sm`}
+                className={`flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-2 py-1.5 text-[11px] transition-all duration-300 hover:bg-card hover:shadow-sm cursor-pointer hover:border-border/60`}
                 style={{ animationDelay: `${idx * 180}ms` }}
               >
                 <span
                   className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border transition-colors duration-300 ${
                     task.done
                       ? "border-secondary bg-secondary text-white"
-                      : "border-muted-foreground/30"
+                      : "border-muted-foreground/30 group-hover:border-secondary/50"
                   }`}
                 >
                   {task.done && <Check className="h-2.5 w-2.5" />}
@@ -260,7 +264,7 @@ function PreviewPanel() {
         {/* Bottom gradient fade */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-card/80 to-transparent" />
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -489,6 +493,13 @@ export default function Landing() {
             No pressure. No perfectionism. Just support.
           </p>
           <PreviewPanel />
+          <Link
+            to="/today"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/70 px-4 py-2 text-sm text-foreground/90 transition-all duration-300 hover:bg-card hover:shadow-md hover:scale-[1.02]"
+          >
+            Open Today demo
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+          </Link>
         </div>
         <div className="relative hidden sm:block lg:pt-4">
           <HeroMockup />
