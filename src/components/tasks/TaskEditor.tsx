@@ -860,7 +860,7 @@ function PillPopover({
         <button
           type="button"
           className={cn(
-            "group inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] transition-colors sm:h-7 sm:px-2.5",
+            "group inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12px] transition-colors sm:h-7 sm:px-2.5",
             active
               ? "border-primary/40 bg-primary/10 text-foreground hover:bg-primary/15"
               : "border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
