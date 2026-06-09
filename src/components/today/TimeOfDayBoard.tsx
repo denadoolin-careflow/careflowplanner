@@ -212,7 +212,7 @@ function TaskGroup({
   icon?: typeof Sunrise;
   date: Date;
   dayPart?: "Morning" | "Afternoon" | "Evening";
-  tasks: { id: string; title: string; done: boolean; estMinutes?: number | null }[];
+  tasks: Task[];
   onToggle: (id: string) => void | Promise<void>;
   onTaskClick?: (id: string) => void;
   onDrop: (id: string) => Promise<void>;
