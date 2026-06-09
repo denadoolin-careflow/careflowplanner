@@ -278,6 +278,7 @@ function TaskGroup({
               >
                 {t.title}
               </button>
+              <QuickDayPartButton task={t} />
               {t.estMinutes ? <span className="text-[10px] text-muted-foreground">{t.estMinutes}m</span> : null}
             </li>
           ))}
