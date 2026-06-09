@@ -72,6 +72,7 @@ export default function AdminUpdates() {
   const [lastPullError, setLastPullError] = useState<string | null>(null);
   const [lastPullFetched, setLastPullFetched] = useState<number | null>(null);
   const [lastPullInserted, setLastPullInserted] = useState<number | null>(null);
+  const lastShiftIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     (async () => {
