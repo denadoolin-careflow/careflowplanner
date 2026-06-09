@@ -505,7 +505,7 @@ export default function AdminUpdates() {
               entry={entry}
               onChange={refresh}
               selected={selected.has(entry.id)}
-              onToggleSelect={() => toggleSelect(entry.id)}
+              onToggleSelect={(shift) => toggleSelect(entry.id, shift)}
             />
           ))
         )}
