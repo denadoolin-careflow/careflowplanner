@@ -1,13 +1,27 @@
+import { useState } from "react";
+import { ArrowDown, ArrowUp, GripVertical, Plus, RotateCcw, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
+import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
 import { MoonPrioritiesCard } from "@/components/today/widgets/MoonPrioritiesCard";
 import { TasksTodayWidget } from "@/components/today/widgets/TasksTodayWidget";
 import { MealsPlannedWidget } from "@/components/today/widgets/MealsPlannedWidget";
+import { GroceryWidget } from "@/components/today/widgets/GroceryWidget";
+import { NotesTodayWidget } from "@/components/today/widgets/NotesTodayWidget";
+import { JournalTodayWidget } from "@/components/today/widgets/JournalTodayWidget";
+import { MemoriesTodayWidget } from "@/components/today/widgets/MemoriesTodayWidget";
+import { HomeResetWidget } from "@/components/today/widgets/HomeResetWidget";
+import { BrainDumpWidget } from "@/components/today/widgets/BrainDumpWidget";
+import { CycleSidebarCard } from "@/components/today/widgets/CycleSidebarCard";
 import { CollapsibleWidget } from "@/components/today/CollapsibleWidget";
 import { useCollapsedWidgets } from "@/lib/today-view";
+import { useWidgetOrder } from "@/lib/widget-order";
 
 interface Props {
   /** Anchor date used by the per-day widgets. */
   date: Date;
+  /** Scope namespace for persisted preferences (week, month, …). */
+  scope?: "week" | "month";
   /** Optional task click handler (opens task editor). */
   onTaskClick?: (id: string) => void;
   /** Extra widgets/cards rendered above the shared rail (e.g. unscheduled tasks). */
@@ -15,34 +29,170 @@ interface Props {
 }
 
 /**
- * Shared widgets rail for the Week and Month pages so the right column feels
- * the same across the three planning views.
+ * Shared widgets rail for the Week and Month pages. Mirrors the Today
+ * sidebar: customizable order, per-widget hide + restore, collapsible cards.
  */
-export function ScopeSidebar({ date, onTaskClick, children }: Props) {
-  const { collapsed, toggle } = useCollapsedWidgets();
+export function ScopeSidebar({ date, scope = "week", onTaskClick, children }: Props) {
+  const { collapsed, toggle: toggleCollapsed } = useCollapsedWidgets();
+  const [reorderMode, setReorderMode] = useState(false);
+
+  const registry: { id: string; label: string; render: () => JSX.Element | null }[] = [
+    { id: "weather",         label: "Weather",         render: () => <WeatherWidget /> },
+    { id: "weekly-weather",  label: "Weekly weather",  render: () => <WeeklyWeather /> },
+    { id: "moon-priorities", label: "Moon & Top 3",    render: () => <MoonPrioritiesCard date={date} onTaskClick={onTaskClick} /> },
+    { id: "tasks-today",     label: "Tasks",           render: () => <TasksTodayWidget date={date} /> },
+    { id: "meals-planned",   label: "Meals planned",   render: () => <MealsPlannedWidget date={date} /> },
+    { id: "grocery",         label: "Grocery",         render: () => <GroceryWidget /> },
+    { id: "cycle",           label: "Cycle",           render: () => <CycleSidebarCard date={date} /> },
+    { id: "notes-today",     label: "Notes",           render: () => <NotesTodayWidget /> },
+    { id: "journal-today",   label: "Journal",         render: () => <JournalTodayWidget /> },
+    { id: "memories-today",  label: "Memories",        render: () => <MemoriesTodayWidget /> },
+    { id: "home-reset",      label: "Home reset",      render: () => <HomeResetWidget /> },
+    { id: "brain-dump",      label: "Brain dump",      render: () => <BrainDumpWidget /> },
+  ];
+
+  const canonical = registry.map(w => w.id);
+  const byId = new Map(registry.map(w => [w.id, w]));
+
+  // Default-hidden: keep the original lean rail; users can restore the rest.
+  const defaultHidden = [
+    "weekly-weather", "grocery", "cycle", "notes-today", "journal-today",
+    "memories-today", "home-reset", "brain-dump",
+  ];
+
+  const { order, hidden, move, remove, restore, restoreAll, reset } = useWidgetOrder(
+    `careflow:${scope}:sidebar`,
+    canonical,
+    { defaultHidden },
+  );
 
   return (
     <aside className="min-w-0 max-w-full space-y-3 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:w-[clamp(240px,28vw,340px)] md:self-start md:overflow-y-auto md:pr-1">
-      <div className="px-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-        At a glance
+      <div className="flex items-center justify-between gap-2 px-1">
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          {reorderMode ? "Edit widgets" : "Widgets"}
+        </span>
+        <div className="flex items-center gap-1">
+          {reorderMode && (
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              title="Reset to default order"
+            >
+              <RotateCcw className="h-2.5 w-2.5" /> Reset
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setReorderMode(v => !v)}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider transition-colors",
+              reorderMode
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+            )}
+            title="Toggle reorder mode"
+          >
+            <GripVertical className="h-2.5 w-2.5" /> {reorderMode ? "Done" : "Edit"}
+          </button>
+        </div>
       </div>
+
       {children}
-      <CollapsibleWidget id="weather" title="Weather"
-        collapsed={collapsed.has("weather")} onToggle={() => toggle("weather")}>
-        <WeatherWidget />
-      </CollapsibleWidget>
-      <CollapsibleWidget id="moon-priorities" title="Moon & Top 3"
-        collapsed={collapsed.has("moon-priorities")} onToggle={() => toggle("moon-priorities")}>
-        <MoonPrioritiesCard date={date} onTaskClick={onTaskClick} />
-      </CollapsibleWidget>
-      <CollapsibleWidget id="tasks-today" title="Tasks"
-        collapsed={collapsed.has("tasks-today")} onToggle={() => toggle("tasks-today")}>
-        <TasksTodayWidget date={date} />
-      </CollapsibleWidget>
-      <CollapsibleWidget id="meals-planned" title="Meals planned"
-        collapsed={collapsed.has("meals-planned")} onToggle={() => toggle("meals-planned")}>
-        <MealsPlannedWidget date={date} />
-      </CollapsibleWidget>
+
+      <div className="space-y-3">
+        {order.map((id, idx) => {
+          const w = byId.get(id);
+          if (!w) return null;
+          if (hidden.has(id)) return null;
+          const node = w.render();
+          if (!node) return null;
+          if (!reorderMode) {
+            return (
+              <CollapsibleWidget
+                key={id}
+                id={id}
+                title={w.label}
+                collapsed={collapsed.has(id)}
+                onToggle={() => toggleCollapsed(id)}
+              >
+                {node}
+              </CollapsibleWidget>
+            );
+          }
+          return (
+            <div key={id} className="relative min-w-0">
+              <div className="absolute -left-1 top-1 z-10 flex flex-col gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => move(id, -1)}
+                  disabled={idx === 0}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm ring-1 ring-border hover:text-foreground disabled:opacity-30"
+                  aria-label={`Move ${w.label} up`}
+                >
+                  <ArrowUp className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(id, 1)}
+                  disabled={idx === order.length - 1}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm ring-1 ring-border hover:text-foreground disabled:opacity-30"
+                  aria-label={`Move ${w.label} down`}
+                >
+                  <ArrowDown className="h-3 w-3" />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => remove(id)}
+                className="absolute -right-1 top-1 z-10 inline-flex h-5 w-5 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm ring-1 ring-border hover:text-destructive"
+                aria-label={`Remove ${w.label}`}
+                title={`Remove ${w.label}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+              <div className="rounded-2xl ring-1 ring-dashed ring-primary/40">
+                {node}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {hidden.size > 0 && (
+        <div className="mt-4 rounded-2xl border border-dashed border-border/60 bg-card/40 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Hidden ({hidden.size})
+            </span>
+            <button
+              type="button"
+              onClick={restoreAll}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            >
+              <RotateCcw className="h-2.5 w-2.5" /> Restore all
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {canonical.filter(id => hidden.has(id)).map(id => {
+              const w = byId.get(id);
+              if (!w) return null;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => restore(id)}
+                  className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                  title={`Restore ${w.label}`}
+                >
+                  <Plus className="h-3 w-3" /> {w.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
