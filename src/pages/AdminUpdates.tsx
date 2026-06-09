@@ -561,6 +561,7 @@ function EntryEditor({
             aria-label="Select entry"
             onClick={(e) => e.stopPropagation()}
           />
+        </div>
         <Badge variant={draft.published ? "default" : "secondary"} className="text-[10px] uppercase tracking-wider">
           {draft.published ? "Published" : "Draft"}
         </Badge>
