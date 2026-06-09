@@ -67,8 +67,8 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
       });
     const morning = all.filter((t) => t.dayPart === "Morning");
     const afternoon = all.filter((t) => t.dayPart === "Afternoon");
-    const evening = all.filter((t) => t.dayPart === "Evening");
-    const anytime = all.filter((t) => !t.dayPart || t.dayPart === "Anytime");
+    const evening = all.filter((t) => t.dayPart === "Evening" || t.dayPart === "Late Night");
+    const anytime = all.filter((t) => !t.dayPart);
     return { morning, afternoon, evening, anytime };
   }, [tasks, isoToday]);
 
