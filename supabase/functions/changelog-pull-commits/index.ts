@@ -27,37 +27,60 @@ Deno.serve(async (req) => {
     });
     if (!isAdmin) return json({ error: "Admin role required" }, 403);
 
-    const { perPage = 30 } = await req.json().catch(() => ({}));
-    const ghResp = await fetch(`https://api.github.com/repos/${ghRepo}/commits?per_page=${Math.min(100, perPage)}`, {
-      headers: {
-        Authorization: `Bearer ${ghToken}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    });
-    if (!ghResp.ok) {
-      return json({ error: `GitHub API ${ghResp.status}: ${await ghResp.text()}` }, 502);
-    }
-    const commits = await ghResp.json() as Array<{
-      sha: string;
-      html_url: string;
-      commit: { message: string; author: { name?: string; date?: string } };
-    }>;
+    const body = await req.json().catch(() => ({})) as {
+      perPage?: number;
+      since?: string; // ISO date
+      maxCommits?: number; // hard cap
+      all?: boolean; // paginate until done
+    };
+    const perPage = Math.min(100, body.perPage ?? 100);
+    const maxCommits = body.all ? 5000 : Math.min(5000, body.maxCommits ?? perPage);
+    const sinceParam = body.since ? `&since=${encodeURIComponent(new Date(body.since).toISOString())}` : "";
 
     const admin = createClient(supabaseUrl, serviceKey);
-    const rows = commits.map((c) => ({
-      sha: c.sha,
-      message: c.commit.message,
-      author: c.commit.author?.name ?? null,
-      committed_at: c.commit.author?.date ?? null,
-      url: c.html_url,
-    }));
-    const { error: upErr, count } = await admin
-      .from("changelog_raw_commits")
-      .upsert(rows, { onConflict: "sha", count: "exact", ignoreDuplicates: true });
-    if (upErr) return json({ error: upErr.message }, 500);
+    let fetched = 0;
+    let inserted = 0;
+    let page = 1;
 
-    return json({ ok: true, fetched: commits.length, inserted: count ?? 0 }, 200);
+    while (fetched < maxCommits) {
+      const url = `https://api.github.com/repos/${ghRepo}/commits?per_page=${perPage}&page=${page}${sinceParam}`;
+      const ghResp = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${ghToken}`,
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      });
+      if (!ghResp.ok) {
+        return json({ error: `GitHub API ${ghResp.status}: ${await ghResp.text()}` }, 502);
+      }
+      const commits = await ghResp.json() as Array<{
+        sha: string;
+        html_url: string;
+        commit: { message: string; author: { name?: string; date?: string } };
+      }>;
+      if (!commits.length) break;
+
+      const slice = commits.slice(0, maxCommits - fetched);
+      const rows = slice.map((c) => ({
+        sha: c.sha,
+        message: c.commit.message,
+        author: c.commit.author?.name ?? null,
+        committed_at: c.commit.author?.date ?? null,
+        url: c.html_url,
+      }));
+      const { error: upErr, count } = await admin
+        .from("changelog_raw_commits")
+        .upsert(rows, { onConflict: "sha", count: "exact", ignoreDuplicates: true });
+      if (upErr) return json({ error: upErr.message }, 500);
+
+      fetched += slice.length;
+      inserted += count ?? 0;
+      if (commits.length < perPage) break;
+      page += 1;
+    }
+
+    return json({ ok: true, fetched, inserted }, 200);
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
