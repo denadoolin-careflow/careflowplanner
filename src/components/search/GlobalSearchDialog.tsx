@@ -531,7 +531,8 @@ function EmptyHints({ onBrainDump }: { onBrainDump?: () => void }) {
       )}
       <div className="px-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">Tips</div>
       <ul className="space-y-1 px-2 text-xs text-muted-foreground">
-        <li>• Type to search tasks, notes, tags, projects, calendar, and astrology.</li>
+        <li>• Jump to any page — try "wealth", "habits", "settings", "trips".</li>
+        <li>• Search tasks, notes, tags, projects, calendar, and astrology.</li>
         <li>• ↑↓ navigate · Enter to open · Esc to close.</li>
       </ul>
     </div>
