@@ -1303,6 +1303,7 @@ export type Database = {
       }
       changelog_settings: {
         Row: {
+          cron_secret: string
           id: boolean
           last_pulled_at: string | null
           pull_frequency: string
@@ -1310,6 +1311,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          cron_secret?: string
           id?: boolean
           last_pulled_at?: string | null
           pull_frequency?: string
@@ -1317,6 +1319,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          cron_secret?: string
           id?: boolean
           last_pulled_at?: string | null
           pull_frequency?: string
