@@ -256,15 +256,15 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex max-h-[92vh] w-[min(96vw,60rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-h-[88vh]"
+        className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:h-auto sm:max-h-[88vh] sm:w-[min(96vw,60rem)] sm:rounded-lg"
       >
         {/* Sticky header */}
-        <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
-          <div className="flex items-center gap-2.5">
+        <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-3 py-3 backdrop-blur sm:px-5">
+          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-2.5">
             <Checkbox
               checked={draft.done}
               onCheckedChange={() => toggleTask(draft.id)}
-              className="h-5 w-5 shrink-0"
+              className="h-6 w-6 shrink-0 sm:h-5 sm:w-5"
               aria-label="Mark complete"
             />
             <LucideIconPicker
@@ -277,8 +277,9 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               onChange={e => set("title", e.target.value)}
               onBlur={() => { if (nlpOn && parsed && parsed.chips.length) applyNlp(); }}
               placeholder="Task title"
-              className="h-10 flex-1 border-0 bg-transparent px-0 text-[17px] font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="order-last h-11 w-full min-w-0 flex-1 basis-full border-0 bg-transparent px-0 text-[17px] font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:order-none sm:h-10 sm:basis-auto sm:w-auto"
             />
+            <div className="ml-auto flex items-center gap-1 sm:ml-0 sm:contents">
             <TaskAIAssistPopover
               title={draft.title}
               notes={draft.notes}
@@ -308,7 +309,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               type="button"
               variant="ghost"
               size="icon"
-              className={cn("h-8 w-8 shrink-0", draft.isTopThree ? "text-amber-500" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-9 w-9 shrink-0 sm:h-8 sm:w-8", draft.isTopThree ? "text-amber-500" : "text-muted-foreground hover:text-foreground")}
               onClick={() => set("isTopThree", !draft.isTopThree)}
               aria-label="Favorite / Top three"
               title="Top three today"
@@ -319,13 +320,14 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary"
+              className="h-9 w-9 shrink-0 text-muted-foreground hover:text-primary sm:h-8 sm:w-8"
               onClick={() => setTimerOpen(true)}
               aria-label="Start timer"
               title="Start focus timer"
             >
               <Timer className="h-4 w-4" />
             </Button>
+            </div>
             <div className="mx-1 hidden h-5 w-px bg-border/60 sm:block" />
             <DialogTitle className="sr-only">Edit task</DialogTitle>
             <Button
@@ -372,7 +374,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
           </div>
 
           {/* Quick details bar — pills */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <div className="-mx-1 mt-3 flex flex-wrap items-center gap-1.5 px-1">
             <PillPopover
               icon={<CalendarIcon className="h-3.5 w-3.5" />}
               label={draft.dueDate ? format(parseISO(draft.dueDate), "EEE, MMM d") : "Today"}
@@ -536,7 +538,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         </DialogHeader>
 
         {/* Scrollable body */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5">
           <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
             {/* ─────────── Left column: work surface ─────────── */}
             <div className="space-y-4">
@@ -789,7 +791,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         </div>
 
         {/* Sticky footer */}
-        <div className="shrink-0 border-t border-border/60 bg-background/95 px-5 py-3 backdrop-blur">
+        <div className="shrink-0 border-t border-border/60 bg-background/95 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-5">
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
             <Button
               variant="ghost"
@@ -799,18 +801,19 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             >
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </Button>
-            <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-nowrap">
               {onUnschedule && (
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full sm:w-auto"
                   onClick={async () => { await onUnschedule(); onOpenChange(false); }}
                 >
                   {unscheduleLabel}
                 </Button>
               )}
-              <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button size="sm" onClick={save}>Save</Button>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button size="sm" className="w-full sm:w-auto" onClick={save}>Save</Button>
             </div>
           </div>
         </div>
@@ -849,7 +852,7 @@ function PillPopover({
         <button
           type="button"
           className={cn(
-            "group inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[12px] transition-colors",
+            "group inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] transition-colors sm:h-7 sm:px-2.5",
             active
               ? "border-primary/40 bg-primary/10 text-foreground hover:bg-primary/15"
               : "border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground"

@@ -16,7 +16,6 @@ import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import type { Task } from "@/lib/types";
-import { personalGreeting } from "@/lib/greeting";
 import { haptics } from "@/lib/haptics";
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { getRhythmForecast, type Element } from "@/lib/rhythm-forecast";
@@ -28,7 +27,6 @@ import { getKeyPhaseInfo, isKeyPhaseDay } from "@/lib/lunar-phases";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
 import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
-import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useCycle } from "@/lib/cycle-store";
 import { phaseForDate, PHASE_META } from "@/lib/cycle";
@@ -47,6 +45,9 @@ import { DayDetailExtras } from "@/components/calendar/DayDetailExtras";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { getTransitsForDate } from "@/lib/transits";
 import { useTransitsEnabled } from "@/lib/astrology-prefs";
+import { ScopeHero } from "@/components/layout/ScopeHero";
+import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
+import { isSameMonth as isSameMonthFn } from "date-fns";
 
 function MonthWxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-2.5 w-2.5 sm:h-3 sm:w-3", className);
@@ -164,35 +165,37 @@ export default function Month() {
   };
 
   return (
-    <div className="flex gap-6">
-      <div className="min-w-0 flex-1 space-y-6">
-        <div className="cozy-card gradient-warm flex flex-col gap-3 p-4 sm:p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              {personalGreeting(state.settings.name)} <span className="opacity-60">· Month of</span>
-            </p>
-            <h2 className="font-display text-2xl font-semibold sm:text-4xl">{format(cursor, "MMMM yyyy")}</h2>
-          </div>
-          <div className="no-scrollbar -mx-4 flex items-center gap-1 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-            <ScopeNavToggle active="month" className="mr-1" />
-            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setCursor(subMonths(cursor, 1))} aria-label="Previous"><ChevronLeft className="h-4 w-4" /></Button>
-            <DayPickerButton date={cursor} onChange={setCursor} label={format(cursor, "MMM yyyy")} />
-            <Button variant="ghost" size="sm" className="h-8 shrink-0 px-3 text-xs" onClick={() => setCursor(new Date())}>Today</Button>
-            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setCursor(addMonths(cursor, 1))} aria-label="Next"><ChevronRight className="h-4 w-4" /></Button>
-            <Link
-              to="/reset/month"
-              className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
-            >
-              <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
-            </Link>
-            <Link
-              to="/month/overview"
-              className="ml-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-primary/15"
-            >
-              <Moon className="h-3.5 w-3.5" /> Monthly overview
-            </Link>
-          </div>
-        </div>
+    <div className="mx-auto grid w-full min-w-0 max-w-6xl gap-4 md:gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)] lg:gap-6">
+      <div className="min-w-0 space-y-6">
+        <ScopeHero
+          scope="month"
+          date={cursor}
+          title={format(cursor, "MMMM yyyy")}
+          eyebrow="Month of"
+          pickerLabel={format(cursor, "MMM yyyy")}
+          isCurrent={isSameMonthFn(cursor, new Date())}
+          onPrev={() => setCursor(subMonths(cursor, 1))}
+          onNext={() => setCursor(addMonths(cursor, 1))}
+          onToday={() => setCursor(new Date())}
+          onDatePick={setCursor}
+          showQuickAdd
+          actions={
+            <>
+              <Link
+                to="/reset/month"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
+              >
+                <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
+              </Link>
+              <Link
+                to="/month/overview"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-primary/15"
+              >
+                <Moon className="h-3.5 w-3.5" /> Monthly overview
+              </Link>
+            </>
+          }
+        />
 
         <SectionCard title="Calendar" accent="calm" action={
           <div className="flex items-center gap-2">
@@ -492,6 +495,10 @@ export default function Month() {
 
         <CalendarTasksPanel days={monthDays} title={`Tasks · ${format(cursor, "MMMM yyyy")}`} />
       </div>
+      <ScopeSidebar date={cursor} onTaskClick={(id) => {
+        const t = state.tasks.find(x => x.id === id);
+        if (t) setEditingTask(t);
+      }} />
       <UnscheduledTasksRail />
 
       {editingTask && (
