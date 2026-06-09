@@ -17,6 +17,7 @@ import { todayISO } from "@/lib/store";
 import type { Task } from "@/lib/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAtmosphere } from "@/lib/atmospheres";
+import { RoutinesMini } from "@/components/routines/RoutinesMini";
 
 function atmoColor(palette: string[], index: number, alpha?: number): string {
   const hex = palette[index % palette.length];
@@ -114,6 +115,7 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
           )}
         </div>
       )}
+      <RoutinesMini />
       <div className="mt-2 border-t border-border/40 pt-2">
         <Link
           to="/today"
