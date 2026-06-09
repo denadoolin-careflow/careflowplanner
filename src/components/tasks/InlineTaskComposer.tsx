@@ -15,8 +15,15 @@ import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { TemplatePickerDialog } from "@/components/tasks/TemplatePickerDialog";
 import { BookTemplate } from "lucide-react";
+import { useAtmosphere } from "@/lib/atmospheres";
 
 type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId" | "energy" | "estMinutes" | "tags">>;
+
+function atmoColor(palette: string[], index: number, alpha?: number): string {
+  const hex = palette[index % palette.length];
+  if (alpha == null || alpha === 1) return hex;
+  return `color-mix(in srgb, ${hex} ${Math.round(alpha * 100)}%, transparent)`;
+}
 
 interface Props {
   /** Defaults applied to created tasks (e.g. { inbox: true } for the inbox page). */
@@ -32,6 +39,7 @@ interface Props {
 
 export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "Add a task…", initialDate, defaultTags }: Props) {
   const { state, addTask } = useStore();
+  const { atmosphere } = useAtmosphere();
   const [text, setText] = useState("");
   const [notes, setNotes] = useState("");
   const [notesOpen, setNotesOpen] = useState(false);
@@ -115,7 +123,12 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
   };
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card/40 p-2">
+    <div
+      className="rounded-xl border border-border/60 bg-card/40 p-2 transition-shadow duration-500"
+      style={{
+        boxShadow: `0 0 0 1px ${atmoColor(atmosphere.palette, 0, 0.12)}, 0 4px 24px -6px ${atmoColor(atmosphere.palette, 0, 0.22)}`,
+      }}
+    >
       <div className="flex items-start gap-2">
         <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
           <Plus className="h-4 w-4" />
