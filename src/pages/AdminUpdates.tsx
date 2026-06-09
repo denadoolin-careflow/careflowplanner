@@ -546,7 +546,21 @@ function EntryEditor({
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-2 flex items-center gap-2">
-        <Checkbox checked={selected} onCheckedChange={onToggleSelect} aria-label="Select entry" />
+        <div
+          className="flex items-center gap-2"
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest("button")) return;
+            onToggleSelect(e.shiftKey);
+          }}
+        >
+          <Checkbox
+            checked={selected}
+            onCheckedChange={(v) => {
+              if (v !== selected) onToggleSelect(false);
+            }}
+            aria-label="Select entry"
+            onClick={(e) => e.stopPropagation()}
+          />
         <Badge variant={draft.published ? "default" : "secondary"} className="text-[10px] uppercase tracking-wider">
           {draft.published ? "Published" : "Draft"}
         </Badge>
