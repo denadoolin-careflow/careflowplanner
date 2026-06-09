@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
-import { Sparkles, RefreshCw, Clock, CheckCircle2, Circle } from "lucide-react";
+import { Sparkles, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useStore } from "@/lib/store";
