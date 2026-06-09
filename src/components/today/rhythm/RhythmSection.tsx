@@ -135,7 +135,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <section className={cn("cozy-card overflow-hidden")}>
+      <section id={`slot-${slot}`} className={cn("cozy-card overflow-hidden scroll-mt-24")}>
         <div className={cn("relative bg-gradient-to-br px-4 py-3 sm:px-5", meta.tint)}>
           <CollapsibleTrigger className="flex w-full items-center gap-3 text-left">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card/70 text-primary shadow-soft">
