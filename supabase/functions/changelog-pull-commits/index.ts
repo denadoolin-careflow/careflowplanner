@@ -12,32 +12,56 @@ Deno.serve(async (req) => {
     if (!ghToken || !ghRepo) {
       return json({ error: "GITHUB_TOKEN and GITHUB_REPO must be configured in project secrets." }, 500);
     }
-    const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader) return json({ error: "Unauthorized" }, 401);
+    const admin = createClient(supabaseUrl, serviceKey);
+    const cronSecretHeader = req.headers.get("x-changelog-cron-secret") ?? "";
+    let isCron = false;
+    if (cronSecretHeader) {
+      const { data: settings } = await admin
+        .from("changelog_settings")
+        .select("cron_secret")
+        .eq("id", true)
+        .maybeSingle();
+      if (settings?.cron_secret && settings.cron_secret === cronSecretHeader) {
+        isCron = true;
+      }
+    }
 
-    const supabase = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
-
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: userData.user.id,
-      _role: "admin",
-    });
-    if (!isAdmin) return json({ error: "Admin role required" }, 403);
+    if (!isCron) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      if (!authHeader) return json({ error: "Unauthorized" }, 401);
+      const supabase = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+      const { data: isAdmin } = await supabase.rpc("has_role", {
+        _user_id: userData.user.id,
+        _role: "admin",
+      });
+      if (!isAdmin) return json({ error: "Admin role required" }, 403);
+    }
 
     const body = await req.json().catch(() => ({})) as {
       perPage?: number;
       since?: string; // ISO date
       maxCommits?: number; // hard cap
       all?: boolean; // paginate until done
+      fromLastPull?: boolean; // use settings.last_pulled_at as since
     };
+
+    if (body.fromLastPull && !body.since) {
+      const { data: s } = await admin
+        .from("changelog_settings")
+        .select("last_pulled_at")
+        .eq("id", true)
+        .maybeSingle();
+      if (s?.last_pulled_at) body.since = s.last_pulled_at as unknown as string;
+    }
+
     const perPage = Math.min(100, body.perPage ?? 100);
     const maxCommits = body.all ? 5000 : Math.min(5000, body.maxCommits ?? perPage);
     const sinceParam = body.since ? `&since=${encodeURIComponent(new Date(body.since).toISOString())}` : "";
 
-    const admin = createClient(supabaseUrl, serviceKey);
     let fetched = 0;
     let inserted = 0;
     let page = 1;
@@ -80,7 +104,8 @@ Deno.serve(async (req) => {
       page += 1;
     }
 
-    return json({ ok: true, fetched, inserted }, 200);
+    await admin.from("changelog_settings").update({ last_pulled_at: new Date().toISOString() }).eq("id", true);
+    return json({ ok: true, fetched, inserted, isCron }, 200);
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }

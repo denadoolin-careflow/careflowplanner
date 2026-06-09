@@ -1301,6 +1301,33 @@ export type Database = {
           },
         ]
       }
+      changelog_settings: {
+        Row: {
+          cron_secret: string
+          id: boolean
+          last_pulled_at: string | null
+          pull_frequency: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cron_secret?: string
+          id?: boolean
+          last_pulled_at?: string | null
+          pull_frequency?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cron_secret?: string
+          id?: boolean
+          last_pulled_at?: string | null
+          pull_frequency?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       chore_assignments: {
         Row: {
           created_at: string
@@ -6958,6 +6985,7 @@ export type Database = {
         Args: { _household_id: string; _user_id: string }
         Returns: boolean
       }
+      set_changelog_pull_schedule: { Args: { _freq: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
