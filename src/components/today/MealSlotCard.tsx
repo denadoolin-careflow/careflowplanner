@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { ChefHat, Plus, Sparkles, UtensilsCrossed, X, Sunrise, Sun, Moon } from "lucide-react";
+import { ChefHat, Plus, Sparkles, UtensilsCrossed, X, Sunrise, Sun, Moon, ChevronDown, ChevronRight, Pencil, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RecipeDrawer } from "@/components/meals/RecipeDrawer";
+import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { useMealsLibrary } from "@/lib/meals-library";
 import { toast } from "sonner";
@@ -14,6 +17,11 @@ const SLOT_ICON: Record<MealSlot, typeof Sunrise> = {
   Lunch: Sun,
   Dinner: Moon,
 };
+const SLOT_EMOJI: Record<MealSlot, string> = {
+  Breakfast: "🥞",
+  Lunch: "🥗",
+  Dinner: "🍽️",
+};
 
 /**
  * Compact meal selector for a single slot, intended to live inside a
@@ -21,7 +29,7 @@ const SLOT_ICON: Record<MealSlot, typeof Sunrise> = {
  */
 export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
   const iso = format(date, "yyyy-MM-dd");
-  const { state, addMeal, deleteMeal } = useStore();
+  const { state, addMeal, deleteMeal, updateMeal } = useStore();
   const { items: library } = useMealsLibrary();
   const meal = useMemo(
     () => state.meals.find(m => m.date === iso && m.slot === slot),
@@ -29,6 +37,10 @@ export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
   );
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [newIng, setNewIng] = useState("");
   const Icon = SLOT_ICON[slot];
 
   const filtered = useMemo(() => {
@@ -44,30 +56,103 @@ export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
     toast.success(`Added ${slot.toLowerCase()}: ${name}`);
   };
 
+  const ingredients = meal?.ingredients ?? [];
+  const hasRecipe = (ingredients.length + (meal?.steps?.length ?? 0)) > 0;
+
+  const setIngredient = async (idx: number, value: string) => {
+    if (!meal) return;
+    const next = [...ingredients];
+    if (!value.trim()) next.splice(idx, 1);
+    else next[idx] = value.trim();
+    await updateMeal(meal.id, { ingredients: next });
+  };
+
+  const addIngredient = async () => {
+    const v = newIng.trim();
+    if (!v || !meal) return;
+    await updateMeal(meal.id, { ingredients: [...ingredients, v] });
+    setNewIng("");
+  };
+
   return (
     <div className="mt-2 rounded-xl border border-border/50 bg-background/60 px-2 py-1.5 text-xs">
       <div className="flex flex-wrap items-center gap-1.5">
-        <Icon className="h-3 w-3 shrink-0 text-accent" />
+        {meal ? (
+          <button
+            type="button"
+            onClick={() => setExpanded(v => !v)}
+            className="grid h-5 w-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label={expanded ? "Hide details" : "Show details"}
+            title={expanded ? "Hide details" : "Show details"}
+          >
+            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          </button>
+        ) : (
+          <Icon className="h-3 w-3 shrink-0 text-accent" />
+        )}
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {slot}
         </span>
         {meal ? (
-          <span className="ml-1 min-w-0 flex-1 basis-full whitespace-normal break-words font-medium leading-snug text-foreground/90 sm:basis-auto">
-            {meal.name}
-          </span>
+          renaming ? (
+            <input
+              autoFocus
+              defaultValue={meal.name}
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                if (v && v !== meal.name) void updateMeal(meal.id, { name: v });
+                setRenaming(false);
+              }}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") (e.target as HTMLInputElement).blur(); }}
+              className="ml-1 min-w-0 flex-1 basis-full bg-transparent text-xs text-foreground outline-none sm:basis-auto"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setExpanded(v => !v)}
+              className="ml-1 inline-flex min-w-0 flex-1 basis-full items-center gap-1 whitespace-normal break-words text-left font-medium leading-snug text-foreground/90 hover:text-primary sm:basis-auto"
+              title="Show details"
+            >
+              <span aria-hidden>{SLOT_EMOJI[slot]}</span>
+              <span className="min-w-0 flex-1">{meal.name}</span>
+            </button>
+          )
         ) : (
           <span className="ml-1 min-w-0 flex-1 basis-full whitespace-normal italic text-muted-foreground sm:basis-auto">No {slot.toLowerCase()} planned</span>
         )}
         {meal && (
-          <button
-            type="button"
-            onClick={() => void deleteMeal(meal.id)}
-            className="grid h-5 w-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label="Clear meal"
-            title="Clear"
-          >
-            <X className="h-3 w-3" />
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => setRenaming(v => !v)}
+              className="grid h-5 w-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="Rename meal"
+              title="Rename"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className={cn(
+                "grid h-5 w-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground",
+                hasRecipe && "text-primary",
+              )}
+              aria-label="Open recipe"
+              title="Open recipe"
+            >
+              <BookOpen className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => void deleteMeal(meal.id)}
+              className="grid h-5 w-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="Clear meal"
+              title="Clear"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </>
         )}
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -129,6 +214,58 @@ export function MealSlotCard({ date, slot }: { date: Date; slot: MealSlot }) {
           </PopoverContent>
         </Popover>
       </div>
+      {meal && expanded && (
+        <div className="mt-2 space-y-1 rounded-lg bg-muted/30 px-2 py-1.5">
+          {ingredients.length === 0 && (
+            <p className="text-[11px] italic text-muted-foreground">No ingredients yet — add some below.</p>
+          )}
+          {ingredients.map((ing, idx) => {
+            return (
+              <div key={`${idx}::${ing}`} className="flex items-center gap-2">
+                <Checkbox aria-label={`Mark ${ing}`} className="h-3.5 w-3.5" />
+                <input
+                  defaultValue={ing}
+                  onBlur={(e) => {
+                    const v = e.target.value;
+                    if (v.trim() !== ing) void setIngredient(idx, v);
+                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                  className="min-w-0 flex-1 bg-transparent text-[11px] text-foreground outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => void setIngredient(idx, "")}
+                  className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive"
+                  title="Remove"
+                  aria-label="Remove ingredient"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
+          <form
+            onSubmit={(e) => { e.preventDefault(); void addIngredient(); }}
+            className="flex items-center gap-2 pt-0.5"
+          >
+            <Plus className="h-3 w-3 shrink-0 text-muted-foreground" />
+            <input
+              value={newIng}
+              onChange={(e) => setNewIng(e.target.value)}
+              placeholder="Add ingredient…"
+              className="min-w-0 flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/70"
+            />
+          </form>
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-primary hover:underline"
+          >
+            <BookOpen className="h-3 w-3" /> Full recipe
+          </button>
+        </div>
+      )}
+      <RecipeDrawer meal={drawerOpen ? meal ?? null : null} onClose={() => setDrawerOpen(false)} onChanged={() => {}} />
     </div>
   );
 }
