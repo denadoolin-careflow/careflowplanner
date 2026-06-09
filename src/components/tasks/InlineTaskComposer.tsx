@@ -41,6 +41,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
   const { state, addTask } = useStore();
   const { atmosphere } = useAtmosphere();
   const [text, setText] = useState("");
+  const [focused, setFocused] = useState(false);
   const [notes, setNotes] = useState("");
   const [notesOpen, setNotesOpen] = useState(false);
   const [date, setDate] = useState<string | undefined>(initialDate ?? defaults.dueDate);
@@ -126,7 +127,9 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     <div
       className="rounded-xl border border-border/60 bg-card/40 p-2 transition-shadow duration-500"
       style={{
-        boxShadow: `0 0 0 1px ${atmoColor(atmosphere.palette, 0, 0.22)}, 0 6px 32px -6px ${atmoColor(atmosphere.palette, 0, 0.38)}`,
+        boxShadow: focused || text.trim()
+          ? `0 0 0 1.5px ${atmoColor(atmosphere.palette, 0, 0.45)}, 0 8px 40px -6px ${atmoColor(atmosphere.palette, 0, 0.55)}`
+          : `0 0 0 1px ${atmoColor(atmosphere.palette, 0, 0.22)}, 0 6px 32px -6px ${atmoColor(atmosphere.palette, 0, 0.38)}`,
       }}
     >
       <div className="flex items-start gap-2">
@@ -139,6 +142,8 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKey}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             placeholder={placeholder}
             rows={1}
             className="w-full resize-none border-0 bg-transparent px-1 py-1 text-sm leading-snug shadow-none outline-none focus-visible:ring-0 placeholder:text-muted-foreground"

@@ -25,6 +25,7 @@ export function MobileCaptureCard({ defaultArea }: { defaultArea?: Area }) {
   const { addTask, state } = useStore();
   const { atmosphere } = useAtmosphere();
   const [title, setTitle] = useState("");
+  const [focused, setFocused] = useState(false);
   const [date, setDate] = useState<string | undefined>(undefined);
   const [projectId, setProjectId] = useState<string | undefined>(undefined);
   const [area, setArea] = useState<Area | undefined>(defaultArea);
@@ -67,7 +68,9 @@ export function MobileCaptureCard({ defaultArea }: { defaultArea?: Area }) {
     <div
       className="cf-card p-4 transition-shadow duration-500"
       style={{
-        boxShadow: `0 0 0 1px ${atmoColor(atmosphere.palette, 0, 0.22)}, 0 6px 32px -6px ${atmoColor(atmosphere.palette, 0, 0.38)}`,
+        boxShadow: focused || title.trim()
+          ? `0 0 0 1.5px ${atmoColor(atmosphere.palette, 0, 0.45)}, 0 8px 40px -6px ${atmoColor(atmosphere.palette, 0, 0.55)}`
+          : `0 0 0 1px ${atmoColor(atmosphere.palette, 0, 0.22)}, 0 6px 32px -6px ${atmoColor(atmosphere.palette, 0, 0.38)}`,
       }}
     >
       <div className="flex items-center gap-3">
@@ -76,6 +79,8 @@ export function MobileCaptureCard({ defaultArea }: { defaultArea?: Area }) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholder="Capture anything…"
           className="min-w-0 flex-1 bg-transparent text-[15.5px] outline-none placeholder:text-muted-foreground/70"
         />
