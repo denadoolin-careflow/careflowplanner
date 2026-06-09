@@ -1,5 +1,4 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
 import { SIGN_GLYPH, PLANET_GLYPH, planetDisplay, SIGN_ELEMENT, ELEMENT_VAR } from "@/lib/cosmic/glyphs";
 import type { NatalChartV2, NatalPlanet } from "@/lib/cosmic/chart";
