@@ -216,6 +216,14 @@ function TodayInner() {
               {reorderMode ? "Reorder widgets" : "Widgets"}
             </span>
             <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setSidebarHidden(true)}
+                className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/70 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur hover:text-foreground"
+                title="Hide widgets"
+              >
+                <PanelRightClose className="h-2.5 w-2.5" /> Hide
+              </button>
               {reorderMode && (
                 <button
                   type="button"
