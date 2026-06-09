@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Plus, Sunrise, Sun, Moon, ListChecks, UtensilsCrossed, Sparkles, Home } from "lucide-react";
+import { Plus, Sunrise, Sun, Moon, ListChecks, UtensilsCrossed, Sparkles, Home, StickyNote } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { createNote } from "@/lib/notes";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 type Slot = "auto" | "morning" | "afternoon" | "evening";
-type Kind = "task" | "home" | "meal";
+type Kind = "task" | "home" | "meal" | "note";
 
 function currentSlot(d = new Date()): Exclude<Slot, "auto"> {
   const h = d.getHours();
@@ -42,6 +44,7 @@ function tokenize(s: string): string[] {
  */
 export function QuickAddBar({ date }: { date: Date }) {
   const { addTask, addMeal, state } = useStore();
+  const navigate = useNavigate();
   const [kind, setKind] = useState<Kind>("task");
   const [slot, setSlot] = useState<Slot>("auto");
   const [text, setText] = useState("");
@@ -96,9 +99,20 @@ export function QuickAddBar({ date }: { date: Date }) {
         area: "Home",
       });
       toast.success(`Added home task → ${SLOT_TO_DAYPART[resolvedSlot]}`);
-    } else {
+    } else if (kind === "meal") {
       await addMeal({ name: value, date: iso, slot: SLOT_TO_MEAL[resolvedSlot] });
       toast.success(`Added ${SLOT_TO_MEAL[resolvedSlot]} → ${value}`);
+    } else {
+      try {
+        const n = await createNote({ title: value });
+        toast.success("Note created");
+        setText("");
+        navigate(`/notes/${n.id}`);
+        return;
+      } catch {
+        toast.error("Couldn't create note");
+        return;
+      }
     }
     setText("");
   };
@@ -109,9 +123,9 @@ export function QuickAddBar({ date }: { date: Date }) {
       className="cozy-card flex flex-wrap items-center gap-1.5 p-2 sm:p-2.5"
     >
       <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5 text-[11px]">
-        {(["task", "home", "meal"] as Kind[]).map(k => {
-          const Icon = k === "task" ? ListChecks : k === "home" ? Home : UtensilsCrossed;
-          const label = k === "task" ? "Task" : k === "home" ? "Home" : "Meal";
+        {(["task", "home", "meal", "note"] as Kind[]).map(k => {
+          const Icon = k === "task" ? ListChecks : k === "home" ? Home : k === "meal" ? UtensilsCrossed : StickyNote;
+          const label = k === "task" ? "Task" : k === "home" ? "Home" : k === "meal" ? "Meal" : "Note";
           return (
             <button
               key={k}
@@ -139,7 +153,9 @@ export function QuickAddBar({ date }: { date: Date }) {
               ? "Add a task to today…"
               : kind === "home"
                 ? "Add a home or cleaning task…"
-                : "Add a meal for today…"
+              : kind === "meal"
+                ? "Add a meal for today…"
+                : "Add a note…"
           }
           className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
         />
