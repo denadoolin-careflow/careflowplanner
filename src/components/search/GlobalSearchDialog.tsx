@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import {
   Search, FileText, CheckSquare, Folder, Hash, Sparkles, Calendar,
-  Mic, ShoppingBasket, Plus, ArrowRight, CornerDownLeft,
+  Mic, ShoppingBasket, Plus, ArrowRight, CornerDownLeft, Compass,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTags } from "@/hooks/use-tags";
 import { upcomingEvents, type CosmicEvent } from "@/lib/cosmic/events";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
+import { NAV, NAV_GROUPS, NAV_DESCRIPTIONS } from "@/lib/nav";
 import { toast } from "sonner";
 
-type ResultKind = "task" | "note" | "project" | "tag" | "event" | "appointment";
+type ResultKind = "page" | "task" | "note" | "project" | "tag" | "event" | "appointment";
 
 export type SearchResult = {
   id: string;
@@ -31,6 +32,7 @@ export type SearchResult = {
 };
 
 const KIND_LABEL: Record<ResultKind, string> = {
+  page: "Pages",
   task: "Tasks",
   note: "Notes",
   project: "Projects",
@@ -40,6 +42,7 @@ const KIND_LABEL: Record<ResultKind, string> = {
 };
 
 const KIND_ICON: Record<ResultKind, React.ComponentType<{ className?: string }>> = {
+  page: Compass,
   task: CheckSquare,
   note: FileText,
   project: Folder,
@@ -47,6 +50,78 @@ const KIND_ICON: Record<ResultKind, React.ComponentType<{ className?: string }>>
   event: Sparkles,
   appointment: Calendar,
 };
+
+/** Common synonyms users may type to find a page. */
+const PAGE_KEYWORDS: Record<string, string[]> = {
+  "/wealth": ["money", "finances", "budget", "spending", "accounts"],
+  "/inbox": ["capture", "tasks", "todo", "to do"],
+  "/today": ["agenda", "now", "day"],
+  "/calendar": ["schedule", "agenda", "events"],
+  "/pantry": ["groceries", "shopping", "inventory", "fridge"],
+  "/meals": ["food", "recipes", "dinner", "lunch", "breakfast"],
+  "/meals/library": ["recipes", "cookbook"],
+  "/health": ["fitness", "wellness", "energy", "mood", "sleep"],
+  "/habits": ["streak", "routine", "daily"],
+  "/journal": ["diary", "write", "writing"],
+  "/notes": ["docs", "documents", "knowledge"],
+  "/whiteboards": ["canvas", "board"],
+  "/graph": ["knowledge graph", "connections", "map"],
+  "/goals": ["objectives", "milestones"],
+  "/focus": ["pomodoro", "timer", "deep work"],
+  "/mental-load": ["invisible work", "fairplay"],
+  "/family": ["household", "members", "sharing"],
+  "/caregiving": ["caregiver", "elder", "care plan"],
+  "/care": ["care loop", "care hub"],
+  "/automations": ["rules", "triggers", "workflows"],
+  "/settings": ["preferences", "account", "config", "options"],
+  "/trips": ["travel", "vacation", "packing"],
+  "/routines": ["rituals", "checklist"],
+  "/home-areas": ["rooms", "zones", "house"],
+  "/cosmic-flow": ["astrology", "moon", "transits", "horoscope", "zodiac"],
+  "/seasons": ["holidays", "celebrations", "birthdays"],
+  "/memories": ["memory book", "moments", "photos"],
+  "/logbook": ["completed", "done", "history"],
+  "/review": ["reflect", "retrospective"],
+  "/rhythm": ["lunar", "moon", "seasonal"],
+  "/upcoming": ["next", "later"],
+  "/anytime": ["someday", "no date"],
+  "/someday": ["maybe", "later", "ideas"],
+  "/not-today": ["snoozed", "skip"],
+};
+
+type PageEntry = { to: string; label: string; group?: string; description?: string; keywords?: string[]; icon: React.ComponentType<{ className?: string }> };
+
+/** Build a deduped, searchable list of all pages from NAV + NAV_GROUPS. */
+function buildPageIndex(): PageEntry[] {
+  const map = new Map<string, PageEntry>();
+  // Start with top-level NAV (icon authority)
+  for (const n of NAV) {
+    map.set(n.to, {
+      to: n.to,
+      label: n.label,
+      description: NAV_DESCRIPTIONS[n.to],
+      keywords: PAGE_KEYWORDS[n.to],
+      icon: n.icon,
+    });
+  }
+  // Augment with grouped nav (adds pages, group context)
+  for (const g of NAV_GROUPS) {
+    for (const it of g.items) {
+      const prev = map.get(it.to);
+      map.set(it.to, {
+        to: it.to,
+        label: prev?.label ?? it.label,
+        group: g.label,
+        description: NAV_DESCRIPTIONS[it.to] ?? prev?.description,
+        keywords: PAGE_KEYWORDS[it.to] ?? prev?.keywords,
+        icon: prev?.icon ?? it.icon,
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+const PAGE_INDEX: PageEntry[] = buildPageIndex();
 
 function highlight(text: string, term: string): React.ReactNode {
   if (!term) return text;
@@ -111,6 +186,21 @@ export function GlobalSearchDialog({
   const results = useMemo<SearchResult[]>(() => {
     if (!lc) return [];
     const out: SearchResult[] = [];
+
+    // Pages — always searched, so users can jump anywhere
+    for (const p of PAGE_INDEX) {
+      const kw = (p.keywords ?? []).join(" ");
+      if (m(p.label) || m(p.description) || m(p.group) || m(p.to) || m(kw)) {
+        out.push({
+          id: `page:${p.to}`,
+          kind: "page",
+          title: p.label,
+          subtitle: [p.group, p.description].filter(Boolean).join(" · ") || undefined,
+          to: p.to,
+          raw: p,
+        });
+      }
+    }
 
     // Tags
     for (const t of tags) {
@@ -200,6 +290,7 @@ export function GlobalSearchDialog({
         if (t.startsWith(lc)) score += 10;
         else if (t.includes(lc)) score += 5;
         if (r.kind === "tag") score += 2; // tags are short, surface them
+        if (r.kind === "page") score += 6; // surface navigation prominently
         return { r, score };
       })
       .sort((a, b) => b.score - a.score)
@@ -209,7 +300,7 @@ export function GlobalSearchDialog({
 
   // Group results in render order
   const grouped = useMemo(() => {
-    const order: ResultKind[] = ["task", "note", "project", "tag", "appointment", "event"];
+    const order: ResultKind[] = ["page", "task", "note", "project", "tag", "appointment", "event"];
     const map = new Map<ResultKind, SearchResult[]>();
     for (const r of results) {
       const arr = map.get(r.kind) ?? [];
@@ -277,7 +368,7 @@ export function GlobalSearchDialog({
                 ref={inputRef}
                 value={q}
                 onChange={e => setQ(e.target.value)}
-                placeholder="Search tasks, notes, tags, projects, events…"
+                placeholder="Search pages, tasks, notes, projects, tags…"
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
               <kbd className="hidden rounded border border-border/60 bg-muted/50 px-1.5 text-[10px] font-mono text-muted-foreground sm:inline">ESC</kbd>
@@ -295,7 +386,7 @@ export function GlobalSearchDialog({
                 </div>
               ) : (
                 grouped.map(group => {
-                  const Icon = KIND_ICON[group.kind];
+                  const GroupIcon = KIND_ICON[group.kind];
                   return (
                     <div key={group.kind} className="mb-2">
                       <div className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
@@ -305,6 +396,8 @@ export function GlobalSearchDialog({
                         {group.items.map(r => {
                           const idx = flat.indexOf(r);
                           const isActive = idx === active;
+                          const RowIcon: React.ComponentType<{ className?: string }> =
+                            r.kind === "page" && r.raw?.icon ? r.raw.icon : GroupIcon;
                           return (
                             <li key={r.id}>
                               <button
@@ -317,7 +410,7 @@ export function GlobalSearchDialog({
                                   isActive ? "bg-primary/10 text-foreground" : "hover:bg-muted/60",
                                 )}
                               >
-                                <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                <RowIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                 <span className="min-w-0 flex-1">
                                   <span className="block truncate font-medium">{highlight(r.title, term)}</span>
                                   {r.subtitle && (
@@ -400,6 +493,8 @@ function Preview({ r, onOpen }: { r: SearchResult; onOpen: () => void }) {
           <AppointmentPreview appt={r.raw} />
         ) : r.kind === "tag" ? (
           <TagPreview tag={r.raw} />
+        ) : r.kind === "page" ? (
+          <PagePreview page={r.raw} />
         ) : (
           <p className="text-sm italic text-muted-foreground">No preview available.</p>
         )}
@@ -438,7 +533,8 @@ function EmptyHints({ onBrainDump }: { onBrainDump?: () => void }) {
       )}
       <div className="px-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">Tips</div>
       <ul className="space-y-1 px-2 text-xs text-muted-foreground">
-        <li>• Type to search tasks, notes, tags, projects, calendar, and astrology.</li>
+        <li>• Jump to any page — try "wealth", "habits", "settings", "trips".</li>
+        <li>• Search tasks, notes, tags, projects, calendar, and astrology.</li>
         <li>• ↑↓ navigate · Enter to open · Esc to close.</li>
       </ul>
     </div>
@@ -486,6 +582,28 @@ function TagPreview({ tag }: { tag: any }) {
 }
 
 function EventPreview({ event }: { event: CosmicEvent | undefined }) {
+  return EventPreviewInner(event);
+}
+
+function PagePreview({ page }: { page: any }) {
+  if (!page) return null;
+  const Icon = page.icon ?? Compass;
+  return (
+    <div className="space-y-3 text-sm">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" /> {page.group ?? "Page"}
+      </div>
+      {page.description ? (
+        <p>{page.description}</p>
+      ) : (
+        <p className="italic text-muted-foreground">Open this page to view it.</p>
+      )}
+      <p className="text-[11px] font-mono text-muted-foreground">{page.to}</p>
+    </div>
+  );
+}
+
+function EventPreviewInner(event: CosmicEvent | undefined) {
   if (!event) return null;
   const pretty = (() => { try { return format(parseISO(event.date), "EEEE, MMMM d, yyyy"); } catch { return event.date; } })();
   return (
