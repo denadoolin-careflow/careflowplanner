@@ -3,7 +3,7 @@ import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Flame, Trash2, ChevronDown, Leaf, ListChecks } from "lucide-react";
+import { Flame, Trash2, ChevronDown, Leaf, ListChecks, Sparkles, Home, Users, Heart, Activity, Palette, Moon } from "lucide-react";
 import { useState } from "react";
 import { format, subDays } from "date-fns";
 import { Habit } from "@/lib/types";
@@ -72,7 +72,10 @@ export default function Habits() {
           <Input placeholder="A tiny, doable habit" value={title} onChange={e => setTitle(e.target.value)} />
           <Select value={cat} onValueChange={(v: any) => setCat(v)}>
             <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
-            <SelectContent>{CATS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+          <SelectContent>{CATS.map(c => {
+            const CatIcon = c === "self-care" ? Sparkles : c === "home" ? Home : c === "family" ? Users : c === "caregiving" ? Heart : c === "health" ? Activity : c === "creative" ? Palette : Moon;
+            return <SelectItem key={c} value={c} icon={<CatIcon className="h-4 w-4 text-muted-foreground" />}>{c}</SelectItem>;
+          })}</SelectContent>
           </Select>
           <Button onClick={() => { if (!title.trim()) return; addHabit({ title, category: cat }); setTitle(""); }}>Add</Button>
         </div>

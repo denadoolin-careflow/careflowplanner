@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { format } from "date-fns";
 import {
   ArrowLeft, Calendar, MapPin, Edit3, Trash2, Save, X, Users, StickyNote, Plane,
+  ClipboardList, RefreshCw, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -196,7 +197,10 @@ export default function TripDetail() {
               <Select value={form.status ?? "planning"} onValueChange={v => setForm(f => ({ ...f, status: v as TripStatus }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                  {STATUSES.map(s => {
+                    const StatusIcon = s === "planning" ? ClipboardList : s === "upcoming" ? Calendar : s === "active" ? RefreshCw : CheckCircle2;
+                    return <SelectItem key={s} value={s} className="capitalize" icon={<StatusIcon className="h-4 w-4 text-muted-foreground" />}>{s}</SelectItem>;
+                  })}
                 </SelectContent>
               </Select>
             </div>

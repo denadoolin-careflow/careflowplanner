@@ -1,7 +1,7 @@
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Link } from "react-router-dom";
-import { Palette, ArrowRight } from "lucide-react";
+import { Palette, ArrowRight, LayoutDashboard, Sun, Inbox, CalendarClock, Clock, Calendar, Map, CalendarDays, FolderKanban, StickyNote, UtensilsCrossed, Repeat } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -110,18 +110,18 @@ export default function Settings() {
             >
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="/">Dashboard</SelectItem>
-                <SelectItem value="/today">Today</SelectItem>
-                <SelectItem value="/inbox">Inbox</SelectItem>
-                <SelectItem value="/upcoming">Upcoming</SelectItem>
-                <SelectItem value="/anytime">Anytime</SelectItem>
-                <SelectItem value="/calendar">Calendar</SelectItem>
-                <SelectItem value="/plan">Plan</SelectItem>
-                <SelectItem value="/week">Week</SelectItem>
-                <SelectItem value="/projects">Projects</SelectItem>
-                <SelectItem value="/notes">Notes</SelectItem>
-                <SelectItem value="/meals">Meals</SelectItem>
-                <SelectItem value="/habits">Habits</SelectItem>
+                <SelectItem value="/" icon={<LayoutDashboard className="h-4 w-4 text-muted-foreground" />}>Dashboard</SelectItem>
+                <SelectItem value="/today" icon={<Sun className="h-4 w-4 text-muted-foreground" />}>Today</SelectItem>
+                <SelectItem value="/inbox" icon={<Inbox className="h-4 w-4 text-muted-foreground" />}>Inbox</SelectItem>
+                <SelectItem value="/upcoming" icon={<CalendarClock className="h-4 w-4 text-muted-foreground" />}>Upcoming</SelectItem>
+                <SelectItem value="/anytime" icon={<Clock className="h-4 w-4 text-muted-foreground" />}>Anytime</SelectItem>
+                <SelectItem value="/calendar" icon={<Calendar className="h-4 w-4 text-muted-foreground" />}>Calendar</SelectItem>
+                <SelectItem value="/plan" icon={<Map className="h-4 w-4 text-muted-foreground" />}>Plan</SelectItem>
+                <SelectItem value="/week" icon={<CalendarDays className="h-4 w-4 text-muted-foreground" />}>Week</SelectItem>
+                <SelectItem value="/projects" icon={<FolderKanban className="h-4 w-4 text-muted-foreground" />}>Projects</SelectItem>
+                <SelectItem value="/notes" icon={<StickyNote className="h-4 w-4 text-muted-foreground" />}>Notes</SelectItem>
+                <SelectItem value="/meals" icon={<UtensilsCrossed className="h-4 w-4 text-muted-foreground" />}>Meals</SelectItem>
+                <SelectItem value="/habits" icon={<Repeat className="h-4 w-4 text-muted-foreground" />}>Habits</SelectItem>
               </SelectContent>
             </Select>
             <p className="mt-1 text-[11px] text-muted-foreground">

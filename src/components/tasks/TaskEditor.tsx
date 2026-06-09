@@ -89,8 +89,8 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
         <Select value={draft.projectId ?? "none"} onValueChange={v => set("projectId", v === "none" ? undefined : v)}>
           <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
           <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
-            <SelectItem value="none">No project</SelectItem>
-            {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+            <SelectItem value="none" icon={<X className="h-4 w-4 text-muted-foreground" />}>No project</SelectItem>
+            {projects.map(p => <SelectItem key={p.id} value={p.id} icon={<FolderKanban className="h-4 w-4 text-muted-foreground" />}>{p.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </Field>
@@ -98,8 +98,8 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
         <Select value={draft.goalId ?? "none"} onValueChange={v => set("goalId", v === "none" ? undefined : v)}>
           <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
           <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
-            <SelectItem value="none">No goal</SelectItem>
-            {state.goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
+            <SelectItem value="none" icon={<X className="h-4 w-4 text-muted-foreground" />}>No goal</SelectItem>
+            {state.goals.map(g => <SelectItem key={g.id} value={g.id} icon={<Target className="h-4 w-4 text-muted-foreground" />}>{g.title}</SelectItem>)}
           </SelectContent>
         </Select>
       </Field>
@@ -107,8 +107,8 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
         <Select value={draft.recipientId ?? "none"} onValueChange={v => set("recipientId", v === "none" ? undefined : v)}>
           <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
           <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
-            <SelectItem value="none">No one</SelectItem>
-            {(state.recipients ?? []).map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+            <SelectItem value="none" icon={<X className="h-4 w-4 text-muted-foreground" />}>No one</SelectItem>
+            {(state.recipients ?? []).map(r => <SelectItem key={r.id} value={r.id} icon={<User className="h-4 w-4 text-muted-foreground" />}>{r.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </Field>

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ClipboardList, RefreshCw, CheckCircle2 } from "lucide-react";
 import { useCelebrations, useCelebrationTasks } from "@/lib/seasons/hooks";
 import { CelebrationEditor } from "@/components/seasons/CelebrationEditor";
 import type { CelebrationTaskCategory } from "@/lib/seasons/types";
@@ -74,9 +74,9 @@ export default function SeasonsCelebrationDetail() {
           <Select value={celebration.status} onValueChange={async (v) => { await update(celebration.id, { status: v as any }); }}>
             <SelectTrigger className="w-40 h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="planning">Planning</SelectItem>
-              <SelectItem value="in_progress">In progress</SelectItem>
-              <SelectItem value="done">Done</SelectItem>
+              <SelectItem value="planning" icon={<ClipboardList className="h-4 w-4 text-muted-foreground" />}>Planning</SelectItem>
+              <SelectItem value="in_progress" icon={<RefreshCw className="h-4 w-4 text-muted-foreground" />}>In progress</SelectItem>
+              <SelectItem value="done" icon={<CheckCircle2 className="h-4 w-4 text-muted-foreground" />}>Done</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="ghost" size="sm" className="text-destructive ml-auto" onClick={async () => { await remove(celebration.id); window.history.back(); }}>
