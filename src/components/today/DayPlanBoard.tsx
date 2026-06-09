@@ -81,7 +81,7 @@ export function DayPlanBoard({ date, onTaskClick }: { date: Date; onTaskClick?: 
                 </div>
                 <ul className="space-y-1">
                   {list.map(t => (
-                    <li key={t.id} className="flex items-center gap-2 rounded-lg bg-background/60 px-2 py-1.5">
+                    <li key={t.id} className="group flex items-center gap-2 rounded-lg bg-background/60 px-2 py-1.5">
                       <Checkbox checked={t.done} onCheckedChange={() => void toggleTask(t.id)} />
                       <button
                         type="button"
@@ -93,6 +93,7 @@ export function DayPlanBoard({ date, onTaskClick }: { date: Date; onTaskClick?: 
                       >
                         {t.title}
                       </button>
+                      <QuickDayPartButton task={t} />
                     </li>
                   ))}
                 </ul>
