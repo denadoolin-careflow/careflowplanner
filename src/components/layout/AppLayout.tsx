@@ -12,7 +12,6 @@ import { AICaptureDialog } from "@/components/care/AICaptureDialog";
 import { CareyChat } from "@/components/carey/CareyChat";
 import { useStore } from "@/lib/store";
 import { NAV } from "@/lib/nav";
-import { RoutinesStrip } from "@/components/routines/RoutinesStrip";
 import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
@@ -63,7 +62,6 @@ export function AppLayout() {
               </Link>
             </div>
           </header>
-          <RoutinesStrip />
           <main className="flex-1 px-4 pb-28 pt-6 lg:px-8 lg:pb-12">
             <div className="mx-auto w-full max-w-6xl">
               <AnimatePresence mode="wait" initial={false}>
