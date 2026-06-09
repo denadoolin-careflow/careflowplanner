@@ -11,6 +11,7 @@ import type { Task } from "@/lib/types";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { toast } from "sonner";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 
 type Scope = "today" | "tomorrow" | "thisWeek" | "thisMonth" | "thisYear";
 
@@ -226,6 +227,7 @@ export function TasksWidget({ date = new Date() }: Props) {
                   <span className="shrink-0 text-[9px] text-muted-foreground">{t.estMinutes}m</span>
                 ) : null}
               </button>
+              <QuickDayPartButton task={t} />
             </li>
           ))}
         </ul>

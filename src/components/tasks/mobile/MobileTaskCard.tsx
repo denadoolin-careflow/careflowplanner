@@ -16,6 +16,7 @@ import { playCompletionChime } from "@/lib/completion-sound";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { MobileTaskSheet } from "./MobileTaskSheet";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 
 const DOTS: Record<Task["priority"], number> = { low: 0, medium: 1, high: 2 };
 
@@ -147,6 +148,7 @@ export function MobileTaskCard({ task }: { task: Task }) {
             ))}
           </div>
         </div>
+        <QuickDayPartButton task={task} />
       </div>
     </button>
   );

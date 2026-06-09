@@ -8,6 +8,8 @@ import { MealSlotCard } from "@/components/today/MealSlotCard";
 import { SlotWeather } from "@/components/today/rhythm/SlotWeather";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { toast } from "sonner";
+import type { Task } from "@/lib/types";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 
 type Slot = "morning" | "afternoon" | "evening";
 type DayPart = "Morning" | "Afternoon" | "Evening" | "Anytime";
@@ -210,7 +212,7 @@ function TaskGroup({
   icon?: typeof Sunrise;
   date: Date;
   dayPart?: "Morning" | "Afternoon" | "Evening";
-  tasks: { id: string; title: string; done: boolean; estMinutes?: number | null }[];
+  tasks: Task[];
   onToggle: (id: string) => void | Promise<void>;
   onTaskClick?: (id: string) => void;
   onDrop: (id: string) => Promise<void>;
@@ -276,6 +278,7 @@ function TaskGroup({
               >
                 {t.title}
               </button>
+              <QuickDayPartButton task={t} />
               {t.estMinutes ? <span className="text-[10px] text-muted-foreground">{t.estMinutes}m</span> : null}
             </li>
           ))}
