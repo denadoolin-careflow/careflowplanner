@@ -7,14 +7,22 @@ import { useBirthChart } from "@/lib/cosmic/hooks";
 import { useNatalChart } from "@/lib/cosmic/v2-hooks";
 import { NatalWheel } from "@/components/cosmic/NatalWheel";
 import { PlacementDetailDialog } from "@/components/cosmic/PlacementDetailDialog";
+import { SignDetailDialog } from "@/components/cosmic/SignDetailDialog";
+import { HouseDetailDialog, HOUSE_TITLE } from "@/components/cosmic/HouseDetailDialog";
 import { RetrogradeBadge } from "@/components/cosmic/RetrogradeBadge";
 import type { NatalPlanet } from "@/lib/cosmic/chart";
+import type { Sign } from "@/lib/transits";
+import { SIGN_GLYPH } from "@/lib/cosmic/glyphs";
 
 export default function CosmicNatal() {
   const { row } = useBirthChart();
   const chart = useNatalChart(row ? { date: row.birth_date, time: row.birth_time, tz: row.birth_tz, lat: row.birth_lat, lng: row.birth_lng, place: row.birth_place, house_system: "whole-sign" } : null);
   const [selected, setSelected] = useState<NatalPlanet | null>(null);
   const [open, setOpen] = useState(false);
+  const [selectedSign, setSelectedSign] = useState<Sign | null>(null);
+  const [signOpen, setSignOpen] = useState(false);
+  const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
+  const [houseOpen, setHouseOpen] = useState(false);
 
   if (!row) {
     return (
@@ -39,8 +47,10 @@ export default function CosmicNatal() {
           <NatalWheel
             chart={chart}
             onSelectPlanet={(p) => { setSelected(p); setOpen(true); }}
+            onSelectSign={(s) => { setSelectedSign(s); setSignOpen(true); }}
+            onSelectHouse={(h) => { setSelectedHouse(h); setHouseOpen(true); }}
           />
-          <p className="mt-2 text-center text-[11px] text-muted-foreground">Tap a planet to learn more.</p>
+          <p className="mt-2 text-center text-[11px] text-muted-foreground">Tap a planet, sign, or house to explore.</p>
         </section>
 
         <section className="space-y-3">
@@ -106,7 +116,39 @@ export default function CosmicNatal() {
           ))}
         </div>
       </section>
+
+      <section className="cozy-card p-4">
+        <p className="font-display text-base mb-2">House Explorer</p>
+        <p className="text-xs text-muted-foreground mb-3">The twelve rooms of your life. Tap one to open it.</p>
+        <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 12 }, (_, i) => i + 1).map(h => {
+            const cusp = chart.houses?.cusps[h - 1];
+            const SIGN_ORDER: Sign[] = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+            const sign = cusp != null ? SIGN_ORDER[Math.floor(cusp / 30) % 12] : null;
+            const planetsHere = chart.planets.filter(p => p.house === h);
+            return (
+              <button
+                key={h}
+                onClick={() => { setSelectedHouse(h); setHouseOpen(true); }}
+                className="text-left rounded-lg border border-border/40 bg-card/40 p-2.5 hover:bg-card hover:border-primary/40 transition-colors"
+              >
+                <p className="text-[10px] text-muted-foreground">House {h}</p>
+                <p className="text-[12.5px] font-medium leading-tight">{HOUSE_TITLE[h]}</p>
+                {sign && <p className="text-[11px] text-muted-foreground mt-0.5">{SIGN_GLYPH[sign]} {sign}</p>}
+                {planetsHere.length > 0 && (
+                  <p className="text-[12px] mt-1">
+                    {planetsHere.map(p => p.glyph).join(" ")}
+                  </p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       <PlacementDetailDialog chart={chart} planet={selected} open={open} onOpenChange={setOpen} />
+      <SignDetailDialog chart={chart} sign={selectedSign} open={signOpen} onOpenChange={setSignOpen} />
+      <HouseDetailDialog chart={chart} house={selectedHouse} open={houseOpen} onOpenChange={setHouseOpen} />
     </div>
   );
 }

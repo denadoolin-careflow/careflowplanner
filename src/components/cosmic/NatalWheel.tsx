@@ -65,11 +65,15 @@ function spreadPositions(planets: NatalPlanet[], ascSignIndex: number): { p: Nat
 interface Props {
   chart: NatalChartV2;
   onSelectPlanet?: (p: NatalPlanet) => void;
+  onSelectSign?: (sign: Sign) => void;
+  onSelectHouse?: (house: number) => void;
   showAspects?: boolean;
 }
 
-export function NatalWheel({ chart, onSelectPlanet, showAspects = true }: Props) {
+export function NatalWheel({ chart, onSelectPlanet, onSelectSign, onSelectHouse, showAspects = true }: Props) {
   const [hover, setHover] = useState<string | null>(null);
+  const [hoverSign, setHoverSign] = useState<Sign | null>(null);
+  const [hoverHouse, setHoverHouse] = useState<number | null>(null);
   const ascSignIndex = chart.houses ? Math.floor(chart.houses.ascendant / 30) % 12 : 0;
 
   const positions = useMemo(() => spreadPositions(chart.planets, ascSignIndex), [chart.planets, ascSignIndex]);
@@ -92,13 +96,18 @@ export function NatalWheel({ chart, onSelectPlanet, showAspects = true }: Props)
         const start = idx * 30;
         const end = start + 30;
         const colorVar = ELEMENT_VAR[SIGN_ELEMENT[sign]];
+        const isHover = hoverSign === sign;
         return (
           <path
             key={`slice-${sign}`}
             d={arcPath(start, end, R_SIGN_INNER, R_OUTER, ascSignIndex)}
-            fill={`hsl(var(${colorVar}) / 0.18)`}
+            fill={`hsl(var(${colorVar}) / ${isHover ? 0.38 : 0.18})`}
             stroke={ringStroke}
             strokeOpacity={0.5}
+            onClick={() => onSelectSign?.(sign)}
+            onMouseEnter={() => setHoverSign(sign)}
+            onMouseLeave={() => setHoverSign(null)}
+            className={onSelectSign ? "cursor-pointer" : undefined}
           />
         );
       })}
@@ -129,6 +138,22 @@ export function NatalWheel({ chart, onSelectPlanet, showAspects = true }: Props)
       <circle cx={CX} cy={CY} r={R_HOUSE_RING} fill="hsl(var(--background))" stroke={ringStroke} strokeOpacity={0.5} />
 
       {/* house cusps + numbers */}
+      {chart.houses?.cusps.map((cusp, i) => {
+        const next = chart.houses!.cusps[(i + 1) % 12];
+        const isHover = hoverHouse === i + 1;
+        return (
+          <path
+            key={`hwedge-${i}`}
+            d={arcPath(cusp, next, R_INNER, R_HOUSE_RING, ascSignIndex)}
+            fill={isHover ? "hsl(var(--primary) / 0.12)" : "transparent"}
+            stroke="transparent"
+            onClick={() => onSelectHouse?.(i + 1)}
+            onMouseEnter={() => setHoverHouse(i + 1)}
+            onMouseLeave={() => setHoverHouse(null)}
+            className={onSelectHouse ? "cursor-pointer" : undefined}
+          />
+        );
+      })}
       {chart.houses?.cusps.map((cusp, i) => {
         const aIn = polar(cusp, R_INNER, ascSignIndex);
         const aOut = polar(cusp, R_SIGN_INNER, ascSignIndex);
