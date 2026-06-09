@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { isSameDay, format } from "date-fns";
 import { TaskSelectionProvider } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
