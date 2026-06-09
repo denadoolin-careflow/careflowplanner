@@ -9,6 +9,7 @@ import { useDayEnergy } from "@/lib/energy-store";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { toast } from "sonner";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 
 function estMin(t: Task) { return t.estMinutes ?? 15; }
 function inferEnergy(t: Task): Energy {
