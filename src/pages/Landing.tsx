@@ -3,12 +3,15 @@ import { useEffect, useRef, useState } from "react";
 import {
   Sparkles, Moon, Heart, Calendar, Brain, Utensils,
   Wallet, NotebookPen, Sun, Mountain, Flower2, Waves, Sprout, Home,
-  Cloud, Sunrise, Trees, Coffee, ArrowRight, Check, Quote, Plus,
+  Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap,
+  Sunrise, Trees, Coffee, ArrowRight, Check, Quote, Plus,
 } from "lucide-react";
 import botanical from "@/assets/landing-botanical.png";
 import storyImg from "@/assets/landing-story.jpg";
 import { CaregiverArchetypeQuiz } from "@/components/quiz/CaregiverArchetypeQuiz";
 import { CareFlowMark } from "@/components/widgets/CareFlowMark";
+import { MOON_INFO, getMoonPhase, getIllumination } from "@/lib/moon";
+import { fetchWeather, loadSavedPlace, reverseLabel, type WeatherCondition, type WeatherSnapshot } from "@/lib/weather";
 
 /* ---------- Local presentational helpers ---------- */
 
