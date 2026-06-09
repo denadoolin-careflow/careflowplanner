@@ -19,8 +19,6 @@ function inferEnergy(t: Task): Energy {
   return "high";
 }
 
-const ICONS = [Leaf, ShoppingBasket, MessageCircle];
-
 function recommend(tasks: Task[], dominantEnergy: Energy, today: string) {
   const base = tasks.filter(t => !t.parentTaskId && !t.done && t.dueDate && t.status !== "parked");
   const score = (t: Task) => {
