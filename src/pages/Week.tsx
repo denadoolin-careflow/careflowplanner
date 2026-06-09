@@ -35,10 +35,12 @@ import { WeekHabitsStrip } from "@/components/week/WeekHabitsStrip";
 import { ScopeHero } from "@/components/layout/ScopeHero";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { addWeeks, subWeeks, isSameWeek } from "date-fns";
+import { useSidebarHidden } from "@/lib/today-view";
 
 export default function Week() {
   const { state, updateTask, updateAppointment } = useStore();
   const isMobile = useIsMobile();
+  const [sidebarHidden] = useSidebarHidden();
   const [searchParams] = useSearchParams();
   const [start, setStart] = useState(() => {
     const d = searchParams.get("date");
@@ -102,7 +104,12 @@ export default function Week() {
   const visibleDays = isMobile && view === "schedule" ? [selectedDate] : days;
 
   return (
-    <div className="mx-auto grid w-full min-w-0 max-w-6xl gap-4 md:gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)] lg:gap-6">
+    <div className={cn(
+      "mx-auto grid w-full min-w-0 max-w-6xl gap-4 md:gap-5 lg:gap-6",
+      sidebarHidden
+        ? "lg:grid-cols-1"
+        : "lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)]",
+    )}>
       <div className="min-w-0 space-y-6">
         <ScopeHero
           scope="week"
