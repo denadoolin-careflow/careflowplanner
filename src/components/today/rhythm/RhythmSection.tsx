@@ -72,6 +72,16 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
   const meta = SLOT_META[slot];
   const Icon = meta.icon;
   const [open, setOpen] = useState(defaultOpen);
+  // Open this section when the URL hash targets it (e.g. #slot-morning)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sync = () => {
+      if (window.location.hash === `#slot-${slot}`) setOpen(true);
+    };
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, [slot]);
   const [dropHover, setDropHover] = useState(false);
   const [draft, setDraft] = useState("");
   const [adding, setAdding] = useState(false);
@@ -135,7 +145,7 @@ export function RhythmSection({ slot, date, defaultOpen = true, onTaskClick, sho
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <section className={cn("cozy-card overflow-hidden")}>
+      <section id={`slot-${slot}`} className={cn("cozy-card overflow-hidden scroll-mt-24")}>
         <div className={cn("relative bg-gradient-to-br px-4 py-3 sm:px-5", meta.tint)}>
           <CollapsibleTrigger className="flex w-full items-center gap-3 text-left">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card/70 text-primary shadow-soft">

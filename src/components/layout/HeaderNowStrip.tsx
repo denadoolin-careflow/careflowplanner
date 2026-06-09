@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, isToday } from "date-fns";
+import { Link } from "react-router-dom";
 import {
   ChevronDown, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
   Moon, Sun, Zap,
@@ -40,6 +41,13 @@ export function HeaderNowStrip({ className }: { className?: string }) {
   const time = useMemo(() => format(now, "h:mm a"), [now]);
   const date = useMemo(() => format(now, "EEE, MMM d"), [now]);
   const shortDate = useMemo(() => format(now, "EEE, MMM d"), [now]);
+  const currentSlot = useMemo<"morning" | "afternoon" | "evening">(() => {
+    const h = now.getHours();
+    if (h < 12) return "morning";
+    if (h < 17) return "afternoon";
+    return "evening";
+  }, [now]);
+  const slotLabel = currentSlot[0].toUpperCase() + currentSlot.slice(1);
   const tempStr = snap ? `${unit === "F" ? cToF(snap.tempC) : Math.round(snap.tempC)}°` : null;
   const fmtT = (c: number) => `${unit === "F" ? cToF(c) : Math.round(c)}°`;
   const rangeStr = snap ? `${fmtT(snap.highC)} / ${fmtT(snap.lowC)}` : null;
@@ -54,9 +62,14 @@ export function HeaderNowStrip({ className }: { className?: string }) {
     <div className={cn("flex items-center gap-2 text-sm", className)}>
       {/* ───── Mobile (compact + toggle) ───── */}
       <div className="flex items-center gap-1.5 md:hidden">
-        <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 tabular-nums text-xs font-medium text-foreground/85">
+        <Link
+          to={`/today#slot-${currentSlot}`}
+          aria-label={`Open today's ${slotLabel} tasks`}
+          title={`Jump to ${slotLabel} tasks`}
+          className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 tabular-nums text-xs font-medium text-foreground/85 hover:bg-muted/70 transition"
+        >
           {time}
-        </span>
+        </Link>
         {snap && tempStr && (
           <WeatherDetailPopover
             trigger={
@@ -126,12 +139,22 @@ export function HeaderNowStrip({ className }: { className?: string }) {
 
       {/* ───── Desktop / tablet (inline full strip) ───── */}
       <div className="hidden items-center gap-2 md:flex">
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 tabular-nums font-medium text-foreground/85">
+      <Link
+        to={`/today#slot-${currentSlot}`}
+        aria-label={`Open today's ${slotLabel} tasks`}
+        title={`Jump to ${slotLabel} tasks`}
+        className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 tabular-nums font-medium text-foreground/85 hover:bg-muted/70 transition"
+      >
         {time}
-      </span>
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85">
+      </Link>
+      <Link
+        to="/today"
+        aria-label="Open Today"
+        title="Open today's tasks"
+        className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85 hover:bg-muted/70 transition"
+      >
         {date}
-      </span>
+      </Link>
       {snap && tempStr && (
         <WeatherDetailPopover
           trigger={
