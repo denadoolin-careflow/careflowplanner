@@ -336,7 +336,7 @@ function PreviewPanel() {
             {["Morning", "Afternoon", "Evening"].map((t, i) => (
               <div
                 key={t}
-                className={`flex-1 rounded-lg px-1.5 py-1 text-[10px] text-center transition-all duration-500 cursor-default ${
+                className={`flex-1 rounded-lg px-1.5 py-1 text-[10px] text-center transition-all duration-500 cursor-default lg:py-1.5 lg:text-[12px] ${
                   i === 0 ? "bg-warm/15 text-warm-foreground font-medium" : "bg-muted/40 text-muted-foreground hover:bg-muted/60"
                 }`}
               >
