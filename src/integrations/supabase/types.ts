@@ -4932,6 +4932,7 @@ export type Database = {
           last_seen_changelog_at: string | null
           low_energy_mode: boolean
           name: string
+          notify_on_updates: boolean
           planning_style: string
           theme: string
           time_zone: string
@@ -4949,6 +4950,7 @@ export type Database = {
           last_seen_changelog_at?: string | null
           low_energy_mode?: boolean
           name?: string
+          notify_on_updates?: boolean
           planning_style?: string
           theme?: string
           time_zone?: string
@@ -4966,6 +4968,7 @@ export type Database = {
           last_seen_changelog_at?: string | null
           low_energy_mode?: boolean
           name?: string
+          notify_on_updates?: boolean
           planning_style?: string
           theme?: string
           time_zone?: string
