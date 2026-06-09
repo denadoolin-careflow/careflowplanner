@@ -582,6 +582,28 @@ function TagPreview({ tag }: { tag: any }) {
 }
 
 function EventPreview({ event }: { event: CosmicEvent | undefined }) {
+  return EventPreviewInner(event);
+}
+
+function PagePreview({ page }: { page: any }) {
+  if (!page) return null;
+  const Icon = page.icon ?? Compass;
+  return (
+    <div className="space-y-3 text-sm">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" /> {page.group ?? "Page"}
+      </div>
+      {page.description ? (
+        <p>{page.description}</p>
+      ) : (
+        <p className="italic text-muted-foreground">Open this page to view it.</p>
+      )}
+      <p className="text-[11px] font-mono text-muted-foreground">{page.to}</p>
+    </div>
+  );
+}
+
+function EventPreviewInner(event: CosmicEvent | undefined) {
   if (!event) return null;
   const pretty = (() => { try { return format(parseISO(event.date), "EEEE, MMMM d, yyyy"); } catch { return event.date; } })();
   return (
