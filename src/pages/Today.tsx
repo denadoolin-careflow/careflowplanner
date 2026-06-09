@@ -190,18 +190,7 @@ function TodayInner() {
       )}>
         {/* Main column */}
         <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
-          <div className="relative">
-            <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
-            <button
-              type="button"
-              onClick={() => setSidebarHidden(!sidebarHidden)}
-              className="absolute right-3 top-3 hidden md:inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/80 px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur hover:text-foreground"
-              title={sidebarHidden ? "Show widgets" : "Hide widgets"}
-            >
-              {sidebarHidden ? <PanelRightOpen className="h-3 w-3" /> : <PanelRightClose className="h-3 w-3" />}
-              {sidebarHidden ? "Widgets" : "Hide"}
-            </button>
-          </div>
+          <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
           {isReallyToday && prefs.showCareyNudges && <CareyProactiveCards />}
           <TopThreeStrip date={day} onTaskClick={setEditTaskId} />
           {renderMain()}
