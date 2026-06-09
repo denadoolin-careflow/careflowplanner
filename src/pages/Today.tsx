@@ -190,18 +190,7 @@ function TodayInner() {
       )}>
         {/* Main column */}
         <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
-          <div className="relative">
-            <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
-            <button
-              type="button"
-              onClick={() => setSidebarHidden(!sidebarHidden)}
-              className="absolute right-3 top-3 hidden md:inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/80 px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur hover:text-foreground"
-              title={sidebarHidden ? "Show widgets" : "Hide widgets"}
-            >
-              {sidebarHidden ? <PanelRightOpen className="h-3 w-3" /> : <PanelRightClose className="h-3 w-3" />}
-              {sidebarHidden ? "Widgets" : "Hide"}
-            </button>
-          </div>
+          <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
           {isReallyToday && prefs.showCareyNudges && <CareyProactiveCards />}
           <TopThreeStrip date={day} onTaskClick={setEditTaskId} />
           {renderMain()}
@@ -227,6 +216,14 @@ function TodayInner() {
               {reorderMode ? "Reorder widgets" : "Widgets"}
             </span>
             <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setSidebarHidden(true)}
+                className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/70 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur hover:text-foreground"
+                title="Hide widgets"
+              >
+                <PanelRightClose className="h-2.5 w-2.5" /> Hide
+              </button>
               {reorderMode && (
                 <button
                   type="button"
@@ -302,6 +299,19 @@ function TodayInner() {
         </aside>
         )}
       </div>
+
+      {/* Show-widgets pill when sidebar is collapsed */}
+      {sidebarHidden && (
+        <button
+          type="button"
+          onClick={() => setSidebarHidden(false)}
+          className="fixed right-0 top-24 z-40 hidden md:inline-flex items-center gap-1 rounded-l-full border border-r-0 border-border/60 bg-card/90 px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
+          title="Show widgets"
+        >
+          <PanelRightOpen className="h-3 w-3" />
+          <span className="hidden lg:inline">Widgets</span>
+        </button>
+      )}
 
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
