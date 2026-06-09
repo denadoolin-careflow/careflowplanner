@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Map, ChevronUp, Check } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Map as MapIcon, ChevronUp, Check, KanbanSquare, CalendarRange, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
+import { format, parseISO, startOfMonth } from "date-fns";
 
 type Status = "planned" | "in_progress" | "shipped" | "cancelled";
 type Category = "new" | "improved" | "fixed" | "announcement";
@@ -26,6 +28,14 @@ const columns: { key: Status; label: string }[] = [
   { key: "in_progress", label: "In progress" },
   { key: "shipped", label: "Shipped" },
 ];
+
+// Sort quarters like "Q1 2026" chronologically; unknowns last.
+function quarterSortKey(q: string | null): number {
+  if (!q) return Number.MAX_SAFE_INTEGER;
+  const m = q.match(/Q([1-4])\s*(\d{4})/i);
+  if (!m) return Number.MAX_SAFE_INTEGER - 1;
+  return parseInt(m[2]) * 10 + parseInt(m[1]);
+}
 
 export default function Roadmap() {
   const [items, setItems] = useState<Item[]>([]);
@@ -103,7 +113,7 @@ export default function Roadmap() {
         <header className="mt-6 mb-12 flex items-end justify-between gap-4 flex-wrap">
           <div>
             <div className="flex items-center gap-2 text-primary">
-              <Map className="h-4 w-4" />
+              <MapIcon className="h-4 w-4" />
               <span className="text-xs uppercase tracking-[0.2em]">Roadmap</span>
             </div>
             <h1 className="mt-3 font-display text-4xl font-semibold">What's coming</h1>
@@ -122,81 +132,228 @@ export default function Roadmap() {
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : (
-          <div className="grid gap-6 md:grid-cols-3">
-            {columns.map((col) => {
-              const colItems = items.filter((i) => i.status === col.key);
+          <Tabs defaultValue="kanban">
+            <TabsList className="mb-6">
+              <TabsTrigger value="kanban"><KanbanSquare className="h-3.5 w-3.5 mr-1.5" />Kanban</TabsTrigger>
+              <TabsTrigger value="timeline"><CalendarRange className="h-3.5 w-3.5 mr-1.5" />Timeline</TabsTrigger>
+              <TabsTrigger value="calendar"><CalendarDays className="h-3.5 w-3.5 mr-1.5" />Calendar</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="kanban">
+              <div className="grid gap-6 md:grid-cols-3">
+                {columns.map((col) => {
+                  const colItems = items.filter((i) => i.status === col.key);
+                  return (
+                    <div key={col.key}>
+                      <div className="mb-3 flex items-center justify-between">
+                        <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground">
+                          {col.label}
+                        </h2>
+                        <span className="text-xs text-muted-foreground">{colItems.length}</span>
+                      </div>
+                      <ul className="space-y-3">
+                        {colItems.length === 0 && (
+                          <li className="rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
+                            Nothing here yet.
+                          </li>
+                        )}
+                        {colItems.map((item) => (
+                          <ItemCard
+                            key={item.id}
+                            item={item}
+                            voted={votes.has(item.id)}
+                            onVote={() => toggleVote(item)}
+                          />
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="timeline">
+              <TimelineView items={items} votes={votes} onVote={toggleVote} />
+            </TabsContent>
+
+            <TabsContent value="calendar">
+              <CalendarView items={items} votes={votes} onVote={toggleVote} />
+            </TabsContent>
+          </Tabs>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ItemCard({
+  item, voted, onVote, compact = false,
+}: { item: Item; voted: boolean; onVote: () => void; compact?: boolean }) {
+  const isShipped = item.status === "shipped";
+  return (
+    <li className="rounded-lg border border-border bg-card p-3">
+      <div className="flex items-start gap-3">
+        <button
+          onClick={onVote}
+          disabled={isShipped}
+          className={`flex flex-col items-center rounded-md border px-2 py-1 text-xs transition ${
+            voted ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/40"
+          } ${isShipped ? "opacity-50 cursor-not-allowed" : ""}`}
+          aria-label="Vote"
+        >
+          <ChevronUp className="h-3.5 w-3.5" />
+          <span className="font-semibold">{item.vote_count}</span>
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">
+              {item.category}
+            </Badge>
+            {item.target_quarter && (
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {item.target_quarter}
+              </span>
+            )}
+            {isShipped && <Check className="h-3 w-3 text-primary" />}
+          </div>
+          <h3 className="mt-1 text-sm font-medium leading-snug">{item.title}</h3>
+          {!compact && item.description && (
+            <p className="mt-1 text-xs text-muted-foreground whitespace-pre-wrap">{item.description}</p>
+          )}
+          {isShipped && item.changelog_id && (
+            <Link to="/updates" className="mt-2 inline-block text-xs text-primary hover:underline">
+              See in changelog →
+            </Link>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function TimelineView({
+  items, votes, onVote,
+}: { items: Item[]; votes: Set<string>; onVote: (i: Item) => void }) {
+  // Group by target_quarter; non-shipped items appear here. Shipped grouped separately at end.
+  const upcoming = items.filter((i) => i.status !== "shipped");
+  const shipped = items.filter((i) => i.status === "shipped");
+
+  const groups = new Map<string, Item[]>();
+  for (const i of upcoming) {
+    const key = i.target_quarter || "Unscheduled";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(i);
+  }
+  const sortedKeys = [...groups.keys()].sort(
+    (a, b) => quarterSortKey(a === "Unscheduled" ? null : a) - quarterSortKey(b === "Unscheduled" ? null : b)
+  );
+
+  return (
+    <div className="space-y-10 border-l border-border pl-6">
+      {sortedKeys.length === 0 && shipped.length === 0 && (
+        <p className="text-sm text-muted-foreground">No items yet.</p>
+      )}
+      {sortedKeys.map((q) => (
+        <section key={q} className="relative">
+          <span className="absolute -left-[31px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
+          <h2 className="font-display text-lg font-semibold">{q}</h2>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            {groups.get(q)!.length} item{groups.get(q)!.length === 1 ? "" : "s"}
+          </p>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {groups.get(q)!
+              .sort((a, b) => b.vote_count - a.vote_count)
+              .map((item) => (
+                <ItemCard key={item.id} item={item} voted={votes.has(item.id)} onVote={() => onVote(item)} />
+              ))}
+          </ul>
+        </section>
+      ))}
+      {shipped.length > 0 && (
+        <section className="relative">
+          <span className="absolute -left-[31px] top-1.5 h-2.5 w-2.5 rounded-full bg-muted-foreground" />
+          <h2 className="font-display text-lg font-semibold">Already shipped</h2>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {shipped
+              .sort((a, b) => (b.shipped_at ?? "").localeCompare(a.shipped_at ?? ""))
+              .map((item) => (
+                <ItemCard key={item.id} item={item} voted={votes.has(item.id)} onVote={() => onVote(item)} compact />
+              ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function CalendarView({
+  items, votes, onVote,
+}: { items: Item[]; votes: Set<string>; onVote: (i: Item) => void }) {
+  // Shipped items grouped by month of shipped_at, newest first.
+  const shipped = items
+    .filter((i) => i.status === "shipped" && i.shipped_at)
+    .sort((a, b) => (b.shipped_at ?? "").localeCompare(a.shipped_at ?? ""));
+
+  const upcoming = items.filter((i) => i.status !== "shipped");
+
+  const monthGroups = new Map<string, Item[]>();
+  for (const i of shipped) {
+    const d = startOfMonth(parseISO(i.shipped_at!));
+    const key = format(d, "yyyy-MM");
+    if (!monthGroups.has(key)) monthGroups.set(key, []);
+    monthGroups.get(key)!.push(i);
+  }
+
+  return (
+    <div className="space-y-10">
+      {upcoming.length > 0 && (
+        <section>
+          <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground mb-3">
+            Upcoming (by target quarter)
+          </h2>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {upcoming
+              .sort(
+                (a, b) =>
+                  quarterSortKey(a.target_quarter) - quarterSortKey(b.target_quarter) ||
+                  b.vote_count - a.vote_count
+              )
+              .map((item) => (
+                <ItemCard key={item.id} item={item} voted={votes.has(item.id)} onVote={() => onVote(item)} />
+              ))}
+          </ul>
+        </section>
+      )}
+
+      <section>
+        <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground mb-3">
+          Shipped by month
+        </h2>
+        {monthGroups.size === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing shipped yet.</p>
+        ) : (
+          <div className="space-y-6">
+            {[...monthGroups.entries()].map(([key, list]) => {
+              const date = parseISO(key + "-01");
               return (
-                <div key={col.key}>
-                  <div className="mb-3 flex items-center justify-between">
-                    <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground">
-                      {col.label}
-                    </h2>
-                    <span className="text-xs text-muted-foreground">{colItems.length}</span>
+                <div key={key} className="grid gap-4 md:grid-cols-[140px_1fr]">
+                  <div>
+                    <div className="font-display text-2xl font-semibold">{format(date, "MMM")}</div>
+                    <div className="text-xs uppercase tracking-widest text-muted-foreground">
+                      {format(date, "yyyy")}
+                    </div>
                   </div>
-                  <ul className="space-y-3">
-                    {colItems.length === 0 && (
-                      <li className="rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
-                        Nothing here yet.
-                      </li>
-                    )}
-                    {colItems.map((item) => {
-                      const voted = votes.has(item.id);
-                      return (
-                        <li key={item.id} className="rounded-lg border border-border bg-card p-4">
-                          <div className="flex items-start gap-3">
-                            <button
-                              onClick={() => toggleVote(item)}
-                              disabled={col.key === "shipped"}
-                              className={`flex flex-col items-center rounded-md border px-2 py-1.5 text-xs transition ${
-                                voted
-                                  ? "border-primary bg-primary/10 text-primary"
-                                  : "border-border hover:border-primary/40"
-                              } ${col.key === "shipped" ? "opacity-50 cursor-not-allowed" : ""}`}
-                              aria-label="Vote"
-                            >
-                              <ChevronUp className="h-4 w-4" />
-                              <span className="font-semibold">{item.vote_count}</span>
-                            </button>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">
-                                  {item.category}
-                                </Badge>
-                                {item.target_quarter && (
-                                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                    {item.target_quarter}
-                                  </span>
-                                )}
-                                {col.key === "shipped" && (
-                                  <Check className="h-3 w-3 text-primary" />
-                                )}
-                              </div>
-                              <h3 className="mt-1 font-medium leading-snug">{item.title}</h3>
-                              {item.description && (
-                                <p className="mt-1 text-xs text-muted-foreground whitespace-pre-wrap">
-                                  {item.description}
-                                </p>
-                              )}
-                              {col.key === "shipped" && item.changelog_id && (
-                                <Link
-                                  to="/updates"
-                                  className="mt-2 inline-block text-xs text-primary hover:underline"
-                                >
-                                  See in changelog →
-                                </Link>
-                              )}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
+                  <ul className="grid gap-3 sm:grid-cols-2">
+                    {list.map((item) => (
+                      <ItemCard key={item.id} item={item} voted={votes.has(item.id)} onVote={() => onVote(item)} compact />
+                    ))}
                   </ul>
                 </div>
               );
             })}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
