@@ -160,6 +160,7 @@ export function HeaderNowStrip({ className }: { className?: string }) {
   const snap = useWeatherSnapshot();
   const [unit] = useTempUnit();
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  const navigate = useNavigate();
 
   const time = useMemo(() => format(now, "h:mm a"), [now]);
   const date = useMemo(() => format(now, "EEE, MMM d"), [now]);
