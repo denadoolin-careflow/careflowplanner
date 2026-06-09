@@ -57,6 +57,9 @@ export function TaskHoverActions({ task, onEdit, onDetails }: Props) {
   return (
     <>
     <div className="hidden items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 sm:flex">
+      {/* Time of day */}
+      <QuickDayPartButton task={task} />
+
       {/* Start timer */}
       <Button
         variant="ghost" size="icon"
