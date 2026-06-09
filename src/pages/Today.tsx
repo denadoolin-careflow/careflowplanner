@@ -265,7 +265,7 @@ function TodayInner() {
             const w = byId.get(id);
             if (!w) return null;
             if (hidden.has(id)) return null;
-            const node = w.render();
+            const node = w.render(widgetOpts);
             if (!node) return null;
             if (!reorderMode) {
               return (
