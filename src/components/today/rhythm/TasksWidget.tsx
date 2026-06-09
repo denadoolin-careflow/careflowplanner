@@ -11,6 +11,7 @@ import type { Task } from "@/lib/types";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { toast } from "sonner";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 
 type Scope = "today" | "tomorrow" | "thisWeek" | "thisMonth" | "thisYear";
 
