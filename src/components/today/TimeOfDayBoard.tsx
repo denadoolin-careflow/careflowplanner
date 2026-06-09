@@ -67,18 +67,18 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
                 <TaskGroup
                   label={s.dayPart}
                   date={date}
-                  dayPart={s.dayPart}
+                  dayPart={s.dayPart as "Morning" | "Afternoon" | "Evening"}
                   tasks={tasks}
                   onToggle={toggleTask}
                   onTaskClick={onTaskClick}
                   onDrop={async (id) => {
                     const t = state.tasks.find(x => x.id === id);
                     if (!t) return;
-                    await updateTask(id, { dueDate: iso, dayPart: s.dayPart, inbox: false });
+                    await updateTask(id, { dueDate: iso, dayPart: s.dayPart as "Morning" | "Afternoon" | "Evening", inbox: false });
                     toast.success(`Scheduled "${t.title}" → ${s.dayPart}`);
                   }}
                   onAdd={async (title) => {
-                    await addTask({ title, dueDate: iso, dayPart: s.dayPart });
+                    await addTask({ title, dueDate: iso, dayPart: s.dayPart as "Morning" | "Afternoon" | "Evening" });
                   }}
                 />
               </div>
