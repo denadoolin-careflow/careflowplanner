@@ -37,11 +37,18 @@ function quarterSortKey(q: string | null): number {
   return parseInt(m[2]) * 10 + parseInt(m[1]);
 }
 
+function currentQuarter(d = new Date()): string {
+  return `Q${Math.floor(d.getMonth() / 3) + 1} ${d.getFullYear()}`;
+}
+
 export default function Roadmap() {
   const [items, setItems] = useState<Item[]>([]);
   const [votes, setVotes] = useState<Set<string>>(new Set());
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<Status | null>(null);
 
   useEffect(() => {
     document.title = "Roadmap · CareFlow";
@@ -70,8 +77,46 @@ export default function Roadmap() {
         .select("roadmap_item_id")
         .eq("user_id", user.id);
       setVotes(new Set((v ?? []).map((r: any) => r.roadmap_item_id)));
+      const { data: r } = await supabase
+        .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+      setIsAdmin(!!r);
+    } else {
+      setIsAdmin(false);
     }
     setLoading(false);
+  }
+
+  async function handleDrop(targetStatus: Status) {
+    const id = dragId;
+    setDragId(null);
+    setDragOverCol(null);
+    if (!id) return;
+    const item = items.find((i) => i.id === id);
+    if (!item || item.status === targetStatus) return;
+    if (!isAdmin) { toast.error("Admin only"); return; }
+
+    const prev = items;
+    const nextQuarter = targetStatus === "shipped" ? item.target_quarter : currentQuarter();
+    setItems((arr) =>
+      arr.map((i) =>
+        i.id === id
+          ? { ...i, status: targetStatus, target_quarter: nextQuarter, shipped_at: targetStatus === "shipped" ? new Date().toISOString() : i.shipped_at }
+          : i
+      )
+    );
+
+    if (targetStatus === "shipped") {
+      const { error } = await supabase.rpc("ship_roadmap_item", { _id: id, _publish: false });
+      if (error) { toast.error(error.message); setItems(prev); return; }
+      toast.success("Shipped — draft changelog created");
+    } else {
+      const patch: { status: Status; target_quarter?: string | null; shipped_at?: string | null } = { status: targetStatus };
+      if (!item.target_quarter || item.status === "shipped") patch.target_quarter = currentQuarter();
+      if (item.status === "shipped") patch.shipped_at = null;
+      const { error } = await supabase.from("roadmap_items").update(patch).eq("id", id);
+      if (error) { toast.error(error.message); setItems(prev); return; }
+      toast.success(`Moved to ${targetStatus.replace("_", " ")}`);
+    }
   }
 
   async function toggleVote(item: Item) {
@@ -140,11 +185,22 @@ export default function Roadmap() {
             </TabsList>
 
             <TabsContent value="kanban">
+              {isAdmin && (
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Drag cards between columns to update status. Target quarter updates automatically.
+                </p>
+              )}
               <div className="grid gap-6 md:grid-cols-3">
                 {columns.map((col) => {
                   const colItems = items.filter((i) => i.status === col.key);
                   return (
-                    <div key={col.key}>
+                    <div
+                      key={col.key}
+                      onDragOver={(e) => { if (isAdmin) { e.preventDefault(); setDragOverCol(col.key); } }}
+                      onDragLeave={() => setDragOverCol((c) => (c === col.key ? null : c))}
+                      onDrop={(e) => { e.preventDefault(); handleDrop(col.key); }}
+                      className={`rounded-lg transition ${dragOverCol === col.key ? "ring-2 ring-primary/40 bg-primary/5" : ""}`}
+                    >
                       <div className="mb-3 flex items-center justify-between">
                         <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground">
                           {col.label}
@@ -163,6 +219,10 @@ export default function Roadmap() {
                             item={item}
                             voted={votes.has(item.id)}
                             onVote={() => toggleVote(item)}
+                            draggable={isAdmin}
+                            onDragStart={() => setDragId(item.id)}
+                            onDragEnd={() => { setDragId(null); setDragOverCol(null); }}
+                            dragging={dragId === item.id}
                           />
                         ))}
                       </ul>
@@ -188,10 +248,19 @@ export default function Roadmap() {
 
 function ItemCard({
   item, voted, onVote, compact = false,
-}: { item: Item; voted: boolean; onVote: () => void; compact?: boolean }) {
+  draggable = false, onDragStart, onDragEnd, dragging = false,
+}: {
+  item: Item; voted: boolean; onVote: () => void; compact?: boolean;
+  draggable?: boolean; onDragStart?: () => void; onDragEnd?: () => void; dragging?: boolean;
+}) {
   const isShipped = item.status === "shipped";
   return (
-    <li className="rounded-lg border border-border bg-card p-3">
+    <li
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      className={`rounded-lg border border-border bg-card p-3 ${draggable ? "cursor-grab active:cursor-grabbing" : ""} ${dragging ? "opacity-50" : ""}`}
+    >
       <div className="flex items-start gap-3">
         <button
           onClick={onVote}
