@@ -3,12 +3,15 @@ import { useEffect, useRef, useState } from "react";
 import {
   Sparkles, Moon, Heart, Calendar, Brain, Utensils,
   Wallet, NotebookPen, Sun, Mountain, Flower2, Waves, Sprout, Home,
-  Cloud, Sunrise, Trees, Coffee, ArrowRight, Check, Quote, Plus,
+  Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap,
+  Sunrise, Trees, Coffee, ArrowRight, Check, Quote, Plus,
 } from "lucide-react";
 import botanical from "@/assets/landing-botanical.png";
 import storyImg from "@/assets/landing-story.jpg";
 import { CaregiverArchetypeQuiz } from "@/components/quiz/CaregiverArchetypeQuiz";
 import { CareFlowMark } from "@/components/widgets/CareFlowMark";
+import { MOON_INFO, getMoonPhase, getIllumination } from "@/lib/moon";
+import { fetchWeather, loadSavedPlace, reverseLabel, type WeatherCondition, type WeatherSnapshot } from "@/lib/weather";
 
 /* ---------- Local presentational helpers ---------- */
 
@@ -179,6 +182,65 @@ function PreviewPanel() {
   const [burstId, setBurstId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Live clock — updates each minute so the preview always reflects "now".
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Live moon phase for today.
+  const moonInfo = MOON_INFO[getMoonPhase(now)];
+  const moonIllum = getIllumination(now);
+
+  // Live weather — uses saved location, else silently tries geolocation,
+  // else falls back to a default city so the preview is always populated.
+  const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const FALLBACK = { name: "New York, NY", lat: 40.7128, lon: -74.006 };
+    const load = async (lat: number, lon: number, label: string) => {
+      try {
+        const snap = await fetchWeather(lat, lon, label);
+        if (!cancelled) setWeather(snap);
+      } catch {/* noop */}
+    };
+    const saved = loadSavedPlace();
+    if (saved) { void load(saved.lat, saved.lon, saved.name); return () => { cancelled = true; }; }
+    if (!("geolocation" in navigator)) {
+      void load(FALLBACK.lat, FALLBACK.lon, FALLBACK.name);
+      return () => { cancelled = true; };
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        let label = "Your area";
+        try { label = await reverseLabel(latitude, longitude); } catch {}
+        if (!cancelled) void load(latitude, longitude, label);
+      },
+      () => { if (!cancelled) void load(FALLBACK.lat, FALLBACK.lon, FALLBACK.name); },
+      { timeout: 4000, maximumAge: 10 * 60 * 1000 },
+    );
+    return () => { cancelled = true; };
+  }, []);
+
+  const WeatherIcon = (() => {
+    const c: WeatherCondition | undefined = weather?.condition;
+    if (!c) return Sun;
+    if (c === "clear") return weather?.isNight ? Moon : Sun;
+    if (c === "partly-cloudy") return CloudSun;
+    if (c === "cloudy") return Cloud;
+    if (c === "fog") return CloudFog;
+    if (c === "drizzle") return CloudDrizzle;
+    if (c === "rain") return CloudRain;
+    if (c === "snow") return CloudSnow;
+    if (c === "thunderstorm") return Zap;
+    return Cloud;
+  })();
+  const tempF = weather ? Math.round(weather.tempC * 9 / 5 + 32) : null;
+  const timeLabel = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const dateLabel = now.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+
   // Sync user-added tasks to sessionStorage so Today demo banner can show them
   useEffect(() => {
     const userTasks = tasks.filter(t => !t.id.startsWith("s"));
@@ -222,7 +284,7 @@ function PreviewPanel() {
 
   return (
     <div
-      className="group relative mt-8 block w-full max-w-sm mx-auto sm:mx-0 sm:w-auto"
+      className="group relative mt-8 block w-full max-w-sm mx-auto sm:max-w-xl lg:max-w-3xl"
       aria-label="Interactive Today preview"
     >
       {/* Glow */}
@@ -232,32 +294,40 @@ function PreviewPanel() {
         style={{ background: "radial-gradient(50% 50% at 50% 50%, hsl(145 35% 80% / 0.45), transparent 70%)" }}
       />
 
-      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-[0_20px_50px_-20px_hsl(258_30%_40%/0.35)] backdrop-blur-xl transition-all duration-500 group-hover:shadow-[0_30px_60px_-15px_hsl(258_30%_40%/0.45)]">
+      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-[0_20px_50px_-20px_hsl(258_30%_40%/0.35)] backdrop-blur-xl transition-all duration-500 group-hover:shadow-[0_30px_60px_-15px_hsl(258_30%_40%/0.45)] lg:rounded-3xl">
         {/* Header bar */}
-        <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border/40 lg:px-5 lg:py-3">
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded-full bg-rose-300/70" />
             <div className="h-2 w-2 rounded-full bg-amber-300/70" />
             <div className="h-2 w-2 rounded-full bg-emerald-300/70" />
           </div>
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-            <Sun className="h-3 w-3 text-warm" />
-            72°
-            <span className="ml-1 rounded-full bg-secondary-soft/60 px-1.5 py-0.5 text-[9px] text-secondary-foreground">
-              9:14 AM
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground lg:text-[11px]" title={weather?.locationLabel ?? "Loading weather…"}>
+            <WeatherIcon className="h-3 w-3 text-warm lg:h-3.5 lg:w-3.5" />
+            <span className="tabular-nums">{tempF !== null ? `${tempF}°` : "—°"}</span>
+            {weather?.locationLabel && (
+              <span className="hidden sm:inline truncate max-w-[10rem] opacity-70">· {weather.locationLabel}</span>
+            )}
+            <span className="ml-1 rounded-full bg-secondary-soft/60 px-1.5 py-0.5 text-[9px] text-secondary-foreground tabular-nums lg:text-[10px]">
+              {timeLabel}
             </span>
           </div>
         </div>
 
-        <div className="p-3 space-y-2.5">
+        <div className="p-3 space-y-2.5 lg:p-5 lg:space-y-3.5">
           {/* Date */}
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Today</div>
-              <div className="font-display text-sm text-foreground">June 9, 2026</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground lg:text-[11px]">Today</div>
+              <div className="font-display text-sm text-foreground lg:text-lg">{dateLabel}</div>
             </div>
-            <div className="flex items-center gap-1 rounded-full bg-moon/10 px-2 py-1 text-[10px] text-moon-foreground">
-              <Moon className="h-3 w-3" /> Waxing Gibbous
+            <div
+              className="flex items-center gap-1.5 rounded-full bg-moon/10 px-2 py-1 text-[10px] text-moon-foreground lg:px-3 lg:py-1.5 lg:text-[11px]"
+              title={`${moonInfo.label} · ${moonIllum}% illuminated`}
+            >
+              <span className="text-sm leading-none lg:text-base" aria-hidden>{moonInfo.glyph}</span>
+              <span>{moonInfo.label}</span>
+              <span className="tabular-nums opacity-70">· {moonIllum}%</span>
             </div>
           </div>
 
@@ -266,7 +336,7 @@ function PreviewPanel() {
             {["Morning", "Afternoon", "Evening"].map((t, i) => (
               <div
                 key={t}
-                className={`flex-1 rounded-lg px-1.5 py-1 text-[10px] text-center transition-all duration-500 cursor-default ${
+                className={`flex-1 rounded-lg px-1.5 py-1 text-[10px] text-center transition-all duration-500 cursor-default lg:py-1.5 lg:text-[12px] ${
                   i === 0 ? "bg-warm/15 text-warm-foreground font-medium" : "bg-muted/40 text-muted-foreground hover:bg-muted/60"
                 }`}
               >
