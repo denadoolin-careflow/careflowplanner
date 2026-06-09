@@ -19,6 +19,12 @@ import { useAtmosphere } from "@/lib/atmospheres";
 
 type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId" | "energy" | "estMinutes" | "tags">>;
 
+function atmoColor(palette: string[], index: number, alpha?: number): string {
+  const hex = palette[index % palette.length];
+  if (alpha == null || alpha === 1) return hex;
+  return `color-mix(in srgb, ${hex} ${Math.round(alpha * 100)}%, transparent)`;
+}
+
 interface Props {
   /** Defaults applied to created tasks (e.g. { inbox: true } for the inbox page). */
   defaults?: Defaults;
