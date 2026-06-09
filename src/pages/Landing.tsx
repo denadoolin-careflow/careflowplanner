@@ -548,7 +548,7 @@ export default function Landing() {
       <section id="story" className="bg-[hsl(36_50%_97%)]/60">
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-14 sm:px-5 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div className="overflow-hidden rounded-3xl border border-border/40 shadow-cozy">
-            <img src={storyImg} alt="A cozy candlelit reading nook with a journal and herbal tea" loading="lazy" width={1408} height={896} className="h-full w-full object-cover" />
+            <img src={storyImg} alt="Split scene: an overwhelmed mom surrounded by sticky notes and a calendar, beside the same mom looking calm and confident using CareFlow on a tablet" loading="lazy" width={1408} height={896} className="h-full w-full object-cover" />
           </div>
           <div className="text-center lg:text-left">
             <Pill><Heart className="h-3 w-3" /> Our story</Pill>
