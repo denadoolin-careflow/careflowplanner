@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, NavLink } from "react-router-dom";
 import { isSameDay, format } from "date-fns";
 import { TaskSelectionProvider } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
@@ -166,6 +166,27 @@ function TodayInner() {
       )}>
         {/* Main column */}
         <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
+          <nav className="flex items-center gap-1 rounded-full border border-border/60 bg-card/60 p-1 text-xs font-medium backdrop-blur w-fit">
+            {[
+              { to: "/today", label: "Today" },
+              { to: "/week",  label: "Week"  },
+              { to: "/month", label: "Month" },
+            ].map((t) => (
+              <NavLink
+                key={t.to}
+                to={t.to}
+                end
+                className={({ isActive }) => cn(
+                  "rounded-full px-3 py-1.5 transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                )}
+              >
+                {t.label}
+              </NavLink>
+            ))}
+          </nav>
           <div className="relative">
             <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
             <button
