@@ -266,6 +266,8 @@ export default function AdminUpdates() {
   };
 
   const filteredEntries = filter === "all" ? entries : entries.filter((e) => e.category === filter);
+  const allSelected = filteredEntries.length > 0 && filteredEntries.every((e) => selected.has(e.id));
+  const nextPullAt = computeNextPullAt(frequency, lastPulledAt);
   const filteredCommitText = commitFilter.trim()
     ? commitsText.split("\n").filter((l) => l.toLowerCase().includes(commitFilter.toLowerCase())).join("\n")
     : commitsText;
