@@ -566,22 +566,22 @@ export default function Landing() {
       </header>
 
       {/* HERO */}
-      <section className="relative mx-auto grid w-full max-w-6xl gap-10 px-4 pb-16 pt-10 sm:px-5 sm:pb-24 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-24">
-        <div className="relative text-center lg:text-left">
+      <section className="relative mx-auto w-full max-w-6xl gap-10 px-4 pb-16 pt-10 sm:px-5 sm:pb-24 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-24">
+        <div className="relative mx-auto max-w-xl text-center">
           <Pill><Heart className="h-3 w-3" /> Built for real-life caregivers</Pill>
           <h1 className="mt-5 font-display text-[34px] leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[58px]">
             Turn your daily workload into a{" "}
             <em className="not-italic text-[hsl(28_70%_45%)]">gentle loop</em>{" "}
             you can repeat.
           </h1>
-          <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground mx-auto sm:mt-5 sm:text-base lg:mx-0">
+          <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground mx-auto sm:mt-5 sm:text-base">
             CareFlow is the emotionally intelligent planning system for caregivers, overwhelmed minds, neurodivergent users, and busy households — without pressure, guilt, or perfectionism.
           </p>
-          <div className="mt-6 flex flex-col items-stretch gap-2.5 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 lg:justify-start">
+          <div className="mt-6 flex flex-col items-stretch gap-2.5 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3">
             <PrimaryCTA><CareFlowMark size={18} rounded="md" /> Start Your CareFlow</PrimaryCTA>
             <SecondaryCTA><Sparkles className="h-4 w-4" /> Find Your Archetype</SecondaryCTA>
           </div>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground lg:justify-start">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> All-in-one planner</span>
             <span className="inline-flex items-center gap-1.5"><Brain className="h-3.5 w-3.5" /> Mental load support</span>
             <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> AI companion</span>
@@ -589,6 +589,10 @@ export default function Landing() {
           <p className="mt-5 text-xs italic text-muted-foreground/80">
             No pressure. No perfectionism. Just support.
           </p>
+        </div>
+
+        {/* Centered Preview Panel */}
+        <div className="mt-8 flex flex-col items-center sm:mt-10">
           <PreviewPanel />
           <Link
             to="/today"
@@ -597,9 +601,6 @@ export default function Landing() {
             Open Today demo
             <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
           </Link>
-        </div>
-        <div className="relative hidden sm:block lg:pt-4">
-          <HeroMockup />
         </div>
       </section>
 
