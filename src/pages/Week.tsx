@@ -209,7 +209,7 @@ export default function Week() {
         )}
       </div>
       {layout === "grid" && (
-        <ScopeSidebar date={selectedDate} onTaskClick={setEditTaskId} />
+        <ScopeSidebar scope="week" date={selectedDate} onTaskClick={setEditTaskId} />
       )}
       {layout === "grid" && <UnscheduledTasksRail onTaskClick={setEditTaskId} />}
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
