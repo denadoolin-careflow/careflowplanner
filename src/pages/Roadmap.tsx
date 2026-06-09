@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Map, ChevronUp, Check, KanbanSquare, CalendarRange, CalendarDays } from "lucide-react";
+import { Map as MapIcon, ChevronUp, Check, KanbanSquare, CalendarRange, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO, startOfMonth, addMonths } from "date-fns";
 
@@ -120,7 +120,7 @@ export default function Roadmap() {
         <header className="mt-6 mb-12 flex items-end justify-between gap-4 flex-wrap">
           <div>
             <div className="flex items-center gap-2 text-primary">
-              <Map className="h-4 w-4" />
+              <MapIcon className="h-4 w-4" />
               <span className="text-xs uppercase tracking-[0.2em]">Roadmap</span>
             </div>
             <h1 className="mt-3 font-display text-4xl font-semibold">What's coming</h1>
