@@ -135,7 +135,7 @@ function InboxInner() {
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
-      <header className="flex flex-col gap-2">
+      <header className="flex flex-col gap-1">
         {/* Title row */}
         <div className="flex items-center gap-3">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary sm:h-10 sm:w-10">
@@ -150,7 +150,7 @@ function InboxInner() {
         </div>
 
         {/* Action buttons row */}
-        <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-1.5">
           {/* Mobile: icon-only essentials */}
           <Button
             variant={selectionMode ? "default" : "ghost"}
@@ -160,7 +160,7 @@ function InboxInner() {
             title={selectionMode ? "Exit select mode" : "Select multiple tasks"}
             aria-label="Select tasks"
           >
-            <CheckSquare className="h-4 w-4" />
+            <CheckSquare className="h-3 w-3" />
           </Button>
           <Button
             variant="ghost"
@@ -171,7 +171,7 @@ function InboxInner() {
             title="Smart triage"
             aria-label="Smart triage"
           >
-            {triaging ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {triaging ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
           </Button>
           <Button
             variant={controlsVisible ? "default" : "ghost"}
@@ -182,7 +182,7 @@ function InboxInner() {
             aria-label="Options"
             aria-pressed={controlsVisible}
           >
-            <SlidersHorizontal className="h-4 w-4" />
+            <SlidersHorizontal className="h-3 w-3" />
           </Button>
 
           {/* Desktop / tablet */}
@@ -194,7 +194,7 @@ function InboxInner() {
               className="h-8 gap-1.5 text-xs"
               title={selectionMode ? "Exit select mode" : "Select multiple tasks"}
             >
-              <CheckSquare className="h-3.5 w-3.5" />
+              <CheckSquare className="h-3 w-3" />
               {selectionMode ? "Done" : "Select"}
             </Button>
             <Button
@@ -204,7 +204,7 @@ function InboxInner() {
               disabled={triaging || items.length === 0}
               className="h-8 gap-1.5 text-xs"
             >
-              {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {triaging ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
               Smart triage
             </Button>
             <Button
@@ -215,7 +215,7 @@ function InboxInner() {
               title={controlsVisible ? "Hide group / filter / sort" : "Show group / filter / sort"}
               aria-pressed={controlsVisible}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <SlidersHorizontal className="h-3 w-3" />
               <span>Options</span>
             </Button>
             <Button
@@ -226,7 +226,7 @@ function InboxInner() {
               title={tagLibraryVisible ? "Hide tag library" : "Show tag library"}
               aria-label="Toggle tag library"
             >
-              {tagLibraryVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {tagLibraryVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
             </Button>
             <Button
               variant="ghost"
@@ -236,7 +236,7 @@ function InboxInner() {
               title={paneOpen ? "Hide details pane" : "Show details pane"}
               aria-label="Toggle details pane"
             >
-              {paneOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+              {paneOpen ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRightOpen className="h-3.5 w-3.5" />}
             </Button>
           </div>
         </div>
