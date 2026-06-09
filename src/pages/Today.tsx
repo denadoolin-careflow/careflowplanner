@@ -64,8 +64,21 @@ function currentSlot(d: Date): "morning" | "afternoon" | "evening" {
 function TodayInner() {
   const { state } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   useEnsureWeather();
   const [exhaleOpen, setExhaleOpen] = useState(false);
+
+  // When arriving with a #slot-morning|afternoon|evening hash, scroll to it.
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = location.hash.slice(1);
+    // Wait for sections to mount
+    const t = setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+    return () => clearTimeout(t);
+  }, [location.hash, location.key]);
 
   const [day, setDay] = useState<Date>(() => {
     const d = searchParams.get("date");
