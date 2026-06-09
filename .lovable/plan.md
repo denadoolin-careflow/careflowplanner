@@ -1,54 +1,49 @@
-
-# Cosmic Flow 2.0
-
-This is a large, multi-week build. I'll break it into phases so we can ship value early and you can steer along the way. Confirm the phasing (and Phase 1 scope) before I start coding.
-
 ## Goal
-Turn `/cosmic` from a static astrology page into a living guidance system: Natal → Transits → Planner → Journal → Rituals → Carey Cosmic AI, all using **Whole Sign houses** and grounded in CareFlow planning.
 
-## Phased Roadmap
+Give users a public `/updates` page on the landing site and a "What's new" indicator in the app header, fed by a Lovable Cloud table you (admin) curate. To keep it low-effort, an AI summarizer turns raw GitHub commits into a draft entry you review and publish.
 
-### Phase 1 — Foundation (engine + hero) ⭐ start here
-- Refactor `src/lib/cosmic/*` to a single engine module with: natal placements, **Whole Sign houses**, aspects, current transits, lunar phase, retrogrades, ingresses, eclipses, **annual profections**, **progressed Moon/Sun**, Solar Return themes.
-- Verify a few sample charts against Astro-Seek (Pisces rising, etc.).
-- New `/cosmic` hero: Moon phase, zodiac season, rising-sign theme, today's astro-weather sentence, 5 quick actions (Journal, Plan Day, Transits, Moon Ritual, Insights).
-- Design tokens: moonlit white, deep indigo, soft lavender, muted gold, glassmorphism cards.
+## User flows
 
-### Phase 2 — Birth Chart tab
-- Interactive SVG wheel (hover/click planets, houses, signs; animated aspect lines).
-- Click-through panel: Core Gifts / Growth Edge / In Your Life / Journal Prompt.
-- House Explorer: 12 cards (sign, themes, planets present, current focus).
+- **Public visitor → `/updates`**: scrollable, newest-first list of published entries (date, title, summary, tags like "New", "Improved", "Fixed").
+- **Signed-in user → app header**: a small "✨ What's new" pill next to the bell. Dot shows when there are entries newer than their `last_seen_changelog_at`. Click opens a popover with the latest 5 entries and a "See all updates" link to `/updates`.
+- **Admin → `/admin/updates`**: list of drafts + published entries, "Pull latest commits" button (calls edge function), "Summarize with AI" on a draft, edit fields, toggle Published.
 
-### Phase 3 — Current Transits tab
-- Timeline scrubber: Today / Week / Month / Upcoming.
-- Transit cards: planet, sign, house activated, interpretation, practical advice, journal prompt.
-- "Add to planner" action on each card.
+## Data model (one migration)
 
-### Phase 4 — Cosmic Planner tab
-- Per-transit planning suggestions (best for / avoid / suggested tasks).
-- One-click "Add tasks to planner" → writes into existing `tasks` table for today.
-- Daily energy gauges: Focus, Relationships, Creativity, Home, Wellness.
+`changelog`
+- `id`, `title`, `summary` (markdown), `category` (`new` | `improved` | `fixed` | `announcement`), `published` (bool, default false), `published_at`, `created_at`, `updated_at`.
+- RLS: public can `SELECT` rows where `published = true`. Only `has_role(auth.uid(), 'admin')` can `INSERT/UPDATE/DELETE`.
 
-### Phase 5 — Cosmic Journal tab
-- Auto-generated daily prompts (Reflection / Shadow / Action) from Moon + transits + profections.
-- "Write entry" links into existing journal flow.
+`changelog_raw_commits` (admin-only)
+- `id`, `sha` (unique), `message`, `author`, `committed_at`, `included_in_entry_id` (nullable FK → changelog), `created_at`.
+- RLS: admin-only on all ops.
 
-### Phase 6 — Lunar Rituals tab
-- Phase-aware rituals (New / First Quarter / Full / Last Quarter), personalized by natal Moon.
-- Link each ritual to a journal entry.
+`profiles.last_seen_changelog_at timestamptz` — used by the in-app indicator. (Adds a column to existing `profiles`.)
 
-### Phase 7 — Carey Cosmic Mode + Insights Feed
-- Extend existing Carey edge function with a `cosmic` system prompt that receives the user's natal + today's transits + goals/tasks summary.
-- Personalized insights feed on the hero ("Venus entering your 9th House…").
+Grants on each new table per Cloud rules (`authenticated`, `service_role`; `anon SELECT` only on `changelog` for published rows).
 
-## Technical Notes
-- Engine lives in `src/lib/cosmic/engine.ts` (pure functions, fully typed); UI consumes via `useCosmic(date)` hook.
-- Whole Sign: ascendant sign = house 1, next sign = house 2, etc. Drop Placidus cusps from transit/house logic.
-- Calculations use existing ephemeris helper (already in `src/lib/cosmic/`); no new heavy deps.
-- New tables only if needed for saved insights/ritual completions — I'll surface a migration when we hit that phase.
-- Carey Cosmic uses the existing edge function via Lovable AI Gateway (no new secret).
+## Edge functions
 
-## What I need from you
-1. **Approve the phase order** (or re-order).
-2. Confirm I should start with **Phase 1 only** in the next turn, then check in with you before Phase 2.
-3. Any natal-data caveat — should I assume users with no birth time get a noon chart with a soft warning? (Astro-Seek default.)
+1. `changelog-pull-commits` (admin-gated): fetches recent commits from the connected GitHub repo via GitHub REST API, upserts into `changelog_raw_commits` by `sha`. Requires `GITHUB_TOKEN` + `GITHUB_REPO` secrets (will prompt user to add via secrets tool).
+2. `changelog-summarize` (admin-gated): takes an array of commit SHAs, sends their messages to Lovable AI (`google/gemini-3-flash-preview`) with a system prompt that produces `{ title, summary, category }` JSON, returns a draft (or directly inserts an unpublished `changelog` row and links the commits).
+
+Both validate the caller has the `admin` role via `has_role`.
+
+## Frontend
+
+- `src/pages/Updates.tsx` — public page at `/updates`, SEO meta + JSON-LD, lists published entries.
+- `src/pages/admin/AdminUpdates.tsx` — list/edit/publish, "Pull commits", "Summarize selected".
+- `src/components/updates/WhatsNewPopover.tsx` — header pill + popover, reads `changelog` + `profiles.last_seen_changelog_at`, updates the timestamp on open.
+- Route additions in `src/App.tsx`; header mount in `src/components/layout/HeaderNowStrip.tsx` (or wherever the bell lives).
+- Landing site link to `/updates` in the footer.
+
+## Setup the user will need to do
+
+- Confirm there is at least one row in `user_roles` with role `admin` for the user's own account (I'll add a quick check + helper note).
+- Connect GitHub to the project (Plus menu → GitHub) and provide a GitHub personal access token (`repo:read`) + `owner/repo` string when prompted — I'll request these via the secrets tool when we get to the edge function.
+
+## Out of scope
+
+- Email digests of updates.
+- Per-entry comments/reactions.
+- Automatic publishing without admin review (drafts only by default — safer).
