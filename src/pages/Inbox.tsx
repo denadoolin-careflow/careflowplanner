@@ -213,7 +213,6 @@ function InboxInner() {
               <SlidersHorizontal className="h-3.5 w-3.5" />
               <span>Options</span>
             </Button>
-            {controlsVisible && <TaskListControls prefs={prefs} onChange={setPrefs} />}
             <Button
               variant="ghost"
               size="icon"
@@ -238,9 +237,9 @@ function InboxInner() {
         </div>
       </header>
 
-      {/* On mobile, when Options is on, surface the group/filter/sort controls below the header */}
+      {/* When Options is on, surface the group/filter/sort controls below the header so they stay within the inbox frame */}
       {controlsVisible && (
-        <div className="flex flex-wrap items-center gap-2 sm:hidden">
+        <div className="flex flex-wrap items-center gap-2">
           <TaskListControls prefs={prefs} onChange={setPrefs} />
         </div>
       )}
