@@ -493,6 +493,8 @@ function Preview({ r, onOpen }: { r: SearchResult; onOpen: () => void }) {
           <AppointmentPreview appt={r.raw} />
         ) : r.kind === "tag" ? (
           <TagPreview tag={r.raw} />
+        ) : r.kind === "page" ? (
+          <PagePreview page={r.raw} />
         ) : (
           <p className="text-sm italic text-muted-foreground">No preview available.</p>
         )}
