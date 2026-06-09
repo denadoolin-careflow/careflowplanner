@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
-import { useSearchParams, NavLink } from "react-router-dom";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { isSameDay, format } from "date-fns";
 import { TaskSelectionProvider } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
@@ -117,6 +117,27 @@ function TodayInner() {
   const [sidebarHidden, setSidebarHidden] = useSidebarHidden();
   const [prefs] = useTodayPrefs();
 
+  // Swipe between Today / Week / Month on touch devices.
+  const navigate = useNavigate();
+  const touchRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchRef.current;
+    touchRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (Date.now() - start.t > 600) return;
+    // /today -> swipe left -> /week ; swipe right does nothing (already first)
+    if (dx < 0) navigate("/week");
+    else navigate("/today");
+  };
+
   const widgetRegistry: { id: string; label: string; render: () => JSX.Element | null }[] = [
     { id: "brain-dump",       label: "Brain dump",       render: () => <BrainDumpWidget /> },
     { id: "what-fits",        label: "What fits now",    render: () => <WhatFitsNow date={day} onTaskClick={setEditTaskId} /> },
@@ -158,7 +179,10 @@ function TodayInner() {
 
   return (
     <>
-      <div className={cn(
+      <div
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        className={cn(
         "mx-auto grid w-full min-w-0 max-w-6xl gap-4 overflow-x-clip md:gap-5 lg:gap-6",
         sidebarHidden
           ? "md:grid-cols-1"
@@ -166,27 +190,6 @@ function TodayInner() {
       )}>
         {/* Main column */}
         <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
-          <nav className="flex items-center gap-1 rounded-full border border-border/60 bg-card/60 p-1 text-xs font-medium backdrop-blur w-fit">
-            {[
-              { to: "/today", label: "Today" },
-              { to: "/week",  label: "Week"  },
-              { to: "/month", label: "Month" },
-            ].map((t) => (
-              <NavLink
-                key={t.to}
-                to={t.to}
-                end
-                className={({ isActive }) => cn(
-                  "rounded-full px-3 py-1.5 transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                )}
-              >
-                {t.label}
-              </NavLink>
-            ))}
-          </nav>
           <div className="relative">
             <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
             <button
