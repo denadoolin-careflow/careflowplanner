@@ -9,7 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Sparkles, Plus, Trash2, Save, Upload, Eye, EyeOff, Layers, Merge, Clock } from "lucide-react";
+import { Loader2, Sparkles, Plus, Trash2, Save, Upload, Eye, EyeOff, Layers, Merge, Clock, CheckCircle2, AlertCircle, CalendarDays } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 type Category = "new" | "improved" | "fixed" | "announcement";
@@ -43,6 +43,10 @@ export default function AdminUpdates() {
   const [frequency, setFrequency] = useState<Frequency>("off");
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [lastPulledAt, setLastPulledAt] = useState<string | null>(null);
+  const [lastPullStatus, setLastPullStatus] = useState<string | null>(null);
+  const [lastPullError, setLastPullError] = useState<string | null>(null);
+  const [lastPullFetched, setLastPullFetched] = useState<number | null>(null);
+  const [lastPullInserted, setLastPullInserted] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -66,19 +70,25 @@ export default function AdminUpdates() {
 
   useEffect(() => { if (isAdmin) refresh(); }, [isAdmin]);
 
+  const loadSettings = async () => {
+    const { data } = await supabase
+      .from("changelog_settings")
+      .select("pull_frequency, last_pulled_at, last_pull_status, last_pull_error, last_pull_fetched, last_pull_inserted")
+      .eq("id", true)
+      .maybeSingle();
+    if (data) {
+      setFrequency((data.pull_frequency as Frequency) ?? "off");
+      setLastPulledAt((data.last_pulled_at as string | null) ?? null);
+      setLastPullStatus((data as any).last_pull_status ?? null);
+      setLastPullError((data as any).last_pull_error ?? null);
+      setLastPullFetched((data as any).last_pull_fetched ?? null);
+      setLastPullInserted((data as any).last_pull_inserted ?? null);
+    }
+  };
+
   useEffect(() => {
     if (!isAdmin) return;
-    (async () => {
-      const { data } = await supabase
-        .from("changelog_settings")
-        .select("pull_frequency, last_pulled_at")
-        .eq("id", true)
-        .maybeSingle();
-      if (data) {
-        setFrequency((data.pull_frequency as Frequency) ?? "off");
-        setLastPulledAt((data.last_pulled_at as string | null) ?? null);
-      }
-    })();
+    loadSettings();
   }, [isAdmin]);
 
   const createDraft = async (
@@ -138,12 +148,7 @@ export default function AdminUpdates() {
       if (rows?.length) {
         setCommitsText(rows.map((r) => r.message).join("\n"));
       }
-      const { data: s } = await supabase
-        .from("changelog_settings")
-        .select("last_pulled_at")
-        .eq("id", true)
-        .maybeSingle();
-      setLastPulledAt((s?.last_pulled_at as string | null) ?? null);
+      await loadSettings();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to pull commits. Configure GITHUB_TOKEN and GITHUB_REPO secrets.");
     } finally {
@@ -211,6 +216,17 @@ export default function AdminUpdates() {
     } finally {
       setMerging(false);
     }
+  };
+
+  const deleteSelected = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} entr${ids.length === 1 ? "y" : "ies"}?`)) return;
+    const { error } = await supabase.from("changelog").delete().in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    setSelected(new Set());
+    toast.success(`Deleted ${ids.length}`);
+    await refresh();
   };
 
   const summarizeAllInBatches = async () => {
