@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Sparkles, Moon, Heart, Calendar, Brain, Utensils,
   Wallet, NotebookPen, Sun, Mountain, Flower2, Waves, Sprout, Home,
-  Cloud, Sunrise, Trees, Coffee, ArrowRight, Check, Quote,
+  Cloud, Sunrise, Trees, Coffee, ArrowRight, Check, Quote, Plus,
 } from "lucide-react";
 import botanical from "@/assets/landing-botanical.png";
 import storyImg from "@/assets/landing-story.jpg";
@@ -165,11 +165,65 @@ function HeroMockup() {
 /* ---------- Hero Today Preview card (animated + interactive) ---------- */
 
 function PreviewPanel() {
+  type DemoTask = { id: string; label: string; tag: "Morning" | "Afternoon" | "Evening"; done: boolean; glow: string };
+  const STORAGE_KEY = "careflow.demoTasks";
+  const seed: DemoTask[] = [
+    { id: "s1", label: "Pack lunches", tag: "Morning", done: true, glow: "bg-secondary/30" },
+    { id: "s2", label: "Call dentist for kids", tag: "Morning", done: false, glow: "bg-accent/20" },
+    { id: "s3", label: "Grocery run — veggies", tag: "Afternoon", done: false, glow: "bg-moon/20" },
+    { id: "s4", label: "15-min reset tidy", tag: "Evening", done: false, glow: "bg-warm/20" },
+  ];
+
+  const [tasks, setTasks] = useState<DemoTask[]>(seed);
+  const [input, setInput] = useState("");
+  const [burstId, setBurstId] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync user-added tasks to sessionStorage so Today demo banner can show them
+  useEffect(() => {
+    const userTasks = tasks.filter(t => !t.id.startsWith("s"));
+    try {
+      if (userTasks.length === 0) sessionStorage.removeItem(STORAGE_KEY);
+      else sessionStorage.setItem(STORAGE_KEY, JSON.stringify(userTasks));
+    } catch {}
+  }, [tasks]);
+
+  const currentSlot = (): "Morning" | "Afternoon" | "Evening" => {
+    const h = new Date().getHours();
+    if (h < 12) return "Morning";
+    if (h < 17) return "Afternoon";
+    return "Evening";
+  };
+
+  const addTask = () => {
+    const label = input.trim();
+    if (!label) return;
+    const slot = currentSlot();
+    const glow = slot === "Morning" ? "bg-accent/20" : slot === "Afternoon" ? "bg-moon/20" : "bg-warm/20";
+    setTasks(prev => [
+      ...prev,
+      { id: `u${Date.now()}`, label, tag: slot, done: false, glow },
+    ]);
+    setInput("");
+    inputRef.current?.focus();
+  };
+
+  const toggle = (id: string) => {
+    setTasks(prev => {
+      const next = prev.map(t => (t.id === id ? { ...t, done: !t.done } : t));
+      const target = next.find(t => t.id === id);
+      if (target?.done) {
+        setBurstId(id);
+        setTimeout(() => setBurstId(null), 700);
+      }
+      return next;
+    });
+  };
+
   return (
-    <Link
-      to="/today"
+    <div
       className="group relative mt-8 block w-full max-w-sm mx-auto sm:mx-0 sm:w-auto"
-      aria-label="Open Today dashboard demo"
+      aria-label="Interactive Today preview"
     >
       {/* Glow */}
       <div
@@ -178,7 +232,7 @@ function PreviewPanel() {
         style={{ background: "radial-gradient(50% 50% at 50% 50%, hsl(145 35% 80% / 0.45), transparent 70%)" }}
       />
 
-      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-[0_20px_50px_-20px_hsl(258_30%_40%/0.35)] backdrop-blur-xl transition-all duration-500 group-hover:shadow-[0_30px_60px_-15px_hsl(258_30%_40%/0.45)] group-hover:scale-[1.01]">
+      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-[0_20px_50px_-20px_hsl(258_30%_40%/0.35)] backdrop-blur-xl transition-all duration-500 group-hover:shadow-[0_30px_60px_-15px_hsl(258_30%_40%/0.45)]">
         {/* Header bar */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
           <div className="flex items-center gap-1.5">
@@ -221,34 +275,69 @@ function PreviewPanel() {
             ))}
           </div>
 
-          {/* Animated tasks */}
+          {/* Quick add */}
+          <form
+            onSubmit={e => { e.preventDefault(); addTask(); }}
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/70 px-2 py-1.5 focus-within:border-secondary/60 focus-within:bg-card transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="Quick add a task…"
+              aria-label="Quick add task"
+              className="flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/70"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim()}
+              className="rounded-md bg-secondary/80 px-2 py-0.5 text-[10px] font-medium text-white transition-all hover:bg-secondary disabled:opacity-40"
+            >
+              Add
+            </button>
+          </form>
+
+          {/* Interactive tasks */}
           <div className="space-y-1.5">
-            {[
-              { label: "Pack lunches", tag: "Morning", done: true, glow: "bg-secondary/30" },
-              { label: "Call dentist for kids", tag: "Morning", done: false, glow: "bg-accent/20" },
-              { label: "Grocery run — veggies", tag: "Afternoon", done: false, glow: "bg-moon/20" },
-              { label: "15-min reset tidy", tag: "Evening", done: false, glow: "bg-warm/20" },
-            ].map((task, idx) => (
-              <div
-                key={task.label}
-                className={`flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-2 py-1.5 text-[11px] transition-all duration-300 hover:bg-card hover:shadow-sm cursor-pointer hover:border-border/60`}
-                style={{ animationDelay: `${idx * 180}ms` }}
-              >
-                <span
-                  className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border transition-colors duration-300 ${
-                    task.done
-                      ? "border-secondary bg-secondary text-white"
-                      : "border-muted-foreground/30 group-hover:border-secondary/50"
-                  }`}
+            {tasks.map((task) => (
+              <div key={task.id} className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggle(task.id)}
+                  className="flex w-full items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-2 py-1.5 text-left text-[11px] transition-all duration-300 hover:border-border/60 hover:bg-card hover:shadow-sm"
                 >
-                  {task.done && <Check className="h-2.5 w-2.5" />}
-                </span>
-                <span className={`flex-1 ${task.done ? "text-muted-foreground line-through" : "text-foreground"}`}>
-                  {task.label}
-                </span>
-                <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${task.glow} text-foreground/80`}>
-                  {task.tag}
-                </span>
+                  <span
+                    className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border transition-all duration-300 ${
+                      task.done
+                        ? "scale-110 border-secondary bg-secondary text-white"
+                        : "border-muted-foreground/40"
+                    }`}
+                  >
+                    {task.done && <Check className="h-2.5 w-2.5 animate-scale-in" />}
+                  </span>
+                  <span className={`flex-1 transition-colors duration-300 ${task.done ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                    {task.label}
+                  </span>
+                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${task.glow} text-foreground/80`}>
+                    {task.tag}
+                  </span>
+                </button>
+                {burstId === task.id && (
+                  <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+                    {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+                      <span
+                        key={i}
+                        className="absolute block h-1 w-1 rounded-full bg-secondary"
+                        style={{
+                          transform: `rotate(${i * 45}deg) translateX(0)`,
+                          animation: `preview-burst-${i} 0.6s ease-out forwards`,
+                        }}
+                      />
+                    ))}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -264,7 +353,15 @@ function PreviewPanel() {
         {/* Bottom gradient fade */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-card/80 to-transparent" />
       </div>
-    </Link>
+      <style>{`
+        ${[0,1,2,3,4,5,6,7].map(i => `
+          @keyframes preview-burst-${i} {
+            0% { opacity: 1; transform: rotate(${i*45}deg) translateX(0) scale(1); }
+            100% { opacity: 0; transform: rotate(${i*45}deg) translateX(20px) scale(0.3); }
+          }
+        `).join("\n")}
+      `}</style>
+    </div>
   );
 }
 

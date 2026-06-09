@@ -44,6 +44,7 @@ import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
 import { DayPlanBoard } from "@/components/today/DayPlanBoard";
 import { ScheduleBoard } from "@/components/today/ScheduleBoard";
 import { cn } from "@/lib/utils";
+import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 
 export default function Today() {
   return (
@@ -204,6 +205,7 @@ function TodayInner() {
       )}>
         {/* Main column */}
         <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
+          <DemoTasksBanner />
           <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
           {isReallyToday && prefs.showCareyNudges && (
             <CareyProactiveCards onHide={() => setPrefs({ showCareyNudges: false })} />
