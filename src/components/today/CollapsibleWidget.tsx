@@ -42,7 +42,7 @@ export function CollapsibleWidget({ id, title, collapsed, onToggle, children }: 
           <span className="shrink-0 text-[10px] uppercase tracking-wider">Show</span>
         </button>
       ) : (
-        <div className="min-w-0 [&_*]:min-w-0">{children}</div>
+        <div className="min-w-0 [overflow-wrap:anywhere]">{children}</div>
       )}
     </div>
   );
