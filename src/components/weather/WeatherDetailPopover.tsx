@@ -15,7 +15,7 @@ export function WeatherDetailPopover({ trigger, align = "end" }: Props) {
       <PopoverContent
         align={align}
         sideOffset={8}
-        className="w-[22rem] overflow-hidden p-0 sm:w-[26rem]"
+        className="w-[22rem] max-h-[min(80vh,40rem)] overflow-y-auto overflow-x-hidden p-0 sm:w-[26rem]"
       >
         <WeatherDetailCard />
       </PopoverContent>
