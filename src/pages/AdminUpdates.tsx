@@ -196,10 +196,23 @@ export default function AdminUpdates() {
     }
   };
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id: string, shift = false) => {
+    const ordered = filteredEntries.map((e) => e.id);
     setSelected((prev) => {
       const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
+      if (shift && lastShiftIdRef.current && ordered.length) {
+        const a = ordered.indexOf(lastShiftIdRef.current);
+        const b = ordered.indexOf(id);
+        if (a >= 0 && b >= 0) {
+          const [lo, hi] = a < b ? [a, b] : [b, a];
+          for (let i = lo; i <= hi; i++) n.add(ordered[i]);
+          lastShiftIdRef.current = id;
+          return n;
+        }
+      }
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      lastShiftIdRef.current = id;
       return n;
     });
   };
