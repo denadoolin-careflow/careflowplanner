@@ -16,6 +16,13 @@ import { useStore } from "@/lib/store";
 import { todayISO } from "@/lib/store";
 import type { Task } from "@/lib/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useAtmosphere } from "@/lib/atmospheres";
+
+function atmoColor(palette: string[], index: number, alpha?: number): string {
+  const hex = palette[index % palette.length];
+  if (alpha == null || alpha === 1) return hex;
+  return `color-mix(in srgb, ${hex} ${Math.round(alpha * 100)}%, transparent)`;
+}
 
 function CondIcon({ c, isNight, className }: { c: WeatherCondition; isNight?: boolean; className?: string }) {
   const cls = cn("h-5 w-5", className);
@@ -151,6 +158,16 @@ function DueNextPreview({ tasks, slotLabel }: { tasks: Task[]; slotLabel: string
 
 export function HeaderNowStrip({ className }: { className?: string }) {
   useEnsureWeather();
+  const { atmosphere } = useAtmosphere();
+  const chipStyle = {
+    backgroundColor: atmoColor(atmosphere.palette, 2, 0.35),
+    borderColor: atmoColor(atmosphere.palette, 1, 0.45),
+    color: atmoColor(atmosphere.palette, 4, 1),
+  } as React.CSSProperties;
+  const chipMutedStyle = {
+    backgroundColor: atmoColor(atmosphere.palette, 2, 0.25),
+    borderColor: atmoColor(atmosphere.palette, 1, 0.35),
+  } as React.CSSProperties;
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
@@ -207,16 +224,17 @@ export function HeaderNowStrip({ className }: { className?: string }) {
   const ring = snap ? weatherTheme(snap.condition, snap.isNight).ring : "";
 
   return (
-    <div className={cn("flex items-center gap-2 text-sm", className)}>
+    <div className={cn("flex items-center gap-2 text-sm min-w-0", className)}>
       {/* ───── Mobile (compact + toggle) ───── */}
-      <div className="flex items-center gap-1.5 md:hidden">
+      <div className="flex items-center gap-1.5 md:hidden overflow-x-auto no-scrollbar max-w-full flex-nowrap">
         <Popover>
           <PopoverTrigger asChild>
             <button
               type="button"
               aria-label={`Open today's ${slotLabel} tasks`}
               title={`${slotLabel} tasks`}
-              className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 tabular-nums text-xs font-medium text-foreground/85 hover:bg-muted/70 transition"
+              style={chipStyle}
+              className="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 tabular-nums text-xs font-medium hover:brightness-110 transition"
             >
               {time}
               {slotTasks.length > 0 && (
@@ -235,8 +253,9 @@ export function HeaderNowStrip({ className }: { className?: string }) {
             trigger={
               <button
                 type="button"
+                style={chipStyle}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-xs text-foreground/85 hover:bg-muted/70 transition ring-1 ring-transparent",
+                  "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-xs hover:brightness-110 transition ring-1 ring-transparent",
                   ring,
                 )}
                 title={snap.conditionLabel ?? undefined}
@@ -253,7 +272,8 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           onClick={() => setMobileExpanded(v => !v)}
           aria-expanded={mobileExpanded}
           aria-label={mobileExpanded ? "Hide date and forecast" : "Show date and forecast"}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/40 bg-muted/40 text-foreground/70 hover:bg-muted/70 transition"
+          style={chipMutedStyle}
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border hover:brightness-110 transition"
         >
           <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", mobileExpanded && "rotate-180")} />
         </button>
@@ -310,14 +330,15 @@ export function HeaderNowStrip({ className }: { className?: string }) {
       )}
 
       {/* ───── Desktop / tablet (inline full strip) ───── */}
-      <div className="hidden items-center gap-2 md:flex">
+      <div className="hidden items-center gap-2 md:flex overflow-x-auto no-scrollbar max-w-full flex-nowrap">
       <Popover>
         <PopoverTrigger asChild>
           <button
             type="button"
             aria-label={`Open today's ${slotLabel} tasks`}
             title={`${slotLabel} tasks`}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 tabular-nums font-medium text-foreground/85 hover:bg-muted/70 transition"
+            style={chipStyle}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 tabular-nums font-medium hover:brightness-110 transition"
           >
             {time}
             {slotTasks.length > 0 && (
@@ -337,7 +358,8 @@ export function HeaderNowStrip({ className }: { className?: string }) {
             type="button"
             aria-label="Open today's tasks"
             title="Today's tasks"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85 hover:bg-muted/70 transition"
+            style={chipStyle}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 hover:brightness-110 transition"
           >
             {date}
           </button>
@@ -351,8 +373,9 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           trigger={
             <button
               type="button"
+              style={chipStyle}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85 hover:bg-muted/70 transition ring-1 ring-transparent hover:ring-2",
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 hover:brightness-110 transition ring-1 ring-transparent hover:ring-2",
                 weatherTheme(snap.condition, snap.isNight).ring,
               )}
               title={snap.conditionLabel ?? undefined}
@@ -360,12 +383,12 @@ export function HeaderNowStrip({ className }: { className?: string }) {
               <CondIcon c={snap.condition} isNight={snap.isNight} />
               <span className="tabular-nums font-medium">{tempStr}</span>
               {rangeStr && (
-                <span className="tabular-nums text-foreground/60">· {rangeStr}</span>
+                <span className="tabular-nums opacity-75">· {rangeStr}</span>
               )}
               {snap.conditionLabel && (
-                <span className="hidden truncate text-foreground/70 lg:inline">· {snap.conditionLabel}</span>
+                <span className="hidden truncate opacity-80 lg:inline">· {snap.conditionLabel}</span>
               )}
-              <span className="max-w-[100px] truncate text-foreground/60">· {snap.locationLabel}</span>
+              <span className="max-w-[100px] truncate opacity-75">· {snap.locationLabel}</span>
             </button>
           }
         />
@@ -375,7 +398,8 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           trigger={
             <button
               type="button"
-              className="hidden items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/80 hover:bg-muted/70 transition xl:inline-flex"
+              style={chipStyle}
+              className="hidden shrink-0 items-center gap-1 rounded-full border px-2 py-1 hover:brightness-110 transition xl:inline-flex"
               title="Open weather details"
             >
               {upcoming.map(d => (
@@ -383,12 +407,12 @@ export function HeaderNowStrip({ className }: { className?: string }) {
                   key={d.date}
                   className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5"
                 >
-                  <span className="text-[11px] uppercase tracking-wide text-foreground/60">
+                  <span className="text-[11px] uppercase tracking-wide opacity-70">
                     {format(d.dateObj, "EEE")}
                   </span>
                   <CondIcon c={d.condition} className="h-4 w-4" />
                   <span className="tabular-nums text-xs font-medium">{fmtT(d.highC)}</span>
-                  <span className="tabular-nums text-xs text-foreground/55">{fmtT(d.lowC)}</span>
+                  <span className="tabular-nums text-xs opacity-65">{fmtT(d.lowC)}</span>
                 </span>
               ))}
             </button>
