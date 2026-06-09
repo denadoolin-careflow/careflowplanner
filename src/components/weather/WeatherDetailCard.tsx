@@ -10,6 +10,7 @@ import type { WeatherCondition } from "@/lib/weather";
 import { weatherTheme, dayDressTips, relativeFromNow } from "@/lib/weather-theme";
 import { LocationPickerPopover } from "./LocationPickerPopover";
 import { UnitToggle } from "./UnitToggle";
+import { useAtmosphere } from "@/lib/atmospheres";
 
 function GlyphIcon({
   c, isNight, className,
@@ -29,12 +30,22 @@ function GlyphIcon({
 export function WeatherDetailCard({ className }: { className?: string }) {
   const snap = useWeatherSnapshot();
   const [unit] = useTempUnit();
+  const { atmosphere } = useAtmosphere();
   const fmtT = (c: number) => `${unit === "F" ? cToF(c) : Math.round(c)}°`;
 
   const theme = useMemo(
     () => weatherTheme(snap?.condition ?? "cloudy", snap?.isNight),
     [snap?.condition, snap?.isNight],
   );
+
+  const p = atmosphere.palette;
+  const bandStyle: React.CSSProperties = {
+    backgroundImage: `linear-gradient(135deg, ${p[4 % p.length] ?? p[0]}, ${p[1 % p.length] ?? p[0]} 55%, ${p[3 % p.length] ?? p[0]})`,
+    color: p[2 % p.length] ?? "#fff",
+  };
+  const auraStyle: React.CSSProperties = {
+    backgroundColor: `color-mix(in srgb, ${p[3 % p.length] ?? p[0]} 45%, transparent)`,
+  };
 
   if (!snap) {
     return (
@@ -68,12 +79,13 @@ export function WeatherDetailCard({ className }: { className?: string }) {
   return (
     <div className={cn("flex flex-col", className)}>
       {/* Header band — colored by condition */}
-      <div className={cn("relative overflow-hidden rounded-t-md px-4 py-4", theme.band)}>
+      <div
+        style={bandStyle}
+        className="relative overflow-hidden rounded-t-md px-4 py-4"
+      >
         <div
-          className={cn(
-            "pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full blur-2xl",
-            theme.aura,
-          )}
+          style={auraStyle}
+          className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full blur-2xl"
         />
         <div className="relative flex items-start justify-between gap-3">
           <div className="min-w-0">
