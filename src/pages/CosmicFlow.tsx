@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sparkles, User, Calendar } from "lucide-react";
+import { User, Calendar } from "lucide-react";
 import { useBirthChart } from "@/lib/cosmic/hooks";
 import { useNatalChart, useDailyGuidance } from "@/lib/cosmic/v2-hooks";
 import { CosmicHero } from "@/components/cosmic/CosmicHero";
