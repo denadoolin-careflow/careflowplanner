@@ -570,7 +570,12 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
 
         {/* Scrollable body */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5">
-          <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
+          <div className={cn(
+            "grid gap-4 transition-all",
+            sideHidden
+              ? "lg:mx-auto lg:max-w-3xl lg:grid-cols-1"
+              : "lg:grid-cols-[1.55fr_1fr]",
+          )}>
             {/* ─────────── Left column: work surface ─────────── */}
             <div className="space-y-4">
               {/* Checklist */}
@@ -721,7 +726,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             </div>
 
             {/* ─────────── Right column: context & assist ─────────── */}
-            <div className="space-y-4">
+            <div className={cn("space-y-4", sideHidden && "lg:hidden")}>
               <FlowContextCard draft={draft} set={set} />
 
               {/* AI Assistant card */}
