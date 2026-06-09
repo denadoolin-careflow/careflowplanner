@@ -384,7 +384,7 @@ export default function AdminUpdates() {
         <p className="text-xs text-muted-foreground">
           Automatically fetch new commits from GitHub on a schedule (uses last pull time as the “since” date).
         </p>
-        <div className="mt-3 flex flex-wrap items-end gap-2">
+        <div className="mt-3 flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Frequency</label>
             <Select value={frequency} onValueChange={(v) => saveSchedule(v as Frequency)} disabled={savingSchedule}>
@@ -397,15 +397,62 @@ export default function AdminUpdates() {
               </SelectContent>
             </Select>
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            Last pull: {lastPulledAt ? format(parseISO(lastPulledAt), "MMM d, yyyy HH:mm") : "never"}
-          </p>
+        </div>
+        <div className="mt-3 grid gap-2 text-[11px] sm:grid-cols-3">
+          <div className="rounded-md border border-border bg-muted/20 p-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Last pull</div>
+            <div className="mt-0.5 font-medium">
+              {lastPulledAt ? format(parseISO(lastPulledAt), "MMM d, yyyy HH:mm") : "Never"}
+            </div>
+          </div>
+          <div className="rounded-md border border-border bg-muted/20 p-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Next pull</div>
+            <div className="mt-0.5 font-medium">
+              {nextPullAt ? format(nextPullAt, "MMM d, yyyy HH:mm 'UTC'") : "Off"}
+            </div>
+          </div>
+          <div className="rounded-md border border-border bg-muted/20 p-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Status</div>
+            <div className="mt-0.5 flex items-center gap-1 font-medium">
+              {lastPullStatus === "success" ? (
+                <><CheckCircle2 className="h-3 w-3 text-emerald-500" /> Success
+                  {lastPullFetched != null && (
+                    <span className="ml-1 text-muted-foreground">
+                      ({lastPullFetched} fetched, {lastPullInserted ?? 0} new)
+                    </span>
+                  )}
+                </>
+              ) : lastPullStatus === "error" ? (
+                <><AlertCircle className="h-3 w-3 text-destructive" /> Error</>
+              ) : (
+                <span className="text-muted-foreground">No runs yet</span>
+              )}
+            </div>
+            {lastPullStatus === "error" && lastPullError && (
+              <div className="mt-1 line-clamp-2 text-[10px] text-destructive/80" title={lastPullError}>
+                {lastPullError}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Entries</h2>
+          {filteredEntries.length > 0 && (
+            <label className="ml-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={(v) => {
+                  if (v) setSelected(new Set(filteredEntries.map((e) => e.id)));
+                  else setSelected(new Set());
+                }}
+                aria-label="Select all"
+              />
+              Select all
+            </label>
+          )}
           <div className="ml-auto flex flex-wrap items-center gap-1">
             {(["all","new","improved","fixed","announcement"] as FilterCategory[]).map((c) => (
               <Button
@@ -426,6 +473,9 @@ export default function AdminUpdates() {
             <Button size="sm" variant="outline" disabled={merging || selected.size < 2} onClick={mergeSelected}>
               {merging ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Merge className="mr-1 h-3 w-3" />}
               Merge selected
+            </Button>
+            <Button size="sm" variant="outline" className="text-destructive" onClick={deleteSelected}>
+              <Trash2 className="mr-1 h-3 w-3" /> Delete selected
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
           </div>
