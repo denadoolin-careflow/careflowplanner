@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef } from "react";
 import { format } from "date-fns";
-import { Sunrise, Sun, Moon, ListChecks, Plus, CornerDownLeft } from "lucide-react";
+import { Sunrise, Sun, Moon, ListChecks, Plus, CornerDownLeft, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useStore } from "@/lib/store";
@@ -11,6 +11,15 @@ import { toast } from "sonner";
 
 type Slot = "morning" | "afternoon" | "evening";
 type DayPart = "Morning" | "Afternoon" | "Evening" | "Anytime";
+
+/** Heuristic: task counts as a home/cleaning task. */
+function isHomeTask(t: { area?: string; tags?: string[]; title?: string }) {
+  if (t.area === "Home") return true;
+  const tags = (t.tags ?? []).map(x => x.toLowerCase());
+  if (tags.some(x => ["home", "cleaning", "clean", "chore", "chores", "tidy", "laundry"].includes(x))) return true;
+  const title = (t.title ?? "").toLowerCase();
+  return /\b(clean|tidy|vacuum|laundry|dishes|sweep|mop|dust|trash|garbage|chore)\b/.test(title);
+}
 
 const SLOTS: { slot: Slot; label: string; icon: typeof Sunrise; meal: "Breakfast" | "Lunch" | "Dinner"; dayPart: DayPart; tint: string }[] = [
   { slot: "morning",   label: "Morning",   icon: Sunrise, meal: "Breakfast", dayPart: "Morning",   tint: "from-amber-100/70 to-transparent" },
@@ -45,7 +54,9 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
       <div className="grid gap-3 p-3 sm:p-4 md:grid-cols-3">
         {SLOTS.map(s => {
           const Icon = s.icon;
-          const tasks = tasksByPart[s.dayPart];
+          const allSlotTasks = tasksByPart[s.dayPart];
+          const homeTasks = allSlotTasks.filter(isHomeTask);
+          const otherTasks = allSlotTasks.filter(t => !isHomeTask(t));
           return (
             <div key={s.slot} className={cn("rounded-2xl border border-border/40 bg-gradient-to-br p-3 flex flex-col", s.tint)}>
               <div className="mb-2 flex items-center gap-2">
@@ -55,7 +66,7 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
                 <div className="min-w-0">
                   <div className="font-display text-base font-semibold text-foreground">{s.label}</div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {tasks.length} task{tasks.length === 1 ? "" : "s"}
+                    {allSlotTasks.length} task{allSlotTasks.length === 1 ? "" : "s"}
                   </div>
                 </div>
               </div>
@@ -71,12 +82,12 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
                 }}
               />
 
-              <div className="mt-2 flex-1">
+              <div className="mt-2 flex-1 space-y-2">
                 <TaskGroup
                   label={s.dayPart}
                   date={date}
                   dayPart={s.dayPart as "Morning" | "Afternoon" | "Evening"}
-                  tasks={tasks}
+                  tasks={otherTasks}
                   onToggle={toggleTask}
                   onTaskClick={onTaskClick}
                   onDrop={async (id) => {
@@ -88,6 +99,36 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
                   onAdd={async (title) => {
                     await addTask({ title, dueDate: iso, dayPart: s.dayPart as "Morning" | "Afternoon" | "Evening" });
                   }}
+                />
+                <TaskGroup
+                  label="Home & cleaning"
+                  icon={Home}
+                  date={date}
+                  dayPart={s.dayPart as "Morning" | "Afternoon" | "Evening"}
+                  tasks={homeTasks}
+                  onToggle={toggleTask}
+                  onTaskClick={onTaskClick}
+                  onDrop={async (id) => {
+                    const t = state.tasks.find(x => x.id === id);
+                    if (!t) return;
+                    await updateTask(id, {
+                      dueDate: iso,
+                      dayPart: s.dayPart as "Morning" | "Afternoon" | "Evening",
+                      area: "Home",
+                      inbox: false,
+                    });
+                    toast.success(`Scheduled "${t.title}" → ${s.dayPart} · Home`);
+                  }}
+                  onAdd={async (title) => {
+                    await addTask({
+                      title,
+                      dueDate: iso,
+                      dayPart: s.dayPart as "Morning" | "Afternoon" | "Evening",
+                      area: "Home",
+                    });
+                  }}
+                  placeholder="Add a home/cleaning task…"
+                  emptyText="No home tasks here."
                 />
               </div>
             </div>
@@ -163,9 +204,10 @@ function QuickAddSlot({ onAdd }: { onAdd: (title: string) => Promise<void> }) {
 }
 
 function TaskGroup({
-  label, tasks, onToggle, onTaskClick, onDrop, onAdd,
+  label, icon: IconComp, tasks, onToggle, onTaskClick, onDrop, onAdd, placeholder, emptyText,
 }: {
   label: string;
+  icon?: typeof Sunrise;
   date: Date;
   dayPart?: "Morning" | "Afternoon" | "Evening";
   tasks: { id: string; title: string; done: boolean; estMinutes?: number | null }[];
@@ -173,6 +215,8 @@ function TaskGroup({
   onTaskClick?: (id: string) => void;
   onDrop: (id: string) => Promise<void>;
   onAdd: (title: string) => Promise<void>;
+  placeholder?: string;
+  emptyText?: string;
 }) {
   const [hover, setHover] = useState(false);
   const [draft, setDraft] = useState("");
@@ -197,13 +241,14 @@ function TaskGroup({
         hover ? "border-primary/70 bg-primary/10 ring-2 ring-primary/40" : "border-border/40",
       )}
     >
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
+      <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {IconComp ? <IconComp className="h-3 w-3 text-primary" /> : null}
+        <span>{label}</span>
         <span className="ml-1 text-muted-foreground/60">· {tasks.length}</span>
       </div>
       {tasks.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border/50 px-2 py-3 text-center text-xs text-muted-foreground">
-          Nothing yet.
+          {emptyText ?? "Nothing yet."}
         </p>
       ) : (
         <ul className="space-y-1">
@@ -240,7 +285,7 @@ function TaskGroup({
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Add a task…"
+          placeholder={placeholder ?? "Add a task…"}
           className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/70"
         />
         <button
