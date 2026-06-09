@@ -263,9 +263,21 @@ export function HeaderNowStrip({ className }: { className?: string }) {
       {mobileExpanded && (
         <div className="fixed inset-x-0 top-[52px] z-30 border-b border-border/50 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-md md:hidden">
           <div className="mx-auto flex max-w-screen-sm flex-wrap items-center gap-1.5 text-xs">
-            <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85">
-              {shortDate}
-            </span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Open today's tasks"
+                  title="Today's tasks"
+                  className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85 hover:bg-muted/70 transition"
+                >
+                  {shortDate}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" sideOffset={6} className="w-auto p-0">
+                <TodayPreview tasks={state.tasks} navigate={navigate} />
+              </PopoverContent>
+            </Popover>
             {snap && (
               <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/75">
                 <span className="tabular-nums">{rangeStr}</span>
