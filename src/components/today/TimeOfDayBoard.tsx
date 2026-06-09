@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { format } from "date-fns";
-import { Sunrise, Sun, Moon, ListChecks, Plus } from "lucide-react";
+import { Sunrise, Sun, Moon, ListChecks, Plus, CornerDownLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useStore } from "@/lib/store";
