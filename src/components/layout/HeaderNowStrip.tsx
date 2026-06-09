@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, isToday } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
-  Moon, Sun, Zap, CheckCircle2,
+  Moon, Sun, Zap, CheckCircle2, Circle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
@@ -28,6 +28,95 @@ function CondIcon({ c, isNight, className }: { c: WeatherCondition; isNight?: bo
   if (c === "snow") return <CloudSnow className={cls} />;
   if (c === "thunderstorm") return <Zap className={cls} />;
   return <Cloud className={cls} />;
+}
+
+function TaskMiniRow({ t, navigate }: { t: Task; navigate: ReturnType<typeof useNavigate> }) {
+  return (
+    <button
+      type="button"
+      key={t.id}
+      onClick={() => {
+        navigate(`/today?task=${t.id}`);
+      }}
+      className="flex w-full items-start gap-2 rounded-md px-1 py-1 text-left hover:bg-muted/60 transition"
+    >
+      {t.done ? (
+        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+      ) : (
+        <Circle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+      )}
+      <span className={cn("line-clamp-2 text-xs leading-snug", t.done && "text-muted-foreground line-through")}>
+        {t.title}
+      </span>
+    </button>
+  );
+}
+
+function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType<typeof useNavigate> }) {
+  const isoToday = todayISO();
+  const groups = useMemo(() => {
+    const all = tasks
+      .filter((t) => t.dueDate === isoToday && t.status !== "parked" && !t.parentTaskId)
+      .sort((a, b) => {
+        if (!!b.isTopThree !== !!a.isTopThree) return b.isTopThree ? 1 : -1;
+        const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        return (
+          (rank[a.priority ?? "medium"] - rank[b.priority ?? "medium"]) ||
+          ((a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        );
+      });
+    const morning = all.filter((t) => t.dayPart === "Morning");
+    const afternoon = all.filter((t) => t.dayPart === "Afternoon");
+    const evening = all.filter((t) => t.dayPart === "Evening" || t.dayPart === "Late Night");
+    const anytime = all.filter((t) => !t.dayPart);
+    return { morning, afternoon, evening, anytime };
+  }, [tasks, isoToday]);
+
+  const sections: { label: string; items: Task[] }[] = [
+    { label: "Morning", items: groups.morning },
+    { label: "Afternoon", items: groups.afternoon },
+    { label: "Evening", items: groups.evening },
+    { label: "Anytime", items: groups.anytime },
+  ];
+
+  const total = sections.reduce((s, sec) => s + sec.items.length, 0);
+
+  return (
+    <div className="w-64 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Today</div>
+        <span className="text-[10px] font-medium text-muted-foreground">{total} tasks</span>
+      </div>
+      {total === 0 ? (
+        <p className="text-xs text-muted-foreground">Nothing scheduled for today.</p>
+      ) : (
+        <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+          {sections.map((sec) =>
+            sec.items.length === 0 ? null : (
+              <div key={sec.label}>
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+                  {sec.label}
+                </div>
+                <div className="space-y-0.5">
+                  {sec.items.map((t) => (
+                    <TaskMiniRow key={t.id} t={t} navigate={navigate} />
+                  ))}
+                </div>
+              </div>
+            )
+          )}
+        </div>
+      )}
+      <div className="mt-2 border-t border-border/40 pt-2">
+        <Link
+          to="/today"
+          className="block text-[11px] font-medium text-primary hover:underline"
+        >
+          Open Today →
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 function DueNextPreview({ tasks, slotLabel }: { tasks: Task[]; slotLabel: string }) {
@@ -71,6 +160,7 @@ export function HeaderNowStrip({ className }: { className?: string }) {
   const snap = useWeatherSnapshot();
   const [unit] = useTempUnit();
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  const navigate = useNavigate();
 
   const time = useMemo(() => format(now, "h:mm a"), [now]);
   const date = useMemo(() => format(now, "EEE, MMM d"), [now]);
@@ -173,9 +263,21 @@ export function HeaderNowStrip({ className }: { className?: string }) {
       {mobileExpanded && (
         <div className="fixed inset-x-0 top-[52px] z-30 border-b border-border/50 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-md md:hidden">
           <div className="mx-auto flex max-w-screen-sm flex-wrap items-center gap-1.5 text-xs">
-            <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85">
-              {shortDate}
-            </span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Open today's tasks"
+                  title="Today's tasks"
+                  className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85 hover:bg-muted/70 transition"
+                >
+                  {shortDate}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" sideOffset={6} className="w-auto p-0">
+                <TodayPreview tasks={state.tasks} navigate={navigate} />
+              </PopoverContent>
+            </Popover>
             {snap && (
               <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/75">
                 <span className="tabular-nums">{rangeStr}</span>
@@ -229,14 +331,21 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           <DueNextPreview tasks={slotTasks} slotLabel={slotLabel} />
         </PopoverContent>
       </Popover>
-      <Link
-        to="/today"
-        aria-label="Open Today"
-        title="Open today's tasks"
-        className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85 hover:bg-muted/70 transition"
-      >
-        {date}
-      </Link>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label="Open today's tasks"
+            title="Today's tasks"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85 hover:bg-muted/70 transition"
+          >
+            {date}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" sideOffset={6} className="w-auto p-0">
+          <TodayPreview tasks={state.tasks} navigate={navigate} />
+        </PopoverContent>
+      </Popover>
       {snap && tempStr && (
         <WeatherDetailPopover
           trigger={
