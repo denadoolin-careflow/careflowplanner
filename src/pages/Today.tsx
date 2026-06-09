@@ -7,7 +7,7 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useStore } from "@/lib/store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
-import { Wind, ArrowUp, ArrowDown, RotateCcw, GripVertical } from "lucide-react";
+import { Wind, ArrowUp, ArrowDown, RotateCcw, GripVertical, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { RhythmHeader } from "@/components/today/rhythm/RhythmHeader";
@@ -37,6 +37,11 @@ import { MoonPrioritiesCard } from "@/components/today/widgets/MoonPrioritiesCar
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
 import { useSidebarOrder } from "@/lib/today-sidebar-order";
+import { useTodayView, useCollapsedWidgets, useSidebarHidden } from "@/lib/today-view";
+import { CollapsibleWidget } from "@/components/today/CollapsibleWidget";
+import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
+import { DayPlanBoard } from "@/components/today/DayPlanBoard";
+import { ScheduleBoard } from "@/components/today/ScheduleBoard";
 import { cn } from "@/lib/utils";
 
 export default function Today() {
@@ -107,6 +112,9 @@ function TodayInner() {
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
 
   const [reorderMode, setReorderMode] = useState(false);
+  const [view] = useTodayView();
+  const { collapsed, toggle: toggleCollapsed } = useCollapsedWidgets();
+  const [sidebarHidden, setSidebarHidden] = useSidebarHidden();
 
   const widgetRegistry: { id: string; label: string; render: () => JSX.Element | null }[] = [
     { id: "brain-dump",       label: "Brain dump",       render: () => <BrainDumpWidget /> },
@@ -131,21 +139,47 @@ function TodayInner() {
   const { order, move, reset } = useSidebarOrder(canonical);
   const byId = new Map(widgetRegistry.map(w => [w.id, w]));
 
+  const renderMain = () => {
+    if (view === "timeofday") return <TimeOfDayBoard date={day} onTaskClick={setEditTaskId} />;
+    if (view === "plan") return <DayPlanBoard date={day} onTaskClick={setEditTaskId} />;
+    if (view === "schedule") return <ScheduleBoard date={day} onTaskClick={setEditTaskId} onApptClick={setEditApptId} />;
+    return (
+      <>
+        <DailySnapshotRow date={day} />
+        {isReallyToday && <WeatherRemindersCard />}
+        <WhatFitsNow date={day} onTaskClick={setEditTaskId} />
+        <RhythmSection slot="morning"   date={day} defaultOpen={nowSlot === "morning"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
+        <RhythmSection slot="afternoon" date={day} defaultOpen={nowSlot === "afternoon" || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
+        <RhythmSection slot="evening"   date={day} defaultOpen={nowSlot === "evening"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
+      </>
+    );
+  };
+
   return (
     <>
-      <div className="mx-auto grid w-full min-w-0 max-w-6xl gap-4 overflow-x-clip md:gap-5 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+      <div className={cn(
+        "mx-auto grid w-full min-w-0 max-w-6xl gap-4 overflow-x-clip md:gap-5 lg:gap-6",
+        sidebarHidden
+          ? "md:grid-cols-1"
+          : "md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px]",
+      )}>
         {/* Main column */}
         <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
-          <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
+          <div className="relative">
+            <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
+            <button
+              type="button"
+              onClick={() => setSidebarHidden(!sidebarHidden)}
+              className="absolute right-3 top-3 hidden md:inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/80 px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur hover:text-foreground"
+              title={sidebarHidden ? "Show widgets" : "Hide widgets"}
+            >
+              {sidebarHidden ? <PanelRightOpen className="h-3 w-3" /> : <PanelRightClose className="h-3 w-3" />}
+              {sidebarHidden ? "Widgets" : "Hide"}
+            </button>
+          </div>
           {isReallyToday && <CareyProactiveCards />}
           <TopThreeStrip date={day} onTaskClick={setEditTaskId} />
-          <DailySnapshotRow date={day} />
-          {isReallyToday && <WeatherRemindersCard />}
-          <WhatFitsNow date={day} onTaskClick={setEditTaskId} />
-
-          <RhythmSection slot="morning"   date={day} defaultOpen={nowSlot === "morning"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
-          <RhythmSection slot="afternoon" date={day} defaultOpen={nowSlot === "afternoon" || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
-          <RhythmSection slot="evening"   date={day} defaultOpen={nowSlot === "evening"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
+          {renderMain()}
 
           <EndOfDayCard />
 
@@ -161,6 +195,7 @@ function TodayInner() {
         </div>
 
         {/* Sidebar */}
+        {!sidebarHidden && (
         <aside className="min-w-0 max-w-full space-y-3 md:space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
           <div className="flex items-center justify-between gap-2 px-1">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -198,7 +233,19 @@ function TodayInner() {
             if (!w) return null;
             const node = w.render();
             if (!node) return null;
-            if (!reorderMode) return <div key={id}>{node}</div>;
+            if (!reorderMode) {
+              return (
+                <CollapsibleWidget
+                  key={id}
+                  id={id}
+                  title={w.label}
+                  collapsed={collapsed.has(id)}
+                  onToggle={() => toggleCollapsed(id)}
+                >
+                  {node}
+                </CollapsibleWidget>
+              );
+            }
             return (
               <div key={id} className="relative">
                 <div className="absolute -left-1 top-1 z-10 flex flex-col gap-0.5">
@@ -228,6 +275,7 @@ function TodayInner() {
             );
           })}
         </aside>
+        )}
       </div>
 
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
