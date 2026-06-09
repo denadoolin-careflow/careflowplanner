@@ -179,7 +179,10 @@ function TodayInner() {
 
   return (
     <>
-      <div className={cn(
+      <div
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        className={cn(
         "mx-auto grid w-full min-w-0 max-w-6xl gap-4 overflow-x-clip md:gap-5 lg:gap-6",
         sidebarHidden
           ? "md:grid-cols-1"
