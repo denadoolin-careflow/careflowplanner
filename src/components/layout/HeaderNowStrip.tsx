@@ -139,12 +139,22 @@ export function HeaderNowStrip({ className }: { className?: string }) {
 
       {/* ───── Desktop / tablet (inline full strip) ───── */}
       <div className="hidden items-center gap-2 md:flex">
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 tabular-nums font-medium text-foreground/85">
+      <Link
+        to={`/today#slot-${currentSlot}`}
+        aria-label={`Open today's ${slotLabel} tasks`}
+        title={`Jump to ${slotLabel} tasks`}
+        className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 tabular-nums font-medium text-foreground/85 hover:bg-muted/70 transition"
+      >
         {time}
-      </span>
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85">
+      </Link>
+      <Link
+        to="/today"
+        aria-label="Open Today"
+        title="Open today's tasks"
+        className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85 hover:bg-muted/70 transition"
+      >
         {date}
-      </span>
+      </Link>
       {snap && tempStr && (
         <WeatherDetailPopover
           trigger={
