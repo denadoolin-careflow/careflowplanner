@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,7 @@ export default function AdminUpdates() {
   const [lastPullError, setLastPullError] = useState<string | null>(null);
   const [lastPullFetched, setLastPullFetched] = useState<number | null>(null);
   const [lastPullInserted, setLastPullInserted] = useState<number | null>(null);
+  const lastShiftIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -195,10 +196,23 @@ export default function AdminUpdates() {
     }
   };
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id: string, shift = false) => {
+    const ordered = filteredEntries.map((e) => e.id);
     setSelected((prev) => {
       const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
+      if (shift && lastShiftIdRef.current && ordered.length) {
+        const a = ordered.indexOf(lastShiftIdRef.current);
+        const b = ordered.indexOf(id);
+        if (a >= 0 && b >= 0) {
+          const [lo, hi] = a < b ? [a, b] : [b, a];
+          for (let i = lo; i <= hi; i++) n.add(ordered[i]);
+          lastShiftIdRef.current = id;
+          return n;
+        }
+      }
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      lastShiftIdRef.current = id;
       return n;
     });
   };
@@ -491,7 +505,7 @@ export default function AdminUpdates() {
               entry={entry}
               onChange={refresh}
               selected={selected.has(entry.id)}
-              onToggleSelect={() => toggleSelect(entry.id)}
+              onToggleSelect={(shift) => toggleSelect(entry.id, shift)}
             />
           ))
         )}
@@ -503,7 +517,7 @@ export default function AdminUpdates() {
 function EntryEditor({
   entry, onChange, selected, onToggleSelect,
 }: {
-  entry: Entry; onChange: () => void; selected: boolean; onToggleSelect: () => void;
+  entry: Entry; onChange: () => void; selected: boolean; onToggleSelect: (shift: boolean) => void;
 }) {
   const [draft, setDraft] = useState(entry);
   const [saving, setSaving] = useState(false);
@@ -532,7 +546,22 @@ function EntryEditor({
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-2 flex items-center gap-2">
-        <Checkbox checked={selected} onCheckedChange={onToggleSelect} aria-label="Select entry" />
+        <div
+          className="flex items-center gap-2"
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest("button")) return;
+            onToggleSelect(e.shiftKey);
+          }}
+        >
+          <Checkbox
+            checked={selected}
+            onCheckedChange={(v) => {
+              if (v !== selected) onToggleSelect(false);
+            }}
+            aria-label="Select entry"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
         <Badge variant={draft.published ? "default" : "secondary"} className="text-[10px] uppercase tracking-wider">
           {draft.published ? "Published" : "Draft"}
         </Badge>
