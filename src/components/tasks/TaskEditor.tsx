@@ -256,7 +256,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:h-auto sm:max-h-[88vh] sm:w-[min(96vw,60rem)] sm:rounded-lg"
+        className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:h-auto sm:max-h-[88vh] sm:w-[min(96vw,60rem)] sm:rounded-lg lg:w-[min(96vw,72rem)] lg:max-h-[90vh]"
       >
         {/* Sticky header */}
         <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-3 py-3 backdrop-blur sm:px-5">
@@ -374,7 +374,15 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
           </div>
 
           {/* Quick details bar — pills */}
-          <div className="-mx-1 mt-3 flex flex-wrap items-center gap-1.5 px-1">
+          <div
+            className={cn(
+              "-mx-1 mt-3 flex items-center gap-1.5 px-1",
+              // Mobile: single horizontally-scrollable row so 6+ pills don't
+              // explode the header height. Desktop: wrap normally.
+              "overflow-x-auto overflow-y-hidden whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+              "sm:flex-wrap sm:overflow-visible sm:whitespace-normal",
+            )}
+          >
             <PillPopover
               icon={<CalendarIcon className="h-3.5 w-3.5" />}
               label={draft.dueDate ? format(parseISO(draft.dueDate), "EEE, MMM d") : "Today"}
@@ -852,7 +860,7 @@ function PillPopover({
         <button
           type="button"
           className={cn(
-            "group inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12px] transition-colors sm:h-7 sm:px-2.5",
+            "group inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12px] transition-colors sm:h-7 sm:px-2.5",
             active
               ? "border-primary/40 bg-primary/10 text-foreground hover:bg-primary/15"
               : "border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground"

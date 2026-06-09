@@ -132,6 +132,23 @@ function TodayInner() {
   const [sidebarHidden, setSidebarHidden] = useSidebarHidden();
   const [prefs, setPrefs] = useTodayPrefs();
 
+  // Auto-hide widgets sidebar while a task editor is open so the focused
+  // editor isn't competing with the rail. Restore the prior state on close.
+  const priorSidebarRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (editTaskId) {
+      if (priorSidebarRef.current === null) {
+        priorSidebarRef.current = sidebarHidden;
+        if (!sidebarHidden) setSidebarHidden(true);
+      }
+    } else if (priorSidebarRef.current !== null) {
+      const prev = priorSidebarRef.current;
+      priorSidebarRef.current = null;
+      if (sidebarHidden !== prev) setSidebarHidden(prev);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editTaskId]);
+
   // Swipe between Today / Week / Month on touch devices.
   const navigate = useNavigate();
   const touchRef = useRef<{ x: number; y: number; t: number } | null>(null);
