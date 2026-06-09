@@ -22,62 +22,63 @@ export function TopThreeStrip({
 
   return (
     <div className="mb-3 rounded-xl border border-primary/20 bg-primary/5 p-2.5">
-      <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
-        <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
           <Sparkles className="h-3 w-3 shrink-0" />
-          <span className="truncate">Top 3 today</span>
+          <span>Top 3 today</span>
+          <span className="ml-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] tabular-nums text-primary">
+            {doneCount}/{Math.max(top.length, 1)}
+          </span>
         </div>
-        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
-          {doneCount}/{Math.max(top.length, 1)} done
-        </span>
-      </div>
-      {top.length === 0 ? (
-        <p className="px-1 py-1 text-[11px] text-muted-foreground">
-          Star up to 3 tasks below to anchor your day.
-        </p>
-      ) : (
-        <ul className="grid gap-1 sm:grid-cols-3">
-          {top.map((t, idx) => (
-            <li
-              key={t.id}
-              className={cn(
-                "flex min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border/40 bg-card/70 px-2 py-1.5 transition",
-                "hover:border-primary/30 hover:bg-card",
-                t.done && "opacity-60",
-              )}
-            >
-              <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">
-                {idx + 1}
-              </span>
-              <Checkbox
-                checked={t.done}
-                onCheckedChange={() => toggleTask(t.id)}
-                aria-label={`Complete ${t.title}`}
-              />
-              <button
-                type="button"
+        {top.length === 0 ? (
+          <p className="flex-1 text-[11px] text-muted-foreground">
+            Star up to 3 tasks below to anchor your day.
+          </p>
+        ) : (
+          <ul className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+            {top.map((t, idx) => (
+              <li
+                key={t.id}
                 className={cn(
-                  "min-w-0 flex-1 truncate text-left text-xs",
-                  t.done && "line-through",
+                  "inline-flex min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-full border border-border/40 bg-card/70 px-2 py-1 transition",
+                  "hover:border-primary/30 hover:bg-card",
+                  t.done && "opacity-60",
                 )}
-                onClick={() => onTaskClick?.(t.id)}
-                title={t.title}
               >
-                {t.title}
-              </button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6 shrink-0 text-muted-foreground hover:text-amber-500"
-                onClick={() => updateTask(t.id, { isTopThree: !t.isTopThree })}
-                title={t.isTopThree ? "Unpin priority" : "Pin as priority"}
-              >
-                <Star className={cn("h-3 w-3", t.isTopThree && "fill-amber-400 text-amber-500")} />
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
+                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">
+                  {idx + 1}
+                </span>
+                <Checkbox
+                  checked={t.done}
+                  onCheckedChange={() => toggleTask(t.id)}
+                  aria-label={`Complete ${t.title}`}
+                  className="h-3.5 w-3.5"
+                />
+                <button
+                  type="button"
+                  className={cn(
+                    "min-w-0 max-w-[14rem] truncate text-left text-xs",
+                    t.done && "line-through",
+                  )}
+                  onClick={() => onTaskClick?.(t.id)}
+                  title={t.title}
+                >
+                  {t.title}
+                </button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5 shrink-0 text-muted-foreground hover:text-amber-500"
+                  onClick={() => updateTask(t.id, { isTopThree: !t.isTopThree })}
+                  title={t.isTopThree ? "Unpin priority" : "Pin as priority"}
+                >
+                  <Star className={cn("h-3 w-3", t.isTopThree && "fill-amber-400 text-amber-500")} />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
