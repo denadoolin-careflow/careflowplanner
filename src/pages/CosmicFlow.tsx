@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, User, Calendar } from "lucide-react";
 import { useBirthChart } from "@/lib/cosmic/hooks";
 import { useNatalChart, useDailyGuidance } from "@/lib/cosmic/v2-hooks";
+import { CosmicHero } from "@/components/cosmic/CosmicHero";
 import { DailyOverviewCard } from "@/components/cosmic/DailyOverviewCard";
 import { MoonCycleCard } from "@/components/cosmic/MoonCycleCard";
 import { CurrentTransitsTable } from "@/components/cosmic/CurrentTransitsTable";
@@ -26,23 +27,15 @@ export default function CosmicFlow() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-3 p-3 pb-28 sm:space-y-4 sm:p-6 sm:pb-6">
-      <header className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">CareFlow</p>
-          <h1 className="font-display text-xl sm:text-2xl flex items-center gap-1.5">
-            Cosmic Flow <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-          </h1>
-          <p className="hidden sm:block text-sm text-muted-foreground">Your wise mentor in the rhythms of the sky.</p>
-        </div>
-        <div className="flex gap-1.5 shrink-0">
-          <Button asChild variant="outline" size="sm" className="h-8 px-2.5 text-xs">
-            <Link to="/cosmic-flow/natal"><User className="h-3.5 w-3.5 mr-1" />Natal</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="h-8 px-2.5 text-xs">
-            <Link to="/cosmic-flow/calendar"><Calendar className="h-3.5 w-3.5" /></Link>
-          </Button>
-        </div>
-      </header>
+      <CosmicHero date={date} chart={chart} />
+      <div className="flex justify-end gap-1.5">
+        <Button asChild variant="outline" size="sm" className="h-8 px-2.5 text-xs">
+          <Link to="/cosmic-flow/natal"><User className="h-3.5 w-3.5 mr-1" />Natal chart</Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="h-8 px-2.5 text-xs">
+          <Link to="/cosmic-flow/calendar"><Calendar className="h-3.5 w-3.5 mr-1" />Calendar</Link>
+        </Button>
+      </div>
 
       {!row && (
         <section className="cozy-card p-4 flex items-center justify-between gap-2">
