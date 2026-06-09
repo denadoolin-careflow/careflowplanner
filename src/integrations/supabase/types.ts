@@ -5603,6 +5603,91 @@ export type Database = {
           },
         ]
       }
+      roadmap_items: {
+        Row: {
+          category: Database["public"]["Enums"]["roadmap_category"]
+          changelog_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          shipped_at: string | null
+          sort_order: number
+          status: Database["public"]["Enums"]["roadmap_status"]
+          target_quarter: string | null
+          title: string
+          updated_at: string
+          vote_count: number
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["roadmap_category"]
+          changelog_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          shipped_at?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["roadmap_status"]
+          target_quarter?: string | null
+          title: string
+          updated_at?: string
+          vote_count?: number
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["roadmap_category"]
+          changelog_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          shipped_at?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["roadmap_status"]
+          target_quarter?: string | null
+          title?: string
+          updated_at?: string
+          vote_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_items_changelog_id_fkey"
+            columns: ["changelog_id"]
+            isOneToOne: false
+            referencedRelation: "changelog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_votes: {
+        Row: {
+          created_at: string
+          id: string
+          roadmap_item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          roadmap_item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          roadmap_item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_votes_roadmap_item_id_fkey"
+            columns: ["roadmap_item_id"]
+            isOneToOne: false
+            referencedRelation: "roadmap_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routine_completions: {
         Row: {
           completed_on: string
@@ -6998,6 +7083,10 @@ export type Database = {
         Returns: boolean
       }
       set_changelog_pull_schedule: { Args: { _freq: string }; Returns: string }
+      ship_roadmap_item: {
+        Args: { _id: string; _publish?: boolean }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
@@ -7034,6 +7123,8 @@ export type Database = {
         | "celebration"
         | "year"
       remembrance_kind: "person" | "pet" | "date"
+      roadmap_category: "new" | "improved" | "fixed" | "announcement"
+      roadmap_status: "planned" | "in_progress" | "shipped" | "cancelled"
       tradition_anchor:
         | "christmas_eve"
         | "thanksgiving"
@@ -7206,6 +7297,8 @@ export const Constants = {
         "year",
       ],
       remembrance_kind: ["person", "pet", "date"],
+      roadmap_category: ["new", "improved", "fixed", "announcement"],
+      roadmap_status: ["planned", "in_progress", "shipped", "cancelled"],
       tradition_anchor: [
         "christmas_eve",
         "thanksgiving",
