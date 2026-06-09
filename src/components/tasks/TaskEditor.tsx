@@ -12,7 +12,7 @@ import {
   CalendarIcon, X, Tag, Flag, Zap, Clock, Repeat, FolderKanban, Target,
   Star, Trash2, FileText, Link2, AlignLeft, Paperclip, ListTree, User, FolderTree,
   ChevronDown, ChevronRight, Wand2, Hash, ListChecks, Timer, History,
-  Sunrise, Sun, Sunset, Moon,
+  Sunrise, Sun, Sunset, Moon, PanelRightOpen, PanelRightClose,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
