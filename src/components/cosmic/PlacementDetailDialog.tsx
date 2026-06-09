@@ -8,11 +8,15 @@ import { SIGN_GLYPH, PLANET_GLYPH, ASPECT_GLYPH, formatDms, planetDisplay, SIGN_
 import type { NatalChartV2, NatalPlanet } from "@/lib/cosmic/chart";
 import type { Sign } from "@/lib/transits";
 
+type AspectRow = NatalChartV2["aspects"][number];
+
 interface Props {
   chart: NatalChartV2;
   planet: NatalPlanet | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onSelectPlanet?: (p: NatalPlanet) => void;
+  onSelectAspect?: (a: AspectRow) => void;
 }
 
 const HOUSE_TOPICS: Record<number, string> = {
@@ -96,7 +100,7 @@ function journalPrompts(planet: NatalPlanet): string[] {
   return prompts;
 }
 
-export function PlacementDetailDialog({ chart, planet, open, onOpenChange }: Props) {
+export function PlacementDetailDialog({ chart, planet, open, onOpenChange, onSelectPlanet, onSelectAspect }: Props) {
   if (!planet) return null;
   const aspects = chart.aspects
     .filter(a => a.a === planet.body || a.b === planet.body)
@@ -152,17 +156,34 @@ export function PlacementDetailDialog({ chart, planet, open, onOpenChange }: Pro
           {aspects.length > 0 && (
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Key aspects</p>
+              <p className="text-[10.5px] text-muted-foreground mb-1.5">Tap an aspect for details, or jump to the other planet.</p>
               <ul className="space-y-1 text-xs">
                 {aspects.map((a, i) => {
                   const other = a.a === planet.body ? a.b : a.a;
+                  const otherPlanet = chart.planets.find(p => p.body === other);
                   return (
-                    <li key={i} className="flex items-center justify-between rounded border border-border/40 px-2 py-1">
-                      <span className="flex items-center gap-1.5">
-                        <span className="text-base leading-none">{ASPECT_GLYPH[a.aspect.name] ?? ""}</span>
-                        <span className="capitalize">{a.aspect.name}</span>
-                        <span>{PLANET_GLYPH[other] ?? ""} {planetDisplay(other)}</span>
-                      </span>
-                      <span className="text-muted-foreground">{a.aspect.orb.toFixed(1)}°</span>
+                    <li key={i} className="flex items-stretch rounded border border-border/40 overflow-hidden">
+                      <button
+                        onClick={() => onSelectAspect?.(a)}
+                        className="flex-1 flex items-center justify-between px-2 py-1 hover:bg-muted/50 text-left transition-colors"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-base leading-none">{ASPECT_GLYPH[a.aspect.name] ?? ""}</span>
+                          <span className="capitalize">{a.aspect.name}</span>
+                          <span className="text-muted-foreground">{PLANET_GLYPH[other] ?? ""} {planetDisplay(other)}</span>
+                        </span>
+                        <span className="text-muted-foreground">{a.aspect.orb.toFixed(1)}°</span>
+                      </button>
+                      {otherPlanet && (
+                        <button
+                          onClick={() => onSelectPlanet?.(otherPlanet)}
+                          className="px-2 border-l border-border/40 hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+                          title={`Open ${planetDisplay(other)}`}
+                          aria-label={`Open ${planetDisplay(other)}`}
+                        >
+                          →
+                        </button>
+                      )}
                     </li>
                   );
                 })}
