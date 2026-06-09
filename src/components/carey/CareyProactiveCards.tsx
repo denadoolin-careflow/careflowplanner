@@ -405,7 +405,7 @@ export function CareyProactiveCards({ className }: { className?: string }) {
         <div className="flex items-center gap-2">
           <CareyAvatar size={18} />
           <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            Carey's nudges
+            Try this now
           </span>
         </div>
         {dismissedCards.length > 0 && (
