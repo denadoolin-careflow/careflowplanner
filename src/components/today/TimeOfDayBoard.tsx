@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef } from "react";
 import { format } from "date-fns";
-import { Sunrise, Sun, Moon, ListChecks, Plus, CornerDownLeft, Home } from "lucide-react";
+import { Sunrise, Sun, Moon, ListChecks, Plus, CornerDownLeft, Home, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useStore } from "@/lib/store";
@@ -253,7 +253,17 @@ function TaskGroup({
       ) : (
         <ul className="space-y-1">
           {tasks.map(t => (
-            <li key={t.id} className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-muted/40">
+            <li
+              key={t.id}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData(TASK_DRAG_MIME, t.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              className="group flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-muted/40 cursor-grab active:cursor-grabbing"
+              title="Drag to another time-of-day slot"
+            >
+              <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
               <Checkbox checked={t.done} onCheckedChange={() => void onToggle(t.id)} />
               <button
                 type="button"
