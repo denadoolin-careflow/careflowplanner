@@ -12,7 +12,7 @@ import {
   CalendarIcon, X, Tag, Flag, Zap, Clock, Repeat, FolderKanban, Target,
   Star, Trash2, FileText, Link2, AlignLeft, Paperclip, ListTree, User, FolderTree,
   ChevronDown, ChevronRight, Wand2, Hash, ListChecks, Timer, History,
-  Sunrise, Sun, Sunset, Moon,
+  Sunrise, Sun, Sunset, Moon, PanelRightOpen, PanelRightClose,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -129,6 +129,17 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     if (typeof window === "undefined") return true;
     return localStorage.getItem("cf.taskedit.nlp") !== "0";
   });
+  const [sideHidden, setSideHidden] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("cf.taskedit.sideHidden") === "1";
+  });
+  const toggleSide = () => {
+    setSideHidden(v => {
+      const next = !v;
+      try { localStorage.setItem("cf.taskedit.sideHidden", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
   const toggleNlp = () => {
     setNlpOn(v => {
       const next = !v;
@@ -371,6 +382,18 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             >
               <FileText className="h-3.5 w-3.5" /> Duplicate
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="hidden gap-1.5 text-muted-foreground hover:text-foreground lg:inline-flex"
+              onClick={toggleSide}
+              title={sideHidden ? "Show context panel" : "Focus mode — hide context panel"}
+              aria-pressed={sideHidden}
+            >
+              {sideHidden ? <PanelRightOpen className="h-3.5 w-3.5" /> : <PanelRightClose className="h-3.5 w-3.5" />}
+              {sideHidden ? "Show panel" : "Focus"}
+            </Button>
           </div>
 
           {/* Quick details bar — pills */}
@@ -547,7 +570,12 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
 
         {/* Scrollable body */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5">
-          <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
+          <div className={cn(
+            "grid gap-4 transition-all",
+            sideHidden
+              ? "lg:mx-auto lg:max-w-3xl lg:grid-cols-1"
+              : "lg:grid-cols-[1.55fr_1fr]",
+          )}>
             {/* ─────────── Left column: work surface ─────────── */}
             <div className="space-y-4">
               {/* Checklist */}
@@ -698,7 +726,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             </div>
 
             {/* ─────────── Right column: context & assist ─────────── */}
-            <div className="space-y-4">
+            <div className={cn("space-y-4", sideHidden && "lg:hidden")}>
               <FlowContextCard draft={draft} set={set} />
 
               {/* AI Assistant card */}
