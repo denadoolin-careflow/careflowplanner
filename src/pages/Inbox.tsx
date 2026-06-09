@@ -145,7 +145,7 @@ function InboxInner() {
             {items.length} waiting · capture now, organize later
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-1 sm:gap-2">
           {/* Mobile: icon-only essentials. Full labels return at sm+. */}
           <Button
             variant={selectionMode ? "default" : "ghost"}
