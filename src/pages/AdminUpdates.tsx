@@ -532,15 +532,18 @@ function EntryEditor({
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-2 flex items-center gap-2">
-        {!draft.published && (
-          <Checkbox checked={selected} onCheckedChange={onToggleSelect} aria-label="Select draft" />
-        )}
+        <Checkbox checked={selected} onCheckedChange={onToggleSelect} aria-label="Select entry" />
         <Badge variant={draft.published ? "default" : "secondary"} className="text-[10px] uppercase tracking-wider">
           {draft.published ? "Published" : "Draft"}
         </Badge>
         <span className="text-[10px] text-muted-foreground">
-          {format(parseISO(draft.created_at), "MMM d, yyyy")}
+          Created {format(parseISO(draft.created_at), "MMM d, yyyy")}
         </span>
+        {draft.published_at && (
+          <span className="text-[10px] text-muted-foreground">
+            · Published {format(parseISO(draft.published_at), "MMM d, yyyy")}
+          </span>
+        )}
       </div>
       <Input
         value={draft.title}
@@ -562,11 +565,33 @@ function EntryEditor({
             <SelectItem value="announcement">Announcement</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-1">
+          <CalendarDays className="h-3 w-3 text-muted-foreground" />
+          <Input
+            type="date"
+            className="h-8 w-36 text-xs"
+            value={(draft.published_at ?? draft.created_at).slice(0, 10)}
+            onChange={(e) => {
+              const iso = e.target.value ? new Date(e.target.value + "T12:00:00Z").toISOString() : null;
+              if (draft.published) {
+                setDraft({ ...draft, published_at: iso });
+              } else {
+                setDraft({ ...draft, created_at: iso ?? draft.created_at });
+              }
+            }}
+          />
+        </div>
         <Button
           size="sm"
           variant="outline"
           disabled={saving}
-          onClick={() => save({ title: draft.title, summary: draft.summary, category: draft.category })}
+          onClick={() => save({
+            title: draft.title,
+            summary: draft.summary,
+            category: draft.category,
+            published_at: draft.published_at,
+            created_at: draft.created_at,
+          })}
         >
           <Save className="mr-1 h-3 w-3" /> Save
         </Button>
