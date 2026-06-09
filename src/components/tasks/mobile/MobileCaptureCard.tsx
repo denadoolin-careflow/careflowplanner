@@ -25,6 +25,7 @@ export function MobileCaptureCard({ defaultArea }: { defaultArea?: Area }) {
   const { addTask, state } = useStore();
   const { atmosphere } = useAtmosphere();
   const [title, setTitle] = useState("");
+  const [focused, setFocused] = useState(false);
   const [date, setDate] = useState<string | undefined>(undefined);
   const [projectId, setProjectId] = useState<string | undefined>(undefined);
   const [area, setArea] = useState<Area | undefined>(defaultArea);
