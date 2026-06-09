@@ -382,6 +382,18 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             >
               <FileText className="h-3.5 w-3.5" /> Duplicate
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="hidden gap-1.5 text-muted-foreground hover:text-foreground lg:inline-flex"
+              onClick={toggleSide}
+              title={sideHidden ? "Show context panel" : "Focus mode — hide context panel"}
+              aria-pressed={sideHidden}
+            >
+              {sideHidden ? <PanelRightOpen className="h-3.5 w-3.5" /> : <PanelRightClose className="h-3.5 w-3.5" />}
+              {sideHidden ? "Show panel" : "Focus"}
+            </Button>
           </div>
 
           {/* Quick details bar — pills */}
