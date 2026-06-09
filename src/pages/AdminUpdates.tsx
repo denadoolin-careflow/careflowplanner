@@ -9,7 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Sparkles, Plus, Trash2, Save, Upload, Eye, EyeOff } from "lucide-react";
+import { Loader2, Sparkles, Plus, Trash2, Save, Upload, Eye, EyeOff, Layers } from "lucide-react";
 
 type Category = "new" | "improved" | "fixed" | "announcement";
 type Entry = {
@@ -29,6 +29,10 @@ export default function AdminUpdates() {
   const [commitsText, setCommitsText] = useState("");
   const [summarizing, setSummarizing] = useState(false);
   const [pulling, setPulling] = useState(false);
+  const [since, setSince] = useState<string>("");
+  const [maxRange, setMaxRange] = useState<string>("30");
+  const [batching, setBatching] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -92,9 +96,11 @@ export default function AdminUpdates() {
   const pullCommits = async () => {
     setPulling(true);
     try {
-      const { data, error } = await supabase.functions.invoke("changelog-pull-commits", {
-        body: { perPage: 30 },
-      });
+      const body: Record<string, unknown> = {};
+      if (since) body.since = since;
+      if (maxRange === "all") body.all = true;
+      else body.maxCommits = Number(maxRange);
+      const { data, error } = await supabase.functions.invoke("changelog-pull-commits", { body });
       if (error) throw error;
       toast.success(`Fetched ${data.fetched} commits (${data.inserted} new)`);
       const { data: rows } = await supabase
@@ -102,7 +108,7 @@ export default function AdminUpdates() {
         .select("message")
         .is("included_in_entry_id", null)
         .order("committed_at", { ascending: false })
-        .limit(30);
+        .limit(Math.min(100, data.fetched || 30));
       if (rows?.length) {
         setCommitsText(rows.map((r) => r.message).join("\n"));
       }
@@ -110,6 +116,42 @@ export default function AdminUpdates() {
       toast.error(e instanceof Error ? e.message : "Failed to pull commits. Configure GITHUB_TOKEN and GITHUB_REPO secrets.");
     } finally {
       setPulling(false);
+    }
+  };
+
+  const summarizeAllInBatches = async () => {
+    setBatching(true);
+    setBatchProgress(null);
+    try {
+      const { data: rows, error } = await supabase
+        .from("changelog_raw_commits")
+        .select("id, message, committed_at")
+        .is("included_in_entry_id", null)
+        .order("committed_at", { ascending: true });
+      if (error) throw error;
+      if (!rows?.length) { toast.error("No pending commits to summarize"); return; }
+
+      const BATCH = 40;
+      const batches: typeof rows[] = [];
+      for (let i = 0; i < rows.length; i += BATCH) batches.push(rows.slice(i, i + BATCH));
+      setBatchProgress({ done: 0, total: batches.length });
+
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        const text = batch.map((r) => r.message).join("\n");
+        const { data: sum, error: sErr } = await supabase.functions.invoke("changelog-summarize", {
+          body: { text },
+        });
+        if (sErr) throw sErr;
+        await createDraft({ title: sum.title, summary: sum.summary, category: sum.category });
+        setBatchProgress({ done: i + 1, total: batches.length });
+      }
+      toast.success(`Created ${batches.length} draft${batches.length === 1 ? "" : "s"}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to batch-summarize");
+    } finally {
+      setBatching(false);
+      setBatchProgress(null);
     }
   };
 
@@ -146,6 +188,25 @@ export default function AdminUpdates() {
           value={commitsText}
           onChange={(e) => setCommitsText(e.target.value)}
         />
+        <div className="mt-3 grid gap-2 sm:grid-cols-[auto_auto_1fr] sm:items-end">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Since</label>
+            <Input type="date" value={since} onChange={(e) => setSince(e.target.value)} className="h-8 w-40 text-xs" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground">How many</label>
+            <Select value={maxRange} onValueChange={setMaxRange}>
+              <SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">Last 30</SelectItem>
+                <SelectItem value="100">Last 100</SelectItem>
+                <SelectItem value="300">Last 300</SelectItem>
+                <SelectItem value="1000">Last 1000</SelectItem>
+                <SelectItem value="all">All (since date)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button onClick={summarize} disabled={summarizing} size="sm">
             {summarizing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Sparkles className="mr-1 h-3 w-3" />}
@@ -154,6 +215,12 @@ export default function AdminUpdates() {
           <Button onClick={pullCommits} disabled={pulling} size="sm" variant="outline">
             {pulling ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
             Pull from GitHub
+          </Button>
+          <Button onClick={summarizeAllInBatches} disabled={batching} size="sm" variant="outline">
+            {batching ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Layers className="mr-1 h-3 w-3" />}
+            {batchProgress
+              ? `Summarizing ${batchProgress.done}/${batchProgress.total}…`
+              : "Summarize all pending → grouped drafts"}
           </Button>
           <Button onClick={() => createDraft()} size="sm" variant="ghost">
             <Plus className="mr-1 h-3 w-3" /> Blank draft
