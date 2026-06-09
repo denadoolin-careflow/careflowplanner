@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import {
   Search, FileText, CheckSquare, Folder, Hash, Sparkles, Calendar,
-  Mic, ShoppingBasket, Plus, ArrowRight, CornerDownLeft,
+  Mic, ShoppingBasket, Plus, ArrowRight, CornerDownLeft, Compass,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTags } from "@/hooks/use-tags";
 import { upcomingEvents, type CosmicEvent } from "@/lib/cosmic/events";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
+import { NAV, NAV_GROUPS, NAV_DESCRIPTIONS } from "@/lib/nav";
 import { toast } from "sonner";
 
-type ResultKind = "task" | "note" | "project" | "tag" | "event" | "appointment";
+type ResultKind = "page" | "task" | "note" | "project" | "tag" | "event" | "appointment";
 
 export type SearchResult = {
   id: string;
@@ -31,6 +32,7 @@ export type SearchResult = {
 };
 
 const KIND_LABEL: Record<ResultKind, string> = {
+  page: "Pages",
   task: "Tasks",
   note: "Notes",
   project: "Projects",
@@ -40,6 +42,7 @@ const KIND_LABEL: Record<ResultKind, string> = {
 };
 
 const KIND_ICON: Record<ResultKind, React.ComponentType<{ className?: string }>> = {
+  page: Compass,
   task: CheckSquare,
   note: FileText,
   project: Folder,
@@ -47,6 +50,78 @@ const KIND_ICON: Record<ResultKind, React.ComponentType<{ className?: string }>>
   event: Sparkles,
   appointment: Calendar,
 };
+
+/** Common synonyms users may type to find a page. */
+const PAGE_KEYWORDS: Record<string, string[]> = {
+  "/wealth": ["money", "finances", "budget", "spending", "accounts"],
+  "/inbox": ["capture", "tasks", "todo", "to do"],
+  "/today": ["agenda", "now", "day"],
+  "/calendar": ["schedule", "agenda", "events"],
+  "/pantry": ["groceries", "shopping", "inventory", "fridge"],
+  "/meals": ["food", "recipes", "dinner", "lunch", "breakfast"],
+  "/meals/library": ["recipes", "cookbook"],
+  "/health": ["fitness", "wellness", "energy", "mood", "sleep"],
+  "/habits": ["streak", "routine", "daily"],
+  "/journal": ["diary", "write", "writing"],
+  "/notes": ["docs", "documents", "knowledge"],
+  "/whiteboards": ["canvas", "board"],
+  "/graph": ["knowledge graph", "connections", "map"],
+  "/goals": ["objectives", "milestones"],
+  "/focus": ["pomodoro", "timer", "deep work"],
+  "/mental-load": ["invisible work", "fairplay"],
+  "/family": ["household", "members", "sharing"],
+  "/caregiving": ["caregiver", "elder", "care plan"],
+  "/care": ["care loop", "care hub"],
+  "/automations": ["rules", "triggers", "workflows"],
+  "/settings": ["preferences", "account", "config", "options"],
+  "/trips": ["travel", "vacation", "packing"],
+  "/routines": ["rituals", "checklist"],
+  "/home-areas": ["rooms", "zones", "house"],
+  "/cosmic-flow": ["astrology", "moon", "transits", "horoscope", "zodiac"],
+  "/seasons": ["holidays", "celebrations", "birthdays"],
+  "/memories": ["memory book", "moments", "photos"],
+  "/logbook": ["completed", "done", "history"],
+  "/review": ["reflect", "retrospective"],
+  "/rhythm": ["lunar", "moon", "seasonal"],
+  "/upcoming": ["next", "later"],
+  "/anytime": ["someday", "no date"],
+  "/someday": ["maybe", "later", "ideas"],
+  "/not-today": ["snoozed", "skip"],
+};
+
+type PageEntry = { to: string; label: string; group?: string; description?: string; keywords?: string[]; icon: React.ComponentType<{ className?: string }> };
+
+/** Build a deduped, searchable list of all pages from NAV + NAV_GROUPS. */
+function buildPageIndex(): PageEntry[] {
+  const map = new Map<string, PageEntry>();
+  // Start with top-level NAV (icon authority)
+  for (const n of NAV) {
+    map.set(n.to, {
+      to: n.to,
+      label: n.label,
+      description: NAV_DESCRIPTIONS[n.to],
+      keywords: PAGE_KEYWORDS[n.to],
+      icon: n.icon,
+    });
+  }
+  // Augment with grouped nav (adds pages, group context)
+  for (const g of NAV_GROUPS) {
+    for (const it of g.items) {
+      const prev = map.get(it.to);
+      map.set(it.to, {
+        to: it.to,
+        label: prev?.label ?? it.label,
+        group: g.label,
+        description: NAV_DESCRIPTIONS[it.to] ?? prev?.description,
+        keywords: PAGE_KEYWORDS[it.to] ?? prev?.keywords,
+        icon: prev?.icon ?? it.icon,
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+const PAGE_INDEX: PageEntry[] = buildPageIndex();
 
 function highlight(text: string, term: string): React.ReactNode {
   if (!term) return text;
