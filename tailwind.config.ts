@@ -95,6 +95,7 @@ export default {
         "fade-in": "fade-in 0.4s ease-out",
         "scale-in": "scale-in 0.25s ease-out",
         "soft-pulse": "soft-pulse 2.4s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
         "task-sweep": "task-sweep 0.9s ease-out forwards",
       },
     },
