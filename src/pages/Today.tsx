@@ -7,7 +7,7 @@ import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useStore } from "@/lib/store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
-import { Wind, ArrowUp, ArrowDown, RotateCcw, GripVertical, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Wind, ArrowUp, ArrowDown, RotateCcw, GripVertical, PanelRightClose, PanelRightOpen, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { RhythmHeader } from "@/components/today/rhythm/RhythmHeader";
@@ -160,7 +160,7 @@ function TodayInner() {
     { id: "upcoming-events",  label: "Upcoming events",  render: () => <UpcomingEventsCard date={day} /> },
   ];
   const canonical = widgetRegistry.map(w => w.id);
-  const { order, move, reset } = useSidebarOrder(canonical);
+  const { order, hidden, move, remove, restore, restoreAll, reset } = useSidebarOrder(canonical);
   const byId = new Map(widgetRegistry.map(w => [w.id, w]));
 
   const renderMain = () => {
@@ -187,7 +187,7 @@ function TodayInner() {
         "mx-auto grid w-full min-w-0 max-w-6xl gap-4 overflow-x-clip md:gap-5 lg:gap-6",
         sidebarHidden
           ? "md:grid-cols-1"
-          : "md:grid-cols-[minmax(0,1fr)_clamp(220px,26vw,320px)]",
+          : "md:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,360px)]",
       )}>
         {/* Main column */}
         <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
@@ -223,10 +223,10 @@ function TodayInner() {
 
         {/* Sidebar */}
         {!sidebarHidden && (
-        <aside className="min-w-0 max-w-full space-y-3 md:space-y-4 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
+        <aside className="min-w-0 max-w-full md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:self-start md:overflow-y-auto md:pr-1">
           <div className="flex items-center justify-between gap-2 px-1">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {reorderMode ? "Reorder widgets" : "Widgets"}
+              {reorderMode ? "Edit widgets" : "Widgets"}
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -258,14 +258,16 @@ function TodayInner() {
                 )}
                 title="Toggle reorder mode"
               >
-                <GripVertical className="h-2.5 w-2.5" /> {reorderMode ? "Done" : "Reorder"}
+                <GripVertical className="h-2.5 w-2.5" /> {reorderMode ? "Done" : "Edit"}
               </button>
             </div>
           </div>
 
+          <div className="mt-3 grid gap-3 md:gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))]">
           {order.map((id, idx) => {
             const w = byId.get(id);
             if (!w) return null;
+            if (hidden.has(id)) return null;
             const node = w.render();
             if (!node) return null;
             if (!reorderMode) {
@@ -282,7 +284,7 @@ function TodayInner() {
               );
             }
             return (
-              <div key={id} className="relative">
+              <div key={id} className="relative min-w-0">
                 <div className="absolute -left-1 top-1 z-10 flex flex-col gap-0.5">
                   <button
                     type="button"
@@ -303,12 +305,56 @@ function TodayInner() {
                     <ArrowDown className="h-3 w-3" />
                   </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => remove(id)}
+                  className="absolute -right-1 top-1 z-10 inline-flex h-5 w-5 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm ring-1 ring-border hover:text-destructive"
+                  aria-label={`Remove ${w.label}`}
+                  title={`Remove ${w.label}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
                 <div className="rounded-2xl ring-1 ring-dashed ring-primary/40">
                   {node}
                 </div>
               </div>
             );
           })}
+          </div>
+
+          {hidden.size > 0 && (
+            <div className="mt-4 rounded-2xl border border-dashed border-border/60 bg-card/40 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Hidden ({hidden.size})
+                </span>
+                <button
+                  type="button"
+                  onClick={restoreAll}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                >
+                  <RotateCcw className="h-2.5 w-2.5" /> Restore all
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {canonical.filter(id => hidden.has(id)).map(id => {
+                  const w = byId.get(id);
+                  if (!w) return null;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => restore(id)}
+                      className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                      title={`Restore ${w.label}`}
+                    >
+                      <Plus className="h-3 w-3" /> {w.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </aside>
         )}
       </div>
