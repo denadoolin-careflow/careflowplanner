@@ -368,7 +368,7 @@ export function GlobalSearchDialog({
                 ref={inputRef}
                 value={q}
                 onChange={e => setQ(e.target.value)}
-                placeholder="Search tasks, notes, tags, projects, events…"
+                placeholder="Search pages, tasks, notes, projects, tags…"
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
               <kbd className="hidden rounded border border-border/60 bg-muted/50 px-1.5 text-[10px] font-mono text-muted-foreground sm:inline">ESC</kbd>
