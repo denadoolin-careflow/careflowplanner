@@ -9,9 +9,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Sparkles, Plus, Trash2, Save, Upload, Eye, EyeOff, Layers } from "lucide-react";
+import { Loader2, Sparkles, Plus, Trash2, Save, Upload, Eye, EyeOff, Layers, Merge, Clock } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Category = "new" | "improved" | "fixed" | "announcement";
+type FilterCategory = Category | "all";
+type Frequency = "off" | "hourly" | "daily" | "weekly";
 type Entry = {
   id: string;
   title: string;
@@ -33,6 +36,13 @@ export default function AdminUpdates() {
   const [maxRange, setMaxRange] = useState<string>("30");
   const [batching, setBatching] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null);
+  const [filter, setFilter] = useState<FilterCategory>("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [merging, setMerging] = useState(false);
+  const [commitFilter, setCommitFilter] = useState("");
+  const [frequency, setFrequency] = useState<Frequency>("off");
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [lastPulledAt, setLastPulledAt] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -56,6 +66,21 @@ export default function AdminUpdates() {
 
   useEffect(() => { if (isAdmin) refresh(); }, [isAdmin]);
 
+  useEffect(() => {
+    if (!isAdmin) return;
+    (async () => {
+      const { data } = await supabase
+        .from("changelog_settings")
+        .select("pull_frequency, last_pulled_at")
+        .eq("id", true)
+        .maybeSingle();
+      if (data) {
+        setFrequency((data.pull_frequency as Frequency) ?? "off");
+        setLastPulledAt((data.last_pulled_at as string | null) ?? null);
+      }
+    })();
+  }, [isAdmin]);
+
   const createDraft = async (
     initial: Partial<Entry> = { title: "Untitled update", summary: "", category: "new" },
   ) => {
@@ -74,6 +99,7 @@ export default function AdminUpdates() {
     if (error) { toast.error(error.message); return; }
     setEntries((es) => [data as Entry, ...es]);
     toast.success("Draft created");
+    return data as Entry;
   };
 
   const summarize = async () => {
@@ -112,10 +138,78 @@ export default function AdminUpdates() {
       if (rows?.length) {
         setCommitsText(rows.map((r) => r.message).join("\n"));
       }
+      const { data: s } = await supabase
+        .from("changelog_settings")
+        .select("last_pulled_at")
+        .eq("id", true)
+        .maybeSingle();
+      setLastPulledAt((s?.last_pulled_at as string | null) ?? null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to pull commits. Configure GITHUB_TOKEN and GITHUB_REPO secrets.");
     } finally {
       setPulling(false);
+    }
+  };
+
+  const saveSchedule = async (freq: Frequency) => {
+    setSavingSchedule(true);
+    try {
+      const { error } = await supabase.rpc("set_changelog_pull_schedule", { _freq: freq });
+      if (error) throw error;
+      setFrequency(freq);
+      toast.success(freq === "off" ? "Auto-pull turned off" : `Auto-pull set to ${freq}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update schedule");
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const mergeSelected = async () => {
+    const ids = Array.from(selected);
+    if (ids.length < 2) { toast.error("Select at least 2 drafts to merge"); return; }
+    const chosen = entries.filter((e) => ids.includes(e.id) && !e.published);
+    if (chosen.length < 2) { toast.error("Only unpublished drafts can be merged"); return; }
+    setMerging(true);
+    try {
+      // Order oldest -> newest so summaries read chronologically
+      chosen.sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
+      const title = chosen[0].title || "Merged update";
+      const summary = chosen
+        .map((e) => `**${e.title}**\n\n${e.summary}`.trim())
+        .filter(Boolean)
+        .join("\n\n---\n\n");
+      // Use the most common category (fallback first)
+      const counts = new Map<Category, number>();
+      for (const e of chosen) counts.set(e.category, (counts.get(e.category) ?? 0) + 1);
+      const category = [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+
+      const merged = await createDraft({ title, summary, category });
+      if (!merged) throw new Error("Failed to create merged draft");
+
+      // Re-point raw commits to the new entry, then delete old drafts
+      await supabase
+        .from("changelog_raw_commits")
+        .update({ included_in_entry_id: merged.id })
+        .in("included_in_entry_id", ids);
+      const { error: delErr } = await supabase.from("changelog").delete().in("id", ids);
+      if (delErr) throw delErr;
+
+      setSelected(new Set());
+      toast.success(`Merged ${ids.length} drafts`);
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to merge");
+    } finally {
+      setMerging(false);
     }
   };
 
@@ -155,6 +249,11 @@ export default function AdminUpdates() {
     }
   };
 
+  const filteredEntries = filter === "all" ? entries : entries.filter((e) => e.category === filter);
+  const filteredCommitText = commitFilter.trim()
+    ? commitsText.split("\n").filter((l) => l.toLowerCase().includes(commitFilter.toLowerCase())).join("\n")
+    : commitsText;
+
   if (isAdmin === null) return <div className="p-8 text-sm text-muted-foreground">Checking access…</div>;
   if (!isAdmin) return (
     <div className="mx-auto max-w-md p-12 text-center">
@@ -182,11 +281,17 @@ export default function AdminUpdates() {
         <p className="text-xs text-muted-foreground">
           Paste raw commit messages (or pull from GitHub) and turn them into a polished draft.
         </p>
+        <Input
+          placeholder="Filter commit lines (keyword)…"
+          value={commitFilter}
+          onChange={(e) => setCommitFilter(e.target.value)}
+          className="mt-3 h-8 text-xs"
+        />
         <Textarea
           className="mt-3 min-h-32 text-xs"
           placeholder="One commit message per line…"
-          value={commitsText}
-          onChange={(e) => setCommitsText(e.target.value)}
+          value={filteredCommitText}
+          onChange={(e) => { setCommitFilter(""); setCommitsText(e.target.value); }}
         />
         <div className="mt-3 grid gap-2 sm:grid-cols-[auto_auto_1fr] sm:items-end">
           <div className="flex flex-col gap-1">
@@ -228,15 +333,73 @@ export default function AdminUpdates() {
         </div>
       </section>
 
+      <section className="rounded-lg border border-border bg-card p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <Clock className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold">Auto-pull schedule</h2>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Automatically fetch new commits from GitHub on a schedule (uses last pull time as the “since” date).
+        </p>
+        <div className="mt-3 flex flex-wrap items-end gap-2">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Frequency</label>
+            <Select value={frequency} onValueChange={(v) => saveSchedule(v as Frequency)} disabled={savingSchedule}>
+              <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="off">Off</SelectItem>
+                <SelectItem value="hourly">Hourly</SelectItem>
+                <SelectItem value="daily">Daily (6am UTC)</SelectItem>
+                <SelectItem value="weekly">Weekly (Mon 6am UTC)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Last pull: {lastPulledAt ? format(parseISO(lastPulledAt), "MMM d, yyyy HH:mm") : "never"}
+          </p>
+        </div>
+      </section>
+
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Entries</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Entries</h2>
+          <div className="ml-auto flex flex-wrap items-center gap-1">
+            {(["all","new","improved","fixed","announcement"] as FilterCategory[]).map((c) => (
+              <Button
+                key={c}
+                size="sm"
+                variant={filter === c ? "default" : "outline"}
+                className="h-7 px-2 text-[11px] capitalize"
+                onClick={() => setFilter(c)}
+              >
+                {c}
+              </Button>
+            ))}
+          </div>
+        </div>
+        {selected.size > 0 && (
+          <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 p-2 text-xs">
+            <span>{selected.size} selected</span>
+            <Button size="sm" variant="outline" disabled={merging || selected.size < 2} onClick={mergeSelected}>
+              {merging ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Merge className="mr-1 h-3 w-3" />}
+              Merge selected
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
+          </div>
+        )}
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : entries.length === 0 ? (
+        ) : filteredEntries.length === 0 ? (
           <p className="text-sm text-muted-foreground">No entries yet.</p>
         ) : (
-          entries.map((entry) => (
-            <EntryEditor key={entry.id} entry={entry} onChange={refresh} />
+          filteredEntries.map((entry) => (
+            <EntryEditor
+              key={entry.id}
+              entry={entry}
+              onChange={refresh}
+              selected={selected.has(entry.id)}
+              onToggleSelect={() => toggleSelect(entry.id)}
+            />
           ))
         )}
       </section>
@@ -244,7 +407,11 @@ export default function AdminUpdates() {
   );
 }
 
-function EntryEditor({ entry, onChange }: { entry: Entry; onChange: () => void }) {
+function EntryEditor({
+  entry, onChange, selected, onToggleSelect,
+}: {
+  entry: Entry; onChange: () => void; selected: boolean; onToggleSelect: () => void;
+}) {
   const [draft, setDraft] = useState(entry);
   const [saving, setSaving] = useState(false);
 
@@ -272,6 +439,9 @@ function EntryEditor({ entry, onChange }: { entry: Entry; onChange: () => void }
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-2 flex items-center gap-2">
+        {!draft.published && (
+          <Checkbox checked={selected} onCheckedChange={onToggleSelect} aria-label="Select draft" />
+        )}
         <Badge variant={draft.published ? "default" : "secondary"} className="text-[10px] uppercase tracking-wider">
           {draft.published ? "Published" : "Draft"}
         </Badge>
