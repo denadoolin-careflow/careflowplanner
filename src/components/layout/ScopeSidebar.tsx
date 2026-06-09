@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { ArrowDown, ArrowUp, GripVertical, Plus, RotateCcw, X } from "lucide-react";
+import { ArrowDown, ArrowUp, GripVertical, PanelRightClose, PanelRightOpen, Plus, RotateCcw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CollapsibleWidget } from "@/components/today/CollapsibleWidget";
-import { useCollapsedWidgets } from "@/lib/today-view";
-import { useWidgetOrder } from "@/lib/widget-order";
+import { useCollapsedWidgets, useSidebarHidden } from "@/lib/today-view";
+import { useSidebarOrder } from "@/lib/today-sidebar-order";
 import { buildSidebarWidgetRegistry } from "@/components/today/widget-registry";
 
 interface Props {
@@ -24,6 +24,7 @@ interface Props {
 export function ScopeSidebar({ date, scope = "week", onTaskClick, children }: Props) {
   const { collapsed, toggle: toggleCollapsed } = useCollapsedWidgets();
   const [reorderMode, setReorderMode] = useState(false);
+  const [sidebarHidden, setSidebarHidden] = useSidebarHidden();
 
   // Shared registry — identical shape/options across Today, Week and Month.
   const registry = buildSidebarWidgetRegistry();
@@ -31,27 +32,37 @@ export function ScopeSidebar({ date, scope = "week", onTaskClick, children }: Pr
   const canonical = registry.map(w => w.id);
   const byId = new Map(registry.map(w => [w.id, w]));
 
-  // Default-hidden: keep the original lean rail; users can restore the rest.
-  // Anything not listed here starts visible (matches the previous Week/Month curated set).
-  const defaultHidden = [
-    "brain-dump", "what-fits", "weekly-weather", "tasks", "grocery", "cycle",
-    "notes-today", "journal-today", "memories-today", "home-reset",
-    "family-snapshot", "growing-season", "care-loop", "upcoming-events",
-  ];
-
-  const { order, hidden, move, remove, restore, restoreAll, reset } = useWidgetOrder(
-    `careflow:${scope}:sidebar`,
-    canonical,
-    { defaultHidden },
-  );
+  // Shared with Today via `careflow:today:sidebar-order:v1` so widget order
+  // and per-widget hidden state stay in sync across Today / Week / Month.
+  const { order, hidden, move, remove, restore, restoreAll, reset } = useSidebarOrder(canonical);
 
   return (
+    <>
+    {sidebarHidden ? (
+      <button
+        type="button"
+        onClick={() => setSidebarHidden(false)}
+        className="fixed right-0 top-24 z-40 hidden md:inline-flex items-center gap-1 rounded-l-full border border-r-0 border-border/60 bg-card/90 px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
+        title="Show widgets"
+      >
+        <PanelRightOpen className="h-3 w-3" />
+        <span className="hidden lg:inline">Widgets</span>
+      </button>
+    ) : (
     <aside className="min-w-0 max-w-full space-y-3 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] md:w-[clamp(240px,28vw,340px)] md:self-start md:overflow-y-auto md:pr-1">
       <div className="flex items-center justify-between gap-2 px-1">
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
           {reorderMode ? "Edit widgets" : "Widgets"}
         </span>
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setSidebarHidden(true)}
+            className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/70 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur hover:text-foreground"
+            title="Hide widgets"
+          >
+            <PanelRightClose className="h-2.5 w-2.5" /> Hide
+          </button>
           {reorderMode && (
             <button
               type="button"
@@ -173,5 +184,7 @@ export function ScopeSidebar({ date, scope = "week", onTaskClick, children }: Pr
         </div>
       )}
     </aside>
+    )}
+    </>
   );
 }
