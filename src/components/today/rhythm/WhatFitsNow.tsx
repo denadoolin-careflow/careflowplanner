@@ -90,7 +90,7 @@ export function WhatFitsNow({ date, onTaskClick }: Props) {
             <div
               key={t.id}
               className={cn(
-                "flex min-w-0 items-center gap-2 rounded-xl border border-border/50 bg-background/70",
+                "group flex min-w-0 items-center gap-2 rounded-xl border border-border/50 bg-background/70",
                 "px-3 py-2 text-left transition-all hover:border-primary/40 hover:bg-background",
               )}
             >
@@ -115,6 +115,7 @@ export function WhatFitsNow({ date, onTaskClick }: Props) {
                   </span>
                 </div>
               </button>
+              <QuickDayPartButton task={t} />
             </div>
           );
         })}
