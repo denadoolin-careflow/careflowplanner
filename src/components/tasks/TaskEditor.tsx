@@ -129,6 +129,17 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     if (typeof window === "undefined") return true;
     return localStorage.getItem("cf.taskedit.nlp") !== "0";
   });
+  const [sideHidden, setSideHidden] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("cf.taskedit.sideHidden") === "1";
+  });
+  const toggleSide = () => {
+    setSideHidden(v => {
+      const next = !v;
+      try { localStorage.setItem("cf.taskedit.sideHidden", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
   const toggleNlp = () => {
     setNlpOn(v => {
       const next = !v;
