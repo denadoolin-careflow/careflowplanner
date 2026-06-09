@@ -48,6 +48,7 @@ import { useTransitsEnabled } from "@/lib/astrology-prefs";
 import { ScopeHero } from "@/components/layout/ScopeHero";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { isSameMonth as isSameMonthFn } from "date-fns";
+import { useSidebarHidden } from "@/lib/today-view";
 
 function MonthWxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-2.5 w-2.5 sm:h-3 sm:w-3", className);
@@ -73,6 +74,7 @@ export default function Month() {
   const transitsOn = useTransitsEnabled();
   const { settings: cycleSettings, periods: cyclePeriods } = useCycle();
   const [cursor, setCursor] = useState(new Date());
+  const [sidebarHidden] = useSidebarHidden();
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   const [hoverISO, setHoverISO] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -165,7 +167,12 @@ export default function Month() {
   };
 
   return (
-    <div className="mx-auto grid w-full min-w-0 max-w-6xl gap-4 md:gap-5 lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)] lg:gap-6">
+    <div className={cn(
+      "mx-auto grid w-full min-w-0 max-w-6xl gap-4 md:gap-5 lg:gap-6",
+      sidebarHidden
+        ? "lg:grid-cols-1"
+        : "lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)]",
+    )}>
       <div className="min-w-0 space-y-6">
         <ScopeHero
           scope="month"
