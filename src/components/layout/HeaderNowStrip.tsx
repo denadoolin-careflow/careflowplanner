@@ -319,14 +319,21 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           <DueNextPreview tasks={slotTasks} slotLabel={slotLabel} />
         </PopoverContent>
       </Popover>
-      <Link
-        to="/today"
-        aria-label="Open Today"
-        title="Open today's tasks"
-        className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85 hover:bg-muted/70 transition"
-      >
-        {date}
-      </Link>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label="Open today's tasks"
+            title="Today's tasks"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 text-foreground/85 hover:bg-muted/70 transition"
+          >
+            {date}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" sideOffset={6} className="w-auto p-0">
+          <TodayPreview tasks={state.tasks} navigate={navigate} />
+        </PopoverContent>
+      </Popover>
       {snap && tempStr && (
         <WeatherDetailPopover
           trigger={
