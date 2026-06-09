@@ -1224,6 +1224,83 @@ export type Database = {
         }
         Relationships: []
       }
+      changelog: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          published: boolean
+          published_at: string | null
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          published?: boolean
+          published_at?: string | null
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      changelog_raw_commits: {
+        Row: {
+          author: string | null
+          committed_at: string | null
+          created_at: string
+          id: string
+          included_in_entry_id: string | null
+          message: string
+          sha: string
+          url: string | null
+        }
+        Insert: {
+          author?: string | null
+          committed_at?: string | null
+          created_at?: string
+          id?: string
+          included_in_entry_id?: string | null
+          message: string
+          sha: string
+          url?: string | null
+        }
+        Update: {
+          author?: string | null
+          committed_at?: string | null
+          created_at?: string
+          id?: string
+          included_in_entry_id?: string | null
+          message?: string
+          sha?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "changelog_raw_commits_included_in_entry_id_fkey"
+            columns: ["included_in_entry_id"]
+            isOneToOne: false
+            referencedRelation: "changelog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chore_assignments: {
         Row: {
           created_at: string
@@ -4852,6 +4929,7 @@ export type Database = {
           energy_today: string | null
           header_image_url: string | null
           id: string
+          last_seen_changelog_at: string | null
           low_energy_mode: boolean
           name: string
           planning_style: string
@@ -4868,6 +4946,7 @@ export type Database = {
           energy_today?: string | null
           header_image_url?: string | null
           id: string
+          last_seen_changelog_at?: string | null
           low_energy_mode?: boolean
           name?: string
           planning_style?: string
@@ -4884,6 +4963,7 @@ export type Database = {
           energy_today?: string | null
           header_image_url?: string | null
           id?: string
+          last_seen_changelog_at?: string | null
           low_energy_mode?: boolean
           name?: string
           planning_style?: string
