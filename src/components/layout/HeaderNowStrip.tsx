@@ -90,6 +90,30 @@ export function HeaderNowStrip({ className }: { className?: string }) {
     [snap],
   );
 
+  const { state } = useStore();
+  const isoToday = useMemo(() => todayISO(), [now]);
+  const slotTasks = useMemo(() => {
+    const slotLabel = currentSlot[0].toUpperCase() + currentSlot.slice(1);
+    return state.tasks
+      .filter(
+        (t) =>
+          t.dueDate === isoToday &&
+          !t.done &&
+          t.status !== "parked" &&
+          t.dayPart === slotLabel &&
+          !t.parentTaskId
+      )
+      .sort((a, b) => {
+        if (!!b.isTopThree !== !!a.isTopThree) return b.isTopThree ? 1 : -1;
+        const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        return (
+          (rank[a.priority ?? "medium"] - rank[b.priority ?? "medium"]) ||
+          ((a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        );
+      })
+      .slice(0, 3);
+  }, [state.tasks, isoToday, currentSlot]);
+
   const ring = snap ? weatherTheme(snap.condition, snap.isNight).ring : "";
 
   return (
