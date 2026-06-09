@@ -85,7 +85,7 @@ function SkeletonCard() {
 
 /* ------------------------------------------------------------------ */
 
-export function CareyProactiveCards({ className }: { className?: string }) {
+export function CareyProactiveCards({ className, onHide }: { className?: string; onHide?: () => void }) {
   const { state } = useStore();
   const [dismissed, setDismissed] = useState<Set<string>>(readDismissed);
   const [showDismissed, setShowDismissed] = useState(false);
@@ -408,23 +408,36 @@ export function CareyProactiveCards({ className }: { className?: string }) {
             Try this now
           </span>
         </div>
-        {dismissedCards.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setShowDismissed((s) => !s)}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-          >
-            {showDismissed ? (
-              <>
-                <ChevronUp className="h-2.5 w-2.5" /> Hide dismissed
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-2.5 w-2.5" /> {dismissedCards.length} dismissed
-              </>
-            )}
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {dismissedCards.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowDismissed((s) => !s)}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            >
+              {showDismissed ? (
+                <>
+                  <ChevronUp className="h-2.5 w-2.5" /> Hide dismissed
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-2.5 w-2.5" /> {dismissedCards.length} dismissed
+                </>
+              )}
+            </button>
+          )}
+          {onHide && (
+            <button
+              type="button"
+              onClick={onHide}
+              title="Hide Try this now"
+              aria-label="Hide Try this now section"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            >
+              <X className="h-2.5 w-2.5" /> Hide
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Visible cards */}
