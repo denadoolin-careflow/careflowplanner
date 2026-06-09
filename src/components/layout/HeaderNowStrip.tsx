@@ -90,7 +90,7 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
   const total = sections.reduce((s, sec) => s + sec.items.length, 0);
 
   return (
-    <div className="w-64 p-3">
+    <div className="w-80 max-h-[min(80vh,38rem)] overflow-y-auto p-3">
       <div className="mb-2 flex items-center justify-between">
         <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Today</div>
         <span className="text-[10px] font-medium text-muted-foreground">{total} tasks</span>
