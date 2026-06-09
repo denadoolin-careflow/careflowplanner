@@ -169,8 +169,6 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
             </div>
           </div>
 
-          <PeriodNav />
-
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
               Plan with
