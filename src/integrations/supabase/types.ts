@@ -1301,6 +1301,30 @@ export type Database = {
           },
         ]
       }
+      changelog_settings: {
+        Row: {
+          id: boolean
+          last_pulled_at: string | null
+          pull_frequency: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          last_pulled_at?: string | null
+          pull_frequency?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          last_pulled_at?: string | null
+          pull_frequency?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       chore_assignments: {
         Row: {
           created_at: string
