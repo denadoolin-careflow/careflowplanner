@@ -1,72 +1,54 @@
+
+# Cosmic Flow 2.0
+
+This is a large, multi-week build. I'll break it into phases so we can ship value early and you can steer along the way. Confirm the phasing (and Phase 1 scope) before I start coding.
+
 ## Goal
+Turn `/cosmic` from a static astrology page into a living guidance system: Natal → Transits → Planner → Journal → Rituals → Carey Cosmic AI, all using **Whole Sign houses** and grounded in CareFlow planning.
 
-Give the Today page multiple "plan with" layouts, restore the side-by-side morning/afternoon/evening view, slim the Top 3 strip into a single horizontal row, and let the sidebar widgets collapse to free up space.
+## Phased Roadmap
 
-## 1. Today view switcher
+### Phase 1 — Foundation (engine + hero) ⭐ start here
+- Refactor `src/lib/cosmic/*` to a single engine module with: natal placements, **Whole Sign houses**, aspects, current transits, lunar phase, retrogrades, ingresses, eclipses, **annual profections**, **progressed Moon/Sun**, Solar Return themes.
+- Verify a few sample charts against Astro-Seek (Pisces rising, etc.).
+- New `/cosmic` hero: Moon phase, zodiac season, rising-sign theme, today's astro-weather sentence, 5 quick actions (Journal, Plan Day, Transits, Moon Ritual, Insights).
+- Design tokens: moonlit white, deep indigo, soft lavender, muted gold, glassmorphism cards.
 
-Add a persisted view selector ("How you plan today") to the `RhythmHeader` greeting card, next to the date controls.
+### Phase 2 — Birth Chart tab
+- Interactive SVG wheel (hover/click planets, houses, signs; animated aspect lines).
+- Click-through panel: Core Gifts / Growth Edge / In Your Life / Journal Prompt.
+- House Explorer: 12 cards (sign, themes, planets present, current focus).
 
-Views (renamed for clarity):
+### Phase 3 — Current Transits tab
+- Timeline scrubber: Today / Week / Month / Upcoming.
+- Transit cards: planet, sign, house activated, interpretation, practical advice, journal prompt.
+- "Add to planner" action on each card.
 
-- **Rhythm** — current stacked layout (default).
-- **Time of day** — restored horizontal morning/afternoon/evening layout (details below).
-- **Day plan** — a single condensed planner card: Top 3 → Meals → All today's tasks grouped by day part, no routines/weather inline.
-- **Schedule** — appointment-first vertical timeline using the existing `DailySnapshotRow` + `WhatFitsNow` + agenda list (no rhythm sections).
+### Phase 4 — Cosmic Planner tab
+- Per-transit planning suggestions (best for / avoid / suggested tasks).
+- One-click "Add tasks to planner" → writes into existing `tasks` table for today.
+- Daily energy gauges: Focus, Relationships, Creativity, Home, Wellness.
 
-Storage: `careflow:today-view:v1` in localStorage via a small `useTodayView()` hook (mirrors `useCalView` pattern in `CalendarViewToggle.tsx`). The selector is a pill toggle in `RhythmHeader` and the active view is read in `Today.tsx` to swap the middle of the main column.
+### Phase 5 — Cosmic Journal tab
+- Auto-generated daily prompts (Reflection / Shadow / Action) from Moon + transits + profections.
+- "Write entry" links into existing journal flow.
 
-## 2. Time-of-day view (restored)
+### Phase 6 — Lunar Rituals tab
+- Phase-aware rituals (New / First Quarter / Full / Last Quarter), personalized by natal Moon.
+- Link each ritual to a journal entry.
 
-New component `TimeOfDayBoard.tsx` rendered when view = "Time of day":
+### Phase 7 — Carey Cosmic Mode + Insights Feed
+- Extend existing Carey edge function with a `cosmic` system prompt that receives the user's natal + today's transits + goals/tasks summary.
+- Personalized insights feed on the hero ("Venus entering your 9th House…").
 
-```text
-┌─────────── Morning ──────┬── Afternoon ──┬── Evening ──┐
-│ slot header + weather    │   …           │   …         │
-│ Breakfast meal card      │ Lunch         │ Dinner      │
-│ Routine progress (mini)  │   …           │   …         │
-└──────────────────────────┴───────────────┴─────────────┘
-   ── All tasks planned for the day (grouped by day part) ──
-```
+## Technical Notes
+- Engine lives in `src/lib/cosmic/engine.ts` (pure functions, fully typed); UI consumes via `useCosmic(date)` hook.
+- Whole Sign: ascendant sign = house 1, next sign = house 2, etc. Drop Placidus cusps from transit/house logic.
+- Calculations use existing ephemeris helper (already in `src/lib/cosmic/`); no new heavy deps.
+- New tables only if needed for saved insights/ritual completions — I'll surface a migration when we hit that phase.
+- Carey Cosmic uses the existing edge function via Lovable AI Gateway (no new secret).
 
-Implementation: reuse pieces from `RhythmSection` (slot header, `SlotWeather`, `MealSlotCard`, routine block) but render the three slots inside a single `md:grid-cols-3` card with no per-slot collapsibles. Underneath the three columns, render a single tasks panel that lists all tasks with `dueDate === today`, grouped by `dayPart` (Morning / Afternoon / Evening / Anytime), reusing the task row markup from `RhythmSection`. Drag-to-reschedule and inline add are preserved per group.
-
-On mobile the three columns stack; the tasks panel stays full-width.
-
-## 3. Horizontal Top 3 strip
-
-Update `TopThreeStrip.tsx` so the three pinned tasks render as a single horizontal row (chips) instead of 3 equal columns:
-
-- Replace `grid sm:grid-cols-3` with `flex flex-wrap items-center gap-2` (or `overflow-x-auto` on narrow screens).
-- Each task becomes a pill: number badge · checkbox · title (truncate) · star.
-- Header ("Top 3 today · 1/3 done") stays inline on the left, "Pin tasks" CTA on the right when empty.
-
-This applies in every view so the strip reads as one calm row above the day.
-
-## 4. Collapsible sidebar widgets
-
-Two layers of collapse, both persisted:
-
-1. **Per-widget collapse** — wrap each widget in `Today.tsx` with a `<CollapsibleWidget id="…" title="…">` shell that shows a small chevron in the top-right corner. State stored in `careflow:today-sidebar-collapsed:v1` (Set of widget ids). Collapsing keeps the title bar visible but hides the body.
-2. **Collapse the whole rail** — add a "Hide widgets" toggle next to the existing Reorder button. When hidden, the main column expands to full width (drop the `md:grid-cols-[…_280px]` track). State stored in `careflow:today-sidebar-hidden:v1`.
-
-The existing reorder mode is unchanged; collapse chevrons are visible in normal mode too.
-
-## Files touched
-
-- `src/pages/Today.tsx` — view switcher wiring, conditional main-column render, sidebar hide toggle, grid track switch.
-- `src/components/today/rhythm/RhythmHeader.tsx` — add view pill selector.
-- `src/components/today/TopThreeStrip.tsx` — horizontal pill row.
-- New `src/components/today/TimeOfDayBoard.tsx` — restored layout.
-- New `src/components/today/DayPlanBoard.tsx` — condensed planner.
-- New `src/components/today/ScheduleBoard.tsx` — schedule view (composes existing snapshot/agenda).
-- New `src/components/today/CollapsibleWidget.tsx` — per-widget shell.
-- New `src/lib/today-view.ts` — `useTodayView()` + storage keys.
-- Touch `src/lib/today-sidebar-order.ts` if a shared collapsed-state helper fits there; otherwise keep it in `today-view.ts`.
-
-No backend, schema, or business-logic changes — all presentation + local state.
-
-## Out of scope
-
-- Editing what widgets exist (the registry stays the same).
-- Changing the underlying Rhythm sections used by the default view.
-- Touching the Carey icon/halo work.
+## What I need from you
+1. **Approve the phase order** (or re-order).
+2. Confirm I should start with **Phase 1 only** in the next turn, then check in with you before Phase 2.
+3. Any natal-data caveat — should I assume users with no birth time get a noon chart with a soft warning? (Astro-Seek default.)
