@@ -12,6 +12,7 @@ export const TODAY_VIEW_LABELS: Record<TodayView, string> = {
 const VIEW_KEY = "careflow:today-view:v1";
 const COLLAPSED_KEY = "careflow:today-sidebar-collapsed:v1";
 const HIDDEN_KEY = "careflow:today-sidebar-hidden:v1";
+const PREFS_KEY = "careflow:today-prefs:v1";
 
 const viewListeners = new Set<(v: TodayView) => void>();
 
@@ -77,4 +78,40 @@ export function useSidebarHidden(): [boolean, (v: boolean) => void] {
     try { localStorage.setItem(HIDDEN_KEY, v ? "1" : "0"); } catch { /* */ }
   }, []);
   return [hidden, set];
+}
+
+export type TodayPrefs = {
+  showCareyNudges: boolean;
+  showQuickAdd: boolean;
+};
+
+const DEFAULT_PREFS: TodayPrefs = {
+  showCareyNudges: true,
+  showQuickAdd: true,
+};
+
+const prefsListeners = new Set<(p: TodayPrefs) => void>();
+
+function readPrefs(): TodayPrefs {
+  if (typeof localStorage === "undefined") return DEFAULT_PREFS;
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return DEFAULT_PREFS;
+    return { ...DEFAULT_PREFS, ...JSON.parse(raw) };
+  } catch { return DEFAULT_PREFS; }
+}
+
+export function useTodayPrefs(): [TodayPrefs, (patch: Partial<TodayPrefs>) => void] {
+  const [prefs, setPrefs] = useState<TodayPrefs>(readPrefs);
+  useEffect(() => {
+    const fn = (next: TodayPrefs) => setPrefs(next);
+    prefsListeners.add(fn);
+    return () => { prefsListeners.delete(fn); };
+  }, []);
+  const set = useCallback((patch: Partial<TodayPrefs>) => {
+    const next = { ...readPrefs(), ...patch };
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(next)); } catch { /* */ }
+    prefsListeners.forEach(l => l(next));
+  }, []);
+  return [prefs, set];
 }
