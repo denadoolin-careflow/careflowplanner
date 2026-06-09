@@ -135,23 +135,28 @@ function InboxInner() {
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
-      <header className="flex items-center gap-3">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary sm:h-10 sm:w-10">
-          <InboxIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+      <header className="flex flex-col gap-2">
+        {/* Title row */}
+        <div className="flex items-center gap-3">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary sm:h-10 sm:w-10">
+            <InboxIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-lg font-semibold tracking-tight sm:text-2xl">Inbox</h1>
+            <p className="truncate text-[11px] text-muted-foreground sm:text-sm">
+              {items.length} waiting · capture now, organize later
+            </p>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold tracking-tight sm:text-2xl">Inbox</h1>
-          <p className="truncate text-[11px] text-muted-foreground sm:text-sm">
-            {items.length} waiting · capture now, organize later
-          </p>
-        </div>
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-1 sm:gap-2">
-          {/* Mobile: icon-only essentials. Full labels return at sm+. */}
+
+        {/* Action buttons row */}
+        <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+          {/* Mobile: icon-only essentials */}
           <Button
             variant={selectionMode ? "default" : "ghost"}
             size="icon"
             onClick={toggleSelectionMode}
-            className="h-9 w-9 sm:hidden"
+            className="h-8 w-8 sm:hidden"
             title={selectionMode ? "Exit select mode" : "Select multiple tasks"}
             aria-label="Select tasks"
           >
@@ -162,7 +167,7 @@ function InboxInner() {
             size="icon"
             onClick={triage}
             disabled={triaging || items.length === 0}
-            className="h-9 w-9 sm:hidden"
+            className="h-8 w-8 sm:hidden"
             title="Smart triage"
             aria-label="Smart triage"
           >
@@ -172,7 +177,7 @@ function InboxInner() {
             variant={controlsVisible ? "default" : "ghost"}
             size="icon"
             onClick={toggleControls}
-            className="h-9 w-9 sm:hidden"
+            className="h-8 w-8 sm:hidden"
             title="Options"
             aria-label="Options"
             aria-pressed={controlsVisible}
@@ -180,13 +185,13 @@ function InboxInner() {
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
 
-          {/* Desktop / tablet — original full controls */}
-          <div className="hidden flex-wrap items-center justify-end gap-2 sm:flex">
+          {/* Desktop / tablet */}
+          <div className="hidden flex-wrap items-center justify-end gap-1.5 sm:flex">
             <Button
               variant={selectionMode ? "default" : "outline"}
               size="sm"
               onClick={toggleSelectionMode}
-              className="gap-1.5"
+              className="h-8 gap-1.5 text-xs"
               title={selectionMode ? "Exit select mode" : "Select multiple tasks"}
             >
               <CheckSquare className="h-3.5 w-3.5" />
@@ -197,7 +202,7 @@ function InboxInner() {
               size="sm"
               onClick={triage}
               disabled={triaging || items.length === 0}
-              className="gap-1.5"
+              className="h-8 gap-1.5 text-xs"
             >
               {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               Smart triage
@@ -206,7 +211,7 @@ function InboxInner() {
               variant={controlsVisible ? "default" : "outline"}
               size="sm"
               onClick={toggleControls}
-              className="gap-1.5"
+              className="h-8 gap-1.5 text-xs"
               title={controlsVisible ? "Hide group / filter / sort" : "Show group / filter / sort"}
               aria-pressed={controlsVisible}
             >
@@ -235,14 +240,14 @@ function InboxInner() {
             </Button>
           </div>
         </div>
-      </header>
 
-      {/* When Options is on, surface the group/filter/sort controls below the header so they stay within the inbox frame */}
-      {controlsVisible && (
-        <div className="flex flex-wrap items-center gap-2">
-          <TaskListControls prefs={prefs} onChange={setPrefs} />
-        </div>
-      )}
+        {/* Controls row — appears below buttons when Options is on */}
+        {controlsVisible && (
+          <div className="flex flex-wrap items-center gap-2">
+            <TaskListControls prefs={prefs} onChange={setPrefs} />
+          </div>
+        )}
+      </header>
 
       {selectionMode && (
         <div className="flex items-center justify-between rounded-xl border border-primary/40 bg-primary/5 px-3 py-2 text-xs">
