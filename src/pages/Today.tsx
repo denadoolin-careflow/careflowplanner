@@ -12,30 +12,13 @@ import { Button } from "@/components/ui/button";
 
 import { RhythmHeader } from "@/components/today/rhythm/RhythmHeader";
 import { DailySnapshotRow } from "@/components/today/rhythm/DailySnapshotRow";
-import { WhatFitsNow } from "@/components/today/rhythm/WhatFitsNow";
 import { RhythmSection } from "@/components/today/rhythm/RhythmSection";
-import { FamilySnapshotCard } from "@/components/today/rhythm/FamilySnapshotCard";
-import { GrowingSeasonCard } from "@/components/today/rhythm/GrowingSeasonCard";
-import { CareLoopCard } from "@/components/today/rhythm/CareLoopCard";
-import { UpcomingEventsCard } from "@/components/today/rhythm/UpcomingEventsCard";
 import { CareyProactiveCards } from "@/components/carey/CareyProactiveCards";
 import { EndOfDayCard } from "@/components/today/rhythm/EndOfDayCard";
-import { TasksWidget } from "@/components/today/rhythm/TasksWidget";
 import { TopThreeStrip } from "@/components/today/TopThreeStrip";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { WeatherRemindersCard } from "@/components/today/WeatherRemindersCard";
-import { MealsPlannedWidget } from "@/components/today/widgets/MealsPlannedWidget";
-import { TasksTodayWidget } from "@/components/today/widgets/TasksTodayWidget";
-import { GroceryWidget } from "@/components/today/widgets/GroceryWidget";
-import { NotesTodayWidget } from "@/components/today/widgets/NotesTodayWidget";
-import { JournalTodayWidget } from "@/components/today/widgets/JournalTodayWidget";
-import { MemoriesTodayWidget } from "@/components/today/widgets/MemoriesTodayWidget";
-import { HomeResetWidget } from "@/components/today/widgets/HomeResetWidget";
-import { BrainDumpWidget } from "@/components/today/widgets/BrainDumpWidget";
-import { CycleSidebarCard } from "@/components/today/widgets/CycleSidebarCard";
-import { MoonPrioritiesCard } from "@/components/today/widgets/MoonPrioritiesCard";
-import { WeatherWidget } from "@/components/widgets/WeatherWidget";
-import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
+import { buildSidebarWidgetRegistry } from "@/components/today/widget-registry";
 import { useSidebarOrder } from "@/lib/today-sidebar-order";
 import { useTodayView, useCollapsedWidgets, useSidebarHidden, useTodayPrefs } from "@/lib/today-view";
 import { Sparkles } from "lucide-react";
@@ -170,26 +153,8 @@ function TodayInner() {
     else navigate("/today");
   };
 
-  const widgetRegistry: { id: string; label: string; render: () => JSX.Element | null }[] = [
-    { id: "brain-dump",       label: "Brain dump",       render: () => <BrainDumpWidget /> },
-    { id: "what-fits",        label: "What fits now",    render: () => <WhatFitsNow date={day} onTaskClick={setEditTaskId} /> },
-    { id: "weather",          label: "Weather",          render: () => <WeatherWidget /> },
-    { id: "weekly-weather",   label: "Weekly weather",   render: () => <WeeklyWeather /> },
-    { id: "moon-priorities",  label: "Moon & Top 3",     render: () => <MoonPrioritiesCard date={day} onTaskClick={setEditTaskId} /> },
-    { id: "tasks-today",      label: "Tasks",            render: () => <TasksTodayWidget date={day} /> },
-    { id: "tasks",            label: "Tasks",            render: () => <TasksWidget date={day} /> },
-    { id: "meals-planned",    label: "Meals planned",    render: () => <MealsPlannedWidget date={day} /> },
-    { id: "grocery",          label: "Grocery",          render: () => <GroceryWidget /> },
-    { id: "cycle",            label: "Cycle",            render: () => <CycleSidebarCard date={day} /> },
-    { id: "notes-today",      label: "Notes today",      render: () => <NotesTodayWidget /> },
-    { id: "journal-today",    label: "Journal today",    render: () => <JournalTodayWidget /> },
-    { id: "memories-today",   label: "Memories today",   render: () => <MemoriesTodayWidget /> },
-    { id: "home-reset",       label: "Home reset",       render: () => <HomeResetWidget /> },
-    { id: "family-snapshot",  label: "Family snapshot",  render: () => <FamilySnapshotCard date={day} /> },
-    { id: "growing-season",   label: "Growing season",   render: () => <GrowingSeasonCard /> },
-    { id: "care-loop",        label: "Care loop",        render: () => <CareLoopCard /> },
-    { id: "upcoming-events",  label: "Upcoming events",  render: () => <UpcomingEventsCard date={day} /> },
-  ];
+  const widgetRegistry = buildSidebarWidgetRegistry();
+  const widgetOpts = { date: day, onTaskClick: setEditTaskId };
   const canonical = widgetRegistry.map(w => w.id);
   const { order, hidden, move, remove, restore, restoreAll, reset } = useSidebarOrder(canonical);
   const byId = new Map(widgetRegistry.map(w => [w.id, w]));
@@ -300,7 +265,7 @@ function TodayInner() {
             const w = byId.get(id);
             if (!w) return null;
             if (hidden.has(id)) return null;
-            const node = w.render();
+            const node = w.render(widgetOpts);
             if (!node) return null;
             if (!reorderMode) {
               return (
