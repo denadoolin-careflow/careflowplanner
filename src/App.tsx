@@ -78,6 +78,8 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Updates from "./pages/Updates";
 import AdminUpdates from "./pages/AdminUpdates";
+import Roadmap from "./pages/Roadmap";
+import AdminRoadmap from "./pages/AdminRoadmap";
 import FamilySettings from "./pages/FamilySettings";
 import JoinHousehold from "./pages/JoinHousehold";
 import FamilyRequests from "./pages/FamilyRequests";
@@ -141,6 +143,7 @@ const App = () => (
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/updates" element={<Updates />} />
+              <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/" element={<IndexRedirect />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
                 <Route path="/dashboard" element={<HomeHub />} />
@@ -202,6 +205,7 @@ const App = () => (
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/automations" element={<Automations />} />
                 <Route path="/admin/updates" element={<AdminUpdates />} />
+                <Route path="/admin/roadmap" element={<AdminRoadmap />} />
                 <Route path="/trips" element={<Trips />} />
                 <Route path="/trips/:id" element={<TripDetail />} />
                 <Route path="/family" element={<FamilySettings />} />
