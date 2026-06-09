@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
-import { Sparkles, RefreshCw, Leaf, ShoppingBasket, MessageCircle, Clock } from "lucide-react";
+import { Sparkles, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useStore } from "@/lib/store";
 import type { Task, Energy } from "@/lib/types";
 import { useDayEnergy } from "@/lib/energy-store";
@@ -17,8 +18,6 @@ function inferEnergy(t: Task): Energy {
   if (m <= 30) return "medium";
   return "high";
 }
-
-const ICONS = [Leaf, ShoppingBasket, MessageCircle];
 
 function recommend(tasks: Task[], dominantEnergy: Energy, today: string) {
   const base = tasks.filter(t => !t.parentTaskId && !t.done && t.dueDate && t.status !== "parked");
@@ -83,43 +82,46 @@ export function WhatFitsNow({ date, onTaskClick }: Props) {
         </Button>
       </div>
 
-      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-        {picks.map((t, i) => {
-          const Icon = ICONS[i] ?? Leaf;
+      <div className="flex flex-wrap items-start gap-2">
+        {picks.map((t) => {
           const mins = estMin(t);
           return (
-            <button
+            <div
               key={t.id}
-              type="button"
-              onClick={() => onTaskClick?.(t.id)}
               className={cn(
-                "group flex flex-col items-start gap-2 rounded-2xl border border-border/50 bg-background/70",
-                "px-3 py-3 text-left transition-all hover:border-primary/40 hover:bg-background",
+                "flex min-w-0 items-center gap-2 rounded-xl border border-border/50 bg-background/70",
+                "px-3 py-2 text-left transition-all hover:border-primary/40 hover:bg-background",
               )}
             >
-              <div className="flex w-full items-center justify-between">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-primary">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  <Clock className="h-2.5 w-2.5" /> {mins} min
-                </span>
-              </div>
-              <div className="min-w-0">
-                <div className="line-clamp-2 text-sm font-medium text-foreground">{t.title}</div>
-                {t.area && (
-                  <div className="mt-0.5 text-[11px] text-muted-foreground">{t.area}</div>
-                )}
-              </div>
-            </button>
+              <Checkbox
+                checked={t.done}
+                onCheckedChange={() => void toggleTask(t.id)}
+                className="shrink-0"
+                aria-label={`Complete ${t.title}`}
+              />
+              <button
+                type="button"
+                onClick={() => onTaskClick?.(t.id)}
+                className="min-w-0 text-left"
+              >
+                <div className="break-words text-sm font-medium leading-snug text-foreground">
+                  {t.title}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  {t.area && <span>{t.area}</span>}
+                  <span className="inline-flex items-center gap-0.5">
+                    <Clock className="h-2.5 w-2.5" /> {mins} min
+                  </span>
+                </div>
+              </button>
+            </div>
           );
         })}
         {picks.length === 0 && (
-          <div className="col-span-full rounded-2xl border border-dashed border-border/60 px-4 py-6 text-center text-sm text-muted-foreground">
+          <div className="w-full rounded-2xl border border-dashed border-border/60 px-4 py-6 text-center text-sm text-muted-foreground">
             All caught up — nothing pulling for your attention.
           </div>
         )}
-
       </div>
 
       <div className="mt-2 flex justify-end">
