@@ -1,18 +1,28 @@
 import { useEffect, useState, useMemo } from "react";
 import { format, addDays } from "date-fns";
-import { ChevronLeft, ChevronRight, Sparkles, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Sparkles, Clock, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { useStore } from "@/lib/store";
 import { personalGreeting } from "@/lib/greeting";
 import { AffirmationHeader } from "@/components/today/AffirmationHeader";
 import { AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
-import { useTodayView, TODAY_VIEW_LABELS, type TodayView } from "@/lib/today-view";
+import {
+  useTodayView,
+  TODAY_VIEW_LABELS,
+  type TodayView,
+  useTodayPrefs,
+} from "@/lib/today-view";
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
-import { getMoonPhase, MOON_INFO } from "@/lib/moon";
+import { getMoonPhase, MOON_INFO, getIllumination, daysUntilFull, daysUntilNew } from "@/lib/moon";
+import { MoonGlyph } from "@/components/widgets/MoonGlyph";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
+import { QuickAddBar } from "@/components/today/QuickAddBar";
 
 interface Props {
   date: Date;
@@ -39,12 +49,23 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
     ? `${unit === "F" ? cToF(snap.tempC) : Math.round(snap.tempC)}°`
     : null;
 
-  const moon = MOON_INFO[getMoonPhase(date)];
+  const moonPhase = getMoonPhase(date);
+  const moon = MOON_INFO[moonPhase];
+  const illum = getIllumination(date);
+  const toFull = daysUntilFull(date);
+  const toNew = daysUntilNew(date);
+  const moonProximity =
+    toFull === 0 ? "Full tonight"
+    : toNew === 0 ? "New tonight"
+    : toFull < toNew ? `${toFull}d to full`
+    : `${toNew}d to new`;
 
   const { periods, settings } = useCycle();
   const cyclePhase = useMemo(() => {
     try { return getPhaseInfo(date, periods, settings); } catch { return null; }
   }, [date, periods, settings]);
+
+  const [prefs, setPrefs] = useTodayPrefs();
 
   return (
     <div className="cozy-card overflow-hidden">
@@ -83,25 +104,30 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
             <h1 className="font-display text-2xl font-semibold leading-none text-foreground sm:text-4xl">
               Today
             </h1>
-            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-              {format(date, "EEEE, MMMM d, yyyy")}
-            </p>
-            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <span
-                className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-card/60 px-2 py-0.5 text-[10px] text-foreground/80 backdrop-blur"
-                title={moon.invitation}
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <p className="text-xs text-muted-foreground sm:text-sm">
+                {format(date, "EEEE, MMMM d, yyyy")}
+              </p>
+              <Link
+                to="/rhythm"
+                title={`${moon.label} · ${illum}% lit · ${moonProximity} — open Lunar`}
+                className="group inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-2 py-0.5 text-[11px] text-foreground/85 shadow-soft backdrop-blur transition hover:border-primary/40 hover:bg-card hover:text-foreground"
               >
-                <span aria-hidden>{moon.glyph}</span>
-                <span>{moon.label}</span>
-              </span>
+                <MoonGlyph date={date} size={16} className="-my-0.5" />
+                <span className="font-medium">{moon.label}</span>
+                <span className="tabular-nums text-muted-foreground">· {illum}%</span>
+                <span className="hidden text-muted-foreground sm:inline">· {moonProximity}</span>
+              </Link>
               {cyclePhase && (
-                <span
-                  className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-card/60 px-2 py-0.5 text-[10px] text-foreground/80 backdrop-blur"
-                  title={PHASE_META[cyclePhase.phase].invitation}
+                <Link
+                  to="/health"
+                  title={`${PHASE_META[cyclePhase.phase].invitation} — open Cycle`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-2 py-0.5 text-[11px] text-foreground/85 shadow-soft backdrop-blur transition hover:border-primary/40 hover:bg-card hover:text-foreground"
                 >
                   <span aria-hidden>{PHASE_META[cyclePhase.phase].glyph}</span>
-                  <span>Cycle day {cyclePhase.cycleDay} · {PHASE_META[cyclePhase.phase].label}</span>
-                </span>
+                  <span className="font-medium">Day {cyclePhase.cycleDay}</span>
+                  <span className="text-muted-foreground">· {PHASE_META[cyclePhase.phase].label}</span>
+                </Link>
               )}
             </div>
           </div>
@@ -162,11 +188,54 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
                 </button>
               ))}
             </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/70 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                  title="Today preferences"
+                >
+                  <Settings2 className="h-3 w-3" /> Preferences
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 space-y-3 p-3">
+                <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Today preferences
+                </div>
+                <PrefRow
+                  label="Try this now from Carey"
+                  hint="Show Carey's actionable suggestions at the top of Today."
+                  checked={prefs.showCareyNudges}
+                  onChange={(v) => setPrefs({ showCareyNudges: v })}
+                />
+                <PrefRow
+                  label="Quick add bar"
+                  hint="Inline input to drop tasks or meals into the right time slot."
+                  checked={prefs.showQuickAdd}
+                  onChange={(v) => setPrefs({ showQuickAdd: v })}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <AffirmationHeader date={date} className="max-w-2xl" />
+          {prefs.showQuickAdd && <QuickAddBar date={date} />}
         </div>
       </div>
     </div>
+  );
+}
+
+function PrefRow({
+  label, hint, checked, onChange,
+}: { label: string; hint: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-start justify-between gap-3">
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-foreground">{label}</span>
+        <span className="block text-[11px] leading-snug text-muted-foreground">{hint}</span>
+      </span>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </label>
   );
 }

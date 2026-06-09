@@ -37,7 +37,7 @@ import { MoonPrioritiesCard } from "@/components/today/widgets/MoonPrioritiesCar
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
 import { useSidebarOrder } from "@/lib/today-sidebar-order";
-import { useTodayView, useCollapsedWidgets, useSidebarHidden } from "@/lib/today-view";
+import { useTodayView, useCollapsedWidgets, useSidebarHidden, useTodayPrefs } from "@/lib/today-view";
 import { CollapsibleWidget } from "@/components/today/CollapsibleWidget";
 import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
 import { DayPlanBoard } from "@/components/today/DayPlanBoard";
@@ -115,9 +115,11 @@ function TodayInner() {
   const [view] = useTodayView();
   const { collapsed, toggle: toggleCollapsed } = useCollapsedWidgets();
   const [sidebarHidden, setSidebarHidden] = useSidebarHidden();
+  const [prefs] = useTodayPrefs();
 
   const widgetRegistry: { id: string; label: string; render: () => JSX.Element | null }[] = [
     { id: "brain-dump",       label: "Brain dump",       render: () => <BrainDumpWidget /> },
+    { id: "what-fits",        label: "What fits now",    render: () => <WhatFitsNow date={day} onTaskClick={setEditTaskId} /> },
     { id: "weather",          label: "Weather",          render: () => <WeatherWidget /> },
     { id: "weekly-weather",   label: "Weekly weather",   render: () => <WeeklyWeather /> },
     { id: "moon-priorities",  label: "Moon & Top 3",     render: () => <MoonPrioritiesCard date={day} onTaskClick={setEditTaskId} /> },
@@ -147,7 +149,6 @@ function TodayInner() {
       <>
         <DailySnapshotRow date={day} />
         {isReallyToday && <WeatherRemindersCard />}
-        <WhatFitsNow date={day} onTaskClick={setEditTaskId} />
         <RhythmSection slot="morning"   date={day} defaultOpen={nowSlot === "morning"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
         <RhythmSection slot="afternoon" date={day} defaultOpen={nowSlot === "afternoon" || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
         <RhythmSection slot="evening"   date={day} defaultOpen={nowSlot === "evening"   || !isReallyToday} onTaskClick={setEditTaskId} showWeather />
@@ -177,7 +178,7 @@ function TodayInner() {
               {sidebarHidden ? "Widgets" : "Hide"}
             </button>
           </div>
-          {isReallyToday && <CareyProactiveCards />}
+          {isReallyToday && prefs.showCareyNudges && <CareyProactiveCards />}
           <TopThreeStrip date={day} onTaskClick={setEditTaskId} />
           {renderMain()}
 
