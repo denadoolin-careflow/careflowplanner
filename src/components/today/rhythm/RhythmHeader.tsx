@@ -23,7 +23,6 @@ import { MoonGlyph } from "@/components/widgets/MoonGlyph";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
-import { PeriodNav } from "@/components/today/PeriodNav";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 
 interface Props {
@@ -169,8 +168,6 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
               )}
             </div>
           </div>
-
-          <PeriodNav />
 
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
