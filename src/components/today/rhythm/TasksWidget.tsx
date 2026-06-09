@@ -227,6 +227,7 @@ export function TasksWidget({ date = new Date() }: Props) {
                   <span className="shrink-0 text-[9px] text-muted-foreground">{t.estMinutes}m</span>
                 ) : null}
               </button>
+              <QuickDayPartButton task={t} />
             </li>
           ))}
         </ul>
