@@ -17,6 +17,7 @@ import { CommandPalette } from "@/components/command/CommandPalette";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { FocusPanel } from "@/components/focus/FocusPanel";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { WhatsNewPopover } from "@/components/updates/WhatsNewPopover";
 import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
 import { UpgradePromptHost } from "@/components/UpgradePromptHost";
 import { useEffect } from "react";
@@ -56,6 +57,7 @@ export function AppLayout() {
               <HeaderNowStrip />
               <UniversalSearchBar />
               <NotificationCenter />
+              <WhatsNewPopover />
               <HeaderQuickSettings />
               <Link to="/" aria-label="CareFlow home" className="ml-1 hidden sm:inline-flex">
                 <CareFlowLogo size={32} />
