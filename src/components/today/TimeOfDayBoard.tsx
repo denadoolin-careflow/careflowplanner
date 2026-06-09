@@ -45,8 +45,9 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
       <div className="grid gap-3 p-3 sm:p-4 md:grid-cols-3">
         {SLOTS.map(s => {
           const Icon = s.icon;
+          const tasks = tasksByPart[s.dayPart];
           return (
-            <div key={s.slot} className={cn("rounded-2xl border border-border/40 bg-gradient-to-br p-3", s.tint)}>
+            <div key={s.slot} className={cn("rounded-2xl border border-border/40 bg-gradient-to-br p-3 flex flex-col", s.tint)}>
               <div className="mb-2 flex items-center gap-2">
                 <span className="grid h-8 w-8 place-items-center rounded-full bg-card/70 text-primary shadow-soft">
                   <Icon className="h-4 w-4" />
@@ -54,7 +55,7 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
                 <div className="min-w-0">
                   <div className="font-display text-base font-semibold text-foreground">{s.label}</div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {tasksByPart[s.dayPart].length} task{tasksByPart[s.dayPart].length === 1 ? "" : "s"}
+                    {tasks.length} task{tasks.length === 1 ? "" : "s"}
                   </div>
                 </div>
               </div>
@@ -62,42 +63,58 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
               <div className="mt-2 rounded-xl border border-border/40 bg-background/60 p-2">
                 <MealSlotCard date={date} slot={s.meal} />
               </div>
+              <div className="mt-3 flex-1">
+                <TaskGroup
+                  label={s.dayPart}
+                  date={date}
+                  dayPart={s.dayPart}
+                  tasks={tasks}
+                  onToggle={toggleTask}
+                  onTaskClick={onTaskClick}
+                  onDrop={async (id) => {
+                    const t = state.tasks.find(x => x.id === id);
+                    if (!t) return;
+                    await updateTask(id, { dueDate: iso, dayPart: s.dayPart, inbox: false });
+                    toast.success(`Scheduled "${t.title}" → ${s.dayPart}`);
+                  }}
+                  onAdd={async (title) => {
+                    await addTask({ title, dueDate: iso, dayPart: s.dayPart });
+                  }}
+                />
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div className="border-t border-border/40 p-3 sm:p-4">
-        <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          <ListChecks className="h-3.5 w-3.5 text-primary" />
-          Tasks planned for the day
-          <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] tabular-nums text-primary">
-            {todayTasks.length}
-          </span>
+      {/* Anytime tasks — full width below the three columns */}
+      {tasksByPart.Anytime.length > 0 && (
+        <div className="border-t border-border/40 p-3 sm:p-4">
+          <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <ListChecks className="h-3.5 w-3.5 text-primary" />
+            Anytime
+            <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] tabular-nums text-primary">
+              {tasksByPart.Anytime.length}
+            </span>
+          </div>
+          <TaskGroup
+            label="Anytime"
+            date={date}
+            tasks={tasksByPart.Anytime}
+            onToggle={toggleTask}
+            onTaskClick={onTaskClick}
+            onDrop={async (id) => {
+              const t = state.tasks.find(x => x.id === id);
+              if (!t) return;
+              await updateTask(id, { dueDate: iso, dayPart: undefined, inbox: false });
+              toast.success(`Scheduled "${t.title}" → Anytime`);
+            }}
+            onAdd={async (title) => {
+              await addTask({ title, dueDate: iso });
+            }}
+          />
         </div>
-        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {(["Morning", "Afternoon", "Evening", "Anytime"] as DayPart[]).map(part => (
-            <TaskGroup
-              key={part}
-              label={part}
-              date={date}
-              dayPart={part === "Anytime" ? undefined : part}
-              tasks={tasksByPart[part]}
-              onToggle={toggleTask}
-              onTaskClick={onTaskClick}
-              onDrop={async (id) => {
-                const t = state.tasks.find(x => x.id === id);
-                if (!t) return;
-                await updateTask(id, { dueDate: iso, dayPart: part === "Anytime" ? undefined : part, inbox: false });
-                toast.success(`Scheduled "${t.title}" → ${part}`);
-              }}
-              onAdd={async (title) => {
-                await addTask({ title, dueDate: iso, dayPart: part === "Anytime" ? undefined : part });
-              }}
-            />
-          ))}
-        </div>
-      </div>
+      )}
     </section>
   );
 }
