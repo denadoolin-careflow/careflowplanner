@@ -488,6 +488,7 @@ export default function Landing() {
           <p className="mt-5 text-xs italic text-muted-foreground/80">
             No pressure. No perfectionism. Just support.
           </p>
+          <PreviewPanel />
         </div>
         <div className="relative hidden sm:block lg:pt-4">
           <HeroMockup />
