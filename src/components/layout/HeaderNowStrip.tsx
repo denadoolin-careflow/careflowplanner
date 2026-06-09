@@ -209,14 +209,26 @@ export function HeaderNowStrip({ className }: { className?: string }) {
 
       {/* ───── Desktop / tablet (inline full strip) ───── */}
       <div className="hidden items-center gap-2 md:flex">
-      <Link
-        to={`/today#slot-${currentSlot}`}
-        aria-label={`Open today's ${slotLabel} tasks`}
-        title={`Jump to ${slotLabel} tasks`}
-        className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 tabular-nums font-medium text-foreground/85 hover:bg-muted/70 transition"
-      >
-        {time}
-      </Link>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={`Open today's ${slotLabel} tasks`}
+            title={`${slotLabel} tasks`}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted/40 px-2.5 py-1.5 tabular-nums font-medium text-foreground/85 hover:bg-muted/70 transition"
+          >
+            {time}
+            {slotTasks.length > 0 && (
+              <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                {slotTasks.length}
+              </span>
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" sideOffset={6} className="w-60 p-0">
+          <DueNextPreview tasks={slotTasks} slotLabel={slotLabel} />
+        </PopoverContent>
+      </Popover>
       <Link
         to="/today"
         aria-label="Open Today"
