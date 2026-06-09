@@ -1,49 +1,70 @@
 ## Goal
 
-Give users a public `/updates` page on the landing site and a "What's new" indicator in the app header, fed by a Lovable Cloud table you (admin) curate. To keep it low-effort, an AI summarizer turns raw GitHub commits into a draft entry you review and publish.
+Finish the `/updates` system: get GitHub pulling commits, add a discoverable "What's new" link on the landing footer, give you a reusable user-facing release notes template, and let users opt in to email notifications when new updates are published.
 
-## User flows
+## 1. GitHub secrets
 
-- **Public visitor → `/updates`**: scrollable, newest-first list of published entries (date, title, summary, tags like "New", "Improved", "Fixed").
-- **Signed-in user → app header**: a small "✨ What's new" pill next to the bell. Dot shows when there are entries newer than their `last_seen_changelog_at`. Click opens a popover with the latest 5 entries and a "See all updates" link to `/updates`.
-- **Admin → `/admin/updates`**: list of drafts + published entries, "Pull latest commits" button (calls edge function), "Summarize with AI" on a draft, edit fields, toggle Published.
+The migration already ran when it was created — no need to paste anything into the SQL editor. The remaining setup is the two GitHub secrets so the `changelog-pull-commits` edge function can reach your repo:
 
-## Data model (one migration)
+- `GITHUB_TOKEN` — a fine-grained personal access token with **Contents: Read** on the repo.
+- `GITHUB_REPO` — the repo in `owner/repo` form (e.g. `yourname/careflow`).
 
-`changelog`
-- `id`, `title`, `summary` (markdown), `category` (`new` | `improved` | `fixed` | `announcement`), `published` (bool, default false), `published_at`, `created_at`, `updated_at`.
-- RLS: public can `SELECT` rows where `published = true`. Only `has_role(auth.uid(), 'admin')` can `INSERT/UPDATE/DELETE`.
+I'll trigger the secrets prompt once we move to build. You enter the values in the secure form; nothing about them is stored in code.
 
-`changelog_raw_commits` (admin-only)
-- `id`, `sha` (unique), `message`, `author`, `committed_at`, `included_in_entry_id` (nullable FK → changelog), `created_at`.
-- RLS: admin-only on all ops.
+## 2. Landing footer "What's new" link
 
-`profiles.last_seen_changelog_at timestamptz` — used by the in-app indicator. (Adds a column to existing `profiles`.)
+Find the landing footer (likely in `src/pages/Index.tsx` or a `Footer` component used by the landing route) and add a `<Link to="/updates">What's new</Link>` next to the existing Privacy/Terms links. Match the surrounding text style — no new design tokens.
 
-Grants on each new table per Cloud rules (`authenticated`, `service_role`; `anon SELECT` only on `changelog` for published rows).
+## 3. User-facing release notes template
 
-## Edge functions
+A markdown stub I'll drop into the admin editor's "New entry" flow so every published update has a consistent shape. Used as the default `summary` when you create a draft manually or after AI summarization:
 
-1. `changelog-pull-commits` (admin-gated): fetches recent commits from the connected GitHub repo via GitHub REST API, upserts into `changelog_raw_commits` by `sha`. Requires `GITHUB_TOKEN` + `GITHUB_REPO` secrets (will prompt user to add via secrets tool).
-2. `changelog-summarize` (admin-gated): takes an array of commit SHAs, sends their messages to Lovable AI (`google/gemini-3-flash-preview`) with a system prompt that produces `{ title, summary, category }` JSON, returns a draft (or directly inserts an unpublished `changelog` row and links the commits).
+```
+**What changed**
+- …
 
-Both validate the caller has the `admin` role via `has_role`.
+**Why it matters**
+- …
 
-## Frontend
+**Heads up**
+- … (optional: anything to watch for)
+```
 
-- `src/pages/Updates.tsx` — public page at `/updates`, SEO meta + JSON-LD, lists published entries.
-- `src/pages/admin/AdminUpdates.tsx` — list/edit/publish, "Pull commits", "Summarize selected".
-- `src/components/updates/WhatsNewPopover.tsx` — header pill + popover, reads `changelog` + `profiles.last_seen_changelog_at`, updates the timestamp on open.
-- Route additions in `src/App.tsx`; header mount in `src/components/layout/HeaderNowStrip.tsx` (or wherever the bell lives).
-- Landing site link to `/updates` in the footer.
+Plus a small "Insert template" button in `AdminUpdates.tsx` next to the summary field so you can drop it in at any time, and the AI summarizer's system prompt will be nudged to produce summaries in this shape.
 
-## Setup the user will need to do
+## 4. Email notifications (opt-in)
 
-- Confirm there is at least one row in `user_roles` with role `admin` for the user's own account (I'll add a quick check + helper note).
-- Connect GitHub to the project (Plus menu → GitHub) and provide a GitHub personal access token (`repo:read`) + `owner/repo` string when prompted — I'll request these via the secrets tool when we get to the edge function.
+### Data
+- Add `profiles.notify_on_updates boolean default false`.
+- A simple `Settings` toggle: "Email me when new updates ship."
+
+### Sending
+Use Lovable Emails (built-in). Required setup before sends work:
+1. Email infrastructure (`setup_email_infra`) — creates the queue, send log, suppression list, unsubscribe tokens.
+2. App email scaffolding (`scaffold_transactional_email`) — creates `send-transactional-email`, unsubscribe + suppression handlers, and the templates folder.
+3. A new React Email template `changelog-update.tsx` in `supabase/functions/_shared/transactional-email-templates/` with: title, category badge, summary (rendered as plain text — markdown won't be parsed inside the email), and a "Read on CareFlow" button to `/updates`.
+
+If no email domain is configured yet, I'll surface the email setup dialog first — you pick a sender subdomain, Lovable handles DNS delegation, and sends activate once DNS verifies.
+
+### Trigger
+A new edge function `changelog-notify` (admin-gated) that:
+- Takes a `changelog.id`.
+- Fetches all profiles where `notify_on_updates = true` and email is verified.
+- For each, invokes `send-transactional-email` with `templateName: "changelog-update"`, an idempotency key of `changelog-${entryId}-${userId}`, and the entry's title/category/summary as `templateData`.
+
+Wired into the AdminUpdates "Publish" action: after toggling `published = true`, if `published_at` was just set, prompt "Send email to subscribers?" — if yes, invoke `changelog-notify`. The idempotency key prevents duplicate sends if you re-trigger.
+
+### User-facing
+- Settings toggle (default off).
+- Every email has the standard Lovable Emails unsubscribe footer (auto-added).
+
+## Setup you'll need to do
+
+- Enter `GITHUB_TOKEN` + `GITHUB_REPO` when prompted.
+- If no email domain yet, complete the email setup dialog (one-click, DNS handled by Lovable).
 
 ## Out of scope
 
-- Email digests of updates.
-- Per-entry comments/reactions.
-- Automatic publishing without admin review (drafts only by default — safer).
+- Digesting multiple updates into one email (each published entry sends one email).
+- Per-category subscription preferences (single on/off toggle for now).
+- In-app push notifications.
