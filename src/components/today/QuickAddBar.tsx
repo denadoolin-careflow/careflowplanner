@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Plus, Sunrise, Sun, Moon, ListChecks, UtensilsCrossed, Sparkles } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -18,19 +18,67 @@ function currentSlot(d = new Date()): Exclude<Slot, "auto"> {
 const SLOT_ICON = { auto: Sparkles, morning: Sunrise, afternoon: Sun, evening: Moon } as const;
 const SLOT_TO_DAYPART = { morning: "Morning", afternoon: "Afternoon", evening: "Evening" } as const;
 const SLOT_TO_MEAL = { morning: "Breakfast", afternoon: "Lunch", evening: "Dinner" } as const;
+const DAYPART_TO_SLOT: Record<string, Exclude<Slot, "auto">> = {
+  Morning: "morning", Afternoon: "afternoon", Evening: "evening", "Late Night": "evening",
+};
+const MEAL_TO_SLOT: Record<string, Exclude<Slot, "auto">> = {
+  Breakfast: "morning", Lunch: "afternoon", Dinner: "evening", Snack: "afternoon",
+};
+
+function tokenize(s: string): string[] {
+  return Array.from(
+    new Set(
+      s.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter(t => t.length >= 3),
+    ),
+  );
+}
 
 /**
  * Inline quick-add: types a task or meal, optionally chooses a slot,
  * and we auto-route it into the right time-of-day section.
  */
 export function QuickAddBar({ date }: { date: Date }) {
-  const { addTask, addMeal } = useStore();
+  const { addTask, addMeal, state } = useStore();
   const [kind, setKind] = useState<Kind>("task");
   const [slot, setSlot] = useState<Slot>("auto");
   const [text, setText] = useState("");
 
   const iso = format(date, "yyyy-MM-dd");
-  const resolvedSlot = slot === "auto" ? currentSlot() : slot;
+
+  // Suggest a slot from past entries with overlapping tokens; fall back to time-of-day.
+  const suggestedSlot = useMemo<Exclude<Slot, "auto">>(() => {
+    const fallback = currentSlot();
+    const tokens = tokenize(text);
+    if (!tokens.length) return fallback;
+    const score: Record<Exclude<Slot, "auto">, number> = { morning: 0, afternoon: 0, evening: 0 };
+    if (kind === "task") {
+      for (const t of state.tasks ?? []) {
+        if (!t?.dayPart) continue;
+        const s = DAYPART_TO_SLOT[t.dayPart as string];
+        if (!s) continue;
+        const hay = tokenize(t.title ?? "");
+        const hits = tokens.filter(tok => hay.includes(tok)).length;
+        if (hits) score[s] += hits;
+      }
+    } else {
+      for (const m of state.meals ?? []) {
+        const s = MEAL_TO_SLOT[m.slot as string];
+        if (!s) continue;
+        const hay = tokenize(m.name ?? "");
+        const hits = tokens.filter(tok => hay.includes(tok)).length;
+        if (hits) score[s] += hits;
+      }
+    }
+    const best = (Object.entries(score) as [Exclude<Slot, "auto">, number][])
+      .sort((a, b) => b[1] - a[1])[0];
+    return best && best[1] > 0 ? best[0] : fallback;
+  }, [text, kind, state.tasks, state.meals]);
+
+  const resolvedSlot = slot === "auto" ? suggestedSlot : slot;
+  const autoFromHistory = slot === "auto" && suggestedSlot !== currentSlot();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,19 +132,30 @@ export function QuickAddBar({ date }: { date: Date }) {
       <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5 text-[11px]">
         {(["auto", "morning", "afternoon", "evening"] as Slot[]).map(s => {
           const Icon = SLOT_ICON[s];
+          const isAuto = s === "auto";
+          const label = isAuto ? `Auto · ${SLOT_TO_DAYPART[suggestedSlot]}` : s;
           return (
             <button
               key={s}
               type="button"
               onClick={() => setSlot(s)}
-              title={s === "auto" ? `Auto · ${SLOT_TO_DAYPART[currentSlot()]}` : s}
+              title={
+                isAuto
+                  ? autoFromHistory
+                    ? `Auto · ${SLOT_TO_DAYPART[suggestedSlot]} (learned from past ${kind === "task" ? "tasks" : "meals"})`
+                    : `Auto · ${SLOT_TO_DAYPART[suggestedSlot]} (time of day)`
+                  : s
+              }
               className={cn(
                 "inline-flex items-center gap-1 rounded-full px-2 py-1 capitalize transition-colors",
                 slot === s ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                isAuto && autoFromHistory && slot === "auto" && "ring-1 ring-primary/30",
               )}
             >
               <Icon className="h-3 w-3" />
-              <span className="hidden sm:inline">{s}</span>
+              <span className="hidden sm:inline">
+                {isAuto ? `Auto · ${SLOT_TO_DAYPART[suggestedSlot].slice(0, 3)}` : s}
+              </span>
             </button>
           );
         })}
