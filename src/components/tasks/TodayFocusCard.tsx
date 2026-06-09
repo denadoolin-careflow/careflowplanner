@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { energyBucket, ENERGY_META } from "@/lib/task-energy";
 import type { Energy, Task } from "@/lib/types";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 
 /**
  * "Today's Focus" hero card shown above task lists & on Today.
