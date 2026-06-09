@@ -6982,6 +6982,7 @@ export type Database = {
         Args: { _household_id: string; _user_id: string }
         Returns: boolean
       }
+      set_changelog_pull_schedule: { Args: { _freq: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
