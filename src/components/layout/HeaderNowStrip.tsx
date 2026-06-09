@@ -120,14 +120,26 @@ export function HeaderNowStrip({ className }: { className?: string }) {
     <div className={cn("flex items-center gap-2 text-sm", className)}>
       {/* ───── Mobile (compact + toggle) ───── */}
       <div className="flex items-center gap-1.5 md:hidden">
-        <Link
-          to={`/today#slot-${currentSlot}`}
-          aria-label={`Open today's ${slotLabel} tasks`}
-          title={`Jump to ${slotLabel} tasks`}
-          className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 tabular-nums text-xs font-medium text-foreground/85 hover:bg-muted/70 transition"
-        >
-          {time}
-        </Link>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Open today's ${slotLabel} tasks`}
+              title={`${slotLabel} tasks`}
+              className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 tabular-nums text-xs font-medium text-foreground/85 hover:bg-muted/70 transition"
+            >
+              {time}
+              {slotTasks.length > 0 && (
+                <span className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
+                  {slotTasks.length}
+                </span>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" sideOffset={6} className="w-60 p-0">
+            <DueNextPreview tasks={slotTasks} slotLabel={slotLabel} />
+          </PopoverContent>
+        </Popover>
         {snap && tempStr && (
           <WeatherDetailPopover
             trigger={
