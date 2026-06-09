@@ -386,7 +386,7 @@ export function GlobalSearchDialog({
                 </div>
               ) : (
                 grouped.map(group => {
-                  const Icon = KIND_ICON[group.kind];
+                  const GroupIcon = KIND_ICON[group.kind];
                   return (
                     <div key={group.kind} className="mb-2">
                       <div className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
@@ -396,6 +396,8 @@ export function GlobalSearchDialog({
                         {group.items.map(r => {
                           const idx = flat.indexOf(r);
                           const isActive = idx === active;
+                          const RowIcon: React.ComponentType<{ className?: string }> =
+                            r.kind === "page" && r.raw?.icon ? r.raw.icon : GroupIcon;
                           return (
                             <li key={r.id}>
                               <button
@@ -408,7 +410,7 @@ export function GlobalSearchDialog({
                                   isActive ? "bg-primary/10 text-foreground" : "hover:bg-muted/60",
                                 )}
                               >
-                                <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                <RowIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                 <span className="min-w-0 flex-1">
                                   <span className="block truncate font-medium">{highlight(r.title, term)}</span>
                                   {r.subtitle && (
