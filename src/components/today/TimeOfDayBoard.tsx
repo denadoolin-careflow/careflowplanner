@@ -127,6 +127,41 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
   );
 }
 
+function QuickAddSlot({ onAdd }: { onAdd: (title: string) => Promise<void> }) {
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const title = draft.trim();
+        if (!title) return;
+        await onAdd(title);
+        setDraft("");
+        inputRef.current?.focus();
+      }}
+      className="mt-2 flex items-center gap-1.5 rounded-xl border border-border/50 bg-background/70 px-2.5 py-1.5 shadow-soft transition-colors focus-within:border-primary/60 focus-within:bg-background focus-within:ring-1 focus-within:ring-primary/20"
+    >
+      <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder="Quick add task…"
+        className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/60"
+      />
+      {draft.trim() && (
+        <button
+          type="submit"
+          className="inline-flex items-center gap-0.5 rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/25"
+        >
+          <CornerDownLeft className="h-2.5 w-2.5" />
+        </button>
+      )}
+    </form>
+  );
+}
+
 function TaskGroup({
   label, tasks, onToggle, onTaskClick, onDrop, onAdd,
 }: {
