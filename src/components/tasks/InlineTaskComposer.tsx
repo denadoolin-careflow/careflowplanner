@@ -15,6 +15,7 @@ import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { TemplatePickerDialog } from "@/components/tasks/TemplatePickerDialog";
 import { BookTemplate } from "lucide-react";
+import { useAtmosphere } from "@/lib/atmospheres";
 
 type Defaults = Partial<Pick<Task, "inbox" | "dueDate" | "status" | "area" | "projectId" | "energy" | "estMinutes" | "tags">>;
 
