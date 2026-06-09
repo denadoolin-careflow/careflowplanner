@@ -148,6 +148,7 @@ export function MobileTaskCard({ task }: { task: Task }) {
             ))}
           </div>
         </div>
+        <QuickDayPartButton task={task} />
       </div>
     </button>
   );
