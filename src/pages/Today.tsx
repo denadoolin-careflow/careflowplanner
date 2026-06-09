@@ -38,6 +38,7 @@ import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
 import { useSidebarOrder } from "@/lib/today-sidebar-order";
 import { useTodayView, useCollapsedWidgets, useSidebarHidden, useTodayPrefs } from "@/lib/today-view";
+import { Sparkles } from "lucide-react";
 import { CollapsibleWidget } from "@/components/today/CollapsibleWidget";
 import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
 import { DayPlanBoard } from "@/components/today/DayPlanBoard";
@@ -115,7 +116,7 @@ function TodayInner() {
   const [view] = useTodayView();
   const { collapsed, toggle: toggleCollapsed } = useCollapsedWidgets();
   const [sidebarHidden, setSidebarHidden] = useSidebarHidden();
-  const [prefs] = useTodayPrefs();
+  const [prefs, setPrefs] = useTodayPrefs();
 
   // Swipe between Today / Week / Month on touch devices.
   const navigate = useNavigate();
@@ -186,12 +187,24 @@ function TodayInner() {
         "mx-auto grid w-full min-w-0 max-w-6xl gap-4 overflow-x-clip md:gap-5 lg:gap-6",
         sidebarHidden
           ? "md:grid-cols-1"
-          : "md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px]",
+          : "md:grid-cols-[minmax(0,1fr)_clamp(220px,26vw,320px)]",
       )}>
         {/* Main column */}
         <div className="min-w-0 max-w-full space-y-4 md:space-y-5">
           <RhythmHeader date={day} onDateChange={setDayAndUrl} isReallyToday={isReallyToday} />
-          {isReallyToday && prefs.showCareyNudges && <CareyProactiveCards />}
+          {isReallyToday && prefs.showCareyNudges && (
+            <CareyProactiveCards onHide={() => setPrefs({ showCareyNudges: false })} />
+          )}
+          {isReallyToday && !prefs.showCareyNudges && (
+            <button
+              type="button"
+              onClick={() => setPrefs({ showCareyNudges: true })}
+              className="inline-flex items-center gap-1.5 self-start rounded-full border border-border/60 bg-card/70 px-2.5 py-1 text-[11px] text-muted-foreground backdrop-blur hover:text-foreground"
+              title="Show Try this now from Carey"
+            >
+              <Sparkles className="h-3 w-3" /> Show Try this now
+            </button>
+          )}
           <TopThreeStrip date={day} onTaskClick={setEditTaskId} />
           {renderMain()}
 
