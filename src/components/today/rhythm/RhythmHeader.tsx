@@ -23,7 +23,6 @@ import { MoonGlyph } from "@/components/widgets/MoonGlyph";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
-import { PeriodNav } from "@/components/today/PeriodNav";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 
 interface Props {
