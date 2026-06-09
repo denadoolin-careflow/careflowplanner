@@ -71,11 +71,19 @@ function readBool(key: string): boolean {
   return localStorage.getItem(key) === "1";
 }
 
+const hiddenListeners = new Set<(v: boolean) => void>();
+
 export function useSidebarHidden(): [boolean, (v: boolean) => void] {
   const [hidden, setHidden] = useState<boolean>(() => readBool(HIDDEN_KEY));
+  useEffect(() => {
+    const fn = (next: boolean) => setHidden(next);
+    hiddenListeners.add(fn);
+    return () => { hiddenListeners.delete(fn); };
+  }, []);
   const set = useCallback((v: boolean) => {
     setHidden(v);
     try { localStorage.setItem(HIDDEN_KEY, v ? "1" : "0"); } catch { /* */ }
+    hiddenListeners.forEach(l => l(v));
   }, []);
   return [hidden, set];
 }
