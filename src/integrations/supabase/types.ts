@@ -1305,6 +1305,10 @@ export type Database = {
         Row: {
           cron_secret: string
           id: boolean
+          last_pull_error: string | null
+          last_pull_fetched: number | null
+          last_pull_inserted: number | null
+          last_pull_status: string | null
           last_pulled_at: string | null
           pull_frequency: string
           updated_at: string
@@ -1313,6 +1317,10 @@ export type Database = {
         Insert: {
           cron_secret?: string
           id?: boolean
+          last_pull_error?: string | null
+          last_pull_fetched?: number | null
+          last_pull_inserted?: number | null
+          last_pull_status?: string | null
           last_pulled_at?: string | null
           pull_frequency?: string
           updated_at?: string
@@ -1321,6 +1329,10 @@ export type Database = {
         Update: {
           cron_secret?: string
           id?: boolean
+          last_pull_error?: string | null
+          last_pull_fetched?: number | null
+          last_pull_inserted?: number | null
+          last_pull_status?: string | null
           last_pulled_at?: string | null
           pull_frequency?: string
           updated_at?: string

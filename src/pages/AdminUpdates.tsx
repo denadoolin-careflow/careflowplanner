@@ -9,7 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Sparkles, Plus, Trash2, Save, Upload, Eye, EyeOff, Layers, Merge, Clock } from "lucide-react";
+import { Loader2, Sparkles, Plus, Trash2, Save, Upload, Eye, EyeOff, Layers, Merge, Clock, CheckCircle2, AlertCircle, CalendarDays } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 type Category = "new" | "improved" | "fixed" | "announcement";
@@ -24,6 +24,31 @@ type Entry = {
   published_at: string | null;
   created_at: string;
 };
+
+function computeNextPullAt(freq: Frequency, lastPulledAt: string | null): Date | null {
+  if (freq === "off") return null;
+  const now = new Date();
+  if (freq === "hourly") {
+    const d = new Date(now);
+    d.setUTCMinutes(0, 0, 0);
+    d.setUTCHours(d.getUTCHours() + 1);
+    return d;
+  }
+  if (freq === "daily") {
+    const d = new Date(now);
+    d.setUTCHours(6, 0, 0, 0);
+    if (d <= now) d.setUTCDate(d.getUTCDate() + 1);
+    return d;
+  }
+  // weekly Mon 6am UTC
+  const d = new Date(now);
+  d.setUTCHours(6, 0, 0, 0);
+  const day = d.getUTCDay(); // 0=Sun,1=Mon
+  let add = (1 - day + 7) % 7;
+  if (add === 0 && d <= now) add = 7;
+  d.setUTCDate(d.getUTCDate() + add);
+  return d;
+}
 
 export default function AdminUpdates() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -43,6 +68,10 @@ export default function AdminUpdates() {
   const [frequency, setFrequency] = useState<Frequency>("off");
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [lastPulledAt, setLastPulledAt] = useState<string | null>(null);
+  const [lastPullStatus, setLastPullStatus] = useState<string | null>(null);
+  const [lastPullError, setLastPullError] = useState<string | null>(null);
+  const [lastPullFetched, setLastPullFetched] = useState<number | null>(null);
+  const [lastPullInserted, setLastPullInserted] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -66,19 +95,25 @@ export default function AdminUpdates() {
 
   useEffect(() => { if (isAdmin) refresh(); }, [isAdmin]);
 
+  const loadSettings = async () => {
+    const { data } = await supabase
+      .from("changelog_settings")
+      .select("pull_frequency, last_pulled_at, last_pull_status, last_pull_error, last_pull_fetched, last_pull_inserted")
+      .eq("id", true)
+      .maybeSingle();
+    if (data) {
+      setFrequency((data.pull_frequency as Frequency) ?? "off");
+      setLastPulledAt((data.last_pulled_at as string | null) ?? null);
+      setLastPullStatus((data as any).last_pull_status ?? null);
+      setLastPullError((data as any).last_pull_error ?? null);
+      setLastPullFetched((data as any).last_pull_fetched ?? null);
+      setLastPullInserted((data as any).last_pull_inserted ?? null);
+    }
+  };
+
   useEffect(() => {
     if (!isAdmin) return;
-    (async () => {
-      const { data } = await supabase
-        .from("changelog_settings")
-        .select("pull_frequency, last_pulled_at")
-        .eq("id", true)
-        .maybeSingle();
-      if (data) {
-        setFrequency((data.pull_frequency as Frequency) ?? "off");
-        setLastPulledAt((data.last_pulled_at as string | null) ?? null);
-      }
-    })();
+    loadSettings();
   }, [isAdmin]);
 
   const createDraft = async (
@@ -138,12 +173,7 @@ export default function AdminUpdates() {
       if (rows?.length) {
         setCommitsText(rows.map((r) => r.message).join("\n"));
       }
-      const { data: s } = await supabase
-        .from("changelog_settings")
-        .select("last_pulled_at")
-        .eq("id", true)
-        .maybeSingle();
-      setLastPulledAt((s?.last_pulled_at as string | null) ?? null);
+      await loadSettings();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to pull commits. Configure GITHUB_TOKEN and GITHUB_REPO secrets.");
     } finally {
@@ -213,6 +243,17 @@ export default function AdminUpdates() {
     }
   };
 
+  const deleteSelected = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} entr${ids.length === 1 ? "y" : "ies"}?`)) return;
+    const { error } = await supabase.from("changelog").delete().in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    setSelected(new Set());
+    toast.success(`Deleted ${ids.length}`);
+    await refresh();
+  };
+
   const summarizeAllInBatches = async () => {
     setBatching(true);
     setBatchProgress(null);
@@ -250,6 +291,8 @@ export default function AdminUpdates() {
   };
 
   const filteredEntries = filter === "all" ? entries : entries.filter((e) => e.category === filter);
+  const allSelected = filteredEntries.length > 0 && filteredEntries.every((e) => selected.has(e.id));
+  const nextPullAt = computeNextPullAt(frequency, lastPulledAt);
   const filteredCommitText = commitFilter.trim()
     ? commitsText.split("\n").filter((l) => l.toLowerCase().includes(commitFilter.toLowerCase())).join("\n")
     : commitsText;
@@ -341,7 +384,7 @@ export default function AdminUpdates() {
         <p className="text-xs text-muted-foreground">
           Automatically fetch new commits from GitHub on a schedule (uses last pull time as the “since” date).
         </p>
-        <div className="mt-3 flex flex-wrap items-end gap-2">
+        <div className="mt-3 flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Frequency</label>
             <Select value={frequency} onValueChange={(v) => saveSchedule(v as Frequency)} disabled={savingSchedule}>
@@ -354,15 +397,62 @@ export default function AdminUpdates() {
               </SelectContent>
             </Select>
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            Last pull: {lastPulledAt ? format(parseISO(lastPulledAt), "MMM d, yyyy HH:mm") : "never"}
-          </p>
+        </div>
+        <div className="mt-3 grid gap-2 text-[11px] sm:grid-cols-3">
+          <div className="rounded-md border border-border bg-muted/20 p-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Last pull</div>
+            <div className="mt-0.5 font-medium">
+              {lastPulledAt ? format(parseISO(lastPulledAt), "MMM d, yyyy HH:mm") : "Never"}
+            </div>
+          </div>
+          <div className="rounded-md border border-border bg-muted/20 p-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Next pull</div>
+            <div className="mt-0.5 font-medium">
+              {nextPullAt ? format(nextPullAt, "MMM d, yyyy HH:mm 'UTC'") : "Off"}
+            </div>
+          </div>
+          <div className="rounded-md border border-border bg-muted/20 p-2">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Status</div>
+            <div className="mt-0.5 flex items-center gap-1 font-medium">
+              {lastPullStatus === "success" ? (
+                <><CheckCircle2 className="h-3 w-3 text-emerald-500" /> Success
+                  {lastPullFetched != null && (
+                    <span className="ml-1 text-muted-foreground">
+                      ({lastPullFetched} fetched, {lastPullInserted ?? 0} new)
+                    </span>
+                  )}
+                </>
+              ) : lastPullStatus === "error" ? (
+                <><AlertCircle className="h-3 w-3 text-destructive" /> Error</>
+              ) : (
+                <span className="text-muted-foreground">No runs yet</span>
+              )}
+            </div>
+            {lastPullStatus === "error" && lastPullError && (
+              <div className="mt-1 line-clamp-2 text-[10px] text-destructive/80" title={lastPullError}>
+                {lastPullError}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Entries</h2>
+          {filteredEntries.length > 0 && (
+            <label className="ml-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={(v) => {
+                  if (v) setSelected(new Set(filteredEntries.map((e) => e.id)));
+                  else setSelected(new Set());
+                }}
+                aria-label="Select all"
+              />
+              Select all
+            </label>
+          )}
           <div className="ml-auto flex flex-wrap items-center gap-1">
             {(["all","new","improved","fixed","announcement"] as FilterCategory[]).map((c) => (
               <Button
@@ -383,6 +473,9 @@ export default function AdminUpdates() {
             <Button size="sm" variant="outline" disabled={merging || selected.size < 2} onClick={mergeSelected}>
               {merging ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Merge className="mr-1 h-3 w-3" />}
               Merge selected
+            </Button>
+            <Button size="sm" variant="outline" className="text-destructive" onClick={deleteSelected}>
+              <Trash2 className="mr-1 h-3 w-3" /> Delete selected
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
           </div>
@@ -439,15 +532,18 @@ function EntryEditor({
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-2 flex items-center gap-2">
-        {!draft.published && (
-          <Checkbox checked={selected} onCheckedChange={onToggleSelect} aria-label="Select draft" />
-        )}
+        <Checkbox checked={selected} onCheckedChange={onToggleSelect} aria-label="Select entry" />
         <Badge variant={draft.published ? "default" : "secondary"} className="text-[10px] uppercase tracking-wider">
           {draft.published ? "Published" : "Draft"}
         </Badge>
         <span className="text-[10px] text-muted-foreground">
-          {format(parseISO(draft.created_at), "MMM d, yyyy")}
+          Created {format(parseISO(draft.created_at), "MMM d, yyyy")}
         </span>
+        {draft.published_at && (
+          <span className="text-[10px] text-muted-foreground">
+            · Published {format(parseISO(draft.published_at), "MMM d, yyyy")}
+          </span>
+        )}
       </div>
       <Input
         value={draft.title}
@@ -469,11 +565,33 @@ function EntryEditor({
             <SelectItem value="announcement">Announcement</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-1">
+          <CalendarDays className="h-3 w-3 text-muted-foreground" />
+          <Input
+            type="date"
+            className="h-8 w-36 text-xs"
+            value={(draft.published_at ?? draft.created_at).slice(0, 10)}
+            onChange={(e) => {
+              const iso = e.target.value ? new Date(e.target.value + "T12:00:00Z").toISOString() : null;
+              if (draft.published) {
+                setDraft({ ...draft, published_at: iso });
+              } else {
+                setDraft({ ...draft, created_at: iso ?? draft.created_at });
+              }
+            }}
+          />
+        </div>
         <Button
           size="sm"
           variant="outline"
           disabled={saving}
-          onClick={() => save({ title: draft.title, summary: draft.summary, category: draft.category })}
+          onClick={() => save({
+            title: draft.title,
+            summary: draft.summary,
+            category: draft.category,
+            published_at: draft.published_at,
+            created_at: draft.created_at,
+          })}
         >
           <Save className="mr-1 h-3 w-3" /> Save
         </Button>

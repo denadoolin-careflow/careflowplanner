@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
     let inserted = 0;
     let page = 1;
 
+    try {
     while (fetched < maxCommits) {
       const url = `https://api.github.com/repos/${ghRepo}/commits?per_page=${perPage}&page=${page}${sinceParam}`;
       const ghResp = await fetch(url, {
@@ -76,7 +77,15 @@ Deno.serve(async (req) => {
         },
       });
       if (!ghResp.ok) {
-        return json({ error: `GitHub API ${ghResp.status}: ${await ghResp.text()}` }, 502);
+        const errText = `GitHub API ${ghResp.status}: ${await ghResp.text()}`;
+        await admin.from("changelog_settings").update({
+          last_pulled_at: new Date().toISOString(),
+          last_pull_status: "error",
+          last_pull_error: errText.slice(0, 1000),
+          last_pull_fetched: fetched,
+          last_pull_inserted: inserted,
+        }).eq("id", true);
+        return json({ error: errText }, 502);
       }
       const commits = await ghResp.json() as Array<{
         sha: string;
@@ -96,7 +105,16 @@ Deno.serve(async (req) => {
       const { error: upErr, count } = await admin
         .from("changelog_raw_commits")
         .upsert(rows, { onConflict: "sha", count: "exact", ignoreDuplicates: true });
-      if (upErr) return json({ error: upErr.message }, 500);
+      if (upErr) {
+        await admin.from("changelog_settings").update({
+          last_pulled_at: new Date().toISOString(),
+          last_pull_status: "error",
+          last_pull_error: upErr.message.slice(0, 1000),
+          last_pull_fetched: fetched,
+          last_pull_inserted: inserted,
+        }).eq("id", true);
+        return json({ error: upErr.message }, 500);
+      }
 
       fetched += slice.length;
       inserted += count ?? 0;
@@ -104,8 +122,25 @@ Deno.serve(async (req) => {
       page += 1;
     }
 
-    await admin.from("changelog_settings").update({ last_pulled_at: new Date().toISOString() }).eq("id", true);
+    await admin.from("changelog_settings").update({
+      last_pulled_at: new Date().toISOString(),
+      last_pull_status: "success",
+      last_pull_error: null,
+      last_pull_fetched: fetched,
+      last_pull_inserted: inserted,
+    }).eq("id", true);
     return json({ ok: true, fetched, inserted, isCron }, 200);
+    } catch (innerErr) {
+      const msg = innerErr instanceof Error ? innerErr.message : "Unknown error";
+      await admin.from("changelog_settings").update({
+        last_pulled_at: new Date().toISOString(),
+        last_pull_status: "error",
+        last_pull_error: msg.slice(0, 1000),
+        last_pull_fetched: fetched,
+        last_pull_inserted: inserted,
+      }).eq("id", true);
+      throw innerErr;
+    }
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
