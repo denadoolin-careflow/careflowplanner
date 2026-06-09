@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { haptics } from "@/lib/haptics";
 import { ProjectQuickJump } from "@/components/tasks/ProjectQuickJump";
 import { PomodoroDialog } from "@/components/routines/PomodoroDialog";
+import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
 
 type Props = {
   task: Task;
