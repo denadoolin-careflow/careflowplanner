@@ -69,7 +69,7 @@ export function TopThreeStrip({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground hover:text-amber-500"
+                  className="h-5 w-5 shrink-0 text-muted-foreground hover:text-amber-500"
                   onClick={() => updateTask(t.id, { isTopThree: !t.isTopThree })}
                   title={t.isTopThree ? "Unpin priority" : "Pin as priority"}
                 >
