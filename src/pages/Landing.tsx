@@ -493,6 +493,13 @@ export default function Landing() {
             No pressure. No perfectionism. Just support.
           </p>
           <PreviewPanel />
+          <Link
+            to="/today"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/70 px-4 py-2 text-sm text-foreground/90 transition-all duration-300 hover:bg-card hover:shadow-md hover:scale-[1.02]"
+          >
+            Open Today demo
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+          </Link>
         </div>
         <div className="relative hidden sm:block lg:pt-4">
           <HeroMockup />
