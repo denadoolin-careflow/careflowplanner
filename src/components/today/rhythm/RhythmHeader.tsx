@@ -24,6 +24,7 @@ import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { PeriodNav } from "@/components/today/PeriodNav";
+import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 
 interface Props {
   date: Date;
@@ -134,6 +135,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <ScopeNavToggle active="today" />
             <AtmosphereChip />
             <div className="inline-flex items-center gap-1">
               <Button
