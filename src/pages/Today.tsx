@@ -153,26 +153,8 @@ function TodayInner() {
     else navigate("/today");
   };
 
-  const widgetRegistry: { id: string; label: string; render: () => JSX.Element | null }[] = [
-    { id: "brain-dump",       label: "Brain dump",       render: () => <BrainDumpWidget /> },
-    { id: "what-fits",        label: "What fits now",    render: () => <WhatFitsNow date={day} onTaskClick={setEditTaskId} /> },
-    { id: "weather",          label: "Weather",          render: () => <WeatherWidget /> },
-    { id: "weekly-weather",   label: "Weekly weather",   render: () => <WeeklyWeather /> },
-    { id: "moon-priorities",  label: "Moon & Top 3",     render: () => <MoonPrioritiesCard date={day} onTaskClick={setEditTaskId} /> },
-    { id: "tasks-today",      label: "Tasks",            render: () => <TasksTodayWidget date={day} /> },
-    { id: "tasks",            label: "Tasks",            render: () => <TasksWidget date={day} /> },
-    { id: "meals-planned",    label: "Meals planned",    render: () => <MealsPlannedWidget date={day} /> },
-    { id: "grocery",          label: "Grocery",          render: () => <GroceryWidget /> },
-    { id: "cycle",            label: "Cycle",            render: () => <CycleSidebarCard date={day} /> },
-    { id: "notes-today",      label: "Notes today",      render: () => <NotesTodayWidget /> },
-    { id: "journal-today",    label: "Journal today",    render: () => <JournalTodayWidget /> },
-    { id: "memories-today",   label: "Memories today",   render: () => <MemoriesTodayWidget /> },
-    { id: "home-reset",       label: "Home reset",       render: () => <HomeResetWidget /> },
-    { id: "family-snapshot",  label: "Family snapshot",  render: () => <FamilySnapshotCard date={day} /> },
-    { id: "growing-season",   label: "Growing season",   render: () => <GrowingSeasonCard /> },
-    { id: "care-loop",        label: "Care loop",        render: () => <CareLoopCard /> },
-    { id: "upcoming-events",  label: "Upcoming events",  render: () => <UpcomingEventsCard date={day} /> },
-  ];
+  const widgetRegistry = buildSidebarWidgetRegistry();
+  const widgetOpts = { date: day, onTaskClick: setEditTaskId };
   const canonical = widgetRegistry.map(w => w.id);
   const { order, hidden, move, remove, restore, restoreAll, reset } = useSidebarOrder(canonical);
   const byId = new Map(widgetRegistry.map(w => [w.id, w]));
