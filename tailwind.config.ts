@@ -86,7 +86,6 @@ export default {
         "fade-in": { from: { opacity: "0", transform: "translateY(8px)" }, to: { opacity: "1", transform: "translateY(0)" } },
         "scale-in": { from: { opacity: "0", transform: "scale(0.96)" }, to: { opacity: "1", transform: "scale(1)" } },
         "soft-pulse": { "0%, 100%": { opacity: "1" }, "50%": { opacity: "0.6" } },
-        "glow-pulse": { "0%, 100%": { opacity: "0.3", transform: "scale(1)" }, "50%": { opacity: "0.65", transform: "scale(1.02)" } },
         "task-sweep": { from: { transform: "translateX(0)" }, to: { transform: "translateX(360%)" } },
       },
       animation: {
@@ -95,7 +94,6 @@ export default {
         "fade-in": "fade-in 0.4s ease-out",
         "scale-in": "scale-in 0.25s ease-out",
         "soft-pulse": "soft-pulse 2.4s ease-in-out infinite",
-        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
         "task-sweep": "task-sweep 0.9s ease-out forwards",
       },
     },
