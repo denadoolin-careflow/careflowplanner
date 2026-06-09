@@ -22,7 +22,7 @@ export function TopThreeStrip({
 
   return (
     <div className="mb-3 rounded-xl border border-primary/20 bg-primary/5 p-2.5">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-2">
         <div className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
           <Sparkles className="h-3 w-3 shrink-0" />
           <span>Top 3 today</span>
