@@ -50,7 +50,7 @@ export function ScheduleBoard({ date, onTaskClick, onApptClick }: {
               <li
                 key={`${r.kind}-${r.id}`}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 px-3 py-2",
+                  "group flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 px-3 py-2",
                   r.done && "opacity-60",
                 )}
               >
@@ -72,6 +72,9 @@ export function ScheduleBoard({ date, onTaskClick, onApptClick }: {
                 >
                   {r.label}
                 </button>
+                {r.kind === "task" && r.task && (
+                  <QuickDayPartButton task={r.task} />
+                )}
                 <span className="shrink-0 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
                   {r.kind}
                 </span>
