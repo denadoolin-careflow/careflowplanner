@@ -7,6 +7,8 @@ import { personalGreeting } from "@/lib/greeting";
 import { AffirmationHeader } from "@/components/today/AffirmationHeader";
 import { AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
+import { useTodayView, TODAY_VIEW_LABELS, type TodayView } from "@/lib/today-view";
+import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { useCycle } from "@/lib/cycle-store";
@@ -24,6 +26,7 @@ interface Props {
  */
 export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
   const { state } = useStore();
+  const [view, setView] = useTodayView();
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
@@ -135,6 +138,29 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
                   Today
                 </Button>
               )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              Plan with
+            </span>
+            <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
+              {(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setView(k)}
+                  className={cn(
+                    "rounded-full px-2.5 py-1 transition-colors",
+                    view === k
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {TODAY_VIEW_LABELS[k]}
+                </button>
+              ))}
             </div>
           </div>
 
