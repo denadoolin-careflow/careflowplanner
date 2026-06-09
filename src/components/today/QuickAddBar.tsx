@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Plus, Sunrise, Sun, Moon, ListChecks, UtensilsCrossed, Sparkles } from "lucide-react";
+import { Plus, Sunrise, Sun, Moon, ListChecks, UtensilsCrossed, Sparkles, Home } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 type Slot = "auto" | "morning" | "afternoon" | "evening";
-type Kind = "task" | "meal";
+type Kind = "task" | "home" | "meal";
 
 function currentSlot(d = new Date()): Exclude<Slot, "auto"> {
   const h = d.getHours();
@@ -54,9 +54,10 @@ export function QuickAddBar({ date }: { date: Date }) {
     const tokens = tokenize(text);
     if (!tokens.length) return fallback;
     const score: Record<Exclude<Slot, "auto">, number> = { morning: 0, afternoon: 0, evening: 0 };
-    if (kind === "task") {
+    if (kind === "task" || kind === "home") {
       for (const t of state.tasks ?? []) {
         if (!t?.dayPart) continue;
+        if (kind === "home" && t.area !== "Home") continue;
         const s = DAYPART_TO_SLOT[t.dayPart as string];
         if (!s) continue;
         const hay = tokenize(t.title ?? "");
@@ -87,6 +88,14 @@ export function QuickAddBar({ date }: { date: Date }) {
     if (kind === "task") {
       await addTask({ title: value, dueDate: iso, dayPart: SLOT_TO_DAYPART[resolvedSlot] });
       toast.success(`Added task → ${SLOT_TO_DAYPART[resolvedSlot]}`);
+    } else if (kind === "home") {
+      await addTask({
+        title: value,
+        dueDate: iso,
+        dayPart: SLOT_TO_DAYPART[resolvedSlot],
+        area: "Home",
+      });
+      toast.success(`Added home task → ${SLOT_TO_DAYPART[resolvedSlot]}`);
     } else {
       await addMeal({ name: value, date: iso, slot: SLOT_TO_MEAL[resolvedSlot] });
       toast.success(`Added ${SLOT_TO_MEAL[resolvedSlot]} → ${value}`);
@@ -100,8 +109,9 @@ export function QuickAddBar({ date }: { date: Date }) {
       className="cozy-card flex flex-wrap items-center gap-1.5 p-2 sm:p-2.5"
     >
       <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5 text-[11px]">
-        {(["task", "meal"] as Kind[]).map(k => {
-          const Icon = k === "task" ? ListChecks : UtensilsCrossed;
+        {(["task", "home", "meal"] as Kind[]).map(k => {
+          const Icon = k === "task" ? ListChecks : k === "home" ? Home : UtensilsCrossed;
+          const label = k === "task" ? "Task" : k === "home" ? "Home" : "Meal";
           return (
             <button
               key={k}
@@ -113,7 +123,7 @@ export function QuickAddBar({ date }: { date: Date }) {
               )}
             >
               <Icon className="h-3 w-3" />
-              {k === "task" ? "Task" : "Meal"}
+              {label}
             </button>
           );
         })}
@@ -124,7 +134,13 @@ export function QuickAddBar({ date }: { date: Date }) {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={kind === "task" ? "Add a task to today…" : "Add a meal for today…"}
+          placeholder={
+            kind === "task"
+              ? "Add a task to today…"
+              : kind === "home"
+                ? "Add a home or cleaning task…"
+                : "Add a meal for today…"
+          }
           className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
         />
       </div>
@@ -142,7 +158,7 @@ export function QuickAddBar({ date }: { date: Date }) {
               title={
                 isAuto
                   ? autoFromHistory
-                    ? `Auto · ${SLOT_TO_DAYPART[suggestedSlot]} (learned from past ${kind === "task" ? "tasks" : "meals"})`
+                    ? `Auto · ${SLOT_TO_DAYPART[suggestedSlot]} (learned from past ${kind === "meal" ? "meals" : kind === "home" ? "home tasks" : "tasks"})`
                     : `Auto · ${SLOT_TO_DAYPART[suggestedSlot]} (time of day)`
                   : s
               }
