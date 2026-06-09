@@ -126,7 +126,7 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
     <div
       className="rounded-xl border border-border/60 bg-card/40 p-2 transition-shadow duration-500"
       style={{
-        boxShadow: `0 0 0 1px ${atmoColor(atmosphere.palette, 0, 0.12)}, 0 4px 24px -6px ${atmoColor(atmosphere.palette, 0, 0.22)}`,
+        boxShadow: `0 0 0 1px ${atmoColor(atmosphere.palette, 0, 0.22)}, 0 6px 32px -6px ${atmoColor(atmosphere.palette, 0, 0.38)}`,
       }}
     >
       <div className="flex items-start gap-2">

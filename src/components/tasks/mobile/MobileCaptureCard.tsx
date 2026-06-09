@@ -12,10 +12,18 @@ import { cn } from "@/lib/utils";
 import { AREAS, type Area, type DayPart, type Priority } from "@/lib/types";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
+import { useAtmosphere } from "@/lib/atmospheres";
+
+function atmoColor(palette: string[], index: number, alpha?: number): string {
+  const hex = palette[index % palette.length];
+  if (alpha == null || alpha === 1) return hex;
+  return `color-mix(in srgb, ${hex} ${Math.round(alpha * 100)}%, transparent)`;
+}
 
 /** Mobile-first quick capture card matching the redesign spec. */
 export function MobileCaptureCard({ defaultArea }: { defaultArea?: Area }) {
   const { addTask, state } = useStore();
+  const { atmosphere } = useAtmosphere();
   const [title, setTitle] = useState("");
   const [date, setDate] = useState<string | undefined>(undefined);
   const [projectId, setProjectId] = useState<string | undefined>(undefined);
@@ -56,7 +64,12 @@ export function MobileCaptureCard({ defaultArea }: { defaultArea?: Area }) {
   const proj = projectId ? state.projects?.find(p => p.id === projectId) : undefined;
 
   return (
-    <div className="cf-card p-4">
+    <div
+      className="cf-card p-4 transition-shadow duration-500"
+      style={{
+        boxShadow: `0 0 0 1px ${atmoColor(atmosphere.palette, 0, 0.22)}, 0 6px 32px -6px ${atmoColor(atmosphere.palette, 0, 0.38)}`,
+      }}
+    >
       <div className="flex items-center gap-3">
         <div className="cf-icon-tile shrink-0"><Plus className="h-4 w-4" /></div>
         <input
