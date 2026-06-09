@@ -30,6 +30,36 @@ function CondIcon({ c, isNight, className }: { c: WeatherCondition; isNight?: bo
   return <Cloud className={cls} />;
 }
 
+function DueNextPreview({ tasks, slotLabel }: { tasks: Task[]; slotLabel: string }) {
+  return (
+    <div className="w-56 p-3">
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        What's due next · {slotLabel}
+      </div>
+      {tasks.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Nothing on your plate right now.</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {tasks.map(t => (
+            <li key={t.id} className="flex items-start gap-2">
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+              <span className="line-clamp-2 text-xs leading-snug text-foreground">{t.title}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-2 border-t border-border/40 pt-2">
+        <Link
+          to={`/today#slot-${slotLabel.toLowerCase()}`}
+          className="block text-[11px] font-medium text-primary hover:underline"
+        >
+          Open Today →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export function HeaderNowStrip({ className }: { className?: string }) {
   useEnsureWeather();
   const [now, setNow] = useState(() => new Date());
