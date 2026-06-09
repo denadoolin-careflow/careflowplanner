@@ -1,21 +1,10 @@
 import { useState } from "react";
 import { ArrowDown, ArrowUp, GripVertical, Plus, RotateCcw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { WeatherWidget } from "@/components/widgets/WeatherWidget";
-import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
-import { MoonPrioritiesCard } from "@/components/today/widgets/MoonPrioritiesCard";
-import { TasksTodayWidget } from "@/components/today/widgets/TasksTodayWidget";
-import { MealsPlannedWidget } from "@/components/today/widgets/MealsPlannedWidget";
-import { GroceryWidget } from "@/components/today/widgets/GroceryWidget";
-import { NotesTodayWidget } from "@/components/today/widgets/NotesTodayWidget";
-import { JournalTodayWidget } from "@/components/today/widgets/JournalTodayWidget";
-import { MemoriesTodayWidget } from "@/components/today/widgets/MemoriesTodayWidget";
-import { HomeResetWidget } from "@/components/today/widgets/HomeResetWidget";
-import { BrainDumpWidget } from "@/components/today/widgets/BrainDumpWidget";
-import { CycleSidebarCard } from "@/components/today/widgets/CycleSidebarCard";
 import { CollapsibleWidget } from "@/components/today/CollapsibleWidget";
 import { useCollapsedWidgets } from "@/lib/today-view";
 import { useWidgetOrder } from "@/lib/widget-order";
+import { buildSidebarWidgetRegistry } from "@/components/today/widget-registry";
 
 interface Props {
   /** Anchor date used by the per-day widgets. */
@@ -36,28 +25,18 @@ export function ScopeSidebar({ date, scope = "week", onTaskClick, children }: Pr
   const { collapsed, toggle: toggleCollapsed } = useCollapsedWidgets();
   const [reorderMode, setReorderMode] = useState(false);
 
-  const registry: { id: string; label: string; render: () => JSX.Element | null }[] = [
-    { id: "weather",         label: "Weather",         render: () => <WeatherWidget /> },
-    { id: "weekly-weather",  label: "Weekly weather",  render: () => <WeeklyWeather /> },
-    { id: "moon-priorities", label: "Moon & Top 3",    render: () => <MoonPrioritiesCard date={date} onTaskClick={onTaskClick} /> },
-    { id: "tasks-today",     label: "Tasks",           render: () => <TasksTodayWidget date={date} /> },
-    { id: "meals-planned",   label: "Meals planned",   render: () => <MealsPlannedWidget date={date} /> },
-    { id: "grocery",         label: "Grocery",         render: () => <GroceryWidget /> },
-    { id: "cycle",           label: "Cycle",           render: () => <CycleSidebarCard date={date} /> },
-    { id: "notes-today",     label: "Notes",           render: () => <NotesTodayWidget /> },
-    { id: "journal-today",   label: "Journal",         render: () => <JournalTodayWidget /> },
-    { id: "memories-today",  label: "Memories",        render: () => <MemoriesTodayWidget /> },
-    { id: "home-reset",      label: "Home reset",      render: () => <HomeResetWidget /> },
-    { id: "brain-dump",      label: "Brain dump",      render: () => <BrainDumpWidget /> },
-  ];
-
+  // Shared registry — identical shape/options across Today, Week and Month.
+  const registry = buildSidebarWidgetRegistry();
+  const widgetOpts = { date, onTaskClick };
   const canonical = registry.map(w => w.id);
   const byId = new Map(registry.map(w => [w.id, w]));
 
   // Default-hidden: keep the original lean rail; users can restore the rest.
+  // Anything not listed here starts visible (matches the previous Week/Month curated set).
   const defaultHidden = [
-    "weekly-weather", "grocery", "cycle", "notes-today", "journal-today",
-    "memories-today", "home-reset", "brain-dump",
+    "brain-dump", "what-fits", "weekly-weather", "tasks", "grocery", "cycle",
+    "notes-today", "journal-today", "memories-today", "home-reset",
+    "family-snapshot", "growing-season", "care-loop", "upcoming-events",
   ];
 
   const { order, hidden, move, remove, restore, restoreAll, reset } = useWidgetOrder(
@@ -106,7 +85,7 @@ export function ScopeSidebar({ date, scope = "week", onTaskClick, children }: Pr
           const w = byId.get(id);
           if (!w) return null;
           if (hidden.has(id)) return null;
-          const node = w.render();
+          const node = w.render(widgetOpts);
           if (!node) return null;
           if (!reorderMode) {
             return (
