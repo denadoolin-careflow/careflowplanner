@@ -517,7 +517,7 @@ export default function AdminUpdates() {
 function EntryEditor({
   entry, onChange, selected, onToggleSelect,
 }: {
-  entry: Entry; onChange: () => void; selected: boolean; onToggleSelect: () => void;
+  entry: Entry; onChange: () => void; selected: boolean; onToggleSelect: (shift: boolean) => void;
 }) {
   const [draft, setDraft] = useState(entry);
   const [saving, setSaving] = useState(false);
