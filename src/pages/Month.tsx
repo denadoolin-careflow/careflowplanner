@@ -495,7 +495,7 @@ export default function Month() {
 
         <CalendarTasksPanel days={monthDays} title={`Tasks · ${format(cursor, "MMMM yyyy")}`} />
       </div>
-      <ScopeSidebar date={cursor} onTaskClick={(id) => {
+      <ScopeSidebar scope="month" date={cursor} onTaskClick={(id) => {
         const t = state.tasks.find(x => x.id === id);
         if (t) setEditingTask(t);
       }} />
