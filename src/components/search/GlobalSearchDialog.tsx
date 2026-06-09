@@ -290,6 +290,7 @@ export function GlobalSearchDialog({
         if (t.startsWith(lc)) score += 10;
         else if (t.includes(lc)) score += 5;
         if (r.kind === "tag") score += 2; // tags are short, surface them
+        if (r.kind === "page") score += 6; // surface navigation prominently
         return { r, score };
       })
       .sort((a, b) => b.score - a.score)
@@ -299,7 +300,7 @@ export function GlobalSearchDialog({
 
   // Group results in render order
   const grouped = useMemo(() => {
-    const order: ResultKind[] = ["task", "note", "project", "tag", "appointment", "event"];
+    const order: ResultKind[] = ["page", "task", "note", "project", "tag", "appointment", "event"];
     const map = new Map<ResultKind, SearchResult[]>();
     for (const r of results) {
       const arr = map.get(r.kind) ?? [];
