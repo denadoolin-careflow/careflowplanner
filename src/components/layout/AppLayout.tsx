@@ -2,9 +2,8 @@ import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Sidebar, MobileSidebarTrigger } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
-import { ThemeToggle } from "./ThemeToggle";
-import { AtmospherePicker } from "@/components/atmospheres/AtmospherePicker";
 import { AtmosphereAmbient } from "@/components/atmospheres/AtmosphereAmbient";
+import { HeaderQuickSettings } from "./HeaderQuickSettings";
 import { useAutoAtmosphereResolver, useAtmosphere } from "@/lib/atmospheres";
 import { QuickAddFab } from "@/components/quick-add/QuickAddFab";
 import { CareGuideFab } from "@/components/care/CareGuideFab";
@@ -12,14 +11,10 @@ import { CombinedFab } from "@/components/quick-add/CombinedFab";
 import { AICaptureDialog } from "@/components/care/AICaptureDialog";
 import { CareyChat } from "@/components/carey/CareyChat";
 import { useStore } from "@/lib/store";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { BatteryLow, BatteryMedium } from "lucide-react";
 import { NAV } from "@/lib/nav";
 import { RoutinesStrip } from "@/components/routines/RoutinesStrip";
 import { UniversalSearchBar } from "@/components/search/UniversalSearchBar";
 import { CommandPalette } from "@/components/command/CommandPalette";
-import { PanelPicker } from "@/components/workspace/PanelPicker";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { FocusPanel } from "@/components/focus/FocusPanel";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
@@ -34,7 +29,7 @@ import { Link } from "react-router-dom";
 import { HeaderNowStrip } from "./HeaderNowStrip";
 
 export function AppLayout() {
-  const { state, setLowEnergyMode } = useStore();
+  const { state } = useStore();
   const { pathname } = useLocation();
   const current = NAV.find(n => n.to === pathname) ?? NAV[0];
   useAutoAtmosphereResolver({ lowEnergy: state.settings.lowEnergyMode });
@@ -61,30 +56,9 @@ export function AppLayout() {
             <div className="flex items-center gap-1 sm:gap-3">
               <HeaderNowStrip />
               <UniversalSearchBar />
-              <div className="hidden items-center gap-2 sm:flex sm:gap-3">
-                <NotificationCenter />
-                <PanelPicker />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Toggle low-energy mode"
-                      aria-pressed={state.settings.lowEnergyMode}
-                      onClick={() => setLowEnergyMode(!state.settings.lowEnergyMode)}
-                      className={`h-9 w-9 rounded-full ${state.settings.lowEnergyMode ? "text-primary bg-primary/10" : ""}`}
-                    >
-                      {state.settings.lowEnergyMode ? <BatteryLow className="h-4 w-4" /> : <BatteryMedium className="h-4 w-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    Low-energy mode {state.settings.lowEnergyMode ? "on" : "off"}
-                  </TooltipContent>
-                </Tooltip>
-                <AtmospherePicker />
-              </div>
-              <ThemeToggle />
-              <Link to="/" aria-label="CareFlow home" className="ml-1 inline-flex">
+              <NotificationCenter />
+              <HeaderQuickSettings />
+              <Link to="/" aria-label="CareFlow home" className="ml-1 hidden sm:inline-flex">
                 <CareFlowLogo size={32} />
               </Link>
             </div>
