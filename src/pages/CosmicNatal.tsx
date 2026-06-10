@@ -194,3 +194,65 @@ export default function CosmicNatal() {
     </div>
   );
 }
+
+const TRANSIT_PLANETS: Planet[] = ["Sun", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"];
+const PHASE_GLYPH: Record<string, string> = {
+  "new": "🌑", "waxing-crescent": "🌒", "first-quarter": "🌓", "waxing-gibbous": "🌔",
+  "full": "🌕", "waning-gibbous": "🌖", "last-quarter": "🌗", "waning-crescent": "🌘",
+};
+const PHASE_LABEL: Record<string, string> = {
+  "new": "New Moon", "waxing-crescent": "Waxing Crescent", "first-quarter": "First Quarter",
+  "waxing-gibbous": "Waxing Gibbous", "full": "Full Moon", "waning-gibbous": "Waning Gibbous",
+  "last-quarter": "Last Quarter", "waning-crescent": "Waning Crescent",
+};
+
+function TodayInYourHouses({ houses }: { houses: NonNullable<NatalChartV2["houses"]> }) {
+  const today = new Date();
+  const moonInfo = getMoonSign(today);
+  const moonLonNoon = (() => {
+    // Approximate: use ecliptic longitude bucketed via the sign index + 15° center.
+    const idx = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"].indexOf(moonInfo.name);
+    return idx * 30 + 15;
+  })();
+  const moonHouse = houseOf(moonLonNoon, houses);
+  const phase = getMoonPhase(today);
+
+  const rows = TRANSIT_PLANETS.map((p) => {
+    const sign = planetSign(p, today);
+    const lon = planetLongitude(p, today);
+    const house = houseOf(lon, houses);
+    return { planet: p, sign, house };
+  });
+
+  return (
+    <section className="cozy-card p-4">
+      <p className="font-display text-base">Today's sky in your houses</p>
+      <p className="text-[11px] text-muted-foreground mb-3">Where the current transits land in your natal chart.</p>
+
+      <div className="mb-3 flex items-center gap-2 rounded-md border border-border/40 bg-card/40 px-3 py-2 text-[12.5px]">
+        <span className="text-base">{PHASE_GLYPH[phase] ?? "🌙"}</span>
+        <span className="font-medium">{PHASE_LABEL[phase] ?? "Moon"}</span>
+        <span className="text-muted-foreground">·</span>
+        <span>{moonInfo.symbol} Moon in {moonInfo.name}</span>
+        <span className="text-muted-foreground">·</span>
+        <span className="text-muted-foreground">H{moonHouse} — {HOUSE_THEME[moonHouse]}</span>
+      </div>
+
+      <div className="grid gap-1.5 sm:grid-cols-2 text-[12.5px]">
+        {rows.map(({ planet, sign, house }) => (
+          <div
+            key={planet}
+            className="flex items-center justify-between rounded border border-border/40 bg-card/40 px-2 py-1.5"
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="text-sm">{PLANET_GLYPH[planet]}</span>
+              <span className="font-medium">{planet}</span>
+              <span className="text-muted-foreground">in {sign}</span>
+            </span>
+            <span className="text-[11px] text-muted-foreground">H{house}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
