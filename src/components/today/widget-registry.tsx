@@ -16,6 +16,7 @@ import { CycleSidebarCard } from "@/components/today/widgets/CycleSidebarCard";
 import { MoonPrioritiesCard } from "@/components/today/widgets/MoonPrioritiesCard";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
+import { TransitRememberWidget } from "@/components/today/widgets/TransitRememberWidget";
 
 /** Options consumed by every sidebar widget. Keep this shape identical across
  *  Today / Week / Month so widgets share one props/options schema. */
@@ -53,5 +54,6 @@ export function buildSidebarWidgetRegistry(): SidebarWidgetSpec[] {
     { id: "growing-season",   label: "Growing season",   render: () => <GrowingSeasonCard /> },
     { id: "care-loop",        label: "Care loop",        render: () => <CareLoopCard /> },
     { id: "upcoming-events",  label: "Upcoming events",  render: ({ date }) => <UpcomingEventsCard date={date} /> },
+    { id: "transit-remember", label: "Transits to remember", render: () => <TransitRememberWidget /> },
   ];
 }
