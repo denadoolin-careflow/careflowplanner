@@ -184,7 +184,7 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
                     {format(parseISO(t.dueDate + "T00:00:00"), "MMM d")}
                   </span>
                 )}
-                {celebrate && <CompletionBurst variant={completionVisual} />}
+                {celebrate && <CompletionBurst variant={celebrateVariant} />}
               </li>
             );
           })}
