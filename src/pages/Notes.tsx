@@ -23,6 +23,7 @@ import { todayISO, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { NoteCardV2 } from "@/components/notes/NoteCardV2";
+import { NoteHoverPreview } from "@/components/notes/NoteHoverPreview";
 import { NotesSideNav, applyCollection, type SmartCollectionId } from "@/components/notes/NotesSideNav";
 import { NoteContextRail } from "@/components/notes/NoteContextRail";
 import { NotesStatsRow } from "@/components/notes/NotesStatsRow";
