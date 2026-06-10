@@ -332,7 +332,7 @@ export default function NoteDetail() {
           <IconEl className="h-7 w-7 shrink-0 text-primary sm:h-8 sm:w-8" />
           <div className="min-w-0 flex-1">
             {note.kind === "daily" ? (
-              <h1 className="note-page-title text-3xl sm:text-4xl md:text-5xl">{headerTitle}</h1>
+              <h1 className="note-page-title text-2xl md:text-3xl">{headerTitle}</h1>
             ) : (
               <Input
                 value={title}
