@@ -10,6 +10,7 @@ import {
   type Planet, planetLongitude, PLANET_GLYPH,
 } from "@/lib/transits";
 import type { CosmicEvent } from "./events";
+export type { AspectName as AspectKind };
 
 const PLANETS: Planet[] = ["Sun", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"];
 

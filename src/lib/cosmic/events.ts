@@ -18,6 +18,7 @@ import {
 import { getMoonPhase, type MoonPhase } from "@/lib/moon";
 import { getMoonSign } from "@/lib/zodiac";
 import { encodeEventId, type CosmicEventKind } from "@/lib/cosmic/event-id";
+import { aspectEventsOnDay } from "@/lib/cosmic/aspect-events";
 
 export interface CosmicEvent {
   id: string;
@@ -190,13 +191,8 @@ export function eventsOnDay(date: Date): CosmicEvent[] {
   out.push(...stationEvents(date));
   const v = vocEvent(date);
   if (v) out.push(v);
-  // Aspects + cazimi between transiting planets (only on closest-to-exact day).
-  try {
-    // Lazy require to avoid circular imports with event-meta.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { aspectEventsOnDay } = require("./aspect-events") as typeof import("./aspect-events");
-    out.push(...aspectEventsOnDay(date));
-  } catch { /* ignore */ }
+  // Aspects + cazimi between transiting planets (closest-to-exact day only).
+  out.push(...aspectEventsOnDay(date));
   return out;
 }
 
