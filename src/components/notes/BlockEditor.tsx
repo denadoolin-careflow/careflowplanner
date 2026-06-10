@@ -577,7 +577,19 @@ export function BlockEditor({
   const [prefs] = useEditorPrefs();
   const { tags: registeredTags } = useTags();
   const refsRef = useRef<RefItem[]>([]);
-  refsRef.current = useMemo(() => buildReferences(state), [state]);
+  const transitRefs = useMemo<RefItem[]>(() => {
+    const start = addDays(new Date(), -30);
+    const events = upcomingEvents(start, 120);
+    return events.map(ev => ({
+      id: ev.id,
+      label: `${ev.glyph}  ${ev.title}`,
+      type: `Transit · ${formatDate(new Date(ev.date), "MMM d")}`,
+      href: `/cosmic-flow/event/${encodeURIComponent(ev.id)}`,
+      icon: Sparkles,
+      insertText: ev.title,
+    }));
+  }, []);
+  refsRef.current = useMemo(() => buildReferences(state, transitRefs), [state, transitRefs]);
   const lastSyncedRef = useRef<string>(body);
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
