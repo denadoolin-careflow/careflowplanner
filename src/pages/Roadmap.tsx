@@ -444,6 +444,67 @@ export default function Roadmap() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={suggestOpen} onOpenChange={(o) => !o && setSuggestOpen(false)}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Auto-link suggestions</DialogTitle>
+            <DialogDescription>
+              Proposed changelog matches for shipped roadmap items that aren't linked yet. Review and link the best fit.
+            </DialogDescription>
+          </DialogHeader>
+          {suggestLoading ? (
+            <p className="text-sm text-muted-foreground">Scanning…</p>
+          ) : suggestions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nothing to suggest — every shipped item is already linked.
+            </p>
+          ) : (
+            <ul className="space-y-4">
+              {suggestions.map(({ item, matches }) => (
+                <li key={item.id} className="rounded-lg border border-border p-3">
+                  <div className="mb-2">
+                    <div className="text-sm font-medium">{item.title}</div>
+                    {item.description && (
+                      <div className="text-xs text-muted-foreground line-clamp-2">{item.description}</div>
+                    )}
+                  </div>
+                  {matches.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No likely matches found.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {matches.map((m) => (
+                        <li key={m.id} className="flex items-start gap-2 rounded-md border border-border/60 bg-card/50 p-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium truncate">{m.title}</span>
+                              <Badge variant="secondary" className="text-[10px]">
+                                {Math.round(m.score * 100)}% match
+                              </Badge>
+                              {!m.published && (
+                                <Badge variant="outline" className="text-[10px]">Draft</Badge>
+                              )}
+                            </div>
+                            {m.summary && (
+                              <div className="text-xs text-muted-foreground line-clamp-2">{m.summary}</div>
+                            )}
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => linkSuggestion(item.id, m.id)}>
+                            <Link2 className="h-3 w-3 mr-1" />Link
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSuggestOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
