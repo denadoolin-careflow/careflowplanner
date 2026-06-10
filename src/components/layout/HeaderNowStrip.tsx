@@ -227,8 +227,8 @@ export function HeaderNowStrip({ className }: { className?: string }) {
 
   return (
     <div className={cn("flex items-center gap-2 text-sm min-w-0", className)}>
-      {/* ───── Mobile (compact + toggle) ───── */}
-      <div className="flex items-center gap-1.5 md:hidden overflow-x-auto no-scrollbar max-w-full flex-nowrap">
+      {/* ───── Mobile (compact chips) ───── */}
+      <div className="flex items-center gap-1 md:hidden overflow-x-auto no-scrollbar max-w-full flex-nowrap">
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -236,11 +236,11 @@ export function HeaderNowStrip({ className }: { className?: string }) {
               aria-label={`Open today's ${slotLabel} tasks`}
               title={`${slotLabel} tasks`}
               style={chipStyle}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 tabular-nums text-xs font-medium hover:brightness-110 transition"
+              className="inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 tabular-nums text-[11px] font-medium hover:brightness-110 transition"
             >
               {time}
               {slotTasks.length > 0 && (
-                <span className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
+                <span className="ml-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[7px] font-bold text-primary-foreground">
                   {slotTasks.length}
                 </span>
               )}
@@ -257,28 +257,18 @@ export function HeaderNowStrip({ className }: { className?: string }) {
                 type="button"
                 style={chipStyle}
                 className={cn(
-                  "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-xs hover:brightness-110 transition ring-1 ring-transparent",
+                  "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] hover:brightness-110 transition ring-1 ring-transparent",
                   ring,
                 )}
                 title={snap.conditionLabel ?? undefined}
                 aria-label={`Weather: ${snap.conditionLabel ?? "unknown"} ${tempStr}`}
               >
-                <CondIcon c={snap.condition} isNight={snap.isNight} className="h-4 w-4" />
+                <CondIcon c={snap.condition} isNight={snap.isNight} className="h-3.5 w-3.5" />
                 <span className="tabular-nums font-medium">{tempStr}</span>
               </button>
             }
           />
         )}
-        <button
-          type="button"
-          onClick={() => setMobileExpanded(v => !v)}
-          aria-expanded={mobileExpanded}
-          aria-label={mobileExpanded ? "Hide date and forecast" : "Show date and forecast"}
-          style={chipMutedStyle}
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border hover:brightness-110 transition"
-        >
-          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", mobileExpanded && "rotate-180")} />
-        </button>
       </div>
 
       {/* Mobile expanded row — drops under the header */}
