@@ -170,6 +170,17 @@ export default function Notes() {
     } catch { toast.error("Could not open today's note"); }
   };
 
+  const handleDeleteNote = async (id: string) => {
+    if (!confirm("Delete this note?")) return;
+    try {
+      await deleteNote(id);
+      toast.success("Note deleted");
+      await refresh();
+    } catch {
+      toast.error("Could not delete note");
+    }
+  };
+
   const activeTitle = activeTag
     ? `#${activeTag}`
     : VIEW_TABS.find(v => v.id === view)?.label;
