@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { format, isToday } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  ChevronDown, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
+  Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
   Moon, Sun, Zap, CheckCircle2, Circle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -182,7 +182,6 @@ export function HeaderNowStrip({ className }: { className?: string }) {
 
   const time = useMemo(() => format(now, "h:mm a"), [now]);
   const date = useMemo(() => format(now, "EEE, MMM d"), [now]);
-  const shortDate = useMemo(() => format(now, "EEE, MMM d"), [now]);
   const currentSlot = useMemo<"morning" | "afternoon" | "evening">(() => {
     const h = now.getHours();
     if (h < 12) return "morning";
