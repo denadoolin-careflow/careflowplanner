@@ -133,7 +133,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Grid({
   items, active, onPick,
 }: {
-  items: { name: string; label: string }[];
+  items: { name: string; label: string; description?: string }[];
   active: string | null;
   onPick: (name: string) => void;
 }) {
@@ -142,19 +142,27 @@ function Grid({
       {items.map((it) => {
         const Icon = getLucideIcon(it.name);
         const isActive = active === it.name;
+        const tooltipContent = it.description
+          ? `${it.label} — ${it.description}`
+          : it.label;
         return (
-          <button
-            key={it.name}
-            type="button"
-            onClick={() => onPick(it.name)}
-            title={it.label}
-            className={cn(
-              "grid h-8 w-8 place-items-center rounded-md text-foreground transition-colors hover:bg-muted/70",
-              isActive && "bg-primary/15 text-primary ring-1 ring-primary/40",
-            )}
-          >
-            <Icon className="h-4 w-4" />
-          </button>
+          <Tooltip key={it.name} delayDuration={300}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => onPick(it.name)}
+                className={cn(
+                  "grid h-8 w-8 place-items-center rounded-md text-foreground transition-colors hover:bg-muted/70",
+                  isActive && "bg-primary/15 text-primary ring-1 ring-primary/40",
+                )}
+              >
+                <Icon className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[200px] text-xs leading-snug">
+              {tooltipContent}
+            </TooltipContent>
+          </Tooltip>
         );
       })}
     </div>
