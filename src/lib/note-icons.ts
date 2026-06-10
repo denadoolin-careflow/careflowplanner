@@ -13,7 +13,8 @@ export type IconCategory =
   | "Money"
   | "Ideas"
   | "Nature"
-  | "Symbols";
+  | "Symbols"
+  | "Astrology";
 
 export interface IconEntry {
   name: string;          // Lucide PascalCase name
