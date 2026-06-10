@@ -52,6 +52,7 @@ export default function NoteDetail() {
   const [coverBusy, setCoverBusy] = useState(false);
   const [repositioning, setRepositioning] = useState(false);
   const coverDragRef = useRef<{ startY: number; startPos: number; height: number } | null>(null);
+  const [editorPrefs] = useEditorPrefs();
 
   useEffect(() => {
     if (!id) return;
