@@ -24,6 +24,8 @@ import { NoteCoverPicker } from "@/components/notes/NoteCoverPicker";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { getNoteCoverCss } from "@/lib/note-covers";
 import { buildDailyNoteTemplate, isEmptyBody } from "@/lib/daily-note-template";
+import { useEditorPrefs } from "@/lib/editor-prefs";
+import type { NoteTitleSize } from "@/lib/editor-prefs";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
