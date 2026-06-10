@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { listNotes, createNote, getOrCreateDailyNote, type Note } from "@/lib/notes";
+import { listNotes, createNote, deleteNote, getOrCreateDailyNote, type Note } from "@/lib/notes";
 import { listTags, fallbackColorFor, type Tag } from "@/lib/tags";
 import { todayISO, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
