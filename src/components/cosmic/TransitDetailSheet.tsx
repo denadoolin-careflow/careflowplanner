@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import type { CosmicEvent } from "@/lib/cosmic/events";
-import { copyForEvent, houseOverlayLine } from "@/lib/cosmic/transit-copy";
+import { copyForEvent, houseOverlayLine, guidanceForEvent } from "@/lib/cosmic/transit-copy";
 import { elementFor, fourFoldFor, themesFor, intensityFor } from "@/lib/cosmic/event-meta";
 import { ELEMENT_VAR } from "@/lib/cosmic/glyphs";
 import { TransitJournalInline } from "./TransitJournalInline";
@@ -33,6 +33,7 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
   const date = event ? parseISO(event.date) : null;
   const el = event && date ? elementFor(event, date) : null;
   const copy = useMemo(() => event ? copyForEvent(event) : null, [event]);
+  const guidance = useMemo(() => event ? guidanceForEvent(event) : null, [event]);
   const ff = event ? fourFoldFor(event) : null;
   const themes = event ? themesFor(event) : null;
   const intensity = event ? intensityFor(event) : 0;
@@ -186,12 +187,38 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
                 <p className="mt-1 text-[13.5px] italic">{copy.affirmation}</p>
               </section>
 
+              {guidance && (
+                <section className="space-y-2">
+                  <h4 className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Astrology guide</h4>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <Mini label="Do more" body={guidance.doMore} />
+                    <Mini label="Do less" body={guidance.doLess} />
+                    <Mini label="What to expect" body={guidance.whatToExpect} />
+                    <div className="rounded-md border border-primary/30 bg-primary/5 p-2">
+                      <p className="text-[9.5px] uppercase tracking-[0.18em] text-primary/80">Tarot card</p>
+                      <p className="mt-0.5 text-[12.5px] font-medium leading-snug">{guidance.tarot.card}</p>
+                      <p className="text-[11.5px] leading-snug text-muted-foreground">{guidance.tarot.meaning}</p>
+                    </div>
+                  </div>
+                </section>
+              )}
+
               <Separator />
 
               <section>
                 <h4 className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                   Journal this transit
                 </h4>
+                <p className="mb-2 rounded-md border border-border/50 bg-muted/30 px-2.5 py-1.5 text-[12.5px] italic leading-snug">
+                  {copy.journalPrompt}
+                </p>
+                <Button asChild size="sm" className="mb-2 w-full gap-1.5">
+                  <Link
+                    to={`/journal-flow?prompt=${encodeURIComponent(copy.journalPrompt)}&title=${encodeURIComponent(event.title)}&transit=${encodeURIComponent(event.id)}`}
+                  >
+                    <BookOpen className="h-3.5 w-3.5" /> Journal with how this is landing
+                  </Link>
+                </Button>
                 <div className="mb-2 flex flex-wrap gap-1.5">
                   <Button
                     size="sm"

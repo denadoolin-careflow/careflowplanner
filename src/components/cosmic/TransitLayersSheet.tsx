@@ -37,7 +37,12 @@ export function TransitLayersSheet({
     (async () => {
       setLoading(true);
       const row = await fetchTransitInterpretation(event.id, { event, natal });
-      if (!cancelled) { setLayers(row as Layers); setLoading(false); }
+      if (!cancelled) {
+        // If AI couldn't generate (no creds, offline, etc), show a friendly
+        // fallback built from the event's own detail instead of an infinite loader.
+        setLayers((row as Layers) ?? buildFallbackLayers(event));
+        setLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [open, event, natal]);
@@ -66,9 +71,13 @@ export function TransitLayersSheet({
             <p className="text-xs text-muted-foreground">{event.detail}</p>
           )}
         </SheetHeader>
-        {loading || !layers ? (
+        {loading ? (
           <div className="flex h-40 items-center justify-center text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin mr-2" /> Reading the layers…
+          </div>
+        ) : !layers ? (
+          <div className="flex h-40 items-center justify-center text-center text-sm text-muted-foreground">
+            We couldn't load a deeper reading for this transit.
           </div>
         ) : (
           <div className="mt-4 space-y-3 pb-12">
@@ -215,4 +224,22 @@ function Group({ label, items, onAdd }: { label: string; items: string[]; onAdd?
       </ul>
     </div>
   );
+}
+
+function buildFallbackLayers(event: { label: string; detail?: string; planet?: string; aspect?: string; sign?: string }): Layers {
+  const subj = event.label;
+  return {
+    why_matters: `${subj} is one of today's active currents. Even when we can't generate a deeper AI reading, the simple invitation is to notice how it's landing in your body and your day.`,
+    growth: `Use this transit as a small mirror — what does it ask you to soften, to commit to, or to release?`,
+    challenges: event.detail ?? "Energy may run high or low — pace yourself.",
+    action: "Take one small, kind action that honors this energy.",
+    affirmation: "I let the sky meet me where I am today.",
+    reflection: `How is ${subj} showing up for you today?`,
+    careflow: {
+      tasks: ["One small task aligned with this energy"],
+      habits: ["A 2-minute pause to check in with yourself"],
+      routines: [],
+      journaling: [`Reflect on ${subj}`],
+    },
+  };
 }

@@ -18,6 +18,7 @@ import {
 import { getMoonPhase, type MoonPhase } from "@/lib/moon";
 import { getMoonSign } from "@/lib/zodiac";
 import { encodeEventId, type CosmicEventKind } from "@/lib/cosmic/event-id";
+import { aspectEventsOnDay } from "@/lib/cosmic/aspect-events";
 
 export interface CosmicEvent {
   id: string;
@@ -30,6 +31,10 @@ export interface CosmicEvent {
   title: string;            // short label
   subtitle?: string;        // detail
   tone: "soft" | "warm" | "rest" | "warn";
+  /** Aspect name for `kind === "aspect" | "cazimi"`. */
+  aspect?: string;
+  /** Second planet for aspect/cazimi events. */
+  partner?: string;
 }
 
 const PLANETS: Planet[] = ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"];
@@ -186,6 +191,8 @@ export function eventsOnDay(date: Date): CosmicEvent[] {
   out.push(...stationEvents(date));
   const v = vocEvent(date);
   if (v) out.push(v);
+  // Aspects + cazimi between transiting planets (closest-to-exact day only).
+  out.push(...aspectEventsOnDay(date));
   return out;
 }
 

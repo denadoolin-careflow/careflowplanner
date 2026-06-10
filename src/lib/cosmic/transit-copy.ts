@@ -157,6 +157,37 @@ export function vocCopy(): TransitCopy {
 }
 
 /* ---------------------------------------------------------------- */
+/* Aspect + cazimi copy                                              */
+/* ---------------------------------------------------------------- */
+
+const ASPECT_TONE: Record<string, { gist: string; affirm: string; prompt: string }> = {
+  conjunction: { gist: "blend energies — a fresh fusion of intentions", affirm: "I let these two forces meet inside me with grace.", prompt: "What new theme is being born from this meeting?" },
+  sextile:     { gist: "open a soft, productive opportunity", affirm: "I take the small open door in front of me.", prompt: "Where is a small yes available today?" },
+  square:      { gist: "ask for a brave, conscious choice", affirm: "I meet friction as a sign of growth.", prompt: "Where is tension showing you what matters?" },
+  trine:       { gist: "create easy, supportive flow", affirm: "I let what's easy be easy.", prompt: "What flows naturally for you right now?" },
+  opposition:  { gist: "ask for a wise middle ground", affirm: "I honor both sides without abandoning myself.", prompt: "Which two truths need to coexist today?" },
+};
+
+export function aspectCopy(planetA: Planet, planetB: Planet, aspect: string): TransitCopy {
+  const tone = ASPECT_TONE[aspect] ?? ASPECT_TONE.conjunction;
+  const a = PLANET_FLAVOR[planetA] ?? "this part of life";
+  const b = PLANET_FLAVOR[planetB] ?? "another part of life";
+  return {
+    insight: `${planetA} ${aspect} ${planetB} — ${a} and ${b} ${tone.gist}. Today's window asks you to notice how these themes are interacting and to move with intention rather than reaction.`,
+    journalPrompt: tone.prompt,
+    affirmation: tone.affirm,
+  };
+}
+
+export function cazimiCopy(planet: Planet): TransitCopy {
+  return {
+    insight: `${planet} is cazimi — held in the heart of the Sun within seventeen minutes of exact. This is a brief, luminous empowerment: whatever ${planet} governs in your life is being clarified and dignified today.`,
+    journalPrompt: `What does ${planet} want you to see clearly today, while the light is this strong?`,
+    affirmation: `I receive the clarity ${planet} is offering me.`,
+  };
+}
+
+/* ---------------------------------------------------------------- */
 /* House-of-natal-chart copy — used when overlaying transit on user  */
 /* ---------------------------------------------------------------- */
 
@@ -198,9 +229,120 @@ export function copyForEvent(event: CosmicEvent): TransitCopy {
   if (event.kind === "phase" && event.phase) return phaseCopy(event.phase, (event.sign ?? null) as Sign | null);
   if (event.kind === "eclipse") return eclipseCopy(event.phase === "full");
   if (event.kind === "voc") return vocCopy();
+  if (event.kind === "aspect" && event.planet && event.partner && event.aspect)
+    return aspectCopy(event.planet, event.partner as Planet, event.aspect);
+  if (event.kind === "cazimi" && event.planet) return cazimiCopy(event.planet);
   return {
     insight: "A small cosmic shift today — gentle enough to be felt only if you're listening.",
     journalPrompt: "What does your body or mind want you to notice today?",
     affirmation: "I notice what wants to be noticed.",
+  };
+}
+
+/* ---------------------------------------------------------------- */
+/* Astrology-friendly guidance: do more / do less / expect / tarot   */
+/* ---------------------------------------------------------------- */
+
+export interface TransitGuidance {
+  doMore: string;
+  doLess: string;
+  whatToExpect: string;
+  tarot: { card: string; meaning: string };
+}
+
+const TAROT_BY_PLANET: Record<string, { card: string; meaning: string }> = {
+  Sun:     { card: "The Sun",       meaning: "Vitality, visibility, joyful clarity." },
+  Moon:    { card: "The High Priestess", meaning: "Intuition, inner tides, listening within." },
+  Mercury: { card: "The Magician",  meaning: "Communication, focus, weaving ideas into form." },
+  Venus:   { card: "The Empress",   meaning: "Love, beauty, abundance, gentle care." },
+  Mars:    { card: "The Tower",     meaning: "Decisive action, breakthrough, clearing the path." },
+  Jupiter: { card: "The Wheel of Fortune", meaning: "Expansion, opportunity, trust the turning." },
+  Saturn:  { card: "The World",     meaning: "Mastery, completion, structured devotion." },
+};
+const TAROT_BY_PHASE: Record<string, { card: string; meaning: string }> = {
+  new:            { card: "The Fool",  meaning: "Beginning again with open hands." },
+  "first-quarter":{ card: "Strength",  meaning: "Gentle courage to keep going." },
+  full:           { card: "The Star",  meaning: "Illumination, hope, what's been hidden." },
+  "last-quarter": { card: "Death",     meaning: "Honoring an ending, making room." },
+};
+
+function tarotFor(event: CosmicEvent) {
+  if (event.kind === "phase" && event.phase) return TAROT_BY_PHASE[event.phase] ?? TAROT_BY_PLANET.Moon;
+  if (event.kind === "eclipse") return { card: "Judgement", meaning: "A reckoning that re-arranges what comes next." };
+  if (event.kind === "voc") return { card: "The Hanged Man", meaning: "Suspension — let the day breathe." };
+  if (event.planet && TAROT_BY_PLANET[event.planet]) return TAROT_BY_PLANET[event.planet];
+  return { card: "The Star", meaning: "A gentle, hopeful pause." };
+}
+
+export function guidanceForEvent(event: CosmicEvent): TransitGuidance {
+  const tarot = tarotFor(event);
+  if (event.kind === "retrograde" && event.planet) {
+    return {
+      doMore: `Re-read, repair, and revisit ${event.planet.toLowerCase()} themes (review, slow down, reconnect).`,
+      doLess: `Launch new ${event.planet.toLowerCase()}-flavored commitments or assume you've been understood the first time.`,
+      whatToExpect: `Plans may loop back; delays often surface what wants refining. Energy is inward-facing.`,
+      tarot,
+    };
+  }
+  if (event.kind === "direct" && event.planet) {
+    return {
+      doMore: `Take one small forward step that honors what you learned during the review.`,
+      doLess: `Sprint, over-correct, or try to make up for the slower season in a day.`,
+      whatToExpect: `Forward motion returns gradually — clarity over speed.`,
+      tarot,
+    };
+  }
+  if (event.kind === "phase") {
+    const p = event.phase;
+    if (p === "new") return { doMore: "Set one quiet intention, rest early, listen.", doLess: "Big announcements or overscheduling.", whatToExpect: "A subtle seed-point — small whispers count.", tarot };
+    if (p === "full") return { doMore: "Celebrate, share, feel, and reflect on what's ripe.", doLess: "Force a fix on what just wants to be felt.", whatToExpect: "Heightened emotion and clarity — things come to light.", tarot };
+    if (p === "first-quarter") return { doMore: "Recommit to one priority and protect it.", doLess: "Add new commitments before honoring the current one.", whatToExpect: "Productive friction — the seed pushes through soil.", tarot };
+    if (p === "last-quarter") return { doMore: "Archive, edit, and let go of what's outgrown its season.", doLess: "Start anything new you'll regret in a week.", whatToExpect: "A clearing — quieter energy, ready for release.", tarot };
+  }
+  if (event.kind === "eclipse") {
+    return { doMore: "Rest, hydrate, journal, and let what surfaces be information.", doLess: "Sign, launch, or have the hard conversation this week.", whatToExpect: "Outsized feelings, surprise news, and quiet redirections.", tarot };
+  }
+  if (event.kind === "voc") {
+    return { doMore: "Drift, daydream, do small repeatable tasks.", doLess: "Make important decisions or send big asks.", whatToExpect: "A soft pause — things you start may not land as planned.", tarot };
+  }
+  if (event.kind === "ingress" && event.planet && event.sign) {
+    return { doMore: `Lean ${event.planet.toLowerCase()} themes into the texture of ${event.sign}.`, doLess: `Cling to the prior sign's flavor or rush the transition.`, whatToExpect: `A gradual tonal shift over the next few weeks.`, tarot };
+  }
+  if (event.kind === "aspect" && event.planet && event.partner && event.aspect) {
+    const tone = ASPECT_TONE[event.aspect] ?? ASPECT_TONE.conjunction;
+    const more: Record<string, string> = {
+      conjunction: "Notice what's beginning between these two themes — give the blend room.",
+      sextile: "Take the small open door — one yes, one outreach, one experiment.",
+      square: "Choose consciously where these forces want to push each other.",
+      trine: "Lean into what flows — momentum is on your side.",
+      opposition: "Listen to both sides, then choose a middle the supports both.",
+    };
+    const less: Record<string, string> = {
+      conjunction: "Force the meaning of the blend before it reveals itself.",
+      sextile: "Wait for a perfect opportunity — this one wants a soft yes.",
+      square: "Pretend the friction isn't there or take it personally.",
+      trine: "Coast so much you forget to honor what's working.",
+      opposition: "Pick a side just to relieve the tension.",
+    };
+    return {
+      doMore: more[event.aspect] ?? "Move with intention.",
+      doLess: less[event.aspect] ?? "React from the surface.",
+      whatToExpect: `${event.planet} and ${event.partner} ${tone.gist}. Today is the peak of this exchange.`,
+      tarot,
+    };
+  }
+  if (event.kind === "cazimi" && event.planet) {
+    return {
+      doMore: `Pay attention — ${event.planet} themes are being clarified and dignified now.`,
+      doLess: `Dismiss insights or distract yourself through this window.`,
+      whatToExpect: `A brief, luminous moment of clarity around ${event.planet}.`,
+      tarot,
+    };
+  }
+  return {
+    doMore: "Move at the pace of kindness today.",
+    doLess: "Overschedule or expect peak performance.",
+    whatToExpect: "An ordinary cosmic day — workable and warm.",
+    tarot,
   };
 }

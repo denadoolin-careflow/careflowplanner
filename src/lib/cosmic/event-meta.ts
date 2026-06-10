@@ -7,6 +7,7 @@ import type { CosmicEvent } from "@/lib/cosmic/events";
 import { eventsOnDay } from "@/lib/cosmic/events";
 import { SIGN_ELEMENT, type Element } from "@/lib/cosmic/glyphs";
 import type { Sign } from "@/lib/transits";
+import { planetSign } from "@/lib/transits";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { getMoonSign } from "@/lib/zodiac";
 
@@ -36,6 +37,7 @@ export function categoriesFor(e: CosmicEvent): EventCategory[] {
   if (e.kind === "eclipse") { out.add("eclipse"); out.add("moon"); }
   if (e.kind === "ingress") out.add("ingress");
   if (e.kind === "retrograde" || e.kind === "direct") out.add("retrograde");
+  if (e.kind === "aspect" || e.kind === "cazimi") out.add("personal");
   if (e.planet && PERSONAL.has(e.planet)) out.add("personal");
   if (e.planet && OUTER.has(e.planet)) out.add("outer");
   if (e.planet === "Venus") { out.add("love"); out.add("home"); }
@@ -56,14 +58,20 @@ export function elementFor(e: CosmicEvent, date: Date): Element | null {
     const ms = getMoonSign(date);
     return SIGN_ELEMENT[ms.name as Sign] ?? null;
   }
+  if ((e.kind === "aspect" || e.kind === "cazimi") && e.planet) {
+    const s = planetSign(e.planet, date);
+    return SIGN_ELEMENT[s as Sign] ?? null;
+  }
   return null;
 }
 
 export function intensityFor(e: CosmicEvent): number {
   if (e.kind === "eclipse") return 5;
+  if (e.kind === "cazimi") return 4;
   if (e.kind === "phase" && (e.phase === "full" || e.phase === "new")) return 4;
   if (e.kind === "retrograde" || e.kind === "direct") return 3;
   if (e.kind === "ingress") return 3;
+  if (e.kind === "aspect") return 3;
   if (e.kind === "phase") return 2;
   return 1;
 }

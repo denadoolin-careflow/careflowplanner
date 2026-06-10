@@ -6,7 +6,8 @@
  * Example: "ingress:2026-06-11:Mercury:Cancer", "phase:2026-06-15:full"
  */
 export type CosmicEventKind =
-  | "phase" | "ingress" | "retrograde" | "direct" | "voc" | "eclipse";
+  | "phase" | "ingress" | "retrograde" | "direct" | "voc" | "eclipse"
+  | "aspect" | "cazimi";
 
 export interface CosmicEventRef {
   kind: CosmicEventKind;
@@ -14,6 +15,8 @@ export interface CosmicEventRef {
   planet?: string;
   sign?: string;
   phase?: string;        // 'new' | 'first-quarter' | 'full' | 'last-quarter'
+  aspect?: string;       // 'conjunction' | 'sextile' | 'square' | 'trine' | 'opposition'
+  partner?: string;      // the second planet for aspect/cazimi events
 }
 
 export function encodeEventId(ref: CosmicEventRef): string {
