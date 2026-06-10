@@ -521,7 +521,7 @@ function DayPartItem({
           : () => { if (it.kind === "appt" && it.id && onApptClick) onApptClick(it.id); }
       }
       className={cn(
-        "flex items-center gap-2 rounded-lg bg-muted/40 px-2 py-1.5 text-sm",
+        "flex items-start gap-2 rounded-lg bg-muted/40 px-2 py-1.5 text-sm",
         clickable && "cursor-pointer hover:bg-primary/10",
         it.kind === "task" && "touch-none",
         it.kind === "task" && it.done && !completing && "opacity-60",
@@ -532,23 +532,28 @@ function DayPartItem({
         <button
           onPointerDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); triggerToggle(); }}
-          className="text-muted-foreground hover:text-primary"
+          className="mt-0.5 text-muted-foreground hover:text-primary"
           aria-label="Toggle task"
         >
           {it.done ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4" />}
         </button>
       ) : !hideTime ? (
-        <span className="w-14 shrink-0 font-mono text-[10px] text-muted-foreground">{it.time ? formatTime12(it.time.slice(0,5)) : ""}</span>
+        <span className="mt-0.5 w-14 shrink-0 font-mono text-[10px] text-muted-foreground">{it.time ? formatTime12(it.time.slice(0,5)) : ""}</span>
       ) : null}
       {icon && (
         icon.kind === "lucide"
-          ? <icon.Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/80" aria-hidden />
-          : <span className="shrink-0 text-sm leading-none" aria-hidden>{icon.char}</span>
+          ? <icon.Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/80" aria-hidden />
+          : <span className="mt-0.5 shrink-0 text-sm leading-none" aria-hidden>{icon.char}</span>
       )}
       {taskForIcon && <PriorityFlag task={taskForIcon} />}
-      <span className={cn("min-w-0 flex-1 whitespace-normal break-words", it.kind === "task" && it.done && "line-through")}>{it.label}</span>
+      <span
+        className={cn("min-w-0 flex-1 whitespace-normal break-words leading-snug", it.kind === "task" && it.done && "line-through")}
+        style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+      >
+        {it.label}
+      </span>
       {it.kind === "task" && (
-        <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
+        <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
       )}
     </li>
   );
