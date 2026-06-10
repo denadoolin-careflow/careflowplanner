@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { Pin, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,8 @@ import { fallbackColorFor } from "@/lib/tags";
 import type { Note } from "@/lib/notes";
 import type { Tag } from "@/lib/tags";
 import { NoteHoverPreview } from "@/components/notes/NoteHoverPreview";
+import { deleteNote } from "@/lib/notes";
+import { toast } from "sonner";
 
 function stripMd(s: string): string {
   if (!s) return "";
