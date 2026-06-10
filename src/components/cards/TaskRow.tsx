@@ -31,11 +31,50 @@ import {
   SwipeAction, Type as SwipeType,
 } from "react-swipeable-list";
 
-const PRIORITY_DOTS: Record<Task["priority"], number> = { low: 0, medium: 1, high: 2 };
-const PRIORITY_TONE: Record<Task["priority"], string> = {
-  low: "bg-muted-foreground/40",
-  medium: "bg-amber-500/80",
-  high: "bg-rose-500",
+const PRIORITY_DOTS: Record<Task["priority"], number> = { low: 1, medium: 2, high: 3 };
+
+type PriorityStyle = {
+  bar: string;       // left vertical accent bar
+  badgeBg: string;   // right badge background
+  badgeBorder: string;
+  badgeText: string;
+  dotOn: string;     // lit dot color
+  dotOff: string;    // unlit dot color
+  glow: string;      // optional outer glow utility
+  label: string;
+};
+
+const PRIORITY_STYLES: Record<Task["priority"], PriorityStyle> = {
+  high: {
+    bar: "bg-priority-high",
+    badgeBg: "bg-priority-high/10",
+    badgeBorder: "border-priority-high/25",
+    badgeText: "text-priority-high",
+    dotOn: "bg-priority-high",
+    dotOff: "bg-priority-high/30",
+    glow: "shadow-priority-high",
+    label: "Urgent",
+  },
+  medium: {
+    bar: "bg-priority-med",
+    badgeBg: "bg-priority-med/10",
+    badgeBorder: "border-priority-med/20",
+    badgeText: "text-priority-med",
+    dotOn: "bg-priority-med/80",
+    dotOff: "bg-white/10",
+    glow: "",
+    label: "Med",
+  },
+  low: {
+    bar: "",
+    badgeBg: "",
+    badgeBorder: "border-border/40",
+    badgeText: "text-muted-foreground/60",
+    dotOn: "bg-muted-foreground/40",
+    dotOff: "bg-transparent",
+    glow: "",
+    label: "Low",
+  },
 };
 
 export function TaskRow({
