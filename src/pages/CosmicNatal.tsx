@@ -14,6 +14,11 @@ import { RetrogradeBadge } from "@/components/cosmic/RetrogradeBadge";
 import type { NatalPlanet, NatalChartV2 } from "@/lib/cosmic/chart";
 import type { Sign } from "@/lib/transits";
 import { SIGN_GLYPH, ASPECT_GLYPH } from "@/lib/cosmic/glyphs";
+import { PLANET_GLYPH, planetSign, planetLongitude, type Planet } from "@/lib/transits";
+import { getMoonSign } from "@/lib/zodiac";
+import { getMoonPhase } from "@/lib/moon";
+import { houseOf } from "@/lib/cosmic/astro/houses";
+import { HOUSE_THEME } from "@/lib/cosmic/transit-copy";
 
 type AspectRow = NatalChartV2["aspects"][number];
 
@@ -131,6 +136,8 @@ export default function CosmicNatal() {
           ))}
         </div>
       </section>
+
+      {chart.houses && <TodayInYourHouses houses={chart.houses} />}
 
       <section className="cozy-card p-4">
         <p className="font-display text-base mb-2">House Explorer</p>
