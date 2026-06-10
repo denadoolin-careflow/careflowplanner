@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Sparkles, Star } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,6 +8,9 @@ import { useStore } from "@/lib/store";
 import { pickTopThree } from "@/lib/top-three";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { haptics } from "@/lib/haptics";
+import { pickAffirmation } from "@/lib/affirmations";
+import { toast } from "sonner";
+import { CompletionBurst } from "@/components/cards/CompletionBurst";
 import { cn } from "@/lib/utils";
 
 export function MoonPrioritiesCard({
