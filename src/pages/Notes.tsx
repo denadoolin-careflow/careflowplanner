@@ -388,7 +388,7 @@ export default function Notes() {
                 ))}
               </div>
             ) : view === "list" ? (
-              <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} />
+              <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} onDelete={handleDeleteNote} />
             ) : view === "board" ? (
               <BoardView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} />
             ) : view === "timeline" ? (
