@@ -149,6 +149,30 @@ const STARS = [
   { left: 84, delay: 220, ty: -30 },
 ];
 
+const PRIORITY_CONFETTI = [
+  { tx: -56, ty: -34, rot: -50, delay: 0,   color: "--primary" },
+  { tx: -36, ty: -48, rot: -25, delay: 20,  color: "--accent" },
+  { tx: -12, ty: -54, rot:  -5, delay: 10,  color: "--secondary" },
+  { tx:  10, ty: -50, rot:  20, delay: 40,  color: "--primary" },
+  { tx:  32, ty: -42, rot:  45, delay: 15,  color: "--accent" },
+  { tx:  54, ty: -30, rot:  75, delay: 55,  color: "--secondary" },
+  { tx:  64, ty: -16, rot: 105, delay: 30,  color: "--primary" },
+  { tx: -48, ty:  18, rot:-130, delay: 70,  color: "--accent" },
+  { tx: -20, ty:  28, rot: -85, delay: 45,  color: "--secondary" },
+  { tx:   8, ty:  32, rot:  35, delay: 85,  color: "--primary" },
+  { tx:  38, ty:  24, rot:  95, delay: 60,  color: "--accent" },
+  { tx:  58, ty:  12, rot: 125, delay: 90,  color: "--secondary" },
+];
+
+const PRIORITY_STARS = [
+  { left: 12, delay:   0, ty: -38 },
+  { left: 28, delay:  60, ty: -52 },
+  { left: 48, delay: 120, ty: -44 },
+  { left: 66, delay: 180, ty: -56 },
+  { left: 82, delay: 100, ty: -40 },
+  { left: 92, delay: 240, ty: -48 },
+];
+
 const KEYFRAMES = `
 @keyframes cf-confetti {
   0%   { transform: translate(0,0) rotate(0deg); opacity: 0; }
