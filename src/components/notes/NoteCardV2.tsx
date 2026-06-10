@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Pin, Link2, Check, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
+import { resolveNoteIcon, getLucideIcon, NOTE_ICONS } from "@/lib/note-icons";
 import { getNoteCoverCss } from "@/lib/note-covers";
 import { fallbackColorFor } from "@/lib/tags";
 import type { Note } from "@/lib/notes";
@@ -14,6 +14,7 @@ import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
 import { NoteIconPicker } from "@/components/notes/NoteIconPicker";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 function countLinks(body: string): number {
