@@ -580,7 +580,7 @@ function TimelineView({
           </div>
           <div className="space-y-2 border-l border-border/50 pl-4">
             {byDay[d].map(n => (
-              <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} compact />
+              <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} onDelete={onDelete} compact />
             ))}
           </div>
         </div>
