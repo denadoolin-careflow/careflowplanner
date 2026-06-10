@@ -247,9 +247,9 @@ export function HeaderNowStrip({ className }: { className?: string }) {
             trigger={
               <button
                 type="button"
-                style={chipStyle}
+                style={chipBorder}
                 className={cn(
-                  "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] hover:brightness-110 transition ring-1 ring-transparent",
+                  "inline-flex shrink-0 items-center gap-1 rounded-full border bg-muted px-1.5 py-0.5 text-[11px] text-foreground hover:bg-muted/80 transition ring-1 ring-transparent",
                   ring,
                 )}
                 title={snap.conditionLabel ?? undefined}
@@ -272,8 +272,8 @@ export function HeaderNowStrip({ className }: { className?: string }) {
             type="button"
             aria-label={`Open today's ${slotLabel} tasks`}
             title={`${slotLabel} tasks`}
-            style={chipStyle}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 tabular-nums font-medium hover:brightness-110 transition"
+            style={chipBorder}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border bg-muted px-2.5 py-1.5 tabular-nums font-medium text-foreground hover:bg-muted/80 transition"
           >
             {time}
             {slotTasks.length > 0 && (
@@ -293,8 +293,8 @@ export function HeaderNowStrip({ className }: { className?: string }) {
             type="button"
             aria-label="Open today's tasks"
             title="Today's tasks"
-            style={chipStyle}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 hover:brightness-110 transition"
+            style={chipBorder}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border bg-muted px-2.5 py-1.5 text-foreground hover:bg-muted/80 transition"
           >
             {date}
           </button>
@@ -308,9 +308,9 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           trigger={
             <button
               type="button"
-              style={chipStyle}
+              style={chipBorder}
               className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 hover:brightness-110 transition ring-1 ring-transparent hover:ring-2",
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full border bg-muted px-2.5 py-1.5 text-foreground hover:bg-muted/80 transition ring-1 ring-transparent hover:ring-2",
                 weatherTheme(snap.condition, snap.isNight).ring,
               )}
               title={snap.conditionLabel ?? undefined}
@@ -333,8 +333,8 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           trigger={
             <button
               type="button"
-              style={chipStyle}
-              className="hidden shrink-0 items-center gap-1 rounded-full border px-2 py-1 hover:brightness-110 transition xl:inline-flex"
+              style={chipBorder}
+              className="hidden shrink-0 items-center gap-1 rounded-full border bg-muted px-2 py-1 text-foreground hover:bg-muted/80 transition xl:inline-flex"
               title="Open weather details"
             >
               {upcoming.map(d => (
