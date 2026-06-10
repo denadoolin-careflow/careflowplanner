@@ -14,6 +14,7 @@ import {
   MOON_INFO,
   type MoonPhase,
 } from "@/lib/moon";
+import { getMoonSign as localMoonSign } from "@/lib/zodiac";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface MoonData {
@@ -42,6 +43,7 @@ const localProvider: MoonProvider = {
   description: "Built-in synodic-cycle math. No network.",
   get(date) {
     const phase = localPhase(date);
+    const sign = localMoonSign(date);
     return {
       date,
       phase,
@@ -49,6 +51,7 @@ const localProvider: MoonProvider = {
       glyph: MOON_INFO[phase].glyph,
       illumination: localIllum(date),
       source: "local",
+      sign: sign.name,
     };
   },
 };
