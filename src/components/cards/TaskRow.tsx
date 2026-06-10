@@ -31,11 +31,50 @@ import {
   SwipeAction, Type as SwipeType,
 } from "react-swipeable-list";
 
-const PRIORITY_DOTS: Record<Task["priority"], number> = { low: 0, medium: 1, high: 2 };
-const PRIORITY_TONE: Record<Task["priority"], string> = {
-  low: "bg-muted-foreground/40",
-  medium: "bg-amber-500/80",
-  high: "bg-rose-500",
+const PRIORITY_DOTS: Record<Task["priority"], number> = { low: 1, medium: 2, high: 3 };
+
+type PriorityStyle = {
+  bar: string;       // left vertical accent bar
+  badgeBg: string;   // right badge background
+  badgeBorder: string;
+  badgeText: string;
+  dotOn: string;     // lit dot color
+  dotOff: string;    // unlit dot color
+  glow: string;      // optional outer glow utility
+  label: string;
+};
+
+const PRIORITY_STYLES: Record<Task["priority"], PriorityStyle> = {
+  high: {
+    bar: "bg-priority-high",
+    badgeBg: "bg-priority-high/10",
+    badgeBorder: "border-priority-high/25",
+    badgeText: "text-priority-high",
+    dotOn: "bg-priority-high",
+    dotOff: "bg-priority-high/30",
+    glow: "shadow-priority-high",
+    label: "Urgent",
+  },
+  medium: {
+    bar: "bg-priority-med",
+    badgeBg: "bg-priority-med/10",
+    badgeBorder: "border-priority-med/20",
+    badgeText: "text-priority-med",
+    dotOn: "bg-priority-med/80",
+    dotOff: "bg-white/10",
+    glow: "",
+    label: "Med",
+  },
+  low: {
+    bar: "",
+    badgeBg: "",
+    badgeBorder: "border-border/40",
+    badgeText: "text-muted-foreground/60",
+    dotOn: "bg-muted-foreground/40",
+    dotOff: "bg-transparent",
+    glow: "",
+    label: "Low",
+  },
 };
 
 export function TaskRow({
@@ -242,11 +281,21 @@ export function TaskRow({
       onPointerCancel={cancelLongPress}
       onContextMenu={(e) => { e.preventDefault(); setQuickEditOpen(true); }}
     >
-      {/* Status dot (area color) — hidden on mobile to reduce leading clutter */}
+      {/* Left accent bar — priority color when prioritized, otherwise area color */}
       <span
-        className="mt-[7px] hidden h-2 w-2 shrink-0 rounded-full ring-1 ring-border/60 sm:inline-block"
-        style={areaColor ? { backgroundColor: areaColor } : { backgroundColor: "hsl(var(--muted-foreground) / 0.5)" }}
+        className={cn(
+          "mt-[3px] hidden shrink-0 rounded-full sm:inline-block",
+          isSubtask ? "h-5 w-1" : "h-8 w-1.5",
+          task.priority !== "low" && PRIORITY_STYLES[task.priority].bar,
+          task.priority === "high" && PRIORITY_STYLES.high.glow,
+        )}
+        style={
+          task.priority === "low"
+            ? { backgroundColor: areaColor || "hsl(var(--muted-foreground) / 0.45)" }
+            : undefined
+        }
         aria-hidden
+        title={task.priority !== "low" ? `Priority: ${task.priority}` : undefined}
       />
       <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-[3px]" aria-label={`Mark complete: ${task.title}`} />
 
@@ -314,13 +363,6 @@ export function TaskRow({
               {showArea && <span className="opacity-40">·</span>}
               <SmartDueChip date={task.dueDate} done={task.done} />
             </>)}
-            {task.priority !== "low" && (
-              <span className="inline-flex items-center gap-0.5" aria-label={`Priority ${task.priority}`} title={`Priority: ${task.priority}`}>
-                {Array.from({ length: PRIORITY_DOTS[task.priority] + 1 }).map((_, i) => (
-                  <span key={i} className={cn("h-1.5 w-1.5 rounded-full", PRIORITY_TONE[task.priority])} />
-                ))}
-              </span>
-            )}
             {task.dayPart && <span className="opacity-70">{task.dayPart}</span>}
             {task.resetItemId && (
               <a href="/home-reset" className="inline-flex items-center gap-1 text-secondary-foreground/80 hover:text-secondary-foreground">
@@ -349,6 +391,42 @@ export function TaskRow({
           </div>
         )}
       </div>
+
+      {/* Right-side priority badge — hidden on hover so action cluster has room */}
+      {!isSubtask && task.priority !== "low" && !editing && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); handleCyclePriority(); }}
+          aria-label={`Priority: ${task.priority}. Click to change.`}
+          title="Click to change priority"
+          className={cn(
+            "mt-[3px] inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 transition-opacity group-hover:opacity-0",
+            PRIORITY_STYLES[task.priority].badgeBg,
+            PRIORITY_STYLES[task.priority].badgeBorder,
+          )}
+        >
+          <span className="flex flex-col gap-0.5">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  i < PRIORITY_DOTS[task.priority]
+                    ? PRIORITY_STYLES[task.priority].dotOn
+                    : PRIORITY_STYLES[task.priority].dotOff,
+                  task.priority === "high" && i < PRIORITY_DOTS[task.priority] && PRIORITY_STYLES.high.glow,
+                )}
+              />
+            ))}
+          </span>
+          <span className={cn(
+            "hidden text-[10px] font-bold uppercase tracking-widest sm:inline",
+            PRIORITY_STYLES[task.priority].badgeText,
+          )}>
+            {PRIORITY_STYLES[task.priority].label}
+          </span>
+        </button>
+      )}
 
       {/* Desktop hover actions — plan, edit, snooze, move, details */}
       <TaskHoverActions

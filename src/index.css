@@ -103,6 +103,11 @@
     --aspect-harmonious: 145 50% 45%;
     --aspect-dynamic: 0 65% 55%;
     --aspect-neutral: 260 30% 55%;
+
+    /* Task priority tokens */
+    --priority-high: 351 83% 61%;
+    --priority-med: 38 92% 50%;
+    --priority-low: 220 9% 46%;
   }
 
   .dark {
