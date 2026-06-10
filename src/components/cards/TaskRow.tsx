@@ -281,11 +281,21 @@ export function TaskRow({
       onPointerCancel={cancelLongPress}
       onContextMenu={(e) => { e.preventDefault(); setQuickEditOpen(true); }}
     >
-      {/* Status dot (area color) — hidden on mobile to reduce leading clutter */}
+      {/* Left accent bar — priority color when prioritized, otherwise area color */}
       <span
-        className="mt-[7px] hidden h-2 w-2 shrink-0 rounded-full ring-1 ring-border/60 sm:inline-block"
-        style={areaColor ? { backgroundColor: areaColor } : { backgroundColor: "hsl(var(--muted-foreground) / 0.5)" }}
+        className={cn(
+          "mt-[3px] hidden shrink-0 rounded-full sm:inline-block",
+          isSubtask ? "h-5 w-1" : "h-8 w-1.5",
+          task.priority !== "low" && PRIORITY_STYLES[task.priority].bar,
+          task.priority === "high" && PRIORITY_STYLES.high.glow,
+        )}
+        style={
+          task.priority === "low"
+            ? { backgroundColor: areaColor || "hsl(var(--muted-foreground) / 0.45)" }
+            : undefined
+        }
         aria-hidden
+        title={task.priority !== "low" ? `Priority: ${task.priority}` : undefined}
       />
       <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-[3px]" aria-label={`Mark complete: ${task.title}`} />
 
@@ -353,13 +363,6 @@ export function TaskRow({
               {showArea && <span className="opacity-40">·</span>}
               <SmartDueChip date={task.dueDate} done={task.done} />
             </>)}
-            {task.priority !== "low" && (
-              <span className="inline-flex items-center gap-0.5" aria-label={`Priority ${task.priority}`} title={`Priority: ${task.priority}`}>
-                {Array.from({ length: PRIORITY_DOTS[task.priority] + 1 }).map((_, i) => (
-                  <span key={i} className={cn("h-1.5 w-1.5 rounded-full", PRIORITY_TONE[task.priority])} />
-                ))}
-              </span>
-            )}
             {task.dayPart && <span className="opacity-70">{task.dayPart}</span>}
             {task.resetItemId && (
               <a href="/home-reset" className="inline-flex items-center gap-1 text-secondary-foreground/80 hover:text-secondary-foreground">
