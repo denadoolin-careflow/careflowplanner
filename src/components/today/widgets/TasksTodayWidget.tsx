@@ -85,15 +85,17 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
 
   const handleToggle = (t: Task) => {
     if (t.done) { void toggleTask(t.id); return; }
+    const isPriority = t.priority === "high" || t.isTopThree;
+    setCelebrateVariant(isPriority ? "priority" : completionVisual);
     setCelebrateId(t.id);
     playCompletionChime();
     haptics.success?.();
-    toast.success("Done — softly.", {
+    toast.success(isPriority ? "Big win — priority done!" : "Done — softly.", {
       description: pickAffirmation(),
       duration: 5000,
       action: { label: "Undo", onClick: () => { haptics.tap?.(); void updateTask(t.id, { done: false }); } },
     });
-    window.setTimeout(() => { void toggleTask(t.id); setCelebrateId(null); }, 900);
+    window.setTimeout(() => { void toggleTask(t.id); setCelebrateId(null); }, isPriority ? 1200 : 900);
   };
 
   return (
