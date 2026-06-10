@@ -50,7 +50,6 @@ export function CurrentTransitsTable({ date = new Date(), limit = 4 }: { date?: 
         <ul className="divide-y divide-border/40">
           {aspects.map(a => {
             const id = encodeEventId({ kind: "phase", date: format(date, "yyyy-MM-dd"), planet: a.a, sign: a.aSign });
-            const eventId = `aspect~${format(date, "yyyy-MM-dd")}~${a.id}`;
             const toneClass = ACTION_TONE[a.action] ?? "bg-primary/15 text-primary";
             return (
               <li key={a.id} className="py-3 first:pt-0 last:pb-0">
