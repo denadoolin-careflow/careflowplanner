@@ -1355,16 +1355,6 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   accentColor={accent.color}
                   onClick={handleNavClick(`/flow/${group.id}`)}
                 />
-                {group.items.map(({ to, label, icon: Icon }) => (
-                  <RailButton
-                    key={to}
-                    to={to}
-                    label={label}
-                    icon={Icon}
-                    end={to === "/"}
-                    onClick={handleNavClick(to)}
-                  />
-                ))}
                 {idx < orderedGroups.length - 1 && <RailDivider />}
               </div>
             );
