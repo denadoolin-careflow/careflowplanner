@@ -12,6 +12,7 @@ export type EditorTheme =
 
 export type EditorDensity = "cozy" | "comfortable" | "airy";
 export type EditorWidth = "narrow" | "regular" | "wide" | "full";
+export type NoteTitleSize = "small" | "medium" | "large";
 
 export interface EditorPrefs {
   theme: EditorTheme;
@@ -20,6 +21,7 @@ export interface EditorPrefs {
   fontScale: number; // 0.9 – 1.3
   customBg: string;   // any CSS color
   customFg: string;   // any CSS color
+  titleSize: NoteTitleSize;
 }
 
 const KEY = "careflow.editorPrefs.v1";
@@ -31,6 +33,7 @@ const DEFAULTS: EditorPrefs = {
   fontScale: 1,
   customBg: "#f4ede2",
   customFg: "#2a2218",
+  titleSize: "medium",
 };
 
 function read(): EditorPrefs {
