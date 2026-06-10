@@ -448,7 +448,14 @@ function ListView({
           ? format(parseISO(n.date), "EEEE, MMM d")
           : (n.title || "Untitled");
         return (
-          <NoteHoverPreview key={n.id} note={n} tagsByName={tagsByName}>
+          <NoteHoverPreview
+            key={n.id}
+            note={n}
+            tagsByName={tagsByName}
+            onOpen={onSelect}
+            onEdit={onSelect}
+            onDelete={onDelete}
+          >
           <button
             key={n.id}
             type="button"
