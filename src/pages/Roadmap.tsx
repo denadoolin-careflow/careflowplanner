@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Map as MapIcon, ChevronUp, Check, KanbanSquare, CalendarRange, CalendarDays } from "lucide-react";
+import { Sparkles, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO, startOfMonth } from "date-fns";
 import {
@@ -68,6 +69,12 @@ export default function Roadmap() {
     publish: boolean;
     saving: boolean;
   }>(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<Array<{
+    item: Item;
+    matches: Array<{ id: string; title: string; summary: string | null; published: boolean; score: number }>;
+  }>>([]);
 
   useEffect(() => {
     document.title = "Roadmap · CareFlow";
@@ -188,6 +195,63 @@ export default function Roadmap() {
     load();
   }
 
+  function tokenize(s: string): Set<string> {
+    return new Set(
+      s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((t) => t.length > 2)
+    );
+  }
+  function similarity(a: string, b: string): number {
+    const A = tokenize(a), B = tokenize(b);
+    if (!A.size || !B.size) return 0;
+    let inter = 0;
+    A.forEach((t) => { if (B.has(t)) inter++; });
+    return inter / (A.size + B.size - inter);
+  }
+
+  async function openSuggestions() {
+    setSuggestOpen(true);
+    setSuggestLoading(true);
+    const notLinked = items.filter((i) => i.status === "shipped" && !i.changelog_id);
+    const linkedIds = new Set(items.map((i) => i.changelog_id).filter(Boolean) as string[]);
+    const { data: cl, error } = await supabase
+      .from("changelog")
+      .select("id,title,summary,published,created_at")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (error) { toast.error(error.message); setSuggestLoading(false); return; }
+    const candidates = (cl ?? []).filter((c: any) => !linkedIds.has(c.id));
+    const results = notLinked.map((item) => {
+      const scored = candidates
+        .map((c: any) => ({
+          id: c.id as string,
+          title: c.title as string,
+          summary: (c.summary ?? null) as string | null,
+          published: !!c.published,
+          score: similarity(
+            `${item.title} ${item.description ?? ""}`,
+            `${c.title} ${c.summary ?? ""}`
+          ),
+        }))
+        .filter((s) => s.score > 0.08)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
+      return { item, matches: scored };
+    });
+    setSuggestions(results);
+    setSuggestLoading(false);
+  }
+
+  async function linkSuggestion(itemId: string, changelogId: string) {
+    const { error } = await supabase
+      .from("roadmap_items")
+      .update({ changelog_id: changelogId })
+      .eq("id", itemId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Linked to changelog");
+    setSuggestions((s) => s.filter((x) => x.item.id !== itemId));
+    load();
+  }
+
   async function toggleVote(item: Item) {
     if (!userId) {
       toast.error("Sign in to vote");
@@ -255,9 +319,15 @@ export default function Roadmap() {
 
             <TabsContent value="kanban">
               {isAdmin && (
-                <p className="mb-3 text-xs text-muted-foreground">
-                  Drag cards between columns to update status. Target quarter updates automatically.
-                </p>
+                <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
+                  <p className="text-xs text-muted-foreground">
+                    Drag cards between columns to update status. Target quarter updates automatically.
+                  </p>
+                  <Button size="sm" variant="outline" onClick={openSuggestions}>
+                    <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                    Auto-link suggestions
+                  </Button>
+                </div>
               )}
               <div className="grid gap-6 md:grid-cols-3">
                 {columns.map((col) => {
