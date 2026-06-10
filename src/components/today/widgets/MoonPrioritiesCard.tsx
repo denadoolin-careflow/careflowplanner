@@ -24,13 +24,19 @@ export function MoonPrioritiesCard({
   const dateISO = format(date, "yyyy-MM-dd");
   const top = useMemo(() => pickTopThree(state.tasks, dateISO), [state.tasks, dateISO]);
   const doneCount = top.filter(t => t.done).length;
+  const [celebrateId, setCelebrateId] = useState<string | null>(null);
 
   const handleToggle = (id: string, wasDone: boolean) => {
-    if (!wasDone) {
-      playCompletionChime();
-      haptics.success();
-    }
-    void toggleTask(id);
+    if (wasDone) { void toggleTask(id); return; }
+    setCelebrateId(id);
+    playCompletionChime();
+    haptics.success();
+    toast.success("Big win — priority done!", {
+      description: pickAffirmation(),
+      duration: 5000,
+      action: { label: "Undo", onClick: () => { haptics.tap?.(); void updateTask(id, { done: false }); } },
+    });
+    window.setTimeout(() => { void toggleTask(id); setCelebrateId(null); }, 1200);
   };
 
   return (
