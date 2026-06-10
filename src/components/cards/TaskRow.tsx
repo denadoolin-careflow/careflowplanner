@@ -392,6 +392,42 @@ export function TaskRow({
         )}
       </div>
 
+      {/* Right-side priority badge — hidden on hover so action cluster has room */}
+      {!isSubtask && task.priority !== "low" && !editing && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); handleCyclePriority(); }}
+          aria-label={`Priority: ${task.priority}. Click to change.`}
+          title="Click to change priority"
+          className={cn(
+            "mt-[3px] inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 transition-opacity group-hover:opacity-0",
+            PRIORITY_STYLES[task.priority].badgeBg,
+            PRIORITY_STYLES[task.priority].badgeBorder,
+          )}
+        >
+          <span className="flex flex-col gap-0.5">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  i < PRIORITY_DOTS[task.priority]
+                    ? PRIORITY_STYLES[task.priority].dotOn
+                    : PRIORITY_STYLES[task.priority].dotOff,
+                  task.priority === "high" && i < PRIORITY_DOTS[task.priority] && PRIORITY_STYLES.high.glow,
+                )}
+              />
+            ))}
+          </span>
+          <span className={cn(
+            "hidden text-[10px] font-bold uppercase tracking-widest sm:inline",
+            PRIORITY_STYLES[task.priority].badgeText,
+          )}>
+            {PRIORITY_STYLES[task.priority].label}
+          </span>
+        </button>
+      )}
+
       {/* Desktop hover actions — plan, edit, snooze, move, details */}
       <TaskHoverActions
         task={task}
