@@ -7,6 +7,7 @@ export type CompletionVisualKey =
   | "glow"
   | "checkmark"
   | "stars"
+  | "priority"
   | "none";
 
 export interface CompletionVisualMeta {
