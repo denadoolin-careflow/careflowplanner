@@ -79,18 +79,16 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
               "radial-gradient(60% 80% at 85% 20%, hsl(var(--primary)/0.18), transparent 70%), radial-gradient(50% 70% at 10% 100%, hsl(var(--accent)/0.15), transparent 70%)",
           }}
         />
-        <div className="relative flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground inline-flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3 text-primary" />
-                {personalGreeting(state.settings.name)}
-              </p>
-            </div>
+        <div className="relative flex flex-col items-center gap-4 text-center">
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground inline-flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 text-primary" />
+              {personalGreeting(state.settings.name)}
+            </p>
             <h1 className="font-display text-3xl font-semibold leading-none text-foreground sm:text-5xl">
               Today
             </h1>
-            <div className="mt-1 inline-flex items-center gap-2 text-sm text-foreground/80 sm:text-base">
+            <div className="mt-1 flex items-center justify-center gap-2 text-sm text-foreground/80 sm:text-base">
               <Clock className="h-4 w-4 text-primary" />
               <span className="tabular-nums font-medium">{format(now, "h:mm a")}</span>
               {tempStr && (
@@ -105,7 +103,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
                 </>
               )}
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
               <p className="text-sm font-medium text-muted-foreground sm:text-base">
                 {format(date, "EEEE, MMMM d, yyyy")}
               </p>
