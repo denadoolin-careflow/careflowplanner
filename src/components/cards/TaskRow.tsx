@@ -87,6 +87,7 @@ export function TaskRow({
   const [open, setOpen] = useState(false);
   const [pomOpen, setPomOpen] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const [celebrateVariant, setCelebrateVariant] = useState<CompletionVisualKey>("sparkle");
   const completionVisual = useCompletionVisual();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
