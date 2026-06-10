@@ -390,9 +390,9 @@ export default function Notes() {
             ) : view === "list" ? (
               <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} onDelete={handleDeleteNote} />
             ) : view === "board" ? (
-              <BoardView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} />
+              <BoardView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} onDelete={handleDeleteNote} />
             ) : view === "timeline" ? (
-              <TimelineView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} />
+              <TimelineView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} onDelete={handleDeleteNote} />
             ) : (
               <CalendarView notes={filtered} onSelectNote={selectNote} />
             )}
