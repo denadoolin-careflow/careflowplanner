@@ -35,6 +35,7 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
   const [scope, setScope] = useState<Scope>("today");
   const [dropHover, setDropHover] = useState(false);
   const [celebrateId, setCelebrateId] = useState<string | null>(null);
+  const [celebrateVariant, setCelebrateVariant] = useState<CompletionVisualKey>("sparkle");
   const completionVisual = useCompletionVisual();
   const todayISO = format(date, "yyyy-MM-dd");
 
