@@ -74,30 +74,34 @@ export function TodaysFocusWidget() {
         <p className="text-sm text-muted-foreground">No focus set yet. Pick three small things.</p>
       ) : (
         <ul className="space-y-1">
-          {shown.map((t) => (
-            <li key={t.id} className="group flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-1.5">
-              <input
-                type="checkbox"
-                checked={t.done}
-                onChange={() => toggleTask(t.id)}
-                className="h-4 w-4 shrink-0 rounded accent-primary"
-              />
-              <button
-                type="button"
-                onClick={() => openTaskEditor(t.id)}
-                className={cn(
-                  "min-w-0 flex-1 truncate text-left text-sm",
-                  t.done && "text-muted-foreground line-through",
-                )}
-                title={t.title}
-              >
-                {t.title}
-              </button>
-              {t.estMinutes ? (
-                <span className="text-[10px] text-muted-foreground">{t.estMinutes}m</span>
-              ) : null}
-            </li>
-          ))}
+          {shown.map((t) => {
+            const celebrate = celebrateId === t.id;
+            return (
+              <li key={t.id} className="group relative flex items-center gap-2 overflow-hidden rounded-lg bg-muted/40 px-3 py-1.5">
+                <input
+                  type="checkbox"
+                  checked={t.done || celebrate}
+                  onChange={() => handleToggle(t.id, t.done)}
+                  className="h-4 w-4 shrink-0 rounded accent-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => openTaskEditor(t.id)}
+                  className={cn(
+                    "min-w-0 flex-1 truncate text-left text-sm",
+                    t.done && "text-muted-foreground line-through",
+                  )}
+                  title={t.title}
+                >
+                  {t.title}
+                </button>
+                {t.estMinutes ? (
+                  <span className="text-[10px] text-muted-foreground">{t.estMinutes}m</span>
+                ) : null}
+                {celebrate && <CompletionBurst variant="priority" />}
+              </li>
+            );
+          })}
         </ul>
       )}
 
