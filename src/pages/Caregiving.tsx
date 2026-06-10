@@ -15,6 +15,7 @@ import { CareTasksPanel } from "@/components/caregiving/CareTasksPanel";
 import { PersonDashboard } from "@/components/caregiving/PersonDashboard";
 import { CareChoresPanel } from "@/components/caregiving/CareChoresPanel";
 import { PersonMonthlyReport } from "@/components/caregiving/PersonMonthlyReport";
+import { PersonTimeline } from "@/components/caregiving/PersonTimeline";
 
 export default function Caregiving() {
   const { state, addCareNote, deleteCareNote } = useStore();
@@ -86,6 +87,7 @@ export default function Caregiving() {
         <Tabs defaultValue="overview" className="space-y-5">
           <TabsList className="rounded-full bg-card/60 p-1">
             <TabsTrigger value="overview" className="rounded-full px-4 text-xs">Overview</TabsTrigger>
+            <TabsTrigger value="timeline" className="rounded-full px-4 text-xs">Timeline</TabsTrigger>
             <TabsTrigger value="dashboard" className="rounded-full px-4 text-xs">Dashboard</TabsTrigger>
             <TabsTrigger value="profile" className="rounded-full px-4 text-xs">Profile</TabsTrigger>
             <TabsTrigger value="routines" className="rounded-full px-4 text-xs">Routines</TabsTrigger>
@@ -189,6 +191,10 @@ export default function Caregiving() {
 
           <TabsContent value="profile">
             <CareProfile recipient={recipient} />
+          </TabsContent>
+
+          <TabsContent value="timeline">
+            <PersonTimeline recipient={recipient} />
           </TabsContent>
 
           <TabsContent value="dashboard">
