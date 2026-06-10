@@ -338,7 +338,7 @@ export default function NoteDetail() {
                 value={title}
                 onChange={(e) => { setTitle(e.target.value); save({ title: e.target.value }); }}
                 placeholder="Untitled"
-                className="note-page-title h-auto border-0 bg-transparent px-0 py-1 text-3xl shadow-none focus-visible:ring-0 sm:text-4xl md:text-5xl"
+                className="note-page-title h-auto border-0 bg-transparent px-0 py-1 text-2xl shadow-none focus-visible:ring-0 md:text-3xl"
               />
             )}
           </div>
