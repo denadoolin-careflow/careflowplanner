@@ -22,7 +22,7 @@ import { resolveTaskIcon } from "@/lib/task-icons";
 import { TagChip } from "@/components/tags/TagChip";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { CompletionBurst } from "@/components/cards/CompletionBurst";
-import { useCompletionVisual } from "@/lib/completion-visual";
+import { useCompletionVisual, type CompletionVisualKey } from "@/lib/completion-visual";
 import { SmartDueChip } from "@/components/tasks/SmartDueChip";
 import { Button } from "@/components/ui/button";
 import { addDays, format } from "date-fns";
@@ -87,6 +87,7 @@ export function TaskRow({
   const [open, setOpen] = useState(false);
   const [pomOpen, setPomOpen] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const [celebrateVariant, setCelebrateVariant] = useState<CompletionVisualKey>("sparkle");
   const completionVisual = useCompletionVisual();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
@@ -132,10 +133,12 @@ export function TaskRow({
   const handleToggle = () => {
     const wasDone = task.done;
     if (!wasDone) {
+      const isPriority = task.priority === "high" || task.isTopThree;
+      setCelebrateVariant(isPriority ? "priority" : completionVisual);
       setCelebrate(true);
       playCompletionChime();
       haptics.success?.();
-      toast.success("Done — softly.", {
+      toast.success(isPriority ? "Big win — priority done!" : "Done — softly.", {
         description: pickAffirmation(),
         duration: 5000,
         action: {
@@ -146,7 +149,7 @@ export function TaskRow({
           },
         },
       });
-      window.setTimeout(() => { toggleTask(task.id); setCelebrate(false); }, 900);
+      window.setTimeout(() => { toggleTask(task.id); setCelebrate(false); }, 1100);
     } else {
       toggleTask(task.id);
     }
@@ -435,7 +438,7 @@ export function TaskRow({
         onDetails={() => setQuickEditOpen(true)}
       />
 
-      {celebrate && <CompletionBurst variant={completionVisual} />}
+      {celebrate && <CompletionBurst variant={celebrateVariant} />}
     </RowShell>
   );
 

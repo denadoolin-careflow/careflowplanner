@@ -3,12 +3,18 @@ import { useStore, todayISO } from "@/lib/store";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { CompletionBurst } from "@/components/cards/CompletionBurst";
+import { playCompletionChime } from "@/lib/completion-sound";
+import { haptics } from "@/lib/haptics";
+import { pickAffirmation } from "@/lib/affirmations";
+import { toast } from "sonner";
 
 type Mode = "3" | "5" | "all";
 
 export function TodaysFocusWidget() {
-  const { state, toggleTask } = useStore();
+  const { state, toggleTask, updateTask } = useStore();
   const [mode, setMode] = useState<Mode>("3");
+  const [celebrateId, setCelebrateId] = useState<string | null>(null);
   const T = todayISO();
 
   const focus = useMemo(() => {
@@ -29,6 +35,19 @@ export function TodaysFocusWidget() {
   const total = focus.length;
   const done = focus.filter((t) => t.done).length;
   const pct = total ? (done / total) * 100 : 0;
+
+  const handleToggle = (id: string, wasDone: boolean) => {
+    if (wasDone) { void toggleTask(id); return; }
+    setCelebrateId(id);
+    playCompletionChime();
+    haptics.success?.();
+    toast.success("Big win — focus task done!", {
+      description: pickAffirmation(),
+      duration: 5000,
+      action: { label: "Undo", onClick: () => { haptics.tap?.(); void updateTask(id, { done: false }); } },
+    });
+    window.setTimeout(() => { void toggleTask(id); setCelebrateId(null); }, 1200);
+  };
 
   return (
     <div className="space-y-3">
@@ -55,30 +74,34 @@ export function TodaysFocusWidget() {
         <p className="text-sm text-muted-foreground">No focus set yet. Pick three small things.</p>
       ) : (
         <ul className="space-y-1">
-          {shown.map((t) => (
-            <li key={t.id} className="group flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-1.5">
-              <input
-                type="checkbox"
-                checked={t.done}
-                onChange={() => toggleTask(t.id)}
-                className="h-4 w-4 shrink-0 rounded accent-primary"
-              />
-              <button
-                type="button"
-                onClick={() => openTaskEditor(t.id)}
-                className={cn(
-                  "min-w-0 flex-1 truncate text-left text-sm",
-                  t.done && "text-muted-foreground line-through",
-                )}
-                title={t.title}
-              >
-                {t.title}
-              </button>
-              {t.estMinutes ? (
-                <span className="text-[10px] text-muted-foreground">{t.estMinutes}m</span>
-              ) : null}
-            </li>
-          ))}
+          {shown.map((t) => {
+            const celebrate = celebrateId === t.id;
+            return (
+              <li key={t.id} className="group relative flex items-center gap-2 overflow-hidden rounded-lg bg-muted/40 px-3 py-1.5">
+                <input
+                  type="checkbox"
+                  checked={t.done || celebrate}
+                  onChange={() => handleToggle(t.id, t.done)}
+                  className="h-4 w-4 shrink-0 rounded accent-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => openTaskEditor(t.id)}
+                  className={cn(
+                    "min-w-0 flex-1 truncate text-left text-sm",
+                    t.done && "text-muted-foreground line-through",
+                  )}
+                  title={t.title}
+                >
+                  {t.title}
+                </button>
+                {t.estMinutes ? (
+                  <span className="text-[10px] text-muted-foreground">{t.estMinutes}m</span>
+                ) : null}
+                {celebrate && <CompletionBurst variant="priority" />}
+              </li>
+            );
+          })}
         </ul>
       )}
 

@@ -48,6 +48,54 @@ export function CompletionBurst({ variant }: { variant: CompletionVisualKey }) {
           </span>
         )}
 
+        {variant === "priority" && (
+          <span className="absolute inset-0">
+            {/* Super glow sweep */}
+            <span className="absolute inset-y-0 -left-1/2 w-2/3 animate-[task-sweep_1100ms_ease-out_forwards] bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+            {/* Enhanced confetti */}
+            <span className="absolute inset-0 grid place-items-center">
+              {PRIORITY_CONFETTI.map((c, i) => (
+                <span
+                  key={`cf-${i}`}
+                  className="absolute h-2 w-2 rounded-sm"
+                  style={{
+                    background: `hsl(var(${c.color}))`,
+                    animation: `cf-confetti 1200ms ease-out forwards`,
+                    ["--tx" as any]: `${c.tx}px`,
+                    ["--ty" as any]: `${c.ty}px`,
+                    ["--rot" as any]: `${c.rot}deg`,
+                    animationDelay: `${c.delay}ms`,
+                  }}
+                />
+              ))}
+            </span>
+            {/* Rising stars */}
+            <span className="absolute inset-0">
+              {PRIORITY_STARS.map((s, i) => (
+                <span
+                  key={`st-${i}`}
+                  className="absolute text-lg"
+                  style={{
+                    left: `${s.left}%`,
+                    bottom: "25%",
+                    animation: `cf-star 1300ms ease-out forwards`,
+                    animationDelay: `${s.delay}ms`,
+                    ["--ty" as any]: `${s.ty}px`,
+                  }}
+                >⭐</span>
+              ))}
+            </span>
+            {/* Bouncy checkmark overlay */}
+            <span className="absolute inset-0 grid place-items-center">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_0_20px_hsl(var(--primary)/0.6)] animate-[cf-bounce_1000ms_cubic-bezier(.34,1.56,.64,1)_forwards]">
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+              </span>
+            </span>
+          </span>
+        )}
+
         {variant === "glow" && (
           <span className="absolute inset-0 animate-[cf-glow_1000ms_ease-out_forwards] bg-gradient-to-r from-primary/0 via-primary/25 to-primary/0" />
         )}
@@ -99,6 +147,30 @@ const STARS = [
   { left: 42, delay:  80, ty: -34 },
   { left: 66, delay: 160, ty: -22 },
   { left: 84, delay: 220, ty: -30 },
+];
+
+const PRIORITY_CONFETTI = [
+  { tx: -56, ty: -34, rot: -50, delay: 0,   color: "--primary" },
+  { tx: -36, ty: -48, rot: -25, delay: 20,  color: "--accent" },
+  { tx: -12, ty: -54, rot:  -5, delay: 10,  color: "--secondary" },
+  { tx:  10, ty: -50, rot:  20, delay: 40,  color: "--primary" },
+  { tx:  32, ty: -42, rot:  45, delay: 15,  color: "--accent" },
+  { tx:  54, ty: -30, rot:  75, delay: 55,  color: "--secondary" },
+  { tx:  64, ty: -16, rot: 105, delay: 30,  color: "--primary" },
+  { tx: -48, ty:  18, rot:-130, delay: 70,  color: "--accent" },
+  { tx: -20, ty:  28, rot: -85, delay: 45,  color: "--secondary" },
+  { tx:   8, ty:  32, rot:  35, delay: 85,  color: "--primary" },
+  { tx:  38, ty:  24, rot:  95, delay: 60,  color: "--accent" },
+  { tx:  58, ty:  12, rot: 125, delay: 90,  color: "--secondary" },
+];
+
+const PRIORITY_STARS = [
+  { left: 12, delay:   0, ty: -38 },
+  { left: 28, delay:  60, ty: -52 },
+  { left: 48, delay: 120, ty: -44 },
+  { left: 66, delay: 180, ty: -56 },
+  { left: 82, delay: 100, ty: -40 },
+  { left: 92, delay: 240, ty: -48 },
 ];
 
 const KEYFRAMES = `

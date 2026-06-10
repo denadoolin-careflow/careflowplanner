@@ -8,6 +8,7 @@ import { openTaskEditor } from "@/lib/open-task-editor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CompletionBurst } from "@/components/cards/CompletionBurst";
 import { useCompletionVisual } from "@/lib/completion-visual";
+import type { CompletionVisualKey } from "@/lib/completion-visual";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { haptics } from "@/lib/haptics";
 import { pickAffirmation } from "@/lib/affirmations";
@@ -34,6 +35,7 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
   const [scope, setScope] = useState<Scope>("today");
   const [dropHover, setDropHover] = useState(false);
   const [celebrateId, setCelebrateId] = useState<string | null>(null);
+  const [celebrateVariant, setCelebrateVariant] = useState<CompletionVisualKey>("sparkle");
   const completionVisual = useCompletionVisual();
   const todayISO = format(date, "yyyy-MM-dd");
 
@@ -83,15 +85,17 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
 
   const handleToggle = (t: Task) => {
     if (t.done) { void toggleTask(t.id); return; }
+    const isPriority = t.priority === "high" || t.isTopThree;
+    setCelebrateVariant(isPriority ? "priority" : completionVisual);
     setCelebrateId(t.id);
     playCompletionChime();
     haptics.success?.();
-    toast.success("Done — softly.", {
+    toast.success(isPriority ? "Big win — priority done!" : "Done — softly.", {
       description: pickAffirmation(),
       duration: 5000,
       action: { label: "Undo", onClick: () => { haptics.tap?.(); void updateTask(t.id, { done: false }); } },
     });
-    window.setTimeout(() => { void toggleTask(t.id); setCelebrateId(null); }, 900);
+    window.setTimeout(() => { void toggleTask(t.id); setCelebrateId(null); }, isPriority ? 1200 : 900);
   };
 
   return (
@@ -180,7 +184,7 @@ export function TasksTodayWidget({ date = new Date() }: { date?: Date }) {
                     {format(parseISO(t.dueDate + "T00:00:00"), "MMM d")}
                   </span>
                 )}
-                {celebrate && <CompletionBurst variant={completionVisual} />}
+                {celebrate && <CompletionBurst variant={celebrateVariant} />}
               </li>
             );
           })}
