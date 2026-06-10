@@ -438,7 +438,7 @@ export function TaskRow({
         onDetails={() => setQuickEditOpen(true)}
       />
 
-      {celebrate && <CompletionBurst variant={completionVisual} />}
+      {celebrate && <CompletionBurst variant={celebrateVariant} />}
     </RowShell>
   );
 

@@ -8,6 +8,7 @@ import { openTaskEditor } from "@/lib/open-task-editor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CompletionBurst } from "@/components/cards/CompletionBurst";
 import { useCompletionVisual } from "@/lib/completion-visual";
+import type { CompletionVisualKey } from "@/lib/completion-visual";
 import { playCompletionChime } from "@/lib/completion-sound";
 import { haptics } from "@/lib/haptics";
 import { pickAffirmation } from "@/lib/affirmations";
