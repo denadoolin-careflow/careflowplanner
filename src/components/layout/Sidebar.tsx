@@ -199,17 +199,15 @@ function useSidebarData(forceExpanded: boolean) {
     setOpenMap((prev) => {
       const next = { ...prev };
       let changed = false;
+      // Accordion behavior: only the group containing the active route stays
+      // open; every other Flow group collapses to its header so the sidebar
+      // stays short and scannable.
+      const activeGroup = NAV_GROUPS.find((g) =>
+        g.items.some((it) => it.to === pathname) || pathname === `/flow/${g.id}`
+      );
       for (const g of NAV_GROUPS) {
-        const has = g.items.some((it) => it.to === pathname) || pathname === `/flow/${g.id}`;
-        if (has) {
-          // Accordion: open this group, close all other NAV_GROUPS.
-          for (const other of NAV_GROUPS) {
-            const want = other.id === g.id;
-            if (!!next[other.id] !== want) { next[other.id] = want; changed = true; }
-          }
-          return changed ? next : prev;
-        }
-        if (!(g.id in next)) { next[g.id] = false; changed = true; }
+        const want = activeGroup ? g.id === activeGroup.id : false;
+        if (!!next[g.id] !== want) { next[g.id] = want; changed = true; }
       }
       return changed ? next : prev;
     });
