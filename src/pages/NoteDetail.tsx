@@ -342,13 +342,13 @@ export default function NoteDetail() {
           <IconEl className="h-7 w-7 shrink-0 text-primary sm:h-8 sm:w-8" />
           <div className="min-w-0 flex-1">
             {note.kind === "daily" ? (
-              <h1 className="note-page-title text-xl md:text-2xl break-words leading-snug">{headerTitle}</h1>
+              <h1 className={cn("note-page-title break-words leading-snug", titleCls)}>{headerTitle}</h1>
             ) : (
               <Input
                 value={title}
                 onChange={(e) => { setTitle(e.target.value); save({ title: e.target.value }); }}
                 placeholder="Untitled"
-                className="note-page-title h-auto border-0 bg-transparent px-0 py-1 text-xl shadow-none focus-visible:ring-0 md:text-2xl break-words leading-snug"
+                className={cn("note-page-title h-auto border-0 bg-transparent px-0 py-1 shadow-none focus-visible:ring-0 break-words leading-snug", titleCls)}
               />
             )}
           </div>
