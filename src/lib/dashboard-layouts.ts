@@ -47,7 +47,8 @@ export type WidgetType =
   | "grocery-list-mini"
   | "low-stock"
   | "transits-today"
-  | "lunar-planner";
+  | "lunar-planner"
+  | "carey-snapshot";
 
 export interface WidgetInstance {
   id: string;

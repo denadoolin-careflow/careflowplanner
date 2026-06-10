@@ -41,6 +41,7 @@ import { LowStockWidget } from "./widgets/grocery/LowStockWidget";
 import { Package, ShoppingCart, AlertTriangle, Telescope } from "lucide-react";
 import { TransitsTodayWidget } from "./widgets/TransitsToday";
 import { LunarPlannerCard } from "./widgets/LunarPlannerCard";
+import { CareyDailySnapshot } from "./widgets/CareyDailySnapshot";
 
 export interface WidgetSpec {
   type: WidgetType;
@@ -121,6 +122,7 @@ export const WIDGET_REGISTRY: Record<WidgetType, WidgetSpec> = {
   "low-stock": { type: "low-stock", title: "Running low", icon: AlertTriangle, defaultSize: { w: 4, h: 5 }, Component: LowStockWidget, pageHref: "/pantry" },
   "transits-today": { type: "transits-today", title: "Transits today", icon: Telescope, defaultSize: { w: 4, h: 5 }, Component: TransitsTodayWidget, bare: true, pageHref: "/today" },
   "lunar-planner": { type: "lunar-planner", title: "Lunar planner", icon: Moon, defaultSize: { w: 6, h: 6 }, Component: LunarPlannerCard, bare: true, pageHref: "/today" },
+  "carey-snapshot": { type: "carey-snapshot", title: "Carey's daily snapshot", icon: Sparkles, defaultSize: { w: 6, h: 7 }, Component: CareyDailySnapshot, bare: true, pageHref: "/cosmic-flow" },
 };
 
 export const ALL_WIDGET_TYPES = Object.keys(WIDGET_REGISTRY) as WidgetType[];
