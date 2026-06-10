@@ -116,13 +116,18 @@ export function NoteCardV2({
       onPin={handlePin}
       onArchive={handleArchive}
     >
-    <button
-      type="button"
+    <div
+      role={editing ? undefined : "button"}
+      tabIndex={editing ? -1 : 0}
       onClick={() => !editing && onSelect?.(note.id)}
+      onKeyDown={(e) => {
+        if (editing) return;
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect?.(note.id); }
+      }}
       onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); }}
       className={cn(
         "group relative flex w-full flex-col overflow-hidden rounded-2xl border bg-card/70 text-left transition-all",
-        "hover:-translate-y-0.5 hover:shadow-lg",
+        "hover:-translate-y-0.5 hover:shadow-lg cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
         selected
           ? "border-primary/60 shadow-md ring-1 ring-primary/30"
           : "border-border/60 hover:border-primary/40",
@@ -242,7 +247,7 @@ export function NoteCardV2({
           )}
         </div>
       </div>
-    </button>
+    </div>
     </NoteHoverPreview>
   );
 }
