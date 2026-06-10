@@ -133,10 +133,12 @@ export function TaskRow({
   const handleToggle = () => {
     const wasDone = task.done;
     if (!wasDone) {
+      const isPriority = task.priority === "high" || task.isTopThree;
+      setCelebrateVariant(isPriority ? "priority" : completionVisual);
       setCelebrate(true);
       playCompletionChime();
       haptics.success?.();
-      toast.success("Done — softly.", {
+      toast.success(isPriority ? "Big win — priority done!" : "Done — softly.", {
         description: pickAffirmation(),
         duration: 5000,
         action: {
@@ -147,7 +149,7 @@ export function TaskRow({
           },
         },
       });
-      window.setTimeout(() => { toggleTask(task.id); setCelebrate(false); }, 900);
+      window.setTimeout(() => { toggleTask(task.id); setCelebrate(false); }, 1100);
     } else {
       toggleTask(task.id);
     }
