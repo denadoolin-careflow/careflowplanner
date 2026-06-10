@@ -28,12 +28,12 @@ export function AdvancedAstrologyRow({ chart, today = new Date() }: { chart: Nat
   const tiles = (() => {
     if (!chart || !chart.houses) {
       return [
-        { href: "#profection", icon: <Camera className="h-3.5 w-3.5 text-primary" />,    title: "Profection Year",   sub: "Add birth time" },
-        { href: "#solar-return", icon: <Sun className="h-3.5 w-3.5 text-warm-foreground" />, title: "Solar Return",    sub: "Add birth time" },
-        { href: "#progressions", icon: <Moon className="h-3.5 w-3.5 text-moon-foreground" />, title: "Progressed Moon", sub: "Add birth date" },
-        { href: "#profection", icon: <Sparkles className="h-3.5 w-3.5 text-primary" />,  title: "House Activations", sub: "Add birth time" },
-        { href: "#lunar-return", icon: <Circle className="h-3.5 w-3.5 text-secondary-foreground" />, title: "Lunar Return", sub: "Add birth time" },
-        { href: "#time-lord", icon: <Star className="h-3.5 w-3.5 text-accent-foreground" />, title: "Time Lord", sub: "Add birth time" },
+        { href: "#profection",   icon: <Camera className="h-3.5 w-3.5 text-primary" />,             title: "Profection Year",   sub: "Add birth time", preview: "Reveals the house & ruler steering your year." },
+        { href: "#solar-return", icon: <Sun className="h-3.5 w-3.5 text-warm-foreground" />,        title: "Solar Return",      sub: "Add birth time", preview: "Your yearly chart — themes for the next 12 months." },
+        { href: "#progressions", icon: <Moon className="h-3.5 w-3.5 text-moon-foreground" />,       title: "Progressed Moon",   sub: "Add birth date", preview: "Tracks your emotional season (~2.5 yrs per sign)." },
+        { href: "#profection",   icon: <Sparkles className="h-3.5 w-3.5 text-primary" />,           title: "House Activations", sub: "Add birth time", preview: "Which life area is being illuminated now." },
+        { href: "#lunar-return", icon: <Circle className="h-3.5 w-3.5 text-secondary-foreground" />, title: "Lunar Return",      sub: "Add birth time", preview: "The mood and focus of your next ~28 days." },
+        { href: "#time-lord",    icon: <Star className="h-3.5 w-3.5 text-accent-foreground" />,     title: "Time Lord",         sub: "Add birth time", preview: "The planet quietly steering the chapter." },
       ];
     }
     const birthD = new Date(chart.birth.date);
@@ -44,24 +44,38 @@ export function AdvancedAstrologyRow({ chart, today = new Date() }: { chart: Nat
     const lunar = nextLunarReturn(birthD, today);
     const saturn = nextSaturnReturn(birthD, today);
     const jupiter = nextJupiterReturn(birthD, today);
-    void saturn; void jupiter;
+    const houseTopic = houseTopics(prof.house);
     return [
       { href: "#profection", icon: <Camera className="h-3.5 w-3.5 text-primary" />,
-        title: "Profection Year", sub: `Age ${prof.age} · ${prof.house}H ${prof.profectedSign}` },
+        title: "Profection Year", sub: `Age ${prof.age} · ${prof.house}H ${prof.profectedSign}`,
+        preview: `${houseTopic} · ruled by ${prof.timeLord}.` },
       { href: "#solar-return", icon: <Sun className="h-3.5 w-3.5 text-warm-foreground" />,
-        title: "Solar Return", sub: daysFromNow(solar, today) },
+        title: "Solar Return", sub: daysFromNow(solar, today),
+        preview: solar ? `Next chart resets ${format(solar, "MMM d, yyyy")}.` : "Sets the theme of your next year." },
       { href: "#progressions", icon: <Moon className="h-3.5 w-3.5 text-moon-foreground" />,
-        title: "Progressed Moon", sub: `${prog.progressedMoon.sign} · ${prog.progressedMoon.lunarPhase}` },
+        title: "Progressed Moon", sub: `${prog.progressedMoon.sign} · ${prog.progressedMoon.lunarPhase}`,
+        preview: `Inner season in ${prog.progressedMoon.sign} — ${prog.progressedMoon.lunarPhase.toLowerCase()} phase.` },
       { href: "#profection", icon: <Sparkles className="h-3.5 w-3.5 text-primary" />,
-        title: "House Activations", sub: `${prof.house}H · ${houseTopics(prof.house).split(",")[0]}` },
+        title: "House Activations", sub: `${prof.house}H · ${houseTopic.split(",")[0]}`,
+        preview: `Spotlight on: ${houseTopic}.` },
       { href: "#lunar-return", icon: <Circle className="h-3.5 w-3.5 text-secondary-foreground" />,
-        title: "Lunar Return", sub: daysFromNow(lunar, today) },
+        title: "Lunar Return", sub: daysFromNow(lunar, today),
+        preview: lunar ? `Next monthly reset ${format(lunar, "MMM d")}.` : "The mood of your next ~28 days." },
       { href: "#time-lord", icon: <Star className="h-3.5 w-3.5 text-accent-foreground" />,
-        title: "Time Lord", sub: `${prof.timeLord} · ${TIME_LORD_FLAVOR[prof.timeLord] ?? ""}` },
+        title: "Time Lord", sub: `${prof.timeLord} · ${TIME_LORD_FLAVOR[prof.timeLord] ?? ""}`,
+        preview: `${prof.timeLord} steers this year's chapter.` },
       { href: "#progressions", icon: <Moon className="h-3.5 w-3.5 text-moon-foreground" />,
-        title: "Prog. Moon Ingress", sub: `${progIng.sign} on ${format(new Date(progIng.date), "MMM yyyy")}` },
+        title: "Prog. Moon Ingress", sub: `${progIng.sign} on ${format(new Date(progIng.date), "MMM yyyy")}`,
+        preview: `Emotional shift into ${progIng.sign} approaches.` },
       { href: "#progressions", icon: <Sparkles className="h-3.5 w-3.5 text-primary" />,
-        title: "Solar Arc", sub: `${prog.solarArc.toFixed(1)}° from natal Sun` },
+        title: "Solar Arc", sub: `${prog.solarArc.toFixed(1)}° from natal Sun`,
+        preview: `Slow life-direction arc — ${prog.solarArc.toFixed(1)}° advanced.` },
+      { href: "#solar-return", icon: <Star className="h-3.5 w-3.5 text-accent-foreground" />,
+        title: "Saturn Return", sub: saturn ? daysFromNow(saturn, today) : "—",
+        preview: saturn ? `Maturity gateway near ${format(saturn, "MMM yyyy")}.` : "Major adulthood threshold." },
+      { href: "#solar-return", icon: <Sun className="h-3.5 w-3.5 text-warm-foreground" />,
+        title: "Jupiter Return", sub: jupiter ? daysFromNow(jupiter, today) : "—",
+        preview: jupiter ? `Growth window near ${format(jupiter, "MMM yyyy")}.` : "12-year expansion cycle." },
     ];
   })();
 
@@ -81,6 +95,9 @@ export function AdvancedAstrologyRow({ chart, today = new Date() }: { chart: Nat
             <div className="mx-auto mb-1.5 flex h-7 w-7 items-center justify-center rounded-md bg-muted/60">{t.icon}</div>
             <p className="text-[11.5px] font-medium leading-tight">{t.title}</p>
             <p className="mt-0.5 text-[10.5px] text-muted-foreground leading-snug">{t.sub}</p>
+            {("preview" in t) && (t as any).preview && (
+              <p className="mt-1 text-[10px] leading-snug text-foreground/70 line-clamp-2">{(t as any).preview}</p>
+            )}
           </Link>
         ))}
       </div>
