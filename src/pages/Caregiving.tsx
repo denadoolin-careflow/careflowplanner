@@ -70,6 +70,8 @@ export default function Caregiving() {
         </div>
       </div>
 
+      <CaregivingHubSnapshot />
+
       <div className="cozy-card flex flex-wrap gap-2 p-4">
         {state.recipients.length === 0 && (
           <p className="px-2 py-1 text-sm text-muted-foreground">No profiles yet — add the first person you're caring for.</p>
