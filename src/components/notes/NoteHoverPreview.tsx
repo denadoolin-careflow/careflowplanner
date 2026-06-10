@@ -1,5 +1,5 @@
 import { format, parseISO } from "date-fns";
-import { Pin, Link2, Tag as TagIcon, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { Pin, PinOff, Link2, Tag as TagIcon, ExternalLink, Pencil, Trash2, Archive, ArchiveRestore } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
@@ -7,26 +7,7 @@ import { getNoteCoverCss } from "@/lib/note-covers";
 import { fallbackColorFor } from "@/lib/tags";
 import type { Note } from "@/lib/notes";
 import type { Tag } from "@/lib/tags";
-import { toast } from "sonner";
-
-function stripMd(s: string): string {
-  if (!s) return "";
-  return s
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`([^`]*)`/g, "$1")
-    .replace(/!\[[^\]]*]\([^)]+\)/g, "")
-    .replace(/\[([^\]]+)]\([^)]+\)/g, "$1")
-    .replace(/\[\[([^\]]+)]]/g, "$1")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/^[-*+]\s+\[[ xX]]\s+/gm, "")
-    .replace(/^[-*+]\s+/gm, "")
-    .replace(/^\d+\.\s+/gm, "")
-    .replace(/^>\s?/gm, "")
-    .replace(/[*_~]{1,3}([^*_~]+)[*_~]{1,3}/g, "$1")
-    .replace(/^---+$/gm, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
+import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
 
 export function NoteHoverPreview({
   note,
@@ -37,6 +18,8 @@ export function NoteHoverPreview({
   onOpen,
   onEdit,
   onDelete,
+  onPin,
+  onArchive,
 }: {
   note: Note;
   tagsByName: Map<string, Tag>;
@@ -46,14 +29,14 @@ export function NoteHoverPreview({
   onOpen?: (id: string) => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onPin?: (id: string, next: boolean) => void;
+  onArchive?: (id: string, next: boolean) => void;
 }) {
   const title = note.kind === "daily" && note.date
     ? format(parseISO(note.date), "EEEE, MMM d")
     : (note.title || "Untitled");
   const Icon = getLucideIcon(resolveNoteIcon(note));
   const gradient = !note.coverUrl ? getNoteCoverCss(note.coverGradient) : null;
-  const body = stripMd(note.body || "");
-  const preview = body.slice(0, 420);
   const linkMatches = note.body?.match(/\[\[[^\]]+]]/g);
   const linkCount = linkMatches ? linkMatches.length : 0;
   const wordCount = note.body ? note.body.split(/\s+/).filter(Boolean).length : 0;
@@ -87,9 +70,9 @@ export function NoteHoverPreview({
             {note.pinned && <Pin className="mt-1 h-3.5 w-3.5 shrink-0 fill-current text-amber-500" />}
           </div>
 
-          <p className="whitespace-pre-wrap break-words text-[12.5px] leading-relaxed text-muted-foreground line-clamp-[8]">
-            {preview || <span className="italic opacity-60">Empty note</span>}
-          </p>
+          <div className="max-h-44 overflow-hidden text-[12.5px] leading-relaxed">
+            <NoteMarkdownPreview body={note.body || ""} maxChars={420} />
+          </div>
 
           {note.tags && note.tags.length > 0 && (
             <div className="flex flex-wrap items-center gap-1 pt-0.5">
@@ -125,8 +108,8 @@ export function NoteHoverPreview({
           </div>
 
           {/* Quick actions */}
-          {(onOpen || onEdit || onDelete) && (
-            <div className="flex items-center gap-1 border-t border-border/40 pt-2">
+          {(onOpen || onEdit || onDelete || onPin || onArchive) && (
+            <div className="flex flex-wrap items-center gap-1 border-t border-border/40 pt-2">
               {onOpen && (
                 <Button
                   variant="ghost"
@@ -145,6 +128,30 @@ export function NoteHoverPreview({
                   onClick={(e) => { e.stopPropagation(); onEdit(note.id); }}
                 >
                   <Pencil className="h-3 w-3" /> Edit
+                </Button>
+              )}
+              {onPin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-7 flex-1 gap-1 text-[11px] ${note.pinned ? "text-amber-500" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={(e) => { e.stopPropagation(); onPin(note.id, !note.pinned); }}
+                  title={note.pinned ? "Unpin" : "Pin to top"}
+                >
+                  {note.pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                  {note.pinned ? "Unpin" : "Pin"}
+                </Button>
+              )}
+              {onArchive && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 flex-1 gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); onArchive(note.id, !note.archived); }}
+                  title={note.archived ? "Restore from archive" : "Archive note"}
+                >
+                  {note.archived ? <ArchiveRestore className="h-3 w-3" /> : <Archive className="h-3 w-3" />}
+                  {note.archived ? "Restore" : "Archive"}
                 </Button>
               )}
               {onDelete && (
