@@ -96,6 +96,10 @@ export function CompletionBurst({ variant }: { variant: CompletionVisualKey }) {
           </span>
         )}
 
+        {variant === "glow" && (
+          <span className="absolute inset-0 animate-[cf-glow_1000ms_ease-out_forwards] bg-gradient-to-r from-primary/0 via-primary/25 to-primary/0" />
+        )}
+
         {variant === "checkmark" && (
           <span className="absolute inset-0 grid place-items-center">
             <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/90 text-primary-foreground shadow-glow animate-[cf-bounce_900ms_cubic-bezier(.34,1.56,.64,1)_forwards]">
