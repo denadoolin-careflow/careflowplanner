@@ -14,6 +14,8 @@ import { HomeResetWidget } from "@/components/today/widgets/HomeResetWidget";
 import { BrainDumpWidget } from "@/components/today/widgets/BrainDumpWidget";
 import { CycleSidebarCard } from "@/components/today/widgets/CycleSidebarCard";
 import { MoonPrioritiesCard } from "@/components/today/widgets/MoonPrioritiesCard";
+import { WeatherWidget } from "@/components/widgets/WeatherWidget";
+import { WeeklyWeather } from "@/components/widgets/WeeklyWeather";
 import { TransitRememberWidget } from "@/components/today/widgets/TransitRememberWidget";
 
 /** Options consumed by every sidebar widget. Keep this shape identical across
