@@ -436,6 +436,7 @@ function ListView({
           ? format(parseISO(n.date), "EEEE, MMM d")
           : (n.title || "Untitled");
         return (
+          <NoteHoverPreview key={n.id} note={n} tagsByName={tagsByName}>
           <button
             key={n.id}
             type="button"
@@ -462,6 +463,7 @@ function ListView({
               {format(parseISO(n.updatedAt), "MMM d")}
             </span>
           </button>
+          </NoteHoverPreview>
         );
       })}
     </div>
