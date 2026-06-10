@@ -19,6 +19,7 @@ export type IconCategory =
 export interface IconEntry {
   name: string;          // Lucide PascalCase name
   label: string;         // human-readable
+  description?: string;    // tooltip / hover explanation (mainly for astrology)
   category: IconCategory;
   tags: string[];        // search keywords
 }
