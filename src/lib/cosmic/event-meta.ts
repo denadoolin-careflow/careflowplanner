@@ -7,6 +7,7 @@ import type { CosmicEvent } from "@/lib/cosmic/events";
 import { eventsOnDay } from "@/lib/cosmic/events";
 import { SIGN_ELEMENT, type Element } from "@/lib/cosmic/glyphs";
 import type { Sign } from "@/lib/transits";
+import { planetSign } from "@/lib/transits";
 import { getMoonPhase, MOON_INFO } from "@/lib/moon";
 import { getMoonSign } from "@/lib/zodiac";
 
@@ -58,13 +59,8 @@ export function elementFor(e: CosmicEvent, date: Date): Element | null {
     return SIGN_ELEMENT[ms.name as Sign] ?? null;
   }
   if ((e.kind === "aspect" || e.kind === "cazimi") && e.planet) {
-    // Use the first planet's current sign element so the chip glows.
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { planetSign } = require("@/lib/transits") as typeof import("@/lib/transits");
-      const s = planetSign(e.planet, date);
-      return SIGN_ELEMENT[s as Sign] ?? null;
-    } catch { return null; }
+    const s = planetSign(e.planet, date);
+    return SIGN_ELEMENT[s as Sign] ?? null;
   }
   return null;
 }
