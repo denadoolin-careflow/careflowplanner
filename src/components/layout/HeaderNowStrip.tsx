@@ -270,55 +270,6 @@ export function HeaderNowStrip({ className }: { className?: string }) {
         )}
       </div>
 
-      {/* Mobile expanded row — drops under the header */}
-      {mobileExpanded && (
-        <div className="fixed inset-x-0 top-[52px] z-30 border-b border-border/50 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-md md:hidden">
-          <div className="mx-auto flex max-w-screen-sm flex-wrap items-center gap-1.5 text-xs">
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Open today's tasks"
-                  title="Today's tasks"
-                  className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85 hover:bg-muted/70 transition"
-                >
-                  {shortDate}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="start" sideOffset={6} className="w-auto p-0">
-                <TodayPreview tasks={state.tasks} navigate={navigate} />
-              </PopoverContent>
-            </Popover>
-            {snap && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/75">
-                <span className="tabular-nums">{rangeStr}</span>
-                {snap.conditionLabel && <span className="text-foreground/55">· {snap.conditionLabel}</span>}
-              </span>
-            )}
-            {upcoming.length > 0 && (
-              <WeatherDetailPopover
-                trigger={
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-1.5 py-1 text-foreground/80 hover:bg-muted/70 transition"
-                  >
-                    {upcoming.map(d => (
-                      <span key={d.date} className="inline-flex items-center gap-0.5 px-1">
-                        <span className="text-[10px] uppercase tracking-wide text-foreground/55">
-                          {format(d.dateObj, "EEE")}
-                        </span>
-                        <CondIcon c={d.condition} className="h-3.5 w-3.5" />
-                        <span className="tabular-nums text-[11px] font-medium">{fmtT(d.highC)}</span>
-                      </span>
-                    ))}
-                  </button>
-                }
-              />
-            )}
-            <UnitToggle />
-          </div>
-        </div>
-      )}
 
       {/* ───── Desktop / tablet (inline full strip) ───── */}
       <div className="hidden items-center gap-2 md:flex overflow-x-auto no-scrollbar max-w-full flex-nowrap">
