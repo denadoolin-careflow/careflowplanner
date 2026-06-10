@@ -102,7 +102,12 @@ export function NoteCardV2({
   const title = note.kind === "daily" && note.date
     ? format(parseISO(note.date), "EEEE, MMM d")
     : (note.title || "Untitled");
-  const Icon = getLucideIcon(resolveNoteIcon(note));
+  const resolvedIconName = resolveNoteIcon(note);
+  const Icon = getLucideIcon(resolvedIconName);
+  const iconEntry = NOTE_ICONS.find((e) => e.name === resolvedIconName);
+  const iconTooltip = iconEntry?.description
+    ? `${iconEntry.label} — ${iconEntry.description}`
+    : iconEntry?.label;
   const gradient = !note.coverUrl ? getNoteCoverCss(note.coverGradient) : null;
   const linkCount = countLinks(note.body);
   const wordCount = note.body ? note.body.split(/\s+/).filter(Boolean).length : 0;
