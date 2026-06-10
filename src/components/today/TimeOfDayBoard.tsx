@@ -337,6 +337,7 @@ function TaskGroup({
             >
               <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
               <Checkbox checked={t.done} onCheckedChange={() => void onToggle(t.id)} />
+              <PriorityFlag task={t} />
               <button
                 type="button"
                 onClick={() => onTaskClick?.(t.id)}
