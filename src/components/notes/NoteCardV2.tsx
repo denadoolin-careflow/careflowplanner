@@ -1,6 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { Pin, Link2 } from "lucide-react";
+import { Pin, Link2, Check, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { getNoteCoverCss } from "@/lib/note-covers";
@@ -8,27 +9,12 @@ import { fallbackColorFor } from "@/lib/tags";
 import type { Note } from "@/lib/notes";
 import type { Tag } from "@/lib/tags";
 import { NoteHoverPreview } from "@/components/notes/NoteHoverPreview";
-import { deleteNote } from "@/lib/notes";
+import { deleteNote, updateNote } from "@/lib/notes";
+import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
+import { NoteIconPicker } from "@/components/notes/NoteIconPicker";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-
-function stripMd(s: string): string {
-  if (!s) return "";
-  return s
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`([^`]*)`/g, "$1")
-    .replace(/!\[[^\]]*]\([^)]+\)/g, "")
-    .replace(/\[([^\]]+)]\([^)]+\)/g, "$1")
-    .replace(/\[\[([^\]]+)]]/g, "$1")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/^[-*+]\s+\[[ xX]]\s+/gm, "")
-    .replace(/^[-*+]\s+/gm, "")
-    .replace(/^\d+\.\s+/gm, "")
-    .replace(/^>\s?/gm, "")
-    .replace(/[*_~]{1,3}([^*_~]+)[*_~]{1,3}/g, "$1")
-    .replace(/^---+$/gm, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 function countLinks(body: string): number {
   const m = body?.match(/\[\[[^\]]+]]/g);
@@ -45,6 +31,7 @@ export function NoteCardV2({
   selected,
   onSelect,
   onDelete,
+  onChanged,
   compact = false,
 }: {
   note: Note;
@@ -52,11 +39,26 @@ export function NoteCardV2({
   selected?: boolean;
   onSelect?: (id: string) => void;
   onDelete?: (id: string) => void;
+  /** Fired after pin/archive/inline-edit mutations so the parent can refresh. */
+  onChanged?: () => void;
   compact?: boolean;
 }) {
   const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(note.title || "");
+  const [draftIcon, setDraftIcon] = useState<string | null>(note.icon ?? null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      setDraftTitle(note.title || "");
+      setDraftIcon(note.icon ?? null);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+  }, [editing, note.id, note.title, note.icon]);
+
   const handleOpen = (id: string) => onSelect?.(id);
-  const handleEdit = (id: string) => navigate(`/notes/${id}`);
+  const handleEdit = (_id: string) => setEditing(true);
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this note?")) return;
     try {
@@ -67,23 +69,65 @@ export function NoteCardV2({
       toast.error("Could not delete note");
     }
   };
+  const handlePin = async (id: string, next: boolean) => {
+    try {
+      await updateNote(id, { pinned: next });
+      toast.success(next ? "Pinned" : "Unpinned");
+      onChanged?.();
+    } catch { toast.error("Could not update pin"); }
+  };
+  const handleArchive = async (id: string, next: boolean) => {
+    try {
+      await updateNote(id, { archived: next });
+      toast.success(next ? "Archived" : "Restored");
+      onChanged?.();
+    } catch { toast.error("Could not update archive"); }
+  };
+  const saveInline = async () => {
+    const nextTitle = draftTitle.trim();
+    if (nextTitle === (note.title || "") && draftIcon === (note.icon ?? null)) {
+      setEditing(false);
+      return;
+    }
+    try {
+      await updateNote(note.id, { title: nextTitle || "Untitled", icon: draftIcon });
+      toast.success("Note updated");
+      setEditing(false);
+      onChanged?.();
+    } catch { toast.error("Could not save"); }
+  };
+  const cancelInline = () => { setEditing(false); };
+
   const title = note.kind === "daily" && note.date
     ? format(parseISO(note.date), "EEEE, MMM d")
     : (note.title || "Untitled");
   const Icon = getLucideIcon(resolveNoteIcon(note));
   const gradient = !note.coverUrl ? getNoteCoverCss(note.coverGradient) : null;
-  const preview = stripMd(note.body).slice(0, 180);
   const linkCount = countLinks(note.body);
   const wordCount = note.body ? note.body.split(/\s+/).filter(Boolean).length : 0;
 
   return (
-    <NoteHoverPreview note={note} tagsByName={tagsByName} onOpen={handleOpen} onEdit={handleEdit} onDelete={handleDelete}>
-    <button
-      type="button"
-      onClick={() => onSelect?.(note.id)}
+    <NoteHoverPreview
+      note={note}
+      tagsByName={tagsByName}
+      onOpen={handleOpen}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+      onPin={handlePin}
+      onArchive={handleArchive}
+    >
+    <div
+      role={editing ? undefined : "button"}
+      tabIndex={editing ? -1 : 0}
+      onClick={() => !editing && onSelect?.(note.id)}
+      onKeyDown={(e) => {
+        if (editing) return;
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect?.(note.id); }
+      }}
+      onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditing(true); }}
       className={cn(
         "group relative flex w-full flex-col overflow-hidden rounded-2xl border bg-card/70 text-left transition-all",
-        "hover:-translate-y-0.5 hover:shadow-lg",
+        "hover:-translate-y-0.5 hover:shadow-lg cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
         selected
           ? "border-primary/60 shadow-md ring-1 ring-primary/30"
           : "border-border/60 hover:border-primary/40",
@@ -103,21 +147,70 @@ export function NoteCardV2({
       )}
 
       {/* Header */}
-      <div className="flex items-start gap-2 px-3.5 pt-3">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-3.5 w-3.5" />
-        </span>
-        <h3 className="line-clamp-2 flex-1 font-display text-[15px] font-semibold leading-snug">{title}</h3>
-        {note.pinned && <Pin className="mt-1 h-3.5 w-3.5 shrink-0 fill-current text-amber-500" />}
+      <div
+        className="flex items-start gap-2 px-3.5 pt-3"
+        onClick={editing ? (e) => e.stopPropagation() : undefined}
+      >
+        {editing ? (
+          <>
+            <span onClick={(e) => e.stopPropagation()}>
+              <NoteIconPicker
+                value={draftIcon}
+                resolved={resolveNoteIcon({ ...note, icon: draftIcon })}
+                onChange={(n) => setDraftIcon(n)}
+                align="start"
+                size="sm"
+              />
+            </span>
+            <Input
+              ref={inputRef}
+              value={draftTitle}
+              onChange={(e) => setDraftTitle(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); void saveInline(); }
+                else if (e.key === "Escape") { e.preventDefault(); cancelInline(); }
+              }}
+              className="h-7 flex-1 px-2 text-[14px] font-medium"
+              placeholder="Note title"
+            />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={(e) => { e.stopPropagation(); void saveInline(); }}
+              title="Save"
+            >
+              <Check className="h-3.5 w-3.5 text-emerald-500" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={(e) => { e.stopPropagation(); cancelInline(); }}
+              title="Cancel"
+            >
+              <XIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            </Button>
+          </>
+        ) : (
+          <>
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+              <Icon className="h-3.5 w-3.5" />
+            </span>
+            <h3 className="line-clamp-2 flex-1 font-display text-[15px] font-semibold leading-snug">{title}</h3>
+            {note.pinned && <Pin className="mt-1 h-3.5 w-3.5 shrink-0 fill-current text-amber-500" />}
+          </>
+        )}
       </div>
 
       {/* Preview */}
-      <p className={cn(
-        "px-3.5 pt-1.5 text-[12.5px] leading-relaxed text-muted-foreground",
-        compact ? "line-clamp-2" : "line-clamp-3",
+      <div className={cn(
+        "px-3.5 pt-1.5 text-[12.5px] leading-relaxed overflow-hidden",
+        compact ? "max-h-10" : "max-h-16",
       )}>
-        {preview || <span className="italic opacity-60">Empty note</span>}
-      </p>
+        <NoteMarkdownPreview body={note.body || ""} maxChars={compact ? 140 : 220} />
+      </div>
 
       {/* Tags */}
       {note.tags && note.tags.length > 0 && (
@@ -154,7 +247,7 @@ export function NoteCardV2({
           )}
         </div>
       </div>
-    </button>
+    </div>
     </NoteHoverPreview>
   );
 }
