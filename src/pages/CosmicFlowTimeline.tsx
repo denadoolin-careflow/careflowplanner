@@ -6,7 +6,7 @@ import { format, parseISO, addDays, startOfMonth, endOfMonth } from "date-fns";
 import { ChevronLeft, Sparkles, ChevronRight, Home } from "lucide-react";
 import type { CosmicEvent } from "@/lib/cosmic/events";
 import {
-  categoriesFor, elementFor, fourFoldFor, themesFor,
+  categoriesFor, elementFor,
   CATEGORY_LABEL, type EventCategory, intensityFor,
 } from "@/lib/cosmic/event-meta";
 import { ELEMENT_VAR, type Element } from "@/lib/cosmic/glyphs";
@@ -86,9 +86,6 @@ function TimelineRow({ event, date, onOpen }: { event: RangeEvent; date: Date; o
     </button>
   );
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _suppressUnused = { fourFoldFor, themesFor };
-
 export default function CosmicFlowTimeline() {
   const [filter, setFilter] = useState<EventCategory | "all">("all");
   const [anchor, setAnchor] = useState<Date>(new Date());
