@@ -16,6 +16,7 @@ import {
   SIGN_GLYPH, PLANET_GLYPH,
 } from "@/lib/transits";
 import { getMoonPhase, type MoonPhase } from "@/lib/moon";
+import { getMoonSign } from "@/lib/zodiac";
 import { encodeEventId, type CosmicEventKind } from "@/lib/cosmic/event-id";
 
 export interface CosmicEvent {
@@ -50,14 +51,21 @@ function phaseEvent(date: Date): CosmicEvent | null {
   const GLYPH: Record<string, string> = {
     "new": "🌑", "first-quarter": "🌓", "full": "🌕", "last-quarter": "🌗",
   };
+  const moon = getMoonSign(date);
+  const moonSign = moon.name as Sign;
   return {
     id: encodeEventId({ kind: "phase", date: iso(date), phase: today }),
     date: iso(date),
     kind: "phase",
     phase: today,
-    glyph: GLYPH[today],
-    title: TITLE[today],
-    subtitle: today === "full" ? "A culmination — honor what's lit." : undefined,
+    sign: moonSign,
+    glyph: `${GLYPH[today]} ${moon.symbol}`,
+    title: `${TITLE[today]} in ${moonSign}`,
+    subtitle: today === "full"
+      ? `A culmination in ${moonSign} — honor what's lit.`
+      : today === "new"
+        ? `A fresh seed-point in ${moonSign}.`
+        : `The Moon is in ${moonSign}.`,
     tone: today === "full" ? "warm" : today === "new" ? "soft" : "soft",
   };
 }
@@ -118,14 +126,17 @@ function stationEvents(date: Date): CosmicEvent[] {
 
 function vocEvent(date: Date): CosmicEvent | null {
   if (!isVoidOfCourse(date)) return null;
-  // emit once a day
+  // emit once a day; tag with the Moon's current sign so the UI can show it
+  const moon = getMoonSign(date);
+  const moonSign = moon.name as Sign;
   return {
     id: encodeEventId({ kind: "voc", date: iso(date) }),
     date: iso(date),
     kind: "voc",
-    glyph: "☾∅",
-    title: "Void-of-course moon",
-    subtitle: "Drift is allowed today.",
+    sign: moonSign,
+    glyph: `☾∅ ${moon.symbol}`,
+    title: `Void-of-course Moon in ${moonSign}`,
+    subtitle: `The Moon drifts through the final degrees of ${moonSign} — let the day breathe.`,
     tone: "rest",
   };
 }
@@ -148,14 +159,18 @@ function eclipseEvent(date: Date): CosmicEvent | null {
   const opp = Math.abs(diff - 180);
   const near = Math.min(diff, opp);
   if (near > 12) return null;
+  const moon = getMoonSign(date);
+  const moonSign = moon.name as Sign;
+  const isLunar = today === "full";
   return {
     id: encodeEventId({ kind: "eclipse", date: iso(date), phase: today }),
     date: iso(date),
     kind: "eclipse",
     phase: today,
-    glyph: today === "full" ? "🌒🌕" : "🌑☀",
-    title: today === "full" ? "Lunar Eclipse" : "Solar Eclipse",
-    subtitle: "A loud cosmic moment — go gently.",
+    sign: moonSign,
+    glyph: `${isLunar ? "🌒🌕" : "🌑☀"} ${moon.symbol}`,
+    title: `${isLunar ? "Lunar" : "Solar"} Eclipse in ${moonSign}`,
+    subtitle: `A loud cosmic moment in ${moonSign} — go gently.`,
     tone: "warn",
   };
 }

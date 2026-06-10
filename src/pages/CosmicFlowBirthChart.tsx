@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Trash2 } from "lucide-react";
+import { ChevronLeft, Trash2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,6 +63,17 @@ export default function CosmicFlowBirthChart() {
       </header>
 
       {natal && <NatalSummaryCard natal={natal} />}
+
+      {row && (
+        <div className="flex justify-end">
+          <Button asChild size="sm" variant="secondary" className="gap-1.5">
+            <Link to="/cosmic-flow/natal">
+              <Sparkles className="h-3.5 w-3.5" />
+              Open your interactive natal chart
+            </Link>
+          </Button>
+        </div>
+      )}
 
       <form onSubmit={onSubmit} className="cozy-card space-y-4 p-5">
         <div className="grid gap-3 sm:grid-cols-2">
