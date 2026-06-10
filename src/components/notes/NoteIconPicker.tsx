@@ -94,7 +94,10 @@ export function NoteIconPicker({
           {recent.length > 0 && !q && (
             <Section title="Recent">
               <Grid
-                items={recent.map((n) => ({ name: n, label: n, category: "Symbols" as IconCategory, tags: [] }))}
+                items={recent.map((n) => {
+                  const entry = NOTE_ICONS.find((e) => e.name === n);
+                  return { name: n, label: entry?.label ?? n, description: entry?.description, category: "Symbols" as IconCategory, tags: [] };
+                })}
                 active={value}
                 onPick={pick}
               />
