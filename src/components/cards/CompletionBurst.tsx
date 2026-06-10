@@ -48,8 +48,52 @@ export function CompletionBurst({ variant }: { variant: CompletionVisualKey }) {
           </span>
         )}
 
-        {variant === "glow" && (
-          <span className="absolute inset-0 animate-[cf-glow_1000ms_ease-out_forwards] bg-gradient-to-r from-primary/0 via-primary/25 to-primary/0" />
+        {variant === "priority" && (
+          <span className="absolute inset-0">
+            {/* Super glow sweep */}
+            <span className="absolute inset-y-0 -left-1/2 w-2/3 animate-[task-sweep_1100ms_ease-out_forwards] bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+            {/* Enhanced confetti */}
+            <span className="absolute inset-0 grid place-items-center">
+              {PRIORITY_CONFETTI.map((c, i) => (
+                <span
+                  key={`cf-${i}`}
+                  className="absolute h-2 w-2 rounded-sm"
+                  style={{
+                    background: `hsl(var(${c.color}))`,
+                    animation: `cf-confetti 1200ms ease-out forwards`,
+                    ["--tx" as any]: `${c.tx}px`,
+                    ["--ty" as any]: `${c.ty}px`,
+                    ["--rot" as any]: `${c.rot}deg`,
+                    animationDelay: `${c.delay}ms`,
+                  }}
+                />
+              ))}
+            </span>
+            {/* Rising stars */}
+            <span className="absolute inset-0">
+              {PRIORITY_STARS.map((s, i) => (
+                <span
+                  key={`st-${i}`}
+                  className="absolute text-lg"
+                  style={{
+                    left: `${s.left}%`,
+                    bottom: "25%",
+                    animation: `cf-star 1300ms ease-out forwards`,
+                    animationDelay: `${s.delay}ms`,
+                    ["--ty" as any]: `${s.ty}px`,
+                  }}
+                >⭐</span>
+              ))}
+            </span>
+            {/* Bouncy checkmark overlay */}
+            <span className="absolute inset-0 grid place-items-center">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_0_20px_hsl(var(--primary)/0.6)] animate-[cf-bounce_1000ms_cubic-bezier(.34,1.56,.64,1)_forwards]">
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+              </span>
+            </span>
+          </span>
         )}
 
         {variant === "checkmark" && (

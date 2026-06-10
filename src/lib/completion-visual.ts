@@ -24,6 +24,7 @@ export const COMPLETION_VISUALS: CompletionVisualMeta[] = [
   { key: "glow",      label: "Warm glow",       emoji: "🌟", description: "Quiet halo pulse, no emoji." },
   { key: "checkmark", label: "Bouncy check",    emoji: "✅", description: "Bouncing checkmark badge." },
   { key: "stars",     label: "Star shower",     emoji: "⭐", description: "A few stars rise and fade." },
+  { key: "priority",  label: "Priority burst",  emoji: "🚀", description: "Dramatic confetti, stars & glow for priority tasks." },
   { key: "none",      label: "None",            emoji: "·",  description: "No visual feedback." },
 ];
 
