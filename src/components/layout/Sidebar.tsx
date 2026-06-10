@@ -1439,34 +1439,73 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         })}
 
       </nav>
-      {collapsed && !forceExpanded && (
-        <div className="mt-auto flex w-full flex-col items-center gap-1.5 pt-2">
-          <RailDivider />
-          <RailIconAction
-            label={`Sidebar theme: ${themePref}`}
-            icon={
-              themePref === "dark" ? Moon :
-              themePref === "light" ? Sun :
-              themePref === "atmosphere" ? Palette : Sun
-            }
-            onClick={cycleTheme}
-          />
-          <RailIconAction
-            label={side === "left" ? "Move sidebar to right" : "Move sidebar to left"}
-            icon={side === "left" ? PanelRight : PanelLeft}
-            onClick={toggleSide}
-          />
-          <RailButton
-            to="/settings"
-            label="Settings"
-            icon={SettingsIcon}
-            onClick={handleNavClick("/settings")}
-          />
-          <RailIconAction
-            label="Expand sidebar"
-            icon={PanelLeftOpen}
-            onClick={() => setCollapsed(c => !c)}
-          />
+      {!forceExpanded && (
+        <div className={cn(
+          "mt-auto w-full border-t border-sidebar-border/40 pt-2",
+          collapsed ? "flex flex-col items-center gap-1.5" : "flex items-center justify-between gap-1 px-1",
+        )}>
+          <Popover>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Sidebar position"
+                    className={cn(
+                      "grid place-items-center rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
+                      collapsed ? "h-9 w-9" : "h-8 w-8",
+                    )}
+                  >
+                    {side === "left" ? <PanelLeft className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
+                  </button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent side={collapsed ? "right" : "top"}>Sidebar position</TooltipContent>
+            </Tooltip>
+            <PopoverContent side="top" align="start" className="w-48 p-1.5">
+              <div className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Move sidebar
+              </div>
+              <button
+                type="button"
+                onClick={() => { if (side !== "left") toggleSide(); }}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/60",
+                  side === "left" && "bg-primary-soft text-foreground",
+                )}
+              >
+                <PanelLeft className="h-3.5 w-3.5" />
+                <span className="flex-1 text-left">Left</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { if (side !== "right") toggleSide(); }}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/60",
+                  side === "right" && "bg-primary-soft text-foreground",
+                )}
+              >
+                <PanelRight className="h-3.5 w-3.5" />
+                <span className="flex-1 text-left">Right</span>
+              </button>
+            </PopoverContent>
+          </Popover>
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setCollapsed(c => !c)}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                className={cn(
+                  "grid place-items-center rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
+                  collapsed ? "h-9 w-9" : "h-8 w-8",
+                )}
+              >
+                {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side={collapsed ? "right" : "top"}>{collapsed ? "Expand sidebar" : "Collapse sidebar"}</TooltipContent>
+          </Tooltip>
         </div>
       )}
     </div>
