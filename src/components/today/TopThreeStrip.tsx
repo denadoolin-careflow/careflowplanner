@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Star, Sparkles } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { pickTopThree } from "@/lib/top-three";
+import { CompletionBurst } from "@/components/cards/CompletionBurst";
+import { playCompletionChime } from "@/lib/completion-sound";
+import { haptics } from "@/lib/haptics";
+import { pickAffirmation } from "@/lib/affirmations";
+import { toast } from "sonner";
 
 /** Slim Top-3 strip rendered inside the day's schedule / time-of-day / agenda card. */
 export function TopThreeStrip({
