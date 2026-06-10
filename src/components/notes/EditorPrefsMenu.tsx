@@ -24,6 +24,12 @@ const WIDTHS: { id: EditorWidth; label: string }[] = [
   { id: "full", label: "Full" },
 ];
 
+const TITLE_SIZES: { id: NoteTitleSize; label: string }[] = [
+  { id: "small", label: "Small" },
+  { id: "medium", label: "Medium" },
+  { id: "large", label: "Large" },
+];
+
 export function EditorPrefsMenu() {
   const [prefs, set] = useEditorPrefs();
   return (
@@ -104,6 +110,21 @@ export function EditorPrefsMenu() {
                   prefs.density === d.id ? "bg-primary/15 text-foreground" : "hover:bg-muted/60 text-muted-foreground",
                 )}
               >{d.label}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Title size</div>
+          <div className="flex gap-1.5">
+            {TITLE_SIZES.map(s => (
+              <button
+                key={s.id}
+                onClick={() => set({ titleSize: s.id })}
+                className={cn(
+                  "flex-1 rounded-md px-2 py-1.5 text-xs transition",
+                  prefs.titleSize === s.id ? "bg-primary/15 text-foreground" : "hover:bg-muted/60 text-muted-foreground",
+                )}
+              >{s.label}</button>
             ))}
           </div>
         </div>
