@@ -48,6 +48,8 @@ import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { useTags } from "@/hooks/use-tags";
 import { updateNote } from "@/lib/notes";
+import { upcomingEvents } from "@/lib/cosmic/events";
+import { addDays, format as formatDate } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 
@@ -175,8 +177,10 @@ const TYPE_TO_ENTITY: Record<string, EntityType> = {
   Person: "person", Appointment: "appointment", Meal: "meal", Journal: "journal",
 };
 
-function buildReferences(state: ReturnType<typeof useStore>["state"]): RefItem[] {
+function buildReferences(state: ReturnType<typeof useStore>["state"], transits: RefItem[] = []): RefItem[] {
   const items: RefItem[] = [];
+  // Cosmic transits first so they're easy to discover via @
+  items.push(...transits);
   (state.tasks ?? []).slice(0, 200).forEach(t => items.push({
     id: t.id, label: t.title, type: "Task", icon: CheckCircle2, href: "/anytime", insertText: t.title,
   }));
@@ -573,7 +577,19 @@ export function BlockEditor({
   const [prefs] = useEditorPrefs();
   const { tags: registeredTags } = useTags();
   const refsRef = useRef<RefItem[]>([]);
-  refsRef.current = useMemo(() => buildReferences(state), [state]);
+  const transitRefs = useMemo<RefItem[]>(() => {
+    const start = addDays(new Date(), -30);
+    const events = upcomingEvents(start, 120);
+    return events.map(ev => ({
+      id: ev.id,
+      label: `${ev.glyph}  ${ev.title}`,
+      type: `Transit · ${formatDate(new Date(ev.date), "MMM d")}`,
+      href: `/cosmic-flow/event/${encodeURIComponent(ev.id)}`,
+      icon: Sparkles,
+      insertText: ev.title,
+    }));
+  }, []);
+  refsRef.current = useMemo(() => buildReferences(state, transitRefs), [state, transitRefs]);
   const lastSyncedRef = useRef<string>(body);
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
