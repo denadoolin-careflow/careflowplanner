@@ -42,6 +42,7 @@ import { Package, ShoppingCart, AlertTriangle, Telescope } from "lucide-react";
 import { TransitsTodayWidget } from "./widgets/TransitsToday";
 import { LunarPlannerCard } from "./widgets/LunarPlannerCard";
 import { CareyDailySnapshot } from "./widgets/CareyDailySnapshot";
+import { TransitRememberWidget } from "@/components/today/widgets/TransitRememberWidget";
 
 export interface WidgetSpec {
   type: WidgetType;
