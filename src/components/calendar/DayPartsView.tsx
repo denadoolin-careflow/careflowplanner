@@ -13,6 +13,7 @@ import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store
 import type { WeatherCondition } from "@/lib/weather";
 import { MealSlotCard } from "@/components/today/MealSlotCard";
 import { formatTime12 } from "@/lib/routines";
+import { PriorityFlag } from "@/components/cards/PriorityFlag";
 
 function WxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-3.5 w-3.5", className);
