@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { listNotes, createNote, getOrCreateDailyNote, type Note } from "@/lib/notes";
+import { listNotes, createNote, deleteNote, getOrCreateDailyNote, type Note } from "@/lib/notes";
 import { listTags, fallbackColorFor, type Tag } from "@/lib/tags";
 import { todayISO, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -168,6 +168,17 @@ export default function Notes() {
       const n = await getOrCreateDailyNote(todayISO());
       navigate(`/notes/${n.id}`);
     } catch { toast.error("Could not open today's note"); }
+  };
+
+  const handleDeleteNote = async (id: string) => {
+    if (!confirm("Delete this note?")) return;
+    try {
+      await deleteNote(id);
+      toast.success("Note deleted");
+      await refresh();
+    } catch {
+      toast.error("Could not delete note");
+    }
   };
 
   const activeTitle = activeTag
@@ -350,8 +361,8 @@ export default function Notes() {
               </h2>
               <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
                 {pinnedStrip.map(n => (
-                  <div key={n.id} className="w-64 shrink-0">
-                    <NoteCardV2 note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} compact />
+                <div key={n.id} className="w-64 shrink-0">
+                    <NoteCardV2 note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} compact />
                   </div>
                 ))}
               </div>
@@ -373,15 +384,15 @@ export default function Notes() {
             ) : view === "grid" ? (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filtered.map(n => (
-                  <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} />
+                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} />
                 ))}
               </div>
             ) : view === "list" ? (
-              <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} />
+              <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} onDelete={handleDeleteNote} />
             ) : view === "board" ? (
-              <BoardView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} />
+              <BoardView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} onDelete={handleDeleteNote} />
             ) : view === "timeline" ? (
-              <TimelineView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} />
+              <TimelineView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} onDelete={handleDeleteNote} />
             ) : (
               <CalendarView notes={filtered} onSelectNote={selectNote} />
             )}
@@ -421,12 +432,13 @@ export default function Notes() {
 /* -------------------- list view -------------------- */
 
 function ListView({
-  notes, selectedId, onSelect, tagsByName,
+  notes, selectedId, onSelect, tagsByName, onDelete,
 }: {
   notes: Note[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   tagsByName: Map<string, Tag>;
+  onDelete?: (id: string) => void;
 }) {
   return (
     <div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/60 bg-card/60">
@@ -436,7 +448,14 @@ function ListView({
           ? format(parseISO(n.date), "EEEE, MMM d")
           : (n.title || "Untitled");
         return (
-          <NoteHoverPreview key={n.id} note={n} tagsByName={tagsByName}>
+          <NoteHoverPreview
+            key={n.id}
+            note={n}
+            tagsByName={tagsByName}
+            onOpen={onSelect}
+            onEdit={onSelect}
+            onDelete={onDelete}
+          >
           <button
             key={n.id}
             type="button"
@@ -473,12 +492,13 @@ function ListView({
 /* -------------------- board view (by tag) -------------------- */
 
 function BoardView({
-  notes, tagsByName, onSelect, selectedId,
+  notes, tagsByName, onSelect, selectedId, onDelete,
 }: {
   notes: Note[];
   tagsByName: Map<string, Tag>;
   onSelect: (id: string) => void;
   selectedId: string | null;
+  onDelete?: (id: string) => void;
 }) {
   // Build one column per tag in use, plus "Untagged".
   const byTag = new Map<string, Note[]>();
@@ -521,7 +541,7 @@ function BoardView({
             </div>
             <div className="space-y-2">
               {c.items.map(n => (
-                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} compact />
+                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} onDelete={onDelete} compact />
               ))}
             </div>
           </div>
@@ -534,12 +554,13 @@ function BoardView({
 /* -------------------- timeline view -------------------- */
 
 function TimelineView({
-  notes, tagsByName, onSelect, selectedId,
+  notes, tagsByName, onSelect, selectedId, onDelete,
 }: {
   notes: Note[];
   tagsByName: Map<string, Tag>;
   onSelect: (id: string) => void;
   selectedId: string | null;
+  onDelete?: (id: string) => void;
 }) {
   const byDay: Record<string, Note[]> = {};
   for (const n of notes) {
@@ -559,7 +580,7 @@ function TimelineView({
           </div>
           <div className="space-y-2 border-l border-border/50 pl-4">
             {byDay[d].map(n => (
-              <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} compact />
+              <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} onDelete={onDelete} compact />
             ))}
           </div>
         </div>

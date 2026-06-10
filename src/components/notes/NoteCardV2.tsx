@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { Pin, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,8 @@ import { fallbackColorFor } from "@/lib/tags";
 import type { Note } from "@/lib/notes";
 import type { Tag } from "@/lib/tags";
 import { NoteHoverPreview } from "@/components/notes/NoteHoverPreview";
+import { deleteNote } from "@/lib/notes";
+import { toast } from "sonner";
 
 function stripMd(s: string): string {
   if (!s) return "";
@@ -42,14 +44,29 @@ export function NoteCardV2({
   tagsByName,
   selected,
   onSelect,
+  onDelete,
   compact = false,
 }: {
   note: Note;
   tagsByName: Map<string, Tag>;
   selected?: boolean;
   onSelect?: (id: string) => void;
+  onDelete?: (id: string) => void;
   compact?: boolean;
 }) {
+  const navigate = useNavigate();
+  const handleOpen = (id: string) => onSelect?.(id);
+  const handleEdit = (id: string) => navigate(`/notes/${id}`);
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this note?")) return;
+    try {
+      await deleteNote(id);
+      toast.success("Note deleted");
+      onDelete?.(id);
+    } catch {
+      toast.error("Could not delete note");
+    }
+  };
   const title = note.kind === "daily" && note.date
     ? format(parseISO(note.date), "EEEE, MMM d")
     : (note.title || "Untitled");
@@ -60,7 +77,7 @@ export function NoteCardV2({
   const wordCount = note.body ? note.body.split(/\s+/).filter(Boolean).length : 0;
 
   return (
-    <NoteHoverPreview note={note} tagsByName={tagsByName}>
+    <NoteHoverPreview note={note} tagsByName={tagsByName} onOpen={handleOpen} onEdit={handleEdit} onDelete={handleDelete}>
     <button
       type="button"
       onClick={() => onSelect?.(note.id)}
