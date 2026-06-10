@@ -3,6 +3,11 @@ import { useStore, todayISO } from "@/lib/store";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { CompletionBurst } from "@/components/cards/CompletionBurst";
+import { playCompletionChime } from "@/lib/completion-sound";
+import { haptics } from "@/lib/haptics";
+import { pickAffirmation } from "@/lib/affirmations";
+import { toast } from "sonner";
 
 type Mode = "3" | "5" | "all";
 

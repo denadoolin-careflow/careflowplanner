@@ -58,44 +58,48 @@ export function MoonPrioritiesCard({
           </p>
         ) : (
           <ul className="space-y-1">
-            {top.map((t, idx) => (
-              <li
-                key={t.id}
-                className={cn(
-                  "flex min-w-0 items-center gap-2 rounded-lg border border-border/40 bg-card/70 px-2 py-1.5 transition hover:border-primary/30 hover:bg-card",
-                  t.done && "opacity-60",
-                )}
-              >
-                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">
-                  {idx + 1}
-                </span>
-                <Checkbox
-                  checked={t.done}
-                  onCheckedChange={() => handleToggle(t.id, t.done)}
-                  aria-label={`Complete ${t.title}`}
-                />
-                <button
-                  type="button"
+            {top.map((t, idx) => {
+              const celebrate = celebrateId === t.id;
+              return (
+                <li
+                  key={t.id}
                   className={cn(
-                    "min-w-0 flex-1 truncate text-left text-xs",
-                    t.done && "line-through",
+                    "relative flex min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border/40 bg-card/70 px-2 py-1.5 transition hover:border-primary/30 hover:bg-card",
+                    t.done && "opacity-60",
                   )}
-                  onClick={() => onTaskClick?.(t.id)}
-                  title={t.title}
                 >
-                  {t.title}
-                </button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 shrink-0 text-muted-foreground hover:text-amber-500"
-                  onClick={() => updateTask(t.id, { isTopThree: !t.isTopThree })}
-                  title={t.isTopThree ? "Unpin priority" : "Pin as priority"}
-                >
-                  <Star className={cn("h-3 w-3", t.isTopThree && "fill-amber-400 text-amber-500")} />
-                </Button>
-              </li>
-            ))}
+                  <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">
+                    {idx + 1}
+                  </span>
+                  <Checkbox
+                    checked={t.done || celebrate}
+                    onCheckedChange={() => handleToggle(t.id, t.done)}
+                    aria-label={`Complete ${t.title}`}
+                  />
+                  <button
+                    type="button"
+                    className={cn(
+                      "min-w-0 flex-1 truncate text-left text-xs",
+                      t.done && "line-through",
+                    )}
+                    onClick={() => onTaskClick?.(t.id)}
+                    title={t.title}
+                  >
+                    {t.title}
+                  </button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 shrink-0 text-muted-foreground hover:text-amber-500"
+                    onClick={() => updateTask(t.id, { isTopThree: !t.isTopThree })}
+                    title={t.isTopThree ? "Unpin priority" : "Pin as priority"}
+                  >
+                    <Star className={cn("h-3 w-3", t.isTopThree && "fill-amber-400 text-amber-500")} />
+                  </Button>
+                  {celebrate && <CompletionBurst variant="priority" />}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
