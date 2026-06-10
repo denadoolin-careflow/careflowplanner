@@ -2,10 +2,11 @@ import { useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Sparkles, ArrowRight, FileText, BookOpen, Loader2 } from "lucide-react";
+import { Sparkles, ArrowRight, FileText, BookOpen, Loader2, Maximize2, PanelRight } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +31,7 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [stubbing, setStubbing] = useState<null | "note" | "journal">(null);
+  const [centered, setCentered] = useState(false);
   const date = event ? parseISO(event.date) : null;
   const el = event && date ? elementFor(event, date) : null;
   const copy = useMemo(() => event ? copyForEvent(event) : null, [event]);
@@ -103,26 +105,33 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
     }
   };
 
-  const accent: React.CSSProperties = el
-    ? { background: `linear-gradient(180deg, hsl(var(${ELEMENT_VAR[el]}) / 0.16), hsl(var(--card)))` }
-    : {};
   const accentBorder: React.CSSProperties = el
     ? { borderTopColor: `hsl(var(${ELEMENT_VAR[el]}))`, borderTopWidth: 3 }
     : {};
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full overflow-y-auto p-0 sm:max-w-lg" style={accent}>
-        {event && date && copy && (
-          <div className="flex h-full flex-col" style={accentBorder}>
-            <SheetHeader className="px-5 pb-3 pt-5 text-left">
+  const body = event && date && copy && (
+        <div className="flex h-full flex-col" style={accentBorder}>
+            <div className="flex items-center justify-end gap-1 px-3 pt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setCentered(c => !c)}
+                className="h-7 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                aria-label={centered ? "Dock to side" : "Open centered"}
+              >
+                {centered ? <PanelRight className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                {centered ? "Side" : "Center"}
+              </Button>
+            </div>
+            <div className="px-5 pb-3 pt-1 text-left">
               <div className="flex items-start gap-3">
                 <span aria-hidden className="text-2xl leading-none">{event.glyph}</span>
                 <div className="min-w-0 flex-1">
-                  <SheetTitle className="font-display text-lg leading-tight">{event.title}</SheetTitle>
-                  <SheetDescription className="text-xs">
+                  <h2 className="font-display text-lg font-semibold leading-tight text-foreground">{event.title}</h2>
+                  <p className="text-xs text-muted-foreground">
                     {format(date, "EEEE, MMM d, yyyy")}
-                  </SheetDescription>
+                  </p>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     {el && (
                       <Badge
@@ -142,7 +151,7 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
                   </div>
                 </div>
               </div>
-            </SheetHeader>
+            </div>
 
             <div className="space-y-4 px-5 py-4">
               {natalHouse && (
@@ -256,7 +265,30 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
               </Button>
             </div>
           </div>
-        )}
+        );
+
+  if (centered) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-h-[90vh] w-[95vw] max-w-2xl overflow-y-auto bg-background p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{event?.title ?? "Transit"}</DialogTitle>
+            <DialogDescription>Transit detail</DialogDescription>
+          </DialogHeader>
+          {body}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full overflow-y-auto bg-background p-0 sm:max-w-lg">
+        <SheetHeader className="sr-only">
+          <SheetTitle>{event?.title ?? "Transit"}</SheetTitle>
+          <SheetDescription>Transit detail</SheetDescription>
+        </SheetHeader>
+        {body}
       </SheetContent>
     </Sheet>
   );

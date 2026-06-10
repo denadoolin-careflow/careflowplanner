@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getActiveAspects, intensityStars } from "@/lib/cosmic/active-aspects";
+import { getActiveAspects, intensityStars, type ActiveAspect } from "@/lib/cosmic/active-aspects";
 import { encodeEventId } from "@/lib/cosmic/event-id";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { TransitLayersSheet } from "./TransitLayersSheet";
-import { useBirthChart } from "@/lib/cosmic/hooks";
-import { useNatalChart } from "@/lib/cosmic/v2-hooks";
+import { TransitDetailSheet } from "./TransitDetailSheet";
+import type { CosmicEvent } from "@/lib/cosmic/events";
 import { ExternalLink } from "lucide-react";
 
 const ACTION_TONE: Record<string, string> = {
@@ -18,20 +17,25 @@ const ACTION_TONE: Record<string, string> = {
 
 export function CurrentTransitsTable({ date = new Date(), limit = 4 }: { date?: Date; limit?: number }) {
   const aspects = useMemo(() => getActiveAspects(date, limit), [date, limit]);
-  const { row } = useBirthChart();
-  const chart = useNatalChart(row ? {
-    date: row.birth_date, time: row.birth_time, tz: row.birth_tz,
-    lat: row.birth_lat, lng: row.birth_lng, place: row.birth_place,
-    house_system: "whole-sign",
-  } : null);
-  const natalLite = chart ? {
-    sun: chart.planets.find(p => p.body === "Sun")?.sign,
-    moon: chart.planets.find(p => p.body === "Moon")?.sign,
-    ascendant: chart.houses?.ascendantSign,
-    chartRuler: chart.chartRuler,
-  } : undefined;
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState<any>(null);
+  const [active, setActive] = useState<CosmicEvent | null>(null);
+
+  function aspectToEvent(a: ActiveAspect, when: Date): CosmicEvent {
+    const iso = format(when, "yyyy-MM-dd");
+    return {
+      id: `aspect~${iso}~${a.id}`,
+      date: iso,
+      kind: "aspect",
+      planet: a.a,
+      partner: a.b,
+      aspect: a.aspect,
+      sign: a.aSign,
+      glyph: `${a.aGlyph}${a.aspectGlyph}${a.bGlyph}`,
+      title: a.title,
+      subtitle: `${a.window} · ${a.motion}${a.retroNote ? ` · ${a.retroNote}` : ""}`,
+      tone: a.aspect === "trine" || a.aspect === "sextile" ? "soft" : a.aspect === "square" || a.aspect === "opposition" ? "warn" : "warm",
+    };
+  }
 
   return (
     <section className="cozy-card p-5" aria-label="Current transits">
@@ -46,23 +50,13 @@ export function CurrentTransitsTable({ date = new Date(), limit = 4 }: { date?: 
         <ul className="divide-y divide-border/40">
           {aspects.map(a => {
             const id = encodeEventId({ kind: "phase", date: format(date, "yyyy-MM-dd"), planet: a.a, sign: a.aSign });
-            const eventId = `aspect~${format(date, "yyyy-MM-dd")}~${a.id}`;
             const toneClass = ACTION_TONE[a.action] ?? "bg-primary/15 text-primary";
             return (
               <li key={a.id} className="py-3 first:pt-0 last:pb-0">
                 <button
                   type="button"
                   onClick={() => {
-                    setActive({
-                      id: eventId,
-                      kind: "aspect",
-                      planet: a.a,
-                      sign: a.aSign,
-                      aspect: a.aspect,
-                      detail: `${a.title} · ${a.window} · ${a.motion}`,
-                      date: format(date, "yyyy-MM-dd"),
-                      label: a.title,
-                    });
+                    setActive(aspectToEvent(a, date));
                     setOpen(true);
                   }}
                   className="w-full grid grid-cols-[44px_minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,130px)] items-center gap-3 text-left transition-opacity hover:opacity-90"
@@ -99,7 +93,7 @@ export function CurrentTransitsTable({ date = new Date(), limit = 4 }: { date?: 
           })}
         </ul>
       )}
-      <TransitLayersSheet open={open} onOpenChange={setOpen} event={active} natal={natalLite} />
+      <TransitDetailSheet event={active} open={open} onOpenChange={(v) => { setOpen(v); if (!v) setActive(null); }} />
     </section>
   );
 }

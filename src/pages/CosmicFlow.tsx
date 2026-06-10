@@ -6,7 +6,6 @@ import { useBirthChart } from "@/lib/cosmic/hooks";
 import { useNatalChart, useDailyGuidance } from "@/lib/cosmic/v2-hooks";
 import { CosmicHero } from "@/components/cosmic/CosmicHero";
 import { DailyOverviewCard } from "@/components/cosmic/DailyOverviewCard";
-import { MoonCycleCard } from "@/components/cosmic/MoonCycleCard";
 import { CurrentTransitsTable } from "@/components/cosmic/CurrentTransitsTable";
 import { JournalWithTheSkyCard } from "@/components/cosmic/JournalWithTheSkyCard";
 import { CosmicTimelineTabs } from "@/components/cosmic/CosmicTimelineTabs";
@@ -55,7 +54,6 @@ export default function CosmicFlow() {
         </div>
 
         <div className="space-y-3 sm:space-y-4">
-          <MoonCycleCard date={date} />
           <JournalWithTheSkyCard date={date} />
           <PredictiveSnapshotList from={date} />
         </div>
