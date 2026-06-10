@@ -131,7 +131,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <ScopeNavToggle active="today" />
             <AtmosphereChip />
             <div className="inline-flex items-center gap-1">
@@ -167,7 +167,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
             <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
               Plan with
             </span>
