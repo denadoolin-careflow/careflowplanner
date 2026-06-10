@@ -1,10 +1,16 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import type { CareRecipient } from "@/lib/types";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { format, parseISO } from "date-fns";
-import { CheckCircle2, Circle, HeartHandshake, CalendarClock, BookOpen } from "lucide-react";
+import { CheckCircle2, Circle, HeartHandshake, CalendarClock, BookOpen, Plus, CalendarIcon } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type Item = {
   id: string;
@@ -24,7 +30,42 @@ const KIND_META: Record<Item["kind"], { label: string; icon: React.ComponentType
 };
 
 export function PersonTimeline({ recipient }: { recipient: CareRecipient }) {
-  const { state } = useStore();
+  const { state, addTask, addCareNote, addAppointment, addJournal } = useStore();
+  const [kind, setKind] = useState<"task" | "note" | "appointment" | "journal">("task");
+  const [draft, setDraft] = useState("");
+  const [time, setTime] = useState("");
+  const [date, setDate] = useState<Date>(new Date());
+  const [busy, setBusy] = useState(false);
+
+  const KINDS: { id: typeof kind; label: string }[] = [
+    { id: "task", label: "Task" },
+    { id: "note", label: "Note" },
+    { id: "appointment", label: "Appt" },
+    { id: "journal", label: "Journal" },
+  ];
+
+  const submit = async () => {
+    const title = draft.trim();
+    if (!title || busy) return;
+    const iso = format(date, "yyyy-MM-dd");
+    setBusy(true);
+    try {
+      if (kind === "task") {
+        await addTask({ title, dueDate: iso, area: "Caregiving", recipientId: recipient.id });
+      } else if (kind === "note") {
+        await addCareNote({ recipientId: recipient.id, body: title });
+      } else if (kind === "appointment") {
+        await addAppointment({ title, date: iso, time: time || undefined, recipientId: recipient.id });
+      } else {
+        await addJournal({ body: title, date: iso, type: "daily",
+          linkedIds: [{ type: "recipient", id: recipient.id, label: recipient.name }] });
+      }
+      toast.success(`Added to ${recipient.name}'s timeline`);
+      setDraft(""); setTime("");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
@@ -98,6 +139,59 @@ export function PersonTimeline({ recipient }: { recipient: CareRecipient }) {
       subtitle="Care tasks, notes, appointments, and journal mentions — newest first."
       accent="calm"
     >
+      <div className="mb-5 rounded-2xl border border-border/60 bg-card/60 p-3">
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {KINDS.map(k => (
+            <Button
+              key={k.id}
+              type="button"
+              size="sm"
+              variant={kind === k.id ? "default" : "outline"}
+              className="h-7 rounded-full px-3 text-xs"
+              onClick={() => setKind(k.id)}
+            >
+              {k.label}
+            </Button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submit(); } }}
+            placeholder={
+              kind === "note" ? `Add a care note for ${recipient.name}…` :
+              kind === "appointment" ? `Appointment title…` :
+              kind === "journal" ? `Journal entry about ${recipient.name}…` :
+              `Add a task for ${recipient.name}…`
+            }
+            className="h-9 min-w-[12rem] flex-1 text-sm"
+          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("h-9 gap-1.5 rounded-full px-3 text-xs font-normal")}>
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {format(date, "MMM d")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
+            </PopoverContent>
+          </Popover>
+          {kind === "appointment" && (
+            <Input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="h-9 w-[7.5rem] text-sm"
+            />
+          )}
+          <Button onClick={submit} disabled={!draft.trim() || busy} size="sm" className="h-9 gap-1 rounded-full">
+            <Plus className="h-3.5 w-3.5" /> Add
+          </Button>
+        </div>
+      </div>
+
       {grouped.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Nothing linked yet. Tasks, notes, appointments, and journal entries that mention {recipient.name} will appear here automatically.
