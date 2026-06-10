@@ -241,7 +241,11 @@ export function resolveNoteIcon(note: Pick<Note, "title" | "body" | "kind" | "ic
 export function getLucideIcon(name: string | null | undefined): LucideIcon {
   if (!name) return StickyNote;
   const map = LucideIcons as unknown as Record<string, LucideIcon>;
-  return map[name] ?? StickyNote;
+  const lucide = map[name];
+  if (lucide) return lucide;
+  // Fall back to custom astrology icons
+  const astro = Astro as unknown as Record<string, LucideIcon>;
+  return astro[name] ?? StickyNote;
 }
 
 /* ---------- recent icons ---------- */
