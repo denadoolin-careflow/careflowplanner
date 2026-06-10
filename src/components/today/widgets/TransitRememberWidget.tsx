@@ -1,9 +1,17 @@
 import { useEffect, useState, useCallback } from "react";
 import { format, parseISO } from "date-fns";
-import { Sparkles, FileText, BookOpen, ArrowRight, ExternalLink, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Sparkles, FileText, BookOpen, ArrowRight, ExternalLink, Star, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
 
 interface TransitItem {
   id: string;
@@ -11,6 +19,7 @@ interface TransitItem {
   title: string;
   date?: string;
   bodyPreview?: string;
+  body?: string;
   icon?: string;
   rating?: number;
 }
@@ -25,6 +34,8 @@ function bodyPreview(body?: string, len = 60) {
 export function TransitRememberWidget() {
   const [items, setItems] = useState<TransitItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<TransitItem | null>(null);
+  const navigate = useNavigate();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -50,7 +61,7 @@ export function TransitRememberWidget() {
           .limit(6),
         (supabase as any)
           .from("transit_reflections")
-          .select("event_id, rating, note")
+          .select("event_id, rating, note, updated_at")
           .eq("user_id", uid)
           .not("note", "is", null)
           .order("updated_at", { ascending: false })
@@ -69,6 +80,7 @@ export function TransitRememberWidget() {
           kind: "note",
           title: n.title || "Transit note",
           date: n.updated_at,
+          body: n.body,
           bodyPreview: bodyPreview(n.body),
           icon: n.icon || "Sparkles",
         });
@@ -83,6 +95,7 @@ export function TransitRememberWidget() {
           kind: "journal",
           title: j.title || "Cosmic journal entry",
           date: j.updated_at,
+          body: j.body,
           bodyPreview: bodyPreview(j.body),
         });
       });
@@ -95,7 +108,8 @@ export function TransitRememberWidget() {
           id: r.event_id,
           kind: "journal",
           title: r.event_id,
-          date: undefined,
+          date: r.updated_at,
+          body: r.note,
           bodyPreview: bodyPreview(r.note),
           rating: r.rating,
         });
@@ -116,6 +130,15 @@ export function TransitRememberWidget() {
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  const handleOpen = (it: TransitItem) => {
+    if (it.kind === "note") {
+      navigate(`/notes/${it.id}`);
+    } else {
+      navigate("/journal");
+    }
+    setSelected(null);
+  };
 
   if (loading) {
     return (
@@ -146,77 +169,140 @@ export function TransitRememberWidget() {
   }
 
   return (
-    <section className="cozy-card p-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <header className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          <Sparkles className="h-3 w-3" /> Transits to remember
-        </header>
-        <Link
-          to="/cosmic-flow"
-          className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-        >
-          Cosmic flow <ArrowRight className="h-2.5 w-2.5" />
-        </Link>
-      </div>
-      <ul className="space-y-1.5">
-        {items.map((it) => (
-          <li
-            key={`${it.kind}:${it.id}`}
-            className={cn(
-              "group flex items-start gap-2 rounded-xl border border-border/40 bg-card/60 px-2.5 py-2 transition-colors hover:bg-muted/40",
-            )}
+    <>
+      <section className="cozy-card p-4">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <header className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            <Sparkles className="h-3 w-3" /> Transits to remember
+          </header>
+          <Link
+            to="/cosmic-flow"
+            className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
           >
-            <span className="mt-0.5 shrink-0 text-primary/80">
-              {it.kind === "note" ? <FileText className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="truncate text-[12.5px] font-medium text-foreground">
-                  {it.title.startsWith("Transit · ") ? it.title.slice(10) : it.title}
-                </span>
-                {it.rating ? (
-                  <span className="flex shrink-0 items-center gap-0.5">
+            Cosmic flow <ArrowRight className="h-2.5 w-2.5" />
+          </Link>
+        </div>
+        <ul className="space-y-1.5">
+          {items.map((it) => (
+            <li
+              key={`${it.kind}:${it.id}`}
+              onClick={() => setSelected(it)}
+              className={cn(
+                "group flex cursor-pointer items-start gap-2 rounded-xl border border-border/40 bg-card/60 px-2.5 py-2 transition-colors hover:bg-muted/40",
+              )}
+            >
+              <span className="mt-0.5 shrink-0 text-primary/80">
+                {it.kind === "note" ? <FileText className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate text-[12.5px] font-medium text-foreground">
+                    {it.title.startsWith("Transit · ") ? it.title.slice(10) : it.title}
+                  </span>
+                  {it.rating ? (
+                    <span className="flex shrink-0 items-center gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={cn(
+                            "h-2.5 w-2.5",
+                            i < it.rating! ? "fill-primary text-primary" : "text-muted-foreground/30",
+                          )}
+                        />
+                      ))}
+                    </span>
+                  ) : null}
+                </div>
+                {it.bodyPreview && (
+                  <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{it.bodyPreview}</p>
+                )}
+                {it.date && (
+                  <p className="mt-0.5 text-[10px] text-muted-foreground/70">
+                    {format(parseISO(it.date), "MMM d")}
+                  </p>
+                )}
+              </div>
+              <span className="mt-0.5 shrink-0 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-foreground group-hover:opacity-100">
+                <ExternalLink className="h-3 w-3" />
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent className="max-w-md rounded-2xl border-border/60 bg-card/95 p-0 backdrop-blur-md">
+          {selected && (
+            <div className="flex flex-col">
+              <DialogHeader className="gap-0 px-5 pt-5 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                    {selected.kind === "note" ? (
+                      <FileText className="h-4 w-4" />
+                    ) : (
+                      <BookOpen className="h-4 w-4" />
+                    )}
+                  </span>
+                  <DialogTitle className="text-[14px] font-semibold leading-snug">
+                    {selected.title.startsWith("Transit · ")
+                      ? selected.title.slice(10)
+                      : selected.title}
+                  </DialogTitle>
+                </div>
+                {selected.date && (
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {format(parseISO(selected.date), "EEEE, MMM d, yyyy · h:mm a")}
+                  </p>
+                )}
+                {selected.rating ? (
+                  <div className="mt-1 flex items-center gap-0.5">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star
                         key={i}
                         className={cn(
-                          "h-2.5 w-2.5",
-                          i < it.rating! ? "fill-primary text-primary" : "text-muted-foreground/30",
+                          "h-3.5 w-3.5",
+                          i < selected.rating! ? "fill-primary text-primary" : "text-muted-foreground/30",
                         )}
                       />
                     ))}
-                  </span>
+                  </div>
                 ) : null}
+              </DialogHeader>
+
+              <div className="max-h-[40vh] overflow-y-auto px-5 py-2">
+                {selected.body ? (
+                  <NoteMarkdownPreview
+                    body={selected.body}
+                    maxChars={1200}
+                    className="text-[12.5px] leading-relaxed"
+                  />
+                ) : (
+                  <p className="text-xs italic text-muted-foreground/70">Empty note</p>
+                )}
               </div>
-              {it.bodyPreview && (
-                <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{it.bodyPreview}</p>
-              )}
-              {it.date && (
-                <p className="mt-0.5 text-[10px] text-muted-foreground/70">
-                  {format(parseISO(it.date), "MMM d")}
-                </p>
-              )}
+
+              <div className="flex items-center justify-end gap-2 border-t border-border/40 px-5 py-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelected(null)}
+                >
+                  <X className="h-3 w-3" /> Close
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-8 gap-1.5 text-[11px]"
+                  onClick={() => handleOpen(selected)}
+                >
+                  <ExternalLink className="h-3 w-3" /> Open
+                </Button>
+              </div>
             </div>
-            {it.kind === "note" ? (
-              <Link
-                to={`/notes/${it.id}`}
-                className="mt-0.5 shrink-0 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-foreground group-hover:opacity-100"
-                title="Open note"
-              >
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-            ) : (
-              <Link
-                to="/journal"
-                className="mt-0.5 shrink-0 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted/60 hover:text-foreground group-hover:opacity-100"
-                title="Open journal"
-              >
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
