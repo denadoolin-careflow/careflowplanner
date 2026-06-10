@@ -7,6 +7,10 @@ import { cachedSnapshot, type DaySnapshot } from "@/lib/cosmic/event-meta";
 import { ELEMENT_VAR, type Element } from "@/lib/cosmic/glyphs";
 import { CosmicDaySheet } from "@/components/cosmic/CosmicDaySheet";
 import { cn } from "@/lib/utils";
+import { TransitDetailSheet } from "@/components/cosmic/TransitDetailSheet";
+import { elementFor } from "@/lib/cosmic/event-meta";
+import { format as fmt } from "date-fns";
+import type { CosmicEvent } from "@/lib/cosmic/events";
 
 function cellStyle(el: Element | null, intensity: number): React.CSSProperties {
   if (!el) return {};
@@ -66,6 +70,7 @@ function LegendDot({ varName, label }: { varName: string; label: string }) {
 export default function CosmicCalendar() {
   const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const [openDate, setOpenDate] = useState<Date | null>(null);
+  const [openEvent, setOpenEvent] = useState<CosmicEvent | null>(null);
 
   const days = useMemo(() => {
     const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
@@ -75,6 +80,14 @@ export default function CosmicCalendar() {
   }, [month]);
 
   const firstDow = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
+
+  const monthTransits = useMemo(() => {
+    const all: { day: number; date: Date; event: CosmicEvent }[] = [];
+    for (const snap of days) {
+      for (const ev of snap.events) all.push({ day: snap.date.getDate(), date: snap.date, event: ev });
+    }
+    return all;
+  }, [days]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-3 pb-28 sm:p-6">
@@ -117,7 +130,43 @@ export default function CosmicCalendar() {
         </div>
       </div>
 
+      <section className="cozy-card p-4" aria-label="Transits this month">
+        <header className="mb-2 flex items-center justify-between">
+          <h2 className="font-display text-base">Transits this month</h2>
+          <span className="text-[11px] text-muted-foreground">{monthTransits.length} events</span>
+        </header>
+        {monthTransits.length === 0 ? (
+          <p className="text-sm italic text-muted-foreground">A quiet month — fine for steady, ordinary things.</p>
+        ) : (
+          <ul className="divide-y divide-border/40">
+            {monthTransits.map((row, i) => {
+              const el = elementFor(row.event, row.date);
+              const glyphStyle: React.CSSProperties = el ? { color: `hsl(var(${ELEMENT_VAR[el]}))` } : {};
+              return (
+                <li key={`${row.event.id}-${i}`}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenEvent(row.event)}
+                    className="flex w-full items-center gap-3 py-2 text-left transition-colors hover:bg-muted/40"
+                  >
+                    <span className="w-12 shrink-0 text-[11px] text-muted-foreground">{fmt(row.date, "EEE d")}</span>
+                    <span className="text-base" aria-hidden style={glyphStyle}>{row.event.glyph}</span>
+                    <span className="min-w-0 flex-1 truncate text-[13px]">{row.event.title}</span>
+                    {el && (
+                      <span className="rounded-full px-2 py-0.5 text-[10px]" style={{ background: `hsl(var(${ELEMENT_VAR[el]}) / 0.18)`, color: `hsl(var(${ELEMENT_VAR[el]}))` }}>
+                        {el}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
       <CosmicDaySheet open={!!openDate} onOpenChange={o => !o && setOpenDate(null)} date={openDate} />
+      <TransitDetailSheet event={openEvent} open={!!openEvent} onOpenChange={v => !v && setOpenEvent(null)} />
     </div>
   );
 }
