@@ -201,9 +201,18 @@ export function NoteCardV2({
           </>
         ) : (
           <>
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Icon className="h-3.5 w-3.5" />
-            </span>
+            <Tooltip delayDuration={400}>
+              <TooltipTrigger asChild>
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary cursor-help">
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+              </TooltipTrigger>
+              {iconTooltip && (
+                <TooltipContent side="top" className="max-w-[220px] text-xs leading-snug">
+                  {iconTooltip}
+                </TooltipContent>
+              )}
+            </Tooltip>
             <h3 className="line-clamp-2 flex-1 font-display text-[15px] font-semibold leading-snug">{title}</h3>
             {note.pinned && <Pin className="mt-1 h-3.5 w-3.5 shrink-0 fill-current text-amber-500" />}
           </>
