@@ -69,6 +69,11 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        priority: {
+          high: "hsl(var(--priority-high))",
+          med: "hsl(var(--priority-med))",
+          low: "hsl(var(--priority-low))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -79,6 +84,8 @@ export default {
         soft: "var(--shadow-soft)",
         cozy: "var(--shadow-cozy)",
         glow: "var(--shadow-glow)",
+        "priority-high": "0 0 12px hsl(var(--priority-high) / 0.35)",
+        "priority-med": "0 0 8px hsl(var(--priority-med) / 0.22)",
       },
       keyframes: {
         "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
