@@ -9,7 +9,7 @@ import { Sparkles, ArrowRight, FileText, BookOpen, Loader2 } from "lucide-react"
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Link as RLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { CosmicEvent } from "@/lib/cosmic/events";
 import { copyForEvent, houseOverlayLine } from "@/lib/cosmic/transit-copy";
 import { elementFor, fourFoldFor, themesFor, intensityFor } from "@/lib/cosmic/event-meta";
