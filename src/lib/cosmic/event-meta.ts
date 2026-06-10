@@ -36,6 +36,7 @@ export function categoriesFor(e: CosmicEvent): EventCategory[] {
   if (e.kind === "eclipse") { out.add("eclipse"); out.add("moon"); }
   if (e.kind === "ingress") out.add("ingress");
   if (e.kind === "retrograde" || e.kind === "direct") out.add("retrograde");
+  if (e.kind === "aspect" || e.kind === "cazimi") out.add("personal");
   if (e.planet && PERSONAL.has(e.planet)) out.add("personal");
   if (e.planet && OUTER.has(e.planet)) out.add("outer");
   if (e.planet === "Venus") { out.add("love"); out.add("home"); }
@@ -56,14 +57,25 @@ export function elementFor(e: CosmicEvent, date: Date): Element | null {
     const ms = getMoonSign(date);
     return SIGN_ELEMENT[ms.name as Sign] ?? null;
   }
+  if ((e.kind === "aspect" || e.kind === "cazimi") && e.planet) {
+    // Use the first planet's current sign element so the chip glows.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { planetSign } = require("@/lib/transits") as typeof import("@/lib/transits");
+      const s = planetSign(e.planet, date);
+      return SIGN_ELEMENT[s as Sign] ?? null;
+    } catch { return null; }
+  }
   return null;
 }
 
 export function intensityFor(e: CosmicEvent): number {
   if (e.kind === "eclipse") return 5;
+  if (e.kind === "cazimi") return 4;
   if (e.kind === "phase" && (e.phase === "full" || e.phase === "new")) return 4;
   if (e.kind === "retrograde" || e.kind === "direct") return 3;
   if (e.kind === "ingress") return 3;
+  if (e.kind === "aspect") return 3;
   if (e.kind === "phase") return 2;
   return 1;
 }
