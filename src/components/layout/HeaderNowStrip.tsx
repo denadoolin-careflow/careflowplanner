@@ -223,13 +223,13 @@ export function HeaderNowStrip({ className }: { className?: string }) {
       <div className="flex items-center gap-1 md:hidden overflow-x-auto no-scrollbar max-w-full flex-nowrap">
         <Popover>
           <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label={`Open today's ${slotLabel} tasks`}
-              title={`${slotLabel} tasks`}
-              style={chipStyle}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 tabular-nums text-[11px] font-medium hover:brightness-110 transition"
-            >
+          <button
+            type="button"
+            aria-label={`Open today's ${slotLabel} tasks`}
+            title={`${slotLabel} tasks`}
+            style={chipBorder}
+            className="inline-flex shrink-0 items-center gap-1 rounded-full border bg-muted px-1.5 py-0.5 tabular-nums text-[11px] font-medium text-foreground hover:bg-muted/80 transition"
+          >
               {time}
               {slotTasks.length > 0 && (
                 <span className="ml-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[7px] font-bold text-primary-foreground">
