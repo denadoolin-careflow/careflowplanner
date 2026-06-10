@@ -93,21 +93,21 @@ export function PersonalGuidanceGrid({ data, loading, onRefresh, date = new Date
         </Button>
       </header>
 
-      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-2 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         {tiles.map(t => (
-          <div key={t.key} className={`rounded-lg border bg-gradient-to-b p-3 ${t.tone}`}>
-            <p className="mb-1.5 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          <div key={t.key} className={`rounded-lg border bg-gradient-to-b p-3 text-foreground ${t.tone}`}>
+            <p className="mb-1.5 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/70">
               {t.icon}{t.label}
             </p>
-            <p className="min-h-[64px] text-[11.5px] leading-snug">{t.body}</p>
-            <div className="mt-2 border-t border-border/40 pt-1.5">
-              <p className="text-[10.5px] text-muted-foreground mb-1">Suggested task</p>
+            <p className="text-[12px] leading-snug text-foreground/90 sm:min-h-[64px] sm:text-[11.5px]">{t.body}</p>
+            <div className="mt-2 border-t border-foreground/15 pt-1.5">
+              <p className="mb-1 text-[10.5px] text-foreground/70">Suggested task</p>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => addAction(t.key, t.action)}
                 disabled={!!added[t.key]}
-                className="h-auto w-full justify-start gap-1.5 whitespace-normal px-1.5 py-1 text-left text-[11.5px] leading-tight hover:bg-background/60"
+                className="h-auto w-full justify-start gap-1.5 whitespace-normal px-1.5 py-1 text-left text-[12px] leading-tight text-foreground hover:bg-background/60 sm:text-[11.5px]"
                 aria-label={`Add "${t.action}" to CareFlow`}
               >
                 {added[t.key]
