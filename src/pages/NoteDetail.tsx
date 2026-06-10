@@ -54,6 +54,13 @@ export default function NoteDetail() {
   const coverDragRef = useRef<{ startY: number; startPos: number; height: number } | null>(null);
   const [editorPrefs] = useEditorPrefs();
 
+  const titleSizeClasses: Record<NoteTitleSize, string> = {
+    small: "text-lg md:text-xl",
+    medium: "text-xl md:text-2xl",
+    large: "text-2xl md:text-3xl",
+  };
+  const titleCls = titleSizeClasses[editorPrefs.titleSize] ?? titleSizeClasses.medium;
+
   useEffect(() => {
     if (!id) return;
     void getNote(id).then(n => {
