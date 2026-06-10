@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 import {
@@ -93,7 +94,10 @@ export function NoteIconPicker({
           {recent.length > 0 && !q && (
             <Section title="Recent">
               <Grid
-                items={recent.map((n) => ({ name: n, label: n, category: "Symbols" as IconCategory, tags: [] }))}
+                items={recent.map((n) => {
+                  const entry = NOTE_ICONS.find((e) => e.name === n);
+                  return { name: n, label: entry?.label ?? n, description: entry?.description, category: "Symbols" as IconCategory, tags: [] };
+                })}
                 active={value}
                 onPick={pick}
               />
@@ -129,7 +133,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Grid({
   items, active, onPick,
 }: {
-  items: { name: string; label: string }[];
+  items: { name: string; label: string; description?: string }[];
   active: string | null;
   onPick: (name: string) => void;
 }) {
@@ -138,19 +142,27 @@ function Grid({
       {items.map((it) => {
         const Icon = getLucideIcon(it.name);
         const isActive = active === it.name;
+        const tooltipContent = it.description
+          ? `${it.label} — ${it.description}`
+          : it.label;
         return (
-          <button
-            key={it.name}
-            type="button"
-            onClick={() => onPick(it.name)}
-            title={it.label}
-            className={cn(
-              "grid h-8 w-8 place-items-center rounded-md text-foreground transition-colors hover:bg-muted/70",
-              isActive && "bg-primary/15 text-primary ring-1 ring-primary/40",
-            )}
-          >
-            <Icon className="h-4 w-4" />
-          </button>
+          <Tooltip key={it.name} delayDuration={300}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => onPick(it.name)}
+                className={cn(
+                  "grid h-8 w-8 place-items-center rounded-md text-foreground transition-colors hover:bg-muted/70",
+                  isActive && "bg-primary/15 text-primary ring-1 ring-primary/40",
+                )}
+              >
+                <Icon className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[200px] text-xs leading-snug">
+              {tooltipContent}
+            </TooltipContent>
+          </Tooltip>
         );
       })}
     </div>

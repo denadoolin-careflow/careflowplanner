@@ -19,6 +19,7 @@ export type IconCategory =
 export interface IconEntry {
   name: string;          // Lucide PascalCase name
   label: string;         // human-readable
+  description?: string;    // tooltip / hover explanation (mainly for astrology)
   category: IconCategory;
   tags: string[];        // search keywords
 }
@@ -139,28 +140,28 @@ export const NOTE_ICONS: IconEntry[] = [
   { name: "Globe",         label: "Web",       category: "Symbols", tags: ["globe","web","world"] },
 
   // Astrology — planets
-  { name: "Mercury",       label: "Mercury",   category: "Astrology", tags: ["mercury","planet","astrology"] },
-  { name: "Venus",         label: "Venus",     category: "Astrology", tags: ["venus","planet","astrology"] },
-  { name: "Mars",          label: "Mars",      category: "Astrology", tags: ["mars","planet","astrology"] },
-  { name: "Jupiter",       label: "Jupiter",   category: "Astrology", tags: ["jupiter","planet","astrology"] },
-  { name: "Saturn",        label: "Saturn",    category: "Astrology", tags: ["saturn","planet","astrology"] },
-  { name: "Uranus",        label: "Uranus",    category: "Astrology", tags: ["uranus","planet","astrology"] },
-  { name: "Neptune",       label: "Neptune",   category: "Astrology", tags: ["neptune","planet","astrology"] },
-  { name: "Pluto",         label: "Pluto",     category: "Astrology", tags: ["pluto","planet","astrology"] },
+  { name: "Mercury",       label: "Mercury",   description: "Communication, mind, intellect, travel, and commerce.", category: "Astrology", tags: ["mercury","planet","astrology"] },
+  { name: "Venus",         label: "Venus",     description: "Love, beauty, harmony, pleasure, and values.", category: "Astrology", tags: ["venus","planet","astrology"] },
+  { name: "Mars",          label: "Mars",      description: "Action, drive, courage, aggression, and passion.", category: "Astrology", tags: ["mars","planet","astrology"] },
+  { name: "Jupiter",       label: "Jupiter",   description: "Expansion, luck, wisdom, growth, and abundance.", category: "Astrology", tags: ["jupiter","planet","astrology"] },
+  { name: "Saturn",        label: "Saturn",    description: "Discipline, responsibility, structure, and karma.", category: "Astrology", tags: ["saturn","planet","astrology"] },
+  { name: "Uranus",        label: "Uranus",    description: "Innovation, rebellion, sudden change, and freedom.", category: "Astrology", tags: ["uranus","planet","astrology"] },
+  { name: "Neptune",       label: "Neptune",   description: "Dreams, intuition, spirituality, illusion, and transcendence.", category: "Astrology", tags: ["neptune","planet","astrology"] },
+  { name: "Pluto",         label: "Pluto",     description: "Transformation, power, rebirth, and the subconscious.", category: "Astrology", tags: ["pluto","planet","astrology"] },
 
   // Astrology — zodiac
-  { name: "Aries",         label: "Aries",     category: "Astrology", tags: ["aries","zodiac","astrology","fire"] },
-  { name: "Taurus",        label: "Taurus",    category: "Astrology", tags: ["taurus","zodiac","astrology","earth"] },
-  { name: "Gemini",        label: "Gemini",    category: "Astrology", tags: ["gemini","zodiac","astrology","air"] },
-  { name: "Cancer",        label: "Cancer",    category: "Astrology", tags: ["cancer","zodiac","astrology","water"] },
-  { name: "Leo",           label: "Leo",       category: "Astrology", tags: ["leo","zodiac","astrology","fire"] },
-  { name: "Virgo",         label: "Virgo",     category: "Astrology", tags: ["virgo","zodiac","astrology","earth"] },
-  { name: "Libra",         label: "Libra",     category: "Astrology", tags: ["libra","zodiac","astrology","air"] },
-  { name: "Scorpio",       label: "Scorpio",   category: "Astrology", tags: ["scorpio","zodiac","astrology","water"] },
-  { name: "Sagittarius",   label: "Sagittarius", category: "Astrology", tags: ["sagittarius","zodiac","astrology","fire"] },
-  { name: "Capricorn",     label: "Capricorn", category: "Astrology", tags: ["capricorn","zodiac","astrology","earth"] },
-  { name: "Aquarius",      label: "Aquarius",  category: "Astrology", tags: ["aquarius","zodiac","astrology","air"] },
-  { name: "Pisces",        label: "Pisces",    category: "Astrology", tags: ["pisces","zodiac","astrology","water"] },
+  { name: "Aries",         label: "Aries",     description: "The Ram — initiator, bold, competitive, and courageous.", category: "Astrology", tags: ["aries","zodiac","astrology","fire"] },
+  { name: "Taurus",        label: "Taurus",    description: "The Bull — stable, sensual, determined, and loyal.", category: "Astrology", tags: ["taurus","zodiac","astrology","earth"] },
+  { name: "Gemini",        label: "Gemini",    description: "The Twins — curious, adaptable, communicative, and witty.", category: "Astrology", tags: ["gemini","zodiac","astrology","air"] },
+  { name: "Cancer",        label: "Cancer",    description: "The Crab — nurturing, emotional, protective, and intuitive.", category: "Astrology", tags: ["cancer","zodiac","astrology","water"] },
+  { name: "Leo",           label: "Leo",       description: "The Lion — charismatic, creative, generous, and confident.", category: "Astrology", tags: ["leo","zodiac","astrology","fire"] },
+  { name: "Virgo",         label: "Virgo",     description: "The Virgin — analytical, helpful, detail-oriented, and practical.", category: "Astrology", tags: ["virgo","zodiac","astrology","earth"] },
+  { name: "Libra",         label: "Libra",     description: "The Scales — diplomatic, fair, charming, and relationship-focused.", category: "Astrology", tags: ["libra","zodiac","astrology","air"] },
+  { name: "Scorpio",       label: "Scorpio",   description: "The Scorpion — intense, magnetic, transformative, and deep.", category: "Astrology", tags: ["scorpio","zodiac","astrology","water"] },
+  { name: "Sagittarius",   label: "Sagittarius", description: "The Archer — adventurous, philosophical, optimistic, and free-spirited.", category: "Astrology", tags: ["sagittarius","zodiac","astrology","fire"] },
+  { name: "Capricorn",     label: "Capricorn", description: "The Goat — ambitious, disciplined, patient, and goal-oriented.", category: "Astrology", tags: ["capricorn","zodiac","astrology","earth"] },
+  { name: "Aquarius",      label: "Aquarius",  description: "The Water-Bearer — visionary, independent, humanitarian, and unconventional.", category: "Astrology", tags: ["aquarius","zodiac","astrology","air"] },
+  { name: "Pisces",        label: "Pisces",    description: "The Fish — compassionate, imaginative, empathic, and dreamy.", category: "Astrology", tags: ["pisces","zodiac","astrology","water"] },
 ];
 
 export const NOTE_ICON_CATEGORIES: IconCategory[] = [

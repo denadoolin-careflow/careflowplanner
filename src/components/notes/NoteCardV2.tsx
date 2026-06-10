@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Pin, Link2, Check, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
+import { resolveNoteIcon, getLucideIcon, NOTE_ICONS } from "@/lib/note-icons";
 import { getNoteCoverCss } from "@/lib/note-covers";
 import { fallbackColorFor } from "@/lib/tags";
 import type { Note } from "@/lib/notes";
@@ -14,6 +14,7 @@ import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
 import { NoteIconPicker } from "@/components/notes/NoteIconPicker";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 function countLinks(body: string): number {
@@ -101,7 +102,12 @@ export function NoteCardV2({
   const title = note.kind === "daily" && note.date
     ? format(parseISO(note.date), "EEEE, MMM d")
     : (note.title || "Untitled");
-  const Icon = getLucideIcon(resolveNoteIcon(note));
+  const resolvedIconName = resolveNoteIcon(note);
+  const Icon = getLucideIcon(resolvedIconName);
+  const iconEntry = NOTE_ICONS.find((e) => e.name === resolvedIconName);
+  const iconTooltip = iconEntry?.description
+    ? `${iconEntry.label} — ${iconEntry.description}`
+    : iconEntry?.label;
   const gradient = !note.coverUrl ? getNoteCoverCss(note.coverGradient) : null;
   const linkCount = countLinks(note.body);
   const wordCount = note.body ? note.body.split(/\s+/).filter(Boolean).length : 0;
@@ -195,9 +201,18 @@ export function NoteCardV2({
           </>
         ) : (
           <>
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Icon className="h-3.5 w-3.5" />
-            </span>
+            <Tooltip delayDuration={400}>
+              <TooltipTrigger asChild>
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary cursor-help">
+                  <Icon className="h-3.5 w-3.5" />
+                </span>
+              </TooltipTrigger>
+              {iconTooltip && (
+                <TooltipContent side="top" className="max-w-[220px] text-xs leading-snug">
+                  {iconTooltip}
+                </TooltipContent>
+              )}
+            </Tooltip>
             <h3 className="line-clamp-2 flex-1 font-display text-[15px] font-semibold leading-snug">{title}</h3>
             {note.pinned && <Pin className="mt-1 h-3.5 w-3.5 shrink-0 fill-current text-amber-500" />}
           </>
