@@ -48,7 +48,8 @@ export type WidgetType =
   | "low-stock"
   | "transits-today"
   | "lunar-planner"
-  | "carey-snapshot";
+  | "carey-snapshot"
+  | "transit-remember";
 
 export interface WidgetInstance {
   id: string;
