@@ -77,7 +77,7 @@ export function NoteCardV2({
   const wordCount = note.body ? note.body.split(/\s+/).filter(Boolean).length : 0;
 
   return (
-    <NoteHoverPreview note={note} tagsByName={tagsByName}>
+    <NoteHoverPreview note={note} tagsByName={tagsByName} onOpen={handleOpen} onEdit={handleEdit} onDelete={handleDelete}>
     <button
       type="button"
       onClick={() => onSelect?.(note.id)}
