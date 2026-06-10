@@ -929,6 +929,21 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             </div>
           </div>
         )}
+        {!forceExpanded && collapsed && (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setCollapsed(c => !c)}
+                aria-label="Expand sidebar"
+                className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <PanelLeftOpen className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Expand sidebar</TooltipContent>
+          </Tooltip>
+        )}
         {!forceExpanded && !collapsed && !compact && (
           <>
             <Tooltip delayDuration={150}>
@@ -1029,21 +1044,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         collapsed ? "items-center gap-1.5 flex-1 min-h-0" : "gap-1 pr-1",
       )}>
         {/* Things-style Lists rail */}
-        {collapsed ? (
-          <div className="flex flex-col items-center gap-1.5">
-            {LISTS.map(({ to, label, icon: Icon, paletteIndex }) => (
-              <RailButton
-                key={to}
-                to={to}
-                label={label}
-                icon={Icon}
-                accentColor={paletteColor(atmosphere.palette, paletteIndex)}
-                onClick={handleNavClick(to)}
-              />
-            ))}
-            <RailDivider />
-          </div>
-        ) : (
+        {!collapsed && (
           <div className="mb-3 flex flex-col gap-1">
             {LISTS.map(({ to, label, icon: Icon, paletteIndex }) => (
               <NavLink
@@ -1076,7 +1077,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         )}
 
         {/* Pinned + quick-date jump sections (live right under Logbook) */}
-        {sections.pinnedNotes && (
+        {!collapsed && sections.pinnedNotes && (
           <PinnedNotesSection
             collapsed={collapsed}
             open={openMap["pinned-notes"] !== false}
@@ -1085,7 +1086,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             pathname={pathname}
           />
         )}
-        {sections.pinnedTags && (
+        {!collapsed && sections.pinnedTags && (
           <PinnedTagsSection
             collapsed={collapsed}
             open={openMap["pinned-tags"] !== false}
@@ -1114,7 +1115,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             onPickDate={jumpToDay}
           />
         )}
-        {sections.astrology && (
+        {!collapsed && sections.astrology && (
           <AstrologySection
             collapsed={collapsed}
             open={openMap["astrology"] !== false}
@@ -1354,16 +1355,6 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   accentColor={accent.color}
                   onClick={handleNavClick(`/flow/${group.id}`)}
                 />
-                {group.items.map(({ to, label, icon: Icon }) => (
-                  <RailButton
-                    key={to}
-                    to={to}
-                    label={label}
-                    icon={Icon}
-                    end={to === "/"}
-                    onClick={handleNavClick(to)}
-                  />
-                ))}
                 {idx < orderedGroups.length - 1 && <RailDivider />}
               </div>
             );
