@@ -31,6 +31,7 @@ type Item = {
   vote_count: number;
   changelog_id: string | null;
   shipped_at: string | null;
+  changelog_published?: boolean | null;
 };
 
 const columns: { key: Status; label: string }[] = [
