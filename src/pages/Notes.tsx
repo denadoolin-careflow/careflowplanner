@@ -554,12 +554,13 @@ function BoardView({
 /* -------------------- timeline view -------------------- */
 
 function TimelineView({
-  notes, tagsByName, onSelect, selectedId,
+  notes, tagsByName, onSelect, selectedId, onDelete,
 }: {
   notes: Note[];
   tagsByName: Map<string, Tag>;
   onSelect: (id: string) => void;
   selectedId: string | null;
+  onDelete?: (id: string) => void;
 }) {
   const byDay: Record<string, Note[]> = {};
   for (const n of notes) {
