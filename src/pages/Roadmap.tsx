@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Map as MapIcon, ChevronUp, Check, KanbanSquare, CalendarRange, CalendarDays } from "lucide-react";
+import { Sparkles, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO, startOfMonth } from "date-fns";
 import {
@@ -68,6 +69,12 @@ export default function Roadmap() {
     publish: boolean;
     saving: boolean;
   }>(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<Array<{
+    item: Item;
+    matches: Array<{ id: string; title: string; summary: string | null; published: boolean; score: number }>;
+  }>>([]);
 
   useEffect(() => {
     document.title = "Roadmap · CareFlow";
@@ -188,6 +195,63 @@ export default function Roadmap() {
     load();
   }
 
+  function tokenize(s: string): Set<string> {
+    return new Set(
+      s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((t) => t.length > 2)
+    );
+  }
+  function similarity(a: string, b: string): number {
+    const A = tokenize(a), B = tokenize(b);
+    if (!A.size || !B.size) return 0;
+    let inter = 0;
+    A.forEach((t) => { if (B.has(t)) inter++; });
+    return inter / (A.size + B.size - inter);
+  }
+
+  async function openSuggestions() {
+    setSuggestOpen(true);
+    setSuggestLoading(true);
+    const notLinked = items.filter((i) => i.status === "shipped" && !i.changelog_id);
+    const linkedIds = new Set(items.map((i) => i.changelog_id).filter(Boolean) as string[]);
+    const { data: cl, error } = await supabase
+      .from("changelog")
+      .select("id,title,summary,published,created_at")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (error) { toast.error(error.message); setSuggestLoading(false); return; }
+    const candidates = (cl ?? []).filter((c: any) => !linkedIds.has(c.id));
+    const results = notLinked.map((item) => {
+      const scored = candidates
+        .map((c: any) => ({
+          id: c.id as string,
+          title: c.title as string,
+          summary: (c.summary ?? null) as string | null,
+          published: !!c.published,
+          score: similarity(
+            `${item.title} ${item.description ?? ""}`,
+            `${c.title} ${c.summary ?? ""}`
+          ),
+        }))
+        .filter((s) => s.score > 0.08)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
+      return { item, matches: scored };
+    });
+    setSuggestions(results);
+    setSuggestLoading(false);
+  }
+
+  async function linkSuggestion(itemId: string, changelogId: string) {
+    const { error } = await supabase
+      .from("roadmap_items")
+      .update({ changelog_id: changelogId })
+      .eq("id", itemId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Linked to changelog");
+    setSuggestions((s) => s.filter((x) => x.item.id !== itemId));
+    load();
+  }
+
   async function toggleVote(item: Item) {
     if (!userId) {
       toast.error("Sign in to vote");
@@ -255,9 +319,15 @@ export default function Roadmap() {
 
             <TabsContent value="kanban">
               {isAdmin && (
-                <p className="mb-3 text-xs text-muted-foreground">
-                  Drag cards between columns to update status. Target quarter updates automatically.
-                </p>
+                <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
+                  <p className="text-xs text-muted-foreground">
+                    Drag cards between columns to update status. Target quarter updates automatically.
+                  </p>
+                  <Button size="sm" variant="outline" onClick={openSuggestions}>
+                    <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                    Auto-link suggestions
+                  </Button>
+                </div>
               )}
               <div className="grid gap-6 md:grid-cols-3">
                 {columns.map((col) => {
@@ -371,6 +441,67 @@ export default function Roadmap() {
             <Button disabled={shipDialog?.saving || !shipDialog?.title.trim()} onClick={confirmShip}>
               {shipDialog?.saving ? "Shipping…" : shipDialog?.publish ? "Ship & publish" : "Ship as draft"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={suggestOpen} onOpenChange={(o) => !o && setSuggestOpen(false)}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Auto-link suggestions</DialogTitle>
+            <DialogDescription>
+              Proposed changelog matches for shipped roadmap items that aren't linked yet. Review and link the best fit.
+            </DialogDescription>
+          </DialogHeader>
+          {suggestLoading ? (
+            <p className="text-sm text-muted-foreground">Scanning…</p>
+          ) : suggestions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nothing to suggest — every shipped item is already linked.
+            </p>
+          ) : (
+            <ul className="space-y-4">
+              {suggestions.map(({ item, matches }) => (
+                <li key={item.id} className="rounded-lg border border-border p-3">
+                  <div className="mb-2">
+                    <div className="text-sm font-medium">{item.title}</div>
+                    {item.description && (
+                      <div className="text-xs text-muted-foreground line-clamp-2">{item.description}</div>
+                    )}
+                  </div>
+                  {matches.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No likely matches found.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {matches.map((m) => (
+                        <li key={m.id} className="flex items-start gap-2 rounded-md border border-border/60 bg-card/50 p-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium truncate">{m.title}</span>
+                              <Badge variant="secondary" className="text-[10px]">
+                                {Math.round(m.score * 100)}% match
+                              </Badge>
+                              {!m.published && (
+                                <Badge variant="outline" className="text-[10px]">Draft</Badge>
+                              )}
+                            </div>
+                            {m.summary && (
+                              <div className="text-xs text-muted-foreground line-clamp-2">{m.summary}</div>
+                            )}
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => linkSuggestion(item.id, m.id)}>
+                            <Link2 className="h-3 w-3 mr-1" />Link
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSuggestOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
