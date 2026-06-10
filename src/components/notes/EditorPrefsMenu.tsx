@@ -8,6 +8,7 @@ import {
   useEditorPrefs,
   type EditorDensity,
   type EditorWidth,
+  type NoteTitleSize,
 } from "@/lib/editor-prefs";
 
 const DENSITIES: { id: EditorDensity; label: string }[] = [
