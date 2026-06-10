@@ -161,14 +161,8 @@ function DueNextPreview({ tasks, slotLabel }: { tasks: Task[]; slotLabel: string
 export function HeaderNowStrip({ className }: { className?: string }) {
   useEnsureWeather();
   const { atmosphere } = useAtmosphere();
-  const chipStyle = {
-    backgroundColor: atmoColor(atmosphere.palette, 2, 0.35),
+  const chipBorder = {
     borderColor: atmoColor(atmosphere.palette, 1, 0.45),
-    color: atmoColor(atmosphere.palette, 4, 1),
-  } as React.CSSProperties;
-  const chipMutedStyle = {
-    backgroundColor: atmoColor(atmosphere.palette, 2, 0.25),
-    borderColor: atmoColor(atmosphere.palette, 1, 0.35),
   } as React.CSSProperties;
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
