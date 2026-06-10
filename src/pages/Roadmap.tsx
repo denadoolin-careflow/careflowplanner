@@ -7,6 +7,16 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Map as MapIcon, ChevronUp, Check, KanbanSquare, CalendarRange, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO, startOfMonth } from "date-fns";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 type Status = "planned" | "in_progress" | "shipped" | "cancelled";
 type Category = "new" | "improved" | "fixed" | "announcement";
@@ -49,6 +59,14 @@ export default function Roadmap() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<Status | null>(null);
+  const [shipDialog, setShipDialog] = useState<null | {
+    item: Item;
+    title: string;
+    summary: string;
+    category: Category;
+    publish: boolean;
+    saving: boolean;
+  }>(null);
 
   useEffect(() => {
     document.title = "Roadmap · CareFlow";
@@ -95,28 +113,63 @@ export default function Roadmap() {
     if (!item || item.status === targetStatus) return;
     if (!isAdmin) { toast.error("Admin only"); return; }
 
+    if (targetStatus === "shipped") {
+      // Open confirmation modal to review changelog draft before shipping.
+      setShipDialog({
+        item,
+        title: item.title,
+        summary: item.description ?? "",
+        category: item.category,
+        publish: false,
+        saving: false,
+      });
+      return;
+    }
+
     const prev = items;
-    const nextQuarter = targetStatus === "shipped" ? item.target_quarter : currentQuarter();
+    const nextQuarter = currentQuarter();
     setItems((arr) =>
       arr.map((i) =>
         i.id === id
-          ? { ...i, status: targetStatus, target_quarter: nextQuarter, shipped_at: targetStatus === "shipped" ? new Date().toISOString() : i.shipped_at }
+          ? { ...i, status: targetStatus, target_quarter: nextQuarter, shipped_at: i.status === "shipped" ? null : i.shipped_at }
           : i
       )
     );
 
-    if (targetStatus === "shipped") {
-      const { error } = await supabase.rpc("ship_roadmap_item", { _id: id, _publish: false });
-      if (error) { toast.error(error.message); setItems(prev); return; }
-      toast.success("Shipped — draft changelog created");
-    } else {
-      const patch: { status: Status; target_quarter?: string | null; shipped_at?: string | null } = { status: targetStatus };
-      if (!item.target_quarter || item.status === "shipped") patch.target_quarter = currentQuarter();
-      if (item.status === "shipped") patch.shipped_at = null;
-      const { error } = await supabase.from("roadmap_items").update(patch).eq("id", id);
-      if (error) { toast.error(error.message); setItems(prev); return; }
-      toast.success(`Moved to ${targetStatus.replace("_", " ")}`);
+    const patch: { status: Status; target_quarter?: string | null; shipped_at?: string | null } = { status: targetStatus };
+    if (!item.target_quarter || item.status === "shipped") patch.target_quarter = currentQuarter();
+    if (item.status === "shipped") patch.shipped_at = null;
+    const { error } = await supabase.from("roadmap_items").update(patch).eq("id", id);
+    if (error) { toast.error(error.message); setItems(prev); return; }
+    toast.success(`Moved to ${targetStatus.replace("_", " ")}`);
+  }
+
+  async function confirmShip() {
+    if (!shipDialog) return;
+    const { item, title, summary, category, publish } = shipDialog;
+    setShipDialog({ ...shipDialog, saving: true });
+
+    // 1) Apply any edits to the roadmap item so the RPC uses the latest text.
+    const { error: updErr } = await supabase
+      .from("roadmap_items")
+      .update({ title, description: summary || null, category })
+      .eq("id", item.id);
+    if (updErr) {
+      toast.error(updErr.message);
+      setShipDialog({ ...shipDialog, saving: false });
+      return;
     }
+
+    // 2) Ship — creates/updates the linked changelog entry.
+    const { error } = await supabase.rpc("ship_roadmap_item", { _id: item.id, _publish: publish });
+    if (error) {
+      toast.error(error.message);
+      setShipDialog({ ...shipDialog, saving: false });
+      return;
+    }
+    toast.success(publish ? "Shipped & published" : "Shipped — draft changelog created");
+    setShipDialog(null);
+    load();
   }
 
   async function toggleVote(item: Item) {
@@ -242,6 +295,69 @@ export default function Roadmap() {
           </Tabs>
         )}
       </div>
+
+      <Dialog open={!!shipDialog} onOpenChange={(o) => !o && !shipDialog?.saving && setShipDialog(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Ship to changelog</DialogTitle>
+            <DialogDescription>
+              Review the draft changelog entry before it's created. You can edit the text or publish it now.
+            </DialogDescription>
+          </DialogHeader>
+          {shipDialog && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="ship-title">Title</Label>
+                <Input
+                  id="ship-title"
+                  value={shipDialog.title}
+                  onChange={(e) => setShipDialog({ ...shipDialog, title: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ship-summary">Summary</Label>
+                <Textarea
+                  id="ship-summary"
+                  rows={4}
+                  value={shipDialog.summary}
+                  onChange={(e) => setShipDialog({ ...shipDialog, summary: e.target.value })}
+                  placeholder="What changed?"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Category</Label>
+                <Select
+                  value={shipDialog.category}
+                  onValueChange={(v: Category) => setShipDialog({ ...shipDialog, category: v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="improved">Improved</SelectItem>
+                    <SelectItem value="fixed">Fixed</SelectItem>
+                    <SelectItem value="announcement">Announcement</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={shipDialog.publish}
+                  onCheckedChange={(c) => setShipDialog({ ...shipDialog, publish: !!c })}
+                />
+                Publish immediately (otherwise saved as a draft in /admin/updates)
+              </label>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" disabled={shipDialog?.saving} onClick={() => setShipDialog(null)}>
+              Cancel
+            </Button>
+            <Button disabled={shipDialog?.saving || !shipDialog?.title.trim()} onClick={confirmShip}>
+              {shipDialog?.saving ? "Shipping…" : shipDialog?.publish ? "Ship & publish" : "Ship as draft"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
