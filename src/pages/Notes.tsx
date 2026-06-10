@@ -421,12 +421,13 @@ export default function Notes() {
 /* -------------------- list view -------------------- */
 
 function ListView({
-  notes, selectedId, onSelect, tagsByName,
+  notes, selectedId, onSelect, tagsByName, onDelete,
 }: {
   notes: Note[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   tagsByName: Map<string, Tag>;
+  onDelete?: (id: string) => void;
 }) {
   return (
     <div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/60 bg-card/60">
