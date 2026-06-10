@@ -11,7 +11,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
 import { InteractiveNoteMarkdown } from "@/components/notes/InteractiveNoteMarkdown";
 
 interface TransitItem {
