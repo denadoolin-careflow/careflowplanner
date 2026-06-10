@@ -5,7 +5,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, FileText, BookOpen, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Link as RLink, useNavigate } from "react-router-dom";
 import type { CosmicEvent } from "@/lib/cosmic/events";
 import { copyForEvent, houseOverlayLine } from "@/lib/cosmic/transit-copy";
 import { elementFor, fourFoldFor, themesFor, intensityFor } from "@/lib/cosmic/event-meta";
@@ -23,6 +27,9 @@ interface Props {
 
 export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
   const { row } = useBirthChart();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [stubbing, setStubbing] = useState<null | "note" | "journal">(null);
   const date = event ? parseISO(event.date) : null;
   const el = event && date ? elementFor(event, date) : null;
   const copy = useMemo(() => event ? copyForEvent(event) : null, [event]);
@@ -30,6 +37,70 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
   const themes = event ? themesFor(event) : null;
   const intensity = event ? intensityFor(event) : 0;
   const natalHouse = event && date ? natalHouseForEvent(event, date, row ?? null) : undefined;
+
+  const createStub = async (kind: "note" | "journal") => {
+    if (!event || !copy) return;
+    setStubbing(kind);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u?.user) {
+        toast({ title: "Sign in to save", description: "Stubs save to your account." });
+        return;
+      }
+      const houseLine = natalHouse ? `\n\n_${houseOverlayLine(natalHouse)}_` : "";
+      const body = [
+        `**${event.title}**${event.date ? ` · ${event.date}` : ""}`,
+        copy.insight,
+        `> ${copy.journalPrompt}`,
+        houseLine,
+        "",
+      ].filter(Boolean).join("\n\n");
+
+      if (kind === "note") {
+        const { data, error } = await (supabase as any).from("notes").insert({
+          user_id: u.user.id,
+          title: `Transit · ${event.title}`,
+          body,
+          kind: "note",
+          tags: ["cosmic", "transit"],
+          icon: "Sparkles",
+        }).select("id").maybeSingle();
+        if (error) throw error;
+        toast({
+          title: "Note created",
+          description: "Linked to this transit.",
+          action: data?.id ? (
+            <Button size="sm" variant="outline" onClick={() => navigate(`/notes/${data.id}`)}>
+              Open
+            </Button>
+          ) : undefined,
+        });
+      } else {
+        const { data, error } = await (supabase as any).from("journal_entries").insert({
+          user_id: u.user.id,
+          date: event.date ?? new Date().toISOString().slice(0, 10),
+          type: "cosmic",
+          title: event.title,
+          body,
+          tags: ["cosmic", "transit"],
+        }).select("id").maybeSingle();
+        if (error) throw error;
+        if (data?.id) {
+          await (supabase as any).from("cosmic_journal_entries").insert({
+            user_id: u.user.id,
+            journal_entry_id: data.id,
+            event_id: event.id,
+            event_date: event.date ?? null,
+          });
+        }
+        toast({ title: "Journal stub created", description: "Saved to Cosmic Journal." });
+      }
+    } catch (e: any) {
+      toast({ title: "Couldn't save", description: e?.message ?? "Try again", variant: "destructive" });
+    } finally {
+      setStubbing(null);
+    }
+  };
 
   const accent: React.CSSProperties = el
     ? { background: `linear-gradient(180deg, hsl(var(${ELEMENT_VAR[el]}) / 0.16), hsl(var(--card)))` }
@@ -121,6 +192,28 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
                 <h4 className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                   Journal this transit
                 </h4>
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 gap-1.5"
+                    disabled={stubbing !== null}
+                    onClick={() => createStub("note")}
+                  >
+                    {stubbing === "note" ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
+                    Save to Notes
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 gap-1.5"
+                    disabled={stubbing !== null}
+                    onClick={() => createStub("journal")}
+                  >
+                    {stubbing === "journal" ? <Loader2 className="h-3 w-3 animate-spin" /> : <BookOpen className="h-3 w-3" />}
+                    Save to Journal
+                  </Button>
+                </div>
                 <TransitJournalInline
                   eventId={event.id}
                   eventLabel={event.title}
