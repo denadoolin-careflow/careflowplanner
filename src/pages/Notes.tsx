@@ -350,8 +350,8 @@ export default function Notes() {
               </h2>
               <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
                 {pinnedStrip.map(n => (
-                  <div key={n.id} className="w-64 shrink-0">
-                    <NoteCardV2 note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} compact />
+                <div key={n.id} className="w-64 shrink-0">
+                    <NoteCardV2 note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} compact />
                   </div>
                 ))}
               </div>
