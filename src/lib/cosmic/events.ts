@@ -30,6 +30,10 @@ export interface CosmicEvent {
   title: string;            // short label
   subtitle?: string;        // detail
   tone: "soft" | "warm" | "rest" | "warn";
+  /** Aspect name for `kind === "aspect" | "cazimi"`. */
+  aspect?: string;
+  /** Second planet for aspect/cazimi events. */
+  partner?: string;
 }
 
 const PLANETS: Planet[] = ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"];
@@ -186,6 +190,13 @@ export function eventsOnDay(date: Date): CosmicEvent[] {
   out.push(...stationEvents(date));
   const v = vocEvent(date);
   if (v) out.push(v);
+  // Aspects + cazimi between transiting planets (only on closest-to-exact day).
+  try {
+    // Lazy require to avoid circular imports with event-meta.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { aspectEventsOnDay } = require("./aspect-events") as typeof import("./aspect-events");
+    out.push(...aspectEventsOnDay(date));
+  } catch { /* ignore */ }
   return out;
 }
 
