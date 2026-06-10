@@ -156,7 +156,7 @@ export default function Auth() {
 
   return (
     <div
-      className="relative min-h-screen w-full overflow-hidden text-slate-900"
+      className="relative min-h-screen w-full overflow-hidden text-foreground"
       style={{
         background:
           "radial-gradient(60% 50% at 80% 10%, hsl(350 65% 92% / 0.7), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(145 40% 88% / 0.7), transparent 60%), linear-gradient(180deg, hsl(36 55% 96%) 0%, hsl(36 42% 95%) 100%)",
@@ -165,22 +165,22 @@ export default function Auth() {
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
         <Link to="/" className="mb-6 flex flex-col items-center gap-2 text-center">
           <CareFlowMark size={72} />
-          <span className="font-brand text-3xl font-semibold text-slate-900">CareFlow</span>
-          <span className="text-sm tracking-[0.12em] text-slate-600">Plan · Care · Grow</span>
+          <span className="font-brand text-3xl font-semibold text-foreground">CareFlow</span>
+          <span className="text-sm tracking-[0.12em] text-muted-foreground">Plan · Care · Grow</span>
         </Link>
 
         <div className="w-full rounded-3xl border border-border/50 bg-card/85 p-6 shadow-cozy backdrop-blur-md sm:p-8">
           <div className="mb-5 text-center">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-600">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
               {tab === "signin" ? "Welcome back" : "Create your account"}
             </p>
-            <h1 className="mt-1 font-display text-2xl text-slate-900 sm:text-3xl">
+            <h1 className="mt-1 font-display text-2xl text-foreground sm:text-3xl">
               {tab === "signin" ? "Sign in to CareFlow" : "Start your CareFlow"}
             </h1>
           </div>
 
           {inApp && (
-            <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
+            <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
               <div className="mb-1 flex items-center gap-1.5 font-semibold">
                 <ExternalLink className="h-3.5 w-3.5" /> Open in your browser
               </div>
@@ -223,7 +223,7 @@ export default function Auth() {
                 type="button"
                 onClick={sendMagicLink}
                 disabled={busy}
-                className="block w-full text-center text-xs text-slate-600 underline-offset-4 hover:text-slate-900 hover:underline"
+                className="block w-full text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
               >
                 Forgot password? Email me a magic link instead
               </button>
@@ -235,23 +235,23 @@ export default function Auth() {
               <Button className="w-full" disabled={busy} onClick={signUp}>{busy ? "Creating…" : "Create account"}</Button>
             </TabsContent>
           </Tabs>
-          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-slate-600">
+          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
             <div className="h-px flex-1 bg-border" /> or <div className="h-px flex-1 bg-border" />
           </div>
           <Button variant="outline" className="h-11 w-full text-base" disabled={busy} onClick={signInGoogle}>
             Continue with Google
           </Button>
-          <p className="mt-4 text-center text-xs text-slate-600">
+          <p className="mt-4 text-center text-xs text-muted-foreground">
             By continuing you agree to our{" "}
-            <Link to="/terms" className="underline underline-offset-2 hover:text-slate-900">Terms</Link>
+            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">Terms</Link>
             {" "}and{" "}
-            <Link to="/privacy" className="underline underline-offset-2 hover:text-slate-900">Privacy Policy</Link>.
+            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</Link>.
           </p>
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-600">
+        <p className="mt-6 text-center text-xs text-muted-foreground">
           Not ready yet?{" "}
-          <Link to="/waitlist" className="font-medium text-slate-900 underline underline-offset-4">
+          <Link to="/waitlist" className="font-medium text-foreground underline underline-offset-4">
             Join the waitlist
           </Link>
         </p>
