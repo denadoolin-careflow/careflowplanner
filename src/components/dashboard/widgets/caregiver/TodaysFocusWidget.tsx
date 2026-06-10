@@ -12,8 +12,9 @@ import { toast } from "sonner";
 type Mode = "3" | "5" | "all";
 
 export function TodaysFocusWidget() {
-  const { state, toggleTask } = useStore();
+  const { state, toggleTask, updateTask } = useStore();
   const [mode, setMode] = useState<Mode>("3");
+  const [celebrateId, setCelebrateId] = useState<string | null>(null);
   const T = todayISO();
 
   const focus = useMemo(() => {
