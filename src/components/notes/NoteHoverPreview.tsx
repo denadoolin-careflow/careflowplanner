@@ -1,11 +1,13 @@
 import { format, parseISO } from "date-fns";
-import { Pin, Link2, Tag as TagIcon } from "lucide-react";
+import { Pin, Link2, Tag as TagIcon, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Button } from "@/components/ui/button";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { getNoteCoverCss } from "@/lib/note-covers";
 import { fallbackColorFor } from "@/lib/tags";
 import type { Note } from "@/lib/notes";
 import type { Tag } from "@/lib/tags";
+import { toast } from "sonner";
 
 function stripMd(s: string): string {
   if (!s) return "";
@@ -32,12 +34,18 @@ export function NoteHoverPreview({
   children,
   side = "right",
   openDelay = 350,
+  onOpen,
+  onEdit,
+  onDelete,
 }: {
   note: Note;
   tagsByName: Map<string, Tag>;
   children: React.ReactNode;
   side?: "top" | "right" | "bottom" | "left";
   openDelay?: number;
+  onOpen?: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }) {
   const title = note.kind === "daily" && note.date
     ? format(parseISO(note.date), "EEEE, MMM d")
@@ -115,6 +123,42 @@ export function NoteHoverPreview({
               )}
             </div>
           </div>
+
+          {/* Quick actions */}
+          {(onOpen || onEdit || onDelete) && (
+            <div className="flex items-center gap-1 border-t border-border/40 pt-2">
+              {onOpen && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 flex-1 gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); onOpen(note.id); }}
+                >
+                  <ExternalLink className="h-3 w-3" /> Open
+                </Button>
+              )}
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 flex-1 gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); onEdit(note.id); }}
+                >
+                  <Pencil className="h-3 w-3" /> Edit
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 flex-1 gap-1 text-[11px] text-destructive hover:text-destructive"
+                  onClick={(e) => { e.stopPropagation(); onDelete(note.id); }}
+                >
+                  <Trash2 className="h-3 w-3" /> Delete
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </HoverCardContent>
     </HoverCard>
