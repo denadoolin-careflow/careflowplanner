@@ -54,5 +54,6 @@ export function buildSidebarWidgetRegistry(): SidebarWidgetSpec[] {
     { id: "growing-season",   label: "Growing season",   render: () => <GrowingSeasonCard /> },
     { id: "care-loop",        label: "Care loop",        render: () => <CareLoopCard /> },
     { id: "upcoming-events",  label: "Upcoming events",  render: ({ date }) => <UpcomingEventsCard date={date} /> },
+    { id: "transit-remember", label: "Transits to remember", render: () => <TransitRememberWidget /> },
   ];
 }
