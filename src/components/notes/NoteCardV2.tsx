@@ -44,14 +44,29 @@ export function NoteCardV2({
   tagsByName,
   selected,
   onSelect,
+  onDelete,
   compact = false,
 }: {
   note: Note;
   tagsByName: Map<string, Tag>;
   selected?: boolean;
   onSelect?: (id: string) => void;
+  onDelete?: (id: string) => void;
   compact?: boolean;
 }) {
+  const navigate = useNavigate();
+  const handleOpen = (id: string) => onSelect?.(id);
+  const handleEdit = (id: string) => navigate(`/notes/${id}`);
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this note?")) return;
+    try {
+      await deleteNote(id);
+      toast.success("Note deleted");
+      onDelete?.(id);
+    } catch {
+      toast.error("Could not delete note");
+    }
+  };
   const title = note.kind === "daily" && note.date
     ? format(parseISO(note.date), "EEEE, MMM d")
     : (note.title || "Untitled");
