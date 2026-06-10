@@ -332,10 +332,10 @@ function TaskGroup({
                 e.dataTransfer.setData(TASK_DRAG_MIME, t.id);
                 e.dataTransfer.effectAllowed = "move";
               }}
-              className="group flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-muted/40 cursor-grab active:cursor-grabbing"
+              className="group flex items-start gap-2 rounded-lg px-1 py-1.5 hover:bg-muted/40 cursor-grab active:cursor-grabbing"
               title="Drag to another time-of-day slot"
             >
-              <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
+              <GripVertical className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
               <Checkbox checked={t.done} onCheckedChange={() => void onToggle(t.id)} />
               <PriorityFlag task={t} />
               <button
@@ -345,12 +345,12 @@ function TaskGroup({
                   "min-w-0 flex-1 whitespace-normal break-words text-left text-sm leading-snug",
                   t.done && "text-muted-foreground line-through",
                 )}
-                style={{ overflowWrap: "anywhere" }}
+                style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
               >
                 {t.title}
               </button>
               <QuickDayPartButton task={t} />
-              {t.estMinutes ? <span className="text-[10px] text-muted-foreground">{t.estMinutes}m</span> : null}
+              {t.estMinutes ? <span className="mt-0.5 text-[10px] text-muted-foreground">{t.estMinutes}m</span> : null}
             </li>
           ))}
         </ul>
