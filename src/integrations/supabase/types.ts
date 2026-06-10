@@ -6457,6 +6457,42 @@ export type Database = {
         }
         Relationships: []
       }
+      transit_reflections: {
+        Row: {
+          created_at: string
+          event_date: string | null
+          event_id: string
+          event_label: string | null
+          id: string
+          note: string
+          rating: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_date?: string | null
+          event_id: string
+          event_label?: string | null
+          id?: string
+          note?: string
+          rating?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string | null
+          event_id?: string
+          event_label?: string | null
+          id?: string
+          note?: string
+          rating?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       trip_itinerary_items: {
         Row: {
           address: string | null
