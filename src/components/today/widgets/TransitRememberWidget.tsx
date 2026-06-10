@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
+import { InteractiveNoteMarkdown } from "@/components/notes/InteractiveNoteMarkdown";
 
 interface TransitItem {
   id: string;
@@ -271,9 +271,9 @@ export function TransitRememberWidget() {
 
               <div className="max-h-[40vh] overflow-y-auto px-5 py-2">
                 {selected.body ? (
-                  <NoteMarkdownPreview
+                  <InteractiveNoteMarkdown
                     body={selected.body}
-                    maxChars={1200}
+                    onNavigate={() => setSelected(null)}
                     className="text-[12.5px] leading-relaxed"
                   />
                 ) : (
