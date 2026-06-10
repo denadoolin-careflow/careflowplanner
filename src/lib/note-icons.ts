@@ -1,4 +1,5 @@
 import { icons as LucideIcons, StickyNote, type LucideIcon } from "lucide-react";
+import * as Astro from "@/components/icons/AstrologyIcons";
 import type { Note } from "@/lib/notes";
 
 export type IconCategory =
@@ -12,7 +13,8 @@ export type IconCategory =
   | "Money"
   | "Ideas"
   | "Nature"
-  | "Symbols";
+  | "Symbols"
+  | "Astrology";
 
 export interface IconEntry {
   name: string;          // Lucide PascalCase name
@@ -135,10 +137,34 @@ export const NOTE_ICONS: IconEntry[] = [
   { name: "Link",          label: "Link",      category: "Symbols", tags: ["link","url"] },
   { name: "Search",        label: "Search",    category: "Symbols", tags: ["search","find"] },
   { name: "Globe",         label: "Web",       category: "Symbols", tags: ["globe","web","world"] },
+
+  // Astrology — planets
+  { name: "Mercury",       label: "Mercury",   category: "Astrology", tags: ["mercury","planet","astrology"] },
+  { name: "Venus",         label: "Venus",     category: "Astrology", tags: ["venus","planet","astrology"] },
+  { name: "Mars",          label: "Mars",      category: "Astrology", tags: ["mars","planet","astrology"] },
+  { name: "Jupiter",       label: "Jupiter",   category: "Astrology", tags: ["jupiter","planet","astrology"] },
+  { name: "Saturn",        label: "Saturn",    category: "Astrology", tags: ["saturn","planet","astrology"] },
+  { name: "Uranus",        label: "Uranus",    category: "Astrology", tags: ["uranus","planet","astrology"] },
+  { name: "Neptune",       label: "Neptune",   category: "Astrology", tags: ["neptune","planet","astrology"] },
+  { name: "Pluto",         label: "Pluto",     category: "Astrology", tags: ["pluto","planet","astrology"] },
+
+  // Astrology — zodiac
+  { name: "Aries",         label: "Aries",     category: "Astrology", tags: ["aries","zodiac","astrology","fire"] },
+  { name: "Taurus",        label: "Taurus",    category: "Astrology", tags: ["taurus","zodiac","astrology","earth"] },
+  { name: "Gemini",        label: "Gemini",    category: "Astrology", tags: ["gemini","zodiac","astrology","air"] },
+  { name: "Cancer",        label: "Cancer",    category: "Astrology", tags: ["cancer","zodiac","astrology","water"] },
+  { name: "Leo",           label: "Leo",       category: "Astrology", tags: ["leo","zodiac","astrology","fire"] },
+  { name: "Virgo",         label: "Virgo",     category: "Astrology", tags: ["virgo","zodiac","astrology","earth"] },
+  { name: "Libra",         label: "Libra",     category: "Astrology", tags: ["libra","zodiac","astrology","air"] },
+  { name: "Scorpio",       label: "Scorpio",   category: "Astrology", tags: ["scorpio","zodiac","astrology","water"] },
+  { name: "Sagittarius",   label: "Sagittarius", category: "Astrology", tags: ["sagittarius","zodiac","astrology","fire"] },
+  { name: "Capricorn",     label: "Capricorn", category: "Astrology", tags: ["capricorn","zodiac","astrology","earth"] },
+  { name: "Aquarius",      label: "Aquarius",  category: "Astrology", tags: ["aquarius","zodiac","astrology","air"] },
+  { name: "Pisces",        label: "Pisces",    category: "Astrology", tags: ["pisces","zodiac","astrology","water"] },
 ];
 
 export const NOTE_ICON_CATEGORIES: IconCategory[] = [
-  "Writing","Life","Work","Care","Health","Home","Travel","Money","Ideas","Nature","Symbols",
+  "Writing","Life","Work","Care","Health","Home","Travel","Money","Ideas","Nature","Symbols","Astrology",
 ];
 
 /** Keyword → icon. First match wins. */
@@ -215,7 +241,11 @@ export function resolveNoteIcon(note: Pick<Note, "title" | "body" | "kind" | "ic
 export function getLucideIcon(name: string | null | undefined): LucideIcon {
   if (!name) return StickyNote;
   const map = LucideIcons as unknown as Record<string, LucideIcon>;
-  return map[name] ?? StickyNote;
+  const lucide = map[name];
+  if (lucide) return lucide;
+  // Fall back to custom astrology icons
+  const astro = Astro as unknown as Record<string, LucideIcon>;
+  return astro[name] ?? StickyNote;
 }
 
 /* ---------- recent icons ---------- */
