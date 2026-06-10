@@ -1,4 +1,5 @@
 import { icons as LucideIcons, StickyNote, type LucideIcon } from "lucide-react";
+import * as Astro from "@/components/icons/AstrologyIcons";
 import type { Note } from "@/lib/notes";
 
 export type IconCategory =
