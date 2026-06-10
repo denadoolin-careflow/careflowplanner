@@ -52,7 +52,7 @@ export default function Dashboard() {
               >
                 <ElementBadge />
               </button>
-              <PhaseBadge onClick={() => navigate("/cycle")} />
+              <PhaseBadge onClick={() => navigate("/today")} />
             </div>
           </div>
           <div className="flex flex-col items-center gap-2 sm:items-end">
