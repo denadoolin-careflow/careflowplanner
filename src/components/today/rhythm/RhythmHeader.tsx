@@ -86,27 +86,27 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
                 <Sparkles className="h-3 w-3 text-primary" />
                 {personalGreeting(state.settings.name)}
               </p>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-2 py-0.5 text-[11px] text-foreground/80 backdrop-blur">
-                <Clock className="h-3 w-3 text-primary" />
-                <span className="tabular-nums">{format(now, "h:mm a")}</span>
-                {tempStr && (
-                  <>
-                    <span className="text-muted-foreground/50">·</span>
-                    <span className="tabular-nums">{tempStr}</span>
-                    {snap?.conditionLabel && (
-                      <span className="hidden text-muted-foreground sm:inline">
-                        {snap.conditionLabel}
-                      </span>
-                    )}
-                  </>
-                )}
-              </div>
             </div>
-            <h1 className="font-display text-2xl font-semibold leading-none text-foreground sm:text-4xl">
+            <h1 className="font-display text-3xl font-semibold leading-none text-foreground sm:text-5xl">
               Today
             </h1>
+            <div className="mt-1 inline-flex items-center gap-2 text-sm text-foreground/80 sm:text-base">
+              <Clock className="h-4 w-4 text-primary" />
+              <span className="tabular-nums font-medium">{format(now, "h:mm a")}</span>
+              {tempStr && (
+                <>
+                  <span className="text-muted-foreground/50">·</span>
+                  <span className="tabular-nums font-medium">{tempStr}</span>
+                  {snap?.conditionLabel && (
+                    <span className="hidden text-muted-foreground sm:inline">
+                      {snap.conditionLabel}
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <p className="text-xs text-muted-foreground sm:text-sm">
+              <p className="text-sm font-medium text-muted-foreground sm:text-base">
                 {format(date, "EEEE, MMMM d, yyyy")}
               </p>
               <Link
