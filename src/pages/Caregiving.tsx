@@ -16,6 +16,7 @@ import { PersonDashboard } from "@/components/caregiving/PersonDashboard";
 import { CareChoresPanel } from "@/components/caregiving/CareChoresPanel";
 import { PersonMonthlyReport } from "@/components/caregiving/PersonMonthlyReport";
 import { PersonTimeline } from "@/components/caregiving/PersonTimeline";
+import { CaregivingHubSnapshot } from "@/components/caregiving/CaregivingHubSnapshot";
 
 export default function Caregiving() {
   const { state, addCareNote, deleteCareNote } = useStore();
