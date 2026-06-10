@@ -88,7 +88,22 @@ export default function Roadmap() {
       .order("status", { ascending: true })
       .order("vote_count", { ascending: false })
       .order("sort_order", { ascending: true });
-    setItems((data as Item[]) ?? []);
+    let nextItems = (data as Item[]) ?? [];
+
+    // Enrich shipped items with changelog published status for sync badges.
+    const linkedIds = nextItems.map((i) => i.changelog_id).filter(Boolean) as string[];
+    if (linkedIds.length > 0) {
+      const { data: cl } = await supabase
+        .from("changelog")
+        .select("id, published")
+        .in("id", linkedIds);
+      const pubMap = new Map<string, boolean>((cl ?? []).map((r: any) => [r.id as string, r.published as boolean]));
+      nextItems = nextItems.map((i) => ({
+        ...i,
+        changelog_published: i.changelog_id ? pubMap.get(i.changelog_id) ?? null : null,
+      }));
+    }
+    setItems(nextItems);
 
     if (user) {
       const { data: v } = await supabase
