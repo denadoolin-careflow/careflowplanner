@@ -93,7 +93,7 @@ export function PersonalGuidanceGrid({ data, loading, onRefresh, date = new Date
         </Button>
       </header>
 
-      <div className="grid grid-cols-1 gap-2 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         {tiles.map(t => (
           <div key={t.key} className={`rounded-lg border bg-gradient-to-b p-3 text-foreground ${t.tone}`}>
             <p className="mb-1.5 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/70">
