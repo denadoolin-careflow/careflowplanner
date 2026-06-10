@@ -84,32 +84,27 @@ export function SlotWeather({ slot }: { slot: Slot }) {
           {tip && (
             <p className="mt-1.5 text-[11px] italic leading-snug text-muted-foreground">{tip}</p>
           )}
-          {hasData && slotHours.length > 0 && (
-            <div className="mt-2 space-y-1">
+          {hasData && slotHours.length > 0 && (() => {
+            const sampled = slotHours.filter((_, i) => i % 2 === 0);
+            return (
               <div
-                className="grid gap-1"
-                style={{ gridTemplateColumns: `repeat(${slotHours.length}, minmax(0, 1fr))` }}
+                className="mt-2 grid gap-1"
+                style={{ gridTemplateColumns: `repeat(${sampled.length}, minmax(0, 1fr))` }}
               >
-                {slotHours.map(h => (
+                {sampled.map(h => (
                   <div
                     key={h.hour}
-                    className="flex min-w-0 flex-col items-center rounded-lg bg-muted/40 px-1.5 py-1.5 text-[11px] tabular-nums text-muted-foreground"
-                    title={h.conditionLabel}
+                    className="flex min-w-0 flex-col items-center gap-0.5 text-[11px] tabular-nums text-muted-foreground"
+                    title={`${h.conditionLabel}${h.precipChance >= 10 ? ` · ${h.precipChance}% rain` : ""}`}
                   >
                     <span>{h.hour % 12 === 0 ? 12 : h.hour % 12}{h.hour < 12 ? "a" : "p"}</span>
-                    <ConditionIcon condition={h.condition} isNight={h.isNight} className="my-0.5 h-4 w-4 text-foreground/80" />
+                    <ConditionIcon condition={h.condition} isNight={h.isNight} className="h-3.5 w-3.5 text-foreground/70" />
                     <span className="font-medium text-foreground/90">{fmt(h.tempC, unit)}</span>
-                    {h.precipChance >= 10 && (
-                      <span className="text-[10px] text-primary">💧{h.precipChance}%</span>
-                    )}
                   </div>
                 ))}
               </div>
-              {!anyRain && (
-                <p className="px-1 text-[10px] text-muted-foreground">No rain expected</p>
-              )}
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     </div>
