@@ -509,6 +509,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const guess = inferEnergyFromTitle(enriched.title, enriched.notes);
         if (guess) enriched.energy = guess;
       }
+      // Auto-link to a care recipient when their name appears in the title/notes,
+      // so caregiving tasks show up under the matched person's profile automatically.
+      if (!enriched.recipientId && (state.recipients?.length ?? 0) > 0) {
+        const { detectAreaAndProject } = await import("./task-auto-detect");
+        const det = detectAreaAndProject({
+          title: enriched.title,
+          notes: enriched.notes,
+          areas: state.areas,
+          projects: state.projects,
+          recipients: state.recipients,
+        });
+        if (det.recipientId) {
+          enriched.recipientId = det.recipientId;
+          if (!t.area && det.area) enriched.area = det.area as typeof enriched.area;
+        }
+      }
       const { data } = await supabase.from("tasks").insert({ user_id: uid, ...taskTo(enriched) }).select().single();
       if (data) {
         const task = taskFrom(data);
