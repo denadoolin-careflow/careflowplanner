@@ -7,6 +7,7 @@ import { getNoteCoverCss } from "@/lib/note-covers";
 import { fallbackColorFor } from "@/lib/tags";
 import type { Note } from "@/lib/notes";
 import type { Tag } from "@/lib/tags";
+import { NoteHoverPreview } from "@/components/notes/NoteHoverPreview";
 
 function stripMd(s: string): string {
   if (!s) return "";
@@ -59,6 +60,7 @@ export function NoteCardV2({
   const wordCount = note.body ? note.body.split(/\s+/).filter(Boolean).length : 0;
 
   return (
+    <NoteHoverPreview note={note} tagsByName={tagsByName}>
     <button
       type="button"
       onClick={() => onSelect?.(note.id)}
@@ -136,5 +138,6 @@ export function NoteCardV2({
         </div>
       </div>
     </button>
+    </NoteHoverPreview>
   );
 }

@@ -23,6 +23,7 @@ import { todayISO, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { NoteCardV2 } from "@/components/notes/NoteCardV2";
+import { NoteHoverPreview } from "@/components/notes/NoteHoverPreview";
 import { NotesSideNav, applyCollection, type SmartCollectionId } from "@/components/notes/NotesSideNav";
 import { NoteContextRail } from "@/components/notes/NoteContextRail";
 import { NotesStatsRow } from "@/components/notes/NotesStatsRow";
@@ -435,6 +436,7 @@ function ListView({
           ? format(parseISO(n.date), "EEEE, MMM d")
           : (n.title || "Untitled");
         return (
+          <NoteHoverPreview key={n.id} note={n} tagsByName={tagsByName}>
           <button
             key={n.id}
             type="button"
@@ -461,6 +463,7 @@ function ListView({
               {format(parseISO(n.updatedAt), "MMM d")}
             </span>
           </button>
+          </NoteHoverPreview>
         );
       })}
     </div>
