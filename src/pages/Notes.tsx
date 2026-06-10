@@ -541,7 +541,7 @@ function BoardView({
             </div>
             <div className="space-y-2">
               {c.items.map(n => (
-                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} compact />
+                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} onDelete={onDelete} compact />
               ))}
             </div>
           </div>
