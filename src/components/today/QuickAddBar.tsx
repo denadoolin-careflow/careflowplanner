@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Plus, Sunrise, Sun, Moon, ListChecks, UtensilsCrossed, Sparkles, Home, StickyNote } from "lucide-react";
+import { Plus, Sunrise, Sun, Moon, ListChecks, UtensilsCrossed, Sparkles, Home, StickyNote, HeartHandshake } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { createNote } from "@/lib/notes";
+import { detectAreaAndProject } from "@/lib/task-auto-detect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 type Slot = "auto" | "morning" | "afternoon" | "evening";
-type Kind = "task" | "home" | "meal" | "note";
+type Kind = "task" | "home" | "care" | "meal" | "note";
 
 function currentSlot(d = new Date()): Exclude<Slot, "auto"> {
   const h = d.getHours();
@@ -48,6 +50,7 @@ export function QuickAddBar({ date }: { date: Date }) {
   const [kind, setKind] = useState<Kind>("task");
   const [slot, setSlot] = useState<Slot>("auto");
   const [text, setText] = useState("");
+  const [careRecipientId, setCareRecipientId] = useState<string>("auto");
 
   const iso = format(date, "yyyy-MM-dd");
 
@@ -57,10 +60,11 @@ export function QuickAddBar({ date }: { date: Date }) {
     const tokens = tokenize(text);
     if (!tokens.length) return fallback;
     const score: Record<Exclude<Slot, "auto">, number> = { morning: 0, afternoon: 0, evening: 0 };
-    if (kind === "task" || kind === "home") {
+    if (kind === "task" || kind === "home" || kind === "care") {
       for (const t of state.tasks ?? []) {
         if (!t?.dayPart) continue;
         if (kind === "home" && t.area !== "Home") continue;
+        if (kind === "care" && t.area !== "Caregiving") continue;
         const s = DAYPART_TO_SLOT[t.dayPart as string];
         if (!s) continue;
         const hay = tokenize(t.title ?? "");
@@ -99,6 +103,34 @@ export function QuickAddBar({ date }: { date: Date }) {
         area: "Home",
       });
       toast.success(`Added home task → ${SLOT_TO_DAYPART[resolvedSlot]}`);
+    } else if (kind === "care") {
+      let recipientId: string | undefined =
+        careRecipientId !== "auto" ? careRecipientId : undefined;
+      if (!recipientId) {
+        const guess = detectAreaAndProject({
+          title: value,
+          areas: state.areas,
+          projects: state.projects,
+          recipients: state.recipients,
+        });
+        recipientId = guess.recipientId;
+      }
+      await addTask({
+        title: value,
+        dueDate: iso,
+        dayPart: SLOT_TO_DAYPART[resolvedSlot],
+        area: "Caregiving",
+        recipientId,
+      });
+      const name = recipientId
+        ? state.recipients?.find(r => r.id === recipientId)?.name
+        : undefined;
+      toast.success(
+        name
+          ? `Added care task for ${name} → ${SLOT_TO_DAYPART[resolvedSlot]}`
+          : `Added care task → ${SLOT_TO_DAYPART[resolvedSlot]}`,
+      );
+      setCareRecipientId("auto");
     } else if (kind === "meal") {
       await addMeal({ name: value, date: iso, slot: SLOT_TO_MEAL[resolvedSlot] });
       toast.success(`Added ${SLOT_TO_MEAL[resolvedSlot]} → ${value}`);
@@ -123,9 +155,19 @@ export function QuickAddBar({ date }: { date: Date }) {
       className="cozy-card flex flex-wrap items-center gap-1.5 p-2 sm:p-2.5"
     >
       <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5 text-[11px]">
-        {(["task", "home", "meal", "note"] as Kind[]).map(k => {
-          const Icon = k === "task" ? ListChecks : k === "home" ? Home : k === "meal" ? UtensilsCrossed : StickyNote;
-          const label = k === "task" ? "Task" : k === "home" ? "Home" : k === "meal" ? "Meal" : "Note";
+        {(["task", "home", "care", "meal", "note"] as Kind[]).map(k => {
+          const Icon =
+            k === "task" ? ListChecks
+            : k === "home" ? Home
+            : k === "care" ? HeartHandshake
+            : k === "meal" ? UtensilsCrossed
+            : StickyNote;
+          const label =
+            k === "task" ? "Task"
+            : k === "home" ? "Home"
+            : k === "care" ? "Care"
+            : k === "meal" ? "Meal"
+            : "Note";
           return (
             <button
               key={k}
@@ -153,6 +195,8 @@ export function QuickAddBar({ date }: { date: Date }) {
               ? "Add a task to today…"
               : kind === "home"
                 ? "Add a home or cleaning task…"
+              : kind === "care"
+                ? "Add a care task… e.g. Change Aerie's diaper"
               : kind === "meal"
                 ? "Add a meal for today…"
                 : "Add a note…"
@@ -160,6 +204,31 @@ export function QuickAddBar({ date }: { date: Date }) {
           className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
         />
       </div>
+
+      {kind === "care" && (
+        (state.recipients ?? []).length === 0 ? (
+          <button
+            type="button"
+            onClick={() => navigate("/caregiving")}
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-border/60 bg-card/60 px-2.5 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            <HeartHandshake className="h-3 w-3" /> Add a person
+          </button>
+        ) : (
+          <Select value={careRecipientId} onValueChange={setCareRecipientId}>
+            <SelectTrigger className="h-7 w-auto gap-1 rounded-full border-border/60 bg-card/60 px-2.5 text-[11px]">
+              <HeartHandshake className="h-3 w-3 text-muted-foreground" />
+              <SelectValue placeholder="Auto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">Auto-detect</SelectItem>
+              {(state.recipients ?? []).map(r => (
+                <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )
+      )}
 
       <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/60 p-0.5 text-[11px]">
         {(["auto", "morning", "afternoon", "evening"] as Slot[]).map(s => {
