@@ -7087,6 +7087,7 @@ export type Database = {
         Args: { _id: string; _publish?: boolean }
         Returns: string
       }
+      sync_changelog_to_roadmap: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
