@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { format, isToday } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  ChevronDown, Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
+  Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
   Moon, Sun, Zap, CheckCircle2, Circle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -178,12 +178,10 @@ export function HeaderNowStrip({ className }: { className?: string }) {
 
   const snap = useWeatherSnapshot();
   const [unit] = useTempUnit();
-  const [mobileExpanded, setMobileExpanded] = useState(false);
   const navigate = useNavigate();
 
   const time = useMemo(() => format(now, "h:mm a"), [now]);
   const date = useMemo(() => format(now, "EEE, MMM d"), [now]);
-  const shortDate = useMemo(() => format(now, "EEE, MMM d"), [now]);
   const currentSlot = useMemo<"morning" | "afternoon" | "evening">(() => {
     const h = now.getHours();
     if (h < 12) return "morning";
@@ -227,8 +225,8 @@ export function HeaderNowStrip({ className }: { className?: string }) {
 
   return (
     <div className={cn("flex items-center gap-2 text-sm min-w-0", className)}>
-      {/* ───── Mobile (compact + toggle) ───── */}
-      <div className="flex items-center gap-1.5 md:hidden overflow-x-auto no-scrollbar max-w-full flex-nowrap">
+      {/* ───── Mobile (compact chips) ───── */}
+      <div className="flex items-center gap-1 md:hidden overflow-x-auto no-scrollbar max-w-full flex-nowrap">
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -236,11 +234,11 @@ export function HeaderNowStrip({ className }: { className?: string }) {
               aria-label={`Open today's ${slotLabel} tasks`}
               title={`${slotLabel} tasks`}
               style={chipStyle}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 tabular-nums text-xs font-medium hover:brightness-110 transition"
+              className="inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 tabular-nums text-[11px] font-medium hover:brightness-110 transition"
             >
               {time}
               {slotTasks.length > 0 && (
-                <span className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
+                <span className="ml-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[7px] font-bold text-primary-foreground">
                   {slotTasks.length}
                 </span>
               )}
@@ -257,79 +255,20 @@ export function HeaderNowStrip({ className }: { className?: string }) {
                 type="button"
                 style={chipStyle}
                 className={cn(
-                  "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-xs hover:brightness-110 transition ring-1 ring-transparent",
+                  "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] hover:brightness-110 transition ring-1 ring-transparent",
                   ring,
                 )}
                 title={snap.conditionLabel ?? undefined}
                 aria-label={`Weather: ${snap.conditionLabel ?? "unknown"} ${tempStr}`}
               >
-                <CondIcon c={snap.condition} isNight={snap.isNight} className="h-4 w-4" />
+                <CondIcon c={snap.condition} isNight={snap.isNight} className="h-3.5 w-3.5" />
                 <span className="tabular-nums font-medium">{tempStr}</span>
               </button>
             }
           />
         )}
-        <button
-          type="button"
-          onClick={() => setMobileExpanded(v => !v)}
-          aria-expanded={mobileExpanded}
-          aria-label={mobileExpanded ? "Hide date and forecast" : "Show date and forecast"}
-          style={chipMutedStyle}
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border hover:brightness-110 transition"
-        >
-          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", mobileExpanded && "rotate-180")} />
-        </button>
       </div>
 
-      {/* Mobile expanded row — drops under the header */}
-      {mobileExpanded && (
-        <div className="fixed inset-x-0 top-[52px] z-30 border-b border-border/50 bg-background/95 px-3 py-2 shadow-sm backdrop-blur-md md:hidden">
-          <div className="mx-auto flex max-w-screen-sm flex-wrap items-center gap-1.5 text-xs">
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Open today's tasks"
-                  title="Today's tasks"
-                  className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/85 hover:bg-muted/70 transition"
-                >
-                  {shortDate}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="start" sideOffset={6} className="w-auto p-0">
-                <TodayPreview tasks={state.tasks} navigate={navigate} />
-              </PopoverContent>
-            </Popover>
-            {snap && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-1 text-foreground/75">
-                <span className="tabular-nums">{rangeStr}</span>
-                {snap.conditionLabel && <span className="text-foreground/55">· {snap.conditionLabel}</span>}
-              </span>
-            )}
-            {upcoming.length > 0 && (
-              <WeatherDetailPopover
-                trigger={
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-1.5 py-1 text-foreground/80 hover:bg-muted/70 transition"
-                  >
-                    {upcoming.map(d => (
-                      <span key={d.date} className="inline-flex items-center gap-0.5 px-1">
-                        <span className="text-[10px] uppercase tracking-wide text-foreground/55">
-                          {format(d.dateObj, "EEE")}
-                        </span>
-                        <CondIcon c={d.condition} className="h-3.5 w-3.5" />
-                        <span className="tabular-nums text-[11px] font-medium">{fmtT(d.highC)}</span>
-                      </span>
-                    ))}
-                  </button>
-                }
-              />
-            )}
-            <UnitToggle />
-          </div>
-        </div>
-      )}
 
       {/* ───── Desktop / tablet (inline full strip) ───── */}
       <div className="hidden items-center gap-2 md:flex overflow-x-auto no-scrollbar max-w-full flex-nowrap">

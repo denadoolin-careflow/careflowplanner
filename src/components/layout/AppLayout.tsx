@@ -44,21 +44,26 @@ export function AppLayout() {
       <div className="flex w-full">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-border/50 bg-background/70 px-3 py-2 backdrop-blur-md sm:gap-3 sm:px-4 sm:py-3 lg:px-8">
-            <div className="flex min-w-0 items-center gap-2">
+          <header className="sticky top-0 z-20 flex flex-nowrap items-center justify-between gap-2 border-b border-border/50 bg-background/70 px-3 py-2 backdrop-blur-md sm:gap-3 sm:px-4 sm:py-3 lg:px-8">
+            <div className="flex min-w-0 flex-nowrap items-center gap-2">
               <MobileSidebarTrigger />
               <div className="min-w-0">
                 <p className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:block">CareFlow</p>
                 <h1 className="font-display text-base font-semibold leading-tight sm:text-2xl">{current.label}</h1>
               </div>
             </div>
-            {/* Mobile: keep only search + theme. Secondary actions live in sidebar / bottom-nav "More". */}
-            <div className="flex items-center gap-1 sm:gap-3">
+            <div className="flex flex-nowrap items-center gap-1 sm:gap-3">
               <HeaderNowStrip />
               <UniversalSearchBar />
-              <NotificationCenter />
-              <WhatsNewPopover />
-              <HeaderQuickSettings />
+              <div className="hidden sm:block">
+                <NotificationCenter />
+              </div>
+              <div className="hidden md:block">
+                <WhatsNewPopover />
+              </div>
+              <div className="hidden md:block">
+                <HeaderQuickSettings />
+              </div>
               <Link to="/" aria-label="CareFlow home" className="ml-1 hidden sm:inline-flex">
                 <CareFlowLogo size={32} />
               </Link>
