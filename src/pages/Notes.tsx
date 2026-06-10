@@ -17,13 +17,14 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { listNotes, createNote, deleteNote, getOrCreateDailyNote, type Note } from "@/lib/notes";
+import { listNotes, createNote, deleteNote, updateNote, getOrCreateDailyNote, type Note } from "@/lib/notes";
 import { listTags, fallbackColorFor, type Tag } from "@/lib/tags";
 import { todayISO, useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { NoteCardV2 } from "@/components/notes/NoteCardV2";
 import { NoteHoverPreview } from "@/components/notes/NoteHoverPreview";
+import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
 import { NotesSideNav, applyCollection, type SmartCollectionId } from "@/components/notes/NotesSideNav";
 import { NoteContextRail } from "@/components/notes/NoteContextRail";
 import { NotesStatsRow } from "@/components/notes/NotesStatsRow";
@@ -179,6 +180,22 @@ export default function Notes() {
     } catch {
       toast.error("Could not delete note");
     }
+  };
+
+  const handlePinNote = async (id: string, next: boolean) => {
+    try {
+      await updateNote(id, { pinned: next });
+      toast.success(next ? "Pinned" : "Unpinned");
+      await refresh();
+    } catch { toast.error("Could not update pin"); }
+  };
+
+  const handleArchiveNote = async (id: string, next: boolean) => {
+    try {
+      await updateNote(id, { archived: next });
+      toast.success(next ? "Archived" : "Restored");
+      await refresh();
+    } catch { toast.error("Could not update archive"); }
   };
 
   const activeTitle = activeTag
@@ -362,7 +379,7 @@ export default function Notes() {
               <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
                 {pinnedStrip.map(n => (
                 <div key={n.id} className="w-64 shrink-0">
-                    <NoteCardV2 note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} compact />
+                    <NoteCardV2 note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} compact />
                   </div>
                 ))}
               </div>
@@ -384,15 +401,15 @@ export default function Notes() {
             ) : view === "grid" ? (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filtered.map(n => (
-                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} />
+                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} />
                 ))}
               </div>
             ) : view === "list" ? (
-              <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} onDelete={handleDeleteNote} />
+              <ListView notes={filtered} selectedId={noteParam} onSelect={selectNote} tagsByName={tagsByName} onDelete={handleDeleteNote} onPin={handlePinNote} onArchive={handleArchiveNote} />
             ) : view === "board" ? (
-              <BoardView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} onDelete={handleDeleteNote} />
+              <BoardView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} onDelete={handleDeleteNote} onChanged={refresh} />
             ) : view === "timeline" ? (
-              <TimelineView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} onDelete={handleDeleteNote} />
+              <TimelineView notes={filtered} tagsByName={tagsByName} onSelect={selectNote} selectedId={noteParam} onDelete={handleDeleteNote} onChanged={refresh} />
             ) : (
               <CalendarView notes={filtered} onSelectNote={selectNote} />
             )}
@@ -432,13 +449,15 @@ export default function Notes() {
 /* -------------------- list view -------------------- */
 
 function ListView({
-  notes, selectedId, onSelect, tagsByName, onDelete,
+  notes, selectedId, onSelect, tagsByName, onDelete, onPin, onArchive,
 }: {
   notes: Note[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   tagsByName: Map<string, Tag>;
   onDelete?: (id: string) => void;
+  onPin?: (id: string, next: boolean) => void;
+  onArchive?: (id: string, next: boolean) => void;
 }) {
   return (
     <div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/60 bg-card/60">
@@ -455,6 +474,8 @@ function ListView({
             onOpen={onSelect}
             onEdit={onSelect}
             onDelete={onDelete}
+            onPin={onPin}
+            onArchive={onArchive}
           >
           <button
             key={n.id}
@@ -468,8 +489,8 @@ function ListView({
             <Icon className="h-4 w-4 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">{title}</div>
-              <div className="truncate text-xs text-muted-foreground">
-                {n.body?.slice(0, 140) || "Empty"}
+              <div className="line-clamp-1 text-xs text-muted-foreground">
+                <NoteMarkdownPreview body={n.body || ""} maxChars={160} />
               </div>
             </div>
             {n.tags?.slice(0, 2).map(t => {
@@ -492,13 +513,14 @@ function ListView({
 /* -------------------- board view (by tag) -------------------- */
 
 function BoardView({
-  notes, tagsByName, onSelect, selectedId, onDelete,
+  notes, tagsByName, onSelect, selectedId, onDelete, onChanged,
 }: {
   notes: Note[];
   tagsByName: Map<string, Tag>;
   onSelect: (id: string) => void;
   selectedId: string | null;
   onDelete?: (id: string) => void;
+  onChanged?: () => void;
 }) {
   // Build one column per tag in use, plus "Untagged".
   const byTag = new Map<string, Note[]>();
@@ -541,7 +563,7 @@ function BoardView({
             </div>
             <div className="space-y-2">
               {c.items.map(n => (
-                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} onDelete={onDelete} compact />
+                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} onDelete={onDelete} onChanged={onChanged} compact />
               ))}
             </div>
           </div>
@@ -554,13 +576,14 @@ function BoardView({
 /* -------------------- timeline view -------------------- */
 
 function TimelineView({
-  notes, tagsByName, onSelect, selectedId, onDelete,
+  notes, tagsByName, onSelect, selectedId, onDelete, onChanged,
 }: {
   notes: Note[];
   tagsByName: Map<string, Tag>;
   onSelect: (id: string) => void;
   selectedId: string | null;
   onDelete?: (id: string) => void;
+  onChanged?: () => void;
 }) {
   const byDay: Record<string, Note[]> = {};
   for (const n of notes) {
@@ -580,7 +603,7 @@ function TimelineView({
           </div>
           <div className="space-y-2 border-l border-border/50 pl-4">
             {byDay[d].map(n => (
-              <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} onDelete={onDelete} compact />
+              <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={selectedId === n.id} onSelect={onSelect} onDelete={onDelete} onChanged={onChanged} compact />
             ))}
           </div>
         </div>
