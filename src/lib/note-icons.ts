@@ -164,7 +164,7 @@ export const NOTE_ICONS: IconEntry[] = [
 ];
 
 export const NOTE_ICON_CATEGORIES: IconCategory[] = [
-  "Writing","Life","Work","Care","Health","Home","Travel","Money","Ideas","Nature","Symbols",
+  "Writing","Life","Work","Care","Health","Home","Travel","Money","Ideas","Nature","Symbols","Astrology",
 ];
 
 /** Keyword → icon. First match wins. */
