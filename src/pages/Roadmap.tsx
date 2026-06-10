@@ -31,6 +31,7 @@ type Item = {
   vote_count: number;
   changelog_id: string | null;
   shipped_at: string | null;
+  changelog_published?: boolean | null;
 };
 
 const columns: { key: Status; label: string }[] = [
@@ -87,7 +88,22 @@ export default function Roadmap() {
       .order("status", { ascending: true })
       .order("vote_count", { ascending: false })
       .order("sort_order", { ascending: true });
-    setItems((data as Item[]) ?? []);
+    let nextItems = (data as Item[]) ?? [];
+
+    // Enrich shipped items with changelog published status for sync badges.
+    const linkedIds = nextItems.map((i) => i.changelog_id).filter(Boolean) as string[];
+    if (linkedIds.length > 0) {
+      const { data: cl } = await supabase
+        .from("changelog")
+        .select("id, published")
+        .in("id", linkedIds);
+      const pubMap = new Map<string, boolean>((cl ?? []).map((r: any) => [r.id as string, r.published as boolean]));
+      nextItems = nextItems.map((i) => ({
+        ...i,
+        changelog_published: i.changelog_id ? pubMap.get(i.changelog_id) ?? null : null,
+      }));
+    }
+    setItems(nextItems);
 
     if (user) {
       const { data: v } = await supabase
@@ -400,6 +416,21 @@ function ItemCard({
               </span>
             )}
             {isShipped && <Check className="h-3 w-3 text-primary" />}
+            {isShipped && (
+              item.changelog_id == null ? (
+                <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+                  Not linked
+                </span>
+              ) : item.changelog_published === false ? (
+                <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                  Needs review
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+                  Linked
+                </span>
+              )
+            )}
           </div>
           <h3 className="mt-1 text-sm font-medium leading-snug">{item.title}</h3>
           {!compact && item.description && (
