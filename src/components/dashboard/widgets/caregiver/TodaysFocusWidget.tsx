@@ -36,6 +36,19 @@ export function TodaysFocusWidget() {
   const done = focus.filter((t) => t.done).length;
   const pct = total ? (done / total) * 100 : 0;
 
+  const handleToggle = (id: string, wasDone: boolean) => {
+    if (wasDone) { void toggleTask(id); return; }
+    setCelebrateId(id);
+    playCompletionChime();
+    haptics.success?.();
+    toast.success("Big win — focus task done!", {
+      description: pickAffirmation(),
+      duration: 5000,
+      action: { label: "Undo", onClick: () => { haptics.tap?.(); void updateTask(id, { done: false }); } },
+    });
+    window.setTimeout(() => { void toggleTask(id); setCelebrateId(null); }, 1200);
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
