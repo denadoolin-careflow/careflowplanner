@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef } from "react";
 import { format } from "date-fns";
-import { Sunrise, Sun, Moon, ListChecks, Plus, CornerDownLeft, Home, GripVertical } from "lucide-react";
+import { Sunrise, Sun, Moon, ListChecks, Plus, CornerDownLeft, Home, GripVertical, ArrowUpDown, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useStore } from "@/lib/store";
@@ -10,9 +10,31 @@ import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { toast } from "sonner";
 import type { Task } from "@/lib/types";
 import { QuickDayPartButton } from "@/components/tasks/QuickDayPartButton";
+import { PriorityFlag, PRIORITY_RANK } from "@/components/cards/PriorityFlag";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 type Slot = "morning" | "afternoon" | "evening";
 type DayPart = "Morning" | "Afternoon" | "Evening" | "Anytime";
+
+type SortMode = "priority" | "alpha" | "time" | "manual";
+type GroupMode = "area" | "flat";
+
+const SORT_STORAGE_KEY = "today.taskSortMode";
+const GROUP_STORAGE_KEY = "today.taskGroupMode";
+
+function sortTasks(tasks: Task[], mode: SortMode): Task[] {
+  if (mode === "manual") return tasks;
+  const arr = [...tasks];
+  if (mode === "alpha") return arr.sort((a, b) => a.title.localeCompare(b.title));
+  if (mode === "time") return arr.sort((a, b) => (a.estMinutes ?? 0) - (b.estMinutes ?? 0));
+  // priority — top-three first, then high → medium → low
+  return arr.sort((a, b) => {
+    if (!!b.isTopThree !== !!a.isTopThree) return b.isTopThree ? 1 : -1;
+    return PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
+  });
+}
 
 /** Heuristic: task counts as a home/cleaning task. */
 function isHomeTask(t: { area?: string; tags?: string[]; title?: string }) {
@@ -34,6 +56,23 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
   const { state, toggleTask, updateTask, addTask } = useStore();
   const iso = format(date, "yyyy-MM-dd");
 
+  const [sortMode, setSortMode] = useState<SortMode>(() => {
+    if (typeof window === "undefined") return "priority";
+    return (localStorage.getItem(SORT_STORAGE_KEY) as SortMode) || "priority";
+  });
+  const [groupMode, setGroupMode] = useState<GroupMode>(() => {
+    if (typeof window === "undefined") return "area";
+    return (localStorage.getItem(GROUP_STORAGE_KEY) as GroupMode) || "area";
+  });
+  const onSortChange = (v: SortMode) => {
+    setSortMode(v);
+    try { localStorage.setItem(SORT_STORAGE_KEY, v); } catch {}
+  };
+  const onGroupChange = (v: GroupMode) => {
+    setGroupMode(v);
+    try { localStorage.setItem(GROUP_STORAGE_KEY, v); } catch {}
+  };
+
   const todayTasks = useMemo(
     () => state.tasks.filter(t => t.dueDate === iso && !t.parentTaskId && t.status !== "parked"),
     [state.tasks, iso],
@@ -53,12 +92,41 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
 
   return (
     <section className="cozy-card overflow-hidden">
+      <div className="flex flex-wrap items-center justify-end gap-2 px-3 pt-3 sm:px-4 sm:pt-4">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <ArrowUpDown className="h-3 w-3" />
+          <Select value={sortMode} onValueChange={(v) => onSortChange(v as SortMode)}>
+            <SelectTrigger className="h-7 w-[120px] rounded-full border-border/50 bg-background/70 px-2.5 text-[11px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="priority">Priority</SelectItem>
+              <SelectItem value="time">Time est.</SelectItem>
+              <SelectItem value="alpha">A → Z</SelectItem>
+              <SelectItem value="manual">Manual</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <Layers className="h-3 w-3" />
+          <Select value={groupMode} onValueChange={(v) => onGroupChange(v as GroupMode)}>
+            <SelectTrigger className="h-7 w-[120px] rounded-full border-border/50 bg-background/70 px-2.5 text-[11px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="area">Split Home</SelectItem>
+              <SelectItem value="flat">Single list</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       <div className="grid gap-3 p-3 sm:p-4 md:grid-cols-3">
         {SLOTS.map(s => {
           const Icon = s.icon;
           const allSlotTasks = tasksByPart[s.dayPart];
-          const homeTasks = allSlotTasks.filter(isHomeTask);
-          const otherTasks = allSlotTasks.filter(t => !isHomeTask(t));
+          const sortedAll = sortTasks(allSlotTasks, sortMode);
+          const homeTasks = groupMode === "area" ? sortedAll.filter(isHomeTask) : [];
+          const otherTasks = groupMode === "area" ? sortedAll.filter(t => !isHomeTask(t)) : sortedAll;
           return (
             <div key={s.slot} className={cn("rounded-2xl border border-border/40 bg-gradient-to-br p-3 flex flex-col", s.tint)}>
               <div className="mb-2 flex items-center gap-2">
@@ -86,7 +154,7 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
 
               <div className="mt-2 flex-1 space-y-2">
                 <TaskGroup
-                  label={s.dayPart}
+                  label={groupMode === "area" ? s.dayPart : `${s.dayPart} tasks`}
                   date={date}
                   dayPart={s.dayPart as "Morning" | "Afternoon" | "Evening"}
                   tasks={otherTasks}
@@ -102,6 +170,7 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
                     await addTask({ title, dueDate: iso, dayPart: s.dayPart as "Morning" | "Afternoon" | "Evening" });
                   }}
                 />
+                {groupMode === "area" && (
                 <TaskGroup
                   label="Home & cleaning"
                   icon={Home}
@@ -132,6 +201,7 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
                   placeholder="Add a home/cleaning task…"
                   emptyText="No home tasks here."
                 />
+                )}
               </div>
             </div>
           );
@@ -151,7 +221,7 @@ export function TimeOfDayBoard({ date, onTaskClick }: { date: Date; onTaskClick?
           <TaskGroup
             label="Anytime"
             date={date}
-            tasks={tasksByPart.Anytime}
+            tasks={sortTasks(tasksByPart.Anytime, sortMode)}
             onToggle={toggleTask}
             onTaskClick={onTaskClick}
             onDrop={async (id) => {
@@ -267,6 +337,7 @@ function TaskGroup({
             >
               <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
               <Checkbox checked={t.done} onCheckedChange={() => void onToggle(t.id)} />
+              <PriorityFlag task={t} />
               <button
                 type="button"
                 onClick={() => onTaskClick?.(t.id)}

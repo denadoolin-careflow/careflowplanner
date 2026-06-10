@@ -13,6 +13,7 @@ import { useWeatherSnapshot, useTempUnit, formatTemp } from "@/lib/weather-store
 import type { WeatherCondition } from "@/lib/weather";
 import { MealSlotCard } from "@/components/today/MealSlotCard";
 import { formatTime12 } from "@/lib/routines";
+import { PriorityFlag } from "@/components/cards/PriorityFlag";
 
 function WxIcon({ c, className }: { c: WeatherCondition; className?: string }) {
   const cls = cn("h-3.5 w-3.5", className);
@@ -544,6 +545,7 @@ function DayPartItem({
           ? <icon.Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/80" aria-hidden />
           : <span className="shrink-0 text-sm leading-none" aria-hidden>{icon.char}</span>
       )}
+      {taskForIcon && <PriorityFlag task={taskForIcon} />}
       <span className={cn("min-w-0 flex-1 whitespace-normal break-words", it.kind === "task" && it.done && "line-through")}>{it.label}</span>
       {it.kind === "task" && (
         <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
