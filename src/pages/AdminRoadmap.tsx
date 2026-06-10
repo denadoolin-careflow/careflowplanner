@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Rocket, Save } from "lucide-react";
+import { Plus, Trash2, Rocket, Save, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 type Status = "planned" | "in_progress" | "shipped" | "cancelled";
@@ -31,6 +31,7 @@ export default function AdminRoadmap() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     document.title = "Roadmap admin · CareFlow";
@@ -62,6 +63,16 @@ export default function AdminRoadmap() {
       category: "new",
     });
     if (error) toast.error(error.message); else load();
+  }
+
+  async function syncFromChangelog() {
+    setSyncing(true);
+    const { data, error } = await supabase.rpc("sync_changelog_to_roadmap");
+    setSyncing(false);
+    if (error) { toast.error(error.message); return; }
+    const count = (data as number) ?? 0;
+    toast.success(count === 0 ? "Already in sync" : `Imported ${count} shipped item${count === 1 ? "" : "s"}`);
+    if (count > 0) load();
   }
 
   async function save(item: Item) {
@@ -118,6 +129,10 @@ export default function AdminRoadmap() {
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline" size="sm"><Link to="/roadmap">View public</Link></Button>
+            <Button onClick={syncFromChangelog} variant="outline" size="sm" disabled={syncing}>
+              <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
+              Sync from changelog
+            </Button>
             <Button onClick={addItem} size="sm"><Plus className="h-4 w-4 mr-1" />New item</Button>
           </div>
         </div>
