@@ -38,7 +38,7 @@ export function CurrentTransitsTable({ date = new Date(), limit = 4 }: { date?: 
   }
 
   return (
-    <section className="cozy-card p-5" aria-label="Current transits">
+    <section className="cozy-card p-4 sm:p-5" aria-label="Current transits">
       <header className="mb-3 flex items-center justify-between">
         <h3 className="font-display text-base">Current Transits</h3>
         <Link to="/cosmic-flow/timeline" className="text-xs text-primary hover:underline">View all</Link>
@@ -59,9 +59,9 @@ export function CurrentTransitsTable({ date = new Date(), limit = 4 }: { date?: 
                     setActive(aspectToEvent(a, date));
                     setOpen(true);
                   }}
-                  className="w-full grid grid-cols-[44px_minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,130px)] items-center gap-3 text-left transition-opacity hover:opacity-90"
+                  className="grid w-full grid-cols-[40px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 text-left transition-opacity hover:opacity-90 sm:grid-cols-[44px_minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,130px)] sm:items-center"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted/60 text-lg" aria-hidden>
+                  <div className="row-span-2 flex h-10 w-10 items-center justify-center rounded-full bg-muted/60 text-lg sm:h-11 sm:w-11" aria-hidden>
                     <span>{a.aGlyph}</span>
                   </div>
                   <div className="min-w-0">
@@ -78,14 +78,14 @@ export function CurrentTransitsTable({ date = new Date(), limit = 4 }: { date?: 
                     </p>
                     <p className="text-[11px] text-muted-foreground">{a.window}</p>
                   </div>
-                  <div className="min-w-0">
+                  <div className="col-start-2 min-w-0 sm:col-start-3">
                     <p className="text-[12.5px] leading-snug">{a.meaning}</p>
                     <p className="text-[11px] text-muted-foreground">Affects: {a.affects}</p>
                   </div>
-                  <div className="flex flex-col items-end gap-1.5">
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Intensity</p>
-                    <p className="font-mono text-[13px] tracking-tight text-primary/80">{intensityStars(a.intensity)}</p>
-                    <Badge className={`mt-0.5 border-transparent px-2 text-[10.5px] font-medium ${toneClass}`}>{a.action}</Badge>
+                  <div className="col-start-3 row-start-1 row-span-2 flex flex-col items-end gap-1 sm:col-start-4 sm:gap-1.5">
+                    <p className="hidden text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:block">Intensity</p>
+                    <p className="font-mono text-[12px] tracking-tight text-primary/80 sm:text-[13px]">{intensityStars(a.intensity)}</p>
+                    <Badge className={`border-transparent px-2 text-[10px] font-medium sm:text-[10.5px] ${toneClass}`}>{a.action}</Badge>
                   </div>
                 </button>
               </li>
