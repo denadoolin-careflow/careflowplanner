@@ -103,14 +103,14 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
                 </>
               )}
             </div>
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
-              <p className="text-sm font-medium text-muted-foreground sm:text-base">
-                {format(date, "EEEE, MMMM d, yyyy")}
-              </p>
+            <p className="mt-1 text-sm font-medium text-muted-foreground sm:text-base">
+              {format(date, "EEEE, MMMM d, yyyy")}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
               <Link
                 to="/rhythm"
                 title={`${moon.label} · ${illum}% lit · ${moonProximity} — open Lunar`}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-2 py-0.5 text-[11px] text-foreground/85 shadow-soft backdrop-blur transition hover:border-primary/40 hover:bg-card hover:text-foreground"
+                className="group inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-[11px] text-foreground/85 shadow-soft backdrop-blur transition hover:border-primary/40 hover:bg-card hover:text-foreground"
               >
                 <MoonGlyph date={date} size={16} className="-my-0.5" />
                 <span className="font-medium">{moon.label}</span>
@@ -121,7 +121,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
                 <Link
                   to="/health"
                   title={`${PHASE_META[cyclePhase.phase].invitation} — open Cycle`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-2 py-0.5 text-[11px] text-foreground/85 shadow-soft backdrop-blur transition hover:border-primary/40 hover:bg-card hover:text-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-[11px] text-foreground/85 shadow-soft backdrop-blur transition hover:border-primary/40 hover:bg-card hover:text-foreground"
                 >
                   <span aria-hidden>{PHASE_META[cyclePhase.phase].glyph}</span>
                   <span className="font-medium">Day {cyclePhase.cycleDay}</span>
