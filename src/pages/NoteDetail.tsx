@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy, Maximize2, Minimize2 } from "lucide-react";
@@ -236,15 +237,8 @@ export default function NoteDetail() {
   const IconEl = getLucideIcon(resolvedIcon);
   const gradientCss = getNoteCoverCss(note.coverGradient);
 
-  return (
-    <div
-      ref={focusContainerRef}
-      className={cn(
-        focusMode
-          ? "fixed inset-0 z-[60] overflow-auto bg-background px-3 py-4 md:px-6 md:py-6"
-          : "mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 lg:grid-cols-[minmax(0,1fr)_300px]",
-      )}
-    >
+  const pageBody = (
+    <>
       {focusMode && (
         <button
           type="button"
@@ -507,6 +501,28 @@ export default function NoteDetail() {
         </div>
       </div>
       )}
+    </>
+  );
+
+  if (focusMode) {
+    return createPortal(
+      <div
+        ref={focusContainerRef}
+        className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-background px-3 py-4 md:px-6 md:py-6"
+        style={{ WebkitOverflowScrolling: "touch" as any }}
+      >
+        {pageBody}
+      </div>,
+      document.body,
+    );
+  }
+
+  return (
+    <div
+      ref={focusContainerRef}
+      className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 lg:grid-cols-[minmax(0,1fr)_300px]"
+    >
+      {pageBody}
     </div>
   );
 }
