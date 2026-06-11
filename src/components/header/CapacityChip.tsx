@@ -1,13 +1,14 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowRight, ArrowUp, Gauge, Sparkles, Zap } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, CalendarClock, Gauge, Sparkles, Zap } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStore, todayISO } from "@/lib/store";
 import { useCycle } from "@/lib/cycle-store";
-import { computeCapacityScore, CAPACITY_BAND_COLOR } from "@/lib/capacity";
+import { computeCapacityScore, CAPACITY_BAND_COLOR, findBetterDay } from "@/lib/capacity";
 import { setEnergyFor, type Energy } from "@/lib/energy-store";
 import { FlowCard, FlowCardEyebrow, FlowCardTitle } from "@/components/ui/flow-card";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 export function CapacityChip({ className }: { className?: string }) {
   const { state } = useStore();
@@ -19,6 +20,13 @@ export function CapacityChip({ className }: { className?: string }) {
     // recompute when the day, tasks, or cycle inputs change
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [iso, state.tasks, periods, cycleSettings.enabled],
+  );
+
+  const betterDay = useMemo(
+    () => (score.band === "rest" || score.band === "soft")
+      ? findBetterDay({ periods, cycleSettings }, { minBand: "steady", lookahead: 10 })
+      : null,
+    [score.band, periods, cycleSettings],
   );
 
   const color = CAPACITY_BAND_COLOR[score.band];
@@ -123,6 +131,18 @@ export function CapacityChip({ className }: { className?: string }) {
               <Sparkles className="h-3 w-3" /> Cosmic
             </Link>
           </div>
+
+          {betterDay && (
+            <div className="mt-3 rounded-lg border border-border/40 bg-muted/40 p-2.5 text-[11.5px]">
+              <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <CalendarClock className="h-3 w-3" /> Defer to a better day
+              </div>
+              <p className="mt-1 leading-snug">
+                <span className="font-medium text-foreground">{format(betterDay.date, "EEEE, MMM d")}</span>{" "}
+                looks <span style={{ color: CAPACITY_BAND_COLOR[betterDay.score.band] }}>{betterDay.score.bandLabel.toLowerCase()}</span> ({betterDay.score.score}). Push the harder thing.
+              </p>
+            </div>
+          )}
         </FlowCard>
       </PopoverContent>
     </Popover>
