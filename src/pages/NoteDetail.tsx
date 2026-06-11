@@ -237,15 +237,8 @@ export default function NoteDetail() {
   const IconEl = getLucideIcon(resolvedIcon);
   const gradientCss = getNoteCoverCss(note.coverGradient);
 
-  return (
-    <div
-      ref={focusContainerRef}
-      className={cn(
-        focusMode
-          ? "fixed inset-0 z-[60] overflow-auto bg-background px-3 py-4 md:px-6 md:py-6"
-          : "mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 lg:grid-cols-[minmax(0,1fr)_300px]",
-      )}
-    >
+  const pageBody = (
+    <>
       {focusMode && (
         <button
           type="button"
