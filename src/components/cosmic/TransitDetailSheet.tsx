@@ -18,6 +18,7 @@ import { ELEMENT_VAR } from "@/lib/cosmic/glyphs";
 import { TransitJournalInline } from "./TransitJournalInline";
 import { natalHouseForEvent } from "@/hooks/useTransitsRange";
 import { useBirthChart } from "@/lib/cosmic/hooks";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -31,7 +32,11 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [stubbing, setStubbing] = useState<null | "note" | "journal">(null);
-  const [centered, setCentered] = useState(false);
+  const isMobile = useIsMobile();
+  // Default to centered modal on desktop (easier to read long-form copy),
+  // side-sheet on mobile (full-screen feels native). User can flip with the toggle.
+  const [centered, setCentered] = useState<boolean | null>(null);
+  const isCentered = centered ?? !isMobile;
   const date = event ? parseISO(event.date) : null;
   const el = event && date ? elementFor(event, date) : null;
   const copy = useMemo(() => event ? copyForEvent(event) : null, [event]);
@@ -116,12 +121,12 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setCentered(c => !c)}
+                onClick={() => setCentered(c => !(c ?? !isMobile))}
                 className="h-7 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
-                aria-label={centered ? "Dock to side" : "Open centered"}
+                aria-label={isCentered ? "Dock to side" : "Open centered"}
               >
-                {centered ? <PanelRight className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-                {centered ? "Side" : "Center"}
+                {isCentered ? <PanelRight className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                {isCentered ? "Side" : "Center"}
               </Button>
             </div>
             <div className="px-5 pb-3 pt-1 text-left">
@@ -267,7 +272,7 @@ export function TransitDetailSheet({ event, open, onOpenChange }: Props) {
           </div>
         );
 
-  if (centered) {
+  if (isCentered) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[90vh] w-[95vw] max-w-2xl overflow-y-auto bg-background p-0">

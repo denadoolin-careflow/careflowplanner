@@ -1,3 +1,6 @@
+import { moonPhaseFor } from "@/lib/moon-phase";
+import { getActiveAspects } from "@/lib/cosmic/active-aspects";
+
 /** Build a compact live snapshot to give Carey current awareness of the user's life. */
 export function buildCareySnapshot(state: any): Record<string, unknown> {
   const today = new Date().toISOString().slice(0, 10);
@@ -48,6 +51,26 @@ export function buildCareySnapshot(state: any): Record<string, unknown> {
 
   const currentEnergy: string | undefined = state?.settings?.currentEnergy ?? state?.energy?.current;
 
+  // Cosmic context — pure date-derived signals so Carey can speak to moon/transit climate.
+  let cosmic: Record<string, unknown> | null = null;
+  try {
+    const now = new Date();
+    const moon = moonPhaseFor(now);
+    const aspects = getActiveAspects(now, 3).map(a => ({
+      title: a.title,
+      meaning: a.meaning,
+      affects: a.affects,
+      intensity: a.intensity,
+      motion: a.motion,
+      exact: a.exactDate,
+      retro: a.retroNote ?? null,
+    }));
+    cosmic = {
+      moonPhase: moon ? { phase: moon.phase, label: moon.label } : null,
+      topAspects: aspects,
+    };
+  } catch { /* best-effort; never block snapshot */ }
+
   return {
     today,
     counts: {
@@ -71,5 +94,6 @@ export function buildCareySnapshot(state: any): Record<string, unknown> {
     habits: habitSnapshot,
     habitsAtRisk,
     lowEnergyMode: !!state?.settings?.lowEnergyMode,
+    cosmic,
   };
 }
