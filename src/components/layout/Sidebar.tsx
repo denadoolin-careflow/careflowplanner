@@ -1322,16 +1322,31 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           const GroupIcon = group.icon;
           const hasActive = group.items.some((it) => it.to === pathname);
           const accent = flowAccents[group.id] ?? flowAccents.settings;
+          const signal = flowSignals[group.id];
           if (collapsed) {
             return (
               <div key={group.id} className="flex flex-col items-center gap-1.5">
-                <RailButton
-                  to={`/flow/${group.id}`}
-                  label={group.label}
-                  icon={GroupIcon}
-                  accentColor={accent.color}
-                  onClick={handleNavClick(`/flow/${group.id}`)}
-                />
+                <div className="relative">
+                  <RailButton
+                    to={`/flow/${group.id}`}
+                    label={signal?.count ? `${group.label} · ${signal.count} today` : group.label}
+                    icon={GroupIcon}
+                    accentColor={accent.color}
+                    onClick={handleNavClick(`/flow/${group.id}`)}
+                  />
+                  {signal && signal.count > 0 && (
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "pointer-events-none absolute right-1 top-1 grid min-h-[14px] min-w-[14px] place-items-center rounded-full px-[3px] text-[9px] font-bold leading-none text-white shadow-soft ring-2 ring-sidebar",
+                        signal.count < 5 ? "h-2 w-2 px-0" : "",
+                      )}
+                      style={{ background: accent.color }}
+                    >
+                      {signal.count >= 5 ? (signal.count > 9 ? "9+" : signal.count) : ""}
+                    </span>
+                  )}
+                </div>
                 {idx < orderedGroups.length - 1 && <RailDivider />}
               </div>
             );
