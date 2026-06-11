@@ -80,7 +80,7 @@ export function AdvancedAstrologyRow({ chart, today = new Date() }: { chart: Nat
   })();
 
   return (
-    <section className="cozy-card p-5" aria-label="Advanced astrology">
+    <section className="cozy-card p-4 sm:p-5" aria-label="Advanced astrology">
       <header className="mb-1">
         <h3 className="font-display text-base">Advanced Astrology</h3>
         <p className="text-[11.5px] text-muted-foreground">Dive deeper into your long-term cosmic blueprint.</p>

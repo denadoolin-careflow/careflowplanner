@@ -27,7 +27,7 @@ export function JournalWithTheSkyCard({ date = new Date() }: { date?: Date }) {
   const phase = MOON_INFO[getMoonPhase(date)].label;
 
   return (
-    <section className="cozy-card p-5" aria-label="Journal with the sky">
+    <section className="cozy-card p-4 sm:p-5" aria-label="Journal with the sky">
       <header className="mb-2 flex items-center gap-2">
         <BookOpen className="h-4 w-4 text-primary" />
         <h3 className="font-display text-base">Journal With The Sky</h3>

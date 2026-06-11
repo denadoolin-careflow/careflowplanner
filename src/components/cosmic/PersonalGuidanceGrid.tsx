@@ -79,7 +79,7 @@ export function PersonalGuidanceGrid({ data, loading, onRefresh, date = new Date
   }, [data, sign]);
 
   return (
-    <section className="cozy-card p-5" aria-label="Personalized cosmic guidance">
+    <section className="cozy-card p-4 sm:p-5" aria-label="Personalized cosmic guidance">
       <header className="mb-3 flex items-center justify-between">
         <div>
           <h3 className="font-display text-base flex items-center gap-1.5">

@@ -118,7 +118,7 @@ export default function CosmicFlowBirthChart() {
 
 function NatalSummaryCard({ natal }: { natal: NatalSnapshot }) {
   return (
-    <section className="cozy-card p-5">
+    <section className="cozy-card p-4 sm:p-5">
       <h3 className="font-display text-base">Your natal snapshot</h3>
       <p className="mt-1 text-sm text-muted-foreground">{natalSummary(natal)}</p>
       <div className="mt-3 flex flex-wrap gap-1.5">

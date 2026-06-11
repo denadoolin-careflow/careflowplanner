@@ -91,22 +91,22 @@ export default function CosmicCalendar() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-3 pb-28 sm:p-6">
-      <header className="flex items-center justify-between">
-        <Button asChild variant="ghost" size="sm" className="h-8 px-2">
+      <header className="flex items-center justify-between gap-2">
+        <Button asChild variant="ghost" size="sm" className="h-8 px-2 shrink-0">
           <Link to="/cosmic-flow"><ArrowLeft className="h-4 w-4 mr-1" />Back</Link>
         </Button>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}>
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-1 sm:gap-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h1 className="font-display text-lg w-36 text-center">
+          <h1 className="font-display text-base sm:text-lg text-center truncate">
             {month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
           </h1>
-          <Button variant="ghost" size="icon" onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <div className="w-12" />
+        <div className="w-[60px] shrink-0" />
       </header>
 
       <div className="cozy-card p-3">

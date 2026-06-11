@@ -47,7 +47,7 @@ export function CosmicTimelineTabs({ from = new Date() }: { from?: Date }) {
   }, [anchor]);
 
   return (
-    <section className="cozy-card p-5" aria-label="Cosmic timeline">
+    <section className="cozy-card p-4 sm:p-5" aria-label="Cosmic timeline">
       <header className="mb-3 flex items-center justify-between gap-2">
         <h3 className="font-display text-base">Cosmic Timeline · This Week</h3>
         <Link to="/cosmic-flow/calendar" className="text-xs text-primary hover:underline">View calendar</Link>

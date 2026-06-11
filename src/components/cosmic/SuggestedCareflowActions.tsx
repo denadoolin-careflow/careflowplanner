@@ -29,7 +29,7 @@ export function SuggestedCareflowActions({ data }: { data: DailyGuidance | null 
   }
 
   return (
-    <section className="cozy-card p-5" aria-label="Suggested CareFlow actions">
+    <section className="cozy-card p-4 sm:p-5" aria-label="Suggested CareFlow actions">
       <header className="mb-1">
         <h3 className="font-display text-base">Suggested CareFlow Actions</h3>
         <p className="text-[11.5px] text-muted-foreground">Aligned with today's cosmic energy</p>
