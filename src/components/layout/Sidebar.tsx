@@ -680,6 +680,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     .filter(Boolean) as typeof NAV_GROUPS[number][];
   const flowAccents = useFlowAccents();
   const flowSignals = useFlowSignals();
+  const [sidebarDotsEnabled] = useSidebarDotsEnabled();
 
   const handleNavClick = (to: string) => (e: MouseEvent<HTMLAnchorElement>) => {
     const panelId = PANEL_BY_ROUTE[to];
@@ -1335,7 +1336,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                     accentColor={accent.color}
                     onClick={handleNavClick(`/flow/${group.id}`)}
                   />
-                  {signal && signal.count > 0 && (
+                  {sidebarDotsEnabled && signal && signal.count > 0 && (
                     <span
                       aria-hidden
                       className={cn(
