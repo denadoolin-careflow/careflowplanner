@@ -501,6 +501,28 @@ export default function NoteDetail() {
         </div>
       </div>
       )}
+    </>
+  );
+
+  if (focusMode) {
+    return createPortal(
+      <div
+        ref={focusContainerRef}
+        className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-background px-3 py-4 md:px-6 md:py-6"
+        style={{ WebkitOverflowScrolling: "touch" as any }}
+      >
+        {pageBody}
+      </div>,
+      document.body,
+    );
+  }
+
+  return (
+    <div
+      ref={focusContainerRef}
+      className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 lg:grid-cols-[minmax(0,1fr)_300px]"
+    >
+      {pageBody}
     </div>
   );
 }
