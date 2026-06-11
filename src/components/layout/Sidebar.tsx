@@ -34,6 +34,7 @@ import { Sparkles } from "lucide-react";
 import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
 import { useFlowSignals } from "@/lib/sidebar-signals";
+import { useSidebarDotsEnabled } from "@/lib/ui-prefs";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon, paletteIndex: 0 },
