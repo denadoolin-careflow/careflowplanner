@@ -4,10 +4,11 @@ import { CareyAvatar } from "@/components/carey/CareyAvatar";
 import { DailyBriefing } from "@/components/carey/DailyBriefing";
 import { CareyInsightsWidget } from "@/components/carey/CareyInsightsWidget";
 import { CaregiverLoadMeter } from "@/components/carey/CaregiverLoadMeter";
+import { TodayAtAGlance } from "@/components/carey/TodayAtAGlance";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, MessageSquarePlus, Send, Trash2 } from "lucide-react";
+import { Loader2, MessageSquarePlus, PanelLeftClose, PanelLeftOpen, Send, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useStore } from "@/lib/store";
@@ -31,6 +32,13 @@ export default function Carey() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const snapshot = useMemo(() => buildCareySnapshot(state), [state]);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return window.localStorage.getItem("carey:sidebar-open") !== "0";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("carey:sidebar-open", sidebarOpen ? "1" : "0"); } catch { /* noop */ }
+  }, [sidebarOpen]);
 
   useEffect(() => { void loadThreads(); }, []);
   useEffect(() => {
@@ -125,14 +133,43 @@ export default function Carey() {
     <>
       <div className="mx-auto flex h-[calc(100vh-7rem)] w-full max-w-6xl gap-4 p-4 sm:p-6">
         {/* Sidebar */}
-        <aside className="hidden w-64 shrink-0 flex-col rounded-2xl border border-border/60 bg-card/40 md:flex">
+        <aside className={cn(
+          "hidden shrink-0 flex-col rounded-2xl border border-border/60 bg-card/40 md:flex",
+          sidebarOpen ? "w-64" : "w-14",
+        )}>
           <div className="flex items-center gap-2 border-b border-border/60 px-3 py-3">
-            <CareyAvatar size={36} />
-            <span className="font-display text-base font-semibold">Carey</span>
-            <Button size="sm" variant="ghost" className="ml-auto gap-1" onClick={newThread}>
-              <MessageSquarePlus className="h-4 w-4" /> New
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={() => setSidebarOpen(v => !v)}
+              aria-label={sidebarOpen ? "Hide chat history" : "Show chat history"}
+              title={sidebarOpen ? "Hide chat history" : "Show chat history"}
+            >
+              {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
             </Button>
+            {sidebarOpen && (
+              <>
+                <span className="font-display text-base font-semibold">Carey</span>
+                <Button size="sm" variant="ghost" className="ml-auto gap-1" onClick={newThread}>
+                  <MessageSquarePlus className="h-4 w-4" /> New
+                </Button>
+              </>
+            )}
+            {!sidebarOpen && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="ml-auto h-8 w-8"
+                onClick={newThread}
+                aria-label="New conversation"
+                title="New conversation"
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+              </Button>
+            )}
           </div>
+          {sidebarOpen && (
           <ScrollArea className="flex-1">
             <div className="space-y-0.5 p-2">
               {threads.length === 0 && (
@@ -162,6 +199,7 @@ export default function Carey() {
               ))}
             </div>
           </ScrollArea>
+          )}
         </aside>
 
         {/* Main */}
@@ -171,6 +209,7 @@ export default function Carey() {
               <div className="mx-auto max-w-2xl space-y-6">
                 <DailyBriefing onAsk={send} />
                 <CaregiverLoadMeter />
+                <TodayAtAGlance />
                 <CareyInsightsWidget />
                 <div className="flex flex-col items-center gap-3 pt-2 text-center">
                   <CareyAvatar size={72} />
