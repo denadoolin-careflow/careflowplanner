@@ -75,7 +75,9 @@ A 0–100 score fusing four signals into one header chip with a tap-to-explain p
 - Drop `<CapacityChip />` into the header just before `<HeaderNowStrip />`. Hidden on `<sm` to keep the 702px viewport tidy (already a documented constraint).
 
 ## Out of scope (future phases)
-- Defer-to-a-better-day, caregiver load meter, archetype dashboard pack — Phase 3.
+- Defer-to-a-better-day — shipped (capacity.ts `findBetterDay` + CapacityChip hint when band ≤ soft).
+- Cosmic Flow mobile polish — shipped (CurrentTransitsTable stacks on <sm; padding p-4 sm:p-5 across cosmic cards; DailyOverviewCard horizontal moon+theme on mobile; CosmicCalendar header no longer overflows).
+- Phase 3 remaining: caregiver load meter, archetype dashboard pack.
 - Migrating every existing card to `FlowCard` — done opportunistically as we touch files.
 
 ## Verification
