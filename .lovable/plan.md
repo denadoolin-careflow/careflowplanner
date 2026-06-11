@@ -1,6 +1,38 @@
-# Cosmic Flow Upgrades
+# CareFlow — Phased Recommendations Build
 
-Big request — breaking into 6 focused workstreams. I'll implement them in this order so each builds on the last.
+Spec: ship both the **Fine-tune (7)** and **Add (6)** lists in phases so each batch is reviewable. Phase 1 is in flight now; later phases ship in subsequent turns.
+
+## Phase 1 — Cheap fine-tunes (this turn)
+1. **Transit Detail Sheet**: default to centered modal on desktop, side-sheet on mobile. User can still flip with the existing Side/Center toggle. _(done — `TransitDetailSheet.tsx`)_
+2. **Cosmic state in Carey**: moon phase + top 3 active aspects added to `buildCareySnapshot`; system prompt updated so Carey uses it sparingly. _(done — `src/lib/carey/context.ts`, `supabase/functions/carey-chat/index.ts`)_
+3. ⌘K hint already present in `UniversalSearchBar`. _(verified)_
+4. Mobile `HeaderNowStrip` already has a compact-chip mode at `<md`. _(verified, no change)_
+
+## Phase 2 — Bigger fine-tunes
+5. **Unified card primitive** shared by Cosmic / Carey / Today (one wrapper component, one shadow/border token set).
+6. **Collapsed-sidebar indicator dots** — small unread/today count per Flow group when sidebar is collapsed.
+7. **Capacity score (0–100)** in header — fuses energy + cycle phase + moon phase + transit intensity into one chip with a tap-to-explain sheet. New file: `src/lib/capacity.ts`. New component: `CapacityChip`.
+
+## Phase 3 — Add features (functional)
+8. **Defer to a better day** — task action that proposes 2–3 future dates ranked by capacity score. Plugs into existing task editor.
+9. **Caregiver load meter** in header — surface `mental-load.ts` + `carey/burnout.ts` + `carey/capacity.ts` as a small ring next to Capacity.
+10. **Finish archetype → dashboard pack** — wire `apply-archetype-setup.ts` + `dashboard-pack.ts` so onboarding lands users on a curated layout.
+
+## Phase 4 — Add features (heavier infra)
+11. **Offline-first Today + Brain Dump** — finish wiring `sync-queue.ts`; introduce `vite-plugin-pwa` with `generateSW`, NetworkFirst nav fallback, guarded registration (no preview SW). Tested only in published app.
+12. **Share / export day or week as PDF** — server-side render via edge function or client-side `react-pdf`; export route per day/week.
+13. **Weekly Carey check-in (Sunday digest)** — new edge function `carey-weekly-digest` + scheduled cron, surfaces in `WhatsNewPopover` or a new bell badge.
+
+## Technical notes
+- Carey snapshot stays dependency-free of the cycle store for now; cycle data joins in Phase 2 via the Capacity score.
+- No DB changes in Phase 1. Phase 4 adds an `ai_weekly_digests` table + cron.
+- All work is additive — no breaking removals beyond what we've already cleaned up in Cosmic Flow.
+
+---
+
+# Archive — previous Cosmic Flow workstreams (shipped)
+
+The earlier 6 Cosmic workstreams are complete; notes preserved below for reference.
 
 ## 1. Aspect engine on transits
 - Use existing `src/lib/cosmic/astro/aspects.ts` (already supports conjunction, opposition, trine, square, sextile + minors).
