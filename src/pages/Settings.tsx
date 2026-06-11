@@ -26,6 +26,7 @@ import { ArchetypeThemeSection } from "@/components/settings/ArchetypeThemeSecti
 import { AtmosphereFeelSection } from "@/components/settings/AtmosphereFeelSection";
 import { FontSection } from "@/components/settings/FontSection";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
+import { useSidebarDotsEnabled } from "@/lib/ui-prefs";
 import { useExhaleReminderPrefs, ensureNotificationPermission } from "@/lib/exhale-reminder";
 import { useRhythmForecastEnabled, useRecommendationTone } from "@/lib/rhythm-forecast";
 import {
@@ -155,6 +156,14 @@ export default function Settings() {
           <Switch checked={state.settings.lowEnergyMode} onCheckedChange={setLowEnergyMode} />
           <Label className="text-sm">{state.settings.lowEnergyMode ? "On — only essentials shown" : "Off"}</Label>
         </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Sidebar notification dots"
+        subtitle="Show small count dots on the collapsed sidebar when a Flow has items for today."
+        accent="calm"
+      >
+        <SidebarDotsToggle />
       </SectionCard>
 
       <SectionCard
