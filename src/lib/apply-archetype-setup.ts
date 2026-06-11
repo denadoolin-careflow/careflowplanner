@@ -6,6 +6,7 @@ import {
 } from "./dashboard-layouts";
 import { routines } from "./routines";
 import { setMoonRemindersEnabled } from "./moon-reminders";
+import { applyArchetypePack } from "./archetype-starter-pack";
 
 /** Curated widget set per archetype for the Home dashboard. */
 const ARCHETYPE_WIDGETS: Record<ArchetypeId, WidgetType[]> = {
@@ -115,5 +116,8 @@ export async function applyArchetypeSetup(archetypeId: ArchetypeId): Promise<voi
         await routines.upsert(person, "evening", { items: mkItems(seed.evening) });
       }
     }
+
+    // 4) Habit + task starter pack (safe to re-run; dedupes by title).
+    try { await applyArchetypePack(archetypeId); } catch { /* non-fatal */ }
   }
 }

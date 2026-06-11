@@ -79,6 +79,7 @@ A 0–100 score fusing four signals into one header chip with a tap-to-explain p
 - Cosmic Flow mobile polish — shipped (CurrentTransitsTable stacks on <sm; padding p-4 sm:p-5 across cosmic cards; DailyOverviewCard horizontal moon+theme on mobile; CosmicCalendar header no longer overflows).
 - Caregiver load meter — shipped (`src/components/carey/CaregiverLoadMeter.tsx`, surfaced on the Carey welcome screen). Reads 14d of `mental_load_checkins`, scores 0–100, bands light → very heavy, renders ring + 7d spark + delta vs prior week.
 - Archetype dashboard pack — shipped earlier (`src/lib/apply-archetype-setup.ts`); reapply UI lives in Settings → Archetype & theme.
+- Archetype habit + task starter pack — shipped (`src/lib/archetype-starter-pack.ts`). Each archetype has a curated set of habits, daily tasks, and weekly tasks; `applyArchetypePack` seeds them with title-based dedupe. Settings → Archetype & theme gets a "Generate daily & weekly plan" button + per-section preview; `applyArchetypeSetup` also runs the pack as part of re-apply.
 - Migrating every existing card to `FlowCard` — done opportunistically as we touch files.
 
 ## Verification
