@@ -97,8 +97,10 @@ export function TodayAtAGlance() {
     return buckets;
   }, [state, today]);
 
+  const toTaskDayPart = (p: DayPart) =>
+    (p.charAt(0).toUpperCase() + p.slice(1)) as "Morning" | "Afternoon" | "Evening";
   const add = (part: DayPart | null, title: string) =>
-    addTask({ title, dueDate: today, dayPart: part ?? undefined });
+    addTask({ title, dueDate: today, dayPart: part ? toTaskDayPart(part) : undefined });
 
   return (
     <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-card/80 to-card/40 p-5">
