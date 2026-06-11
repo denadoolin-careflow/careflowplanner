@@ -90,9 +90,12 @@ export function TodayAtAGlance() {
       morning: [], afternoon: [], evening: [], unassigned: [],
     };
     for (const t of tasks) {
-      const p = (t.dayPart as DayPart) ?? null;
-      if (p && buckets[p]) buckets[p].push(t);
-      else buckets.unassigned.push(t);
+      const raw = typeof t.dayPart === "string" ? t.dayPart.toLowerCase() : null;
+      if (raw === "morning" || raw === "afternoon" || raw === "evening") {
+        buckets[raw as DayPart].push(t);
+      } else {
+        buckets.unassigned.push(t);
+      }
     }
     return buckets;
   }, [state, today]);
