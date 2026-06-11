@@ -1,18 +1,28 @@
 import { useMemo } from "react";
 import { useStore } from "@/lib/store";
+import { Link } from "react-router-dom";
 import { CalendarDays, Compass, Flame, Heart, ListTodo, Sparkles, Sunrise, Target, Wind } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function Stat({ icon: Icon, label, value, tone }: { icon: any; label: string; value: string | number; tone?: string }) {
-  return (
-    <div className={cn("rounded-xl border border-border/60 bg-card/60 p-3", tone)}>
+function Stat({ icon: Icon, label, value, tone, to }: {
+  icon: any; label: string; value: string | number; tone?: string; to?: string;
+}) {
+  const body = (
+    <>
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
         <Icon className="h-3.5 w-3.5" />
         {label}
       </div>
       <p className="mt-1 font-display text-2xl font-semibold leading-none">{value}</p>
-    </div>
+    </>
   );
+  const cls = cn(
+    "block rounded-xl border border-border/60 bg-card/60 p-3 text-left transition-colors",
+    to && "hover:border-primary/40 hover:bg-card",
+    tone,
+  );
+  if (to) return <Link to={to} className={cls} aria-label={`Open ${label}`}>{body}</Link>;
+  return <div className={cls}>{body}</div>;
 }
 
 export function DailyBriefing({ onAsk }: { onAsk: (q: string) => void }) {
@@ -76,11 +86,11 @@ export function DailyBriefing({ onAsk }: { onAsk: (q: string) => void }) {
         <p className="text-xs text-muted-foreground">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</p>
       </header>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
-        <Stat icon={ListTodo} label="Today" value={data.todayTasks.length} />
-        <Stat icon={CalendarDays} label="Overdue" value={data.overdue.length} tone={data.overdue.length ? "border-amber-500/40" : ""} />
-        <Stat icon={Target} label="Goals" value={data.activeGoals.length} />
-        <Stat icon={Flame} label="Top streak" value={data.habitStreak} />
-        <Stat icon={Heart} label="Last mood" value={data.lastMood ?? "—"} />
+        <Stat icon={ListTodo} label="Today" value={data.todayTasks.length} to="/today" />
+        <Stat icon={CalendarDays} label="Overdue" value={data.overdue.length} tone={data.overdue.length ? "border-amber-500/40" : ""} to="/upcoming" />
+        <Stat icon={Target} label="Goals" value={data.activeGoals.length} to="/goals" />
+        <Stat icon={Flame} label="Top streak" value={data.habitStreak} to="/habits" />
+        <Stat icon={Heart} label="Last mood" value={data.lastMood ?? "—"} to="/mental-load" />
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {actions.map(a => (
