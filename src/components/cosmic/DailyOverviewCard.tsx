@@ -35,12 +35,14 @@ export function DailyOverviewCard({ date = new Date() }: { date?: Date }) {
 
       <div className="grid gap-4 sm:gap-5 md:grid-cols-[150px_minmax(0,1fr)] items-start">
         <div className="flex flex-row items-center gap-3 md:flex-col md:items-start">
-          <MoonGlyph date={date} size={84} />
+          <div className="shrink-0">
+            <div className="md:hidden"><MoonGlyph date={date} size={84} /></div>
+            <div className="hidden md:block"><MoonGlyph date={date} size={120} /></div>
+          </div>
           <div className="md:hidden">
             <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Theme</p>
             <p className="text-[13px] font-medium leading-snug">{theme.theme}</p>
           </div>
-          <div className="hidden md:block"><MoonGlyph date={date} size={120} /></div>
           <div className="hidden md:flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <Sparkles className="h-3 w-3 text-primary" />
             <span className="uppercase tracking-[0.18em]">Theme</span>
