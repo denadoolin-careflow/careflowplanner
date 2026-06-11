@@ -17,7 +17,7 @@ export function DailyGuidanceCard({ data, loading, onRefresh }: { data: DailyGui
   }
 
   return (
-    <section className="cozy-card p-5" aria-label="Today's cosmic guidance">
+    <section className="cozy-card p-4 sm:p-5" aria-label="Today's cosmic guidance">
       <header className="flex items-start justify-between gap-2">
         <h3 className="font-display text-base flex items-center gap-1.5">
           <Sparkles className="h-4 w-4 text-primary" />

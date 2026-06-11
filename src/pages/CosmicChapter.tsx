@@ -44,7 +44,7 @@ export default function CosmicChapter() {
       )}
 
       {chapter?.reflection_prompt && (
-        <section className="cozy-card p-5 bg-muted/40">
+        <section className="cozy-card p-4 sm:p-5 bg-muted/40">
           <p className="text-xs font-medium text-muted-foreground">Reflection</p>
           <p className="mt-1 text-[15px] italic">"{chapter.reflection_prompt}"</p>
           <Button asChild size="sm" className="mt-3"><Link to={`/journal?prompt=${encodeURIComponent(chapter.reflection_prompt)}`}>Open journal</Link></Button>
@@ -52,7 +52,7 @@ export default function CosmicChapter() {
       )}
 
       {insights && (insights.themes.length || insights.patterns.length) && (
-        <section className="cozy-card p-5">
+        <section className="cozy-card p-4 sm:p-5">
           <h3 className="font-display text-base flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-primary" />Recent Journal Threads</h3>
           {insights.themes.length > 0 && <Block title="Themes" items={insights.themes} compact />}
           {insights.patterns.length > 0 && <Block title="Patterns" items={insights.patterns} compact />}

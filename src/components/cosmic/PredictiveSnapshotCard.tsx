@@ -12,7 +12,7 @@ export function PredictiveSnapshotCard({ chart }: { chart: NatalChartV2 | null }
   const today = useMemo(() => new Date(), []);
   if (!chart || !chart.houses) {
     return (
-      <section className="cozy-card p-5">
+      <section className="cozy-card p-4 sm:p-5">
         <h3 className="font-display text-base">Predictive Snapshot</h3>
         <p className="mt-2 text-sm text-muted-foreground italic">Add your birth time + place to unlock progressed Moon, profections, and returns.</p>
       </section>
@@ -28,7 +28,7 @@ export function PredictiveSnapshotCard({ chart }: { chart: NatalChartV2 | null }
   const eclipses = eclipseActivations(chart.planets.map(p => p.longitude), today);
 
   return (
-    <section className="cozy-card p-5 space-y-3">
+    <section className="cozy-card p-4 sm:p-5 space-y-3">
       <h3 className="font-display text-base flex items-center gap-1.5">
         <Sparkles className="h-4 w-4 text-primary" /> Predictive Snapshot
       </h3>

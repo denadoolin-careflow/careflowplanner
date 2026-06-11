@@ -62,7 +62,7 @@ export function PredictiveSnapshotList({ from = new Date() }: { from?: Date }) {
   }, [from]);
 
   return (
-    <section className="cozy-card p-5" aria-label="Predictive snapshot">
+    <section className="cozy-card p-4 sm:p-5" aria-label="Predictive snapshot">
       <header className="mb-3 flex items-center justify-between">
         <h3 className="font-display text-base">Predictive Snapshot</h3>
         <span className="text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">Next 30 Days</span>
