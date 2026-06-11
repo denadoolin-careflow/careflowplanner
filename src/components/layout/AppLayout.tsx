@@ -27,6 +27,7 @@ import { installGlobalHaptics } from "@/lib/haptics";
 import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
 import { Link } from "react-router-dom";
 import { HeaderNowStrip } from "./HeaderNowStrip";
+import { CapacityChip } from "@/components/header/CapacityChip";
 
 export function AppLayout() {
   const { state } = useStore();
@@ -53,6 +54,9 @@ export function AppLayout() {
               </div>
             </div>
             <div className="flex flex-nowrap items-center gap-1 sm:gap-3">
+              <div className="hidden sm:inline-flex">
+                <CapacityChip />
+              </div>
               <HeaderNowStrip />
               <UniversalSearchBar />
               <div className="hidden sm:block">
