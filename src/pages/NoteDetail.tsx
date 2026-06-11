@@ -53,6 +53,8 @@ export default function NoteDetail() {
   const [repositioning, setRepositioning] = useState(false);
   const coverDragRef = useRef<{ startY: number; startPos: number; height: number } | null>(null);
   const [editorPrefs] = useEditorPrefs();
+  const focusContainerRef = useRef<HTMLDivElement | null>(null);
+  const savedScrollRef = useRef<{ window: number; focus: number }>({ window: 0, focus: 0 });
   const [focusMode, setFocusMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("careflow.notes.focusMode") === "1";
@@ -60,12 +62,37 @@ export default function NoteDetail() {
   useEffect(() => {
     try { window.localStorage.setItem("careflow.notes.focusMode", focusMode ? "1" : "0"); } catch {}
   }, [focusMode]);
+  // Preserve scroll position across focus toggles. Entering: remember window scrollY.
+  // Exiting: restore window scrollY on next frame (after the overlay unmounts).
+  const enterFocus = () => {
+    savedScrollRef.current.window = window.scrollY;
+    setFocusMode(true);
+  };
+  const exitFocus = () => {
+    if (focusContainerRef.current) {
+      savedScrollRef.current.focus = focusContainerRef.current.scrollTop;
+    }
+    setFocusMode(false);
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: savedScrollRef.current.window, behavior: "auto" });
+    });
+  };
+  // When entering focus mode, restore previous in-overlay scroll position.
+  useEffect(() => {
+    if (!focusMode) return;
+    const el = focusContainerRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTop = savedScrollRef.current.focus || 0;
+    });
+  }, [focusMode]);
   // Esc exits focus mode
   useEffect(() => {
     if (!focusMode) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFocusMode(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") exitFocus(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusMode]);
 
   const titleSizeClasses: Record<NoteTitleSize, string> = {
@@ -211,12 +238,25 @@ export default function NoteDetail() {
 
   return (
     <div
+      ref={focusContainerRef}
       className={cn(
         focusMode
           ? "fixed inset-0 z-[60] overflow-auto bg-background px-3 py-4 md:px-6 md:py-6"
           : "mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 lg:grid-cols-[minmax(0,1fr)_300px]",
       )}
     >
+      {focusMode && (
+        <button
+          type="button"
+          onClick={exitFocus}
+          aria-label="Exit focus mode"
+          title="Exit focus mode (Esc)"
+          className="fixed right-4 top-4 z-[70] inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-soft backdrop-blur transition hover:bg-card hover:text-foreground"
+        >
+          <Minimize2 className="h-3.5 w-3.5" />
+          Exit focus
+        </button>
+      )}
       <div className="min-w-0">
       <header className="mx-auto flex w-full max-w-[760px] flex-wrap items-center gap-2 px-2">
         <Button variant="ghost" size="sm" onClick={() => nav("/notes")} className="gap-1.5">
@@ -226,7 +266,7 @@ export default function NoteDetail() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setFocusMode(f => !f)}
+            onClick={() => (focusMode ? exitFocus() : enterFocus())}
             aria-label={focusMode ? "Exit focus mode" : "Enter focus mode"}
             title={focusMode ? "Exit focus mode (Esc)" : "Focus mode — just the writing"}
           >
