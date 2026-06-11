@@ -82,6 +82,12 @@ A 0–100 score fusing four signals into one header chip with a tap-to-explain p
 - Archetype habit + task starter pack — shipped (`src/lib/archetype-starter-pack.ts`). Each archetype has a curated set of habits, daily tasks, and weekly tasks; `applyArchetypePack` seeds them with title-based dedupe. Settings → Archetype & theme gets a "Generate daily & weekly plan" button + per-section preview; `applyArchetypeSetup` also runs the pack as part of re-apply.
 - Migrating every existing card to `FlowCard` — done opportunistically as we touch files.
 
+## Phase 4 — Writing focus + sidebar quiet mode
+
+- **Note focus mode (shipped):** `src/pages/NoteDetail.tsx` gets a Maximize/Minimize button in the header. Toggling enters a fixed full-viewport overlay (`fixed inset-0 z-[60] bg-background`) that hides the app sidebar, header chrome, and the right context rail / TOC — just title + BlockEditor. Esc exits. State persists in `localStorage` as `careflow.notes.focusMode`.
+- **Sidebar notification dots toggle (shipped):** new `src/lib/ui-prefs.ts` exposes `useSidebarDotsEnabled()`. `Sidebar.tsx` skips the per-flow count dot when disabled. New SectionCard in `src/pages/Settings.tsx` lets users turn the dots off.
+- **Next:** caregiver-facing quick capture from focus mode (voice → today's daily note); writing streaks surface on Notes hub; per-flow "quiet day" mode mirroring focus mode for other flows.
+
 ## Verification
 - Visual: open `/today`, collapse sidebar, see dots on PlanFlow/LunarFlow.
 - Capacity chip renders on desktop; popover opens and lists reasons.
