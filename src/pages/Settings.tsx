@@ -49,6 +49,7 @@ export default function Settings() {
   const templates = usePomodoroTemplatesList();
   const [rhythmOn, setRhythmOn] = useRhythmForecastEnabled();
   const [tone, setTone] = useRecommendationTone();
+  const [sidebarDots, setSidebarDots] = useSidebarDotsEnabled();
   const [astroOn, setAstroOn] = useAstrologyEnabled();
   const [transitsOn, setTransitsOn] = useTransitsEnabledPref();
   const [tarotOn, setTarotOn] = useTarotEnabledPref();
@@ -163,7 +164,10 @@ export default function Settings() {
         subtitle="Show small count dots on the collapsed sidebar when a Flow has items for today."
         accent="calm"
       >
-        <SidebarDotsToggle />
+        <div className="flex items-center gap-3">
+          <Switch checked={sidebarDots} onCheckedChange={setSidebarDots} />
+          <Label className="text-sm">{sidebarDots ? "On — show count dots" : "Off — hide all dots"}</Label>
+        </div>
       </SectionCard>
 
       <SectionCard
