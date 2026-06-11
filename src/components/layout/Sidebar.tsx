@@ -33,6 +33,7 @@ import { AstrologySection } from "./AstrologySection";
 import { Sparkles } from "lucide-react";
 import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
+import { useFlowSignals } from "@/lib/sidebar-signals";
 
 const LISTS = [
   { to: "/inbox", label: "Inbox", icon: InboxIcon, paletteIndex: 0 },
