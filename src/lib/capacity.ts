@@ -153,3 +153,33 @@ export const CAPACITY_BAND_COLOR: Record<CapacityBand, string> = {
   steady: "hsl(150 55% 50%)",
   high:   "hsl(200 80% 55%)",
 };
+
+/**
+ * Phase 3 — Defer-to-a-better-day.
+ * Scans the next `lookahead` days and returns the soonest one whose
+ * capacity band is at least `minBand`. Skips heavy inputs (energy, load)
+ * since those depend on the current state and aren't known for future
+ * days — uses cycle, moon, and aspects only.
+ */
+export function findBetterDay(
+  input: Pick<CapacityInput, "periods" | "cycleSettings">,
+  opts: { from?: Date; lookahead?: number; minBand?: CapacityBand } = {},
+): { date: Date; score: CapacityScore } | null {
+  const from = opts.from ?? new Date();
+  const lookahead = opts.lookahead ?? 14;
+  const targets: CapacityBand[] = opts.minBand === "high" ? ["high"]
+    : opts.minBand === "soft" ? ["soft", "steady", "high"]
+    : ["steady", "high"];
+  for (let i = 1; i <= lookahead; i++) {
+    const d = new Date(from);
+    d.setDate(d.getDate() + i);
+    const s = computeCapacityScore({
+      date: d,
+      state: { tasks: [] }, // future load unknown
+      periods: input.periods,
+      cycleSettings: input.cycleSettings,
+    });
+    if (targets.includes(s.band)) return { date: d, score: s };
+  }
+  return null;
+}
