@@ -77,7 +77,8 @@ A 0–100 score fusing four signals into one header chip with a tap-to-explain p
 ## Out of scope (future phases)
 - Defer-to-a-better-day — shipped (capacity.ts `findBetterDay` + CapacityChip hint when band ≤ soft).
 - Cosmic Flow mobile polish — shipped (CurrentTransitsTable stacks on <sm; padding p-4 sm:p-5 across cosmic cards; DailyOverviewCard horizontal moon+theme on mobile; CosmicCalendar header no longer overflows).
-- Phase 3 remaining: caregiver load meter, archetype dashboard pack.
+- Caregiver load meter — shipped (`src/components/carey/CaregiverLoadMeter.tsx`, surfaced on the Carey welcome screen). Reads 14d of `mental_load_checkins`, scores 0–100, bands light → very heavy, renders ring + 7d spark + delta vs prior week.
+- Archetype dashboard pack — shipped earlier (`src/lib/apply-archetype-setup.ts`); reapply UI lives in Settings → Archetype & theme.
 - Migrating every existing card to `FlowCard` — done opportunistically as we touch files.
 
 ## Verification
