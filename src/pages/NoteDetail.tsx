@@ -449,6 +449,7 @@ export default function NoteDetail() {
         <NoteLinksSidebar noteId={note.id} />
       </div>
       </div>
+      {!focusMode && (
       <div className="hidden lg:block">
         <div className="sticky top-20 space-y-3">
           <NoteContextRail
@@ -465,6 +466,7 @@ export default function NoteDetail() {
           <NoteTOC body={body} />
         </div>
       </div>
+      )}
     </div>
   );
 }
