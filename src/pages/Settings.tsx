@@ -26,6 +26,7 @@ import { ArchetypeThemeSection } from "@/components/settings/ArchetypeThemeSecti
 import { AtmosphereFeelSection } from "@/components/settings/AtmosphereFeelSection";
 import { FontSection } from "@/components/settings/FontSection";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
+import { useSidebarDotsEnabled } from "@/lib/ui-prefs";
 import { useExhaleReminderPrefs, ensureNotificationPermission } from "@/lib/exhale-reminder";
 import { useRhythmForecastEnabled, useRecommendationTone } from "@/lib/rhythm-forecast";
 import {
@@ -48,6 +49,7 @@ export default function Settings() {
   const templates = usePomodoroTemplatesList();
   const [rhythmOn, setRhythmOn] = useRhythmForecastEnabled();
   const [tone, setTone] = useRecommendationTone();
+  const [sidebarDots, setSidebarDots] = useSidebarDotsEnabled();
   const [astroOn, setAstroOn] = useAstrologyEnabled();
   const [transitsOn, setTransitsOn] = useTransitsEnabledPref();
   const [tarotOn, setTarotOn] = useTarotEnabledPref();
@@ -154,6 +156,17 @@ export default function Settings() {
         <div className="flex items-center gap-3">
           <Switch checked={state.settings.lowEnergyMode} onCheckedChange={setLowEnergyMode} />
           <Label className="text-sm">{state.settings.lowEnergyMode ? "On — only essentials shown" : "Off"}</Label>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Sidebar notification dots"
+        subtitle="Show small count dots on the collapsed sidebar when a Flow has items for today."
+        accent="calm"
+      >
+        <div className="flex items-center gap-3">
+          <Switch checked={sidebarDots} onCheckedChange={setSidebarDots} />
+          <Label className="text-sm">{sidebarDots ? "On — show count dots" : "Off — hide all dots"}</Label>
         </div>
       </SectionCard>
 

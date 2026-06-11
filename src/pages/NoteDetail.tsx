@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy } from "lucide-react";
+import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { deleteNote, extractBacklinks, findBacklinksTo, getNote, updateNote, type Note } from "@/lib/notes";
@@ -53,6 +53,20 @@ export default function NoteDetail() {
   const [repositioning, setRepositioning] = useState(false);
   const coverDragRef = useRef<{ startY: number; startPos: number; height: number } | null>(null);
   const [editorPrefs] = useEditorPrefs();
+  const [focusMode, setFocusMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("careflow.notes.focusMode") === "1";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("careflow.notes.focusMode", focusMode ? "1" : "0"); } catch {}
+  }, [focusMode]);
+  // Esc exits focus mode
+  useEffect(() => {
+    if (!focusMode) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFocusMode(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [focusMode]);
 
   const titleSizeClasses: Record<NoteTitleSize, string> = {
     small: "text-lg md:text-xl",
@@ -196,13 +210,28 @@ export default function NoteDetail() {
   const gradientCss = getNoteCoverCss(note.coverGradient);
 
   return (
-    <div className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div
+      className={cn(
+        focusMode
+          ? "fixed inset-0 z-[60] overflow-auto bg-background px-3 py-4 md:px-6 md:py-6"
+          : "mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 lg:grid-cols-[minmax(0,1fr)_300px]",
+      )}
+    >
       <div className="min-w-0">
       <header className="mx-auto flex w-full max-w-[760px] flex-wrap items-center gap-2 px-2">
         <Button variant="ghost" size="sm" onClick={() => nav("/notes")} className="gap-1.5">
           <ArrowLeft className="h-4 w-4" /> Notes
         </Button>
         <div className="ml-auto flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setFocusMode(f => !f)}
+            aria-label={focusMode ? "Exit focus mode" : "Enter focus mode"}
+            title={focusMode ? "Exit focus mode (Esc)" : "Focus mode — just the writing"}
+          >
+            {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
           <NoteAIButton
             title={title}
             body={body}
@@ -420,6 +449,7 @@ export default function NoteDetail() {
         <NoteLinksSidebar noteId={note.id} />
       </div>
       </div>
+      {!focusMode && (
       <div className="hidden lg:block">
         <div className="sticky top-20 space-y-3">
           <NoteContextRail
@@ -436,6 +466,7 @@ export default function NoteDetail() {
           <NoteTOC body={body} />
         </div>
       </div>
+      )}
     </div>
   );
 }
