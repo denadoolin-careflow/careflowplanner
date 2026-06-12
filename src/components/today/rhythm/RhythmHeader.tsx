@@ -1,6 +1,5 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { format, addDays } from "date-fns";
-import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Sparkles, Clock, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
