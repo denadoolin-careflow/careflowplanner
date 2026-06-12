@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { MoonCycleModule } from "@/components/today/rhythm/MoonCycleModule";
+import { DailyEnergyGuidance } from "@/components/today/rhythm/DailyEnergyGuidance";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 
 interface Props {
@@ -88,6 +89,9 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
             </p>
             <div className="mt-3 w-full flex justify-center">
               <MoonCycleModule date={date} />
+            </div>
+            <div className="mt-2 w-full flex justify-center">
+              <DailyEnergyGuidance date={date} />
             </div>
           </div>
 
