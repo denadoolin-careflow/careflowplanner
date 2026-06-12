@@ -18,11 +18,8 @@ import {
 } from "@/lib/today-view";
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
-import { getMoonPhase, MOON_INFO, getIllumination, daysUntilFull, daysUntilNew } from "@/lib/moon";
-import { MoonGlyph } from "@/components/widgets/MoonGlyph";
-import { useCycle } from "@/lib/cycle-store";
-import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
+import { MoonCycleModule } from "@/components/today/rhythm/MoonCycleModule";
 import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
 
 interface Props {
@@ -49,22 +46,6 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
   const tempStr = snap
     ? `${unit === "F" ? cToF(snap.tempC) : Math.round(snap.tempC)}°`
     : null;
-
-  const moonPhase = getMoonPhase(date);
-  const moon = MOON_INFO[moonPhase];
-  const illum = getIllumination(date);
-  const toFull = daysUntilFull(date);
-  const toNew = daysUntilNew(date);
-  const moonProximity =
-    toFull === 0 ? "Full tonight"
-    : toNew === 0 ? "New tonight"
-    : toFull < toNew ? `${toFull}d to full`
-    : `${toNew}d to new`;
-
-  const { periods, settings } = useCycle();
-  const cyclePhase = useMemo(() => {
-    try { return getPhaseInfo(date, periods, settings); } catch { return null; }
-  }, [date, periods, settings]);
 
   const [prefs, setPrefs] = useTodayPrefs();
 
@@ -106,28 +87,8 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
             <p className="mt-1 text-sm font-medium text-muted-foreground sm:text-base">
               {format(date, "EEEE, MMMM d, yyyy")}
             </p>
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-              <Link
-                to="/rhythm"
-                title={`${moon.label} · ${illum}% lit · ${moonProximity} — open Lunar`}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-[11px] text-foreground/85 shadow-soft backdrop-blur transition hover:border-primary/40 hover:bg-card hover:text-foreground"
-              >
-                <MoonGlyph date={date} size={16} className="-my-0.5" />
-                <span className="font-medium">{moon.label}</span>
-                <span className="tabular-nums text-muted-foreground">· {illum}%</span>
-                <span className="hidden text-muted-foreground sm:inline">· {moonProximity}</span>
-              </Link>
-              {cyclePhase && (
-                <Link
-                  to="/health"
-                  title={`${PHASE_META[cyclePhase.phase].invitation} — open Cycle`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-[11px] text-foreground/85 shadow-soft backdrop-blur transition hover:border-primary/40 hover:bg-card hover:text-foreground"
-                >
-                  <span aria-hidden>{PHASE_META[cyclePhase.phase].glyph}</span>
-                  <span className="font-medium">Day {cyclePhase.cycleDay}</span>
-                  <span className="text-muted-foreground">· {PHASE_META[cyclePhase.phase].label}</span>
-                </Link>
-              )}
+            <div className="mt-3 w-full flex justify-center">
+              <MoonCycleModule date={date} />
             </div>
           </div>
 
