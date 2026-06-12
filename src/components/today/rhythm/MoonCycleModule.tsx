@@ -13,11 +13,11 @@ import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { cn } from "@/lib/utils";
 
-const ELEMENT_TONE: Record<"fire" | "earth" | "air" | "water", { ring: string; text: string; soft: string }> = {
-  fire:  { ring: "hsl(20 80% 55% / 0.40)",  text: "hsl(20 70% 60%)",  soft: "hsl(20 70% 60% / 0.65)" },
-  earth: { ring: "hsl(140 45% 45% / 0.40)", text: "hsl(140 45% 60%)", soft: "hsl(140 45% 60% / 0.65)" },
-  air:   { ring: "hsl(48 90% 60% / 0.45)",  text: "hsl(45 85% 65%)",  soft: "hsl(45 85% 65% / 0.7)" },
-  water: { ring: "hsl(210 75% 60% / 0.40)", text: "hsl(210 75% 68%)", soft: "hsl(210 75% 68% / 0.7)" },
+const ELEMENT_TONE: Record<"Fire" | "Earth" | "Air" | "Water", { ring: string; text: string; soft: string }> = {
+  Fire:  { ring: "hsl(20 80% 55% / 0.40)",  text: "hsl(20 70% 60%)",  soft: "hsl(20 70% 60% / 0.65)" },
+  Earth: { ring: "hsl(140 45% 45% / 0.40)", text: "hsl(140 45% 60%)", soft: "hsl(140 45% 60% / 0.65)" },
+  Air:   { ring: "hsl(48 90% 60% / 0.45)",  text: "hsl(45 85% 65%)",  soft: "hsl(45 85% 65% / 0.7)" },
+  Water: { ring: "hsl(210 75% 60% / 0.40)", text: "hsl(210 75% 68%)", soft: "hsl(210 75% 68% / 0.7)" },
 };
 
 const MOON_REMINDER: Record<string, string> = {
