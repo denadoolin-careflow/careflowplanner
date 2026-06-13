@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { routines as routinesApi, useRoutines, ROUTINE_SLOTS, SLOT_LABEL, type RoutineSlot } from "@/lib/routines";
+import { routines as routinesApi, useRoutines, ROUTINE_SLOTS, SLOT_LABEL, type RoutineSlot, type Routine } from "@/lib/routines";
 import { RoutineItemRow } from "@/components/routines/RoutineItemRow";
+import { RoutineFocusMode } from "@/components/routines/RoutineFocusMode";
 import { useStore } from "@/lib/store";
 
 const STORAGE_KEY = "careflow:routines-mini:v1";
@@ -36,6 +37,7 @@ export function RoutinesMini() {
     setPrefs(prev => { const next = { ...prev, ...patch }; writePrefs(next); return next; });
   };
   const { person, slot } = prefs;
+  const [focus, setFocus] = useState<{ routine: Routine; itemId?: string } | null>(null);
 
   const people = useMemo(() => {
     const fromRoutines = routinesApi.people();
@@ -112,7 +114,14 @@ export function RoutinesMini() {
             ) : (
               <div className="space-y-0.5">
                 {items.map(it => (
-                  <RoutineItemRow key={it.id} item={it} person={person} slot={slot} compact />
+                  <RoutineItemRow
+                    key={it.id}
+                    item={it}
+                    person={person}
+                    slot={slot}
+                    compact
+                    onFocus={current ? () => setFocus({ routine: current, itemId: it.id }) : undefined}
+                  />
                 ))}
               </div>
             )
@@ -128,6 +137,14 @@ export function RoutinesMini() {
           Open Routines →
         </Link>
       </div>
+      {focus && (
+        <RoutineFocusMode
+          open={!!focus}
+          onOpenChange={(o) => { if (!o) setFocus(null); }}
+          routine={focus.routine}
+          startItemId={focus.itemId}
+        />
+      )}
     </div>
   );
 }
