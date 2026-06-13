@@ -18,6 +18,10 @@ import type { Task } from "@/lib/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAtmosphere } from "@/lib/atmospheres";
 import { RoutinesMini } from "@/components/routines/RoutinesMini";
+import { QuickAddBar } from "@/components/today/QuickAddBar";
+import { parseTaskInput } from "@/lib/nlp-task";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 function atmoColor(palette: string[], index: number, alpha?: number): string {
   const hex = palette[index % palette.length];
@@ -62,6 +66,7 @@ function TaskMiniRow({ t, navigate }: { t: Task; navigate: ReturnType<typeof use
 
 function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType<typeof useNavigate> }) {
   const isoToday = todayISO();
+  const { addTask } = useStore();
   const groups = useMemo(() => {
     const all = tasks
       .filter((t) => t.dueDate === isoToday && t.status !== "parked" && !t.parentTaskId)
@@ -90,31 +95,52 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
   const total = sections.reduce((s, sec) => s + sec.items.length, 0);
 
   return (
-    <div className="w-80 max-h-[min(80vh,38rem)] overflow-y-auto p-3">
+    <div className="w-96 max-h-[min(85vh,42rem)] overflow-y-auto p-3">
       <div className="mb-2 flex items-center justify-between">
         <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Today</div>
         <span className="text-[10px] font-medium text-muted-foreground">{total} tasks</span>
       </div>
-      {total === 0 ? (
-        <p className="text-xs text-muted-foreground">Nothing scheduled for today.</p>
-      ) : (
-        <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-          {sections.map((sec) =>
-            sec.items.length === 0 ? null : (
-              <div key={sec.label}>
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-                  {sec.label}
-                </div>
-                <div className="space-y-0.5">
-                  {sec.items.map((t) => (
-                    <TaskMiniRow key={t.id} t={t} navigate={navigate} />
-                  ))}
-                </div>
+      <div className="mb-3">
+        <QuickAddBar date={new Date()} />
+      </div>
+      <div className="space-y-3 pr-1">
+        {sections.map((sec) => (
+          <div key={sec.label}>
+            <div className="mb-1 flex items-center justify-between">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+                {sec.label}
               </div>
-            )
-          )}
-        </div>
-      )}
+              <span className="text-[10px] tabular-nums text-muted-foreground/60">{sec.items.length}</span>
+            </div>
+            <div className="space-y-0.5">
+              {sec.items.length === 0 ? (
+                <p className="px-1 text-[11px] italic text-muted-foreground/70">No tasks yet.</p>
+              ) : (
+                sec.items.map((t) => <TaskMiniRow key={t.id} t={t} navigate={navigate} />)
+              )}
+            </div>
+            {sec.label !== "Anytime" && (
+              <SlotQuickAdd
+                slotLabel={sec.label as "Morning" | "Afternoon" | "Evening"}
+                isoDate={isoToday}
+                onAdd={async (parsed) => {
+                  await addTask({
+                    title: parsed.title,
+                    dueDate: parsed.dueDate ?? isoToday,
+                    dayPart: sec.label as "Morning" | "Afternoon" | "Evening",
+                    priority: parsed.priority,
+                    area: parsed.area,
+                    tags: parsed.tags,
+                    energy: parsed.energy,
+                    estMinutes: parsed.estMinutes,
+                  });
+                  toast.success(`Added → ${sec.label}`);
+                }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
       <RoutinesMini />
       <div className="mt-2 border-t border-border/40 pt-2">
         <Link
@@ -125,6 +151,50 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
         </Link>
       </div>
     </div>
+  );
+}
+
+function SlotQuickAdd({
+  slotLabel, isoDate, onAdd,
+}: {
+  slotLabel: "Morning" | "Afternoon" | "Evening";
+  isoDate: string;
+  onAdd: (parsed: ReturnType<typeof parseTaskInput>) => Promise<void>;
+}) {
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const v = text.trim();
+    if (!v) return;
+    setBusy(true);
+    try {
+      const parsed = parseTaskInput(v);
+      await onAdd(parsed);
+      setText("");
+    } finally { setBusy(false); }
+  };
+  void isoDate;
+  return (
+    <form
+      onSubmit={submit}
+      className="mt-1 flex items-center gap-1 rounded-lg border border-border/50 bg-background/60 px-2 py-1"
+    >
+      <Plus className="h-3 w-3 shrink-0 text-muted-foreground" />
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={`Quick add to ${slotLabel.toLowerCase()}…`}
+        className="min-w-0 flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/70"
+      />
+      <button
+        type="submit"
+        disabled={!text.trim() || busy}
+        className="rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary disabled:opacity-40"
+      >
+        Add
+      </button>
+    </form>
   );
 }
 

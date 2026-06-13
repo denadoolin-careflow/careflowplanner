@@ -140,9 +140,9 @@ export function RoutineItemRow({
       {onFocus && (
         <button
           onClick={onFocus}
-          className="rounded-full p-2 text-muted-foreground transition-opacity hover:bg-primary/15 hover:text-primary md:opacity-0 md:group-hover:opacity-100"
-          aria-label="Focus on step"
-          title="Focus"
+          className="rounded-full p-1.5 text-primary/80 transition-colors hover:bg-primary/15 hover:text-primary"
+          aria-label="Start timer for this step"
+          title="Start timer"
         >
           <Play className="h-3.5 w-3.5" />
         </button>
