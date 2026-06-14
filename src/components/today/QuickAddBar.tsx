@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Plus, Sunrise, Sun, Moon, ListChecks, UtensilsCrossed, Sparkles, Home, StickyNote, HeartHandshake } from "lucide-react";
+import { Plus, Sunrise, Sun, Moon, ListChecks, UtensilsCrossed, Sparkles, Home, StickyNote, HeartHandshake, FileText } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { createNote } from "@/lib/notes";
+import { createNote, getOrCreateDailyNote } from "@/lib/notes";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
@@ -268,6 +268,21 @@ export function QuickAddBar({ date }: { date: Date }) {
         className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-soft transition disabled:opacity-40"
       >
         Add
+      </button>
+
+      <button
+        type="button"
+        title="Open today's daily note"
+        onClick={async () => {
+          try {
+            const n = await getOrCreateDailyNote(iso);
+            navigate(`/notes/${n.id}`);
+          } catch { toast.error("Couldn't open today's note"); }
+        }}
+        className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2.5 py-1 text-[11px] text-muted-foreground transition hover:text-foreground"
+      >
+        <FileText className="h-3 w-3" />
+        <span className="hidden sm:inline">Today's note</span>
       </button>
     </form>
   );

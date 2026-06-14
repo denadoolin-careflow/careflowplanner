@@ -20,7 +20,8 @@ import { useAtmosphere } from "@/lib/atmospheres";
 import { RoutinesMini } from "@/components/routines/RoutinesMini";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { parseTaskInput } from "@/lib/nlp-task";
-import { Plus } from "lucide-react";
+import { Plus, BookHeart, FileText, StickyNote } from "lucide-react";
+import { getOrCreateDailyNote, createNote } from "@/lib/notes";
 import { toast } from "sonner";
 
 function atmoColor(palette: string[], index: number, alpha?: number): string {
@@ -142,7 +143,40 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
         ))}
       </div>
       <RoutinesMini />
-      <div className="mt-2 border-t border-border/40 pt-2">
+      <div className="mt-2 border-t border-border/40 pt-2 space-y-1.5">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const n = await getOrCreateDailyNote(isoToday);
+                navigate(`/notes/${n.id}`);
+              } catch { toast.error("Couldn't open today's note"); }
+            }}
+            className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-border/50 bg-background/60 px-2 py-1 text-[10px] font-medium text-foreground/80 hover:bg-background"
+          >
+            <FileText className="h-3 w-3 text-primary" /> Daily note
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const n = await createNote({});
+                navigate(`/notes/${n.id}`);
+              } catch { toast.error("Couldn't create note"); }
+            }}
+            className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-border/50 bg-background/60 px-2 py-1 text-[10px] font-medium text-foreground/80 hover:bg-background"
+          >
+            <StickyNote className="h-3 w-3 text-primary" /> New note
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/journal")}
+            className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-border/50 bg-background/60 px-2 py-1 text-[10px] font-medium text-foreground/80 hover:bg-background"
+          >
+            <BookHeart className="h-3 w-3 text-primary" /> Journal
+          </button>
+        </div>
         <Link
           to="/today"
           className="block text-[11px] font-medium text-primary hover:underline"
