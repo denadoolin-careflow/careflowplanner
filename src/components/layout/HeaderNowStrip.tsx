@@ -20,9 +20,11 @@ import { useAtmosphere } from "@/lib/atmospheres";
 import { RoutinesMini } from "@/components/routines/RoutinesMini";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { parseTaskInput } from "@/lib/nlp-task";
-import { Plus, BookHeart, FileText, StickyNote } from "lucide-react";
+import { Plus, BookHeart, FileText, StickyNote, Pencil } from "lucide-react";
 import { getOrCreateDailyNote, createNote } from "@/lib/notes";
 import { toast } from "sonner";
+import { haptics } from "@/lib/haptics";
+import { openTaskEditor } from "@/lib/open-task-editor";
 
 function atmoColor(palette: string[], index: number, alpha?: number): string {
   const hex = palette[index % palette.length];
@@ -44,24 +46,58 @@ function CondIcon({ c, isNight, className }: { c: WeatherCondition; isNight?: bo
 }
 
 function TaskMiniRow({ t, navigate }: { t: Task; navigate: ReturnType<typeof useNavigate> }) {
+  const { toggleTask } = useStore();
+  const [completing, setCompleting] = useState(false);
+  const onToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!t.done) {
+      setCompleting(true);
+      haptics.success();
+      setTimeout(() => setCompleting(false), 900);
+    } else {
+      haptics.tap();
+    }
+    try { await toggleTask(t.id); } catch { /* */ }
+  };
   return (
-    <button
-      type="button"
+    <div
       key={t.id}
-      onClick={() => {
-        navigate(`/today?task=${t.id}`);
-      }}
-      className="flex w-full items-start gap-2 rounded-md px-1 py-1 text-left hover:bg-muted/60 transition"
-    >
-      {t.done ? (
-        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
-      ) : (
-        <Circle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+      className={cn(
+        "group flex w-full items-start gap-1.5 rounded-md px-1 py-1 transition hover:bg-muted/60",
+        completing && "task-completing",
       )}
-      <span className={cn("line-clamp-2 text-xs leading-snug", t.done && "text-muted-foreground line-through")}>
-        {t.title}
-      </span>
-    </button>
+    >
+      <button
+        type="button"
+        aria-label={t.done ? "Mark incomplete" : "Mark complete"}
+        onClick={onToggle}
+        data-no-haptic
+        className="mt-0.5 shrink-0 rounded-full p-0.5 hover:bg-background/70"
+      >
+        {t.done ? (
+          <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+        ) : (
+          <Circle className="h-3.5 w-3.5 text-muted-foreground/50" />
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={() => navigate(`/today?task=${t.id}`)}
+        className="min-w-0 flex-1 text-left"
+      >
+        <span className={cn("line-clamp-2 text-xs leading-snug", t.done && "text-muted-foreground line-through")}>
+          {t.title}
+        </span>
+      </button>
+      <button
+        type="button"
+        aria-label="Edit task"
+        onClick={(e) => { e.stopPropagation(); openTaskEditor(t.id); }}
+        className="opacity-0 group-hover:opacity-100 focus:opacity-100 mt-0.5 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-background/70 hover:text-foreground transition"
+      >
+        <Pencil className="h-3 w-3" />
+      </button>
+    </div>
   );
 }
 
@@ -232,21 +268,74 @@ function SlotQuickAdd({
   );
 }
 
-function DueNextPreview({ tasks, slotLabel }: { tasks: Task[]; slotLabel: string }) {
+function DueNextRow({ t, navigate }: { t: Task; navigate: ReturnType<typeof useNavigate> }) {
+  const { toggleTask } = useStore();
+  const [completing, setCompleting] = useState(false);
+  const onToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!t.done) {
+      setCompleting(true);
+      haptics.success();
+      setTimeout(() => setCompleting(false), 900);
+    } else {
+      haptics.tap();
+    }
+    try { await toggleTask(t.id); } catch { /* */ }
+  };
   return (
-    <div className="w-56 p-3">
+    <li
+      className={cn(
+        "group flex items-start gap-1.5 rounded-md px-1 py-1 transition hover:bg-muted/60",
+        completing && "task-completing",
+      )}
+    >
+      <button
+        type="button"
+        aria-label={t.done ? "Mark incomplete" : "Mark complete"}
+        onClick={onToggle}
+        data-no-haptic
+        className="mt-0.5 shrink-0 rounded-full p-0.5 hover:bg-background/70"
+      >
+        {t.done ? (
+          <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+        ) : (
+          <Circle className="h-3.5 w-3.5 text-muted-foreground/50" />
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={() => navigate(`/today?task=${t.id}`)}
+        className="min-w-0 flex-1 text-left"
+      >
+        <span className={cn("line-clamp-2 text-xs leading-snug text-foreground", t.done && "text-muted-foreground line-through")}>
+          {t.title}
+        </span>
+      </button>
+      <button
+        type="button"
+        aria-label="Edit task"
+        onClick={(e) => { e.stopPropagation(); openTaskEditor(t.id); }}
+        className="opacity-0 group-hover:opacity-100 focus:opacity-100 mt-0.5 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-background/70 hover:text-foreground transition"
+      >
+        <Pencil className="h-3 w-3" />
+      </button>
+    </li>
+  );
+}
+
+function DueNextPreview({ tasks, slotLabel }: { tasks: Task[]; slotLabel: string }) {
+  const navigate = useNavigate();
+  return (
+    <div className="w-60 p-3">
       <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         What's due next · {slotLabel}
       </div>
       {tasks.length === 0 ? (
         <p className="text-xs text-muted-foreground">Nothing on your plate right now.</p>
       ) : (
-        <ul className="space-y-1.5">
+        <ul className="space-y-0.5">
           {tasks.map(t => (
-            <li key={t.id} className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
-              <span className="line-clamp-2 text-xs leading-snug text-foreground">{t.title}</span>
-            </li>
+            <DueNextRow key={t.id} t={t} navigate={navigate} />
           ))}
         </ul>
       )}
