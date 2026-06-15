@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { Sparkles, Heart, BookHeart } from "lucide-react";
+import { Sparkles, Heart, BookHeart, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MoonGlyph } from "@/components/widgets/MoonGlyph";
@@ -12,6 +12,7 @@ import { TarotCard } from "./TarotCard";
 import { TarotSpreadSheet } from "./TarotSpreadSheet";
 import { useTarotEnabled } from "@/lib/astrology-prefs";
 import { PlanWithEnergyDialog } from "@/components/rhythm/PlanWithEnergyDialog";
+import { JournalEntryDialog } from "@/components/journal/JournalEntryDialog";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ export function RhythmGuidanceCard({ date }: Props) {
   const elemMeta = ELEMENT_META[f.element];
   const [planOpen, setPlanOpen] = useState(false);
   const [spreadOpen, setSpreadOpen] = useState(false);
+  const [journalOpen, setJournalOpen] = useState(false);
   const tarotOn = useTarotEnabled();
   const { addJournal } = useStore();
 
@@ -142,17 +144,36 @@ export function RhythmGuidanceCard({ date }: Props) {
       {/* Footer */}
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/50 pt-3">
         <p className="text-[11.5px] italic text-muted-foreground">{f.guidance.caregiverNote}</p>
-        <Button
-          size="sm"
-          className="h-8 shrink-0 rounded-full px-3 text-xs"
-          onClick={() => setPlanOpen(true)}
-        >
-          <Sparkles className="mr-1 h-3.5 w-3.5" /> Plan with this energy
-        </Button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 rounded-full px-3 text-xs"
+            onClick={() => setJournalOpen(true)}
+          >
+            <PenLine className="mr-1 h-3.5 w-3.5" /> Open editor
+          </Button>
+          <Button
+            size="sm"
+            className="h-8 rounded-full px-3 text-xs"
+            onClick={() => setPlanOpen(true)}
+          >
+            <Sparkles className="mr-1 h-3.5 w-3.5" /> Plan with this energy
+          </Button>
+        </div>
       </div>
 
       <PlanWithEnergyDialog open={planOpen} onOpenChange={setPlanOpen} date={date} forecast={f} />
       {tarotOn && <TarotSpreadSheet open={spreadOpen} onOpenChange={setSpreadOpen} date={date} />}
+      <JournalEntryDialog
+        open={journalOpen}
+        onOpenChange={setJournalOpen}
+        date={date}
+        seedTitle={`Affirmation — ${f.phaseLabel}`}
+        seedBody={`"${f.guidance.suggestion}"\n\nMoon in ${f.sign.sign} · ${elemMeta.label}`}
+        defaultTags={["affirmation", "rhythm", f.element]}
+        defaultType="daily"
+      />
     </section>
   );
 }
