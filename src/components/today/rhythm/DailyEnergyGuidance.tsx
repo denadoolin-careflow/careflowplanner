@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Moon, BookHeart, StickyNote, FileText, Loader2 } from "lucide-react";
+import { Moon, BookHeart, StickyNote, FileText, Loader2, PenLine } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useCycle } from "@/lib/cycle-store";
@@ -7,6 +7,7 @@ import { getDailyEnergyGuidance } from "@/lib/daily-energy-guidance";
 import { useStore, todayISO } from "@/lib/store";
 import { createNote, getOrCreateDailyNote } from "@/lib/notes";
 import { Textarea } from "@/components/ui/textarea";
+import { JournalEntryDialog } from "@/components/journal/JournalEntryDialog";
 import { cn } from "@/lib/utils";
 
 const ELEMENT_ACCENT: Record<string, string> = {
@@ -29,6 +30,7 @@ export function DailyEnergyGuidance({ date, className }: Props) {
   const { addJournal } = useStore();
   const [journalOpen, setJournalOpen] = useState(false);
   const [journalText, setJournalText] = useState("");
+  const [editorOpen, setEditorOpen] = useState(false);
   const [busy, setBusy] = useState<null | "daily" | "new" | "save">(null);
 
   const openDailyNote = async () => {
@@ -132,6 +134,15 @@ export function DailyEnergyGuidance({ date, className }: Props) {
         </button>
         <button
           type="button"
+          onClick={() => setEditorOpen(true)}
+          className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-foreground/80 transition hover:bg-background"
+          style={{ borderColor: accent.replace(")", " / 0.35)") }}
+        >
+          <PenLine className="h-3 w-3" style={{ color: accent }} />
+          Open editor
+        </button>
+        <button
+          type="button"
           onClick={openDailyNote}
           disabled={busy === "daily"}
           className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-foreground/80 transition hover:bg-background disabled:opacity-50"
@@ -182,6 +193,16 @@ export function DailyEnergyGuidance({ date, className }: Props) {
           </div>
         </div>
       )}
+
+      <JournalEntryDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        date={date}
+        seedTitle={g.headline.slice(0, 80)}
+        seedBody={g.reflection}
+        defaultTags={["daily-energy", g.element.toLowerCase()]}
+        defaultType="daily"
+      />
     </section>
   );
 }
