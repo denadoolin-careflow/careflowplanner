@@ -511,6 +511,13 @@ export default function NoteDetail() {
       {!focusMode && (
       <div className="hidden lg:block">
         <div className="sticky top-20 space-y-3">
+          <NoteIntelligencePanel
+            noteId={note.id}
+            title={title}
+            body={body}
+            tags={tags}
+            projectId={note.projectId ?? null}
+          />
           <NoteContextRail
             noteId={note.id}
             onClose={() => nav("/notes")}
