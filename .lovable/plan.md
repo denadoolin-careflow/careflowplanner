@@ -1,45 +1,43 @@
-## Goal
+# Notes & Journal Redesign Plan
 
-The Daily Energy & Reflection card on `/today` currently has no way to act on the prompt. Add lightweight entry points so users can capture a journal entry or open/create a note inspired by the day's reflection — and surface the same in the header "Today" task popover and the Quick Add bar.
+This is a large scope. I want to land it in phases so each ships working, not a single mega-PR that's hard to review. Here's the proposed sequencing — confirm or reshuffle and I'll start with Phase 1.
 
-## 1. Fix & extend `DailyEnergyGuidance` (`src/components/today/rhythm/DailyEnergyGuidance.tsx`)
+## What's already in place
+- `src/pages/Notes.tsx`, `NoteDetail.tsx`, `Journal.tsx`, `JournalFlow.tsx`
+- `src/components/notes/*` — `NotesHub`, `NotesSideNav`, `BlockEditor`, `NoteAIButton`, `LinkedNotesPanel`, `NoteContextRail`, `NoteTOC`, `NoteLinksSidebar`, hover preview, cover/icon pickers, AI markdown
+- `src/components/journal/*` — `JournalEntryDialog`, project/recipient pickers, project panel
+- Backend: `notes`, `journal_entries`, `note_links`, plus tags, tasks, calendar, family, pantry, care_*  tables. AI edge functions: `ai-notes`, `ai-journal`, `ai-cosmic-journal-insights`
+- Auto-link helpers (`note-links.ts`, `extractBacklinks`), tags, daily-note get-or-create
 
-Add a small action row beneath the reflection:
+Most building blocks exist — the work is composition, IA, and a few new surfaces, not a rewrite.
 
-- **Journal this** → calls `addJournal({ body: "<reflection>\n\n", type: "brain-dump", date: todayISO })` then navigates to `/journal` (or inlines a tiny expandable textarea like `JournalTodayWidget` does — preferred so users don't leave the page).
-- **Open today's note** → `await getOrCreateDailyNote(todayISO)` then `navigate(\`/notes/\${note.id}\`)`.
-- **New note** → `await createNote({ title: "", body: \`> \${reflection}\n\n\` })` then navigate to the new note so the reflection seeds it.
+## Phase 1 — IA + three-column shell (Notes)
+- Rework `Notes.tsx` into a three-column layout: `NotesSideNav` (left) · editor (center) · new `NoteIntelligencePanel` (right, collapsible).
+- Left nav adds the requested sections: All, Journal, Favorites, Recent, Shared, Archived + Collections (Family, Medical, Household, Therapy, School, Personal) driven by tags/kind. Quick actions: New Note, New Journal Entry.
+- Center reuses `BlockEditor` + floating save indicator (already auto-saves; surface state).
+- Right panel = first pass: Related Tasks, Related Events, People mentioned, AI Summary, Suggested Actions (stub Create task / Add to grocery / Schedule reminder using existing stores).
+- Mobile: right panel becomes a bottom sheet; left becomes a drawer.
 
-Use ghost-style chip buttons matching the card's sage accent. Keep the section visually intact (the user says it "appears broken" — confirm by re-reading the component and adding the action row inside the card so it feels purposeful, not a loose section).
+## Phase 2 — Journal mode
+- Convert `Journal.tsx` into a calming dashboard: Today's Reflection card (rotating prompts), Mood check-in wheel (6 moods listed), streak + emotional trend strip, "wins / themes" summary powered by `ai-cosmic-journal-insights` or a new `ai-journal-insights` action.
+- Add `mood` + `prompt_id` columns to `journal_entries` (migration) for trends.
+- Prompts library component with categories (Caregiving, Wellness, Parenting, Gratitude, Relationships, Self-Care, Reflection) — dismissible, never forced.
 
-Inline journal mini-form (collapsed by default):
-- Click "Journal this" → expand a 2-line textarea + Save button (mirrors `JournalTodayWidget` pattern).
-- On save: `addJournal` with today's date, toast "Saved to journal", collapse.
+## Phase 3 — Smart capture + AI
+- Universal Quick Capture FAB (Note / Voice / Journal / Checklist / Photo) — reuses `use-voice-dictation`, attachments, `QuickAddBar` patterns.
+- Extend `ai-notes` with `summary`, `key_decisions`, `action_items`, `follow_ups` actions; auto-tag suggestions (people, projects, health, locations).
+- Smart linking: surface Notes↔Tasks/Calendar/Pantry/Care/Family in the right panel using existing relations + `note_links`.
 
-## 2. Today's task popover (`src/components/layout/HeaderNowStrip.tsx → TodayPreview`)
+## Phase 4 — Timeline + Search
+- New `/notes/timeline` view: chronological merge of notes, journal entries, tasks, events.
+- Upgrade `UniversalSearchBar` filters: title, content, tags, person, date, category — instant results.
 
-Add a thin action row above "Open Today →":
-- **Daily note** → `getOrCreateDailyNote(todayISO)` → navigate.
-- **New note** → `createNote({})` → navigate.
-- **Journal** → navigate to `/journal`.
+## Phase 5 — Polish
+- Atmosphere-aware surfaces, soft cards, rounded corners, gentle shadows, mobile full-screen editor, swipe between notes, bottom action bar.
 
-Small icon buttons (BookHeart / StickyNote / Plus) styled like the existing footer link.
+## Open questions
+1. Start with Phase 1 only, or bundle 1+2?
+2. For Collections (Family/Medical/etc.) — drive off existing tags, or add a new `collection` column on `notes`?
+3. Mood check-in: store on `journal_entries` (new column) or on `mental_health_logs` (already exists)?
 
-## 3. Quick Add bar (`src/components/today/QuickAddBar.tsx`)
-
-The bar already has a `note` kind that creates a note from typed text. Add one more affordance:
-
-- A small **"Today's note"** button next to the kind switcher (only visible when `kind !== "note"` or always) that calls `getOrCreateDailyNote(todayISO)` and navigates — so users can jump into today's daily note in one tap without typing.
-- Keep the existing `note` kind behavior (free-text → new note) unchanged.
-
-## Technical notes
-
-- Reuse: `createNote`, `getOrCreateDailyNote` from `src/lib/notes.ts`; `addJournal` from `useStore()`; `todayISO` from `src/lib/store`.
-- Navigation via `useNavigate()` to `/notes/:id` and `/journal`.
-- No schema changes, no new libs.
-- Toasts via existing `sonner`.
-
-## Out of scope
-
-- No changes to the guidance text generator (`src/lib/daily-energy-guidance.ts`).
-- No restyling of unrelated Today cards.
+Reply with answers (or "go" to start Phase 1 with sensible defaults: Phase 1 only, tag-driven collections, mood on `journal_entries`).

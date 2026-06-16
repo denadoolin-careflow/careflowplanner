@@ -296,6 +296,7 @@ export default function Notes() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={newNote}><Plus className="mr-2 h-3.5 w-3.5" /> New note</DropdownMenuItem>
             <DropdownMenuItem onClick={newDaily}><Sun className="mr-2 h-3.5 w-3.5" /> Today's daily note</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/journal")}><BookOpen className="mr-2 h-3.5 w-3.5" /> New journal entry</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>

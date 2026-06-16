@@ -17,6 +17,7 @@ import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { NoteTOC } from "@/components/notes/NoteTOC";
 import { NoteContextRail } from "@/components/notes/NoteContextRail";
+import { NoteIntelligencePanel } from "@/components/notes/NoteIntelligencePanel";
 import { useTags } from "@/hooks/use-tags";
 import { useStore } from "@/lib/store";
 import { copyToClipboard } from "@/lib/clipboard";
@@ -49,6 +50,8 @@ export default function NoteDetail() {
   const [tags, setTags] = useState<string[]>([]);
   const [backlinks, setBacklinks] = useState<Note[]>([]);
   const saveTimer = useRef<number | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const savedFlashTimer = useRef<number | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
   const [repositioning, setRepositioning] = useState(false);
@@ -129,8 +132,18 @@ export default function NoteDetail() {
   const save = (next: { title?: string; body?: string }) => {
     if (!id) return;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    setSaveState("saving");
     saveTimer.current = window.setTimeout(() => {
-      void updateNote(id, next).catch(() => toast.error("Save failed"));
+      void updateNote(id, next)
+        .then(() => {
+          setSaveState("saved");
+          if (savedFlashTimer.current) window.clearTimeout(savedFlashTimer.current);
+          savedFlashTimer.current = window.setTimeout(() => setSaveState("idle"), 1500);
+        })
+        .catch(() => {
+          setSaveState("idle");
+          toast.error("Save failed");
+        });
     }, 400);
   };
 
@@ -256,6 +269,18 @@ export default function NoteDetail() {
         <Button variant="ghost" size="sm" onClick={() => nav("/notes")} className="gap-1.5">
           <ArrowLeft className="h-4 w-4" /> Notes
         </Button>
+        <span
+          className={cn(
+            "ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-opacity",
+            saveState === "saving" && "bg-amber-500/10 text-amber-700 opacity-100",
+            saveState === "saved" && "bg-emerald-500/10 text-emerald-700 opacity-100",
+            saveState === "idle" && "opacity-0",
+          )}
+          aria-live="polite"
+        >
+          {saveState === "saving" && (<><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" /> Saving…</>)}
+          {saveState === "saved" && (<><Check className="h-3 w-3" /> Saved</>)}
+        </span>
         <div className="ml-auto flex items-center gap-1">
           <Button
             variant="ghost"
@@ -486,6 +511,13 @@ export default function NoteDetail() {
       {!focusMode && (
       <div className="hidden lg:block">
         <div className="sticky top-20 space-y-3">
+          <NoteIntelligencePanel
+            noteId={note.id}
+            title={title}
+            body={body}
+            tags={tags}
+            projectId={note.projectId ?? null}
+          />
           <NoteContextRail
             noteId={note.id}
             onClose={() => nav("/notes")}
