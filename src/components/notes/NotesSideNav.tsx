@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Clock3, Pin, Sun, Link2, Tag as TagIcon, Archive, Plus, FileQuestion, FolderOpen, List, ChevronDown,
+  Users, HeartPulse, Home as HomeIcon, Stethoscope, GraduationCap, User as UserIcon, BookHeart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fallbackColorFor, type Tag } from "@/lib/tags";
@@ -33,6 +34,21 @@ export function collectionCount(id: SmartCollectionId, notes: Note[]): number {
   }
 }
 
+/** Predefined caregiver collections that filter notes by tag matches. */
+export const CAREGIVER_COLLECTIONS: { id: string; label: string; icon: React.ComponentType<{ className?: string }>; tags: string[] }[] = [
+  { id: "family",    label: "Family",    icon: Users,         tags: ["family", "kids", "partner", "parents"] },
+  { id: "medical",   label: "Medical",   icon: HeartPulse,    tags: ["medical", "health", "doctor", "appointments"] },
+  { id: "household", label: "Household", icon: HomeIcon,      tags: ["home", "household", "chores", "maintenance"] },
+  { id: "therapy",   label: "Therapy",   icon: Stethoscope,   tags: ["therapy", "mental-health", "counseling"] },
+  { id: "school",    label: "School",    icon: GraduationCap, tags: ["school", "education", "homework"] },
+  { id: "personal",  label: "Personal",  icon: UserIcon,      tags: ["personal", "self", "me"] },
+];
+
+function countCaregiverCollection(notes: Note[], tags: string[]): number {
+  const set = new Set(tags.map(t => t.toLowerCase()));
+  return notes.filter(n => (n.tags ?? []).some(t => set.has(t.toLowerCase()))).length;
+}
+
 export function applyCollection(id: SmartCollectionId, notes: Note[]): Note[] {
   switch (id) {
     case "all":      return notes;
@@ -61,11 +77,16 @@ export function NotesSideNav({
     if (typeof window === "undefined") return true;
     return localStorage.getItem("careflow.notes.sidenav.collections") !== "0";
   });
+  const [openCare, setOpenCare] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("careflow.notes.sidenav.care") !== "0";
+  });
   const [openTags, setOpenTags] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("careflow.notes.sidenav.tags") !== "0";
   });
   useEffect(() => { localStorage.setItem("careflow.notes.sidenav.collections", openCollections ? "1" : "0"); }, [openCollections]);
+  useEffect(() => { localStorage.setItem("careflow.notes.sidenav.care", openCare ? "1" : "0"); }, [openCare]);
   useEffect(() => { localStorage.setItem("careflow.notes.sidenav.tags", openTags ? "1" : "0"); }, [openTags]);
 
   // Compute tag usage counts from loaded notes.
@@ -106,6 +127,17 @@ export function NotesSideNav({
 
   return (
     <aside className="flex h-full w-full flex-col gap-5 overflow-y-auto pr-1">
+      {/* Quick actions */}
+      <section className="space-y-1">
+        <Link
+          to="/journal"
+          className="flex items-center gap-2 rounded-lg border border-border/40 bg-card/60 px-2.5 py-1.5 text-sm font-medium text-foreground transition hover:border-primary/40 hover:bg-primary/5"
+        >
+          <BookHeart className="h-3.5 w-3.5 text-primary" />
+          New journal entry
+        </Link>
+      </section>
+
       {/* Smart collections */}
       <section>
         <button
@@ -142,6 +174,51 @@ export function NotesSideNav({
             );
           })}
         </ul>
+        )}
+      </section>
+
+      {/* Caregiver collections */}
+      <section>
+        <button
+          type="button"
+          onClick={() => setOpenCare(o => !o)}
+          aria-expanded={openCare}
+          className="mb-1.5 flex w-full items-center gap-1 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground"
+        >
+          <ChevronDown className={cn("h-3 w-3 transition-transform", !openCare && "-rotate-90")} />
+          <span className="flex-1 text-left">Caregiver</span>
+        </button>
+        {openCare && (
+          <ul className="space-y-0.5">
+            {CAREGIVER_COLLECTIONS.map(c => {
+              const count = countCaregiverCollection(notes, c.tags);
+              const active = activeTag !== null && c.tags.some(t => t.toLowerCase() === activeTag.toLowerCase());
+              return (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Pick the first matching tag that exists in notes; fall back to first.
+                      const set = new Set(notes.flatMap(n => n.tags ?? []).map(t => t.toLowerCase()));
+                      const pick = c.tags.find(t => set.has(t.toLowerCase())) ?? c.tags[0];
+                      onCollectionChange("all");
+                      onTagChange(pick);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                      active
+                        ? "bg-primary/15 text-foreground font-medium"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                    )}
+                  >
+                    <c.icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="flex-1 text-left">{c.label}</span>
+                    <span className="text-[10px] text-muted-foreground/70">{count}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
 
