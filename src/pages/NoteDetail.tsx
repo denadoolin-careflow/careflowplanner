@@ -269,6 +269,18 @@ export default function NoteDetail() {
         <Button variant="ghost" size="sm" onClick={() => nav("/notes")} className="gap-1.5">
           <ArrowLeft className="h-4 w-4" /> Notes
         </Button>
+        <span
+          className={cn(
+            "ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-opacity",
+            saveState === "saving" && "bg-amber-500/10 text-amber-700 opacity-100",
+            saveState === "saved" && "bg-emerald-500/10 text-emerald-700 opacity-100",
+            saveState === "idle" && "opacity-0",
+          )}
+          aria-live="polite"
+        >
+          {saveState === "saving" && (<><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" /> Saving…</>)}
+          {saveState === "saved" && (<><Check className="h-3 w-3" /> Saved</>)}
+        </span>
         <div className="ml-auto flex items-center gap-1">
           <Button
             variant="ghost"
