@@ -17,6 +17,7 @@ import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { NoteTOC } from "@/components/notes/NoteTOC";
 import { NoteContextRail } from "@/components/notes/NoteContextRail";
+import { NoteIntelligencePanel } from "@/components/notes/NoteIntelligencePanel";
 import { useTags } from "@/hooks/use-tags";
 import { useStore } from "@/lib/store";
 import { copyToClipboard } from "@/lib/clipboard";
@@ -49,6 +50,8 @@ export default function NoteDetail() {
   const [tags, setTags] = useState<string[]>([]);
   const [backlinks, setBacklinks] = useState<Note[]>([]);
   const saveTimer = useRef<number | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const savedFlashTimer = useRef<number | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
   const [repositioning, setRepositioning] = useState(false);
@@ -129,8 +132,18 @@ export default function NoteDetail() {
   const save = (next: { title?: string; body?: string }) => {
     if (!id) return;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    setSaveState("saving");
     saveTimer.current = window.setTimeout(() => {
-      void updateNote(id, next).catch(() => toast.error("Save failed"));
+      void updateNote(id, next)
+        .then(() => {
+          setSaveState("saved");
+          if (savedFlashTimer.current) window.clearTimeout(savedFlashTimer.current);
+          savedFlashTimer.current = window.setTimeout(() => setSaveState("idle"), 1500);
+        })
+        .catch(() => {
+          setSaveState("idle");
+          toast.error("Save failed");
+        });
     }, 400);
   };
 
