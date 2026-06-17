@@ -1,43 +1,44 @@
-# Notes & Journal Redesign Plan
+# Notes & Journal — Today surfacing + Phases 3, 4, 5
 
-This is a large scope. I want to land it in phases so each ships working, not a single mega-PR that's hard to review. Here's the proposed sequencing — confirm or reshuffle and I'll start with Phase 1.
+A lot of surface area here, so I'm grouping it into five shippable chunks. I'll work through them in order and stop after each for you to react if you want.
 
-## What's already in place
-- `src/pages/Notes.tsx`, `NoteDetail.tsx`, `Journal.tsx`, `JournalFlow.tsx`
-- `src/components/notes/*` — `NotesHub`, `NotesSideNav`, `BlockEditor`, `NoteAIButton`, `LinkedNotesPanel`, `NoteContextRail`, `NoteTOC`, `NoteLinksSidebar`, hover preview, cover/icon pickers, AI markdown
-- `src/components/journal/*` — `JournalEntryDialog`, project/recipient pickers, project panel
-- Backend: `notes`, `journal_entries`, `note_links`, plus tags, tasks, calendar, family, pantry, care_*  tables. AI edge functions: `ai-notes`, `ai-journal`, `ai-cosmic-journal-insights`
-- Auto-link helpers (`note-links.ts`, `extractBacklinks`), tags, daily-note get-or-create
+## A. Today screen surfacing (small, ships first)
 
-Most building blocks exist — the work is composition, IA, and a few new surfaces, not a rewrite.
+New `TodayJournalPulse` card on `/today` (above existing journal/reflection block) showing:
+- Mood streak (consecutive days with a `journal_entries.mood`) + last 7 mood dots.
+- Top 1–2 "wins & themes" from `ai-cosmic-journal-insights` (cached daily in localStorage to avoid re-spending credits).
+- Latest reflection prompt with "Write on this" → routes to `/journal` and pre-fills via existing `onUsePrompt` channel (new `careflow:journal:use-prompt` event).
 
-## Phase 1 — IA + three-column shell (Notes)
-- Rework `Notes.tsx` into a three-column layout: `NotesSideNav` (left) · editor (center) · new `NoteIntelligencePanel` (right, collapsible).
-- Left nav adds the requested sections: All, Journal, Favorites, Recent, Shared, Archived + Collections (Family, Medical, Household, Therapy, School, Personal) driven by tags/kind. Quick actions: New Note, New Journal Entry.
-- Center reuses `BlockEditor` + floating save indicator (already auto-saves; surface state).
-- Right panel = first pass: Related Tasks, Related Events, People mentioned, AI Summary, Suggested Actions (stub Create task / Add to grocery / Schedule reminder using existing stores).
-- Mobile: right panel becomes a bottom sheet; left becomes a drawer.
+## B. Journal calendar + task links
 
-## Phase 2 — Journal mode
-- Convert `Journal.tsx` into a calming dashboard: Today's Reflection card (rotating prompts), Mood check-in wheel (6 moods listed), streak + emotional trend strip, "wins / themes" summary powered by `ai-cosmic-journal-insights` or a new `ai-journal-insights` action.
-- Add `mood` + `prompt_id` columns to `journal_entries` (migration) for trends.
-- Prompts library component with categories (Caregiving, Wellness, Parenting, Gratitude, Relationships, Self-Care, Reflection) — dismissible, never forced.
+- `JournalCalendarView` (month grid) added as a toggle on `/journal` next to the existing list view. Days with entries show a mood dot; click → opens that day's entry in `JournalEntryDialog`.
+- Add `journal` as an `EntityType` to `note_links` (already supported in `src/lib/note-links.ts`) and expose a "Link task" affordance inside `JournalEntryDialog` using existing task picker. Renders linked tasks at the bottom of the entry.
 
-## Phase 3 — Smart capture + AI
-- Universal Quick Capture FAB (Note / Voice / Journal / Checklist / Photo) — reuses `use-voice-dictation`, attachments, `QuickAddBar` patterns.
-- Extend `ai-notes` with `summary`, `key_decisions`, `action_items`, `follow_ups` actions; auto-tag suggestions (people, projects, health, locations).
-- Smart linking: surface Notes↔Tasks/Calendar/Pantry/Care/Family in the right panel using existing relations + `note_links`.
+## C. Phase 3 — Smart capture + AI
 
-## Phase 4 — Timeline + Search
-- New `/notes/timeline` view: chronological merge of notes, journal entries, tasks, events.
-- Upgrade `UniversalSearchBar` filters: title, content, tags, person, date, category — instant results.
+- **Universal Quick Capture FAB**: extend `CombinedFab` into a radial menu with Note / Voice / Journal / Checklist / PDF / Photo. Each routes to existing flows (notes create, `useVoiceDictation` sheet, journal new entry, checklist note kind, attachments upload). No new backend.
+- **`ai-notes` actions**: add `summary`, `key_decisions`, `action_items`, `follow_ups`, `auto_tags` to the existing edge function's `ACTIONS` map. `auto_tags` returns JSON `{ people, projects, health, locations, tags }`.
+- **NoteIntelligencePanel upgrades**: add Pantry / Care / Family sections using existing stores (`state.pantryItems`, `state.recipients`, `state.householdUsers`); reuse `note_links` for explicit links and surface implicit matches.
 
-## Phase 5 — Polish
-- Atmosphere-aware surfaces, soft cards, rounded corners, gentle shadows, mobile full-screen editor, swipe between notes, bottom action bar.
+## D. Phase 4 — Timeline + Search
 
-## Open questions
-1. Start with Phase 1 only, or bundle 1+2?
-2. For Collections (Family/Medical/etc.) — drive off existing tags, or add a new `collection` column on `notes`?
-3. Mood check-in: store on `journal_entries` (new column) or on `mental_health_logs` (already exists)?
+- New route `/notes/timeline` (`NotesTimeline.tsx`): chronological merge of notes, journal entries, tasks (completed/created), appointments. Grouped by day, filterable by type chip.
+- Upgrade `UniversalSearchBar` / `GlobalSearchDialog` with filter chips: type, tag, person, date range, category. Instant results via existing in-memory store, plus note body search.
 
-Reply with answers (or "go" to start Phase 1 with sensible defaults: Phase 1 only, tag-driven collections, mood on `journal_entries`).
+## E. Phase 5 — Polish
+
+- Atmosphere-aware surface tokens on note + journal cards (reuse `useAtmosphere`).
+- Soft cards: increase radius to `rounded-2xl`, gentle `shadow-cozy`, hairline borders.
+- Mobile editor goes full-screen via existing sheet; add left/right swipe between adjacent notes (in current filter).
+- Bottom action bar on mobile editor: Save · Tag · Link · AI · More.
+
+## Technical notes
+
+- No schema changes required. `journal_entries.mood` and `note_links.entity_type='journal'` already exist.
+- `ai-notes` edits stay backwards compatible (new actions only).
+- All new components are presentation-only; data uses existing stores and edge functions.
+- Caching: journal insights cached per-day in `localStorage` under `careflow:journal:pulse:<yyyy-mm-dd>`.
+
+## Open question
+
+Do you want the **Universal Quick Capture FAB to fully replace `CombinedFab`** (one FAB system everywhere), or live alongside it on Notes/Journal pages only? I'll default to **replacing** unless you say otherwise — fewer FABs is calmer.

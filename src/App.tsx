@@ -52,6 +52,7 @@ import NotToday from "./pages/NotToday";
 import Logbook from "./pages/Logbook";
 import Notes from "./pages/Notes";
 import NoteDetail from "./pages/NoteDetail";
+import NotesTimeline from "./pages/NotesTimeline";
 import Review from "./pages/Review";
 import Reset from "./pages/Reset";
 import Routines from "./pages/Routines";
@@ -155,6 +156,7 @@ const App = () => (
                 <Route path="/not-today" element={<NotToday />} />
                 <Route path="/logbook" element={<Logbook />} />
                 <Route path="/notes" element={<Notes />} />
+                <Route path="/notes/timeline" element={<NotesTimeline />} />
                 <Route path="/notes/:id" element={<NoteDetail />} />
                 <Route path="/graph" element={<Graph />} />
                 <Route path="/review" element={<Review />} />

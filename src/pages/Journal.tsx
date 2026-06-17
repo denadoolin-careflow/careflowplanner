@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format, parseISO, subDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
-import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter, Layers, ArrowUpDown, LayoutList, GanttChart } from "lucide-react";
+import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter, Layers, ArrowUpDown, LayoutList, GanttChart, Calendar as CalendarIcon } from "lucide-react";
 import { ChevronDown, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { JournalEntry } from "@/lib/types";
@@ -33,6 +33,7 @@ import { DailyWritingGoal } from "@/components/notes/DailyWritingGoal";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { CareyButton } from "@/components/carey/CareyButton";
 import { JournalDashboard } from "@/components/journal/JournalDashboard";
+import { JournalCalendarView } from "@/components/journal/JournalCalendarView";
 
 type TemplateKey =
   | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
@@ -174,6 +175,36 @@ export default function Journal() {
     setEntriesView(v);
     try { localStorage.setItem("journal.entriesView", v); } catch {}
   };
+  const [showCalendar, setShowCalendar] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("journal.showCalendar") === "1";
+  });
+  const toggleCalendar = () => {
+    setShowCalendar((v) => {
+      const next = !v;
+      try { localStorage.setItem("journal.showCalendar", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
+
+  // Receive a seed prompt from Today screen ("Write on this").
+  useEffect(() => {
+    try {
+      const seed = sessionStorage.getItem("careflow:journal:seed-prompt");
+      if (seed) {
+        setBody((b) => (b ? `${b}\n\n**${seed}**\n\n` : `**${seed}**\n\n`));
+        sessionStorage.removeItem("careflow:journal:seed-prompt");
+      }
+    } catch {}
+    const onPrompt = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { prompt?: string } | undefined;
+      if (detail?.prompt) {
+        setBody((b) => (b ? `${b}\n\n**${detail.prompt}**\n\n` : `**${detail.prompt}**\n\n`));
+      }
+    };
+    window.addEventListener("careflow:journal:use-prompt", onPrompt as EventListener);
+    return () => window.removeEventListener("careflow:journal:use-prompt", onPrompt as EventListener);
+  }, []);
 
   const tpl = TEMPLATES.find(t => t.key === template) ?? TEMPLATES[0];
   const todaysMoonTpl = useMemo(() => templateForToday(), []);
@@ -611,8 +642,25 @@ export default function Journal() {
           >
             <LayoutList className="h-3 w-3" /> Cards
           </button>
+          <button
+            type="button"
+            onClick={toggleCalendar}
+            className={cn(
+              "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] transition",
+              showCalendar ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+            title="Toggle calendar"
+          >
+            <CalendarIcon className="h-3 w-3" /> Calendar
+          </button>
         </div>
         </div>
+
+        {showCalendar && (
+          <div className="mb-4">
+            <JournalCalendarView />
+          </div>
+        )}
 
         {pinned.length > 0 && (
           <div className="mb-4">

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { BookHeart, Loader2, Plus, Link as LinkIcon } from "lucide-react";
+import { BookHeart, Loader2, Plus, Link as LinkIcon, X, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStore, todayISO } from "@/lib/store";
 import type { JournalEntry } from "@/lib/types";
 
@@ -63,11 +64,27 @@ export function JournalEntryDialog({
   const [body, setBody] = useState(seedBody ? `> ${seedBody}\n\n` : "");
   const [type, setType] = useState<JournalType>(defaultType);
   const [busy, setBusy] = useState(false);
+  const [linkedTaskIds, setLinkedTaskIds] = useState<string[]>([]);
+  const [taskQuery, setTaskQuery] = useState("");
+
+  const linkedTasks = useMemo(
+    () => state.tasks.filter((t) => linkedTaskIds.includes(t.id)),
+    [state.tasks, linkedTaskIds],
+  );
+  const taskMatches = useMemo(() => {
+    const q = taskQuery.trim().toLowerCase();
+    return state.tasks
+      .filter((t) => !t.done && !linkedTaskIds.includes(t.id))
+      .filter((t) => (q ? t.title.toLowerCase().includes(q) : true))
+      .slice(0, 8);
+  }, [state.tasks, taskQuery, linkedTaskIds]);
 
   const reset = () => {
     setTitle(seedTitle);
     setBody(seedBody ? `> ${seedBody}\n\n` : "");
     setType(defaultType);
+    setLinkedTaskIds([]);
+    setTaskQuery("");
   };
 
   const save = async () => {
@@ -75,13 +92,15 @@ export function JournalEntryDialog({
     if (!trimmed) return;
     try {
       setBusy(true);
+      const linkedIds = linkedTasks.map((t) => ({ type: "task", id: t.id, label: t.title }));
       await addJournal({
         date: iso,
         type,
         title: title.trim() || undefined,
         body: trimmed,
         tags: defaultTags,
-      });
+        linkedIds: linkedIds.length ? linkedIds : undefined,
+      } as any);
       toast.success("Entry saved");
       reset();
     } catch {
@@ -138,6 +157,75 @@ export function JournalEntryDialog({
                 rows={10}
                 className="min-h-[220px] flex-1 resize-none"
               />
+              <div className="rounded-lg border border-border/40 bg-background/50 p-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Linked tasks
+                  </span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-6 gap-1 px-1.5 text-[11px]">
+                        <LinkIcon className="h-3 w-3" /> Link task
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-72 p-2">
+                      <Input
+                        autoFocus
+                        value={taskQuery}
+                        onChange={(e) => setTaskQuery(e.target.value)}
+                        placeholder="Search active tasks…"
+                        className="h-8 text-xs"
+                      />
+                      <ul className="mt-2 max-h-56 space-y-0.5 overflow-y-auto">
+                        {taskMatches.length === 0 ? (
+                          <li className="px-2 py-1.5 text-[11px] text-muted-foreground">
+                            No tasks match.
+                          </li>
+                        ) : taskMatches.map((t) => (
+                          <li key={t.id}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLinkedTaskIds((ids) => [...ids, t.id]);
+                                setTaskQuery("");
+                              }}
+                              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-muted"
+                            >
+                              <Plus className="h-3 w-3 text-muted-foreground" />
+                              <span className="truncate">{t.title}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                {linkedTasks.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {linkedTasks.map((t) => (
+                      <li
+                        key={t.id}
+                        className="flex items-center justify-between gap-2 rounded-md border border-border/40 bg-background/70 px-2 py-1 text-xs"
+                      >
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <CheckCircle2 className="h-3 w-3 shrink-0 text-primary/70" />
+                          <span className="truncate">{t.title}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setLinkedTaskIds((ids) => ids.filter((id) => id !== t.id))
+                          }
+                          className="text-muted-foreground hover:text-foreground"
+                          aria-label={`Unlink ${t.title}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <div className="flex items-center justify-between gap-2">
                 <Link
                   to="/journal"

@@ -28,6 +28,7 @@ import { DayPlanBoard } from "@/components/today/DayPlanBoard";
 import { ScheduleBoard } from "@/components/today/ScheduleBoard";
 import { cn } from "@/lib/utils";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
+import { TodayJournalPulse } from "@/components/today/TodayJournalPulse";
 
 export default function Today() {
   return (
@@ -206,6 +207,8 @@ function TodayInner() {
           {renderMain()}
 
           <EndOfDayCard />
+
+          {isReallyToday && <TodayJournalPulse />}
 
           <div className="cozy-card flex flex-wrap items-center justify-between gap-3 p-4">
             <div className="min-w-0">
