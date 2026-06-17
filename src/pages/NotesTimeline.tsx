@@ -79,11 +79,11 @@ export default function NotesTimeline() {
     }
     if (enabled.has("event")) {
       for (const a of state.appointments) {
-        if (!a.startDate) continue;
+        if (!a.date) continue;
         out.push({
           id: `event-${a.id}`,
           type: "event",
-          date: `${a.startDate}T${a.startTime ?? "09:00"}`,
+          date: `${a.date}T${a.time ?? "09:00"}`,
           title: a.title,
           body: a.notes ?? undefined,
           href: "/calendar",
