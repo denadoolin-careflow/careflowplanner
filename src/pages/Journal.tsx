@@ -382,6 +382,15 @@ export default function Journal() {
         </div>
       </div>
 
+      <JournalDashboard
+        onUsePrompt={(p) => {
+          insertPrompt(p);
+          if (typeof window !== "undefined") {
+            window.scrollTo({ top: document.body.scrollHeight / 3, behavior: "smooth" });
+          }
+        }}
+      />
+
       <RhythmJournalPrompt scope="daily" />
 
       <DailyWritingGoal />
