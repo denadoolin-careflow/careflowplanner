@@ -37,6 +37,26 @@ const ACTIONS: Record<string, { system: string; user: (body: string, title: stri
     system: `You are a helpful writing assistant. Apply the user's instruction to their note. Return only the resulting note text. ${MD_RULES}`,
     user: (b, t, extra) => `Instruction: ${extra}\n\nTitle: ${t}\n\nNote:\n${b}`,
   },
+  summary: {
+    system: `You write a one-paragraph, neutral summary of a note (2-4 sentences). No headings, no bullets. ${MD_RULES}`,
+    user: (b, t) => `Summarize this note in a single short paragraph.\n\nTitle: ${t}\n\nNote:\n${b}`,
+  },
+  key_decisions: {
+    system: `You extract decisions made in a note. Return a markdown bullet list of decisions, each as one sentence. If none, return "_No clear decisions yet._". ${MD_RULES}`,
+    user: (b, t) => `Extract key decisions.\n\nTitle: ${t}\n\nNote:\n${b}`,
+  },
+  action_items: {
+    system: `You extract action items from a note. Return a markdown checkbox list ("- [ ] item"), one per line. Each item should start with a verb. If none, return "_No action items found._". ${MD_RULES}`,
+    user: (b, t) => `Extract action items as a checkbox list.\n\nTitle: ${t}\n\nNote:\n${b}`,
+  },
+  follow_ups: {
+    system: `You suggest follow-up questions or next steps after reading a note. Return 3-5 markdown bullets. ${MD_RULES}`,
+    user: (b, t) => `Suggest follow-ups for this note.\n\nTitle: ${t}\n\nNote:\n${b}`,
+  },
+  auto_tags: {
+    system: `You extract structured tag suggestions from a note. Reply with ONLY valid minified JSON, no prose, no code fences. Schema: {"people":string[],"projects":string[],"health":string[],"locations":string[],"tags":string[]}. Keep each array <= 6, lowercase tags.`,
+    user: (b, t) => `Extract structured tag suggestions as JSON.\n\nTitle: ${t}\n\nNote:\n${b}`,
+  },
 };
 
 Deno.serve(async (req) => {
