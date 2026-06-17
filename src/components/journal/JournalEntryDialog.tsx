@@ -92,13 +92,15 @@ export function JournalEntryDialog({
     if (!trimmed) return;
     try {
       setBusy(true);
+      const linkedIds = linkedTasks.map((t) => ({ type: "task", id: t.id, label: t.title }));
       await addJournal({
         date: iso,
         type,
         title: title.trim() || undefined,
         body: trimmed,
         tags: defaultTags,
-      });
+        linkedIds: linkedIds.length ? linkedIds : undefined,
+      } as any);
       toast.success("Entry saved");
       reset();
     } catch {
