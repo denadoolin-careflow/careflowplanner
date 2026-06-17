@@ -32,6 +32,7 @@ import { CareLoopIndicator } from "@/components/care/CareLoopIndicator";
 import { DailyWritingGoal } from "@/components/notes/DailyWritingGoal";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { CareyButton } from "@/components/carey/CareyButton";
+import { JournalDashboard } from "@/components/journal/JournalDashboard";
 
 type TemplateKey =
   | "daily" | "gratitude" | "brain-dump" | "caregiver-reflection" | "emotional-checkin"
@@ -380,6 +381,15 @@ export default function Journal() {
           </div>
         </div>
       </div>
+
+      <JournalDashboard
+        onUsePrompt={(p) => {
+          insertPrompt(p);
+          if (typeof window !== "undefined") {
+            window.scrollTo({ top: document.body.scrollHeight / 3, behavior: "smooth" });
+          }
+        }}
+      />
 
       <RhythmJournalPrompt scope="daily" />
 
