@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format, parseISO, subDays, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
-import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter, Layers, ArrowUpDown, LayoutList, GanttChart } from "lucide-react";
+import { Trash2, Search, Sparkles, Pin, PinOff, Flame, Plus, X, Filter, Layers, ArrowUpDown, LayoutList, GanttChart, Calendar as CalendarIcon } from "lucide-react";
 import { ChevronDown, Wind } from "lucide-react";
 import { Link } from "react-router-dom";
 import { JournalEntry } from "@/lib/types";
@@ -642,8 +642,25 @@ export default function Journal() {
           >
             <LayoutList className="h-3 w-3" /> Cards
           </button>
+          <button
+            type="button"
+            onClick={toggleCalendar}
+            className={cn(
+              "inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] transition",
+              showCalendar ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+            title="Toggle calendar"
+          >
+            <CalendarIcon className="h-3 w-3" /> Calendar
+          </button>
         </div>
         </div>
+
+        {showCalendar && (
+          <div className="mb-4">
+            <JournalCalendarView />
+          </div>
+        )}
 
         {pinned.length > 0 && (
           <div className="mb-4">
