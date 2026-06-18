@@ -1400,6 +1400,17 @@ export function BlockEditor({
           e.target.value = "";
         }}
       />
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          files.forEach(f => { void uploadAndInsertFile(f); });
+          e.target.value = "";
+        }}
+      />
       {dragActive && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-primary/5 backdrop-blur-[2px]">
           <div className="rounded-full border border-primary/40 bg-popover/95 px-4 py-2 text-sm font-medium text-primary shadow-lg">
