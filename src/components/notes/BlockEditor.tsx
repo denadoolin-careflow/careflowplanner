@@ -768,10 +768,24 @@ export function BlockEditor({
           const extra: SlashItem[] = [
             {
               title: "Image",
-              description: "Upload from your device",
+              description: "Upload a photo from your device",
               icon: ImageIcon,
-              keywords: ["image", "picture", "photo", "upload", "img"],
+              keywords: ["image", "picture", "photo", "upload", "img", "camera"],
               command: () => triggerImageUpload(),
+            },
+            {
+              title: "Photo",
+              description: "Insert a photo inline",
+              icon: ImageIcon,
+              keywords: ["photo", "picture", "camera", "selfie", "img", "image"],
+              command: () => triggerImageUpload(),
+            },
+            {
+              title: "File",
+              description: "Attach PDF, doc or any file (inline preview)",
+              icon: Paperclip,
+              keywords: ["file", "pdf", "doc", "docx", "attachment", "upload", "attach"],
+              command: () => triggerFileUpload(),
             },
             {
               title: "Add to Tasks",
@@ -802,7 +816,7 @@ export function BlockEditor({
         ),
       })];
     },
-  }), [triggerImageUpload]);
+  }), [triggerImageUpload, triggerFileUpload]);
 
   /* --------------------------------------------------------------- */
   /*  Seamless toggle / bullet keymap                                */
