@@ -628,9 +628,18 @@ export default function NoteDetail() {
         className="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-background px-3 py-4 md:px-6 md:py-6"
         style={{ WebkitOverflowScrolling: "touch" as any }}
         onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {pageBody}
+        <div
+          style={{
+            transform: swipeDx ? `translate3d(${swipeDx}px,0,0)` : undefined,
+            opacity: swipeDx ? 1 - swipeProgress * 0.25 : 1,
+            transition: swipeDx ? undefined : "transform 220ms cubic-bezier(.2,.8,.2,1), opacity 220ms",
+          }}
+        >
+          {pageBody}
+        </div>
       </div>,
       document.body,
     );
@@ -641,7 +650,13 @@ export default function NoteDetail() {
       ref={focusContainerRef}
       className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 lg:grid-cols-[minmax(0,1fr)_300px]"
       onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      style={{
+        transform: swipeDx ? `translate3d(${swipeDx}px,0,0)` : undefined,
+        opacity: swipeDx ? 1 - swipeProgress * 0.25 : 1,
+        transition: swipeDx ? undefined : "transform 220ms cubic-bezier(.2,.8,.2,1), opacity 220ms",
+      }}
     >
       {pageBody}
     </div>
