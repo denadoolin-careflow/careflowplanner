@@ -100,6 +100,17 @@ turndown.addRule("gfmCheckboxItem", {
     return `- [${checked ? "x" : " "}] ${text}\n`;
   },
 });
+// Preserve inline file embeds verbatim across markdown round-trips.
+turndown.addRule("fileEmbed", {
+  filter: (node) => node.nodeName === "DIV" && (node as HTMLElement).hasAttribute("data-file-embed"),
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const src = el.getAttribute("data-src") || el.querySelector("iframe")?.getAttribute("src") || el.querySelector("a")?.getAttribute("href") || "";
+    const name = el.getAttribute("data-name") || "file";
+    const mime = el.getAttribute("data-mime") || "";
+    return `\n\n<div data-file-embed data-src="${src}" data-name="${name}" data-mime="${mime}"></div>\n\n`;
+  },
+});
 
 /**
  * Marked emits GFM task lists as <ul><li><input type="checkbox" .../> text</li></ul>.
