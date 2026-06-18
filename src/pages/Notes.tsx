@@ -307,6 +307,8 @@ export default function Notes() {
         </DropdownMenu>
       </header>
 
+      <NoteTemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} />
+
       {/* Active-tag chip + count row (kept above so users can clear filters quickly) */}
       {(activeTag || filtered.length > 0) && (
         <div className="mb-3 flex flex-wrap items-center gap-2">
