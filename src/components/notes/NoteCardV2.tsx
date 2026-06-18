@@ -34,6 +34,8 @@ export function NoteCardV2({
   onDelete,
   onChanged,
   compact = false,
+  previewLines,
+  previewChars,
 }: {
   note: Note;
   tagsByName: Map<string, Tag>;
@@ -43,6 +45,10 @@ export function NoteCardV2({
   /** Fired after pin/archive/inline-edit mutations so the parent can refresh. */
   onChanged?: () => void;
   compact?: boolean;
+  /** 0 = hide preview, otherwise number of preview lines (also drives char budget). */
+  previewLines?: number;
+  /** Optional explicit max characters in the preview. */
+  previewChars?: number;
 }) {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
@@ -220,12 +226,20 @@ export function NoteCardV2({
       </div>
 
       {/* Preview */}
-      <div className={cn(
-        "px-3.5 pt-1.5 text-[12.5px] leading-relaxed overflow-hidden",
-        compact ? "max-h-10" : "max-h-16",
-      )}>
-        <NoteMarkdownPreview body={note.body || ""} maxChars={compact ? 140 : 220} />
-      </div>
+      {(() => {
+        const lines = previewLines ?? (compact ? 2 : 3);
+        if (lines <= 0) return null;
+        const chars = previewChars ?? Math.max(80, lines * 80);
+        const maxH = `${lines * 1.45}rem`;
+        return (
+          <div
+            className="px-3.5 pt-1.5 text-[12.5px] leading-relaxed overflow-hidden"
+            style={{ maxHeight: maxH }}
+          >
+            <NoteMarkdownPreview body={note.body || ""} maxChars={chars} />
+          </div>
+        );
+      })()}
 
       {/* Tags */}
       {note.tags && note.tags.length > 0 && (
