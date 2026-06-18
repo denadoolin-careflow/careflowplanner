@@ -30,6 +30,8 @@ import { NoteContextRail } from "@/components/notes/NoteContextRail";
 import { NotesStatsRow } from "@/components/notes/NotesStatsRow";
 import { TagManagerDialog } from "@/components/tags/TagManagerDialog";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
+import { NoteTemplatesDialog } from "@/components/notes/NoteTemplatesDialog";
+import { BookTemplate } from "lucide-react";
 
 type View = "list" | "grid" | "board" | "timeline" | "calendar";
 type Sort = "updated" | "created" | "title" | "words";
@@ -297,6 +299,9 @@ export default function Notes() {
             <DropdownMenuItem onClick={newNote}><Plus className="mr-2 h-3.5 w-3.5" /> New note</DropdownMenuItem>
             <DropdownMenuItem onClick={newDaily}><Sun className="mr-2 h-3.5 w-3.5" /> Today's daily note</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/journal")}><BookOpen className="mr-2 h-3.5 w-3.5" /> New journal entry</DropdownMenuItem>
+            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTemplatesOpen(true); }}>
+              <BookTemplate className="mr-2 h-3.5 w-3.5" /> From template…
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
