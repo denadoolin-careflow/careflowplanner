@@ -1277,6 +1277,11 @@ export function BlockEditor({
         </BubbleMenu>
       )}
       <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      {editor && isMobile && (
+        <div className="no-swipe mt-3">
+          <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} onInsertImage={triggerImageUpload} />
+        </div>
+      )}
       <input
         ref={imageInputRef}
         type="file"
