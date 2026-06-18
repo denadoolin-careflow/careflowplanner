@@ -30,7 +30,7 @@ import { useEditorPrefs } from "@/lib/editor-prefs";
 import type { NoteTitleSize } from "@/lib/editor-prefs";
 import { listNotes } from "@/lib/notes";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { triggerHaptic } from "@/lib/haptics";
+import { haptics } from "@/lib/haptics";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -91,7 +91,7 @@ export default function NoteDetail() {
     const nextIdx = dx < 0 ? idx + 1 : idx - 1;
     const nextId = noteOrder[nextIdx];
     if (!nextId) return;
-    try { triggerHaptic("light"); } catch {}
+    try { haptics.tap(); } catch {}
     nav(`/notes/${nextId}`);
   };
   const savedScrollRef = useRef<{ window: number; focus: number }>({ window: 0, focus: 0 });
