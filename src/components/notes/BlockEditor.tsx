@@ -589,6 +589,7 @@ export function BlockEditor({
   const { state, addTask } = useStore();
   const navigate = useNavigate();
   const [prefs] = useEditorPrefs();
+  const isMobile = useIsMobile();
   const { tags: registeredTags } = useTags();
   const refsRef = useRef<RefItem[]>([]);
   const transitRefs = useMemo<RefItem[]>(() => {
