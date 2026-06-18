@@ -103,7 +103,7 @@ export function JournalDashboard({ onUsePrompt }: { onUsePrompt?: (prompt: strin
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {/* Today's Reflection */}
-      <div className="cozy-card gradient-warm relative overflow-hidden p-5 lg:col-span-2">
+      <div className="cozy-card gradient-warm relative overflow-hidden rounded-2xl p-5 shadow-soft lg:col-span-2">
         <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary/80">
           <Heart className="h-3 w-3" /> Today's reflection
         </div>
@@ -149,7 +149,7 @@ export function JournalDashboard({ onUsePrompt }: { onUsePrompt?: (prompt: strin
       </div>
 
       {/* Mood wheel */}
-      <div className="cozy-card p-5">
+      <div className="cozy-card rounded-2xl p-5 shadow-soft">
         <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           How are you, right now?
         </div>
@@ -180,7 +180,7 @@ export function JournalDashboard({ onUsePrompt }: { onUsePrompt?: (prompt: strin
       </div>
 
       {/* AI Wins & Themes */}
-      <div className="cozy-card p-5 lg:col-span-3">
+      <div className="cozy-card rounded-2xl p-5 shadow-soft lg:col-span-3">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
