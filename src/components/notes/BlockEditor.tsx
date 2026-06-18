@@ -342,8 +342,18 @@ function Toolbar({ editor, onPromoteTask, onInsertImage }: { editor: Editor; onP
     if (url === "") { editor.chain().focus().unsetLink().run(); return; }
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
+  const doIndent = () => {
+    if (editor.can().sinkListItem("taskItem")) return editor.chain().focus().sinkListItem("taskItem").run();
+    if (editor.can().sinkListItem("listItem")) return editor.chain().focus().sinkListItem("listItem").run();
+    // Fallback: insert a tab character
+    editor.chain().focus().insertContent("\t").run();
+  };
+  const doOutdent = () => {
+    if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
+    if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
+  };
   return (
-    <div className="sticky top-2 z-10 mb-3 flex items-center gap-0.5 overflow-x-auto rounded-xl border border-border/60 bg-card/80 p-1 backdrop-blur-md shadow-sm sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="cf-editor-toolbar z-10 mb-3 flex w-full max-w-full items-center gap-0.5 overflow-x-auto rounded-xl border border-border/60 bg-card/90 p-1 backdrop-blur-md shadow-sm sm:sticky sm:top-2 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <ToolbarButton active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} label="Heading 1"><Heading1 className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} label="Heading 2"><Heading2 className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} label="Heading 3"><Heading3 className="h-4 w-4" /></ToolbarButton>
@@ -362,6 +372,8 @@ function Toolbar({ editor, onPromoteTask, onInsertImage }: { editor: Editor; onP
       <ToolbarButton active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} label="Bullet list"><List className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} label="Numbered list"><ListOrdered className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} label="To-do list"><CheckSquare className="h-4 w-4" /></ToolbarButton>
+      <ToolbarButton onClick={doOutdent} label="Outdent (Shift+Tab)"><IndentDecrease className="h-4 w-4" /></ToolbarButton>
+      <ToolbarButton onClick={doIndent} label="Indent (Tab)"><IndentIncrease className="h-4 w-4" /></ToolbarButton>
       {editor.isActive("taskItem") && (
         <ToolbarButton onClick={onPromoteTask} label="Add this checkbox to Tasks"><ListPlus className="h-4 w-4" /></ToolbarButton>
       )}
