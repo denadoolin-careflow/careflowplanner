@@ -119,7 +119,7 @@ export function TodayJournalPulse() {
   return (
     <section
       aria-label="Journal pulse"
-      className="cozy-card gradient-warm relative overflow-hidden p-5"
+      className="cozy-card gradient-warm relative overflow-hidden rounded-2xl p-5 shadow-soft"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
@@ -137,7 +137,7 @@ export function TodayJournalPulse() {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={writeOnPrompt}>Write on this</Button>
+        <Button size="sm" onClick={writeOnPrompt} className="rounded-full shadow-soft">Write on this</Button>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-background/60 px-3 py-1.5 text-xs">
           <Flame className="h-3.5 w-3.5 text-primary" />
           <span className="font-medium">{streak}</span>
@@ -152,7 +152,7 @@ export function TodayJournalPulse() {
             key={dStr}
             title={`${format(d, "EEE MMM d")} — ${count} entr${count === 1 ? "y" : "ies"}`}
             className={cn(
-              "flex h-9 items-end justify-center rounded-md border border-border/40 bg-background/60 text-base leading-none",
+              "flex h-9 items-end justify-center rounded-xl border border-border/40 bg-background/60 text-base leading-none shadow-soft",
               isSameDay(d, new Date()) && "ring-1 ring-primary",
             )}
           >
@@ -163,7 +163,7 @@ export function TodayJournalPulse() {
 
       {/* Wins & themes (cached daily) */}
       {(topThemes.length > 0 || topWins.length > 0) && (
-        <div className="mt-4 rounded-xl border border-border/40 bg-background/50 p-3">
+        <div className="mt-4 rounded-2xl border border-border/40 bg-background/50 p-3 shadow-soft">
           <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             <Sparkles className="h-3 w-3" /> Wins &amp; themes
           </div>

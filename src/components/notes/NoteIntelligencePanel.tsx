@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useStore, todayISO } from "@/lib/store";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
 
 interface Props {
   noteId: string;
@@ -228,8 +229,8 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId }: 
 
         <Group title="AI summary" icon={Sparkles} open={open.ai} onToggle={() => toggle("ai")}>
           {summary ? (
-            <div className="rounded-lg border border-border/40 bg-background/50 p-2 text-xs leading-relaxed whitespace-pre-wrap text-foreground/90">
-              {summary}
+            <div className="rounded-xl border border-border/40 bg-background/60 p-3 text-[13px] leading-relaxed text-foreground/90 shadow-soft">
+              <NoteMarkdown body={summary} />
             </div>
           ) : (
             <Empty>Generate a quick summary of this note.</Empty>
