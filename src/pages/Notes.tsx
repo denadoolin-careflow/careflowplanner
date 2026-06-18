@@ -31,7 +31,7 @@ import { NotesStatsRow } from "@/components/notes/NotesStatsRow";
 import { TagManagerDialog } from "@/components/tags/TagManagerDialog";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { NoteTemplatesDialog } from "@/components/notes/NoteTemplatesDialog";
-import { BookTemplate } from "lucide-react";
+import { BookTemplate, Images, Type } from "lucide-react";
 
 type View = "list" | "grid" | "board" | "timeline" | "calendar";
 type Sort = "updated" | "created" | "title" | "words";
@@ -81,6 +81,12 @@ export default function Notes() {
   const [activeTag, setActiveTag] = useState<string | null>(params.get("tag"));
   const [sort, setSort] = useState<Sort>("updated");
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [previewLines, setPreviewLines] = useState<number>(() => {
+    if (typeof window === "undefined") return 3;
+    const raw = Number(localStorage.getItem("careflow.notes.previewLines"));
+    return Number.isFinite(raw) && raw >= 0 && raw <= 8 ? raw : 3;
+  });
+  useEffect(() => { localStorage.setItem("careflow.notes.previewLines", String(previewLines)); }, [previewLines]);
   const [pinnedOnly, setPinnedOnly] = useState(false);
   const [kindFilter, setKindFilter] = useState<"all" | "note" | "daily">("all");
   const [sideOpen, setSideOpen] = useState<boolean>(() => {
@@ -302,6 +308,10 @@ export default function Notes() {
             <DropdownMenuItem onClick={() => navigate("/journal")}><BookOpen className="mr-2 h-3.5 w-3.5" /> New journal entry</DropdownMenuItem>
             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTemplatesOpen(true); }}>
               <BookTemplate className="mr-2 h-3.5 w-3.5" /> From template…
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/notes/files")}>
+              <Images className="mr-2 h-3.5 w-3.5" /> Files & photos
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
