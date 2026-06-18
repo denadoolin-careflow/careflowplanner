@@ -227,15 +227,15 @@ function FloatingMenu<T>({ items, onSelect, render }: {
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, [items, active, onSelect]);
-  if (!items.length) return <div className="rounded-xl border border-border/60 bg-popover p-3 text-xs text-muted-foreground shadow-lg">No matches</div>;
+  if (!items.length) return <div className="rounded-xl border border-border/60 bg-popover p-3 text-xs text-popover-foreground/70 shadow-lg">No matches</div>;
   return (
-    <div className="max-h-72 w-72 overflow-y-auto rounded-xl border border-border/60 bg-popover p-1.5 shadow-xl">
+    <div className="max-h-72 w-72 overflow-y-auto rounded-xl border border-border/60 bg-popover text-popover-foreground p-1.5 shadow-xl">
       {items.map((it, i) => (
         <button
           key={i}
           onMouseDown={(e) => { e.preventDefault(); onSelect(it); }}
           onMouseEnter={() => setActive(i)}
-          className={cn("w-full rounded-lg px-2 py-1.5 text-left text-sm transition", i === active ? "bg-muted" : "hover:bg-muted/50")}
+          className={cn("w-full rounded-lg px-2 py-1.5 text-left text-sm text-popover-foreground transition", i === active ? "bg-muted text-foreground" : "hover:bg-muted/50")}
         >
           {render(it, i === active)}
         </button>
