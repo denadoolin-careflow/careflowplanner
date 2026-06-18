@@ -104,10 +104,10 @@
     --aspect-dynamic: 0 65% 55%;
     --aspect-neutral: 260 30% 55%;
 
-    /* Task priority tokens */
-    --priority-high: 351 83% 61%;
-    --priority-med: 38 92% 50%;
-    --priority-low: 220 9% 46%;
+    /* Task priority tokens — calmer defaults (atmospheres override below) */
+    --priority-high: 8 62% 62%;     /* warm coral, never alarming red */
+    --priority-med: 36 65% 58%;    /* honeyed amber */
+    --priority-low: 200 20% 55%;   /* soft slate-blue */
   }
 
   .dark {
