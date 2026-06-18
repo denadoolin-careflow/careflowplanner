@@ -170,10 +170,29 @@ const FileEmbed = TiptapNode.create({
   draggable: true,
   addAttributes() {
     return {
-      src: { default: null },
-      name: { default: "" },
-      mime: { default: "" },
-      size: { default: null },
+      src: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-src"),
+        renderHTML: () => ({}),
+      },
+      name: {
+        default: "",
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-name") ?? "",
+        renderHTML: () => ({}),
+      },
+      mime: {
+        default: "",
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-mime") ?? "",
+        renderHTML: () => ({}),
+      },
+      size: {
+        default: null,
+        parseHTML: (el) => {
+          const v = (el as HTMLElement).getAttribute("data-size");
+          return v ? Number(v) : null;
+        },
+        renderHTML: () => ({}),
+      },
     };
   },
   parseHTML() {
