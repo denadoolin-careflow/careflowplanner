@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy, Maximize2, Minimize2, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy, Maximize2, Minimize2, ChevronLeft, ChevronRight, BookTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { deleteNote, extractBacklinks, findBacklinksTo, getNote, updateNote, type Note } from "@/lib/notes";
@@ -23,6 +23,7 @@ import { useStore } from "@/lib/store";
 import { copyToClipboard } from "@/lib/clipboard";
 import { NoteIconPicker } from "@/components/notes/NoteIconPicker";
 import { NoteCoverPicker } from "@/components/notes/NoteCoverPicker";
+import { NoteTemplatesDialog } from "@/components/notes/NoteTemplatesDialog";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { getNoteCoverCss } from "@/lib/note-covers";
 import { buildDailyNoteTemplate, isEmptyBody } from "@/lib/daily-note-template";
@@ -425,6 +426,21 @@ export default function NoteDetail() {
           <Button variant="ghost" size="icon" onClick={togglePin} aria-label="Pin">
             <Pin className={cn("h-4 w-4", note.pinned && "fill-current text-accent-foreground")} />
           </Button>
+          <NoteTemplatesDialog
+            defaultTab="save"
+            source={{
+              title,
+              body,
+              icon: note.icon,
+              coverGradient: note.coverGradient,
+              tags,
+            }}
+            trigger={
+              <Button variant="ghost" size="icon" aria-label="Save as template" title="Save as template">
+                <BookTemplate className="h-4 w-4" />
+              </Button>
+            }
+          />
           <Button variant="ghost" size="icon" onClick={remove} aria-label="Delete">
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
