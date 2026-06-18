@@ -295,6 +295,32 @@ export default function Notes() {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Preview density */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-full" title="Preview length">
+              <Type className="h-3.5 w-3.5" /> Preview
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Card preview length</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {([
+              { id: 0, label: "Hide preview" },
+              { id: 2, label: "Short (2 lines)" },
+              { id: 3, label: "Medium (3 lines)" },
+              { id: 5, label: "Long (5 lines)" },
+              { id: 8, label: "Extra long (8 lines)" },
+            ] as const).map(o => (
+              <DropdownMenuItem
+                key={o.id}
+                onClick={() => setPreviewLines(o.id)}
+                className={cn(previewLines === o.id && "bg-primary/10 text-foreground")}
+              >{o.label}</DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* New */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
