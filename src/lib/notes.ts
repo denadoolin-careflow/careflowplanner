@@ -81,7 +81,7 @@ export async function updateNote(id: string, patch: Partial<Note>): Promise<void
     cover_position?: number | null;
     icon?: string | null;
     cover_gradient?: string | null;
-    attachments?: Attachment[];
+    attachments?: any;
   } = {};
   if (patch.title !== undefined) row.title = patch.title;
   if (patch.body !== undefined) row.body = patch.body;
@@ -94,7 +94,7 @@ export async function updateNote(id: string, patch: Partial<Note>): Promise<void
   if (patch.coverPosition !== undefined) row.cover_position = patch.coverPosition;
   if (patch.icon !== undefined) row.icon = patch.icon;
   if (patch.coverGradient !== undefined) row.cover_gradient = patch.coverGradient;
-  if (patch.attachments !== undefined) row.attachments = patch.attachments;
+  if (patch.attachments !== undefined) row.attachments = patch.attachments as any;
   const { error } = await supabase.from("notes").update(row).eq("id", id);
   if (error) throw error;
   if (patch.pinned !== undefined || patch.title !== undefined || patch.archived !== undefined) {
