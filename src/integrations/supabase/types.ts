@@ -4352,6 +4352,45 @@ export type Database = {
           },
         ]
       }
+      note_templates: {
+        Row: {
+          body: string
+          cover_gradient: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          cover_gradient?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          cover_gradient?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           anchor_key: string | null
