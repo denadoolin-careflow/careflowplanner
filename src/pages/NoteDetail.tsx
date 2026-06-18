@@ -15,6 +15,8 @@ import { CareyButton } from "@/components/carey/CareyButton";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
+import { AttachmentsField } from "@/components/attachments/AttachmentsField";
+import type { Attachment } from "@/lib/types";
 import { NoteTOC } from "@/components/notes/NoteTOC";
 import { NoteContextRail } from "@/components/notes/NoteContextRail";
 import { NoteIntelligencePanel } from "@/components/notes/NoteIntelligencePanel";
@@ -555,6 +557,20 @@ export default function NoteDetail() {
             }}
           />
         </div>
+
+        {id && (
+          <div className="mt-4">
+            <AttachmentsField
+              scope={"note" as any}
+              ownerId={id}
+              value={note.attachments ?? []}
+              onChange={(next: Attachment[]) => {
+                setNote({ ...note, attachments: next });
+                void updateNote(id, { attachments: next }).catch(() => toast.error("Save failed"));
+              }}
+            />
+          </div>
+        )}
 
         <div className="mt-6">
           <BlockEditor
