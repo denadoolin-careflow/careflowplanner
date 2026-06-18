@@ -6,7 +6,7 @@ import { haptics } from "@/lib/haptics";
 import { fireConfetti } from "@/lib/confetti";
 import { HabitDetailSheet } from "@/components/habits/HabitDetailSheet";
 import {
-  Sprout, Flame, Trophy, CheckCircle2, Sun, CloudSun, Moon, GripVertical, Plus, ChevronLeft, ChevronRight, CalendarRange,
+  Sprout, Flame, Trophy, CheckCircle2, Sun, CloudSun, Moon, GripVertical, Plus, Sparkles,
 } from "lucide-react";
 import type { Habit } from "@/lib/types";
 import { Link } from "react-router-dom";
@@ -32,6 +32,7 @@ export function WeekHabitsStrip({ weekStart: weekStartProp }: { weekStart: Date 
   const [tab, setTab] = useState<Slot>("all");
   const [weekStart, setWeekStart] = useState(weekStartProp);
   useEffect(() => setWeekStart(weekStartProp), [weekStartProp]);
+  const [celebrating, setCelebrating] = useState<string | null>(null);
 
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const todayKey = format(new Date(), "yyyy-MM-dd");
@@ -84,6 +85,19 @@ export function WeekHabitsStrip({ weekStart: weekStartProp }: { weekStart: Date 
   if (!state.habits.length) return null;
 
   const filtered = state.habits.filter(h => tab === "all" ? true : primarySlot(h) === tab);
+
+  const completeToday = async (h: Habit) => {
+    const wasDone = !!h.log[todayKey];
+    await toggleHabit(h.id, todayKey);
+    if (!wasDone) {
+      setCelebrating(h.id);
+      haptics.success?.();
+      fireConfetti({ count: 28 });
+      setTimeout(() => setCelebrating(c => (c === h.id ? null : c)), 900);
+    } else {
+      haptics.tap?.();
+    }
+  };
 
   return (
     <>
@@ -147,9 +161,8 @@ export function WeekHabitsStrip({ weekStart: weekStartProp }: { weekStart: Date 
           </KpiCard>
         </div>
 
-        {/* List + week grid */}
-        <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_minmax(0,360px)]">
-          {/* List */}
+        {/* List */}
+        <div className="mt-4">
           <div className="rounded-2xl border border-border/60 bg-card/60 p-3">
             <div className="mb-2 flex items-center gap-1.5 overflow-x-auto">
               <TabPill active={tab === "all"} onClick={() => setTab("all")}>All habits</TabPill>
@@ -180,24 +193,36 @@ export function WeekHabitsStrip({ weekStart: weekStartProp }: { weekStart: Date 
                 const slot = primarySlot(h);
                 const slotMeta = SLOTS.find(s => s.id === slot)!;
                 const done = !!h.log[todayKey];
+                const isCelebrating = celebrating === h.id;
                 return (
                   <li
                     key={h.id}
                     draggable
                     onDragStart={(e) => { e.dataTransfer.setData("text/habit-id", h.id); e.dataTransfer.effectAllowed = "move"; }}
-                    className="group grid grid-cols-[1fr_auto_auto] items-center gap-2 px-2 py-2"
+                    className={cn(
+                      "group relative grid grid-cols-[1fr_auto_auto] items-center gap-2 rounded-lg px-2 py-2 transition-colors",
+                      done && "bg-primary/5",
+                      isCelebrating && "animate-scale-in",
+                    )}
                   >
+                    {isCelebrating && (
+                      <>
+                        <span className="pointer-events-none absolute inset-0 rounded-lg bg-primary/10 animate-fade-in" />
+                        <Sparkles className="pointer-events-none absolute right-2 top-1.5 h-4 w-4 text-amber-400 animate-scale-in" />
+                      </>
+                    )}
                     <div className="flex min-w-0 items-center gap-2">
                       <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground/60 opacity-0 group-hover:opacity-100" />
                       <button
-                        onClick={async () => { await toggleHabit(h.id, todayKey); haptics.tap?.(); }}
+                        onClick={() => completeToday(h)}
                         aria-label="Toggle today"
-                        className={cn("grid h-6 w-6 shrink-0 place-items-center rounded-full border transition",
-                          done ? "border-primary bg-primary text-primary-foreground" : "border-border/70 bg-card hover:bg-muted/60")}
+                        className={cn("grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-transform",
+                          done ? "border-primary bg-primary text-primary-foreground" : "border-border/70 bg-card hover:bg-muted/60",
+                          isCelebrating && "scale-125")}
                       >
                         {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Sprout className="h-3 w-3 text-muted-foreground" />}
                       </button>
-                      <button onClick={() => setOpenId(h.id)} className="min-w-0 flex-1 truncate text-left text-sm hover:text-primary">
+                      <button onClick={() => setOpenId(h.id)} className={cn("min-w-0 flex-1 truncate text-left text-sm hover:text-primary", done && "line-through text-muted-foreground")}>
                         {h.title}
                       </button>
                       <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px]", slotMeta.chip)}>
@@ -208,9 +233,10 @@ export function WeekHabitsStrip({ weekStart: weekStartProp }: { weekStart: Date 
                       {h.streak || 0} <Flame className="h-3 w-3 text-amber-500" />
                     </div>
                     <button
-                      onClick={async () => { await toggleHabit(h.id, todayKey); haptics.tap?.(); }}
-                      className={cn("grid h-6 w-6 place-items-center rounded-full border transition",
-                        done ? "border-primary bg-primary text-primary-foreground" : "border-border/70 hover:bg-muted/60")}
+                      onClick={() => completeToday(h)}
+                      className={cn("grid h-6 w-6 place-items-center rounded-full border transition-transform",
+                        done ? "border-primary bg-primary text-primary-foreground" : "border-border/70 hover:bg-muted/60",
+                        isCelebrating && "scale-125")}
                       aria-label="Mark today"
                     >
                       {done && <CheckCircle2 className="h-3.5 w-3.5" />}
@@ -219,52 +245,6 @@ export function WeekHabitsStrip({ weekStart: weekStartProp }: { weekStart: Date 
                 );
               })}
             </ul>
-          </div>
-
-          {/* Week grid */}
-          <div className="rounded-2xl border border-border/60 bg-card/60 p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="inline-flex items-center gap-1 text-xs font-medium">
-                <CalendarRange className="h-3.5 w-3.5 text-muted-foreground" />
-                {format(weekStart, "MMM d")} – {format(addDays(weekStart, 6), "MMM d")}
-              </div>
-              <div className="flex items-center gap-0.5">
-                <button onClick={() => setWeekStart(subDays(weekStart, 7))} className="grid h-6 w-6 place-items-center rounded-md hover:bg-muted/60"><ChevronLeft className="h-3.5 w-3.5" /></button>
-                <button onClick={() => setWeekStart(addDays(weekStart, 7))} className="grid h-6 w-6 place-items-center rounded-md hover:bg-muted/60"><ChevronRight className="h-3.5 w-3.5" /></button>
-              </div>
-            </div>
-            <div className="grid grid-cols-7 gap-1 px-0.5 pb-1 text-center text-[10px] uppercase tracking-wide text-muted-foreground">
-              {days.map(d => (
-                <div key={d.toISOString()}>
-                  <div>{format(d, "EEEEE")}</div>
-                  <div className="tabular-nums text-foreground/70">{format(d, "d")}</div>
-                </div>
-              ))}
-            </div>
-            <div className="space-y-1">
-              {filtered.map(h => (
-                <div key={h.id} className="grid grid-cols-7 gap-1">
-                  {days.map(d => {
-                    const k = format(d, "yyyy-MM-dd");
-                    const done = !!h.log[k];
-                    return (
-                      <button
-                        key={k}
-                        onClick={async () => { await toggleHabit(h.id, k); haptics.tap?.(); }}
-                        title={`${h.title} · ${format(d, "EEE MMM d")}`}
-                        className={cn("grid aspect-square place-items-center rounded-md border text-[10px] transition",
-                          done ? "border-primary/50 bg-primary text-primary-foreground" : "border-border/60 bg-background/60 text-muted-foreground hover:bg-muted/60")}
-                      >
-                        {done ? "✓" : ""}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-            <Link to="/habits" className="mt-2 block rounded-lg border border-dashed border-border/60 py-1.5 text-center text-[11px] text-muted-foreground hover:bg-muted/40">
-              View full calendar
-            </Link>
           </div>
         </div>
 
