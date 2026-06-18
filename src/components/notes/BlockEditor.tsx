@@ -26,18 +26,18 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import Suggestion from "@tiptap/suggestion";
-import { Extension } from "@tiptap/core";
+import { Extension, Node as TiptapNode } from "@tiptap/core";
 import { PluginKey } from "@tiptap/pm/state";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import tippy, { Instance as TippyInstance } from "tippy.js";
 import { marked } from "marked";
 import TurndownService from "turndown";
 import Image from "@tiptap/extension-image";
-import { uploadNoteImage } from "@/lib/note-images";
+import { uploadNoteImage, uploadNoteFile } from "@/lib/note-images";
 import {
   Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
-  ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus, Image as ImageIcon,
+  ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus, Image as ImageIcon, Paperclip,
   IndentIncrease, IndentDecrease, ChevronDown,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -100,6 +100,17 @@ turndown.addRule("gfmCheckboxItem", {
     return `- [${checked ? "x" : " "}] ${text}\n`;
   },
 });
+// Preserve inline file embeds verbatim across markdown round-trips.
+turndown.addRule("fileEmbed", {
+  filter: (node) => node.nodeName === "DIV" && (node as HTMLElement).hasAttribute("data-file-embed"),
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const src = el.getAttribute("data-src") || el.querySelector("iframe")?.getAttribute("src") || el.querySelector("a")?.getAttribute("href") || "";
+    const name = el.getAttribute("data-name") || "file";
+    const mime = el.getAttribute("data-mime") || "";
+    return `\n\n<div data-file-embed data-src="${src}" data-name="${name}" data-mime="${mime}"></div>\n\n`;
+  },
+});
 
 /**
  * Marked emits GFM task lists as <ul><li><input type="checkbox" .../> text</li></ul>.
@@ -143,6 +154,91 @@ export function htmlToMarkdown(html: string): string {
   if (!html || html === "<p></p>") return "";
   return turndown.turndown(html).trim();
 }
+
+/* ------------------------------------------------------------------ */
+/*  FileEmbed node — inline PDF/file preview with download fallback   */
+/* ------------------------------------------------------------------ */
+function isPdfLike(mime?: string, name?: string) {
+  return (mime || "").includes("pdf") || /\.pdf$/i.test(name || "");
+}
+
+const FileEmbed = TiptapNode.create({
+  name: "fileEmbed",
+  group: "block",
+  atom: true,
+  selectable: true,
+  draggable: true,
+  addAttributes() {
+    return {
+      src: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-src"),
+        renderHTML: () => ({}),
+      },
+      name: {
+        default: "",
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-name") ?? "",
+        renderHTML: () => ({}),
+      },
+      mime: {
+        default: "",
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-mime") ?? "",
+        renderHTML: () => ({}),
+      },
+      size: {
+        default: null,
+        parseHTML: (el) => {
+          const v = (el as HTMLElement).getAttribute("data-size");
+          return v ? Number(v) : null;
+        },
+        renderHTML: () => ({}),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-file-embed]" }];
+  },
+  renderHTML({ node }) {
+    const src = (node.attrs.src as string) || "";
+    const name = (node.attrs.name as string) || "file";
+    const mime = (node.attrs.mime as string) || "";
+    const pdf = isPdfLike(mime, name);
+    const wrapper: any = {
+      "data-file-embed": "",
+      "data-src": src,
+      "data-name": name,
+      "data-mime": mime,
+      class: "cf-file-embed not-prose my-3 rounded-2xl border border-border/60 bg-card/70 overflow-hidden",
+    };
+    if (pdf && src) {
+      return [
+        "div", wrapper,
+        ["iframe", { src, title: name, loading: "lazy", style: "width:100%;height:480px;border:0;background:#0b0b0b;display:block;" }],
+        ["div", { class: "flex items-center justify-between gap-2 px-3 py-2 text-xs" },
+          ["span", { class: "truncate text-muted-foreground" }, `📄 ${name}`],
+          ["a", { href: src, target: "_blank", rel: "noreferrer", download: name, class: "text-primary underline-offset-2 hover:underline" }, "Open / download"],
+        ],
+      ];
+    }
+    return [
+      "div", wrapper,
+      ["a",
+        { href: src || "#", target: "_blank", rel: "noreferrer", download: name, class: "flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-muted/40" },
+        ["span", { class: "grid h-9 w-9 place-items-center rounded-lg bg-muted/60 text-muted-foreground" }, "📎"],
+        ["span", { class: "min-w-0 flex-1 truncate font-medium" }, name],
+        ["span", { class: "text-xs text-muted-foreground" }, mime || "file"],
+      ],
+    ];
+  },
+  addCommands() {
+    return {
+      setFileEmbed:
+        (attrs: { src: string; name: string; mime?: string; size?: number }) =>
+        ({ commands }: any) =>
+          commands.insertContent({ type: this.name, attrs }),
+    } as any;
+  },
+});
 
 /* ------------------------------------------------------------------ */
 /*  Slash command list                                                */
@@ -610,6 +706,7 @@ export function BlockEditor({
   noteIdRef.current = noteId;
   const promoteRef = useRef<() => void>(() => {});
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const editorRef = useRef<Editor | null>(null);
 
@@ -626,6 +723,30 @@ export function BlockEditor({
 
   const triggerImageUpload = useCallback(() => {
     imageInputRef.current?.click();
+  }, []);
+
+  const uploadAndInsertFile = useCallback(async (file: File) => {
+    const tid = toast.loading(`Uploading ${file.name}…`);
+    try {
+      if (file.type.startsWith("image/")) {
+        const url = await uploadNoteImage(file);
+        editorRef.current?.chain().focus().setImage({ src: url, alt: file.name }).run();
+      } else {
+        const meta = await uploadNoteFile(file);
+        editorRef.current
+          ?.chain()
+          .focus()
+          .insertContent({ type: "fileEmbed", attrs: { src: meta.url, name: meta.name, mime: meta.mime, size: meta.size } })
+          .run();
+      }
+      toast.success("Attached", { id: tid });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed", { id: tid });
+    }
+  }, []);
+
+  const triggerFileUpload = useCallback(() => {
+    fileInputRef.current?.click();
   }, []);
 
   // Union of registered tag names and orphan tag names across data,
@@ -677,10 +798,24 @@ export function BlockEditor({
           const extra: SlashItem[] = [
             {
               title: "Image",
-              description: "Upload from your device",
+              description: "Upload a photo from your device",
               icon: ImageIcon,
-              keywords: ["image", "picture", "photo", "upload", "img"],
+              keywords: ["image", "picture", "photo", "upload", "img", "camera"],
               command: () => triggerImageUpload(),
+            },
+            {
+              title: "Photo",
+              description: "Insert a photo inline",
+              icon: ImageIcon,
+              keywords: ["photo", "picture", "camera", "selfie", "img", "image"],
+              command: () => triggerImageUpload(),
+            },
+            {
+              title: "File",
+              description: "Attach PDF, doc or any file (inline preview)",
+              icon: Paperclip,
+              keywords: ["file", "pdf", "doc", "docx", "attachment", "upload", "attach"],
+              command: () => triggerFileUpload(),
             },
             {
               title: "Add to Tasks",
@@ -711,7 +846,7 @@ export function BlockEditor({
         ),
       })];
     },
-  }), [triggerImageUpload]);
+  }), [triggerImageUpload, triggerFileUpload]);
 
   /* --------------------------------------------------------------- */
   /*  Seamless toggle / bullet keymap                                */
@@ -981,6 +1116,7 @@ export function BlockEditor({
         allowBase64: false,
         HTMLAttributes: { class: "cf-note-image" },
       }),
+      FileEmbed,
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
@@ -1000,18 +1136,18 @@ export function BlockEditor({
         ),
       },
       handlePaste: (_view, event) => {
-        const files = Array.from(event.clipboardData?.files ?? []).filter(f => f.type.startsWith("image/"));
+        const files = Array.from(event.clipboardData?.files ?? []);
         if (!files.length) return false;
         event.preventDefault();
-        files.forEach(f => { void uploadAndInsert(f); });
+        files.forEach(f => { void uploadAndInsertFile(f); });
         return true;
       },
       handleDrop: (_view, event) => {
         const dt = (event as DragEvent).dataTransfer;
-        const files = Array.from(dt?.files ?? []).filter(f => f.type.startsWith("image/"));
+        const files = Array.from(dt?.files ?? []);
         if (!files.length) return false;
         event.preventDefault();
-        files.forEach(f => { void uploadAndInsert(f); });
+        files.forEach(f => { void uploadAndInsertFile(f); });
         return true;
       },
       handleClickOn: (_view, _pos, _node, _nodePos, event) => {
@@ -1291,6 +1427,17 @@ export function BlockEditor({
         onChange={(e) => {
           const files = Array.from(e.target.files ?? []);
           files.forEach(f => { void uploadAndInsert(f); });
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          files.forEach(f => { void uploadAndInsertFile(f); });
           e.target.value = "";
         }}
       />
