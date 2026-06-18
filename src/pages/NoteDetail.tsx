@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy, Maximize2, Minimize2 } from "lucide-react";
+import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy, Maximize2, Minimize2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { deleteNote, extractBacklinks, findBacklinksTo, getNote, updateNote, type Note } from "@/lib/notes";
@@ -72,20 +72,50 @@ export default function NoteDetail() {
     return () => { cancelled = true; };
   }, [isMobile, id]);
   const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null);
+  const [swipeDx, setSwipeDx] = useState(0);
+  const [swipeDir, setSwipeDir] = useState<-1 | 0 | 1>(0);
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
+  useEffect(() => {
+    if (!isMobile) return;
+    try {
+      if (localStorage.getItem("careflow.notes.swipeHint") === "1") return;
+    } catch {}
+    setShowSwipeHint(true);
+    const t = window.setTimeout(() => {
+      setShowSwipeHint(false);
+      try { localStorage.setItem("careflow.notes.swipeHint", "1"); } catch {}
+    }, 3200);
+    return () => window.clearTimeout(t);
+  }, [isMobile]);
   const onTouchStart = (e: React.TouchEvent) => {
     if (!isMobile) return;
+    const target = e.target as HTMLElement | null;
+    // Don't intercept swipes that begin inside editable / scrollable content
+    if (target && target.closest('input, textarea, [contenteditable="true"], .ProseMirror, .no-swipe')) return;
     const t = e.touches[0];
     swipeStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
   };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile || !swipeStart.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - swipeStart.current.x;
+    const dy = t.clientY - swipeStart.current.y;
+    if (Math.abs(dy) > Math.abs(dx)) return;
+    // Resist past threshold for a tactile feel
+    const clamped = Math.max(-180, Math.min(180, dx * 0.55));
+    setSwipeDx(clamped);
+    setSwipeDir(clamped < -10 ? 1 : clamped > 10 ? -1 : 0);
+  };
   const onTouchEnd = (e: React.TouchEvent) => {
-    if (!isMobile || !swipeStart.current || !id) return;
+    if (!isMobile || !swipeStart.current || !id) { setSwipeDx(0); setSwipeDir(0); swipeStart.current = null; return; }
     const t = e.changedTouches[0];
     const dx = t.clientX - swipeStart.current.x;
     const dy = t.clientY - swipeStart.current.y;
     const dt = Date.now() - swipeStart.current.t;
     swipeStart.current = null;
-    if (dt > 600) return;
-    if (Math.abs(dx) < 80 || Math.abs(dy) > 60) return;
+    setSwipeDx(0); setSwipeDir(0);
+    if (dt > 700) return;
+    if (Math.abs(dx) < 70 || Math.abs(dy) > 70) return;
     const idx = noteOrder.indexOf(id);
     if (idx < 0) return;
     const nextIdx = dx < 0 ? idx + 1 : idx - 1;
@@ -94,6 +124,7 @@ export default function NoteDetail() {
     try { haptics.tap(); } catch {}
     nav(`/notes/${nextId}`);
   };
+  const swipeProgress = Math.min(1, Math.abs(swipeDx) / 80);
   const savedScrollRef = useRef<{ window: number; focus: number }>({ window: 0, focus: 0 });
   const [focusMode, setFocusMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -288,6 +319,24 @@ export default function NoteDetail() {
 
   const pageBody = (
     <>
+      {isMobile && swipeDir !== 0 && (
+        <div
+          className={cn(
+            "pointer-events-none fixed top-1/2 z-[80] -translate-y-1/2 flex items-center gap-1.5 rounded-full bg-foreground/85 px-3 py-1.5 text-xs font-medium text-background shadow-lg backdrop-blur",
+            swipeDir === 1 ? "right-3" : "left-3",
+          )}
+          style={{ opacity: 0.4 + swipeProgress * 0.6 }}
+        >
+          {swipeDir === 1 ? (<><span>Next</span><ChevronRight className="h-3.5 w-3.5" /></>) : (<><ChevronLeft className="h-3.5 w-3.5" /><span>Prev</span></>)}
+        </div>
+      )}
+      {isMobile && showSwipeHint && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[80] flex justify-center px-6">
+          <div className="rounded-full bg-foreground/85 px-3 py-1.5 text-[11px] font-medium text-background shadow-lg backdrop-blur animate-fade-in">
+            Swipe left or right to move between notes
+          </div>
+        </div>
+      )}
       {focusMode && (
         <button
           type="button"
