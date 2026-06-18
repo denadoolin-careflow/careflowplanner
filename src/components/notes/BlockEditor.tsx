@@ -1086,6 +1086,7 @@ export function BlockEditor({
         allowBase64: false,
         HTMLAttributes: { class: "cf-note-image" },
       }),
+      FileEmbed,
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
@@ -1105,18 +1106,18 @@ export function BlockEditor({
         ),
       },
       handlePaste: (_view, event) => {
-        const files = Array.from(event.clipboardData?.files ?? []).filter(f => f.type.startsWith("image/"));
+        const files = Array.from(event.clipboardData?.files ?? []);
         if (!files.length) return false;
         event.preventDefault();
-        files.forEach(f => { void uploadAndInsert(f); });
+        files.forEach(f => { void uploadAndInsertFile(f); });
         return true;
       },
       handleDrop: (_view, event) => {
         const dt = (event as DragEvent).dataTransfer;
-        const files = Array.from(dt?.files ?? []).filter(f => f.type.startsWith("image/"));
+        const files = Array.from(dt?.files ?? []);
         if (!files.length) return false;
         event.preventDefault();
-        files.forEach(f => { void uploadAndInsert(f); });
+        files.forEach(f => { void uploadAndInsertFile(f); });
         return true;
       },
       handleClickOn: (_view, _pos, _node, _nodePos, event) => {
