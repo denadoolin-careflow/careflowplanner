@@ -4355,8 +4355,10 @@ export type Database = {
       note_templates: {
         Row: {
           body: string
+          category: string | null
           cover_gradient: string | null
           created_at: string
+          description: string | null
           icon: string | null
           id: string
           name: string
@@ -4367,8 +4369,10 @@ export type Database = {
         }
         Insert: {
           body?: string
+          category?: string | null
           cover_gradient?: string | null
           created_at?: string
+          description?: string | null
           icon?: string | null
           id?: string
           name: string
@@ -4379,8 +4383,10 @@ export type Database = {
         }
         Update: {
           body?: string
+          category?: string | null
           cover_gradient?: string | null
           created_at?: string
+          description?: string | null
           icon?: string | null
           id?: string
           name?: string
@@ -4395,6 +4401,7 @@ export type Database = {
         Row: {
           anchor_key: string | null
           archived: boolean
+          attachments: Json
           body: string
           cover_gradient: string | null
           cover_position: number | null
@@ -4415,6 +4422,7 @@ export type Database = {
         Insert: {
           anchor_key?: string | null
           archived?: boolean
+          attachments?: Json
           body?: string
           cover_gradient?: string | null
           cover_position?: number | null
@@ -4435,6 +4443,7 @@ export type Database = {
         Update: {
           anchor_key?: string | null
           archived?: boolean
+          attachments?: Json
           body?: string
           cover_gradient?: string | null
           cover_position?: number | null

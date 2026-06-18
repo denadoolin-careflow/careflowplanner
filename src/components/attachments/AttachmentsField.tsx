@@ -9,7 +9,7 @@ import type { Attachment } from "@/lib/types";
 const BUCKET = "attachments";
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
 
-export type AttachmentsScope = "task" | "journal" | "home-note" | "memory";
+export type AttachmentsScope = "task" | "journal" | "home-note" | "memory" | "note";
 
 function sanitize(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 80) || "file";

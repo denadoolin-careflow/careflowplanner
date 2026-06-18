@@ -31,7 +31,7 @@ import { NotesStatsRow } from "@/components/notes/NotesStatsRow";
 import { TagManagerDialog } from "@/components/tags/TagManagerDialog";
 import { resolveNoteIcon, getLucideIcon } from "@/lib/note-icons";
 import { NoteTemplatesDialog } from "@/components/notes/NoteTemplatesDialog";
-import { BookTemplate } from "lucide-react";
+import { BookTemplate, Images, Type } from "lucide-react";
 
 type View = "list" | "grid" | "board" | "timeline" | "calendar";
 type Sort = "updated" | "created" | "title" | "words";
@@ -81,6 +81,12 @@ export default function Notes() {
   const [activeTag, setActiveTag] = useState<string | null>(params.get("tag"));
   const [sort, setSort] = useState<Sort>("updated");
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [previewLines, setPreviewLines] = useState<number>(() => {
+    if (typeof window === "undefined") return 3;
+    const raw = Number(localStorage.getItem("careflow.notes.previewLines"));
+    return Number.isFinite(raw) && raw >= 0 && raw <= 8 ? raw : 3;
+  });
+  useEffect(() => { localStorage.setItem("careflow.notes.previewLines", String(previewLines)); }, [previewLines]);
   const [pinnedOnly, setPinnedOnly] = useState(false);
   const [kindFilter, setKindFilter] = useState<"all" | "note" | "daily">("all");
   const [sideOpen, setSideOpen] = useState<boolean>(() => {
@@ -289,6 +295,32 @@ export default function Notes() {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Preview density */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-full" title="Preview length">
+              <Type className="h-3.5 w-3.5" /> Preview
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Card preview length</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {([
+              { id: 0, label: "Hide preview" },
+              { id: 2, label: "Short (2 lines)" },
+              { id: 3, label: "Medium (3 lines)" },
+              { id: 5, label: "Long (5 lines)" },
+              { id: 8, label: "Extra long (8 lines)" },
+            ] as const).map(o => (
+              <DropdownMenuItem
+                key={o.id}
+                onClick={() => setPreviewLines(o.id)}
+                className={cn(previewLines === o.id && "bg-primary/10 text-foreground")}
+              >{o.label}</DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* New */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -302,6 +334,10 @@ export default function Notes() {
             <DropdownMenuItem onClick={() => navigate("/journal")}><BookOpen className="mr-2 h-3.5 w-3.5" /> New journal entry</DropdownMenuItem>
             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTemplatesOpen(true); }}>
               <BookTemplate className="mr-2 h-3.5 w-3.5" /> From template…
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/notes/files")}>
+              <Images className="mr-2 h-3.5 w-3.5" /> Files & photos
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -410,7 +446,7 @@ export default function Notes() {
             ) : view === "grid" ? (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filtered.map(n => (
-                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} />
+                <NoteCardV2 key={n.id} note={n} tagsByName={tagsByName} selected={noteParam === n.id} onSelect={selectNote} onDelete={refresh} onChanged={refresh} previewLines={previewLines} />
                 ))}
               </div>
             ) : view === "list" ? (
