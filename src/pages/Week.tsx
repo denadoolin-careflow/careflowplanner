@@ -106,7 +106,7 @@ export default function Week() {
   return (
     <div className={cn(
       "mx-auto grid w-full min-w-0 max-w-6xl gap-4 md:gap-5 lg:gap-6",
-      sidebarHidden
+      sidebarHidden || !!editTaskId
         ? "lg:grid-cols-1"
         : "lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)]",
     )}>
@@ -215,7 +215,7 @@ export default function Week() {
           </>
         )}
       </div>
-      {layout === "grid" && (
+      {layout === "grid" && !editTaskId && (
         <ScopeSidebar scope="week" date={selectedDate} onTaskClick={setEditTaskId} />
       )}
       {layout === "grid" && <UnscheduledTasksRail onTaskClick={setEditTaskId} />}
