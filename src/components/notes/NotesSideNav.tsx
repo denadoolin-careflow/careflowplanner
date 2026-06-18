@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Clock3, Pin, Sun, Link2, Tag as TagIcon, Archive, Plus, FileQuestion, FolderOpen, List, ChevronDown,
-  Users, HeartPulse, Home as HomeIcon, Stethoscope, GraduationCap, User as UserIcon, BookHeart,
+  Users, HeartPulse, Home as HomeIcon, Stethoscope, GraduationCap, User as UserIcon, BookHeart, Images,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fallbackColorFor, type Tag } from "@/lib/tags";
@@ -135,6 +135,13 @@ export function NotesSideNav({
         >
           <BookHeart className="h-3.5 w-3.5 text-primary" />
           New journal entry
+        </Link>
+        <Link
+          to="/notes/files"
+          className="flex items-center gap-2 rounded-lg border border-border/40 bg-card/60 px-2.5 py-1.5 text-sm font-medium text-foreground transition hover:border-primary/40 hover:bg-primary/5"
+        >
+          <Images className="h-3.5 w-3.5 text-primary" />
+          Files & photos
         </Link>
       </section>
 
