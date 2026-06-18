@@ -28,6 +28,9 @@ import { getNoteCoverCss } from "@/lib/note-covers";
 import { buildDailyNoteTemplate, isEmptyBody } from "@/lib/daily-note-template";
 import { useEditorPrefs } from "@/lib/editor-prefs";
 import type { NoteTitleSize } from "@/lib/editor-prefs";
+import { listNotes } from "@/lib/notes";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { triggerHaptic } from "@/lib/haptics";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -58,6 +61,39 @@ export default function NoteDetail() {
   const coverDragRef = useRef<{ startY: number; startPos: number; height: number } | null>(null);
   const [editorPrefs] = useEditorPrefs();
   const focusContainerRef = useRef<HTMLDivElement | null>(null);
+  const isMobile = useIsMobile();
+  const [noteOrder, setNoteOrder] = useState<string[]>([]);
+  useEffect(() => {
+    if (!isMobile) return;
+    let cancelled = false;
+    void listNotes()
+      .then((arr) => { if (!cancelled) setNoteOrder(arr.map((n) => n.id)); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isMobile, id]);
+  const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    const t = e.touches[0];
+    swipeStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile || !swipeStart.current || !id) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - swipeStart.current.x;
+    const dy = t.clientY - swipeStart.current.y;
+    const dt = Date.now() - swipeStart.current.t;
+    swipeStart.current = null;
+    if (dt > 600) return;
+    if (Math.abs(dx) < 80 || Math.abs(dy) > 60) return;
+    const idx = noteOrder.indexOf(id);
+    if (idx < 0) return;
+    const nextIdx = dx < 0 ? idx + 1 : idx - 1;
+    const nextId = noteOrder[nextIdx];
+    if (!nextId) return;
+    try { triggerHaptic("light"); } catch {}
+    nav(`/notes/${nextId}`);
+  };
   const savedScrollRef = useRef<{ window: number; focus: number }>({ window: 0, focus: 0 });
   const [focusMode, setFocusMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
