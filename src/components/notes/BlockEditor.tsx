@@ -676,6 +676,7 @@ export function BlockEditor({
   noteIdRef.current = noteId;
   const promoteRef = useRef<() => void>(() => {});
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const editorRef = useRef<Editor | null>(null);
 
@@ -692,6 +693,30 @@ export function BlockEditor({
 
   const triggerImageUpload = useCallback(() => {
     imageInputRef.current?.click();
+  }, []);
+
+  const uploadAndInsertFile = useCallback(async (file: File) => {
+    const tid = toast.loading(`Uploading ${file.name}…`);
+    try {
+      if (file.type.startsWith("image/")) {
+        const url = await uploadNoteImage(file);
+        editorRef.current?.chain().focus().setImage({ src: url, alt: file.name }).run();
+      } else {
+        const meta = await uploadNoteFile(file);
+        editorRef.current
+          ?.chain()
+          .focus()
+          .insertContent({ type: "fileEmbed", attrs: { src: meta.url, name: meta.name, mime: meta.mime, size: meta.size } })
+          .run();
+      }
+      toast.success("Attached", { id: tid });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed", { id: tid });
+    }
+  }, []);
+
+  const triggerFileUpload = useCallback(() => {
+    fileInputRef.current?.click();
   }, []);
 
   // Union of registered tag names and orphan tag names across data,
