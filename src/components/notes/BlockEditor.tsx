@@ -38,6 +38,7 @@ import {
   Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
   ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus, Image as ImageIcon,
+  IndentIncrease, IndentDecrease, ChevronDown,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
@@ -47,6 +48,7 @@ import { linkNote, type EntityType } from "@/lib/note-links";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { useTags } from "@/hooks/use-tags";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { updateNote } from "@/lib/notes";
 import { upcomingEvents } from "@/lib/cosmic/events";
 import { addDays, format as formatDate } from "date-fns";
