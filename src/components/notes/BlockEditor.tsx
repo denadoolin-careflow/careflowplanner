@@ -728,6 +728,25 @@ export function BlockEditor({
           const { $from, empty } = state.selection;
           if (!empty) return false;
 
+          // Enter inside an EMPTY paragraph inside detailsContent → exit the toggle
+          for (let d = $from.depth; d > 0; d--) {
+            if ($from.node(d).type.name === "paragraph" && $from.node(d).content.size === 0) {
+              for (let dd = d - 1; dd > 0; dd--) {
+                if ($from.node(dd).type.name === "detailsContent") {
+                  const detailsPos = $from.before(dd - 1);
+                  const details = $from.node(dd - 1);
+                  if (!details || details.type.name !== "details") break;
+                  const after = detailsPos + details.nodeSize;
+                  editor.chain().focus()
+                    .insertContentAt(after, { type: "paragraph" })
+                    .setTextSelection(after + 1)
+                    .run();
+                  return true;
+                }
+              }
+            }
+          }
+
           // Enter inside a details summary -> jump into content as a bullet
           for (let d = $from.depth; d > 0; d--) {
             if ($from.node(d).type.name === "detailsSummary") {
@@ -767,6 +786,30 @@ export function BlockEditor({
           const { state } = editor;
           const { $from, empty } = state.selection;
           if (!empty) return false;
+
+          // Tab on a paragraph that starts with -, *, •, · → convert to bullet list then indent
+          for (let d = $from.depth; d > 0; d--) {
+            const node = $from.node(d);
+            if (node.type.name === "paragraph") {
+              const text = node.textContent || "";
+              const m = text.match(/^([-*•·]|—)\s+/);
+              if (m) {
+                const pStart = $from.before(d);
+                const removeFrom = pStart + 1;
+                const removeTo = removeFrom + m[0].length;
+                editor.chain().focus()
+                  .setTextSelection({ from: removeFrom, to: removeTo })
+                  .deleteSelection()
+                  .toggleBulletList()
+                  .run();
+                if (editor.can().sinkListItem("listItem")) {
+                  editor.chain().focus().sinkListItem("listItem").run();
+                }
+                return true;
+              }
+              break;
+            }
+          }
 
           // Find an enclosing listItem
           for (let d = $from.depth; d > 0; d--) {
@@ -809,6 +852,11 @@ export function BlockEditor({
               return true;
             }
           }
+          return false;
+        },
+        "Shift-Tab": ({ editor }) => {
+          if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
+          if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
           return false;
         },
       };
