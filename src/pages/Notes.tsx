@@ -80,6 +80,7 @@ export default function Notes() {
   });
   const [activeTag, setActiveTag] = useState<string | null>(params.get("tag"));
   const [sort, setSort] = useState<Sort>("updated");
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [pinnedOnly, setPinnedOnly] = useState(false);
   const [kindFilter, setKindFilter] = useState<"all" | "note" | "daily">("all");
   const [sideOpen, setSideOpen] = useState<boolean>(() => {
