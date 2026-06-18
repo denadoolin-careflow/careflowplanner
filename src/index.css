@@ -1680,3 +1680,53 @@ body.pantry-dragging * { cursor: grabbing !important; user-select: none; }
   background: linear-gradient(180deg, transparent 55%, hsl(var(--background) / 0.18) 100%);
   pointer-events: none;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Atmosphere-aware priority palette — three calm hues tuned
+   to each atmosphere so urgency feels grounded, not alarming.
+   ───────────────────────────────────────────────────────────── */
+:root[data-atmosphere="sage-sanctuary"] {
+  --priority-high: 14 55% 58%;
+  --priority-med:  38 58% 56%;
+  --priority-low:  95 18% 48%;
+}
+:root[data-atmosphere="moonlit-plum"] {
+  --priority-high: 340 48% 60%;
+  --priority-med:  30 52% 60%;
+  --priority-low:  270 20% 58%;
+}
+:root[data-atmosphere="soft-linen"] {
+  --priority-high: 12 55% 60%;
+  --priority-med:  35 60% 58%;
+  --priority-low:  210 16% 54%;
+}
+:root[data-atmosphere="coastal-calm"] {
+  --priority-high: 8 58% 60%;
+  --priority-med:  40 62% 58%;
+  --priority-low:  200 32% 52%;
+}
+:root[data-atmosphere="golden-hearth"] {
+  --priority-high: 18 62% 56%;
+  --priority-med:  38 68% 54%;
+  --priority-low:  30 18% 48%;
+}
+:root[data-atmosphere="dark-sage-glass"] {
+  --priority-high: 10 58% 62%;
+  --priority-med:  42 65% 58%;
+  --priority-low:  160 14% 56%;
+}
+:root[data-atmosphere="dawn"] {
+  --priority-high: 350 55% 65%;
+  --priority-med:  30 65% 62%;
+  --priority-low:  220 20% 58%;
+}
+:root[data-atmosphere="mist"] {
+  --priority-high: 345 40% 62%;
+  --priority-med:  200 32% 56%;
+  --priority-low:  215 14% 58%;
+}
+:root[data-atmosphere="blossom"] {
+  --priority-high: 340 55% 65%;
+  --priority-med:  30 62% 62%;
+  --priority-low:  160 20% 54%;
+}
