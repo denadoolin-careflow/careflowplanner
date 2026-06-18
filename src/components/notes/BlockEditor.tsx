@@ -38,6 +38,7 @@ import {
   Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
   ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus, Image as ImageIcon,
+  IndentIncrease, IndentDecrease, ChevronDown,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
@@ -47,6 +48,7 @@ import { linkNote, type EntityType } from "@/lib/note-links";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { useTags } from "@/hooks/use-tags";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { updateNote } from "@/lib/notes";
 import { upcomingEvents } from "@/lib/cosmic/events";
 import { addDays, format as formatDate } from "date-fns";
@@ -340,8 +342,18 @@ function Toolbar({ editor, onPromoteTask, onInsertImage }: { editor: Editor; onP
     if (url === "") { editor.chain().focus().unsetLink().run(); return; }
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
+  const doIndent = () => {
+    if (editor.can().sinkListItem("taskItem")) return editor.chain().focus().sinkListItem("taskItem").run();
+    if (editor.can().sinkListItem("listItem")) return editor.chain().focus().sinkListItem("listItem").run();
+    // Fallback: insert a tab character
+    editor.chain().focus().insertContent("\t").run();
+  };
+  const doOutdent = () => {
+    if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
+    if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
+  };
   return (
-    <div className="sticky top-2 z-10 mb-3 flex items-center gap-0.5 overflow-x-auto rounded-xl border border-border/60 bg-card/80 p-1 backdrop-blur-md shadow-sm sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="cf-editor-toolbar z-10 mb-3 flex w-full max-w-full items-center gap-0.5 overflow-x-auto rounded-xl border border-border/60 bg-card/90 p-1 backdrop-blur-md shadow-sm sm:sticky sm:top-2 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <ToolbarButton active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} label="Heading 1"><Heading1 className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} label="Heading 2"><Heading2 className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} label="Heading 3"><Heading3 className="h-4 w-4" /></ToolbarButton>
@@ -360,6 +372,8 @@ function Toolbar({ editor, onPromoteTask, onInsertImage }: { editor: Editor; onP
       <ToolbarButton active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} label="Bullet list"><List className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} label="Numbered list"><ListOrdered className="h-4 w-4" /></ToolbarButton>
       <ToolbarButton active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} label="To-do list"><CheckSquare className="h-4 w-4" /></ToolbarButton>
+      <ToolbarButton onClick={doOutdent} label="Outdent (Shift+Tab)"><IndentDecrease className="h-4 w-4" /></ToolbarButton>
+      <ToolbarButton onClick={doIndent} label="Indent (Tab)"><IndentIncrease className="h-4 w-4" /></ToolbarButton>
       {editor.isActive("taskItem") && (
         <ToolbarButton onClick={onPromoteTask} label="Add this checkbox to Tasks"><ListPlus className="h-4 w-4" /></ToolbarButton>
       )}
@@ -575,6 +589,7 @@ export function BlockEditor({
   const { state, addTask } = useStore();
   const navigate = useNavigate();
   const [prefs] = useEditorPrefs();
+  const isMobile = useIsMobile();
   const { tags: registeredTags } = useTags();
   const refsRef = useRef<RefItem[]>([]);
   const transitRefs = useMemo<RefItem[]>(() => {
@@ -714,6 +729,25 @@ export function BlockEditor({
           const { $from, empty } = state.selection;
           if (!empty) return false;
 
+          // Enter inside an EMPTY paragraph inside detailsContent → exit the toggle
+          for (let d = $from.depth; d > 0; d--) {
+            if ($from.node(d).type.name === "paragraph" && $from.node(d).content.size === 0) {
+              for (let dd = d - 1; dd > 0; dd--) {
+                if ($from.node(dd).type.name === "detailsContent") {
+                  const detailsPos = $from.before(dd - 1);
+                  const details = $from.node(dd - 1);
+                  if (!details || details.type.name !== "details") break;
+                  const after = detailsPos + details.nodeSize;
+                  editor.chain().focus()
+                    .insertContentAt(after, { type: "paragraph" })
+                    .setTextSelection(after + 1)
+                    .run();
+                  return true;
+                }
+              }
+            }
+          }
+
           // Enter inside a details summary -> jump into content as a bullet
           for (let d = $from.depth; d > 0; d--) {
             if ($from.node(d).type.name === "detailsSummary") {
@@ -753,6 +787,30 @@ export function BlockEditor({
           const { state } = editor;
           const { $from, empty } = state.selection;
           if (!empty) return false;
+
+          // Tab on a paragraph that starts with -, *, •, · → convert to bullet list then indent
+          for (let d = $from.depth; d > 0; d--) {
+            const node = $from.node(d);
+            if (node.type.name === "paragraph") {
+              const text = node.textContent || "";
+              const m = text.match(/^([-*•·]|—)\s+/);
+              if (m) {
+                const pStart = $from.before(d);
+                const removeFrom = pStart + 1;
+                const removeTo = removeFrom + m[0].length;
+                editor.chain().focus()
+                  .setTextSelection({ from: removeFrom, to: removeTo })
+                  .deleteSelection()
+                  .toggleBulletList()
+                  .run();
+                if (editor.can().sinkListItem("listItem")) {
+                  editor.chain().focus().sinkListItem("listItem").run();
+                }
+                return true;
+              }
+              break;
+            }
+          }
 
           // Find an enclosing listItem
           for (let d = $from.depth; d > 0; d--) {
@@ -795,6 +853,11 @@ export function BlockEditor({
               return true;
             }
           }
+          return false;
+        },
+        "Shift-Tab": ({ editor }) => {
+          if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
+          if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
           return false;
         },
       };
@@ -1121,11 +1184,11 @@ export function BlockEditor({
         } : {}),
       } as React.CSSProperties}
     >
-      {editor && <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} onInsertImage={triggerImageUpload} />}
+      {editor && !isMobile && <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} onInsertImage={triggerImageUpload} />}
       {editor && (
         <BubbleMenu
           editor={editor}
-          className="bubble-toolbar flex items-center gap-0.5 rounded-2xl border border-border/40 bg-popover/95 px-1 py-1 shadow-xl backdrop-blur-xl"
+          className="bubble-toolbar flex max-w-[calc(100vw-1.5rem)] items-center gap-0.5 overflow-x-auto rounded-2xl border border-border/40 bg-popover/95 px-1 py-1 shadow-xl backdrop-blur-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <ToolbarButton active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} label="Bold"><Bold className="h-3.5 w-3.5" /></ToolbarButton>
           <ToolbarButton active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} label="Italic"><Italic className="h-3.5 w-3.5" /></ToolbarButton>
@@ -1140,10 +1203,51 @@ export function BlockEditor({
           <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-3.5 w-3.5" /></ToolbarButton>
           <span className="mx-1 h-4 w-px bg-border" />
           <ToolbarButton
+            onClick={() => {
+              if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
+              if (editor.can().liftListItem("listItem")) editor.chain().focus().liftListItem("listItem").run();
+            }}
+            label="Outdent"
+          ><IndentDecrease className="h-3.5 w-3.5" /></ToolbarButton>
+          <ToolbarButton
+            onClick={() => {
+              if (editor.can().sinkListItem("taskItem")) return editor.chain().focus().sinkListItem("taskItem").run();
+              if (editor.can().sinkListItem("listItem")) editor.chain().focus().sinkListItem("listItem").run();
+            }}
+            label="Indent"
+          ><IndentIncrease className="h-3.5 w-3.5" /></ToolbarButton>
+          <span className="mx-1 h-4 w-px bg-border" />
+          <ToolbarButton
             active={editor.isActive("taskList")}
             onClick={() => editor.chain().focus().toggleTaskList().run()}
             label="Convert to checklist"
           ><CheckSquare className="h-3.5 w-3.5" /></ToolbarButton>
+          {(editor.isActive("details") || editor.isActive("detailsSummary") || editor.isActive("detailsContent")) ? (
+            <ToolbarButton
+              onClick={() => {
+                // Toggle the open state of the enclosing <details>
+                const { state } = editor;
+                const { $from } = state.selection;
+                for (let d = $from.depth; d > 0; d--) {
+                  if ($from.node(d).type.name === "details") {
+                    const pos = $from.before(d);
+                    const node = $from.node(d);
+                    editor.chain().focus().command(({ tr }) => {
+                      tr.setNodeMarkup(pos, undefined, { ...node.attrs, open: !node.attrs.open });
+                      return true;
+                    }).run();
+                    return;
+                  }
+                }
+              }}
+              label="Hide / show toggle contents"
+            ><ChevronDown className="h-3.5 w-3.5" /></ToolbarButton>
+          ) : (
+            <ToolbarButton
+              onClick={() => editor.chain().focus().setDetails().run()}
+              label="Wrap in toggle"
+            ><ChevronRight className="h-3.5 w-3.5" /></ToolbarButton>
+          )}
           <ToolbarButton onClick={promoteSelectionToTask} label="Add selection to Tasks">
             <ListPlus className="h-3.5 w-3.5" />
           </ToolbarButton>
@@ -1173,6 +1277,11 @@ export function BlockEditor({
         </BubbleMenu>
       )}
       <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      {editor && isMobile && (
+        <div className="no-swipe mt-3">
+          <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} onInsertImage={triggerImageUpload} />
+        </div>
+      )}
       <input
         ref={imageInputRef}
         type="file"
