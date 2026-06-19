@@ -569,13 +569,20 @@ function MonthView({
                   onTaskDropDay(taskId, k);
                 }
               }}
-              onClick={isMobile && inMonth ? () => setSheetISO(k) : undefined}
+              onClick={
+                inMonth
+                  ? () => {
+                      if (isMobile) setSheetISO(k);
+                      else onDayClick?.(k);
+                    }
+                  : undefined
+              }
               className={cn(
                 "flex min-h-16 flex-col rounded-lg border p-1 text-xs transition-colors sm:min-h-32 sm:rounded-xl sm:p-2",
                 inMonth ? "border-border/60 bg-card" : "border-transparent bg-muted/20 text-muted-foreground/50",
                 today && "ring-2 ring-primary",
                 hoverISO === k && "ring-2 ring-primary bg-primary/10",
-                isMobile && inMonth && "cursor-pointer",
+                inMonth && "cursor-pointer",
               )}
             >
               <div className="mb-1 flex items-baseline justify-between gap-1">
