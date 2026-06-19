@@ -76,8 +76,18 @@ Deno.serve(async (req) => {
       }),
     });
 
-    if (resp.status === 429) return new Response(JSON.stringify({ error: "Rate limit reached. Try again in a moment." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    if (resp.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (resp.status === 429) {
+      return new Response(
+        JSON.stringify({ error: "ai_rate_limited", message: "Rate limit reached. Try again in a moment.", fallback: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (resp.status === 402) {
+      return new Response(
+        JSON.stringify({ error: "ai_quota_exceeded", message: "You've reached your AI limit. Upgrade for more AI actions this month.", fallback: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     if (!resp.ok) {
       const t = await resp.text();
       console.error("ai-pdf-summary gateway error", resp.status, t);

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Attachment } from "@/lib/types";
-import { aiInvoke } from "@/lib/ai-invoke";
+import { aiInvoke, triggerUpgradePrompt } from "@/lib/ai-invoke";
 import { getPdfSummary, setPdfSummary, type PdfSummary } from "@/lib/pdf-summaries";
 
 const BUCKET = "attachments";
@@ -115,9 +115,17 @@ export function AttachmentsField({
     setSummarizing((p) => ({ ...p, [a.id]: true }));
     try {
       const { data, error, quotaExceeded } = await aiInvoke<{
-        summary: string; keyPoints: string[]; text: string;
+        summary: string; keyPoints: string[]; text: string; error?: string; message?: string; fallback?: boolean;
       }>("ai-pdf-summary", { body: { path: a.path, name: a.name } });
       if (quotaExceeded) return;
+      if (data?.error === "ai_quota_exceeded") {
+        triggerUpgradePrompt({ title: "You've reached your AI limit", message: data.message });
+        return;
+      }
+      if (data?.error === "ai_rate_limited") {
+        toast.error(data.message || "Rate limit reached. Try again shortly.");
+        return;
+      }
       if (error || !data) {
         toast.error(error?.error || error?.message || "Could not summarize PDF");
         return;
