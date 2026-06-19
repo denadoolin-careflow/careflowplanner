@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Paperclip, Upload, X, Image as ImageIcon, FileText, Download, Loader2, Eye, EyeOff } from "lucide-react";
+import { Paperclip, Upload, X, Image as ImageIcon, FileText, Download, Loader2, Eye, EyeOff, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Attachment } from "@/lib/types";
+import { aiInvoke } from "@/lib/ai-invoke";
+import { getPdfSummary, setPdfSummary, type PdfSummary } from "@/lib/pdf-summaries";
 
 const BUCKET = "attachments";
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
@@ -70,6 +72,9 @@ export function AttachmentsField({
   const [busy, setBusy] = useState(false);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [summaries, setSummaries] = useState<Record<string, PdfSummary | null>>({});
+  const [summarizing, setSummarizing] = useState<Record<string, boolean>>({});
+  const [showSummary, setShowSummary] = useState<Record<string, boolean>>({});
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -96,6 +101,39 @@ export function AttachmentsField({
     return () => { cancel = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.map((a) => a.id).join(",")]);
+
+  // Load cached PDF summaries from localStorage when items change.
+  useEffect(() => {
+    const next: Record<string, PdfSummary | null> = {};
+    for (const a of items) {
+      if (isPdf(a)) next[a.id] = getPdfSummary(a.path);
+    }
+    setSummaries(next);
+  }, [items.map((a) => a.id).join(",")]);
+
+  const summarizePdf = useCallback(async (a: Attachment) => {
+    setSummarizing((p) => ({ ...p, [a.id]: true }));
+    try {
+      const { data, error, quotaExceeded } = await aiInvoke<{
+        summary: string; keyPoints: string[]; text: string;
+      }>("ai-pdf-summary", { body: { path: a.path, name: a.name } });
+      if (quotaExceeded) return;
+      if (error || !data) {
+        toast.error(error?.error || error?.message || "Could not summarize PDF");
+        return;
+      }
+      setPdfSummary(a.path, {
+        summary: data.summary || "",
+        keyPoints: data.keyPoints || [],
+        text: data.text || "",
+      });
+      setSummaries((p) => ({ ...p, [a.id]: getPdfSummary(a.path) }));
+      setShowSummary((p) => ({ ...p, [a.id]: true }));
+      toast.success("PDF summarized");
+    } finally {
+      setSummarizing((p) => ({ ...p, [a.id]: false }));
+    }
+  }, []);
 
   const uploadFiles = useCallback(async (files: FileList | File[]) => {
     if (!uid) { toast.error("Please sign in to attach files."); return; }
@@ -198,6 +236,26 @@ export function AttachmentsField({
                       {a.mimeType ?? "file"} · {prettyBytes(a.size)}
                     </div>
                   </div>
+                  {pdf && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const existing = summaries[a.id];
+                        if (existing) {
+                          setShowSummary((p) => ({ ...p, [a.id]: !(p[a.id] ?? true) }));
+                        } else {
+                          void summarizePdf(a);
+                        }
+                      }}
+                      disabled={summarizing[a.id]}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+                      title={summaries[a.id] ? "Toggle AI summary" : "Summarize with AI"}
+                    >
+                      {summarizing[a.id]
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        : <Sparkles className="h-3.5 w-3.5" />}
+                    </button>
+                  )}
                   {previewable && !img && (
                     <button
                       type="button"
@@ -229,6 +287,32 @@ export function AttachmentsField({
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
+                {pdf && summaries[a.id] && (showSummary[a.id] ?? true) && (
+                  <div className="border-t border-border/50 bg-primary/5 px-3 py-2.5">
+                    <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/80">
+                      <Sparkles className="h-3 w-3" /> AI Summary
+                      <button
+                        type="button"
+                        onClick={() => void summarizePdf(a)}
+                        disabled={summarizing[a.id]}
+                        className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+                        title="Regenerate"
+                      >
+                        {summarizing[a.id]
+                          ? <Loader2 className="h-3 w-3 animate-spin" />
+                          : <RefreshCw className="h-3 w-3" />}
+                      </button>
+                    </div>
+                    {summaries[a.id]!.summary && (
+                      <p className="mb-2 text-[12px] leading-relaxed text-foreground/90">{summaries[a.id]!.summary}</p>
+                    )}
+                    {summaries[a.id]!.keyPoints?.length > 0 && (
+                      <ul className="ml-4 list-disc space-y-0.5 text-[11.5px] text-foreground/80">
+                        {summaries[a.id]!.keyPoints.map((k, i) => <li key={i}>{k}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                )}
                 {url && isOpen && pdf && (
                   <iframe
                     src={url}
