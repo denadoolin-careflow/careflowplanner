@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Download, File as FileIcon, FileText, Image as ImageIcon, LayoutGrid, List as ListIcon, Loader2, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, Download, File as FileIcon, FileText, Image as ImageIcon, LayoutGrid, List as ListIcon, Loader2, Maximize2, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import type { Attachment } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getAllPdfSummaries, type PdfSummary } from "@/lib/pdf-summaries";
+import { openMediaLightbox } from "@/components/media/MediaLightbox";
 
 const BUCKET = "attachments";
 
