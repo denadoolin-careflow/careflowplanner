@@ -34,6 +34,8 @@ import { marked } from "marked";
 import TurndownService from "turndown";
 import Image from "@tiptap/extension-image";
 import { uploadNoteImage, uploadNoteFile } from "@/lib/note-images";
+import { getNote, updateNote } from "@/lib/notes";
+import type { Attachment } from "@/lib/types";
 import {
   Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
@@ -713,8 +715,14 @@ export function BlockEditor({
   const uploadAndInsert = useCallback(async (file: File) => {
     const tid = toast.loading("Uploading image…");
     try {
-      const url = await uploadNoteImage(file);
-      editorRef.current?.chain().focus().setImage({ src: url, alt: file.name }).run();
+      const meta = await uploadNoteImage(file);
+      editorRef.current?.chain().focus().setImage({ src: meta.url, alt: file.name }).run();
+      await syncInlineAttachment(noteIdRef.current, {
+        id: meta.id, path: meta.path, name: meta.name,
+        mimeType: meta.mime, size: meta.size,
+        uploadedAt: new Date().toISOString(),
+        bucket: meta.bucket, source: "note-inline",
+      });
       toast.success("Image added", { id: tid });
     } catch (e: any) {
       toast.error(e?.message ?? "Upload failed", { id: tid });
@@ -729,8 +737,14 @@ export function BlockEditor({
     const tid = toast.loading(`Uploading ${file.name}…`);
     try {
       if (file.type.startsWith("image/")) {
-        const url = await uploadNoteImage(file);
-        editorRef.current?.chain().focus().setImage({ src: url, alt: file.name }).run();
+        const meta = await uploadNoteImage(file);
+        editorRef.current?.chain().focus().setImage({ src: meta.url, alt: file.name }).run();
+        await syncInlineAttachment(noteIdRef.current, {
+          id: meta.id, path: meta.path, name: meta.name,
+          mimeType: meta.mime, size: meta.size,
+          uploadedAt: new Date().toISOString(),
+          bucket: meta.bucket, source: "note-inline",
+        });
       } else {
         const meta = await uploadNoteFile(file);
         editorRef.current
@@ -738,6 +752,12 @@ export function BlockEditor({
           .focus()
           .insertContent({ type: "fileEmbed", attrs: { src: meta.url, name: meta.name, mime: meta.mime, size: meta.size } })
           .run();
+        await syncInlineAttachment(noteIdRef.current, {
+          id: meta.id, path: meta.path, name: meta.name,
+          mimeType: meta.mime, size: meta.size,
+          uploadedAt: new Date().toISOString(),
+          bucket: meta.bucket, source: "note-inline",
+        });
       }
       toast.success("Attached", { id: tid });
     } catch (e: any) {
