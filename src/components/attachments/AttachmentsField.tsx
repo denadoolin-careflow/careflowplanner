@@ -315,9 +315,27 @@ export function AttachmentsField({
                       <Sparkles className="h-3 w-3" /> AI Summary
                       <button
                         type="button"
+                        onClick={() => {
+                          const s = summaries[a.id]!;
+                          const md = [
+                            `## AI summary — ${a.name}`,
+                            "",
+                            s.summary || "",
+                            s.keyPoints?.length ? "\n**Key points**\n" + s.keyPoints.map(k => `- ${k}`).join("\n") : "",
+                          ].filter(Boolean).join("\n").trim();
+                          window.dispatchEvent(new CustomEvent("careflow:insert-into-note", { detail: { markdown: md } }));
+                          toast.success("Inserted summary into note");
+                        }}
+                        className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                        title="Insert summary into note"
+                      >
+                        <FilePlus2 className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => void summarizePdf(a)}
                         disabled={summarizing[a.id]}
-                        className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+                        className="rounded p-0.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
                         title="Regenerate"
                       >
                         {summarizing[a.id]
@@ -326,11 +344,27 @@ export function AttachmentsField({
                       </button>
                     </div>
                     {summaries[a.id]!.summary && (
-                      <p className="mb-2 text-[12px] leading-relaxed text-foreground/90">{summaries[a.id]!.summary}</p>
+                      <div className={cn(
+                        "prose prose-sm max-w-none text-[12.5px] leading-relaxed text-foreground/90 dark:prose-invert",
+                        "prose-headings:font-display prose-headings:font-semibold prose-headings:text-foreground prose-headings:my-1.5",
+                        "prose-h2:text-[13px] prose-h3:text-[12.5px]",
+                        "prose-p:my-1 prose-strong:text-foreground",
+                        "prose-ul:my-1 prose-ol:my-1 prose-li:my-0",
+                        "prose-code:rounded prose-code:bg-muted/60 prose-code:px-1 prose-code:py-px prose-code:text-[0.9em]",
+                      )}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{summaries[a.id]!.summary}</ReactMarkdown>
+                      </div>
                     )}
                     {summaries[a.id]!.keyPoints?.length > 0 && (
-                      <ul className="ml-4 list-disc space-y-0.5 text-[11.5px] text-foreground/80">
-                        {summaries[a.id]!.keyPoints.map((k, i) => <li key={i}>{k}</li>)}
+                      <ul className="mt-2 ml-4 list-disc space-y-0.5 text-[11.5px] text-foreground/80">
+                        {summaries[a.id]!.keyPoints.map((k, i) => (
+                          <li key={i}>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{ p: ({ children }) => <span>{children}</span> }}
+                            >{k}</ReactMarkdown>
+                          </li>
+                        ))}
                       </ul>
                     )}
                   </div>
