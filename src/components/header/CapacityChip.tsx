@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useStore, todayISO } from "@/lib/store";
 import { useCycle } from "@/lib/cycle-store";
 import { computeCapacityScore, CAPACITY_BAND_COLOR, findBetterDay } from "@/lib/capacity";
-import { setEnergyFor, type Energy } from "@/lib/energy-store";
+import { useDayEnergy, type Energy } from "@/lib/energy-store";
 import { FlowCard, FlowCardEyebrow, FlowCardTitle } from "@/components/ui/flow-card";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -14,6 +14,7 @@ export function CapacityChip({ className }: { className?: string }) {
   const { state } = useStore();
   const { periods, settings: cycleSettings } = useCycle();
   const iso = todayISO();
+  const [currentEnergy, setCurrentEnergy] = useDayEnergy(iso);
 
   const score = useMemo(
     () => computeCapacityScore({ state, periods, cycleSettings }),
@@ -35,7 +36,13 @@ export function CapacityChip({ className }: { className?: string }) {
   } as React.CSSProperties;
 
   const logEnergy = (e: Energy) => {
-    setEnergyFor(iso, e);
+    setCurrentEnergy(e);
+  };
+
+  const ENERGY_META: Record<Energy, { label: string; color: string; bg: string; ring: string; hint: string }> = {
+    low:    { label: "Low",    color: "#ef4444", bg: "rgba(239, 68, 68, 0.12)",  ring: "rgba(239, 68, 68, 0.45)",  hint: "Rest is care. Choose one tiny act and let the rest wait." },
+    medium: { label: "Medium", color: "#eab308", bg: "rgba(234, 179, 8, 0.14)",  ring: "rgba(234, 179, 8, 0.45)",  hint: "Steady pace. Pick two priorities and protect breaks between them." },
+    high:   { label: "High",   color: "#22c55e", bg: "rgba(34, 197, 94, 0.14)",  ring: "rgba(34, 197, 94, 0.45)",  hint: "Lean in — but bank some energy for tomorrow's care, too." },
   };
 
   return (
@@ -109,18 +116,45 @@ export function CapacityChip({ className }: { className?: string }) {
             <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Log energy
             </div>
-            <div className="mt-1.5 flex gap-1">
-              {(["low", "medium", "high"] as Energy[]).map(e => (
-                <button
-                  key={e}
-                  type="button"
-                  onClick={() => logEnergy(e)}
-                  className="flex-1 rounded-full border border-border/60 px-2 py-1 text-[11px] capitalize text-foreground hover:bg-muted"
-                >
-                  {e}
-                </button>
-              ))}
+            <div className="mt-1.5 flex gap-1.5">
+              {(["low", "medium", "high"] as Energy[]).map(e => {
+                const meta = ENERGY_META[e];
+                const active = currentEnergy === e;
+                return (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => logEnergy(e)}
+                    aria-pressed={active}
+                    className={cn(
+                      "flex-1 rounded-full border px-2 py-1 text-[11px] font-medium capitalize transition",
+                      active ? "shadow-sm" : "hover:brightness-110",
+                    )}
+                    style={{
+                      backgroundColor: meta.bg,
+                      borderColor: active ? meta.color : meta.ring,
+                      color: meta.color,
+                      boxShadow: active ? `inset 0 0 0 1px ${meta.color}` : undefined,
+                    }}
+                  >
+                    {meta.label}
+                  </button>
+                );
+              })}
             </div>
+            <p
+              className="mt-2 rounded-md px-2 py-1.5 text-[11px] leading-snug"
+              style={{
+                backgroundColor: ENERGY_META[currentEnergy].bg,
+                color: "hsl(var(--foreground))",
+                borderLeft: `2px solid ${ENERGY_META[currentEnergy].color}`,
+              }}
+            >
+              {ENERGY_META[currentEnergy].hint}
+            </p>
+            <p className="mt-1.5 text-[10.5px] leading-snug text-muted-foreground">
+              Honor your capacity to care — name today's energy honestly so the plan can meet you where you are.
+            </p>
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-2 text-[11px]">
