@@ -137,6 +137,7 @@ const App = () => (
             <CyclePlanningListener />
             <ExhaleReminderHost />
             <InlineTagPreviewLayer />
+            <MediaLightbox />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/join/:token" element={<JoinHousehold />} />
