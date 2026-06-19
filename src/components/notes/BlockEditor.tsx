@@ -1230,11 +1230,15 @@ export function BlockEditor({
   // Listen for global "insert into note" events (e.g. from PDF AI summary).
   useEffect(() => {
     const onInsert = (e: Event) => {
-      const detail = (e as CustomEvent<{ markdown?: string; html?: string }>).detail;
+      const detail = (e as CustomEvent<{ markdown?: string; html?: string; at?: "cursor" | "end" }>).detail;
       if (!detail || !editorRef.current) return;
       const html = detail.html ?? (detail.markdown ? bodyToHtml(detail.markdown) : "");
       if (!html) return;
-      editorRef.current.chain().focus("end").insertContent("<p></p>" + html).run();
+      const where = detail.at ?? "cursor";
+      const chain = editorRef.current.chain();
+      if (where === "end") chain.focus("end"); else chain.focus();
+      // Insert as a new paragraph block at the insertion point.
+      chain.insertContent("<p></p>" + html).run();
     };
     window.addEventListener("careflow:insert-into-note", onInsert as EventListener);
     return () => window.removeEventListener("careflow:insert-into-note", onInsert as EventListener);
@@ -1243,6 +1247,31 @@ export function BlockEditor({
   // Open internal links via router when user clicks
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.target as HTMLElement;
+    // Toggle fit-to-page on an inline PDF embed
+    const fitBtn = el.closest("[data-toggle-fit]") as HTMLElement | null;
+    if (fitBtn && editorRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      const wrapper = fitBtn.closest("[data-file-embed]") as HTMLElement | null;
+      if (wrapper) {
+        try {
+          const view = editorRef.current.view;
+          const pos = view.posAtDOM(wrapper, 0);
+          const resolved = editorRef.current.state.doc.resolve(pos);
+          // The fileEmbed node is the parent of the rendered content.
+          const nodePos = resolved.before(resolved.depth);
+          const node = editorRef.current.state.doc.nodeAt(nodePos);
+          if (node && node.type.name === "fileEmbed") {
+            const next = !node.attrs.fit;
+            editorRef.current.chain().focus().command(({ tr }) => {
+              tr.setNodeMarkup(nodePos, undefined, { ...node.attrs, fit: next });
+              return true;
+            }).run();
+          }
+        } catch { /* best-effort */ }
+      }
+      return;
+    }
     // Fullscreen PDF button inside a fileEmbed block
     const pdfBtn = el.closest("[data-fullscreen-pdf]") as HTMLElement | null;
     if (pdfBtn) {
