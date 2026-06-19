@@ -1216,6 +1216,19 @@ export function BlockEditor({
     if (next !== editor.getHTML()) editor.commands.setContent(next, { emitUpdate: false });
   }, [body, editor]);
 
+  // Listen for global "insert into note" events (e.g. from PDF AI summary).
+  useEffect(() => {
+    const onInsert = (e: Event) => {
+      const detail = (e as CustomEvent<{ markdown?: string; html?: string }>).detail;
+      if (!detail || !editorRef.current) return;
+      const html = detail.html ?? (detail.markdown ? bodyToHtml(detail.markdown) : "");
+      if (!html) return;
+      editorRef.current.chain().focus("end").insertContent("<p></p>" + html).run();
+    };
+    window.addEventListener("careflow:insert-into-note", onInsert as EventListener);
+    return () => window.removeEventListener("careflow:insert-into-note", onInsert as EventListener);
+  }, []);
+
   // Open internal links via router when user clicks
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.target as HTMLElement;
