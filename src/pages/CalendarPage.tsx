@@ -612,9 +612,15 @@ function MonthView({
                 e.preventDefault();
                 setHoverISO(null);
                 if (itemPayload && onItemReschedule) {
-                  const { sourceISO } = JSON.parse(itemPayload) as { sourceISO: string };
-                  if (draggingItem && sourceISO !== k) {
-                    await onItemReschedule(draggingItem.item, { date: k });
+                  const payload = JSON.parse(itemPayload) as { sourceISO: string; itemKind?: EventItem["kind"]; itemId?: string };
+                  if (payload.sourceISO !== k) {
+                    let target: EventItem | null = draggingItem?.item ?? null;
+                    if (!target && payload.itemKind && payload.itemId) {
+                      target = eventsOn(payload.sourceISO).find(
+                        x => x.kind === payload.itemKind && x.id === payload.itemId,
+                      ) ?? null;
+                    }
+                    if (target) await onItemReschedule(target, { date: k });
                   }
                   setDraggingItem(null);
                 } else if (taskId && onTaskDropDay) {
