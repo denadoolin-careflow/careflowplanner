@@ -77,6 +77,15 @@ export default function CalendarPage() {
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [editBdayId, setEditBdayId] = useState<string | null>(null);
   const [editHolId, setEditHolId] = useState<string | null>(null);
+  const [rightPanel, setRightPanel] = useState<"widgets" | "agenda">(() => {
+    if (typeof localStorage === "undefined") return "widgets";
+    return (localStorage.getItem("calendar-right-panel") as "widgets" | "agenda") || "widgets";
+  });
+  const [quickAddISO, setQuickAddISO] = useState<string | null>(null);
+  const switchRightPanel = (next: "widgets" | "agenda") => {
+    setRightPanel(next);
+    try { localStorage.setItem("calendar-right-panel", next); } catch { /* noop */ }
+  };
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
   const editingBday = editBdayId ? state.birthdays.find(b => b.id === editBdayId) ?? null : null;
