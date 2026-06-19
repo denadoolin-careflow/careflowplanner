@@ -208,6 +208,11 @@ const FileEmbed = TiptapNode.create({
         },
         renderHTML: () => ({}),
       },
+      fit: {
+        default: false,
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-fit") === "1",
+        renderHTML: () => ({}),
+      },
     };
   },
   parseHTML() {
@@ -217,21 +222,27 @@ const FileEmbed = TiptapNode.create({
     const src = (node.attrs.src as string) || "";
     const name = (node.attrs.name as string) || "file";
     const mime = (node.attrs.mime as string) || "";
+    const fit = !!node.attrs.fit;
     const pdf = isPdfLike(mime, name);
     const wrapper: any = {
       "data-file-embed": "",
       "data-src": src,
       "data-name": name,
       "data-mime": mime,
+      "data-fit": fit ? "1" : "0",
       class: "cf-file-embed not-prose my-3 rounded-2xl border border-border/60 bg-card/70 overflow-hidden",
     };
     if (pdf && src) {
+      const iframeStyle = fit
+        ? "width:100%;height:90vh;border:0;background:#0b0b0b;display:block;"
+        : "width:100%;height:480px;border:0;background:#0b0b0b;display:block;";
       return [
         "div", wrapper,
-        ["iframe", { src, title: name, loading: "lazy", style: "width:100%;height:480px;border:0;background:#0b0b0b;display:block;" }],
+        ["iframe", { src, title: name, loading: "lazy", style: iframeStyle }],
         ["div", { class: "flex items-center justify-between gap-2 px-3 py-2 text-xs" },
           ["span", { class: "truncate text-muted-foreground" }, `📄 ${name}`],
           ["div", { class: "flex items-center gap-3" },
+            ["button", { type: "button", "data-toggle-fit": "", class: "text-primary underline-offset-2 hover:underline" }, fit ? "Compact view" : "Fit to page"],
             ["button", { type: "button", "data-fullscreen-pdf": "", "data-src": src, "data-name": name, class: "text-primary underline-offset-2 hover:underline" }, "View full screen"],
             ["a", { href: src, target: "_blank", rel: "noreferrer", download: name, class: "text-primary underline-offset-2 hover:underline" }, "Open / download"],
           ],
@@ -1219,11 +1230,15 @@ export function BlockEditor({
   // Listen for global "insert into note" events (e.g. from PDF AI summary).
   useEffect(() => {
     const onInsert = (e: Event) => {
-      const detail = (e as CustomEvent<{ markdown?: string; html?: string }>).detail;
+      const detail = (e as CustomEvent<{ markdown?: string; html?: string; at?: "cursor" | "end" }>).detail;
       if (!detail || !editorRef.current) return;
       const html = detail.html ?? (detail.markdown ? bodyToHtml(detail.markdown) : "");
       if (!html) return;
-      editorRef.current.chain().focus("end").insertContent("<p></p>" + html).run();
+      const where = detail.at ?? "cursor";
+      const chain = editorRef.current.chain();
+      if (where === "end") chain.focus("end"); else chain.focus();
+      // Insert as a new paragraph block at the insertion point.
+      chain.insertContent("<p></p>" + html).run();
     };
     window.addEventListener("careflow:insert-into-note", onInsert as EventListener);
     return () => window.removeEventListener("careflow:insert-into-note", onInsert as EventListener);
@@ -1232,6 +1247,31 @@ export function BlockEditor({
   // Open internal links via router when user clicks
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.target as HTMLElement;
+    // Toggle fit-to-page on an inline PDF embed
+    const fitBtn = el.closest("[data-toggle-fit]") as HTMLElement | null;
+    if (fitBtn && editorRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      const wrapper = fitBtn.closest("[data-file-embed]") as HTMLElement | null;
+      if (wrapper) {
+        try {
+          const view = editorRef.current.view;
+          const pos = view.posAtDOM(wrapper, 0);
+          const resolved = editorRef.current.state.doc.resolve(pos);
+          // The fileEmbed node is the parent of the rendered content.
+          const nodePos = resolved.before(resolved.depth);
+          const node = editorRef.current.state.doc.nodeAt(nodePos);
+          if (node && node.type.name === "fileEmbed") {
+            const next = !node.attrs.fit;
+            editorRef.current.chain().focus().command(({ tr }) => {
+              tr.setNodeMarkup(nodePos, undefined, { ...node.attrs, fit: next });
+              return true;
+            }).run();
+          }
+        } catch { /* best-effort */ }
+      }
+      return;
+    }
     // Fullscreen PDF button inside a fileEmbed block
     const pdfBtn = el.closest("[data-fullscreen-pdf]") as HTMLElement | null;
     if (pdfBtn) {

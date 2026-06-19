@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Paperclip, Upload, X, Image as ImageIcon, FileText, Download, Loader2, Eye, EyeOff, Sparkles, RefreshCw, Maximize2, FilePlus2 } from "lucide-react";
+import { Paperclip, Upload, X, Image as ImageIcon, FileText, Download, Loader2, Eye, EyeOff, Sparkles, RefreshCw, Maximize2, FilePlus2, ListChecks, Minimize2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,7 @@ export function AttachmentsField({
   const [summaries, setSummaries] = useState<Record<string, PdfSummary | null>>({});
   const [summarizing, setSummarizing] = useState<Record<string, boolean>>({});
   const [showSummary, setShowSummary] = useState<Record<string, boolean>>({});
+  const [fitPage, setFitPage] = useState<Record<string, boolean>>({});
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -323,13 +324,34 @@ export function AttachmentsField({
                             s.summary || "",
                             s.keyPoints?.length ? "\n**Key points**\n" + s.keyPoints.map(k => `- ${k}`).join("\n") : "",
                           ].filter(Boolean).join("\n").trim();
-                          window.dispatchEvent(new CustomEvent("careflow:insert-into-note", { detail: { markdown: md } }));
+                          window.dispatchEvent(new CustomEvent("careflow:insert-into-note", { detail: { markdown: md, at: "cursor" } }));
                           toast.success("Inserted summary into note");
                         }}
                         className="ml-auto rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                        title="Insert summary into note"
+                        title="Insert full summary at cursor"
                       >
                         <FilePlus2 className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const s = summaries[a.id]!;
+                          if (!s.keyPoints?.length) {
+                            toast.error("No key points to insert");
+                            return;
+                          }
+                          const md = [
+                            `**Key points — ${a.name}**`,
+                            "",
+                            s.keyPoints.map(k => `- ${k}`).join("\n"),
+                          ].join("\n").trim();
+                          window.dispatchEvent(new CustomEvent("careflow:insert-into-note", { detail: { markdown: md, at: "cursor" } }));
+                          toast.success("Inserted key points into note");
+                        }}
+                        className="rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                        title="Insert only key points at cursor"
+                      >
+                        <ListChecks className="h-3 w-3" />
                       </button>
                       <button
                         type="button"
@@ -370,12 +392,26 @@ export function AttachmentsField({
                   </div>
                 )}
                 {url && isOpen && pdf && (
-                  <iframe
-                    src={url}
-                    title={a.name}
-                    loading="lazy"
-                    className="block h-[420px] w-full border-0 bg-black/80"
-                  />
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setFitPage(p => ({ ...p, [a.id]: !p[a.id] }))}
+                      className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-1 text-[10px] font-medium text-foreground shadow-sm backdrop-blur hover:bg-background"
+                      title={fitPage[a.id] ? "Compact view" : "Fit to page"}
+                    >
+                      {fitPage[a.id] ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+                      {fitPage[a.id] ? "Compact" : "Fit to page"}
+                    </button>
+                    <iframe
+                      src={url}
+                      title={a.name}
+                      loading="lazy"
+                      className={cn(
+                        "block w-full border-0 bg-black/80",
+                        fitPage[a.id] ? "h-[85vh]" : "h-[420px]",
+                      )}
+                    />
+                  </div>
                 )}
                 {url && isOpen && video && (
                   <video src={url} controls className="block max-h-[420px] w-full bg-black" />
