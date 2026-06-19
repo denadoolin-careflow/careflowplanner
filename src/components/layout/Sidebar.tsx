@@ -922,9 +922,24 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
     )} ref={rootRef}>
       <div className={cn(
         "flex w-full py-2",
-        collapsed ? "flex-col items-center gap-1" : "items-center gap-1.5 px-1",
+        collapsed ? "flex-col items-center gap-2" : "items-center gap-1.5 px-1",
       )}>
         <CareFlowLogo size={collapsed ? 40 : 36} />
+        {collapsed && !forceExpanded && (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setCollapsed(false)}
+                aria-label="Expand sidebar"
+                className="grid h-9 w-9 place-items-center rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+              >
+                <PanelLeftOpen className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Expand sidebar</TooltipContent>
+          </Tooltip>
+        )}
         {!collapsed && (
           <div className="min-w-0 flex-1">
             <div className="font-display text-[15px] font-semibold leading-none truncate">CareFlow</div>
