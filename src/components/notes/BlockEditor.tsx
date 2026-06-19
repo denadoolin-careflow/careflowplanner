@@ -34,6 +34,7 @@ import { marked } from "marked";
 import TurndownService from "turndown";
 import Image from "@tiptap/extension-image";
 import { uploadNoteImage, uploadNoteFile } from "@/lib/note-images";
+import { openMediaLightbox } from "@/components/media/MediaLightbox";
 import { getNote, updateNote } from "@/lib/notes";
 import type { Attachment } from "@/lib/types";
 import {
