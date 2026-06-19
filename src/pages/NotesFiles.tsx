@@ -277,6 +277,16 @@ export default function NotesFiles() {
                       <Download className="h-3.5 w-3.5" />
                     </a>
                   )}
+                  {url && (img || pdf) && (
+                    <button
+                      type="button"
+                      onClick={() => openMediaLightbox({ src: url, name: r.name, kind: pdf ? "pdf" : "image" })}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      title="View full screen"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
                 {s?.summary && (
                   <p className="mt-1.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
