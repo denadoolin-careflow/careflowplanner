@@ -66,7 +66,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
               <Sparkles className="h-3 w-3 text-primary" />
               {personalGreeting(state.settings.name)}
             </p>
-            <h1 className="font-display text-3xl font-semibold leading-none text-foreground sm:text-5xl">
+            <h1 className="font-display text-2xl font-semibold leading-none text-foreground sm:text-4xl">
               {format(date, "EEEE, MMMM d")}
             </h1>
             <div className="mt-1 flex items-center justify-center gap-2 text-sm text-foreground/80 sm:text-base">
