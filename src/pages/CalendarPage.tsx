@@ -36,6 +36,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { useCelebrations } from "@/lib/seasons/hooks";
 import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
+import { AgendaRail } from "@/components/calendar/AgendaRail";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CalendarRange, PanelRightClose, PanelRightOpen } from "lucide-react";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -74,6 +77,15 @@ export default function CalendarPage() {
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [editBdayId, setEditBdayId] = useState<string | null>(null);
   const [editHolId, setEditHolId] = useState<string | null>(null);
+  const [rightPanel, setRightPanel] = useState<"widgets" | "agenda">(() => {
+    if (typeof localStorage === "undefined") return "widgets";
+    return (localStorage.getItem("calendar-right-panel") as "widgets" | "agenda") || "widgets";
+  });
+  const [quickAddISO, setQuickAddISO] = useState<string | null>(null);
+  const switchRightPanel = (next: "widgets" | "agenda") => {
+    setRightPanel(next);
+    try { localStorage.setItem("calendar-right-panel", next); } catch { /* noop */ }
+  };
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
   const editingBday = editBdayId ? state.birthdays.find(b => b.id === editBdayId) ?? null : null;
@@ -429,6 +441,7 @@ export default function CalendarPage() {
                 onTaskDropDay={handleDayDrop}
                 onItemClick={openItemEditor}
                 onItemReschedule={rescheduleItem}
+                onDayClick={(iso) => setQuickAddISO(iso)}
               />
             )}
             {view === "week" && (
@@ -461,13 +474,65 @@ export default function CalendarPage() {
         </ul>
       </SectionCard>
       </div>
-      <div className="w-full shrink-0 lg:w-[320px] xl:w-[360px]">
-        <WidgetRail date={cursor} />
-      </div>
+      <aside className="w-full shrink-0 space-y-3 lg:w-[320px] xl:w-[360px]">
+        <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 text-xs">
+          <button
+            type="button"
+            onClick={() => switchRightPanel("widgets")}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-colors",
+              rightPanel === "widgets"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-pressed={rightPanel === "widgets"}
+          >
+            <PanelRightOpen className="h-3.5 w-3.5" /> Widgets
+          </button>
+          <button
+            type="button"
+            onClick={() => switchRightPanel("agenda")}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-colors",
+              rightPanel === "agenda"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-pressed={rightPanel === "agenda"}
+          >
+            <CalendarRange className="h-3.5 w-3.5" /> Agenda
+          </button>
+        </div>
+        {rightPanel === "widgets" ? (
+          <WidgetRail date={cursor} />
+        ) : (
+          <AgendaRail
+            cursor={cursor}
+            eventsOn={eventsOnFiltered}
+            onItemClick={openItemEditor}
+            onAddForDate={(iso) => setQuickAddISO(iso)}
+          />
+        )}
+      </aside>
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <BirthdayHolidayEditor kind="birthday" item={editingBday} open={!!editingBday} onOpenChange={(o) => !o && setEditBdayId(null)} />
       <BirthdayHolidayEditor kind="holiday" item={editingHol} open={!!editingHol} onOpenChange={(o) => !o && setEditHolId(null)} />
+      <Dialog open={!!quickAddISO} onOpenChange={(o) => !o && setQuickAddISO(null)}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              Quick add — {quickAddISO ? format(parseISO(quickAddISO), "EEE, MMM d, yyyy") : ""}
+            </DialogTitle>
+          </DialogHeader>
+          {quickAddISO && (
+            <InboxCapture
+              key={quickAddISO}
+              defaultDate={parseISO(quickAddISO)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -479,7 +544,7 @@ type ColorFn = (k: EventItem["kind"]) => string;
 const ITEM_DRAG_MIME = "application/x-careflow-item";
 
 function MonthView({
-  cursor, eventsOn, colorOf, onTaskDropDay, onItemClick, onItemReschedule,
+  cursor, eventsOn, colorOf, onTaskDropDay, onItemClick, onItemReschedule, onDayClick,
 }: {
   cursor: Date;
   eventsOn: EventsFn;
@@ -487,6 +552,7 @@ function MonthView({
   onTaskDropDay?: (taskId: string, dateISO: string) => void;
   onItemClick?: (item: EventItem) => void;
   onItemReschedule?: (item: EventItem, patch: { date?: string; time?: string | null }) => void | Promise<void>;
+  onDayClick?: (iso: string) => void;
 }) {
   const ms = startOfMonth(cursor);
   const gs = startOfWeek(ms, { weekStartsOn: 0 });
@@ -555,13 +621,20 @@ function MonthView({
                   onTaskDropDay(taskId, k);
                 }
               }}
-              onClick={isMobile && inMonth ? () => setSheetISO(k) : undefined}
+              onClick={
+                inMonth
+                  ? () => {
+                      if (isMobile) setSheetISO(k);
+                      else onDayClick?.(k);
+                    }
+                  : undefined
+              }
               className={cn(
                 "flex min-h-16 flex-col rounded-lg border p-1 text-xs transition-colors sm:min-h-32 sm:rounded-xl sm:p-2",
                 inMonth ? "border-border/60 bg-card" : "border-transparent bg-muted/20 text-muted-foreground/50",
                 today && "ring-2 ring-primary",
                 hoverISO === k && "ring-2 ring-primary bg-primary/10",
-                isMobile && inMonth && "cursor-pointer",
+                inMonth && "cursor-pointer",
               )}
             >
               <div className="mb-1 flex items-baseline justify-between gap-1">
