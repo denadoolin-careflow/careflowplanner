@@ -78,7 +78,8 @@ export default function NotesFiles() {
     (async () => {
       const next: Record<string, string> = {};
       await Promise.all(needed.map(async r => {
-        const { data } = await supabase.storage.from(BUCKET).createSignedUrl(r.path, 60 * 60);
+        const bucket = (r as any).bucket || BUCKET;
+        const { data } = await supabase.storage.from(bucket).createSignedUrl(r.path, 60 * 60);
         if (data?.signedUrl) next[r.id] = data.signedUrl;
       }));
       if (!cancel && Object.keys(next).length) setUrls(prev => ({ ...prev, ...next }));
