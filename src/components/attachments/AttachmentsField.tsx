@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Paperclip, Upload, X, Image as ImageIcon, FileText, Download, Loader2, Eye, EyeOff, Sparkles, RefreshCw, Maximize2 } from "lucide-react";
+import { Paperclip, Upload, X, Image as ImageIcon, FileText, Download, Loader2, Eye, EyeOff, Sparkles, RefreshCw, Maximize2, FilePlus2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
