@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { Dialog, DialogPortal, DialogOverlay } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { X, Download, ExternalLink } from "lucide-react";
 
 export type LightboxMedia = {
@@ -31,10 +33,16 @@ export function MediaLightbox() {
 
   return (
     <Dialog open={!!media} onOpenChange={(o) => { if (!o) close(); }}>
-      <DialogContent
-        className="max-w-none w-screen h-[100dvh] sm:h-screen p-0 gap-0 rounded-none border-0 bg-background/95 backdrop-blur-xl sm:rounded-none"
-        hideCloseButton
-      >
+      <DialogPortal>
+        <DialogOverlay />
+        <DialogPrimitive.Content
+          className={cn(
+            "fixed left-0 top-0 z-50 w-screen h-[100dvh] sm:h-screen",
+            "bg-background/95 backdrop-blur-xl border-0 p-0",
+            "data-[state=open]:animate-in data-[state=closed]:animate-out",
+            "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+          )}
+        >
         {media && (
           <div className="relative flex h-full w-full flex-col">
             <div className="flex items-center gap-2 border-b border-border/40 bg-background/80 px-3 py-2">
@@ -87,7 +95,8 @@ export function MediaLightbox() {
             </div>
           </div>
         )}
-      </DialogContent>
+        </DialogPrimitive.Content>
+      </DialogPortal>
     </Dialog>
   );
 }
