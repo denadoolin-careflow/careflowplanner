@@ -67,7 +67,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
               {personalGreeting(state.settings.name)}
             </p>
             <h1 className="font-display text-3xl font-semibold leading-none text-foreground sm:text-5xl">
-              Today
+              {format(date, "EEEE, MMMM d")}
             </h1>
             <div className="mt-1 flex items-center justify-center gap-2 text-sm text-foreground/80 sm:text-base">
               <Clock className="h-4 w-4 text-primary" />
@@ -84,9 +84,6 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
                 </>
               )}
             </div>
-            <p className="mt-1 text-sm font-medium text-muted-foreground sm:text-base">
-              {format(date, "EEEE, MMMM d, yyyy")}
-            </p>
             <div className="mt-3 w-full flex justify-center">
               <MoonCycleModule date={date} />
             </div>
