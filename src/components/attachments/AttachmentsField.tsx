@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Paperclip, Upload, X, Image as ImageIcon, FileText, Download, Loader2, Eye, EyeOff, Sparkles, RefreshCw } from "lucide-react";
+import { Paperclip, Upload, X, Image as ImageIcon, FileText, Download, Loader2, Eye, EyeOff, Sparkles, RefreshCw, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Attachment } from "@/lib/types";
 import { aiInvoke, triggerUpgradePrompt } from "@/lib/ai-invoke";
 import { getPdfSummary, setPdfSummary, type PdfSummary } from "@/lib/pdf-summaries";
+import { openMediaLightbox } from "@/components/media/MediaLightbox";
 
 const BUCKET = "attachments";
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
