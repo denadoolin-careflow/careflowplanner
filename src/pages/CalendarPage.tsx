@@ -441,6 +441,7 @@ export default function CalendarPage() {
                 onTaskDropDay={handleDayDrop}
                 onItemClick={openItemEditor}
                 onItemReschedule={rescheduleItem}
+                onDayClick={(iso) => setQuickAddISO(iso)}
               />
             )}
             {view === "week" && (
