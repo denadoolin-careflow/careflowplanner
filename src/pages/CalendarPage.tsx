@@ -36,6 +36,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { useCelebrations } from "@/lib/seasons/hooks";
 import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
+import { AgendaRail } from "@/components/calendar/AgendaRail";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CalendarRange, PanelRightClose, PanelRightOpen } from "lucide-react";
 
 type View = "day" | "week" | "month" | "year";
 
