@@ -34,6 +34,8 @@ import { marked } from "marked";
 import TurndownService from "turndown";
 import Image from "@tiptap/extension-image";
 import { uploadNoteImage, uploadNoteFile } from "@/lib/note-images";
+import { getNote, updateNote } from "@/lib/notes";
+import type { Attachment } from "@/lib/types";
 import {
   Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
@@ -49,11 +51,23 @@ import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { updateNote } from "@/lib/notes";
 import { upcomingEvents } from "@/lib/cosmic/events";
 import { addDays, format as formatDate } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
+
+/** Append an inline-uploaded file to the note's attachments list so it appears
+ *  in Files & Photos. Idempotent on path. */
+async function syncInlineAttachment(noteId: string | undefined, att: Attachment) {
+  if (!noteId) return;
+  try {
+    const n = await getNote(noteId);
+    if (!n) return;
+    const existing = n.attachments ?? [];
+    if (existing.some(a => a.path === att.path)) return;
+    await updateNote(noteId, { attachments: [...existing, att] });
+  } catch {/* best-effort */}
+}
 
 /** Hashtag scan: matches #word (Unicode letters/numbers/_/-), bounded by start/whitespace. */
 const HASHTAG_RE = /(?:^|\s)#([\p{L}\p{N}_-]{1,40})/gu;
@@ -713,8 +727,14 @@ export function BlockEditor({
   const uploadAndInsert = useCallback(async (file: File) => {
     const tid = toast.loading("Uploading image…");
     try {
-      const url = await uploadNoteImage(file);
-      editorRef.current?.chain().focus().setImage({ src: url, alt: file.name }).run();
+      const meta = await uploadNoteImage(file);
+      editorRef.current?.chain().focus().setImage({ src: meta.url, alt: file.name }).run();
+      await syncInlineAttachment(noteIdRef.current, {
+        id: meta.id, path: meta.path, name: meta.name,
+        mimeType: meta.mime, size: meta.size,
+        uploadedAt: new Date().toISOString(),
+        bucket: meta.bucket, source: "note-inline",
+      });
       toast.success("Image added", { id: tid });
     } catch (e: any) {
       toast.error(e?.message ?? "Upload failed", { id: tid });
@@ -729,8 +749,14 @@ export function BlockEditor({
     const tid = toast.loading(`Uploading ${file.name}…`);
     try {
       if (file.type.startsWith("image/")) {
-        const url = await uploadNoteImage(file);
-        editorRef.current?.chain().focus().setImage({ src: url, alt: file.name }).run();
+        const meta = await uploadNoteImage(file);
+        editorRef.current?.chain().focus().setImage({ src: meta.url, alt: file.name }).run();
+        await syncInlineAttachment(noteIdRef.current, {
+          id: meta.id, path: meta.path, name: meta.name,
+          mimeType: meta.mime, size: meta.size,
+          uploadedAt: new Date().toISOString(),
+          bucket: meta.bucket, source: "note-inline",
+        });
       } else {
         const meta = await uploadNoteFile(file);
         editorRef.current
@@ -738,6 +764,12 @@ export function BlockEditor({
           .focus()
           .insertContent({ type: "fileEmbed", attrs: { src: meta.url, name: meta.name, mime: meta.mime, size: meta.size } })
           .run();
+        await syncInlineAttachment(noteIdRef.current, {
+          id: meta.id, path: meta.path, name: meta.name,
+          mimeType: meta.mime, size: meta.size,
+          uploadedAt: new Date().toISOString(),
+          bucket: meta.bucket, source: "note-inline",
+        });
       }
       toast.success("Attached", { id: tid });
     } catch (e: any) {

@@ -236,7 +236,7 @@ export default function NoteDetail() {
     setCoverBusy(true);
     const tid = toast.loading("Uploading cover…");
     try {
-      const url = await uploadNoteImage(file);
+      const { url } = await uploadNoteImage(file);
       setNote(n => n ? { ...n, coverUrl: url } : n);
       await updateNote(id, { coverUrl: url });
       toast.success("Cover updated", { id: tid });
