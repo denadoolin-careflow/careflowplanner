@@ -334,7 +334,8 @@ function TaskMiniRow({ t, navigate }: { t: Task; navigate: ReturnType<typeof use
 
 function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType<typeof useNavigate> }) {
   const isoToday = todayISO();
-  const { addTask } = useStore();
+  const { addTask, updateTask } = useStore();
+  const [hoverSlot, setHoverSlot] = useState<SlotKey | null>(null);
   const groups = useMemo(() => {
     const all = tasks
       .filter((t) => t.dueDate === isoToday && t.status !== "parked" && !t.parentTaskId)
@@ -373,8 +374,34 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
       </div>
       <div className="space-y-3 pr-1">
         {sections.map((sec) => (
-          <div key={sec.label}>
-            <div className="mb-1 flex items-center justify-between">
+          <div
+            key={sec.label}
+            onDragOver={(e) => {
+              if (Array.from(e.dataTransfer.types).includes(TASK_ROW_MIME)) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (hoverSlot !== (sec.label as SlotKey)) setHoverSlot(sec.label as SlotKey);
+              }
+            }}
+            onDragLeave={() => setHoverSlot(p => p === (sec.label as SlotKey) ? null : p)}
+            onDrop={async (e) => {
+              const id = e.dataTransfer.getData(TASK_ROW_MIME);
+              setHoverSlot(null);
+              if (!id) return;
+              e.preventDefault();
+              haptics.drop();
+              const target = sec.label === "Anytime" ? undefined : (sec.label as DayPart);
+              try {
+                await updateTask(id, { dueDate: isoToday, dayPart: target });
+                toast.success(`Moved → ${sec.label}`);
+              } catch { /* */ }
+            }}
+            className={cn(
+              "rounded-md transition",
+              hoverSlot === (sec.label as SlotKey) && "bg-primary/5 ring-1 ring-primary/40",
+            )}
+          >
+            <div className="mb-1 flex items-center justify-between px-1">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
                 {sec.label}
               </div>
@@ -382,7 +409,9 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
             </div>
             <div className="space-y-0.5">
               {sec.items.length === 0 ? (
-                <p className="px-1 text-[11px] italic text-muted-foreground/70">No tasks yet.</p>
+                <p className="px-1 py-2 text-[11px] italic text-muted-foreground/70">
+                  {hoverSlot === (sec.label as SlotKey) ? `Drop to move to ${sec.label}` : "No tasks yet. Drop here to move."}
+                </p>
               ) : (
                 sec.items.map((t) => <TaskMiniRow key={t.id} t={t} navigate={navigate} />)
               )}
