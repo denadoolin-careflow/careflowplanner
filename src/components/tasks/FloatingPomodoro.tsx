@@ -25,7 +25,7 @@ function loadPos(): { x: number; y: number } | null {
 
 export function FloatingPomodoro() {
   const s = usePomodoro();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const ref = useRef<HTMLDivElement | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(() => loadPos());
   const [dragging, setDragging] = useState(false);
