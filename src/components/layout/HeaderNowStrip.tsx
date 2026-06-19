@@ -516,7 +516,6 @@ export function HeaderNowStrip({ className }: { className?: string }) {
               {snap.conditionLabel && (
                 <span className="hidden truncate opacity-80 lg:inline">· {snap.conditionLabel}</span>
               )}
-              <span className="max-w-[100px] truncate opacity-75">· {snap.locationLabel}</span>
             </button>
           }
         />
