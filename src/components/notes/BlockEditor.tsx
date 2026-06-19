@@ -51,11 +51,23 @@ import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { updateNote } from "@/lib/notes";
 import { upcomingEvents } from "@/lib/cosmic/events";
 import { addDays, format as formatDate } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
+
+/** Append an inline-uploaded file to the note's attachments list so it appears
+ *  in Files & Photos. Idempotent on path. */
+async function syncInlineAttachment(noteId: string | undefined, att: Attachment) {
+  if (!noteId) return;
+  try {
+    const n = await getNote(noteId);
+    if (!n) return;
+    const existing = n.attachments ?? [];
+    if (existing.some(a => a.path === att.path)) return;
+    await updateNote(noteId, { attachments: [...existing, att] });
+  } catch {/* best-effort */}
+}
 
 /** Hashtag scan: matches #word (Unicode letters/numbers/_/-), bounded by start/whitespace. */
 const HASHTAG_RE = /(?:^|\s)#([\p{L}\p{N}_-]{1,40})/gu;
