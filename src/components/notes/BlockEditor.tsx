@@ -1334,7 +1334,14 @@ export function BlockEditor({
       onDragEnter={(e) => { if (Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === "file")) { setDragActive(true); } }}
       onDragOver={(e) => { if (Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === "file")) { e.preventDefault(); setDragActive(true); } }}
       onDragLeave={(e) => { if (e.currentTarget === e.target) setDragActive(false); }}
-      onDrop={() => setDragActive(false)}
+      onDrop={(e) => {
+        const files = Array.from(e.dataTransfer?.files ?? []);
+        if (files.length) {
+          e.preventDefault();
+          files.forEach((f) => { void uploadAndInsertFile(f); });
+        }
+        setDragActive(false);
+      }}
       className={cn(
         "block-editor",
         "relative rounded-2xl transition",
