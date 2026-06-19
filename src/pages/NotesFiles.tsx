@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Download, File as FileIcon, Image as ImageIcon, Loader2, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, Download, File as FileIcon, FileText, Image as ImageIcon, LayoutGrid, List as ListIcon, Loader2, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,7 @@ export default function NotesFiles() {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<"all" | "photos" | "files" | "pdfs">("all");
   const [summaries, setSummaries] = useState<Record<string, PdfSummary>>({});
+  const [view, setView] = useState<"gallery" | "list">("gallery");
 
   useEffect(() => {
     const refresh = () => setSummaries(getAllPdfSummaries());
@@ -103,9 +104,6 @@ export default function NotesFiles() {
     });
   }, [rows, q, tab, summaries]);
 
-  const photos = filtered.filter(isImage);
-  const files = filtered.filter(r => !isImage(r));
-
   return (
     <div className="mx-auto w-full max-w-[1280px] p-3 md:p-5">
       <header className="mb-4 flex flex-wrap items-center gap-2">
@@ -124,6 +122,28 @@ export default function NotesFiles() {
             placeholder="Search files, notes, or PDF contents…"
             className="h-9 rounded-full pl-8"
           />
+        </div>
+        <div className="flex items-center gap-0.5 rounded-full border border-border/60 bg-muted/30 p-0.5">
+          <button
+            onClick={() => setView("gallery")}
+            className={cn(
+              "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
+              view === "gallery" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+            title="Gallery view"
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => setView("list")}
+            className={cn(
+              "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
+              view === "list" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+            title="List view"
+          >
+            <ListIcon className="h-3.5 w-3.5" />
+          </button>
         </div>
       </header>
 
@@ -154,91 +174,102 @@ export default function NotesFiles() {
           <ImageIcon className="mx-auto mb-2 h-5 w-5 opacity-60" />
           No attachments yet. Open any note and use “Add files” to drop in photos or documents.
         </div>
+      ) : view === "gallery" ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {filtered.map(r => {
+            const url = urls[r.id];
+            const img = isImage(r);
+            const pdf = isPdf(r);
+            const s = summaries[r.path];
+            return (
+              <Link
+                key={r.id}
+                to={`/notes/${r.noteId}`}
+                className="group relative flex aspect-square flex-col overflow-hidden rounded-xl border border-border/60 bg-card/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lg"
+                title={`${r.name} · ${r.noteTitle}`}
+              >
+                <div className={cn("relative flex-1 overflow-hidden", img ? "bg-muted/40" : pdf ? "bg-gradient-to-br from-rose-500/15 via-orange-500/10 to-amber-500/15" : "bg-muted/40")}>
+                  {img && url ? (
+                    <img src={url} alt={r.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
+                  ) : img ? (
+                    <div className="grid h-full w-full place-items-center text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="grid h-full w-full place-items-center">
+                      {pdf ? <FileText className="h-10 w-10 text-rose-500/70" /> : <FileIcon className="h-10 w-10 text-muted-foreground/70" />}
+                    </div>
+                  )}
+                  {s && (
+                    <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-background/90 px-1.5 py-0.5 text-[9px] font-medium text-primary shadow-sm backdrop-blur">
+                      <Sparkles className="h-2.5 w-2.5" /> AI
+                    </div>
+                  )}
+                  {pdf && s?.summary && (
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 max-h-full overflow-hidden bg-gradient-to-t from-background via-background/95 to-transparent p-2 text-[10px] leading-snug text-foreground/85 opacity-0 transition group-hover:opacity-100">
+                      <span className="line-clamp-4">{s.summary}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="border-t border-border/40 bg-card/70 px-2 py-1.5">
+                  <div className="truncate text-[11px] font-medium">{r.name}</div>
+                  <div className="truncate text-[10px] text-muted-foreground">{r.noteTitle} · {prettyBytes(r.size)}</div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       ) : (
-        <>
-          {photos.length > 0 && (
-            <section className="mb-6">
-              <h2 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Photos · {photos.length}
-              </h2>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                {photos.map(r => {
-                  const url = urls[r.id];
-                  return (
-                    <Link
-                      key={r.id}
-                      to={`/notes/${r.noteId}`}
-                      className="group relative aspect-square overflow-hidden rounded-xl border border-border/60 bg-card/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lg"
-                      title={`${r.name} · ${r.noteTitle}`}
+        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map(r => {
+            const url = urls[r.id];
+            const img = isImage(r);
+            const pdf = isPdf(r);
+            const s = summaries[r.path];
+            return (
+              <li key={r.id} className="rounded-xl border border-border/60 bg-card/60 p-2.5 shadow-soft">
+                <div className="flex items-center gap-2">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/60">
+                    {img && url ? (
+                      <img src={url} alt={r.name} className="h-full w-full object-cover" loading="lazy" />
+                    ) : pdf ? (
+                      <FileText className="h-4 w-4 text-rose-500/80" />
+                    ) : (
+                      <FileIcon className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <div className="truncate text-sm font-medium">{r.name}</div>
+                      {s && <Sparkles className="h-3 w-3 shrink-0 text-primary/70" aria-label="AI summarized" />}
+                    </div>
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      <Link to={`/notes/${r.noteId}`} className="hover:underline">{r.noteTitle}</Link>
+                      {" · "}{prettyBytes(r.size)}
+                    </div>
+                  </div>
+                  {url && (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      download={r.name}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      title="Open / download"
                     >
-                      {url ? (
-                        <img src={url} alt={r.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
-                      ) : (
-                        <div className="grid h-full w-full place-items-center text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        </div>
-                      )}
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
-                        <div className="truncate font-medium">{r.noteTitle}</div>
-                        <div className="truncate opacity-80">{r.name}</div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {files.length > 0 && (
-            <section>
-              <h2 className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Files · {files.length}
-              </h2>
-              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {files.map(r => {
-                  const url = urls[r.id];
-                  const s = summaries[r.path];
-                  return (
-                    <li key={r.id} className="rounded-xl border border-border/60 bg-card/60 p-2.5 shadow-soft">
-                      <div className="flex items-center gap-2">
-                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-muted/60">
-                        <FileIcon className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <div className="truncate text-sm font-medium">{r.name}</div>
-                          {s && <Sparkles className="h-3 w-3 shrink-0 text-primary/70" aria-label="AI summarized" />}
-                        </div>
-                        <div className="truncate text-[11px] text-muted-foreground">
-                          <Link to={`/notes/${r.noteId}`} className="hover:underline">{r.noteTitle}</Link>
-                          {" · "}{prettyBytes(r.size)}
-                        </div>
-                      </div>
-                      {url && (
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          download={r.name}
-                          className="rounded-md p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                          title="Open / download"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                      </div>
-                      {s?.summary && (
-                        <p className="mt-1.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
-                          {s.summary}
-                        </p>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-        </>
+                      <Download className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                </div>
+                {s?.summary && (
+                  <p className="mt-1.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+                    {s.summary}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );
