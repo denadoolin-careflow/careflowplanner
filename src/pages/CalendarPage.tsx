@@ -492,7 +492,7 @@ type ColorFn = (k: EventItem["kind"]) => string;
 const ITEM_DRAG_MIME = "application/x-careflow-item";
 
 function MonthView({
-  cursor, eventsOn, colorOf, onTaskDropDay, onItemClick, onItemReschedule,
+  cursor, eventsOn, colorOf, onTaskDropDay, onItemClick, onItemReschedule, onDayClick,
 }: {
   cursor: Date;
   eventsOn: EventsFn;
@@ -500,6 +500,7 @@ function MonthView({
   onTaskDropDay?: (taskId: string, dateISO: string) => void;
   onItemClick?: (item: EventItem) => void;
   onItemReschedule?: (item: EventItem, patch: { date?: string; time?: string | null }) => void | Promise<void>;
+  onDayClick?: (iso: string) => void;
 }) {
   const ms = startOfMonth(cursor);
   const gs = startOfWeek(ms, { weekStartsOn: 0 });
