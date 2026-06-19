@@ -79,7 +79,9 @@ export function FloatingPomodoro() {
     const rect = ref.current.getBoundingClientRect();
     dragRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top, moved: false };
     setDragging(true);
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch { /* noop */ }
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current || !ref.current) return;
@@ -90,10 +92,13 @@ export function FloatingPomodoro() {
     const y = Math.min(Math.max(MARGIN, e.clientY - dragRef.current.dy), window.innerHeight - h - MARGIN);
     setPos({ x, y });
   };
-  const onPointerUp = () => {
+  const onPointerUp = (e: React.PointerEvent) => {
     if (!dragRef.current) return;
     dragRef.current = null;
     setDragging(false);
+    try {
+      e.currentTarget.releasePointerCapture?.(e.pointerId);
+    } catch { /* noop */ }
     setPos(p => {
       if (p) {
         try { localStorage.setItem(POS_KEY, JSON.stringify(p)); } catch {}
