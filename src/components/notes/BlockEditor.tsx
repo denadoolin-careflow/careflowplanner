@@ -34,6 +34,7 @@ import { marked } from "marked";
 import TurndownService from "turndown";
 import Image from "@tiptap/extension-image";
 import { uploadNoteImage, uploadNoteFile } from "@/lib/note-images";
+import { openMediaLightbox } from "@/components/media/MediaLightbox";
 import { getNote, updateNote } from "@/lib/notes";
 import type { Attachment } from "@/lib/types";
 import {
@@ -230,7 +231,10 @@ const FileEmbed = TiptapNode.create({
         ["iframe", { src, title: name, loading: "lazy", style: "width:100%;height:480px;border:0;background:#0b0b0b;display:block;" }],
         ["div", { class: "flex items-center justify-between gap-2 px-3 py-2 text-xs" },
           ["span", { class: "truncate text-muted-foreground" }, `📄 ${name}`],
-          ["a", { href: src, target: "_blank", rel: "noreferrer", download: name, class: "text-primary underline-offset-2 hover:underline" }, "Open / download"],
+          ["div", { class: "flex items-center gap-3" },
+            ["button", { type: "button", "data-fullscreen-pdf": "", "data-src": src, "data-name": name, class: "text-primary underline-offset-2 hover:underline" }, "View full screen"],
+            ["a", { href: src, target: "_blank", rel: "noreferrer", download: name, class: "text-primary underline-offset-2 hover:underline" }, "Open / download"],
+          ],
         ],
       ];
     }
@@ -1215,6 +1219,23 @@ export function BlockEditor({
   // Open internal links via router when user clicks
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.target as HTMLElement;
+    // Fullscreen PDF button inside a fileEmbed block
+    const pdfBtn = el.closest("[data-fullscreen-pdf]") as HTMLElement | null;
+    if (pdfBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const src = pdfBtn.getAttribute("data-src") || "";
+      const name = pdfBtn.getAttribute("data-name") || "Document";
+      if (src) openMediaLightbox({ src, name, kind: "pdf" });
+      return;
+    }
+    // Click on an inline image opens the full-screen viewer
+    if (el.tagName === "IMG" && el.closest(".ProseMirror")) {
+      const img = el as HTMLImageElement;
+      e.preventDefault();
+      openMediaLightbox({ src: img.src, name: img.alt || "Image", kind: "image" });
+      return;
+    }
     // Click on a bullet/numbered marker collapses or expands its nested list
     if (el.tagName === "LI") {
       const li = el as HTMLLIElement;

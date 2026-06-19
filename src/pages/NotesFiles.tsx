@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Download, File as FileIcon, FileText, Image as ImageIcon, LayoutGrid, List as ListIcon, Loader2, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, Download, File as FileIcon, FileText, Image as ImageIcon, LayoutGrid, List as ListIcon, Loader2, Maximize2, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import type { Attachment } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getAllPdfSummaries, type PdfSummary } from "@/lib/pdf-summaries";
+import { openMediaLightbox } from "@/components/media/MediaLightbox";
 
 const BUCKET = "attachments";
 
@@ -211,6 +212,21 @@ export default function NotesFiles() {
                       <span className="line-clamp-4">{s.summary}</span>
                     </div>
                   )}
+                  {url && (img || pdf) && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openMediaLightbox({ src: url, name: r.name, kind: pdf ? "pdf" : "image" });
+                      }}
+                      className="absolute left-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-background/85 text-foreground opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 hover:bg-background"
+                      title="View full screen"
+                      aria-label="View full screen"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
                 <div className="border-t border-border/40 bg-card/70 px-2 py-1.5">
                   <div className="truncate text-[11px] font-medium">{r.name}</div>
@@ -260,6 +276,16 @@ export default function NotesFiles() {
                     >
                       <Download className="h-3.5 w-3.5" />
                     </a>
+                  )}
+                  {url && (img || pdf) && (
+                    <button
+                      type="button"
+                      onClick={() => openMediaLightbox({ src: url, name: r.name, kind: pdf ? "pdf" : "image" })}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      title="View full screen"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    </button>
                   )}
                 </div>
                 {s?.summary && (

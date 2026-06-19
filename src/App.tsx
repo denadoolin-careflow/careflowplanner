@@ -10,6 +10,7 @@ import { WorkspaceLayoutProvider } from "@/components/workspace/useWorkspaceLayo
 import "@/lib/theme-preset";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { InlineTagPreviewLayer } from "@/components/tags/InlineTagPreviewLayer";
+import { MediaLightbox } from "@/components/media/MediaLightbox";
 import { IndexRedirect } from "@/components/auth/IndexRedirect";
 import Today from "./pages/Today";
 import Week from "./pages/Week";
@@ -136,6 +137,7 @@ const App = () => (
             <CyclePlanningListener />
             <ExhaleReminderHost />
             <InlineTagPreviewLayer />
+            <MediaLightbox />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/join/:token" element={<JoinHousehold />} />
