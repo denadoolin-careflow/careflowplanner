@@ -510,6 +510,7 @@ export default function CalendarPage() {
             cursor={cursor}
             eventsOn={eventsOnFiltered}
             onItemClick={openItemEditor}
+            onItemReschedule={rescheduleItem}
             onAddForDate={(iso) => setQuickAddISO(iso)}
           />
         )}
