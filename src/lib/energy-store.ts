@@ -24,6 +24,26 @@ export function getEnergyFor(dateISO: string): Energy | null {
   return readAll()[dateISO] ?? null;
 }
 
+/** Return the full map of date → energy entries. */
+export function getAllEnergy(): Record<string, Energy> {
+  return readAll();
+}
+
+/** React hook returning the full date→energy map, reactive to changes. */
+export function useAllEnergy(): Record<string, Energy> {
+  const [map, setMap] = useState<Record<string, Energy>>(() => readAll());
+  useEffect(() => {
+    const h = () => setMap(readAll());
+    window.addEventListener(EVENT, h);
+    window.addEventListener("storage", h);
+    return () => {
+      window.removeEventListener(EVENT, h);
+      window.removeEventListener("storage", h);
+    };
+  }, []);
+  return map;
+}
+
 export function setEnergyFor(dateISO: string, e: Energy) {
   const map = readAll();
   map[dateISO] = e;
