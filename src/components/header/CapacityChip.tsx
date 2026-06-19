@@ -5,8 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useStore, todayISO } from "@/lib/store";
 import { useCycle } from "@/lib/cycle-store";
 import { computeCapacityScore, CAPACITY_BAND_COLOR, findBetterDay } from "@/lib/capacity";
-import { setEnergyFor, type Energy } from "@/lib/energy-store";
-import { useDayEnergy } from "@/lib/energy-store";
+import { useDayEnergy, type Energy } from "@/lib/energy-store";
 import { FlowCard, FlowCardEyebrow, FlowCardTitle } from "@/components/ui/flow-card";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
