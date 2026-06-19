@@ -93,7 +93,8 @@ export function AttachmentsField({
     (async () => {
       const next: Record<string, string> = {};
       await Promise.all(needed.map(async (a) => {
-        const { data } = await supabase.storage.from(BUCKET).createSignedUrl(a.path, 60 * 60);
+        const bucket = a.bucket || BUCKET;
+        const { data } = await supabase.storage.from(bucket).createSignedUrl(a.path, 60 * 60);
         if (data?.signedUrl) next[a.id] = data.signedUrl;
       }));
       if (!cancel && Object.keys(next).length) setUrls((prev) => ({ ...prev, ...next }));
@@ -183,7 +184,7 @@ export function AttachmentsField({
 
   const remove = async (att: Attachment) => {
     onChange(items.filter((a) => a.id !== att.id));
-    try { await supabase.storage.from(BUCKET).remove([att.path]); } catch { /* best-effort */ }
+    try { await supabase.storage.from(att.bucket || BUCKET).remove([att.path]); } catch { /* best-effort */ }
     setUrls((prev) => {
       const { [att.id]: _gone, ...rest } = prev;
       return rest;
