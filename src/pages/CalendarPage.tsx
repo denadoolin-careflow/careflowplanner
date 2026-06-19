@@ -474,13 +474,65 @@ export default function CalendarPage() {
         </ul>
       </SectionCard>
       </div>
-      <div className="w-full shrink-0 lg:w-[320px] xl:w-[360px]">
-        <WidgetRail date={cursor} />
-      </div>
+      <aside className="w-full shrink-0 space-y-3 lg:w-[320px] xl:w-[360px]">
+        <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 text-xs">
+          <button
+            type="button"
+            onClick={() => switchRightPanel("widgets")}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-colors",
+              rightPanel === "widgets"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-pressed={rightPanel === "widgets"}
+          >
+            <PanelRightOpen className="h-3.5 w-3.5" /> Widgets
+          </button>
+          <button
+            type="button"
+            onClick={() => switchRightPanel("agenda")}
+            className={cn(
+              "flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-colors",
+              rightPanel === "agenda"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-pressed={rightPanel === "agenda"}
+          >
+            <CalendarRange className="h-3.5 w-3.5" /> Agenda
+          </button>
+        </div>
+        {rightPanel === "widgets" ? (
+          <WidgetRail date={cursor} />
+        ) : (
+          <AgendaRail
+            cursor={cursor}
+            eventsOn={eventsOnFiltered}
+            onItemClick={openItemEditor}
+            onAddForDate={(iso) => setQuickAddISO(iso)}
+          />
+        )}
+      </aside>
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <BirthdayHolidayEditor kind="birthday" item={editingBday} open={!!editingBday} onOpenChange={(o) => !o && setEditBdayId(null)} />
       <BirthdayHolidayEditor kind="holiday" item={editingHol} open={!!editingHol} onOpenChange={(o) => !o && setEditHolId(null)} />
+      <Dialog open={!!quickAddISO} onOpenChange={(o) => !o && setQuickAddISO(null)}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              Quick add — {quickAddISO ? format(parseISO(quickAddISO), "EEE, MMM d, yyyy") : ""}
+            </DialogTitle>
+          </DialogHeader>
+          {quickAddISO && (
+            <InboxCapture
+              key={quickAddISO}
+              defaultDate={parseISO(quickAddISO)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
