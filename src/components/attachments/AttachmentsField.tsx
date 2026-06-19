@@ -392,12 +392,26 @@ export function AttachmentsField({
                   </div>
                 )}
                 {url && isOpen && pdf && (
-                  <iframe
-                    src={url}
-                    title={a.name}
-                    loading="lazy"
-                    className="block h-[420px] w-full border-0 bg-black/80"
-                  />
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setFitPage(p => ({ ...p, [a.id]: !p[a.id] }))}
+                      className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-1 text-[10px] font-medium text-foreground shadow-sm backdrop-blur hover:bg-background"
+                      title={fitPage[a.id] ? "Compact view" : "Fit to page"}
+                    >
+                      {fitPage[a.id] ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+                      {fitPage[a.id] ? "Compact" : "Fit to page"}
+                    </button>
+                    <iframe
+                      src={url}
+                      title={a.name}
+                      loading="lazy"
+                      className={cn(
+                        "block w-full border-0 bg-black/80",
+                        fitPage[a.id] ? "h-[85vh]" : "h-[420px]",
+                      )}
+                    />
+                  </div>
                 )}
                 {url && isOpen && video && (
                   <video src={url} controls className="block max-h-[420px] w-full bg-black" />
