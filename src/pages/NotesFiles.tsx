@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Download, File as FileIcon, Image as ImageIcon, Loader2, Search } from "lucide-react";
+import { ArrowLeft, Download, File as FileIcon, Image as ImageIcon, Loader2, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { listNotes, type Note } from "@/lib/notes";
 import type { Attachment } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { getAllPdfSummaries, type PdfSummary } from "@/lib/pdf-summaries";
 
 const BUCKET = "attachments";
 
@@ -16,6 +17,11 @@ type Row = Attachment & { noteId: string; noteTitle: string; noteUpdatedAt: stri
 function isImage(a: Pick<Attachment, "mimeType" | "name">) {
   if (a.mimeType?.startsWith("image/")) return true;
   return /\.(png|jpe?g|gif|webp|avif|heic|svg)$/i.test(a.name ?? "");
+}
+
+function isPdf(a: Pick<Attachment, "mimeType" | "name">) {
+  if ((a.mimeType ?? "").includes("pdf")) return true;
+  return /\.pdf$/i.test(a.name ?? "");
 }
 
 function prettyBytes(n?: number) {
@@ -30,7 +36,15 @@ export default function NotesFiles() {
   const [rows, setRows] = useState<Row[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
-  const [tab, setTab] = useState<"all" | "photos" | "files">("all");
+  const [tab, setTab] = useState<"all" | "photos" | "files" | "pdfs">("all");
+  const [summaries, setSummaries] = useState<Record<string, PdfSummary>>({});
+
+  useEffect(() => {
+    const refresh = () => setSummaries(getAllPdfSummaries());
+    refresh();
+    window.addEventListener("careflow:pdf-summary", refresh);
+    return () => window.removeEventListener("careflow:pdf-summary", refresh);
+  }, []);
 
   useEffect(() => {
     let cancel = false;
@@ -77,14 +91,17 @@ export default function NotesFiles() {
     return rows.filter(r => {
       if (tab === "photos" && !isImage(r)) return false;
       if (tab === "files" && isImage(r)) return false;
+      if (tab === "pdfs" && !isPdf(r)) return false;
       if (!term) return true;
+      const s = summaries[r.path];
       return (
         r.name.toLowerCase().includes(term) ||
         r.noteTitle.toLowerCase().includes(term) ||
-        (r.mimeType ?? "").toLowerCase().includes(term)
+        (r.mimeType ?? "").toLowerCase().includes(term) ||
+        (s ? (s.summary + " " + (s.keyPoints || []).join(" ") + " " + s.text).toLowerCase().includes(term) : false)
       );
     });
-  }, [rows, q, tab]);
+  }, [rows, q, tab, summaries]);
 
   const photos = filtered.filter(isImage);
   const files = filtered.filter(r => !isImage(r));
@@ -115,6 +132,7 @@ export default function NotesFiles() {
           { id: "all", label: `All (${rows.length})` },
           { id: "photos", label: `Photos (${rows.filter(isImage).length})` },
           { id: "files", label: `Files (${rows.filter(r => !isImage(r)).length})` },
+          { id: "pdfs", label: `PDFs (${rows.filter(isPdf).length})` },
         ] as const).map(t => (
           <button
             key={t.id}
