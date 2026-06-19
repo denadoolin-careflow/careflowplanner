@@ -1,20 +1,23 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowRight, ArrowUp, CalendarClock, Gauge, Sparkles, Zap } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, BarChart3, CalendarClock, Check, Gauge, HeartPulse, Sparkles, Zap } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStore, todayISO } from "@/lib/store";
 import { useCycle } from "@/lib/cycle-store";
 import { computeCapacityScore, CAPACITY_BAND_COLOR, findBetterDay } from "@/lib/capacity";
-import { useDayEnergy, type Energy } from "@/lib/energy-store";
+import { useDayEnergy, useAllEnergy, type Energy } from "@/lib/energy-store";
 import { FlowCard, FlowCardEyebrow, FlowCardTitle } from "@/components/ui/flow-card";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { EnergyTimeline } from "@/components/capacity/EnergyTimeline";
+import { CapacityInsightsDialog } from "@/components/capacity/CapacityInsightsDialog";
 
 export function CapacityChip({ className }: { className?: string }) {
   const { state } = useStore();
   const { periods, settings: cycleSettings } = useCycle();
   const iso = todayISO();
   const [currentEnergy, setCurrentEnergy] = useDayEnergy(iso);
+  const energyMap = useAllEnergy();
 
   const score = useMemo(
     () => computeCapacityScore({ state, periods, cycleSettings }),
@@ -124,19 +127,25 @@ export function CapacityChip({ className }: { className?: string }) {
                   <button
                     key={e}
                     type="button"
-                    onClick={() => logEnergy(e)}
+                    onClick={(ev) => {
+                      ev.preventDefault();
+                      ev.stopPropagation();
+                      logEnergy(e);
+                    }}
                     aria-pressed={active}
                     className={cn(
-                      "flex-1 rounded-full border px-2 py-1 text-[11px] font-medium capitalize transition",
-                      active ? "shadow-sm" : "hover:brightness-110",
+                      "flex-1 inline-flex items-center justify-center gap-1 rounded-full border px-2 py-1.5 text-[11.5px] font-medium capitalize cursor-pointer select-none transition active:scale-95",
+                      active ? "shadow-sm ring-2 ring-offset-1 ring-offset-background" : "hover:brightness-110",
                     )}
                     style={{
                       backgroundColor: meta.bg,
                       borderColor: active ? meta.color : meta.ring,
                       color: meta.color,
                       boxShadow: active ? `inset 0 0 0 1px ${meta.color}` : undefined,
+                      ["--tw-ring-color" as any]: meta.color,
                     }}
                   >
+                    {active && <Check className="h-3 w-3" />}
                     {meta.label}
                   </button>
                 );
@@ -155,6 +164,52 @@ export function CapacityChip({ className }: { className?: string }) {
             <p className="mt-1.5 text-[10.5px] leading-snug text-muted-foreground">
               Honor your capacity to care — name today's energy honestly so the plan can meet you where you are.
             </p>
+          </div>
+
+          <div className="mt-3 border-t border-border/40 pt-3">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Last 14 days
+              </div>
+              <CapacityInsightsDialog
+                trigger={
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-[10.5px] text-primary hover:underline"
+                  >
+                    <BarChart3 className="h-3 w-3" /> View all
+                  </button>
+                }
+              />
+            </div>
+            <div className="mt-1.5">
+              <EnergyTimeline map={energyMap} days={14} compact />
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <CapacityInsightsDialog
+              defaultTab="low"
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/50 px-2.5 py-1 text-[11px] hover:bg-muted"
+                >
+                  <HeartPulse className="h-3 w-3 text-rose-500" /> Low-energy mode
+                </button>
+              }
+            />
+            <CapacityInsightsDialog
+              defaultTab="insights"
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/50 px-2.5 py-1 text-[11px] hover:bg-muted"
+                >
+                  <BarChart3 className="h-3 w-3 text-primary" /> Insights
+                </button>
+              }
+            />
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-2 text-[11px]">
