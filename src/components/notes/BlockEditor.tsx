@@ -208,6 +208,11 @@ const FileEmbed = TiptapNode.create({
         },
         renderHTML: () => ({}),
       },
+      fit: {
+        default: false,
+        parseHTML: (el) => (el as HTMLElement).getAttribute("data-fit") === "1",
+        renderHTML: () => ({}),
+      },
     };
   },
   parseHTML() {
@@ -217,21 +222,27 @@ const FileEmbed = TiptapNode.create({
     const src = (node.attrs.src as string) || "";
     const name = (node.attrs.name as string) || "file";
     const mime = (node.attrs.mime as string) || "";
+    const fit = !!node.attrs.fit;
     const pdf = isPdfLike(mime, name);
     const wrapper: any = {
       "data-file-embed": "",
       "data-src": src,
       "data-name": name,
       "data-mime": mime,
+      "data-fit": fit ? "1" : "0",
       class: "cf-file-embed not-prose my-3 rounded-2xl border border-border/60 bg-card/70 overflow-hidden",
     };
     if (pdf && src) {
+      const iframeStyle = fit
+        ? "width:100%;height:90vh;border:0;background:#0b0b0b;display:block;"
+        : "width:100%;height:480px;border:0;background:#0b0b0b;display:block;";
       return [
         "div", wrapper,
-        ["iframe", { src, title: name, loading: "lazy", style: "width:100%;height:480px;border:0;background:#0b0b0b;display:block;" }],
+        ["iframe", { src, title: name, loading: "lazy", style: iframeStyle }],
         ["div", { class: "flex items-center justify-between gap-2 px-3 py-2 text-xs" },
           ["span", { class: "truncate text-muted-foreground" }, `📄 ${name}`],
           ["div", { class: "flex items-center gap-3" },
+            ["button", { type: "button", "data-toggle-fit": "", class: "text-primary underline-offset-2 hover:underline" }, fit ? "Compact view" : "Fit to page"],
             ["button", { type: "button", "data-fullscreen-pdf": "", "data-src": src, "data-name": name, class: "text-primary underline-offset-2 hover:underline" }, "View full screen"],
             ["a", { href: src, target: "_blank", rel: "noreferrer", download: name, class: "text-primary underline-offset-2 hover:underline" }, "Open / download"],
           ],
