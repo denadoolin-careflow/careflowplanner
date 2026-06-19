@@ -1030,7 +1030,35 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 />
               </PopoverContent>
             </Popover>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setCollapsed(true)}
+                  aria-label="Collapse sidebar"
+                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Collapse sidebar</TooltipContent>
+            </Tooltip>
           </>
+        )}
+        {!forceExpanded && !collapsed && compact && (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setCollapsed(true)}
+                aria-label="Collapse sidebar"
+                className="grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Collapse sidebar</TooltipContent>
+          </Tooltip>
         )}
       </div>
       <nav className={cn(
