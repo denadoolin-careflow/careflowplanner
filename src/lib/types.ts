@@ -18,6 +18,10 @@ export interface Attachment {
   size?: number;
   /** ISO timestamp */
   uploadedAt: string;
+  /** Storage bucket. Defaults to "attachments" when omitted. */
+  bucket?: string;
+  /** Optional source marker (e.g. "note-inline") for diagnostics. */
+  source?: string;
 }
 
 export interface Task {
