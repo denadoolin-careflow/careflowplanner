@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format, isToday } from "date-fns";
+import { addDays } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
   Moon, Sun, Zap, CheckCircle2, Circle,
+  Sunrise, Calendar as CalendarIcon, Flag, GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
@@ -25,6 +27,21 @@ import { getOrCreateDailyNote, createNote } from "@/lib/notes";
 import { toast } from "sonner";
 import { haptics } from "@/lib/haptics";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import type { DayPart, Priority } from "@/lib/types";
+
+const TASK_ROW_MIME = "application/x-careflow-task-row";
+
+type SlotKey = "Morning" | "Afternoon" | "Evening" | "Anytime";
+const SLOT_ICON: Record<Exclude<SlotKey, "Anytime">, typeof Sunrise> = {
+  Morning: Sunrise,
+  Afternoon: Sun,
+  Evening: Moon,
+};
+const PRIORITY_TONE: Record<Priority, string> = {
+  high: "text-rose-500",
+  medium: "text-amber-500",
+  low: "text-emerald-500",
+};
 
 function atmoColor(palette: string[], index: number, alpha?: number): string {
   const hex = palette[index % palette.length];
@@ -46,8 +63,13 @@ function CondIcon({ c, isNight, className }: { c: WeatherCondition; isNight?: bo
 }
 
 function TaskMiniRow({ t, navigate }: { t: Task; navigate: ReturnType<typeof useNavigate> }) {
-  const { toggleTask } = useStore();
+  const { toggleTask, updateTask } = useStore();
   const [completing, setCompleting] = useState(false);
+  const [swipeX, setSwipeX] = useState(0);
+  const [armed, setArmed] = useState<"complete" | "edit" | null>(null);
+  const ptr = useRef<{ id: number; x: number; y: number; active: boolean } | null>(null);
+  const SWIPE_TRIGGER = 60;
+
   const onToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!t.done) {
@@ -59,44 +81,253 @@ function TaskMiniRow({ t, navigate }: { t: Task; navigate: ReturnType<typeof use
     }
     try { await toggleTask(t.id); } catch { /* */ }
   };
-  return (
-    <div
-      key={t.id}
-      className={cn(
-        "group flex w-full items-start gap-1.5 rounded-md px-1 py-1 transition hover:bg-muted/60",
-        completing && "task-completing",
-      )}
-    >
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType !== "touch") return;
+    ptr.current = { id: e.pointerId, x: e.clientX, y: e.clientY, active: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const p = ptr.current;
+    if (!p || p.id !== e.pointerId) return;
+    const dx = e.clientX - p.x;
+    const dy = e.clientY - p.y;
+    if (!p.active) {
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+        p.active = true;
+        try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch { /* */ }
+      } else if (Math.abs(dy) > 12) {
+        ptr.current = null;
+        return;
+      } else {
+        return;
+      }
+    }
+    const clamped = Math.max(-120, Math.min(120, dx));
+    setSwipeX(clamped);
+    const next = clamped >= SWIPE_TRIGGER ? "complete" : clamped <= -SWIPE_TRIGGER ? "edit" : null;
+    if (next !== armed) {
+      if (next) haptics.swipe();
+      setArmed(next);
+    }
+  };
+  const onPointerEnd = async (e: React.PointerEvent) => {
+    const p = ptr.current;
+    if (!p || p.id !== e.pointerId) return;
+    const wasActive = p.active;
+    const action = armed;
+    ptr.current = null;
+    setSwipeX(0);
+    setArmed(null);
+    if (!wasActive) return;
+    try { (e.currentTarget as Element).releasePointerCapture?.(e.pointerId); } catch { /* */ }
+    if (action === "complete" && !t.done) {
+      setCompleting(true);
+      haptics.success();
+      setTimeout(() => setCompleting(false), 900);
+      try { await toggleTask(t.id); } catch { /* */ }
+    } else if (action === "edit") {
+      haptics.tap();
+      openTaskEditor(t.id);
+    }
+  };
+
+  const setSlot = async (slot: Exclude<SlotKey, "Anytime"> | null) => {
+    haptics.snap();
+    try { await updateTask(t.id, { dayPart: (slot ?? undefined) as DayPart | undefined }); }
+    catch { /* */ }
+    toast.success(slot ? `Moved to ${slot}` : "Moved to Anytime");
+  };
+  const setDue = async (iso: string | null, label: string) => {
+    haptics.snap();
+    try { await updateTask(t.id, { dueDate: iso ?? undefined }); } catch { /* */ }
+    toast.success(`Due → ${label}`);
+  };
+  const setPriority = async (p: Priority) => {
+    haptics.snap();
+    try { await updateTask(t.id, { priority: p }); } catch { /* */ }
+  };
+
+  const SlotBtn = ({ slot }: { slot: Exclude<SlotKey, "Anytime"> }) => {
+    const Icon = SLOT_ICON[slot];
+    const active = t.dayPart === slot;
+    return (
       <button
         type="button"
-        aria-label={t.done ? "Mark incomplete" : "Mark complete"}
-        onClick={onToggle}
-        data-no-haptic
-        className="mt-0.5 shrink-0 rounded-full p-0.5 hover:bg-background/70"
-      >
-        {t.done ? (
-          <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-        ) : (
-          <Circle className="h-3.5 w-3.5 text-muted-foreground/50" />
+        aria-label={`Schedule for ${slot}`}
+        title={slot}
+        onClick={(e) => { e.stopPropagation(); void setSlot(slot); }}
+        className={cn(
+          "shrink-0 rounded p-0.5 transition",
+          active ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-background/70 hover:text-foreground",
         )}
-      </button>
-      <button
-        type="button"
-        onClick={() => navigate(`/today?task=${t.id}`)}
-        className="min-w-0 flex-1 text-left"
       >
-        <span className={cn("line-clamp-2 text-xs leading-snug", t.done && "text-muted-foreground line-through")}>
-          {t.title}
+        <Icon className="h-3 w-3" />
+      </button>
+    );
+  };
+
+  const PriorityFlag = (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Set priority"
+          title={`Priority: ${t.priority ?? "medium"}`}
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "shrink-0 rounded p-0.5 transition hover:bg-background/70",
+            PRIORITY_TONE[(t.priority ?? "medium") as Priority],
+          )}
+        >
+          <Flag className="h-3 w-3" fill="currentColor" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" sideOffset={4} className="w-auto p-1">
+        <div className="flex items-center gap-0.5">
+          {(["high","medium","low"] as Priority[]).map(p => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPriority(p)}
+              className={cn(
+                "flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition hover:bg-muted",
+                t.priority === p && "bg-muted",
+              )}
+            >
+              <Flag className={cn("h-3 w-3", PRIORITY_TONE[p])} fill="currentColor" />
+              <span className="capitalize">{p}</span>
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+
+  const DueButton = (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Change due date"
+          title={t.dueDate ? `Due ${t.dueDate}` : "No due date"}
+          onClick={(e) => e.stopPropagation()}
+          className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-background/70 hover:text-foreground transition"
+        >
+          <CalendarIcon className="h-3 w-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" sideOffset={4} className="w-40 p-1">
+        <div className="flex flex-col">
+          {[
+            { label: "Today", iso: todayISO() },
+            { label: "Tomorrow", iso: format(addDays(new Date(), 1), "yyyy-MM-dd") },
+            { label: "In 3 days", iso: format(addDays(new Date(), 3), "yyyy-MM-dd") },
+            { label: "Next week", iso: format(addDays(new Date(), 7), "yyyy-MM-dd") },
+          ].map(opt => (
+            <button
+              key={opt.label}
+              type="button"
+              onClick={() => setDue(opt.iso, opt.label)}
+              className={cn(
+                "flex items-center justify-between rounded-md px-2 py-1 text-[11px] hover:bg-muted",
+                t.dueDate === opt.iso && "bg-muted font-medium",
+              )}
+            >
+              <span>{opt.label}</span>
+              <span className="text-[10px] tabular-nums text-muted-foreground">{opt.iso.slice(5)}</span>
+            </button>
+          ))}
+          <div className="my-1 border-t border-border/40" />
+          <button
+            type="button"
+            onClick={() => setDue(null, "Anytime")}
+            className="rounded-md px-2 py-1 text-left text-[11px] text-muted-foreground hover:bg-muted"
+          >
+            Clear date
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+
+  return (
+    <div className="relative">
+      {/* swipe action backgrounds */}
+      {swipeX !== 0 && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-between rounded-md px-2">
+          <span className={cn("text-[10px] font-semibold uppercase tracking-wider", armed === "complete" ? "text-emerald-600" : "text-emerald-600/40")}>
+            ✓ Complete
+          </span>
+          <span className={cn("text-[10px] font-semibold uppercase tracking-wider", armed === "edit" ? "text-primary" : "text-primary/40")}>
+            Edit ✎
+          </span>
+        </div>
+      )}
+      <div
+        key={t.id}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData(TASK_ROW_MIME, t.id);
+          e.dataTransfer.setData("text/plain", t.title);
+          haptics.pickup();
+        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerEnd}
+        onPointerCancel={onPointerEnd}
+        style={swipeX !== 0 ? { transform: `translateX(${swipeX}px)`, transition: "none" } : { transition: "transform 180ms ease" }}
+        className={cn(
+          "group relative flex w-full touch-pan-y select-none items-start gap-1.5 rounded-md bg-card px-1 py-1 transition hover:bg-muted/60",
+          completing && "task-completing",
+        )}
+      >
+        <span
+          aria-hidden
+          className="mt-1 hidden h-3 w-3 shrink-0 cursor-grab text-muted-foreground/40 group-hover:block active:cursor-grabbing"
+          title="Drag to reschedule"
+        >
+          <GripVertical className="h-3 w-3" />
         </span>
-      </button>
-      <button
-        type="button"
-        aria-label="Edit task"
-        onClick={(e) => { e.stopPropagation(); openTaskEditor(t.id); }}
-        className="opacity-0 group-hover:opacity-100 focus:opacity-100 mt-0.5 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-background/70 hover:text-foreground transition"
-      >
-        <Pencil className="h-3 w-3" />
-      </button>
+        <button
+          type="button"
+          aria-label={t.done ? "Mark incomplete" : "Mark complete"}
+          onClick={onToggle}
+          data-no-haptic
+          className="mt-0.5 shrink-0 rounded-full p-0.5 hover:bg-background/70"
+        >
+          {t.done ? (
+            <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+          ) : (
+            <Circle className="h-3.5 w-3.5 text-muted-foreground/50" />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(`/today?task=${t.id}`)}
+          className="min-w-0 flex-1 text-left"
+        >
+          <span className={cn("line-clamp-2 text-xs leading-snug", t.done && "text-muted-foreground line-through")}>
+            {t.title}
+          </span>
+        </button>
+        <div className="ml-1 flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+          <SlotBtn slot="Morning" />
+          <SlotBtn slot="Afternoon" />
+          <SlotBtn slot="Evening" />
+          <span className="mx-0.5 h-3 w-px bg-border/60" aria-hidden />
+          {DueButton}
+          {PriorityFlag}
+          <button
+            type="button"
+            aria-label="Edit task"
+            onClick={(e) => { e.stopPropagation(); openTaskEditor(t.id); }}
+            className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-background/70 hover:text-foreground transition"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
