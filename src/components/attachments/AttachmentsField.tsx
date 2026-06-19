@@ -235,7 +235,10 @@ export function AttachmentsField({
             const previewable = canPreviewInline(a);
             const isOpen = expanded[a.id] ?? pdf; // PDFs auto-open
             return (
-              <li key={a.id} className="group relative rounded-xl border border-border/50 bg-card/60 overflow-hidden">
+              <li key={a.id} className={cn(
+                "group relative rounded-xl border border-border/50 bg-card/60 overflow-hidden",
+                pdf && !compact && "sm:col-span-2",
+              )}>
                 <div className="flex items-center gap-2 p-2">
                   <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/50">
                     {img && url
