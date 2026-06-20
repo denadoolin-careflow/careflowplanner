@@ -137,3 +137,33 @@ function NatalSummaryCard({ natal }: { natal: NatalSnapshot }) {
     </section>
   );
 }
+
+/** Native <select> populated from Intl.supportedValuesOf, falling back to a
+ *  small curated list when the runtime lacks that API. */
+function TimezoneSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const zones: string[] = (() => {
+    try {
+      const anyIntl = Intl as unknown as { supportedValuesOf?: (k: string) => string[] };
+      if (typeof anyIntl.supportedValuesOf === "function") return anyIntl.supportedValuesOf("timeZone");
+    } catch { /* ignore */ }
+    return [
+      "UTC","America/New_York","America/Chicago","America/Denver","America/Los_Angeles","America/Phoenix",
+      "America/Anchorage","America/Honolulu","America/Toronto","America/Mexico_City","America/Sao_Paulo",
+      "Europe/London","Europe/Paris","Europe/Berlin","Europe/Madrid","Europe/Rome","Europe/Moscow",
+      "Africa/Cairo","Africa/Johannesburg","Asia/Dubai","Asia/Kolkata","Asia/Bangkok","Asia/Singapore",
+      "Asia/Shanghai","Asia/Tokyo","Asia/Seoul","Australia/Sydney","Pacific/Auckland",
+    ];
+  })();
+  // Ensure the saved zone shows up even if not in the list.
+  const all = zones.includes(value) ? zones : [value, ...zones];
+  return (
+    <select
+      id="btz"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+    >
+      {all.map(z => <option key={z} value={z}>{z}</option>)}
+    </select>
+  );
+}
