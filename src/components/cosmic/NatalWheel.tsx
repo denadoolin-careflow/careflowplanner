@@ -12,10 +12,10 @@ const SIZE = 360;
 const CX = SIZE / 2;
 const CY = SIZE / 2;
 const R_OUTER = 168;
-const R_SIGN_INNER = 140;
-const R_HOUSE_RING = 112;
-const R_PLANET = 92;
-const R_INNER = 56;
+const R_HOUSE_OUTER = 168;     // outer wheel = house wedges (no sign slice ring)
+const R_HOUSE_INNER = 96;      // inner edge of the labeled house band
+const R_PLANET = 76;           // planets sit just inside the house band
+const R_INNER = 48;            // aspect endpoints / inner hub
 
 /**
  * Convert ecliptic longitude → screen angle (radians, SVG convention).
@@ -72,7 +72,6 @@ interface Props {
 
 export function NatalWheel({ chart, onSelectPlanet, onSelectSign, onSelectHouse, showAspects = true }: Props) {
   const [hover, setHover] = useState<string | null>(null);
-  const [hoverSign, setHoverSign] = useState<Sign | null>(null);
   const [hoverHouse, setHoverHouse] = useState<number | null>(null);
   const ascSignIndex = chart.houses ? Math.floor(chart.houses.ascendant / 30) % 12 : 0;
 
@@ -88,104 +87,68 @@ export function NatalWheel({ chart, onSelectPlanet, onSelectSign, onSelectHouse,
       role="img"
       aria-label="Natal chart wheel"
     >
-      {/* outer ring */}
-      <circle cx={CX} cy={CY} r={R_OUTER} fill="hsl(var(--card))" stroke={ringStroke} strokeWidth={1.2} />
+      {/* outer + inner ring */}
+      <circle cx={CX} cy={CY} r={R_HOUSE_OUTER} fill="hsl(var(--card))" stroke={ringStroke} strokeWidth={1.2} />
+      <circle cx={CX} cy={CY} r={R_HOUSE_INNER} fill="hsl(var(--background))" stroke={ringStroke} strokeOpacity={0.6} />
 
-      {/* element-colored sign slices */}
-      {SIGNS.map((sign, idx) => {
-        const start = idx * 30;
-        const end = start + 30;
-        const colorVar = ELEMENT_VAR[SIGN_ELEMENT[sign]];
-        const isHover = hoverSign === sign;
-        return (
-          <path
-            key={`slice-${sign}`}
-            d={arcPath(start, end, R_SIGN_INNER, R_OUTER, ascSignIndex)}
-            fill={`hsl(var(${colorVar}) / ${isHover ? 0.38 : 0.18})`}
-            stroke={ringStroke}
-            strokeOpacity={0.5}
-            onClick={() => onSelectSign?.(sign)}
-            onMouseEnter={() => setHoverSign(sign)}
-            onMouseLeave={() => setHoverSign(null)}
-            className={onSelectSign ? "cursor-pointer" : undefined}
-          />
-        );
-      })}
-
-      {/* sign glyphs */}
-      {SIGNS.map((sign, idx) => {
-        const mid = idx * 30 + 15;
-        const pos = polar(mid, (R_SIGN_INNER + R_OUTER) / 2, ascSignIndex);
-        const colorVar = ELEMENT_VAR[SIGN_ELEMENT[sign]];
-        return (
-          <text
-            key={sign}
-            x={pos.x}
-            y={pos.y}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={16}
-            fill={`hsl(var(${colorVar}))`}
-            style={{ fontWeight: 600 }}
-          >
-            {SIGN_GLYPH[sign]}
-          </text>
-        );
-      })}
-
-      {/* house ring */}
-      <circle cx={CX} cy={CY} r={R_SIGN_INNER} fill="none" stroke={ringStroke} strokeOpacity={0.6} />
-      <circle cx={CX} cy={CY} r={R_HOUSE_RING} fill="hsl(var(--background))" stroke={ringStroke} strokeOpacity={0.5} />
-
-      {/* house cusps + numbers */}
-      {chart.houses?.cusps.map((cusp, i) => {
+      {/* 12 equal house wedges, anchored on Ascendant */}
+      {chart.houses && Array.from({ length: 12 }, (_, i) => {
+        const cusp = chart.houses!.cusps[i];
         const next = chart.houses!.cusps[(i + 1) % 12];
+        const sign = SIGNS[Math.floor(cusp / 30) % 12];
         const isHover = hoverHouse === i + 1;
+        const isAngle = i === 0 || i === 3 || i === 6 || i === 9;
         return (
-          <path
-            key={`hwedge-${i}`}
-            d={arcPath(cusp, next, R_INNER, R_HOUSE_RING, ascSignIndex)}
-            fill={isHover ? "hsl(var(--primary) / 0.12)" : "transparent"}
-            stroke="transparent"
-            onClick={() => onSelectHouse?.(i + 1)}
-            onMouseEnter={() => setHoverHouse(i + 1)}
-            onMouseLeave={() => setHoverHouse(null)}
-            className={onSelectHouse ? "cursor-pointer" : undefined}
-          />
-        );
-      })}
-      {chart.houses?.cusps.map((cusp, i) => {
-        const aIn = polar(cusp, R_INNER, ascSignIndex);
-        const aOut = polar(cusp, R_SIGN_INNER, ascSignIndex);
-        const isAngle = i === 0 || i === 3 || i === 6 || i === 9; // ASC IC DSC MC
-        return (
-          <line
-            key={`cusp-${i}`}
-            x1={aIn.x}
-            y1={aIn.y}
-            x2={aOut.x}
-            y2={aOut.y}
-            stroke={isAngle ? "hsl(var(--primary))" : "hsl(var(--border))"}
-            strokeOpacity={isAngle ? 0.85 : 0.45}
-            strokeWidth={isAngle ? 1.5 : 0.6}
-          />
-        );
-      })}
-      {chart.houses?.cusps.map((cusp, i) => {
-        const mid = cusp + 15;
-        const pos = polar(mid, (R_INNER + R_HOUSE_RING) / 2, ascSignIndex);
-        return (
-          <text
-            key={`hnum-${i}`}
-            x={pos.x}
-            y={pos.y}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={10}
-            fill="hsl(var(--muted-foreground))"
-          >
-            {i + 1}
-          </text>
+          <g key={`hwedge-${i}`}>
+            <path
+              d={arcPath(cusp, next, R_HOUSE_INNER, R_HOUSE_OUTER, ascSignIndex)}
+              fill={isHover ? "hsl(var(--primary) / 0.10)" : "transparent"}
+              stroke="transparent"
+              onClick={() => { onSelectHouse?.(i + 1); onSelectSign?.(sign); }}
+              onMouseEnter={() => setHoverHouse(i + 1)}
+              onMouseLeave={() => setHoverHouse(null)}
+              className={onSelectHouse ? "cursor-pointer" : undefined}
+            />
+            {/* cusp line */}
+            {(() => {
+              const aIn = polar(cusp, R_INNER, ascSignIndex);
+              const aOut = polar(cusp, R_HOUSE_OUTER, ascSignIndex);
+              return (
+                <line
+                  x1={aIn.x} y1={aIn.y} x2={aOut.x} y2={aOut.y}
+                  stroke={isAngle ? "hsl(var(--primary))" : "hsl(var(--border))"}
+                  strokeOpacity={isAngle ? 0.9 : 0.5}
+                  strokeWidth={isAngle ? 1.5 : 0.6}
+                />
+              );
+            })()}
+            {/* sign glyph (outer ring) */}
+            {(() => {
+              const pos = polar(cusp + 15, (R_HOUSE_INNER + R_HOUSE_OUTER) / 2 + 18, ascSignIndex);
+              return (
+                <text
+                  x={pos.x} y={pos.y}
+                  textAnchor="middle" dominantBaseline="central"
+                  fontSize={16}
+                  fill={`hsl(var(${ELEMENT_VAR[SIGN_ELEMENT[sign]]}))`}
+                  style={{ fontWeight: 600 }}
+                >{SIGN_GLYPH[sign]}</text>
+              );
+            })()}
+            {/* house number (inner band) */}
+            {(() => {
+              const pos = polar(cusp + 15, (R_HOUSE_INNER + R_HOUSE_OUTER) / 2 - 8, ascSignIndex);
+              return (
+                <text
+                  x={pos.x} y={pos.y}
+                  textAnchor="middle" dominantBaseline="central"
+                  fontSize={11}
+                  fill="hsl(var(--muted-foreground))"
+                  style={{ fontWeight: 600 }}
+                >{i + 1}</text>
+              );
+            })()}
+          </g>
         );
       })}
 
