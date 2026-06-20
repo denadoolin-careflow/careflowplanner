@@ -13,6 +13,9 @@ export default function CosmicFlowBirthChart() {
   const { row, loading, save, clear, natal } = useBirthChart();
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [tz, setTz] = useState<string>(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return "UTC"; }
+  });
   const [place, setPlace] = useState("");
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
@@ -22,6 +25,7 @@ export default function CosmicFlowBirthChart() {
     if (row) {
       setDate(row.birth_date ?? "");
       setTime(row.birth_time ?? "");
+      if (row.birth_tz) setTz(row.birth_tz);
       setPlace(row.birth_place ?? "");
       setLat(row.birth_lat != null ? String(row.birth_lat) : "");
       setLng(row.birth_lng != null ? String(row.birth_lng) : "");
@@ -33,7 +37,6 @@ export default function CosmicFlowBirthChart() {
     if (!date) { toast.error("Birth date is required."); return; }
     setBusy(true);
     try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       await save({
         date,
         time: time || undefined,
@@ -87,6 +90,11 @@ export default function CosmicFlowBirthChart() {
           </div>
         </div>
         <div>
+          <Label htmlFor="btz">Birth timezone</Label>
+          <TimezoneSelect value={tz} onChange={setTz} />
+          <p className="text-[11px] text-muted-foreground mt-1">Required for an accurate rising sign. Defaults to your current timezone.</p>
+        </div>
+        <div>
           <Label htmlFor="bp">Birth place</Label>
           <Input id="bp" value={place} onChange={e => setPlace(e.target.value)} placeholder="City, Country" />
         </div>
@@ -127,5 +135,35 @@ function NatalSummaryCard({ natal }: { natal: NatalSnapshot }) {
         ))}
       </div>
     </section>
+  );
+}
+
+/** Native <select> populated from Intl.supportedValuesOf, falling back to a
+ *  small curated list when the runtime lacks that API. */
+function TimezoneSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const zones: string[] = (() => {
+    try {
+      const anyIntl = Intl as unknown as { supportedValuesOf?: (k: string) => string[] };
+      if (typeof anyIntl.supportedValuesOf === "function") return anyIntl.supportedValuesOf("timeZone");
+    } catch { /* ignore */ }
+    return [
+      "UTC","America/New_York","America/Chicago","America/Denver","America/Los_Angeles","America/Phoenix",
+      "America/Anchorage","America/Honolulu","America/Toronto","America/Mexico_City","America/Sao_Paulo",
+      "Europe/London","Europe/Paris","Europe/Berlin","Europe/Madrid","Europe/Rome","Europe/Moscow",
+      "Africa/Cairo","Africa/Johannesburg","Asia/Dubai","Asia/Kolkata","Asia/Bangkok","Asia/Singapore",
+      "Asia/Shanghai","Asia/Tokyo","Asia/Seoul","Australia/Sydney","Pacific/Auckland",
+    ];
+  })();
+  // Ensure the saved zone shows up even if not in the list.
+  const all = zones.includes(value) ? zones : [value, ...zones];
+  return (
+    <select
+      id="btz"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+    >
+      {all.map(z => <option key={z} value={z}>{z}</option>)}
+    </select>
   );
 }
