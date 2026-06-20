@@ -559,4 +559,3 @@ function InsightCard({ label, value, hint, icon, onClick }: { label: string; val
   );
 }
 
-}
