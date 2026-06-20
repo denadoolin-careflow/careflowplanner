@@ -13,6 +13,9 @@ export default function CosmicFlowBirthChart() {
   const { row, loading, save, clear, natal } = useBirthChart();
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [tz, setTz] = useState<string>(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return "UTC"; }
+  });
   const [place, setPlace] = useState("");
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
@@ -22,6 +25,7 @@ export default function CosmicFlowBirthChart() {
     if (row) {
       setDate(row.birth_date ?? "");
       setTime(row.birth_time ?? "");
+      if (row.birth_tz) setTz(row.birth_tz);
       setPlace(row.birth_place ?? "");
       setLat(row.birth_lat != null ? String(row.birth_lat) : "");
       setLng(row.birth_lng != null ? String(row.birth_lng) : "");
@@ -33,7 +37,6 @@ export default function CosmicFlowBirthChart() {
     if (!date) { toast.error("Birth date is required."); return; }
     setBusy(true);
     try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       await save({
         date,
         time: time || undefined,
@@ -85,6 +88,11 @@ export default function CosmicFlowBirthChart() {
             <Label htmlFor="bt">Birth time (optional)</Label>
             <Input id="bt" type="time" value={time} onChange={e => setTime(e.target.value)} />
           </div>
+        </div>
+        <div>
+          <Label htmlFor="btz">Birth timezone</Label>
+          <TimezoneSelect value={tz} onChange={setTz} />
+          <p className="text-[11px] text-muted-foreground mt-1">Required for an accurate rising sign. Defaults to your current timezone.</p>
         </div>
         <div>
           <Label htmlFor="bp">Birth place</Label>
