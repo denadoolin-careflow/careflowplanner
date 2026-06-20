@@ -38,10 +38,41 @@ export interface NatalChartV2 {
   starContacts: { body: ExtPlanet; star: FixedStar }[];
 }
 
+/**
+ * Convert a wall-clock birth date/time in a given IANA timezone to a true
+ * UTC `Date`. Without an accurate UTC instant the Ascendant calculation is
+ * wrong (it depends on apparent sidereal time). If `tz` is omitted we fall
+ * back to the browser's local zone.
+ */
 function birthDate(b: BirthInputV2): Date {
   const [y, m, d] = b.date.split("-").map(Number);
   const [hh = 12, mm = 0] = (b.time ?? "12:00").split(":").map(Number);
-  return new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1, hh, mm));
+  const tz = b.tz || (typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC");
+  const naiveUtc = Date.UTC(y, (m ?? 1) - 1, d ?? 1, hh, mm);
+  // Offset (minutes) that `tz` had at this instant, east of UTC positive.
+  const offsetMin = tzOffsetMinutes(new Date(naiveUtc), tz);
+  return new Date(naiveUtc - offsetMin * 60_000);
+}
+
+function tzOffsetMinutes(date: Date, timeZone: string): number {
+  try {
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone, hourCycle: "h23",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    });
+    const parts = dtf.formatToParts(date).reduce<Record<string, string>>((acc, p) => {
+      if (p.type !== "literal") acc[p.type] = p.value;
+      return acc;
+    }, {});
+    const asUtc = Date.UTC(
+      Number(parts.year), Number(parts.month) - 1, Number(parts.day),
+      Number(parts.hour), Number(parts.minute), Number(parts.second),
+    );
+    return Math.round((asUtc - date.getTime()) / 60_000);
+  } catch {
+    return 0;
+  }
 }
 
 export function computeNatalV2(b: BirthInputV2): NatalChartV2 {
