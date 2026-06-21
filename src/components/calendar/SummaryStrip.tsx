@@ -15,38 +15,57 @@ function nextBirthday(iso: string): Date {
 }
 
 function Card({
-  title, icon: Icon, accent, to, children,
+  title, icon: Icon, accent, to, onClick, children,
 }: {
   title: string;
   icon: typeof CalendarClock;
   accent: string;
-  to: string;
+  to?: string;
+  onClick?: () => void;
   children: React.ReactNode;
 }) {
-  return (
-    <Link
-      to={to}
-      className="group flex min-w-[200px] flex-col rounded-2xl border border-border/40 bg-card/70 p-3 transition-colors hover:border-primary/30 hover:bg-card snap-start"
-    >
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <div className="inline-flex items-center gap-1.5">
-          <span className={cn("grid h-6 w-6 place-items-center rounded-lg", accent)}>
-            <Icon className="h-3 w-3" />
+  const cls = "group flex min-w-[220px] flex-col rounded-2xl border border-border/40 bg-card/70 p-4 text-left transition-colors hover:border-primary/30 hover:bg-card snap-start";
+  const inner = (
+    <>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="inline-flex min-w-0 items-center gap-2">
+          <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-lg", accent)}>
+            <Icon className="h-3.5 w-3.5" />
           </span>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             {title}
           </span>
         </div>
-        <ArrowRight className="h-3 w-3 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5" />
+        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5" />
       </div>
-      <div className="min-h-[44px]">{children}</div>
+      <div className="min-h-[44px] min-w-0">{children}</div>
+    </>
+  );
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={cls}>
+        {inner}
+      </button>
+    );
+  }
+  return (
+    <Link to={to ?? "#"} className={cls}>
+      {inner}
     </Link>
   );
 }
 
 /** Summary strip: Upcoming · Birthdays · Appointments · Holidays.
  *  Responsive: horizontal swipe on mobile, 2x2 on tablet, 4-col on desktop. */
-export function SummaryStrip() {
+export function SummaryStrip({
+  onOpenBirthday,
+  onOpenAppointment,
+  onOpenHoliday,
+}: {
+  onOpenBirthday?: (id: string) => void;
+  onOpenAppointment?: (id: string) => void;
+  onOpenHoliday?: (id: string) => void;
+} = {}) {
   const { state } = useStore();
   const today = todayISO();
   const horizon = format(addDays(new Date(), 30), "yyyy-MM-dd");
@@ -87,7 +106,7 @@ export function SummaryStrip() {
   );
 
   return (
-    <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-2 md:overflow-visible lg:grid-cols-4">
+    <div className="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-2 md:gap-3 md:overflow-visible lg:grid-cols-4">
       <Card
         title="Upcoming"
         icon={CalendarRange}
@@ -102,7 +121,8 @@ export function SummaryStrip() {
         title="Birthdays"
         icon={Cake}
         accent="bg-rose-500/15 text-rose-600 dark:text-rose-300"
-        to="/calendar"
+        to={!nextBday || !onOpenBirthday ? "/calendar" : undefined}
+        onClick={nextBday && onOpenBirthday ? () => onOpenBirthday(nextBday.id) : undefined}
       >
         {nextBday ? (
           <>
@@ -120,11 +140,12 @@ export function SummaryStrip() {
         title="Appointments"
         icon={CalendarClock}
         accent="bg-sky-500/15 text-sky-600 dark:text-sky-300"
-        to="/calendar"
+        to={!nextAppt || !onOpenAppointment ? "/calendar" : undefined}
+        onClick={nextAppt && onOpenAppointment ? () => onOpenAppointment(nextAppt.id) : undefined}
       >
         {nextAppt ? (
           <>
-            <div className="truncate text-sm font-medium">{nextAppt.title}</div>
+            <div className="line-clamp-2 break-words text-sm font-medium leading-snug">{nextAppt.title}</div>
             <div className="text-[11px] text-muted-foreground">
               {format(parseISO(nextAppt.date), "EEE MMM d")}{nextAppt.time ? ` · ${nextAppt.time}` : ""}
             </div>
@@ -138,7 +159,8 @@ export function SummaryStrip() {
         title="Holidays"
         icon={Sparkles}
         accent="bg-amber-500/15 text-amber-600 dark:text-amber-300"
-        to="/calendar"
+        to={!nextHol || !onOpenHoliday ? "/calendar" : undefined}
+        onClick={nextHol && onOpenHoliday ? () => onOpenHoliday(nextHol.id) : undefined}
       >
         {nextHol ? (
           <>

@@ -259,7 +259,11 @@ export default function CalendarPage() {
       </div>
 
       <TodaysRhythmCard date={cursor} />
-      <SummaryStrip />
+      <SummaryStrip
+        onOpenBirthday={(id) => setEditBdayId(id)}
+        onOpenAppointment={(id) => setEditApptId(id)}
+        onOpenHoliday={(id) => setEditHolId(id)}
+      />
 
       <InboxCapture defaultDate={cursor} />
 
