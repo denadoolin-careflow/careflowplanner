@@ -50,7 +50,7 @@ export function CombinedFab() {
   return (
     <div
       ref={wrapRef}
-      className={cn("fixed z-40 hidden flex-col items-end gap-2 lg:flex")}
+      className={cn("pointer-events-none fixed z-40 hidden flex-col items-end gap-2 lg:flex")}
       style={drag.style}
     >
       {/* Expanded radial menu */}
@@ -58,7 +58,7 @@ export function CombinedFab() {
         className={cn(
           "flex flex-col items-end gap-2 transition-all duration-200 ease-out",
           expanded
-            ? "translate-y-0 scale-100 opacity-100"
+            ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
             : "pointer-events-none translate-y-3 scale-75 opacity-0",
         )}
       >
@@ -114,7 +114,7 @@ export function CombinedFab() {
         }}
         aria-label={expanded ? "Close quick actions" : "Open quick actions"}
         className={cn(
-          "grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-cozy",
+          "pointer-events-auto grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-cozy",
           "transition-transform hover:scale-105 active:scale-95",
           drag.dragging && "scale-110 ring-2 ring-primary/40",
           expanded && "rotate-45",
