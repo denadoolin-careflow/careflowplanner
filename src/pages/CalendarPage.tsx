@@ -77,12 +77,13 @@ export default function CalendarPage() {
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [editBdayId, setEditBdayId] = useState<string | null>(null);
   const [editHolId, setEditHolId] = useState<string | null>(null);
-  const [rightPanel, setRightPanel] = useState<"widgets" | "agenda">(() => {
+  type RightPanel = "widgets" | "agenda" | "hidden";
+  const [rightPanel, setRightPanel] = useState<RightPanel>(() => {
     if (typeof localStorage === "undefined") return "widgets";
-    return (localStorage.getItem("calendar-right-panel") as "widgets" | "agenda") || "widgets";
+    return (localStorage.getItem("calendar-right-panel") as RightPanel) || "widgets";
   });
   const [quickAddISO, setQuickAddISO] = useState<string | null>(null);
-  const switchRightPanel = (next: "widgets" | "agenda") => {
+  const switchRightPanel = (next: RightPanel) => {
     setRightPanel(next);
     try { localStorage.setItem("calendar-right-panel", next); } catch { /* noop */ }
   };
@@ -478,6 +479,18 @@ export default function CalendarPage() {
         </ul>
       </SectionCard>
       </div>
+      {rightPanel === "hidden" ? (
+        <aside className="shrink-0">
+          <button
+            type="button"
+            onClick={() => switchRightPanel("widgets")}
+            className="flex items-center gap-1.5 rounded-full bg-muted/60 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+            title="Show side panel"
+          >
+            <PanelRightOpen className="h-3.5 w-3.5" /> Show panel
+          </button>
+        </aside>
+      ) : (
       <aside className="w-full shrink-0 space-y-3 lg:w-[320px] xl:w-[360px]">
         <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 text-xs">
           <button
@@ -506,6 +519,15 @@ export default function CalendarPage() {
           >
             <CalendarRange className="h-3.5 w-3.5" /> Agenda
           </button>
+          <button
+            type="button"
+            onClick={() => switchRightPanel("hidden")}
+            className="flex items-center justify-center rounded-full px-2 py-1.5 text-muted-foreground hover:text-foreground"
+            title="Hide panel"
+            aria-label="Hide panel"
+          >
+            <PanelRightClose className="h-3.5 w-3.5" />
+          </button>
         </div>
         {rightPanel === "widgets" ? (
           <WidgetRail date={cursor} />
@@ -519,6 +541,7 @@ export default function CalendarPage() {
           />
         )}
       </aside>
+      )}
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <BirthdayHolidayEditor kind="birthday" item={editingBday} open={!!editingBday} onOpenChange={(o) => !o && setEditBdayId(null)} />
