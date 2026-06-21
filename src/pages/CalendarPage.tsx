@@ -77,12 +77,13 @@ export default function CalendarPage() {
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [editBdayId, setEditBdayId] = useState<string | null>(null);
   const [editHolId, setEditHolId] = useState<string | null>(null);
-  const [rightPanel, setRightPanel] = useState<"widgets" | "agenda">(() => {
+  type RightPanel = "widgets" | "agenda" | "hidden";
+  const [rightPanel, setRightPanel] = useState<RightPanel>(() => {
     if (typeof localStorage === "undefined") return "widgets";
-    return (localStorage.getItem("calendar-right-panel") as "widgets" | "agenda") || "widgets";
+    return (localStorage.getItem("calendar-right-panel") as RightPanel) || "widgets";
   });
   const [quickAddISO, setQuickAddISO] = useState<string | null>(null);
-  const switchRightPanel = (next: "widgets" | "agenda") => {
+  const switchRightPanel = (next: RightPanel) => {
     setRightPanel(next);
     try { localStorage.setItem("calendar-right-panel", next); } catch { /* noop */ }
   };
