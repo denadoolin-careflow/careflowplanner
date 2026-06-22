@@ -24,6 +24,7 @@ import { WeatherPrefsSection } from "@/components/settings/WeatherPrefsSection";
 import { TimeZoneSelect, detectDeviceTimeZone } from "@/components/settings/TimeZoneSelect";
 import { ArchetypeThemeSection } from "@/components/settings/ArchetypeThemeSection";
 import { AtmosphereFeelSection } from "@/components/settings/AtmosphereFeelSection";
+import { FlowColorPicker } from "@/components/settings/FlowColorPicker";
 import { FontSection } from "@/components/settings/FontSection";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import { useSidebarDotsEnabled } from "@/lib/ui-prefs";
@@ -137,7 +138,9 @@ export default function Settings() {
 
       <AtmosphereFeelSection />
 
-      <SectionCard title="Flow colors" subtitle="Preview how each Flow header tints across every atmosphere." accent="sage">
+      <FlowColorPicker />
+
+      <SectionCard title="Preview across atmospheres" subtitle="See how each Flow header tints under every atmosphere preset." accent="sage">
         <Link
           to="/settings/flow-colors"
           className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/60 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors"
@@ -145,7 +148,7 @@ export default function Settings() {
           <span className="grid h-8 w-8 place-items-center rounded-md bg-primary-soft text-primary">
             <Palette className="h-4 w-4" />
           </span>
-          <span className="flex-1 font-medium">Flow colors across atmospheres</span>
+          <span className="flex-1 font-medium">Open atmosphere preview gallery</span>
           <ArrowRight className="h-4 w-4 text-muted-foreground" />
         </Link>
       </SectionCard>
