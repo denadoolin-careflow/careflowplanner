@@ -6,7 +6,7 @@ import {
   ShoppingCart, FileText, GraduationCap, Cake, Car,
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
-  Mic, Loader2, X, Pencil, Plus as PlusIcon,
+  Mic, Loader2, X, Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
