@@ -8,7 +8,6 @@ import { tagIconFor } from "./tag-icon";
 import { ColorSwatchPicker, IconGroupPicker } from "./TagPicker";
 import { useAtmosphere } from "@/lib/atmospheres";
 import { Trash2, Save } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Props { open: boolean; onOpenChange: (v: boolean) => void; }
