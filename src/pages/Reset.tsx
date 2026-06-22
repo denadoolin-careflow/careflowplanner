@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { Sparkles, RefreshCw, CalendarRange, CalendarDays, Plus, X, Check, Flower2, Trash2, BookHeart, Moon } from "lucide-react";
+import { ChevronDown, ChevronRight, ListChecks, CircleDashed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -326,36 +327,16 @@ export default function Reset() {
           <div className="relative space-y-2 pl-6">
             <div className="absolute left-2 top-2 bottom-2 w-px bg-border/60" aria-hidden />
             {history.map(h => (
-              <div key={h.id} className="relative">
-                <div className="absolute -left-[18px] top-4 grid h-2.5 w-2.5 place-items-center rounded-full bg-secondary ring-4 ring-background" />
-                <SectionCard className="!p-0">
-                  <div className="flex items-start justify-between gap-3 px-5 py-3">
-                    <div className="min-w-0">
-                      <div className="font-display text-sm font-semibold">
-                        {period === "week"
-                          ? `Week of ${format(parseISO(h.period_start), "MMM d, yyyy")}`
-                          : format(parseISO(h.period_start), "MMMM yyyy")}
-                      </div>
-                      {h.reflection && <p className="mt-1 line-clamp-2 text-xs text-foreground/75">{h.reflection}</p>}
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {h.intentions.slice(0,3).map((t,i) => <span key={i} className="rounded-full bg-primary-soft/60 px-2 py-0.5 text-[11px] text-foreground/80">✦ {t}</span>)}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!confirm("Delete this reset?")) return;
-                        await supabase.from("period_reviews").delete().eq("id", h.id);
-                        setHistory(prev => prev.filter(r => r.id !== h.id));
-                      }}
-                      className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-destructive"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </SectionCard>
-              </div>
+              <PastResetItem
+                key={h.id}
+                row={h}
+                period={period}
+                onDelete={async () => {
+                  if (!confirm("Delete this reset?")) return;
+                  await supabase.from("period_reviews").delete().eq("id", h.id);
+                  setHistory(prev => prev.filter(r => r.id !== h.id));
+                }}
+              />
             ))}
           </div>
         </section>
