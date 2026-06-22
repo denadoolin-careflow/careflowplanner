@@ -6,6 +6,7 @@ import {
   ShoppingCart, FileText, GraduationCap, Cake, Car,
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
+  Mic, Square, Loader2, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isToday, isFuture, parseISO, format } from "date-fns";
 import basketImg from "@/assets/inbox-basket.png";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
@@ -76,6 +78,70 @@ function InboxInner() {
   const [draft, setDraft] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [processOpen, setProcessOpen] = useState(false);
+  const recorder = useAudioRecorder();
+  const [transcribing, setTranscribing] = useState(false);
+
+  const fmtElapsed = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    return `${String(Math.floor(s / 60)).padStart(1, "0")}:${String(s % 60).padStart(2, "0")}`;
+  };
+
+  const startVoice = async () => {
+    if (!recorder.supported) {
+      toast.error("Voice capture isn't supported in this browser.");
+      return;
+    }
+    await recorder.start();
+  };
+
+  const cancelVoice = () => {
+    recorder.cancel();
+    toast("Discarded", { description: "Nothing was saved." });
+  };
+
+  const finishVoice = async () => {
+    const out = await recorder.stop();
+    if (!out) return;
+    setTranscribing(true);
+    try {
+      const { data, error } = await aiInvoke("ai-voice-capture", {
+        body: { audioBase64: out.base64, mimeType: out.mimeType },
+      });
+      if (error) throw error;
+      const payload = data as { transcript?: string; summary?: string; tasks?: any[] };
+      const tasks = payload?.tasks ?? [];
+      if (!payload?.transcript) {
+        toast.info("I didn't catch anything — try again.");
+        return;
+      }
+      if (tasks.length === 0) {
+        // Fall back to dropping transcript into draft for review.
+        setDraft(payload.transcript);
+        toast("Captured your words", { description: "Review and tap Capture to save." });
+        return;
+      }
+      for (const t of tasks) {
+        await addTask({
+          title: t.title,
+          area: (t.area as Area) ?? undefined,
+          priority: (t.priority as Priority) ?? "medium",
+          status: (t.status as TaskStatus) ?? "active",
+          dueDate: t.dueDate ?? undefined,
+          estMinutes: t.estMinutes ?? undefined,
+          tags: Array.isArray(t.tags) ? t.tags : undefined,
+          notes: t.notes ?? undefined,
+          inbox: true,
+        });
+      }
+      toast.success(`Caught ${tasks.length} ${tasks.length === 1 ? "thought" : "thoughts"} ✨`, {
+        description: payload.summary || "Safely held in your inbox.",
+      });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't process voice note");
+    } finally {
+      setTranscribing(false);
+    }
+  };
 
   const items = useMemo(
     () => state.tasks.filter((t: any) => t.inbox && !t.done && !t.parentTaskId && t.status !== "parked"),
@@ -221,7 +287,17 @@ function InboxInner() {
               <Sparkles className="h-4 w-4 text-primary" />
               <h3 className="font-display text-lg tracking-tight">Quick Capture</h3>
             </div>
-            <Button
+            <div className="flex items-center gap-2">
+              {recorder.supported && recorder.state === "idle" && !transcribing && (
+                <Button
+                  onClick={startVoice}
+                  variant="outline"
+                  className="h-9 gap-2 rounded-full border-rose-200 bg-rose-50/60 px-4 text-[13px] font-medium text-rose-700 hover:bg-rose-100/70"
+                >
+                  <Mic className="h-3.5 w-3.5" /> Voice
+                </Button>
+              )}
+              <Button
               onClick={() => {
                 if (items.length === 0) {
                   toast.info("Nothing to organize yet — capture something first.");
@@ -234,9 +310,52 @@ function InboxInner() {
             >
               {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               Organize for Me
-            </Button>
+              </Button>
+            </div>
           </div>
 
+          {recorder.state === "recording" || recorder.state === "stopping" || transcribing ? (
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200/70 bg-gradient-to-br from-rose-50/80 to-amber-50/60 px-4 py-4 shadow-inner">
+              <div className="flex items-center gap-3">
+                {transcribing ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                ) : (
+                  <span className="relative grid h-10 w-10 place-items-center rounded-full bg-rose-500 text-white">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-rose-400/60 motion-reduce:hidden" />
+                    <Mic className="relative h-4 w-4" />
+                  </span>
+                )}
+                <div className="leading-tight">
+                  <div className="text-sm font-medium text-foreground">
+                    {transcribing ? "Organizing your thoughts…" : "Listening"}
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">
+                    {transcribing ? "Hold on a moment." : `${fmtElapsed(recorder.elapsedMs)} · tap stop when finished`}
+                  </div>
+                </div>
+              </div>
+              {!transcribing && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={cancelVoice}
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-muted-foreground hover:bg-background/60"
+                    aria-label="Cancel recording"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => void finishVoice()}
+                    disabled={recorder.state === "stopping"}
+                    className="h-9 gap-2 rounded-full bg-rose-500 px-4 text-[13px] text-white hover:bg-rose-600"
+                  >
+                    <Square className="h-3.5 w-3.5 fill-current" /> Stop
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
           <div className="relative">
             <div className="absolute left-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-primary/10 text-primary">
               <span className="text-base leading-none">＋</span>
@@ -246,9 +365,9 @@ function InboxInner() {
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
               placeholder="What needs your attention?"
-              className="h-14 rounded-2xl border-border/40 bg-background/70 pl-14 pr-28 text-[15px] shadow-inner placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15"
+              className="h-14 rounded-2xl border-border/40 bg-background/70 pl-14 pr-24 text-[15px] shadow-inner placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15"
             />
-            {draft.trim() && (
+            {draft.trim() ? (
               <Button
                 onClick={() => void submitCapture()}
                 size="sm"
@@ -256,8 +375,18 @@ function InboxInner() {
               >
                 Capture
               </Button>
-            )}
+            ) : recorder.supported ? (
+              <button
+                type="button"
+                onClick={startVoice}
+                aria-label="Start voice capture"
+                className="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 transition hover:bg-rose-100"
+              >
+                <Mic className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
+          )}
 
           {parsed && (parsed.dueDate || parsed.area || parsed.energy || parsed.tags?.length) ? (
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-primary/20 bg-primary/[0.04] px-3 py-2.5 text-[12.5px] animate-fade-in">

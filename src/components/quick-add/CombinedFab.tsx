@@ -20,7 +20,7 @@ import { CareyAvatar } from "@/components/carey/CareyAvatar";
  */
 export function CombinedFab() {
   const [expanded, setExpanded] = useState(false);
-  const drag = useDraggableFab("careflow:fab:combined", { right: 16, bottom: 88 });
+  const drag = useDraggableFab("careflow:fab:combined", { right: 16, bottom: 96 });
   const wrapRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -50,7 +50,7 @@ export function CombinedFab() {
   return (
     <div
       ref={wrapRef}
-      className={cn("pointer-events-none fixed z-40 hidden flex-col items-end gap-2 lg:flex")}
+      className={cn("pointer-events-none fixed z-40 flex flex-col items-end gap-2")}
       style={drag.style}
     >
       {/* Expanded radial menu */}
