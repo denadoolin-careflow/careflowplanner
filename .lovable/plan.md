@@ -1,33 +1,53 @@
 ## Goal
-Add voice capture to the Inbox and make the floating Quick Add + Ask Carey controls visible again on mobile (where the user is currently working).
 
-## 1. Voice capture on Inbox (`src/pages/Inbox.tsx`)
+Make voice capture feel effortless on mobile via a hold-to-record gesture with clear timer feedback, let users edit task details before they're saved, and tighten the Quick Capture + Categories + Tags experience.
 
-Add a microphone control inside the Quick Capture card, right next to the "Organize for Me" button (and a small mic icon inside the input on mobile).
+## 1. Hold-to-record voice capture (mobile-first)
 
-Behavior:
-- Uses the existing `useAudioRecorder` hook (`src/hooks/use-audio-recorder.ts`).
-- Tap mic → starts recording, shows pulsing red dot + live `mm:ss` timer + "Tap to stop" hint.
-- Tap again → stops, base64-encodes audio, calls the existing `ai-voice-capture` edge function via `aiInvoke` with `{ audioBase64, mimeType }`.
-- Response gives `{ transcript, summary, tasks[] }`. For each task in `tasks`, call `addTask({...mapped, inbox: true })` (title, area, priority, status, dueDate, estMinutes, tags, notes). Toast: "Caught N thoughts ✨" with the gentle `summary` as description.
-- Cancel button (X) discards without sending.
-- Fallback for unsupported browsers: hide mic, show subtle "Voice capture not supported" tooltip.
-- Empty transcript → toast "I didn't catch anything — try again."
-- While recording, the text input is replaced (visually) by the recording chrome; while transcribing, show a spinner + "Organizing your thoughts…".
+Edit `src/pages/Inbox.tsx` and replace the current tap-to-start mic with a press-and-hold mic.
 
-Calming styling consistent with the redesign: rounded-full mic button using the existing peach/sage tints, soft pulse animation, respects `prefers-reduced-motion`.
+- **Gesture**: replace the small mic affordance with a prominent circular mic button (right side of capture input on desktop; a big floating mic button under the input on mobile). Use `onPointerDown` / `onPointerUp` / `onPointerCancel` / `onPointerLeave` (covers touch + mouse). On `pointerdown` → start recording after a 180ms hold (prevents accidental fires); on `pointerup`/`leave` → stop and transcribe. Add `pointer-events: none` for `touch-action: none` to avoid scroll interference.
+- **Slide-to-cancel** (iMessage-style): while holding, if the user drags more than ~80px to the left, mark `willCancel=true`; on release in that state, call `recorder.cancel()` instead of `stop()`. Show "← Slide to cancel" hint inline.
+- **Feedback while held**:
+  - Mic button scales up (1.0 → 1.15) and pulses a soft rose halo (already styled).
+  - Live `mm:ss` timer next to the button.
+  - Animated waveform-ish 3-dot bouncing indicator (CSS only, respects `prefers-reduced-motion`).
+  - Haptic tap on start/stop via existing `src/lib/haptics.ts`.
+- **Tap (short press) fallback**: if pointer is released in <180ms before recording starts, show a one-time toast: "Hold the mic to record" so the gesture is discoverable.
+- Keep desktop tap-to-toggle behavior intact (the existing Stop button remains for the recording overlay) — only the *start* gesture changes on touch.
 
-## 2. Bring back floating buttons on mobile (`src/components/quick-add/CombinedFab.tsx`)
+## 2. Edit task detail before creating tasks
 
-Currently the wrapper uses `hidden lg:flex`, so the universal Quick Capture FAB (with Note / Voice / Journal / Checklist / PDF / Photo / Quick add) and the Ask Carey bubble never appear on phones. Remove the `hidden lg:flex` gating so the FAB shows on all breakpoints, and nudge the default position up (`bottom: 96` → clears the mobile BottomNav). No behavior changes to the actions themselves — the existing "Voice" action already dispatches `careflow:carey:open`, and the Carey bubble already opens the chat assistant.
+Today, voice transcripts that parse to tasks are saved straight to the inbox. Add a confirm-and-edit step.
 
-No other layout files need to change; `AppLayout.tsx` already mounts both `<CombinedFab />` and `<CareyChat />`.
+- New component `src/components/inbox/VoiceReviewSheet.tsx`: a bottom sheet (Drawer from `@/components/ui/drawer`) that opens after transcription completes when `tasks.length > 0`.
+- For each suggested task, render an editable row: title input, Area chip (popover from `AREAS`), When chip (Today / Tomorrow / pick date), Energy chip (Low/Med/High), Priority chip, Tags chip (re-uses `TagPicker`), and Notes textarea (collapsed).
+- Footer actions: "Save all" (calls `addTask` for each, `inbox: true`), "Save & process" (saves then opens `ProcessInboxDialog`), per-row delete, and "Discard all".
+- If transcript yielded zero tasks, keep current fallback (drop transcript into draft for review) — no sheet.
+- Apply the same sheet to text capture when the user presses a new "Edit details" affordance next to Capture (small chevron button) — opens the sheet pre-populated with the parsed values.
 
-## 3. Out of scope
-No changes to edge functions, schema, or other pages. Only the Inbox page and the FAB visibility are touched.
+## 3. Combine Quick Capture Categories with Tags + usability
 
-## Technical notes
-- New imports in `Inbox.tsx`: `Mic`, `Square`, `Loader2` from lucide; `useAudioRecorder` from `@/hooks/use-audio-recorder`.
-- Mapping helper inside `Inbox.tsx` converts each AI task into the local `Task` shape (areas already match the enum used by the edge function).
-- Recording timer formatted from `elapsedMs` (already exposed by the hook).
-- All new state (`recState`, `processing`) stays local to `InboxInner`.
+- Merge the two sections: remove the standalone "Quick Capture Categories" section and lift category chips into the Quick Capture card as a horizontally scrollable row directly under the input.
+- Each chip now represents a **category-as-tag** behavior:
+  - Tapping a category chip toggles it as the active `area` AND adds a matching lowercase tag (`#home`, `#family`, …) to the next capture. Multi-select allowed.
+  - Selected chips show a check + colored ring; a small `×` clears all.
+- Add a "More tags…" trigger at the end of the row that opens `TagPicker` (existing component) so the user can attach arbitrary tags without leaving the card.
+- Show selected tags as removable chips just above the input so it's clear what will be attached.
+- Usability tweaks:
+  - Mobile: horizontal scroll for category chips with `no-scrollbar`, snap-x, larger 36px tap targets.
+  - Capture button stays right-aligned; show an inline "Edit details" ghost button next to it (opens VoiceReviewSheet pre-populated with parsed draft).
+  - Caregiver presets row now also pre-fills the draft *and* opens the review sheet on tap (instead of saving silently), so users can confirm/edit.
+  - Keep `Manage Tags` link in the card header.
+
+## Files
+
+- Edit: `src/pages/Inbox.tsx` (gesture, merged categories+tags UI, sheet wiring)
+- New: `src/components/inbox/VoiceReviewSheet.tsx` (editable confirm sheet)
+- Reuse: `src/hooks/use-audio-recorder.ts`, `src/components/tags/TagPicker.tsx`, `src/lib/haptics.ts`, `src/components/ui/drawer.tsx`, `AREAS` from `@/lib/types`
+
+## Out of scope
+
+- No edge function or schema changes.
+- No changes to ProcessInboxDialog internals (just invoked from the sheet's "Save & process").
+- No changes to desktop FAB or Carey button.
