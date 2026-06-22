@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { Sparkles, RefreshCw, CalendarRange, CalendarDays, Plus, X, Check, Flower2, Trash2, BookHeart, Moon } from "lucide-react";
+import { ChevronDown, ChevronRight, ListChecks, CircleDashed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -223,6 +224,8 @@ export default function Reset() {
 
       {current && (
         <>
+          <PeriodTasksDashboard period={period} start={start} end={end} />
+
           <SectionCard
             accent="calm"
             title={<span className="flex items-center gap-2"><PeriodIcon className="h-4 w-4" /> Reset checklist</span>}
@@ -326,36 +329,16 @@ export default function Reset() {
           <div className="relative space-y-2 pl-6">
             <div className="absolute left-2 top-2 bottom-2 w-px bg-border/60" aria-hidden />
             {history.map(h => (
-              <div key={h.id} className="relative">
-                <div className="absolute -left-[18px] top-4 grid h-2.5 w-2.5 place-items-center rounded-full bg-secondary ring-4 ring-background" />
-                <SectionCard className="!p-0">
-                  <div className="flex items-start justify-between gap-3 px-5 py-3">
-                    <div className="min-w-0">
-                      <div className="font-display text-sm font-semibold">
-                        {period === "week"
-                          ? `Week of ${format(parseISO(h.period_start), "MMM d, yyyy")}`
-                          : format(parseISO(h.period_start), "MMMM yyyy")}
-                      </div>
-                      {h.reflection && <p className="mt-1 line-clamp-2 text-xs text-foreground/75">{h.reflection}</p>}
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {h.intentions.slice(0,3).map((t,i) => <span key={i} className="rounded-full bg-primary-soft/60 px-2 py-0.5 text-[11px] text-foreground/80">✦ {t}</span>)}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!confirm("Delete this reset?")) return;
-                        await supabase.from("period_reviews").delete().eq("id", h.id);
-                        setHistory(prev => prev.filter(r => r.id !== h.id));
-                      }}
-                      className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-destructive"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </SectionCard>
-              </div>
+              <PastResetItem
+                key={h.id}
+                row={h}
+                period={period}
+                onDelete={async () => {
+                  if (!confirm("Delete this reset?")) return;
+                  await supabase.from("period_reviews").delete().eq("id", h.id);
+                  setHistory(prev => prev.filter(r => r.id !== h.id));
+                }}
+              />
             ))}
           </div>
         </section>
@@ -473,5 +456,244 @@ function TagList({
         </form>
       </div>
     </SectionCard>
+  );
+}
+
+function PeriodTasksDashboard({ period, start, end }: { period: Period; start: Date; end: Date }) {
+  const [done, setDone] = useState<any[]>([]);
+  const [open, setOpen] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      setLoading(true);
+      const { data: u } = await supabase.auth.getUser();
+      if (!u?.user) { setLoading(false); return; }
+      const startISO = start.toISOString();
+      const endISO = end.toISOString();
+      const startDate = start.toISOString().slice(0, 10);
+      const endDate = end.toISOString().slice(0, 10);
+      const [d, o] = await Promise.all([
+        supabase.from("tasks")
+          .select("id,title,area,last_completed_at,est_minutes,priority")
+          .eq("user_id", u.user.id).eq("done", true)
+          .gte("last_completed_at", startISO).lte("last_completed_at", endISO)
+          .order("last_completed_at", { ascending: false }).limit(200),
+        supabase.from("tasks")
+          .select("id,title,area,due_date,priority,is_top_three")
+          .eq("user_id", u.user.id).eq("done", false)
+          .or(`due_date.gte.${startDate},due_date.is.null`)
+          .lte("due_date", endDate)
+          .limit(200),
+      ]);
+      if (cancel) return;
+      setDone((d.data as any[]) ?? []);
+      // Tasks "needing tending": overdue or due within period and still open
+      const stillOpen = ((o.data as any[]) ?? []).filter(t => !t.due_date || (t.due_date >= startDate && t.due_date <= endDate));
+      setOpen(stillOpen);
+      setLoading(false);
+    })();
+    return () => { cancel = true; };
+  }, [start.getTime(), end.getTime()]);
+
+  const total = done.length + open.length;
+  const pct = total > 0 ? Math.round((done.length / total) * 100) : 0;
+  const minutes = done.reduce((s, t) => s + (t.est_minutes ?? 0), 0);
+
+  const byArea = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const t of done) {
+      const k = t.area ?? "Other";
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }, [done]);
+
+  return (
+    <SectionCard
+      accent="warm"
+      title={<span className="flex items-center gap-2"><ListChecks className="h-4 w-4" /> This {period}'s movement</span>}
+      subtitle={loading ? "Gathering your tasks…" : `${done.length} completed · ${open.length} still tending`}
+      action={
+        <Button size="sm" variant="ghost" className="h-7 rounded-full text-xs" onClick={() => setExpanded(e => !e)}>
+          {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          {expanded ? "Hide" : "Details"}
+        </Button>
+      }
+    >
+      <div className="space-y-3 px-5 pb-5">
+        <div className="grid grid-cols-3 gap-2">
+          <Stat label="Done" value={String(done.length)} tone="sage" />
+          <Stat label="Open" value={String(open.length)} tone="warm" />
+          <Stat label="Focus min" value={String(minutes)} tone="calm" />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+            <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="text-xs text-muted-foreground">{pct}% complete</span>
+        </div>
+        {byArea.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {byArea.map(([area, n]) => (
+              <span key={area} className="rounded-full bg-primary-soft/60 px-2 py-0.5 text-[11px] text-foreground/80">
+                {area} · {n}
+              </span>
+            ))}
+          </div>
+        )}
+        {expanded && (
+          <div className="grid gap-3 pt-2 md:grid-cols-2">
+            <div className="rounded-xl border border-border/50 bg-background/40 p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <Check className="h-3 w-3" /> Accomplished
+              </div>
+              {done.length === 0 ? (
+                <p className="text-xs italic text-muted-foreground">Nothing logged yet — every small move counts.</p>
+              ) : (
+                <ul className="max-h-60 space-y-1 overflow-y-auto text-sm">
+                  {done.slice(0, 50).map(t => (
+                    <li key={t.id} className="flex items-start gap-2 text-foreground/80">
+                      <Check className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                      <span className="line-through decoration-muted-foreground/40">{t.title}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="rounded-xl border border-border/50 bg-background/40 p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <CircleDashed className="h-3 w-3" /> Still tending
+              </div>
+              {open.length === 0 ? (
+                <p className="text-xs italic text-muted-foreground">Beautifully clear.</p>
+              ) : (
+                <ul className="max-h-60 space-y-1 overflow-y-auto text-sm">
+                  {open.slice(0, 50).map(t => (
+                    <li key={t.id} className="flex items-start gap-2 text-foreground/80">
+                      <CircleDashed className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span>{t.title}{t.due_date && <span className="ml-1 text-[10px] text-muted-foreground">· {format(parseISO(t.due_date), "MMM d")}</span>}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: string; tone: "warm" | "calm" | "sage" }) {
+  const bg = tone === "sage" ? "bg-emerald-100/60" : tone === "warm" ? "bg-amber-100/60" : "bg-sky-100/60";
+  return (
+    <div className={cn("rounded-xl px-3 py-2 ring-1 ring-border/40", bg)}>
+      <div className="text-[10px] uppercase tracking-wider text-foreground/60">{label}</div>
+      <div className="font-display text-lg font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function PastResetItem({ row, period, onDelete }: { row: Row; period: Period; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <div className="absolute -left-[18px] top-4 grid h-2.5 w-2.5 place-items-center rounded-full bg-secondary ring-4 ring-background" />
+      <SectionCard className="!p-0">
+        <div className="flex items-start justify-between gap-3 px-5 py-3">
+          <button type="button" onClick={() => setOpen(o => !o)} className="min-w-0 flex-1 text-left">
+            <div className="flex items-center gap-1.5 font-display text-sm font-semibold">
+              {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+              {period === "week"
+                ? `Week of ${format(parseISO(row.period_start), "MMM d, yyyy")}`
+                : format(parseISO(row.period_start), "MMMM yyyy")}
+            </div>
+            {!open && row.reflection && <p className="mt-1 line-clamp-2 pl-5 text-xs text-foreground/75">{row.reflection}</p>}
+            {!open && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5 pl-5">
+                {row.intentions.slice(0, 3).map((t, i) => (
+                  <span key={i} className="rounded-full bg-primary-soft/60 px-2 py-0.5 text-[11px] text-foreground/80">✦ {t}</span>
+                ))}
+              </div>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-destructive"
+            aria-label="Delete"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        {open && (
+          <div className="space-y-3 border-t border-border/40 px-5 py-4 text-sm">
+            {row.content?.summary && (
+              <div>
+                <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Sparkles className="h-3 w-3" /> AI summary
+                </div>
+                <p className="font-display leading-relaxed text-foreground/90">{row.content.summary}</p>
+                {Array.isArray(row.content?.wins) && row.content.wins.length > 0 && (
+                  <ul className="mt-2 space-y-0.5 text-xs text-foreground/75">
+                    {row.content.wins.slice(0, 5).map((w: string, i: number) => <li key={i}>• {w}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
+            {row.reflection && (
+              <div>
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Reflection</div>
+                <p className="whitespace-pre-wrap text-foreground/85">{row.reflection}</p>
+              </div>
+            )}
+            {(row.wins.length > 0 || row.releases.length > 0) && (
+              <div className="grid gap-3 md:grid-cols-2">
+                {row.wins.length > 0 && (
+                  <div>
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Wins</div>
+                    <ul className="space-y-0.5 text-xs">{row.wins.map((w, i) => <li key={i}>· {w}</li>)}</ul>
+                  </div>
+                )}
+                {row.releases.length > 0 && (
+                  <div>
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Releases</div>
+                    <ul className="space-y-0.5 text-xs">{row.releases.map((w, i) => <li key={i}>· {w}</li>)}</ul>
+                  </div>
+                )}
+              </div>
+            )}
+            {row.intentions.length > 0 && (
+              <div>
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Intentions</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {row.intentions.map((t, i) => (
+                    <span key={i} className="rounded-full bg-primary-soft/60 px-2 py-0.5 text-[11px] text-foreground/80">✦ {t}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {row.checklist.length > 0 && (
+              <div>
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Checklist · {row.checklist.filter(c => c.done).length}/{row.checklist.length}
+                </div>
+                <ul className="space-y-0.5 text-xs">
+                  {row.checklist.map(c => (
+                    <li key={c.id} className={cn("flex items-center gap-1.5", c.done && "text-muted-foreground line-through")}>
+                      {c.done ? <Check className="h-3 w-3 text-primary" /> : <CircleDashed className="h-3 w-3" />}
+                      {c.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </SectionCard>
+    </div>
   );
 }
