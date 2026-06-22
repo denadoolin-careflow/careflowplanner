@@ -1,53 +1,53 @@
 ## Goal
 
-Make voice capture feel effortless on mobile via a hold-to-record gesture with clear timer feedback, let users edit task details before they're saved, and tighten the Quick Capture + Categories + Tags experience.
+Tighten the Inbox tag/category row on mobile, expand the tag editor with more icons and an Atmosphere-aware color palette, and let users override each Flow page's accent color from Settings.
 
-## 1. Hold-to-record voice capture (mobile-first)
+## 1. Inbox: mobile-friendly tags + categories
 
-Edit `src/pages/Inbox.tsx` and replace the current tap-to-start mic with a press-and-hold mic.
+Edit `src/pages/Inbox.tsx`.
 
-- **Gesture**: replace the small mic affordance with a prominent circular mic button (right side of capture input on desktop; a big floating mic button under the input on mobile). Use `onPointerDown` / `onPointerUp` / `onPointerCancel` / `onPointerLeave` (covers touch + mouse). On `pointerdown` → start recording after a 180ms hold (prevents accidental fires); on `pointerup`/`leave` → stop and transcribe. Add `pointer-events: none` for `touch-action: none` to avoid scroll interference.
-- **Slide-to-cancel** (iMessage-style): while holding, if the user drags more than ~80px to the left, mark `willCancel=true`; on release in that state, call `recorder.cancel()` instead of `stop()`. Show "← Slide to cancel" hint inline.
-- **Feedback while held**:
-  - Mic button scales up (1.0 → 1.15) and pulses a soft rose halo (already styled).
-  - Live `mm:ss` timer next to the button.
-  - Animated waveform-ish 3-dot bouncing indicator (CSS only, respects `prefers-reduced-motion`).
-  - Haptic tap on start/stop via existing `src/lib/haptics.ts`.
-- **Tap (short press) fallback**: if pointer is released in <180ms before recording starts, show a one-time toast: "Hold the mic to record" so the gesture is discoverable.
-- Keep desktop tap-to-toggle behavior intact (the existing Stop button remains for the recording overlay) — only the *start* gesture changes on touch.
+- **Selected chips row (above input):** wrap selected categories + extra tags into a single horizontally scrollable lane with `no-scrollbar snap-x` instead of `flex-wrap`, so a long set never pushes the input off-screen. Compact "Clear" pill stays sticky to the right edge of the lane.
+- **Categories & Tags lane:**
+  - Keep the horizontal scroller, but shrink chip padding on `<sm` (`px-3 py-1.5 text-[12px] min-h-[34px]`) so 4-5 chips peek on a 360 px screen.
+  - Add a soft fade-out mask (`mask-image: linear-gradient(to right, black 85%, transparent)`) hinting more chips to the right.
+  - Move "Manage" out of the header on mobile into a trailing "…" chip at the end of the lane so the header collapses to just the section label.
+  - Replace the "More tags" button with a leading round icon chip (`+` only) on `<sm`, full label on `≥sm`.
+- **TagPicker popover:** add `w-[min(20rem,calc(100vw-2rem))]` so it never overflows narrow viewports; pin to `align="end"` when triggered from the end of a scroll lane.
 
-## 2. Edit task detail before creating tasks
+## 2. Tag editor: more icons + atmosphere color palette
 
-Today, voice transcripts that parse to tasks are saved straight to the inbox. Add a confirm-and-edit step.
+Edit `src/components/tags/tag-icon.tsx`, `src/lib/tags.ts`, and `src/components/tags/TagPicker.tsx` (creation panel) + `src/components/tags/TagManagerDialog.tsx`.
 
-- New component `src/components/inbox/VoiceReviewSheet.tsx`: a bottom sheet (Drawer from `@/components/ui/drawer`) that opens after transcription completes when `tasks.length > 0`.
-- For each suggested task, render an editable row: title input, Area chip (popover from `AREAS`), When chip (Today / Tomorrow / pick date), Energy chip (Low/Med/High), Priority chip, Tags chip (re-uses `TagPicker`), and Notes textarea (collapsed).
-- Footer actions: "Save all" (calls `addTask` for each, `inbox: true`), "Save & process" (saves then opens `ProcessInboxDialog`), per-row delete, and "Discard all".
-- If transcript yielded zero tasks, keep current fallback (drop transcript into draft for review) — no sheet.
-- Apply the same sheet to text capture when the user presses a new "Edit details" affordance next to Capture (small chevron button) — opens the sheet pre-populated with the parsed values.
+- **Icons:** grow the curated set from 16 → ~32. Add: `Home, Briefcase, Baby, GraduationCap, ShoppingBag, Plane, Coffee, Music, BookOpen, Brush, Camera, Pill, Stethoscope, Dumbbell, Calendar, Clock, MapPin, Smile`. Group icons by theme (Essentials, Home & Family, Health, Work, Play, Travel, Symbols) and render in a tabbed/grouped grid inside both the creation panel and tag-manager dialog.
+- **Colors:**
+  - Keep `TAG_COLORS` (curated swatches).
+  - Add a new "Atmosphere" group: reads the current `atmosphere.palette` via `useAtmosphere()` and exposes each swatch as a selectable color, labelled with the atmosphere name. Updates live as the user changes atmosphere.
+  - Render two sub-rows in the picker: "Atmosphere" (top, current palette swatches), "Library" (existing curated swatches).
+  - Each swatch shows a tiny check on selection; selected swatch keeps the scale-up affordance.
 
-## 3. Combine Quick Capture Categories with Tags + usability
+## 3. Per-Flow color customization in Settings
 
-- Merge the two sections: remove the standalone "Quick Capture Categories" section and lift category chips into the Quick Capture card as a horizontally scrollable row directly under the input.
-- Each chip now represents a **category-as-tag** behavior:
-  - Tapping a category chip toggles it as the active `area` AND adds a matching lowercase tag (`#home`, `#family`, …) to the next capture. Multi-select allowed.
-  - Selected chips show a check + colored ring; a small `×` clears all.
-- Add a "More tags…" trigger at the end of the row that opens `TagPicker` (existing component) so the user can attach arbitrary tags without leaving the card.
-- Show selected tags as removable chips just above the input so it's clear what will be attached.
-- Usability tweaks:
-  - Mobile: horizontal scroll for category chips with `no-scrollbar`, snap-x, larger 36px tap targets.
-  - Capture button stays right-aligned; show an inline "Edit details" ghost button next to it (opens VoiceReviewSheet pre-populated with parsed draft).
-  - Caregiver presets row now also pre-fills the draft *and* opens the review sheet on tap (instead of saving silently), so users can confirm/edit.
-  - Keep `Manage Tags` link in the card header.
+New Settings section + small store.
+
+- **Storage:** new `src/lib/flow-color-prefs.ts`:
+  - `getFlowColorOverrides(): Record<flowId, number>` — palette index per flow.
+  - `setFlowColorOverride(flowId, index | null)` — null clears.
+  - LocalStorage key `careflow:flow-color-overrides`. Emits `careflow:flow-colors-change` event.
+  - `useFlowColorOverrides()` hook subscribes to storage + custom event.
+- **Wire into accent resolver:** update `getFlowAccent` / `useFlowAccent` / `useFlowAccents` in `src/lib/flow-accent.ts` to consult overrides first, falling back to `FLOW_PALETTE_INDEX`.
+- **New component:** `src/components/settings/FlowColorPicker.tsx`. For each flow in `FLOW_PALETTE_INDEX`:
+  - Show flow label + icon.
+  - Render the current atmosphere's palette as 6-8 swatches; selected one is ringed. A "Reset" pill restores the default.
+  - Live preview chip on the right (accent fill + soft + ring sample) so users see the result before leaving Settings.
+- **Settings placement:** add this above the existing "Flow colors" link card in `src/pages/Settings.tsx` (rename existing card to "Preview across atmospheres" to disambiguate). Atmosphere section stays untouched.
 
 ## Files
 
-- Edit: `src/pages/Inbox.tsx` (gesture, merged categories+tags UI, sheet wiring)
-- New: `src/components/inbox/VoiceReviewSheet.tsx` (editable confirm sheet)
-- Reuse: `src/hooks/use-audio-recorder.ts`, `src/components/tags/TagPicker.tsx`, `src/lib/haptics.ts`, `src/components/ui/drawer.tsx`, `AREAS` from `@/lib/types`
+- Edit: `src/pages/Inbox.tsx`, `src/components/tags/TagPicker.tsx`, `src/components/tags/TagManagerDialog.tsx`, `src/components/tags/tag-icon.tsx`, `src/lib/tags.ts`, `src/lib/flow-accent.ts`, `src/pages/Settings.tsx`
+- New: `src/lib/flow-color-prefs.ts`, `src/components/settings/FlowColorPicker.tsx`
 
 ## Out of scope
 
-- No edge function or schema changes.
-- No changes to ProcessInboxDialog internals (just invoked from the sheet's "Save & process").
-- No changes to desktop FAB or Carey button.
+- No DB schema changes (overrides are client-only, per-device, just like atmosphere prefs).
+- No changes to atmosphere palettes themselves or to Tag CRUD endpoints.
+- No redesign of the inbox capture input, voice flow, or VoiceReviewSheet.
