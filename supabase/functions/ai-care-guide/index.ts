@@ -32,7 +32,21 @@ Deno.serve(async (req) => {
 
   try {
     const gate = await meterRequest(req, WEIGHTS.medium, corsHeaders);
-    if ("response" in gate) return gate.response;
+    if ("response" in gate) {
+      if (gate.response.status === 402) {
+        const meterBody = await gate.response.clone().json().catch(() => ({}));
+        return new Response(JSON.stringify({
+          error: "ai_quota_exceeded",
+          message: meterBody?.message ?? "AI credits exhausted.",
+          brief: FALLBACK,
+          fallback: true,
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return gate.response;
+    }
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
