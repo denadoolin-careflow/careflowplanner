@@ -116,7 +116,7 @@ export function CalendarItemCard({
           {customIcon ? <span className="text-[12px] leading-none">{customIcon}</span>
             : <Icon className="h-3 w-3 opacity-80" />}
         </span>
-        <span className="min-w-0 flex-1 truncate font-medium">{titleText}</span>
+        <span className="min-w-0 flex-1 whitespace-normal break-words font-medium">{titleText}</span>
         {energyStyle && variant !== "compact" && (
           <span className={cn("inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold", energyStyle.chip)}>
             <span className={cn("h-1.5 w-1.5 rounded-full", energyStyle.dot)} />
