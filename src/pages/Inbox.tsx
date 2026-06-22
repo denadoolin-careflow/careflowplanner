@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
 import {
@@ -93,7 +93,7 @@ function InboxInner() {
   const [holdActive, setHoldActive] = useState(false);
   const [willCancel, setWillCancel] = useState(false);
   const [holdStartX, setHoldStartX] = useState<number | null>(null);
-  const holdTimerRef = (typeof window !== "undefined" ? (window as any) : { __cf: null }) as any;
+  const holdTimerRef = useRef<number | null>(null);
 
   const fmtElapsed = (ms: number) => {
     const s = Math.floor(ms / 1000);
@@ -164,7 +164,7 @@ function InboxInner() {
     const id = window.setTimeout(() => {
       if (recorder.state === "idle") void startVoice();
     }, HOLD_DELAY);
-    holdTimerRef.__cf = id;
+    holdTimerRef.current = id;
   };
   const moveHold = (e: React.PointerEvent) => {
     if (!holdActive || holdStartX == null) return;
@@ -174,7 +174,7 @@ function InboxInner() {
   const releaseHold = async () => {
     if (!holdActive) return;
     setHoldActive(false);
-    if (holdTimerRef.__cf) { clearTimeout(holdTimerRef.__cf); holdTimerRef.__cf = null; }
+    if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
     if (recorder.state === "idle" && !transcribing) {
       toast("Hold the mic to record", { description: "Press and hold, release to send." });
       return;
