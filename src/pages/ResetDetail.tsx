@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Sparkles, Check, CircleDashed, BookHeart, Trash2, CalendarRange, CalendarDays } from "lucide-react";
+import { ArrowLeft, Sparkles, Check, CircleDashed, BookHeart, Trash2, CalendarRange, CalendarDays, Pencil, Plus, X } from "lucide-react";
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -30,6 +31,8 @@ export default function ResetDetail() {
   const navigate = useNavigate();
   const [row, setRow] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -74,6 +77,32 @@ export default function ResetDetail() {
     navigate(`/reset/${period}`);
   }
 
+  async function updateChecklist(next: ChecklistItem[]) {
+    if (!row) return;
+    setRow({ ...row, checklist: next });
+    const { error } = await supabase
+      .from("period_reviews")
+      .update({ checklist: next as any })
+      .eq("id", row.id);
+    if (error) toast.error("Could not save");
+  }
+
+  function toggle(id: string) {
+    if (!row) return;
+    void updateChecklist(row.checklist.map(c => c.id === id ? { ...c, done: !c.done } : c));
+  }
+  function removeItem(id: string) {
+    if (!row) return;
+    void updateChecklist(row.checklist.filter(c => c.id !== id));
+  }
+  function addItem(label: string) {
+    if (!row) return;
+    const v = label.trim();
+    if (!v) return;
+    void updateChecklist([...row.checklist, { id: crypto.randomUUID(), label: v, done: false }]);
+    setDraft("");
+  }
+
   return (
     <div className="mx-auto w-full max-w-3xl space-y-5 p-4 md:p-6">
       <div className="flex items-center justify-between gap-2">
@@ -86,6 +115,15 @@ export default function ResetDetail() {
           </Button>
         )}
       </div>
+
+      {row && (
+        <div className="flex justify-end">
+          <Button size="sm" variant={editing ? "default" : "outline"} onClick={() => setEditing(e => !e)} className="h-8 gap-1.5">
+            <Pencil className="h-3.5 w-3.5" /> {editing ? "Done editing" : "Edit checklist"}
+          </Button>
+      </div>
+      )}
+      <div className="hidden">
 
       <header className="flex items-start gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-secondary/20 text-secondary-foreground">
