@@ -183,7 +183,7 @@ function InboxInner() {
                   alt="Wicker basket holding notes and a sage sprig"
                   width={200}
                   height={200}
-                  className="h-32 w-32 select-none animate-[float_6s_ease-in-out_infinite] object-contain sm:h-40 sm:w-40 md:h-48 md:w-48"
+                  className="h-32 w-32 select-none object-contain transition-transform duration-700 hover:-translate-y-1 sm:h-40 sm:w-40 md:h-48 md:w-48"
                   draggable={false}
                 />
               </div>
