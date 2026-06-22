@@ -121,9 +121,8 @@ export default function ResetDetail() {
           <Button size="sm" variant={editing ? "default" : "outline"} onClick={() => setEditing(e => !e)} className="h-8 gap-1.5">
             <Pencil className="h-3.5 w-3.5" /> {editing ? "Done editing" : "Edit checklist"}
           </Button>
-      </div>
+        </div>
       )}
-      <div className="hidden">
 
       <header className="flex items-start gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-secondary/20 text-secondary-foreground">
