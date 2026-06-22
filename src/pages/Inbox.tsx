@@ -6,7 +6,7 @@ import {
   ShoppingCart, FileText, GraduationCap, Cake, Car,
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
-  Mic, Square, Loader2, X,
+  Mic, Loader2, X, Pencil, Plus as PlusIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,10 @@ import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isToday, isFuture, parseISO, format } from "date-fns";
 import basketImg from "@/assets/inbox-basket.png";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
+import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReviewSheet";
+import { TagPicker } from "@/components/tags/TagPicker";
+import { TagChip } from "@/components/tags/TagChip";
+import { haptics } from "@/lib/haptics";
 
 interface Suggestion {
   task_id: string;
@@ -76,10 +80,20 @@ function InboxInner() {
   const [triaging, setTriaging] = useState(false);
   const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
   const [draft, setDraft] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeCategories, setActiveCategories] = useState<string[]>([]);
+  const [extraTags, setExtraTags] = useState<string[]>([]);
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewDrafts, setReviewDrafts] = useState<DraftTask[]>([]);
+  const [reviewTranscript, setReviewTranscript] = useState<string | undefined>(undefined);
+
+  // Hold-to-record state
+  const [holdActive, setHoldActive] = useState(false);
+  const [willCancel, setWillCancel] = useState(false);
+  const [holdStartX, setHoldStartX] = useState<number | null>(null);
+  const holdTimerRef = (typeof window !== "undefined" ? (window as any) : { __cf: null }) as any;
 
   const fmtElapsed = (ms: number) => {
     const s = Math.floor(ms / 1000);
@@ -92,16 +106,19 @@ function InboxInner() {
       return;
     }
     await recorder.start();
+    haptics.tap();
   };
 
   const cancelVoice = () => {
     recorder.cancel();
+    haptics.warning?.();
     toast("Discarded", { description: "Nothing was saved." });
   };
 
   const finishVoice = async () => {
     const out = await recorder.stop();
     if (!out) return;
+    haptics.tap();
     setTranscribing(true);
     try {
       const { data, error } = await aiInvoke("ai-voice-capture", {
@@ -114,33 +131,57 @@ function InboxInner() {
         toast.info("I didn't catch anything — try again.");
         return;
       }
-      if (tasks.length === 0) {
-        // Fall back to dropping transcript into draft for review.
-        setDraft(payload.transcript);
-        toast("Captured your words", { description: "Review and tap Capture to save." });
-        return;
-      }
-      for (const t of tasks) {
-        await addTask({
-          title: t.title,
-          area: (t.area as Area) ?? undefined,
-          priority: (t.priority as Priority) ?? "medium",
-          status: (t.status as TaskStatus) ?? "active",
-          dueDate: t.dueDate ?? undefined,
-          estMinutes: t.estMinutes ?? undefined,
-          tags: Array.isArray(t.tags) ? t.tags : undefined,
-          notes: t.notes ?? undefined,
-          inbox: true,
-        });
-      }
-      toast.success(`Caught ${tasks.length} ${tasks.length === 1 ? "thought" : "thoughts"} ✨`, {
-        description: payload.summary || "Safely held in your inbox.",
-      });
+      const initial: DraftTask[] = tasks.length
+        ? tasks.map((t) => ({
+            title: t.title ?? payload.transcript ?? "",
+            area: (t.area as Area) ?? undefined,
+            priority: (t.priority as Priority) ?? undefined,
+            dueDate: t.dueDate ?? undefined,
+            estMinutes: t.estMinutes ?? undefined,
+            tags: Array.isArray(t.tags) ? t.tags : undefined,
+            notes: t.notes ?? undefined,
+            energy: (t.energy as any) ?? undefined,
+          }))
+        : [{ title: payload.transcript ?? "", notes: payload.summary }];
+      setReviewDrafts(initial);
+      setReviewTranscript(payload.transcript);
+      setReviewOpen(true);
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't process voice note");
     } finally {
       setTranscribing(false);
     }
+  };
+
+  // ── Hold-to-record gesture (touch + mouse) ─────────────────────────────
+  const HOLD_DELAY = 180;
+  const armHold = (e: React.PointerEvent) => {
+    if (transcribing || recorder.state !== "idle") return;
+    setHoldStartX(e.clientX);
+    setWillCancel(false);
+    setHoldActive(true);
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    const id = window.setTimeout(() => {
+      if (recorder.state === "idle") void startVoice();
+    }, HOLD_DELAY);
+    holdTimerRef.__cf = id;
+  };
+  const moveHold = (e: React.PointerEvent) => {
+    if (!holdActive || holdStartX == null) return;
+    const dx = e.clientX - holdStartX;
+    setWillCancel(dx < -70);
+  };
+  const releaseHold = async () => {
+    if (!holdActive) return;
+    setHoldActive(false);
+    if (holdTimerRef.__cf) { clearTimeout(holdTimerRef.__cf); holdTimerRef.__cf = null; }
+    if (recorder.state === "idle" && !transcribing) {
+      toast("Hold the mic to record", { description: "Press and hold, release to send." });
+      return;
+    }
+    if (willCancel) { cancelVoice(); setWillCancel(false); return; }
+    await finishVoice();
+    setWillCancel(false);
   };
 
   const items = useMemo(
@@ -156,26 +197,71 @@ function InboxInner() {
 
   const parsed = useMemo(() => (draft.trim().length > 2 ? parseTaskInput(draft) : null), [draft]);
 
+  const combinedTags = useMemo(() => {
+    const lower = new Set<string>();
+    activeCategories.forEach((c) => lower.add(c.toLowerCase()));
+    extraTags.forEach((t) => lower.add(t.toLowerCase()));
+    return Array.from(lower);
+  }, [activeCategories, extraTags]);
+
   const submitCapture = async (overrideArea?: Area) => {
     const raw = draft.trim();
     if (!raw) return;
     const p = parseTaskInput(raw);
+    const mergedTags = Array.from(new Set([...(p.tags ?? []), ...combinedTags]));
     await addTask({
       title: p.title || raw,
       dueDate: p.dueDate,
-      area: (p.area as Area) ?? overrideArea ?? (activeCategory as Area | undefined),
+      area: (p.area as Area) ?? overrideArea ?? (activeCategories[0] as Area | undefined),
       energy: p.energy,
-      tags: p.tags,
+      tags: mergedTags.length ? mergedTags : undefined,
       estMinutes: p.estMinutes,
       inbox: true,
     });
     setDraft("");
+    setExtraTags([]);
     toast.success("Caught it ✨", { description: "Safely held in your inbox." });
   };
 
-  const quickAdd = async (title: string, area: Area) => {
-    await addTask({ title, area, inbox: true });
-    toast.success(`${title.trim()}`, { description: "Added to inbox." });
+  const openReviewForDraft = () => {
+    const raw = draft.trim();
+    const p = raw ? parseTaskInput(raw) : null;
+    const tags = Array.from(new Set([...(p?.tags ?? []), ...combinedTags]));
+    setReviewDrafts([{
+      title: p?.title || raw || "",
+      dueDate: p?.dueDate,
+      area: (p?.area as Area) ?? (activeCategories[0] as Area | undefined),
+      energy: p?.energy as any,
+      tags: tags.length ? tags : undefined,
+      estMinutes: p?.estMinutes,
+    }]);
+    setReviewTranscript(undefined);
+    setReviewOpen(true);
+  };
+
+  const quickAdd = (title: string, area: Area) => {
+    setReviewDrafts([{ title, area, tags: combinedTags.length ? combinedTags : undefined }]);
+    setReviewTranscript(undefined);
+    setReviewOpen(true);
+  };
+
+  const saveReviewDrafts = async (drafts: DraftTask[]) => {
+    for (const d of drafts) {
+      await addTask({
+        title: d.title,
+        area: d.area,
+        priority: d.priority ?? "medium",
+        dueDate: d.dueDate,
+        energy: d.energy,
+        estMinutes: d.estMinutes,
+        tags: d.tags?.length ? d.tags : undefined,
+        notes: d.notes,
+        inbox: true,
+      });
+    }
+    setDraft("");
+    setExtraTags([]);
+    toast.success(`Saved ${drafts.length} ${drafts.length === 1 ? "item" : "items"} ✨`, { description: "Held gently in your inbox." });
   };
 
   const triage = async () => {
@@ -288,15 +374,6 @@ function InboxInner() {
               <h3 className="font-display text-lg tracking-tight">Quick Capture</h3>
             </div>
             <div className="flex items-center gap-2">
-              {recorder.supported && recorder.state === "idle" && !transcribing && (
-                <Button
-                  onClick={startVoice}
-                  variant="outline"
-                  className="h-9 gap-2 rounded-full border-rose-200 bg-rose-50/60 px-4 text-[13px] font-medium text-rose-700 hover:bg-rose-100/70"
-                >
-                  <Mic className="h-3.5 w-3.5" /> Voice
-                </Button>
-              )}
               <Button
               onClick={() => {
                 if (items.length === 0) {
@@ -314,78 +391,121 @@ function InboxInner() {
             </div>
           </div>
 
-          {recorder.state === "recording" || recorder.state === "stopping" || transcribing ? (
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200/70 bg-gradient-to-br from-rose-50/80 to-amber-50/60 px-4 py-4 shadow-inner">
-              <div className="flex items-center gap-3">
-                {transcribing ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                ) : (
-                  <span className="relative grid h-10 w-10 place-items-center rounded-full bg-rose-500 text-white">
-                    <span className="absolute inset-0 animate-ping rounded-full bg-rose-400/60 motion-reduce:hidden" />
-                    <Mic className="relative h-4 w-4" />
-                  </span>
-                )}
-                <div className="leading-tight">
-                  <div className="text-sm font-medium text-foreground">
-                    {transcribing ? "Organizing your thoughts…" : "Listening"}
-                  </div>
-                  <div className="text-[12px] text-muted-foreground">
-                    {transcribing ? "Hold on a moment." : `${fmtElapsed(recorder.elapsedMs)} · tap stop when finished`}
-                  </div>
-                </div>
+          {/* Selected tag chips */}
+          {!!combinedTags.length && (
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {combinedTags.map((t) => {
+                const isCat = activeCategories.some((c) => c.toLowerCase() === t);
+                return (
+                  <TagChip
+                    key={t}
+                    name={t}
+                    size="xs"
+                    onRemove={() => {
+                      if (isCat) setActiveCategories((cs) => cs.filter((c) => c.toLowerCase() !== t));
+                      else setExtraTags((ts) => ts.filter((x) => x !== t));
+                    }}
+                  />
+                );
+              })}
+              <button
+                onClick={() => { setActiveCategories([]); setExtraTags([]); }}
+                className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
+          {transcribing ? (
+            <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4 shadow-inner">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div className="leading-tight">
+                <div className="text-sm font-medium">Organizing your thoughts…</div>
+                <div className="text-[12px] text-muted-foreground">Hold on a moment.</div>
               </div>
-              {!transcribing && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={cancelVoice}
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full text-muted-foreground hover:bg-background/60"
-                    aria-label="Cancel recording"
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-primary/10 text-primary">
+                <span className="text-base leading-none">＋</span>
+              </div>
+              <Input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
+                placeholder={recorder.state === "recording" ? (willCancel ? "Release to cancel…" : `Listening · ${fmtElapsed(recorder.elapsedMs)}`) : "What needs your attention?"}
+                className={cn(
+                  "h-14 rounded-2xl border-border/40 bg-background/70 pl-14 pr-28 text-[15px] shadow-inner placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15",
+                  recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40",
+                )}
+                disabled={recorder.state !== "idle"}
+              />
+              <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
+                {draft.trim() && recorder.state === "idle" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={openReviewForDraft}
+                      aria-label="Edit details before saving"
+                      className="grid h-10 w-10 place-items-center rounded-xl bg-muted/60 text-muted-foreground transition hover:bg-muted"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <Button
+                      onClick={() => void submitCapture()}
+                      size="sm"
+                      className="h-10 rounded-xl px-3 text-[13px]"
+                    >
+                      Capture
+                    </Button>
+                  </>
+                )}
+                {recorder.supported && !draft.trim() && (
+                  <button
+                    type="button"
+                    onPointerDown={armHold}
+                    onPointerMove={moveHold}
+                    onPointerUp={() => void releaseHold()}
+                    onPointerCancel={() => void releaseHold()}
+                    onPointerLeave={(e) => { if (holdActive && e.buttons === 0) void releaseHold(); }}
+                    onContextMenu={(e) => e.preventDefault()}
+                    aria-label="Hold to record"
+                    style={{ touchAction: "none" }}
+                    className={cn(
+                      "relative grid h-12 w-12 place-items-center rounded-2xl ring-1 transition-all select-none",
+                      recorder.state === "recording"
+                        ? willCancel
+                          ? "scale-110 bg-stone-200 text-stone-600 ring-stone-300"
+                          : "scale-110 bg-rose-500 text-white ring-rose-400 shadow-[0_0_0_8px_hsl(0_84%_60%/0.18)]"
+                        : "bg-rose-50 text-rose-600 ring-rose-100 hover:bg-rose-100 active:scale-95",
+                    )}
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => void finishVoice()}
-                    disabled={recorder.state === "stopping"}
-                    className="h-9 gap-2 rounded-full bg-rose-500 px-4 text-[13px] text-white hover:bg-rose-600"
-                  >
-                    <Square className="h-3.5 w-3.5 fill-current" /> Stop
-                  </Button>
+                    {recorder.state === "recording" && !willCancel && (
+                      <span className="pointer-events-none absolute inset-0 animate-ping rounded-2xl bg-rose-400/40 motion-reduce:hidden" />
+                    )}
+                    {recorder.state === "recording" && willCancel ? (
+                      <X className="relative h-5 w-5" />
+                    ) : (
+                      <Mic className="relative h-5 w-5" />
+                    )}
+                  </button>
+                )}
+              </div>
+              {recorder.state === "recording" && (
+                <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[11.5px] text-muted-foreground">
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500">
+                      <span className="absolute inset-0 animate-ping rounded-full bg-rose-400/60 motion-reduce:hidden" />
+                    </span>
+                    Recording · {fmtElapsed(recorder.elapsedMs)}
+                  </div>
+                  <div className={cn("transition-colors", willCancel ? "font-medium text-rose-600" : "")}>
+                    ← Slide to cancel
+                  </div>
                 </div>
               )}
             </div>
-          ) : (
-          <div className="relative">
-            <div className="absolute left-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-primary/10 text-primary">
-              <span className="text-base leading-none">＋</span>
-            </div>
-            <Input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
-              placeholder="What needs your attention?"
-              className="h-14 rounded-2xl border-border/40 bg-background/70 pl-14 pr-24 text-[15px] shadow-inner placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15"
-            />
-            {draft.trim() ? (
-              <Button
-                onClick={() => void submitCapture()}
-                size="sm"
-                className="absolute right-2 top-1/2 h-10 -translate-y-1/2 rounded-xl px-4 text-[13px]"
-              >
-                Capture
-              </Button>
-            ) : recorder.supported ? (
-              <button
-                type="button"
-                onClick={startVoice}
-                aria-label="Start voice capture"
-                className="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 transition hover:bg-rose-100"
-              >
-                <Mic className="h-4 w-4" />
-              </button>
-            ) : null}
-          </div>
           )}
 
           {parsed && (parsed.dueDate || parsed.area || parsed.energy || parsed.tags?.length) ? (
@@ -422,16 +542,16 @@ function InboxInner() {
           ) : null}
 
           {/* Caregiver quick actions */}
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-5 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
             {CAREGIVER_PRESETS.map(p => {
               const Icon = p.icon;
               return (
                 <button
                   key={p.label}
                   type="button"
-                  onClick={() => void quickAdd(p.title, p.area)}
+                  onClick={() => quickAdd(p.title, p.area)}
                   className={cn(
-                    "group inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
+                    "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
                     p.tint,
                   )}
                 >
@@ -440,36 +560,49 @@ function InboxInner() {
               );
             })}
           </div>
-        </section>
 
-        {/* ────────── Categories ────────── */}
-        <section className="rounded-[24px] border border-border/50 bg-card/60 p-5 backdrop-blur-md md:p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-display text-lg tracking-tight">Quick Capture Categories</h3>
-            <Link to="/tags" className="inline-flex items-center gap-1 text-[12px] text-muted-foreground hover:text-foreground">
-              Manage Tags <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map(c => {
-              const Icon = c.icon;
-              const active = activeCategory === c.label;
-              return (
-                <button
-                  key={c.label}
-                  type="button"
-                  onClick={() => setActiveCategory(active ? null : c.label)}
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
-                    c.tint,
-                    active && "ring-2 ring-primary/40",
-                  )}
-                  aria-pressed={active}
-                >
-                  <Icon className="h-3.5 w-3.5" /> {c.label}
-                </button>
-              );
-            })}
+          {/* Merged: Categories + Tags */}
+          <div className="mt-5 border-t border-border/50 pt-4">
+            <div className="mb-2.5 flex items-center justify-between">
+              <div className="inline-flex items-center gap-2 text-[12.5px] font-medium text-foreground/80">
+                <TagIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                Categories & Tags
+              </div>
+              <Link to="/tags" className="inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground">
+                Manage <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar snap-x">
+              {CATEGORIES.map((c) => {
+                const Icon = c.icon;
+                const active = activeCategories.includes(c.label);
+                return (
+                  <button
+                    key={c.label}
+                    type="button"
+                    onClick={() => setActiveCategories((cs) =>
+                      cs.includes(c.label) ? cs.filter((x) => x !== c.label) : [...cs, c.label],
+                    )}
+                    aria-pressed={active}
+                    className={cn(
+                      "inline-flex shrink-0 snap-start items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-medium ring-1 transition-all min-h-[36px] hover:-translate-y-0.5 hover:shadow-sm",
+                      c.tint,
+                      active && "ring-2 ring-primary/50 shadow-sm",
+                    )}
+                  >
+                    {active ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
+                    {c.label}
+                  </button>
+                );
+              })}
+              <TagPicker
+                value={extraTags}
+                onChange={setExtraTags}
+                inline={false}
+                triggerLabel="More tags"
+                triggerClassName="shrink-0 snap-start min-h-[36px] rounded-full px-3.5 text-[12.5px]"
+              />
+            </div>
           </div>
         </section>
 
@@ -557,6 +690,14 @@ function InboxInner() {
         items={items}
         updateTask={updateTask}
         deleteTask={deleteTask}
+      />
+      <VoiceReviewSheet
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        initialDrafts={reviewDrafts}
+        transcript={reviewTranscript}
+        onSave={saveReviewDrafts}
+        onSaveAndProcess={async (d) => { await saveReviewDrafts(d); setProcessOpen(true); }}
       />
     </div>
   );
