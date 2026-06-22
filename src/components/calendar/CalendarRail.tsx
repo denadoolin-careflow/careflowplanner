@@ -75,7 +75,7 @@ function GoalsThisMonthCard() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <span className="text-base">{goalEmoji(g.category)}</span>
-                    <span className="truncate text-sm font-medium">{g.title}</span>
+                    <span className="whitespace-normal break-words text-sm font-medium">{g.title}</span>
                   </div>
                   <span className="text-[11px] tabular-nums text-muted-foreground">
                     {Math.round(g.progress ?? 0)}%
@@ -255,7 +255,7 @@ function UpcomingBirthdaysCard() {
                   {initial}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{b.name}</div>
+                  <div className="whitespace-normal break-words text-sm font-medium">{b.name}</div>
                   <div className="text-[11px] text-muted-foreground">
                     {days === 0 ? "Today 🎂" : days === 1 ? "Tomorrow" : `in ${days} days`} · {format(b.next, "MMM d")}
                   </div>
@@ -308,7 +308,7 @@ function CelebrationsCard() {
               <li key={it.id} className="flex items-center gap-3">
                 <span className="text-lg">{emoji}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{it.label}</div>
+                  <div className="whitespace-normal break-words text-sm font-medium">{it.label}</div>
                   <div className="text-[11px] text-muted-foreground">{format(d, "EEE · MMM d")}</div>
                 </div>
               </li>
@@ -362,7 +362,7 @@ function UpcomingHighlightsCard() {
                 <r.icon className="h-3.5 w-3.5" />
               </span>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm">{r.label}</div>
+                <div className="whitespace-normal break-words text-sm">{r.label}</div>
                 <div className="text-[11px] text-muted-foreground">{r.sub}</div>
               </div>
             </li>
