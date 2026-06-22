@@ -21,6 +21,7 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { isToday, isFuture, parseISO, format } from "date-fns";
 import basketImg from "@/assets/inbox-basket.png";
+import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
 
 interface Suggestion {
   task_id: string;
@@ -67,13 +68,14 @@ const CATEGORIES: { icon: any; label: string; tint: string }[] = [
 ];
 
 function InboxInner() {
-  const { state, addTask, updateTask } = useStore() as any;
+  const { state, addTask, updateTask, deleteTask } = useStore() as any;
   const navigate = useNavigate();
   const { paneOpen, clear } = useTaskSelection();
   const [triaging, setTriaging] = useState(false);
   const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
   const [draft, setDraft] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [processOpen, setProcessOpen] = useState(false);
 
   const items = useMemo(
     () => state.tasks.filter((t: any) => t.inbox && !t.done && !t.parentTaskId && t.status !== "parked"),
@@ -220,7 +222,13 @@ function InboxInner() {
               <h3 className="font-display text-lg tracking-tight">Quick Capture</h3>
             </div>
             <Button
-              onClick={triage}
+              onClick={() => {
+                if (items.length === 0) {
+                  toast.info("Nothing to organize yet — capture something first.");
+                  return;
+                }
+                setProcessOpen(true);
+              }}
               disabled={triaging}
               className="h-9 gap-2 rounded-full bg-primary px-4 text-[13px] font-medium shadow-sm hover:shadow-md"
             >
@@ -367,7 +375,13 @@ function InboxInner() {
             <GlanceCard icon={<TagIcon className="h-4 w-4" />} tint="bg-rose-50 text-rose-600" value={stats.needCategory} label="Need Categories" hint="needs a home" />
             <button
               type="button"
-              onClick={triage}
+              onClick={() => {
+                if (items.length === 0) {
+                  toast.info("Nothing to organize yet — capture something first.");
+                  return;
+                }
+                setProcessOpen(true);
+              }}
               className="group flex flex-col justify-between rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-4 text-left text-primary-foreground shadow-[0_15px_40px_-20px_hsl(var(--primary)/0.7)] transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_hsl(var(--primary)/0.8)]"
             >
               <div className="flex items-center justify-between">
@@ -408,6 +422,13 @@ function InboxInner() {
 
       {paneOpen && <TaskDetailPane />}
       <UnscheduledTasksRail />
+      <ProcessInboxDialog
+        open={processOpen}
+        onOpenChange={setProcessOpen}
+        items={items}
+        updateTask={updateTask}
+        deleteTask={deleteTask}
+      />
     </div>
   );
 }
