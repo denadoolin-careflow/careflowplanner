@@ -643,10 +643,7 @@ function InboxInner() {
                 Manage <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
-            <div
-              className="flex gap-2 overflow-x-auto pb-1 no-scrollbar snap-x -mx-1 px-1"
-              style={{ WebkitMaskImage: "linear-gradient(to right, black 92%, transparent)", maskImage: "linear-gradient(to right, black 92%, transparent)" }}
-            >
+            <div className="flex flex-wrap items-center gap-2 pb-1">
               {CATEGORIES.map((c) => {
                 const Icon = c.icon;
                 const active = activeCategories.includes(c.label);
