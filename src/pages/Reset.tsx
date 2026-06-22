@@ -598,28 +598,26 @@ function Stat({ label, value, tone }: { label: string; value: string; tone: "war
 }
 
 function PastResetItem({ row, period, onDelete }: { row: Row; period: Period; onDelete: () => void }) {
-  const [open, setOpen] = useState(false);
   return (
     <div className="relative">
       <div className="absolute -left-[18px] top-4 grid h-2.5 w-2.5 place-items-center rounded-full bg-secondary ring-4 ring-background" />
       <SectionCard className="!p-0">
         <div className="flex items-start justify-between gap-3 px-5 py-3">
-          <button type="button" onClick={() => setOpen(o => !o)} className="min-w-0 flex-1 text-left">
+          <Link to={`/reset/${period}/${row.period_start}`} className="min-w-0 flex-1 text-left">
             <div className="flex items-center gap-1.5 font-display text-sm font-semibold">
-              {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+              <ChevronRight className="h-3.5 w-3.5" />
               {period === "week"
                 ? `Week of ${format(parseISO(row.period_start), "MMM d, yyyy")}`
                 : format(parseISO(row.period_start), "MMMM yyyy")}
             </div>
-            {!open && row.reflection && <p className="mt-1 line-clamp-2 pl-5 text-xs text-foreground/75">{row.reflection}</p>}
-            {!open && (
-              <div className="mt-1.5 flex flex-wrap gap-1.5 pl-5">
-                {row.intentions.slice(0, 3).map((t, i) => (
-                  <span key={i} className="rounded-full bg-primary-soft/60 px-2 py-0.5 text-[11px] text-foreground/80">✦ {t}</span>
-                ))}
-              </div>
-            )}
-          </button>
+            {row.reflection && <p className="mt-1 line-clamp-2 pl-5 text-xs text-foreground/75">{row.reflection}</p>}
+            <div className="mt-1.5 flex flex-wrap gap-1.5 pl-5">
+              {row.content?.summary && <span className="rounded-full bg-secondary/30 px-2 py-0.5 text-[11px] text-foreground/80">✨ AI summary</span>}
+              {row.intentions.slice(0, 3).map((t, i) => (
+                <span key={i} className="rounded-full bg-primary-soft/60 px-2 py-0.5 text-[11px] text-foreground/80">✦ {t}</span>
+              ))}
+            </div>
+          </Link>
           <button
             type="button"
             onClick={onDelete}
@@ -629,70 +627,6 @@ function PastResetItem({ row, period, onDelete }: { row: Row; period: Period; on
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
-        {open && (
-          <div className="space-y-3 border-t border-border/40 px-5 py-4 text-sm">
-            {row.content?.summary && (
-              <div>
-                <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Sparkles className="h-3 w-3" /> AI summary
-                </div>
-                <p className="font-display leading-relaxed text-foreground/90">{row.content.summary}</p>
-                {Array.isArray(row.content?.wins) && row.content.wins.length > 0 && (
-                  <ul className="mt-2 space-y-0.5 text-xs text-foreground/75">
-                    {row.content.wins.slice(0, 5).map((w: string, i: number) => <li key={i}>• {w}</li>)}
-                  </ul>
-                )}
-              </div>
-            )}
-            {row.reflection && (
-              <div>
-                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Reflection</div>
-                <p className="whitespace-pre-wrap text-foreground/85">{row.reflection}</p>
-              </div>
-            )}
-            {(row.wins.length > 0 || row.releases.length > 0) && (
-              <div className="grid gap-3 md:grid-cols-2">
-                {row.wins.length > 0 && (
-                  <div>
-                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Wins</div>
-                    <ul className="space-y-0.5 text-xs">{row.wins.map((w, i) => <li key={i}>· {w}</li>)}</ul>
-                  </div>
-                )}
-                {row.releases.length > 0 && (
-                  <div>
-                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Releases</div>
-                    <ul className="space-y-0.5 text-xs">{row.releases.map((w, i) => <li key={i}>· {w}</li>)}</ul>
-                  </div>
-                )}
-              </div>
-            )}
-            {row.intentions.length > 0 && (
-              <div>
-                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Intentions</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {row.intentions.map((t, i) => (
-                    <span key={i} className="rounded-full bg-primary-soft/60 px-2 py-0.5 text-[11px] text-foreground/80">✦ {t}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {row.checklist.length > 0 && (
-              <div>
-                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Checklist · {row.checklist.filter(c => c.done).length}/{row.checklist.length}
-                </div>
-                <ul className="space-y-0.5 text-xs">
-                  {row.checklist.map(c => (
-                    <li key={c.id} className={cn("flex items-center gap-1.5", c.done && "text-muted-foreground line-through")}>
-                      {c.done ? <Check className="h-3 w-3 text-primary" /> : <CircleDashed className="h-3 w-3" />}
-                      {c.label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
       </SectionCard>
     </div>
   );

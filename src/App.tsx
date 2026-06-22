@@ -57,6 +57,7 @@ import NotesTimeline from "./pages/NotesTimeline";
 import NotesFiles from "./pages/NotesFiles";
 import Review from "./pages/Review";
 import Reset from "./pages/Reset";
+import ResetDetail from "./pages/ResetDetail";
 import Routines from "./pages/Routines";
 import PlanTimeline from "./pages/PlanTimeline";
 import PlanDay from "./pages/PlanDay";
@@ -166,6 +167,7 @@ const App = () => (
                 <Route path="/review" element={<Review />} />
                 <Route path="/reset" element={<Reset />} />
                 <Route path="/reset/:period" element={<Reset />} />
+                <Route path="/reset/:period/:periodStart" element={<ResetDetail />} />
                 <Route path="/whiteboards" element={<Whiteboards />} />
                 <Route path="/whiteboards/:id" element={<WhiteboardDetail />} />
                 <Route path="/projects" element={<Projects />} />
