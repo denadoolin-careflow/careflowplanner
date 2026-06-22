@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useAtmosphere, type Atmosphere } from "@/lib/atmospheres";
+import { getFlowColorOverrides, useFlowColorOverrides } from "@/lib/flow-color-prefs";
 
 /**
  * Maps each Flow pillar to a preferred swatch index in the active
@@ -46,8 +47,9 @@ function pickSwatch(palette: string[], preferred: number): string {
   return palette[idx];
 }
 
-export function getFlowAccent(flowId: string, atmosphere: Atmosphere): FlowAccent {
-  const idx = FLOW_PALETTE_INDEX[flowId] ?? 0;
+export function getFlowAccent(flowId: string, atmosphere: Atmosphere, overrides?: Record<string, number>): FlowAccent {
+  const ov = overrides ?? getFlowColorOverrides();
+  const idx = (ov[flowId] ?? FLOW_PALETTE_INDEX[flowId] ?? 0);
   const color = pickSwatch(atmosphere.palette, idx);
   return {
     color,
@@ -57,20 +59,23 @@ export function getFlowAccent(flowId: string, atmosphere: Atmosphere): FlowAccen
   };
 }
 
-/** Reactive accent hook that re-renders when the atmosphere changes. */
+/** Reactive accent hook that re-renders when the atmosphere or overrides change. */
 export function useFlowAccent(flowId: string): FlowAccent {
   const { atmosphere } = useAtmosphere();
-  return useMemo(() => getFlowAccent(flowId, atmosphere), [flowId, atmosphere]);
+  const overrides = useFlowColorOverrides();
+  return useMemo(() => getFlowAccent(flowId, atmosphere, overrides), [flowId, atmosphere, overrides]);
 }
 
-/** Get all flow accents in one go (re-renders with atmosphere). */
+/** Get all flow accents in one go (re-renders with atmosphere and overrides). */
 export function useFlowAccents(): Record<string, FlowAccent> {
   const { atmosphere } = useAtmosphere();
+  const overrides = useFlowColorOverrides();
   return useMemo(() => {
     const out: Record<string, FlowAccent> = {};
-    for (const id of Object.keys(FLOW_PALETTE_INDEX)) {
-      out[id] = getFlowAccent(id, atmosphere);
+    const ids = new Set([...Object.keys(FLOW_PALETTE_INDEX), ...Object.keys(overrides)]);
+    for (const id of ids) {
+      out[id] = getFlowAccent(id, atmosphere, overrides);
     }
     return out;
-  }, [atmosphere]);
+  }, [atmosphere, overrides]);
 }
