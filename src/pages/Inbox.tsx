@@ -399,7 +399,7 @@ function InboxInner() {
         </section>
 
         {/* ────────── Quick Capture ────────── */}
-        <section className="rounded-[24px] border border-border/50 bg-card/70 p-5 shadow-[0_10px_40px_-25px_hsl(var(--primary)/0.4)] backdrop-blur-md md:p-7">
+        <section className="rounded-[24px] border border-border/50 bg-card/70 p-4 shadow-[0_10px_40px_-25px_hsl(var(--primary)/0.4)] backdrop-blur-md sm:p-5 md:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="inline-flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -425,14 +425,11 @@ function InboxInner() {
 
           {/* Selected tag chips */}
           {!!combinedTags.length && (
-            <div
-              className="mb-3 flex items-center gap-1.5 overflow-x-auto no-scrollbar snap-x pb-0.5"
-              style={{ WebkitMaskImage: "linear-gradient(to right, black 85%, transparent)", maskImage: "linear-gradient(to right, black 85%, transparent)" }}
-            >
+            <div className="mb-3 flex flex-wrap items-center gap-2">
               {combinedTags.map((t) => {
                 const isCat = activeCategories.some((c) => c.toLowerCase() === t);
                 return (
-                  <span key={t} className="snap-start shrink-0">
+                  <span key={t} className="shrink-0">
                     <TagChip
                       name={t}
                       size="xs"
@@ -446,7 +443,7 @@ function InboxInner() {
               })}
               <button
                 onClick={() => { setActiveCategories([]); setExtraTags([]); }}
-                className="ml-1 shrink-0 snap-end rounded-full px-2 py-0.5 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                className="ml-auto shrink-0 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
               >
                 Clear
               </button>
@@ -613,7 +610,7 @@ function InboxInner() {
           ) : null}
 
           {/* Caregiver quick actions */}
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <div className="mt-5 flex flex-wrap items-center gap-2">
             {CAREGIVER_PRESETS.map(p => {
               const Icon = p.icon;
               return (
