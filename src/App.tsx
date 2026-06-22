@@ -167,6 +167,7 @@ const App = () => (
                 <Route path="/review" element={<Review />} />
                 <Route path="/reset" element={<Reset />} />
                 <Route path="/reset/:period" element={<Reset />} />
+                <Route path="/reset/:period/:periodStart" element={<ResetDetail />} />
                 <Route path="/whiteboards" element={<Whiteboards />} />
                 <Route path="/whiteboards/:id" element={<WhiteboardDetail />} />
                 <Route path="/projects" element={<Projects />} />
