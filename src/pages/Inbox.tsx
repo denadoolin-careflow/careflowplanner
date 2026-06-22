@@ -397,7 +397,7 @@ function InboxInner() {
             </div>
             <Button
               variant="outline"
-              onClick={() => navigate("/lunar")}
+              onClick={() => navigate("/rhythm")}
               className="h-10 shrink-0 gap-2 rounded-full border-border/60 bg-background/70 px-4 text-[13px] backdrop-blur"
             >
               <Moon className="h-3.5 w-3.5" /> See Lunar Insight
