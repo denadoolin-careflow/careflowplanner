@@ -1138,7 +1138,7 @@ function KanbanCard({
   // and the column-level useLongDropListener handles the drop.
   const longPress = useLongPressDrag(
     () => draggable ? { type: "task", id: item.id ?? item.label, label: item.label } : null,
-    { onClick: clickable ? onClick : undefined },
+    // No onClick — the CalendarItemCard button already handles taps.
   );
   return (
     <div
