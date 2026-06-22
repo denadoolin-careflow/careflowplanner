@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Search, Check, X } from "lucide-react";
+import { Plus, Search, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
   DEFAULT_ICON, getTopTags,
 } from "@/lib/tags";
 import { TagChip } from "./TagChip";
-import { tagIconFor, TAG_ICON_OPTIONS, TAG_ICON_GROUPS } from "./tag-icon";
+import { tagIconFor, TAG_ICON_GROUPS } from "./tag-icon";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { useAtmosphere } from "@/lib/atmospheres";
