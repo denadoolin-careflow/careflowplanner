@@ -498,18 +498,34 @@ function InboxInner() {
                     onPointerLeave={(e) => { if (holdActive && e.buttons === 0) void releaseHold(); }}
                     onContextMenu={(e) => e.preventDefault()}
                     aria-label="Hold to record"
-                    style={{ touchAction: "none" }}
+                    style={{
+                      touchAction: "none",
+                      transform: holdActive
+                        ? `translateX(${holdDx}px) scale(${willCancel ? 0.95 : 1.08})`
+                        : undefined,
+                      transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+                    }}
                     className={cn(
-                      "relative grid h-12 w-12 place-items-center rounded-2xl ring-1 transition-all select-none",
+                      "relative grid h-12 w-12 place-items-center rounded-2xl ring-1 select-none",
                       recorder.state === "recording"
                         ? willCancel
-                          ? "scale-110 bg-stone-200 text-stone-600 ring-stone-300"
-                          : "scale-110 bg-rose-500 text-white ring-rose-400 shadow-[0_0_0_8px_hsl(0_84%_60%/0.18)]"
+                          ? "bg-stone-200 text-stone-600 ring-stone-300"
+                          : "bg-rose-500 text-white ring-rose-400 shadow-[0_0_0_10px_hsl(0_84%_60%/0.14)]"
                         : "bg-rose-50 text-rose-600 ring-rose-100 hover:bg-rose-100 active:scale-95",
                     )}
                   >
                     {recorder.state === "recording" && !willCancel && (
-                      <span className="pointer-events-none absolute inset-0 animate-ping rounded-2xl bg-rose-400/40 motion-reduce:hidden" />
+                      <>
+                        {/* Calm breathing halos — slower than animate-ping, softer opacity */}
+                        <span
+                          className="pointer-events-none absolute -inset-2 rounded-3xl bg-rose-400/20 motion-reduce:hidden"
+                          style={{ animation: "careflow-breath 2.4s ease-in-out infinite" }}
+                        />
+                        <span
+                          className="pointer-events-none absolute -inset-1 rounded-3xl bg-rose-300/25 motion-reduce:hidden"
+                          style={{ animation: "careflow-breath 2.4s ease-in-out infinite 0.6s" }}
+                        />
+                      </>
                     )}
                     {recorder.state === "recording" && willCancel ? (
                       <X className="relative h-5 w-5" />
@@ -520,15 +536,34 @@ function InboxInner() {
                 )}
               </div>
               {recorder.state === "recording" && (
-                <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[11.5px] text-muted-foreground">
-                  <div className="inline-flex items-center gap-1.5">
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500">
-                      <span className="absolute inset-0 animate-ping rounded-full bg-rose-400/60 motion-reduce:hidden" />
+                <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[11.5px] text-muted-foreground animate-fade-in">
+                  <div className="inline-flex items-center gap-2">
+                    {/* Breathing dot */}
+                    <span
+                      className="inline-flex h-2 w-2 rounded-full bg-rose-500 motion-reduce:animate-none"
+                      style={{ animation: "careflow-breath 2.4s ease-in-out infinite" }}
+                    />
+                    <span className="tabular-nums">{fmtElapsed(recorder.elapsedMs)}</span>
+                    {/* 3-dot calm wave */}
+                    <span className="ml-1 inline-flex items-end gap-[3px] motion-reduce:hidden" aria-hidden>
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="block w-[3px] rounded-full bg-rose-400/70"
+                          style={{
+                            height: 6,
+                            animation: "careflow-wave 1.2s ease-in-out infinite",
+                            animationDelay: `${i * 0.18}s`,
+                          }}
+                        />
+                      ))}
                     </span>
-                    Recording · {fmtElapsed(recorder.elapsedMs)}
                   </div>
-                  <div className={cn("transition-colors", willCancel ? "font-medium text-rose-600" : "")}>
-                    ← Slide to cancel
+                  <div
+                    className={cn("transition-colors duration-200", willCancel ? "font-medium text-rose-600" : "")}
+                    style={{ transform: `translateX(${holdDx * 0.4}px)` }}
+                  >
+                    {willCancel ? "Release to cancel" : "← Slide to cancel"}
                   </div>
                 </div>
               )}
