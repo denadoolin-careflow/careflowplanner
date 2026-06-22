@@ -57,6 +57,7 @@ import NotesTimeline from "./pages/NotesTimeline";
 import NotesFiles from "./pages/NotesFiles";
 import Review from "./pages/Review";
 import Reset from "./pages/Reset";
+import ResetDetail from "./pages/ResetDetail";
 import Routines from "./pages/Routines";
 import PlanTimeline from "./pages/PlanTimeline";
 import PlanDay from "./pages/PlanDay";
