@@ -7,7 +7,7 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Trash2, RefreshCw, List, LayoutGrid, CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake, Sparkles, Columns3, Sun, Moon, Sunrise, Check } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
@@ -19,6 +19,7 @@ import { TodaysRhythmCard } from "@/components/calendar/TodaysRhythmCard";
 import { useCalendarPrefs } from "@/lib/calendar-prefs";
 import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
 import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
+import { useLongPressDrag, useLongDropListener, type LongDropDetail } from "@/lib/long-press-drag";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -880,6 +881,40 @@ function KanbanByTimeframe({
   const cols: Col[] = [];
   const [dragging, setDragging] = useState<KItem | null>(null);
   const [overKey, setOverKey] = useState<string | null>(null);
+  const draggingRef = useRef<KItem | null>(null);
+  const dragCounters = useRef<Record<string, number>>({});
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const autoScrollRaf = useRef<number | null>(null);
+
+  useEffect(() => { draggingRef.current = dragging; }, [dragging]);
+
+  // Auto-scroll the horizontal kanban while dragging near the edges.
+  useEffect(() => {
+    if (!dragging) {
+      if (autoScrollRaf.current) { cancelAnimationFrame(autoScrollRaf.current); autoScrollRaf.current = null; }
+      return;
+    }
+    let lastX = 0;
+    const tick = () => {
+      const el = scrollerRef.current;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        const margin = 80;
+        if (lastX && lastX - r.left < margin) el.scrollLeft -= Math.max(6, (margin - (lastX - r.left)) / 4);
+        else if (lastX && r.right - lastX < margin) el.scrollLeft += Math.max(6, (margin - (r.right - lastX)) / 4);
+      }
+      autoScrollRaf.current = requestAnimationFrame(tick);
+    };
+    const onMove = (e: PointerEvent | DragEvent) => { lastX = (e as any).clientX ?? 0; };
+    window.addEventListener("pointermove", onMove as EventListener);
+    window.addEventListener("dragover", onMove as EventListener);
+    autoScrollRaf.current = requestAnimationFrame(tick);
+    return () => {
+      window.removeEventListener("pointermove", onMove as EventListener);
+      window.removeEventListener("dragover", onMove as EventListener);
+      if (autoScrollRaf.current) { cancelAnimationFrame(autoScrollRaf.current); autoScrollRaf.current = null; }
+    };
+  }, [dragging]);
 
   const bucketTime: Record<string, string | null> = {
     Morning: "09:00", Afternoon: "14:00", Evening: "19:00", Night: "22:00", Anytime: null,
@@ -979,27 +1014,69 @@ function KanbanByTimeframe({
     return drop.date;
   };
 
+  const colByKey = useMemo(() => {
+    const m = new Map<string, Col>();
+    for (const c of cols) m.set(c.key, c);
+    return m;
+  }, [cols]);
+
+  const performDrop = async (colKey: string, item: KItem | null) => {
+    const c = colByKey.get(colKey);
+    if (!c?.drop || !item || !onItemReschedule) return;
+    const date = resolveDropDate(c.drop, item.sourceDate);
+    const patch: { date?: string; time?: string | null } = {};
+    if (date && date !== item.sourceDate) patch.date = date;
+    if (view === "day" && c.drop.time !== undefined) patch.time = c.drop.time;
+    if (patch.date || patch.time !== undefined) await onItemReschedule(item, patch);
+  };
+
+  // Listen for long-press touch drops dispatched by useLongPressDrag.
+  useLongDropListener(async (d: LongDropDetail) => {
+    const item = draggingRef.current;
+    if (!item) return;
+    // Find which column the pointer is over.
+    const el = document.elementFromPoint(d.clientX, d.clientY) as HTMLElement | null;
+    const colEl = el?.closest("[data-kanban-col]") as HTMLElement | null;
+    const key = colEl?.getAttribute("data-kanban-col");
+    if (key) await performDrop(key, item);
+    setDragging(null);
+    setOverKey(null);
+    dragCounters.current = {};
+  });
+
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2">
+    <div ref={scrollerRef} className="flex gap-3 overflow-x-auto pb-2 scroll-smooth">
       {cols.map(c => (
         <div
           key={c.key}
-          onDragOver={(e) => { if (c.drop && dragging) { e.preventDefault(); setOverKey(c.key); } }}
-          onDragLeave={() => setOverKey(k => k === c.key ? null : k)}
+          data-kanban-col={c.key}
+          onDragEnter={(e) => {
+            if (!c.drop || !dragging) return;
+            e.preventDefault();
+            dragCounters.current[c.key] = (dragCounters.current[c.key] ?? 0) + 1;
+            setOverKey(c.key);
+          }}
+          onDragOver={(e) => {
+            if (!c.drop || !dragging) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            if (overKey !== c.key) setOverKey(c.key);
+          }}
+          onDragLeave={() => {
+            dragCounters.current[c.key] = Math.max(0, (dragCounters.current[c.key] ?? 0) - 1);
+            if (!dragCounters.current[c.key]) setOverKey(k => k === c.key ? null : k);
+          }}
           onDrop={async (e) => {
             e.preventDefault();
+            dragCounters.current[c.key] = 0;
             setOverKey(null);
-            if (!c.drop || !dragging || !onItemReschedule) return;
-            const date = resolveDropDate(c.drop, dragging.sourceDate);
-            const patch: { date?: string; time?: string | null } = {};
-            if (date && date !== dragging.sourceDate) patch.date = date;
-            if (view === "day" && c.drop.time !== undefined) patch.time = c.drop.time;
-            if (patch.date || patch.time !== undefined) await onItemReschedule(dragging, patch);
+            await performDrop(c.key, dragging);
             setDragging(null);
           }}
           className={cn(
-            "flex w-60 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/30 transition-colors",
-            overKey === c.key && "border-primary/60 bg-primary/5",
+            "flex w-60 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/30 transition-all",
+            dragging && c.drop && overKey !== c.key && "border-dashed border-primary/30",
+            overKey === c.key && "border-primary/70 bg-primary/10 ring-2 ring-primary/30 shadow-sm scale-[1.01]",
           )}
         >
           <div className="sticky top-0 z-10 flex items-baseline justify-between gap-2 rounded-t-xl border-b border-border/60 bg-card/80 px-3 py-2 backdrop-blur">
@@ -1007,35 +1084,86 @@ function KanbanByTimeframe({
               <div className="truncate text-sm font-semibold">{c.title}</div>
               {c.subtitle && <div className="truncate text-[10px] uppercase tracking-wider text-muted-foreground">{c.subtitle}</div>}
             </div>
-            <span className="rounded-full bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">{c.items.length}</span>
+            <span className={cn(
+              "rounded-full px-1.5 text-[10px] font-medium transition-colors",
+              overKey === c.key ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground",
+            )}>{c.items.length}</span>
           </div>
-          <div className="flex flex-col gap-1.5 p-2">
+          <div className="flex min-h-[64px] flex-col gap-1.5 p-2">
             {c.items.length === 0 ? (
-              <p className="rounded-md px-2 py-3 text-center text-[11px] text-muted-foreground/60">—</p>
+              <p className={cn(
+                "rounded-md border border-dashed px-2 py-4 text-center text-[11px] transition-colors",
+                overKey === c.key
+                  ? "border-primary/50 bg-primary/5 text-primary"
+                  : "border-transparent text-muted-foreground/60",
+              )}>
+                {overKey === c.key ? "Drop here" : "—"}
+              </p>
             ) : c.items.map((e, i) => {
               const editable = e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol";
               const clickable = !!onItemClick && editable && !!e.id;
               const draggable = editable && !!e.id && !!onItemReschedule;
               return (
-                <CalendarItemCard
+                <KanbanCard
                   key={i}
-                  kind={e.kind}
-                  id={e.id}
-                  label={e.label}
-                  time={e.time}
-                  color={e.color}
-                  disabled={!clickable && !draggable}
-                  onClick={clickable ? () => onItemClick!(e) : undefined}
+                  item={e}
+                  clickable={clickable}
                   draggable={draggable}
+                  isDragging={dragging?.id === e.id && dragging?.sourceDate === e.sourceDate}
+                  onClick={clickable ? () => onItemClick!(e) : undefined}
                   onDragStart={() => draggable && setDragging(e)}
-                  onDragEnd={() => { setDragging(null); setOverKey(null); }}
-                  className={cn(dragging?.id === e.id && "opacity-50")}
+                  onDragEnd={() => { setDragging(null); setOverKey(null); dragCounters.current = {}; }}
                 />
               );
             })}
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function KanbanCard({
+  item, clickable, draggable, isDragging, onClick, onDragStart, onDragEnd,
+}: {
+  item: EventItem & { sourceDate?: string };
+  clickable: boolean;
+  draggable: boolean;
+  isDragging: boolean;
+  onClick?: () => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+}) {
+  // Long-press touch drag: starts the same `dragging` state via onDragStart,
+  // and the column-level useLongDropListener handles the drop.
+  const longPress = useLongPressDrag(
+    () => draggable ? { type: "task", id: item.id ?? item.label, label: item.label } : null,
+    // No onClick — the CalendarItemCard button already handles taps.
+  );
+  return (
+    <div
+      onPointerDown={(e) => {
+        if (!draggable) return;
+        // Trigger React onDragStart-equivalent state on long-press start as well.
+        longPress.onPointerDown(e);
+      }}
+      className={cn(
+        "touch-none transition-transform",
+        isDragging && "opacity-50 scale-[0.98]",
+      )}
+    >
+      <CalendarItemCard
+        kind={item.kind}
+        id={item.id}
+        label={item.label}
+        time={item.time}
+        color={item.color}
+        disabled={!clickable && !draggable}
+        onClick={clickable ? onClick : undefined}
+        draggable={draggable}
+        onDragStart={() => { onDragStart(); }}
+        onDragEnd={onDragEnd}
+      />
     </div>
   );
 }
