@@ -214,16 +214,54 @@ export default function ResetDetail() {
             </SectionCard>
           )}
 
-          {row.checklist.length > 0 && (
+          {(row.checklist.length > 0 || editing) && (
             <SectionCard accent="calm" title={`Checklist · ${row.checklist.filter(c => c.done).length}/${row.checklist.length}`}>
-              <ul className="space-y-1 px-5 pb-5 text-sm">
-                {row.checklist.map(c => (
-                  <li key={c.id} className={cn("flex items-center gap-2", c.done && "text-muted-foreground line-through")}>
-                    {c.done ? <Check className="h-3.5 w-3.5 text-primary" /> : <CircleDashed className="h-3.5 w-3.5" />}
-                    {c.label}
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-2 px-5 pb-5 text-sm">
+                <ul className="space-y-1">
+                  {row.checklist.map(c => (
+                    <li key={c.id} className="group flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-muted/40">
+                      <button
+                        type="button"
+                        onClick={() => toggle(c.id)}
+                        aria-label={c.done ? "Mark incomplete" : "Mark complete"}
+                        className={cn(
+                          "grid h-5 w-5 place-items-center rounded-full border transition-all",
+                          c.done ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/60",
+                        )}
+                      >
+                        {c.done && <Check className="h-3 w-3" />}
+                      </button>
+                      <span className={cn("flex-1", c.done && "text-muted-foreground line-through")}>{c.label}</span>
+                      {editing && (
+                        <button
+                          type="button"
+                          onClick={() => removeItem(c.id)}
+                          aria-label="Remove"
+                          className="opacity-60 transition-opacity hover:opacity-100"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                {editing && (
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); addItem(draft); }}
+                    className="flex items-center gap-2 pt-1"
+                  >
+                    <Input
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      placeholder="Add a step…"
+                      className="h-9 rounded-xl border-border/60 bg-background/60 text-sm"
+                    />
+                    <Button type="submit" size="sm" variant="secondary" className="gap-1">
+                      <Plus className="h-3.5 w-3.5" /> Add
+                    </Button>
+                  </form>
+                )}
+              </div>
             </SectionCard>
           )}
         </>
