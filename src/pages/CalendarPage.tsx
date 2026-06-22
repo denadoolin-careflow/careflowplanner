@@ -1030,19 +1030,66 @@ function KanbanByTimeframe({
     if (patch.date || patch.time !== undefined) await onItemReschedule(item, patch);
   };
 
+  /**
+   * Find the kanban column whose rect is closest to (x,y). Used to make
+   * mobile drops forgiving: a release between two columns, slightly above
+   * the column, or in the inter-column gap still snaps to the nearest
+   * droppable column (within a generous tolerance).
+   */
+  const findNearestCol = (x: number, y: number): string | null => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return null;
+    const cols = Array.from(scroller.querySelectorAll<HTMLElement>("[data-kanban-col]"));
+    if (!cols.length) return null;
+    // First: direct hit (any column whose rect contains the point).
+    for (const el of cols) {
+      const r = el.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+        return el.getAttribute("data-kanban-col");
+      }
+    }
+    // Fallback: nearest by squared distance to rect, with vertical leniency.
+    const TOLERANCE = 140; // px — finger-friendly snap radius
+    let bestKey: string | null = null;
+    let bestDist = Infinity;
+    for (const el of cols) {
+      const r = el.getBoundingClientRect();
+      const dx = x < r.left ? r.left - x : x > r.right ? x - r.right : 0;
+      const dy = y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0;
+      // Weight vertical distance less so users can release above/below the column.
+      const dist = Math.hypot(dx, dy * 0.5);
+      if (dist < bestDist) { bestDist = dist; bestKey = el.getAttribute("data-kanban-col"); }
+    }
+    return bestDist <= TOLERANCE ? bestKey : null;
+  };
+
   // Listen for long-press touch drops dispatched by useLongPressDrag.
   useLongDropListener(async (d: LongDropDetail) => {
     const item = draggingRef.current;
     if (!item) return;
-    // Find which column the pointer is over.
-    const el = document.elementFromPoint(d.clientX, d.clientY) as HTMLElement | null;
-    const colEl = el?.closest("[data-kanban-col]") as HTMLElement | null;
-    const key = colEl?.getAttribute("data-kanban-col");
+    // Prefer the column resolved by useLongPressDrag (via data-dropdate),
+    // then fall back to a forgiving nearest-column search.
+    const key = d.iso ?? findNearestCol(d.clientX, d.clientY);
     if (key) await performDrop(key, item);
     setDragging(null);
     setOverKey(null);
     dragCounters.current = {};
   });
+
+  // Live highlight during long-press touch drag (mouse drag is handled by
+  // native HTML5 onDragEnter/Leave on each column). We watch pointermove
+  // and reflect the nearest snappable column in `overKey` so the user gets
+  // the same hover feedback as desktop drag.
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: PointerEvent) => {
+      const key = findNearestCol(e.clientX, e.clientY);
+      setOverKey(prev => (prev === key ? prev : key));
+    };
+    window.addEventListener("pointermove", onMove);
+    return () => window.removeEventListener("pointermove", onMove);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragging]);
 
   return (
     <div ref={scrollerRef} className="flex gap-3 overflow-x-auto pb-2 scroll-smooth">
@@ -1050,6 +1097,8 @@ function KanbanByTimeframe({
         <div
           key={c.key}
           data-kanban-col={c.key}
+          data-droppart="kanban"
+          data-dropdate={c.key}
           onDragEnter={(e) => {
             if (!c.drop || !dragging) return;
             e.preventDefault();
