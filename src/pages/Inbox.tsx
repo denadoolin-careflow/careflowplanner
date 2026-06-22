@@ -6,6 +6,7 @@ import {
   ShoppingCart, FileText, GraduationCap, Cake, Car,
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
+  Mic, Square, Loader2, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isToday, isFuture, parseISO, format } from "date-fns";
 import basketImg from "@/assets/inbox-basket.png";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
