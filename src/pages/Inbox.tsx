@@ -28,6 +28,7 @@ import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReview
 import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
+import { QuickAddBar } from "@/components/today/QuickAddBar";
 
 interface Suggestion {
   task_id: string;
