@@ -1730,3 +1730,16 @@ body.pantry-dragging * { cursor: grabbing !important; user-select: none; }
   --priority-med:  30 62% 62%;
   --priority-low:  160 20% 54%;
 }
+
+/* CareFlow: calm hold-to-record cues */
+@keyframes careflow-breath {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50%      { transform: scale(1.18); opacity: 0.85; }
+}
+@keyframes careflow-wave {
+  0%, 100% { height: 6px; opacity: 0.55; }
+  50%      { height: 14px; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="careflow-breath"], [style*="careflow-wave"] { animation: none !important; }
+}
