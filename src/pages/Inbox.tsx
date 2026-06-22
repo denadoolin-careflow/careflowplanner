@@ -222,6 +222,11 @@ function InboxInner() {
     return () => window.removeEventListener("keydown", onKey);
   }, [clear]);
 
+  useEffect(() => () => {
+    if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
+    if (tickRef.current) window.clearInterval(tickRef.current);
+  }, []);
+
   const parsed = useMemo(() => (draft.trim().length > 2 ? parseTaskInput(draft) : null), [draft]);
 
   const combinedTags = useMemo(() => {
