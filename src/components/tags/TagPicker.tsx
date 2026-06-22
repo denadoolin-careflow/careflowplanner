@@ -10,9 +10,10 @@ import {
   DEFAULT_ICON, getTopTags,
 } from "@/lib/tags";
 import { TagChip } from "./TagChip";
-import { tagIconFor, TAG_ICON_OPTIONS } from "./tag-icon";
+import { tagIconFor, TAG_ICON_OPTIONS, TAG_ICON_GROUPS } from "./tag-icon";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
+import { useAtmosphere } from "@/lib/atmospheres";
 
 interface Props {
   value: string[];
@@ -27,6 +28,7 @@ interface Props {
 export function TagPicker({ value, onChange, triggerLabel = "Add tag", triggerClassName, inline = true }: Props) {
   const { tags, ensure, recolor } = useTags();
   const { state } = useStore();
+  const { atmosphere } = useAtmosphere();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [creatingColor, setCreatingColor] = useState<string>(TAG_COLORS[6].hex);
@@ -97,7 +99,7 @@ export function TagPicker({ value, onChange, triggerLabel = "Add tag", triggerCl
         <PopoverContent
           align="start"
           sideOffset={6}
-          className="w-72 rounded-2xl border-border/60 bg-card/95 p-2 shadow-xl backdrop-blur"
+          className="w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border-border/60 bg-card/95 p-2 shadow-xl backdrop-blur"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="relative">
@@ -190,51 +192,102 @@ export function TagPicker({ value, onChange, triggerLabel = "Add tag", triggerCl
                   <Plus className="mr-1 h-3 w-3" /> Create
                 </Button>
               </div>
-              <div>
-                <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Color</div>
-                <div className="flex flex-wrap gap-1">
-                  {TAG_COLORS.map((c) => (
-                    <button
-                      key={c.hex}
-                      type="button"
-                      onClick={() => setCreatingColor(c.hex)}
-                      className={cn(
-                        "h-5 w-5 rounded-full ring-1 ring-border/40 transition",
-                        creatingColor === c.hex && "ring-2 ring-foreground/70 scale-110",
-                      )}
-                      style={{ backgroundColor: c.hex }}
-                      aria-label={c.name}
-                      title={c.name}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Icon</div>
-                <div className="grid grid-cols-8 gap-1">
-                  {TAG_ICON_OPTIONS.map((i) => {
-                    const I = tagIconFor(i);
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setCreatingIcon(i)}
-                        className={cn(
-                          "grid h-6 w-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground",
-                          creatingIcon === i && "bg-primary/15 text-primary",
-                        )}
-                        title={i}
-                      >
-                        <I className="h-3 w-3" />
-                      </button>
-                    );
-                  })}
-                </div>
+              <div className="max-h-64 overflow-y-auto pr-1">
+                <ColorSwatchPicker
+                  atmosphereName={atmosphere.name}
+                  atmospherePalette={atmosphere.palette}
+                  value={creatingColor}
+                  onChange={setCreatingColor}
+                />
+                <IconGroupPicker value={creatingIcon} onChange={setCreatingIcon} />
               </div>
             </div>
           )}
         </PopoverContent>
       </Popover>
+    </div>
+  );
+}
+
+/* ─────────── Sub-pickers (also re-used by TagManagerDialog) ─────────── */
+
+export function ColorSwatchPicker({
+  value, onChange, atmosphereName, atmospherePalette,
+}: {
+  value: string;
+  onChange: (hex: string) => void;
+  atmosphereName: string;
+  atmospherePalette: string[];
+}) {
+  const swatch = (hex: string, label?: string) => (
+    <button
+      key={hex + (label ?? "")}
+      type="button"
+      onClick={() => onChange(hex)}
+      className={cn(
+        "relative grid h-6 w-6 place-items-center rounded-full ring-1 ring-border/40 transition",
+        value === hex && "ring-2 ring-foreground/70 scale-110",
+      )}
+      style={{ backgroundColor: hex }}
+      aria-label={label ?? hex}
+      title={label ?? hex}
+    >
+      {value === hex && (
+        <Check className="h-3 w-3" style={{ color: readableTextOn(hex) }} />
+      )}
+    </button>
+  );
+  return (
+    <div className="space-y-2">
+      <div>
+        <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+          <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: atmospherePalette[0] }} />
+          Atmosphere · {atmosphereName}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {atmospherePalette.map((hex) => swatch(hex, `${atmosphereName} swatch`))}
+        </div>
+      </div>
+      <div>
+        <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Library</div>
+        <div className="flex flex-wrap gap-1">
+          {TAG_COLORS.map((c) => swatch(c.hex, c.name))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function IconGroupPicker({
+  value, onChange,
+}: { value: string; onChange: (icon: string) => void }) {
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Icon</div>
+      {TAG_ICON_GROUPS.map((group) => (
+        <div key={group.label}>
+          <div className="mb-1 text-[10px] text-muted-foreground/80">{group.label}</div>
+          <div className="grid grid-cols-8 gap-1">
+            {group.icons.map((i) => {
+              const I = tagIconFor(i);
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onChange(i)}
+                  className={cn(
+                    "grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition",
+                    value === i && "bg-primary/15 text-primary ring-1 ring-primary/40",
+                  )}
+                  title={i}
+                >
+                  <I className="h-3.5 w-3.5" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
