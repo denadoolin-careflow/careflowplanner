@@ -224,6 +224,8 @@ export default function Reset() {
 
       {current && (
         <>
+          <PeriodTasksDashboard period={period} start={start} end={end} />
+
           <SectionCard
             accent="calm"
             title={<span className="flex items-center gap-2"><PeriodIcon className="h-4 w-4" /> Reset checklist</span>}
