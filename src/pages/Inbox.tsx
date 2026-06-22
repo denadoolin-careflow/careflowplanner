@@ -610,14 +610,13 @@ function InboxInner() {
             </div>
           ) : null}
 
-          {/* Caregiver quick actions */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-
           {/* Structured quick add — task / home / care / meal / note with time-of-day routing */}
           <div className="mt-4">
             <QuickAddBar date={new Date()} />
           </div>
 
+          {/* Caregiver quick actions */}
+          <div className="mt-5 flex flex-wrap items-center gap-2">
             {CAREGIVER_PRESETS.map(p => {
               const Icon = p.icon;
               return (
