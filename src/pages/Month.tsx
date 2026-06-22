@@ -42,6 +42,7 @@ import { useTempUnit, cToF } from "@/lib/weather-store";
 import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Zap } from "lucide-react";
 import type { WeatherCondition } from "@/lib/weather";
 import { DayDetailExtras } from "@/components/calendar/DayDetailExtras";
+import { DayTasksPanel } from "@/components/calendar/DayTasksPanel";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { getTransitsForDate } from "@/lib/transits";
 import { useTransitsEnabled } from "@/lib/astrology-prefs";
@@ -588,6 +589,7 @@ export default function Month() {
           })()}
 
           {sheetISO && <DayDetailExtras iso={sheetISO} />}
+          {sheetISO && <DayTasksPanel iso={sheetISO} />}
 
           {sheetISO && (() => {
             const items = eventsOn(sheetISO);
