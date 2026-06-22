@@ -93,7 +93,10 @@ function InboxInner() {
   const [holdActive, setHoldActive] = useState(false);
   const [willCancel, setWillCancel] = useState(false);
   const [holdStartX, setHoldStartX] = useState<number | null>(null);
+  const [holdDx, setHoldDx] = useState(0);
   const holdTimerRef = useRef<number | null>(null);
+  const tickRef = useRef<number | null>(null);
+  const lastTickRef = useRef(0);
 
   const fmtElapsed = (ms: number) => {
     const s = Math.floor(ms / 1000);
@@ -106,19 +109,32 @@ function InboxInner() {
       return;
     }
     await recorder.start();
-    haptics.tap();
+    // Distinct "armed" cue so the user feels the recording begin.
+    haptics.pickup?.() ?? haptics.tap();
+    lastTickRef.current = 0;
+    if (tickRef.current) window.clearInterval(tickRef.current);
+    // Gentle tick every 15s so long recordings feel grounded.
+    tickRef.current = window.setInterval(() => {
+      const sec = Math.floor((recorder.elapsedMs ?? 0) / 1000);
+      if (sec > 0 && sec % 15 === 0 && sec !== lastTickRef.current) {
+        lastTickRef.current = sec;
+        haptics.swipe?.();
+      }
+    }, 1000);
   };
 
   const cancelVoice = () => {
     recorder.cancel();
     haptics.warning?.();
+    if (tickRef.current) { window.clearInterval(tickRef.current); tickRef.current = null; }
     toast("Discarded", { description: "Nothing was saved." });
   };
 
   const finishVoice = async () => {
     const out = await recorder.stop();
     if (!out) return;
-    haptics.tap();
+    haptics.snap?.() ?? haptics.tap();
+    if (tickRef.current) { window.clearInterval(tickRef.current); tickRef.current = null; }
     setTranscribing(true);
     try {
       const { data, error } = await aiInvoke("ai-voice-capture", {
@@ -146,6 +162,7 @@ function InboxInner() {
       setReviewDrafts(initial);
       setReviewTranscript(payload.transcript);
       setReviewOpen(true);
+      haptics.success?.();
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't process voice note");
     } finally {
@@ -159,6 +176,7 @@ function InboxInner() {
     if (transcribing || recorder.state !== "idle") return;
     setHoldStartX(e.clientX);
     setWillCancel(false);
+    setHoldDx(0);
     setHoldActive(true);
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     const id = window.setTimeout(() => {
@@ -169,11 +187,20 @@ function InboxInner() {
   const moveHold = (e: React.PointerEvent) => {
     if (!holdActive || holdStartX == null) return;
     const dx = e.clientX - holdStartX;
-    setWillCancel(dx < -70);
+    // Clamp to a comfortable visual range and only track leftward drag.
+    const tracked = Math.max(-140, Math.min(0, dx));
+    setHoldDx(tracked);
+    const next = dx < -70;
+    if (next !== willCancel) {
+      setWillCancel(next);
+      // Soft tick when crossing the cancel threshold either way.
+      haptics.swipe?.();
+    }
   };
   const releaseHold = async () => {
     if (!holdActive) return;
     setHoldActive(false);
+    setHoldDx(0);
     if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
     if (recorder.state === "idle" && !transcribing) {
       toast("Hold the mic to record", { description: "Press and hold, release to send." });
@@ -194,6 +221,11 @@ function InboxInner() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [clear]);
+
+  useEffect(() => () => {
+    if (holdTimerRef.current) window.clearTimeout(holdTimerRef.current);
+    if (tickRef.current) window.clearInterval(tickRef.current);
+  }, []);
 
   const parsed = useMemo(() => (draft.trim().length > 2 ? parseTaskInput(draft) : null), [draft]);
 
@@ -471,18 +503,34 @@ function InboxInner() {
                     onPointerLeave={(e) => { if (holdActive && e.buttons === 0) void releaseHold(); }}
                     onContextMenu={(e) => e.preventDefault()}
                     aria-label="Hold to record"
-                    style={{ touchAction: "none" }}
+                    style={{
+                      touchAction: "none",
+                      transform: holdActive
+                        ? `translateX(${holdDx}px) scale(${willCancel ? 0.95 : 1.08})`
+                        : undefined,
+                      transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+                    }}
                     className={cn(
-                      "relative grid h-12 w-12 place-items-center rounded-2xl ring-1 transition-all select-none",
+                      "relative grid h-12 w-12 place-items-center rounded-2xl ring-1 select-none",
                       recorder.state === "recording"
                         ? willCancel
-                          ? "scale-110 bg-stone-200 text-stone-600 ring-stone-300"
-                          : "scale-110 bg-rose-500 text-white ring-rose-400 shadow-[0_0_0_8px_hsl(0_84%_60%/0.18)]"
+                          ? "bg-stone-200 text-stone-600 ring-stone-300"
+                          : "bg-rose-500 text-white ring-rose-400 shadow-[0_0_0_10px_hsl(0_84%_60%/0.14)]"
                         : "bg-rose-50 text-rose-600 ring-rose-100 hover:bg-rose-100 active:scale-95",
                     )}
                   >
                     {recorder.state === "recording" && !willCancel && (
-                      <span className="pointer-events-none absolute inset-0 animate-ping rounded-2xl bg-rose-400/40 motion-reduce:hidden" />
+                      <>
+                        {/* Calm breathing halos — slower than animate-ping, softer opacity */}
+                        <span
+                          className="pointer-events-none absolute -inset-2 rounded-3xl bg-rose-400/20 motion-reduce:hidden"
+                          style={{ animation: "careflow-breath 2.4s ease-in-out infinite" }}
+                        />
+                        <span
+                          className="pointer-events-none absolute -inset-1 rounded-3xl bg-rose-300/25 motion-reduce:hidden"
+                          style={{ animation: "careflow-breath 2.4s ease-in-out infinite 0.6s" }}
+                        />
+                      </>
                     )}
                     {recorder.state === "recording" && willCancel ? (
                       <X className="relative h-5 w-5" />
@@ -493,15 +541,34 @@ function InboxInner() {
                 )}
               </div>
               {recorder.state === "recording" && (
-                <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[11.5px] text-muted-foreground">
-                  <div className="inline-flex items-center gap-1.5">
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500">
-                      <span className="absolute inset-0 animate-ping rounded-full bg-rose-400/60 motion-reduce:hidden" />
+                <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[11.5px] text-muted-foreground animate-fade-in">
+                  <div className="inline-flex items-center gap-2">
+                    {/* Breathing dot */}
+                    <span
+                      className="inline-flex h-2 w-2 rounded-full bg-rose-500 motion-reduce:animate-none"
+                      style={{ animation: "careflow-breath 2.4s ease-in-out infinite" }}
+                    />
+                    <span className="tabular-nums">{fmtElapsed(recorder.elapsedMs)}</span>
+                    {/* 3-dot calm wave */}
+                    <span className="ml-1 inline-flex items-end gap-[3px] motion-reduce:hidden" aria-hidden>
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="block w-[3px] rounded-full bg-rose-400/70"
+                          style={{
+                            height: 6,
+                            animation: "careflow-wave 1.2s ease-in-out infinite",
+                            animationDelay: `${i * 0.18}s`,
+                          }}
+                        />
+                      ))}
                     </span>
-                    Recording · {fmtElapsed(recorder.elapsedMs)}
                   </div>
-                  <div className={cn("transition-colors", willCancel ? "font-medium text-rose-600" : "")}>
-                    ← Slide to cancel
+                  <div
+                    className={cn("transition-colors duration-200", willCancel ? "font-medium text-rose-600" : "")}
+                    style={{ transform: `translateX(${holdDx * 0.4}px)` }}
+                  >
+                    {willCancel ? "Release to cancel" : "← Slide to cancel"}
                   </div>
                 </div>
               )}
