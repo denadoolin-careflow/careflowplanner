@@ -78,6 +78,70 @@ function InboxInner() {
   const [draft, setDraft] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [processOpen, setProcessOpen] = useState(false);
+  const recorder = useAudioRecorder();
+  const [transcribing, setTranscribing] = useState(false);
+
+  const fmtElapsed = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    return `${String(Math.floor(s / 60)).padStart(1, "0")}:${String(s % 60).padStart(2, "0")}`;
+  };
+
+  const startVoice = async () => {
+    if (!recorder.supported) {
+      toast.error("Voice capture isn't supported in this browser.");
+      return;
+    }
+    await recorder.start();
+  };
+
+  const cancelVoice = () => {
+    recorder.cancel();
+    toast("Discarded", { description: "Nothing was saved." });
+  };
+
+  const finishVoice = async () => {
+    const out = await recorder.stop();
+    if (!out) return;
+    setTranscribing(true);
+    try {
+      const { data, error } = await aiInvoke("ai-voice-capture", {
+        body: { audioBase64: out.base64, mimeType: out.mimeType },
+      });
+      if (error) throw error;
+      const payload = data as { transcript?: string; summary?: string; tasks?: any[] };
+      const tasks = payload?.tasks ?? [];
+      if (!payload?.transcript) {
+        toast.info("I didn't catch anything — try again.");
+        return;
+      }
+      if (tasks.length === 0) {
+        // Fall back to dropping transcript into draft for review.
+        setDraft(payload.transcript);
+        toast("Captured your words", { description: "Review and tap Capture to save." });
+        return;
+      }
+      for (const t of tasks) {
+        await addTask({
+          title: t.title,
+          area: (t.area as Area) ?? undefined,
+          priority: (t.priority as Priority) ?? "medium",
+          status: (t.status as TaskStatus) ?? "active",
+          dueDate: t.dueDate ?? undefined,
+          estMinutes: t.estMinutes ?? undefined,
+          tags: Array.isArray(t.tags) ? t.tags : undefined,
+          notes: t.notes ?? undefined,
+          inbox: true,
+        });
+      }
+      toast.success(`Caught ${tasks.length} ${tasks.length === 1 ? "thought" : "thoughts"} ✨`, {
+        description: payload.summary || "Safely held in your inbox.",
+      });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't process voice note");
+    } finally {
+      setTranscribing(false);
+    }
+  };
 
   const items = useMemo(
     () => state.tasks.filter((t: any) => t.inbox && !t.done && !t.parentTaskId && t.status !== "parked"),
