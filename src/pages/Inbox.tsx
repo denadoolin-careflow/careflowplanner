@@ -28,6 +28,7 @@ import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReview
 import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
+import { QuickAddBar } from "@/components/today/QuickAddBar";
 
 interface Suggestion {
   task_id: string;
@@ -608,6 +609,11 @@ function InboxInner() {
               </button>
             </div>
           ) : null}
+
+          {/* Structured quick add — task / home / care / meal / note with time-of-day routing */}
+          <div className="mt-4">
+            <QuickAddBar date={new Date()} />
+          </div>
 
           {/* Caregiver quick actions */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
