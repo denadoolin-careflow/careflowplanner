@@ -425,24 +425,28 @@ function InboxInner() {
 
           {/* Selected tag chips */}
           {!!combinedTags.length && (
-            <div className="mb-3 flex flex-wrap gap-1.5">
+            <div
+              className="mb-3 flex items-center gap-1.5 overflow-x-auto no-scrollbar snap-x pb-0.5"
+              style={{ WebkitMaskImage: "linear-gradient(to right, black 85%, transparent)", maskImage: "linear-gradient(to right, black 85%, transparent)" }}
+            >
               {combinedTags.map((t) => {
                 const isCat = activeCategories.some((c) => c.toLowerCase() === t);
                 return (
-                  <TagChip
-                    key={t}
-                    name={t}
-                    size="xs"
-                    onRemove={() => {
-                      if (isCat) setActiveCategories((cs) => cs.filter((c) => c.toLowerCase() !== t));
-                      else setExtraTags((ts) => ts.filter((x) => x !== t));
-                    }}
-                  />
+                  <span key={t} className="snap-start shrink-0">
+                    <TagChip
+                      name={t}
+                      size="xs"
+                      onRemove={() => {
+                        if (isCat) setActiveCategories((cs) => cs.filter((c) => c.toLowerCase() !== t));
+                        else setExtraTags((ts) => ts.filter((x) => x !== t));
+                      }}
+                    />
+                  </span>
                 );
               })}
               <button
                 onClick={() => { setActiveCategories([]); setExtraTags([]); }}
-                className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                className="ml-1 shrink-0 snap-end rounded-full px-2 py-0.5 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
               >
                 Clear
               </button>
@@ -635,11 +639,14 @@ function InboxInner() {
                 <TagIcon className="h-3.5 w-3.5 text-muted-foreground" />
                 Categories & Tags
               </div>
-              <Link to="/tags" className="inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground">
+              <Link to="/tags" className="hidden sm:inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground">
                 Manage <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar snap-x">
+            <div
+              className="flex gap-2 overflow-x-auto pb-1 no-scrollbar snap-x -mx-1 px-1"
+              style={{ WebkitMaskImage: "linear-gradient(to right, black 92%, transparent)", maskImage: "linear-gradient(to right, black 92%, transparent)" }}
+            >
               {CATEGORIES.map((c) => {
                 const Icon = c.icon;
                 const active = activeCategories.includes(c.label);
@@ -652,7 +659,7 @@ function InboxInner() {
                     )}
                     aria-pressed={active}
                     className={cn(
-                      "inline-flex shrink-0 snap-start items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-medium ring-1 transition-all min-h-[36px] hover:-translate-y-0.5 hover:shadow-sm",
+                      "inline-flex shrink-0 snap-start items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium ring-1 transition-all min-h-[34px] sm:px-3.5 sm:py-2 sm:text-[12.5px] sm:min-h-[36px] hover:-translate-y-0.5 hover:shadow-sm",
                       c.tint,
                       active && "ring-2 ring-primary/50 shadow-sm",
                     )}
@@ -667,8 +674,15 @@ function InboxInner() {
                 onChange={setExtraTags}
                 inline={false}
                 triggerLabel="More tags"
-                triggerClassName="shrink-0 snap-start min-h-[36px] rounded-full px-3.5 text-[12.5px]"
+                triggerClassName="shrink-0 snap-start min-h-[34px] sm:min-h-[36px] rounded-full px-3 sm:px-3.5 text-[12px] sm:text-[12.5px]"
               />
+              <Link
+                to="/tags"
+                className="sm:hidden shrink-0 snap-end inline-flex items-center gap-1 rounded-full border border-dashed border-border/60 bg-background px-3 text-[12px] text-muted-foreground hover:text-foreground min-h-[34px]"
+                aria-label="Manage tags"
+              >
+                Manage
+              </Link>
             </div>
           </div>
         </section>

@@ -3,16 +3,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTags } from "@/hooks/use-tags";
-import { TAG_COLORS, readableTextOn } from "@/lib/tags";
-import { tagIconFor, TAG_ICON_OPTIONS } from "./tag-icon";
+import { readableTextOn } from "@/lib/tags";
+import { tagIconFor } from "./tag-icon";
+import { ColorSwatchPicker, IconGroupPicker } from "./TagPicker";
+import { useAtmosphere } from "@/lib/atmospheres";
 import { Trash2, Save } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Props { open: boolean; onOpenChange: (v: boolean) => void; }
 
 export function TagManagerDialog({ open, onOpenChange }: Props) {
   const { tags, rename, recolor, remove } = useTags();
+  const { atmosphere } = useAtmosphere();
   const [editId, setEditId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftColor, setDraftColor] = useState("");
@@ -89,45 +91,13 @@ export function TagManagerDialog({ open, onOpenChange }: Props) {
                 </div>
                 {editing && (
                   <div className="mt-3 space-y-2">
-                    <div>
-                      <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Color</div>
-                      <div className="flex flex-wrap gap-1">
-                        {TAG_COLORS.map((c) => (
-                          <button
-                            key={c.hex}
-                            type="button"
-                            onClick={() => setDraftColor(c.hex)}
-                            className={cn(
-                              "h-5 w-5 rounded-full ring-1 ring-border/40",
-                              draftColor === c.hex && "ring-2 ring-foreground/70 scale-110",
-                            )}
-                            style={{ backgroundColor: c.hex }}
-                            title={c.name}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Icon</div>
-                      <div className="grid grid-cols-8 gap-1">
-                        {TAG_ICON_OPTIONS.map((i) => {
-                          const I = tagIconFor(i);
-                          return (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => setDraftIcon(i)}
-                              className={cn(
-                                "grid h-6 w-6 place-items-center rounded-md text-muted-foreground hover:bg-muted",
-                                draftIcon === i && "bg-primary/15 text-primary",
-                              )}
-                            >
-                              <I className="h-3 w-3" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <ColorSwatchPicker
+                      value={draftColor}
+                      onChange={setDraftColor}
+                      atmosphereName={atmosphere.name}
+                      atmospherePalette={atmosphere.palette}
+                    />
+                    <IconGroupPicker value={draftIcon} onChange={setDraftIcon} />
                     <div className="flex justify-end gap-2 pt-1">
                       <Button size="sm" variant="outline" onClick={() => setEditId(null)}>Cancel</Button>
                       <Button size="sm" onClick={save}><Save className="mr-1 h-3.5 w-3.5" /> Save</Button>
