@@ -93,7 +93,10 @@ function InboxInner() {
   const [holdActive, setHoldActive] = useState(false);
   const [willCancel, setWillCancel] = useState(false);
   const [holdStartX, setHoldStartX] = useState<number | null>(null);
+  const [holdDx, setHoldDx] = useState(0);
   const holdTimerRef = useRef<number | null>(null);
+  const tickRef = useRef<number | null>(null);
+  const lastTickRef = useRef(0);
 
   const fmtElapsed = (ms: number) => {
     const s = Math.floor(ms / 1000);
@@ -106,19 +109,32 @@ function InboxInner() {
       return;
     }
     await recorder.start();
-    haptics.tap();
+    // Distinct "armed" cue so the user feels the recording begin.
+    haptics.pickup?.() ?? haptics.tap();
+    lastTickRef.current = 0;
+    if (tickRef.current) window.clearInterval(tickRef.current);
+    // Gentle tick every 15s so long recordings feel grounded.
+    tickRef.current = window.setInterval(() => {
+      const sec = Math.floor((recorder.elapsedMs ?? 0) / 1000);
+      if (sec > 0 && sec % 15 === 0 && sec !== lastTickRef.current) {
+        lastTickRef.current = sec;
+        haptics.swipe?.();
+      }
+    }, 1000);
   };
 
   const cancelVoice = () => {
     recorder.cancel();
     haptics.warning?.();
+    if (tickRef.current) { window.clearInterval(tickRef.current); tickRef.current = null; }
     toast("Discarded", { description: "Nothing was saved." });
   };
 
   const finishVoice = async () => {
     const out = await recorder.stop();
     if (!out) return;
-    haptics.tap();
+    haptics.snap?.() ?? haptics.tap();
+    if (tickRef.current) { window.clearInterval(tickRef.current); tickRef.current = null; }
     setTranscribing(true);
     try {
       const { data, error } = await aiInvoke("ai-voice-capture", {
@@ -146,6 +162,7 @@ function InboxInner() {
       setReviewDrafts(initial);
       setReviewTranscript(payload.transcript);
       setReviewOpen(true);
+      haptics.success?.();
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't process voice note");
     } finally {
@@ -159,6 +176,7 @@ function InboxInner() {
     if (transcribing || recorder.state !== "idle") return;
     setHoldStartX(e.clientX);
     setWillCancel(false);
+    setHoldDx(0);
     setHoldActive(true);
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     const id = window.setTimeout(() => {
@@ -169,11 +187,20 @@ function InboxInner() {
   const moveHold = (e: React.PointerEvent) => {
     if (!holdActive || holdStartX == null) return;
     const dx = e.clientX - holdStartX;
-    setWillCancel(dx < -70);
+    // Clamp to a comfortable visual range and only track leftward drag.
+    const tracked = Math.max(-140, Math.min(0, dx));
+    setHoldDx(tracked);
+    const next = dx < -70;
+    if (next !== willCancel) {
+      setWillCancel(next);
+      // Soft tick when crossing the cancel threshold either way.
+      haptics.swipe?.();
+    }
   };
   const releaseHold = async () => {
     if (!holdActive) return;
     setHoldActive(false);
+    setHoldDx(0);
     if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
     if (recorder.state === "idle" && !transcribing) {
       toast("Hold the mic to record", { description: "Press and hold, release to send." });
