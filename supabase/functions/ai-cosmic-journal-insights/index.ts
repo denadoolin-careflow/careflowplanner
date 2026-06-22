@@ -56,17 +56,19 @@ ${COSMIC_TONE_REMINDER}`;
         response_format: { type: "json_object" },
       }),
     });
-    if (upstream.status === 429) return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    if (upstream.status === 402) return new Response(JSON.stringify({ error: "ai_quota_exceeded" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (upstream.status === 429) return new Response(JSON.stringify({ error: "rate_limited", fallback: true, themes: [], patterns: [], breakthroughs: [], reflection_prompt: "", entry_count: entries.length }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (upstream.status === 402) return new Response(JSON.stringify({ error: "ai_quota_exceeded", fallback: true, themes: [], patterns: [], breakthroughs: [], reflection_prompt: "", entry_count: entries.length }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!upstream.ok) {
       const text = await upstream.text();
-      return new Response(JSON.stringify({ error: "upstream_error", detail: text.slice(0, 500) }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      console.error("ai-cosmic-journal-insights upstream", upstream.status, text);
+      return new Response(JSON.stringify({ error: "upstream_error", detail: text.slice(0, 500), fallback: true, themes: [], patterns: [], breakthroughs: [], reflection_prompt: "", entry_count: entries.length }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const data = await upstream.json();
     let parsed: any = {};
     try { parsed = JSON.parse(data?.choices?.[0]?.message?.content ?? "{}"); } catch { parsed = {}; }
     return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: "exception", message: String(e?.message ?? e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    console.error("ai-cosmic-journal-insights exception", e);
+    return new Response(JSON.stringify({ error: "exception", message: String(e?.message ?? e), fallback: true, themes: [], patterns: [], breakthroughs: [], reflection_prompt: "", entry_count: entries.length }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
