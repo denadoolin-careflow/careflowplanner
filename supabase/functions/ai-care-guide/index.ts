@@ -74,19 +74,20 @@ Deno.serve(async (req) => {
     });
 
     if (resp.status === 429) {
-      return new Response(JSON.stringify({ error: "Rate limit — try again shortly.", brief: FALLBACK }), {
-        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "rate_limited", message: "Rate limit — try again shortly.", brief: FALLBACK, fallback: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (resp.status === 402) {
-      return new Response(JSON.stringify({ error: "ai_quota_exceeded", message: "AI credits exhausted.", brief: FALLBACK }), {
-        status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "ai_quota_exceeded", message: "AI credits exhausted.", brief: FALLBACK, fallback: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (!resp.ok) {
       const text = await resp.text();
-      return new Response(JSON.stringify({ error: `AI gateway error: ${text}`, brief: FALLBACK }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      console.error("ai-care-guide gateway error", resp.status, text);
+      return new Response(JSON.stringify({ error: "gateway_error", message: text, brief: FALLBACK, fallback: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -111,8 +112,9 @@ Deno.serve(async (req) => {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: (e as Error).message, brief: FALLBACK }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    console.error("ai-care-guide unexpected error", e);
+    return new Response(JSON.stringify({ error: "service_failed", message: (e as Error).message, brief: FALLBACK, fallback: true }), {
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
