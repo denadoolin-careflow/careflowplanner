@@ -242,6 +242,36 @@ function InboxInner() {
   const submitCapture = async (overrideArea?: Area) => {
     const raw = draft.trim();
     if (!raw) return;
+    // When kind is not "task", route into today's schedule instead of inbox.
+    if (captureKind !== "task") {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const h = new Date().getHours();
+      const dayPart = h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
+      const mealSlot = h < 12 ? "Breakfast" : h < 17 ? "Lunch" : "Dinner";
+      if (captureKind === "home") {
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Home" });
+        toast.success(`Added home task → ${dayPart}`);
+      } else if (captureKind === "care") {
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving" });
+        toast.success(`Added care task → ${dayPart}`);
+      } else if (captureKind === "meal") {
+        await addMeal({ name: raw, date: today, slot: mealSlot });
+        toast.success(`Added ${mealSlot} → ${raw}`);
+      } else if (captureKind === "note") {
+        try {
+          const n = await createNote({ title: raw });
+          setDraft("");
+          toast.success("Note created");
+          navigate(`/notes/${n.id}`);
+          return;
+        } catch {
+          toast.error("Couldn't create note");
+          return;
+        }
+      }
+      setDraft("");
+      return;
+    }
     const p = parseTaskInput(raw);
     const mergedTags = Array.from(new Set([...(p.tags ?? []), ...combinedTags]));
     await addTask({
