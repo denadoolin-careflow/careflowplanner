@@ -6,7 +6,7 @@ import {
   ShoppingCart, FileText, GraduationCap, Cake, Car,
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
-  Mic, Loader2, X, Pencil,
+  Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReview
 import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
-import { QuickAddBar } from "@/components/today/QuickAddBar";
+import { createNote, getOrCreateDailyNote } from "@/lib/notes";
 
 interface Suggestion {
   task_id: string;
@@ -75,7 +75,7 @@ const CATEGORIES: { icon: any; label: string; tint: string }[] = [
 ];
 
 function InboxInner() {
-  const { state, addTask, updateTask, deleteTask } = useStore() as any;
+  const { state, addTask, addMeal, updateTask, deleteTask } = useStore() as any;
   const navigate = useNavigate();
   const { paneOpen, clear } = useTaskSelection();
   const [triaging, setTriaging] = useState(false);
@@ -83,6 +83,8 @@ function InboxInner() {
   const [draft, setDraft] = useState("");
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [extraTags, setExtraTags] = useState<string[]>([]);
+  const [captureKind, setCaptureKind] = useState<"task" | "home" | "care" | "meal" | "note">("task");
+  const [tagsOpen, setTagsOpen] = useState(false);
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
