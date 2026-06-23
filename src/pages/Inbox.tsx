@@ -763,6 +763,7 @@ function InboxInner() {
                 Manage
               </Link>
             </div>
+            )}
           </div>
         </section>
 
