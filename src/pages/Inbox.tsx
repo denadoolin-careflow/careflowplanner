@@ -6,7 +6,7 @@ import {
   ShoppingCart, FileText, GraduationCap, Cake, Car,
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
-  Mic, Loader2, X, Pencil,
+  Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReview
 import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
-import { QuickAddBar } from "@/components/today/QuickAddBar";
+import { createNote, getOrCreateDailyNote } from "@/lib/notes";
 
 interface Suggestion {
   task_id: string;
@@ -75,7 +75,7 @@ const CATEGORIES: { icon: any; label: string; tint: string }[] = [
 ];
 
 function InboxInner() {
-  const { state, addTask, updateTask, deleteTask } = useStore() as any;
+  const { state, addTask, addMeal, updateTask, deleteTask } = useStore() as any;
   const navigate = useNavigate();
   const { paneOpen, clear } = useTaskSelection();
   const [triaging, setTriaging] = useState(false);
@@ -83,6 +83,8 @@ function InboxInner() {
   const [draft, setDraft] = useState("");
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [extraTags, setExtraTags] = useState<string[]>([]);
+  const [captureKind, setCaptureKind] = useState<"task" | "home" | "care" | "meal" | "note">("task");
+  const [tagsOpen, setTagsOpen] = useState(false);
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
@@ -240,6 +242,36 @@ function InboxInner() {
   const submitCapture = async (overrideArea?: Area) => {
     const raw = draft.trim();
     if (!raw) return;
+    // When kind is not "task", route into today's schedule instead of inbox.
+    if (captureKind !== "task") {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const h = new Date().getHours();
+      const dayPart = h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
+      const mealSlot = h < 12 ? "Breakfast" : h < 17 ? "Lunch" : "Dinner";
+      if (captureKind === "home") {
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Home" });
+        toast.success(`Added home task → ${dayPart}`);
+      } else if (captureKind === "care") {
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving" });
+        toast.success(`Added care task → ${dayPart}`);
+      } else if (captureKind === "meal") {
+        await addMeal({ name: raw, date: today, slot: mealSlot });
+        toast.success(`Added ${mealSlot} → ${raw}`);
+      } else if (captureKind === "note") {
+        try {
+          const n = await createNote({ title: raw });
+          setDraft("");
+          toast.success("Note created");
+          navigate(`/notes/${n.id}`);
+          return;
+        } catch {
+          toast.error("Couldn't create note");
+          return;
+        }
+      }
+      setDraft("");
+      return;
+    }
     const p = parseTaskInput(raw);
     const mergedTags = Array.from(new Set([...(p.tags ?? []), ...combinedTags]));
     await addTask({
@@ -451,6 +483,46 @@ function InboxInner() {
             </div>
           )}
 
+          {/* Kind chips + Today's note — combined quick add */}
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5 text-[11.5px]">
+              {([
+                { k: "task", Icon: ListChecks, label: "Task" },
+                { k: "home", Icon: Home, label: "Home" },
+                { k: "care", Icon: HeartHandshake, label: "Care" },
+                { k: "meal", Icon: UtensilsCrossed, label: "Meal" },
+                { k: "note", Icon: StickyNote, label: "Note" },
+              ] as const).map(({ k, Icon, label }) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setCaptureKind(k)}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 transition-colors",
+                    captureKind === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-3 w-3" />
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const iso = format(new Date(), "yyyy-MM-dd");
+                  const n = await getOrCreateDailyNote(iso);
+                  navigate(`/notes/${n.id}`);
+                } catch { toast.error("Couldn't open today's note"); }
+              }}
+              className="ml-auto inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2.5 py-1 text-[11.5px] text-muted-foreground transition hover:text-foreground"
+            >
+              <FileText className="h-3 w-3" />
+              Today's note
+            </button>
+          </div>
+
           {transcribing ? (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4 shadow-inner">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -468,7 +540,15 @@ function InboxInner() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
-                placeholder={recorder.state === "recording" ? (willCancel ? "Release to cancel…" : `Listening · ${fmtElapsed(recorder.elapsedMs)}`) : "What needs your attention?"}
+                placeholder={
+                  recorder.state === "recording"
+                    ? (willCancel ? "Release to cancel…" : `Listening · ${fmtElapsed(recorder.elapsedMs)}`)
+                    : captureKind === "task" ? "What needs your attention?"
+                    : captureKind === "home" ? "Add a home or cleaning task…"
+                    : captureKind === "care" ? "Add a care task…"
+                    : captureKind === "meal" ? "Add a meal for today…"
+                    : "Add a note…"
+                }
                 className={cn(
                   "h-14 rounded-2xl border-border/40 bg-background/70 pl-14 pr-28 text-[15px] shadow-inner placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15",
                   recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40",
@@ -610,11 +690,6 @@ function InboxInner() {
             </div>
           ) : null}
 
-          {/* Structured quick add — task / home / care / meal / note with time-of-day routing */}
-          <div className="mt-4">
-            <QuickAddBar date={new Date()} />
-          </div>
-
           {/* Caregiver quick actions */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
             {CAREGIVER_PRESETS.map(p => {
@@ -637,16 +712,28 @@ function InboxInner() {
 
           {/* Merged: Categories + Tags */}
           <div className="mt-5 border-t border-border/50 pt-4">
-            <div className="mb-2.5 flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 text-[12.5px] font-medium text-foreground/80">
+            <button
+              type="button"
+              onClick={() => setTagsOpen((o) => !o)}
+              aria-expanded={tagsOpen}
+              className="flex w-full items-center justify-between gap-2 text-left"
+            >
+              <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-foreground/80">
                 <TagIcon className="h-3.5 w-3.5 text-muted-foreground" />
                 Categories & Tags
-              </div>
-              <Link to="/tags" className="hidden sm:inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground">
-                Manage <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 pb-1">
+                {(activeCategories.length + extraTags.length) > 0 && (
+                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10.5px] font-medium text-primary">
+                    {activeCategories.length + extraTags.length}
+                  </span>
+                )}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                {tagsOpen ? "Hide" : "Show"}
+                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", tagsOpen && "rotate-180")} />
+              </span>
+            </button>
+            {tagsOpen && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 pb-1 animate-fade-in">
               {CATEGORIES.map((c) => {
                 const Icon = c.icon;
                 const active = activeCategories.includes(c.label);
@@ -684,6 +771,7 @@ function InboxInner() {
                 Manage
               </Link>
             </div>
+            )}
           </div>
         </section>
 
