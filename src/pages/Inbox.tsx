@@ -483,6 +483,46 @@ function InboxInner() {
             </div>
           )}
 
+          {/* Kind chips + Today's note — combined quick add */}
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5 text-[11.5px]">
+              {([
+                { k: "task", Icon: ListChecks, label: "Task" },
+                { k: "home", Icon: Home, label: "Home" },
+                { k: "care", Icon: HeartHandshake, label: "Care" },
+                { k: "meal", Icon: UtensilsCrossed, label: "Meal" },
+                { k: "note", Icon: StickyNote, label: "Note" },
+              ] as const).map(({ k, Icon, label }) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setCaptureKind(k)}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 transition-colors",
+                    captureKind === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon className="h-3 w-3" />
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const iso = format(new Date(), "yyyy-MM-dd");
+                  const n = await getOrCreateDailyNote(iso);
+                  navigate(`/notes/${n.id}`);
+                } catch { toast.error("Couldn't open today's note"); }
+              }}
+              className="ml-auto inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2.5 py-1 text-[11.5px] text-muted-foreground transition hover:text-foreground"
+            >
+              <FileText className="h-3 w-3" />
+              Today's note
+            </button>
+          </div>
+
           {transcribing ? (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4 shadow-inner">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
