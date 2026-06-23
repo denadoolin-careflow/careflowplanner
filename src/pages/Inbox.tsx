@@ -682,11 +682,6 @@ function InboxInner() {
             </div>
           ) : null}
 
-          {/* Structured quick add — task / home / care / meal / note with time-of-day routing */}
-          <div className="mt-4">
-            <QuickAddBar date={new Date()} />
-          </div>
-
           {/* Caregiver quick actions */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
             {CAREGIVER_PRESETS.map(p => {
@@ -709,16 +704,28 @@ function InboxInner() {
 
           {/* Merged: Categories + Tags */}
           <div className="mt-5 border-t border-border/50 pt-4">
-            <div className="mb-2.5 flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 text-[12.5px] font-medium text-foreground/80">
+            <button
+              type="button"
+              onClick={() => setTagsOpen((o) => !o)}
+              aria-expanded={tagsOpen}
+              className="flex w-full items-center justify-between gap-2 text-left"
+            >
+              <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-foreground/80">
                 <TagIcon className="h-3.5 w-3.5 text-muted-foreground" />
                 Categories & Tags
-              </div>
-              <Link to="/tags" className="hidden sm:inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground">
-                Manage <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 pb-1">
+                {(activeCategories.length + extraTags.length) > 0 && (
+                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10.5px] font-medium text-primary">
+                    {activeCategories.length + extraTags.length}
+                  </span>
+                )}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                {tagsOpen ? "Hide" : "Show"}
+                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", tagsOpen && "rotate-180")} />
+              </span>
+            </button>
+            {tagsOpen && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 pb-1 animate-fade-in">
               {CATEGORIES.map((c) => {
                 const Icon = c.icon;
                 const active = activeCategories.includes(c.label);
