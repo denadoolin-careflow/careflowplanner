@@ -540,7 +540,15 @@ function InboxInner() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
-                placeholder={recorder.state === "recording" ? (willCancel ? "Release to cancel…" : `Listening · ${fmtElapsed(recorder.elapsedMs)}`) : "What needs your attention?"}
+                placeholder={
+                  recorder.state === "recording"
+                    ? (willCancel ? "Release to cancel…" : `Listening · ${fmtElapsed(recorder.elapsedMs)}`)
+                    : captureKind === "task" ? "What needs your attention?"
+                    : captureKind === "home" ? "Add a home or cleaning task…"
+                    : captureKind === "care" ? "Add a care task…"
+                    : captureKind === "meal" ? "Add a meal for today…"
+                    : "Add a note…"
+                }
                 className={cn(
                   "h-14 rounded-2xl border-border/40 bg-background/70 pl-14 pr-28 text-[15px] shadow-inner placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15",
                   recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40",
