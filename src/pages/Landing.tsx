@@ -526,6 +526,10 @@ const footerNav = {
     { label: "Careers", href: "#" },
     { label: "Press", href: "#" },
   ],
+  Legal: [
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Service", href: "/terms" },
+  ],
 };
 
 /* ---------- Page ---------- */
@@ -986,8 +990,8 @@ export default function Landing() {
           <div className="mx-auto flex w-full max-w-6xl flex-col items-start justify-between gap-3 px-5 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center">
             <div>© {new Date().getFullYear()} CareFlow — care for what matters today.</div>
             <div className="flex items-center gap-4">
-              <a href="#" className="hover:text-foreground">Privacy</a>
-              <a href="#" className="hover:text-foreground">Terms</a>
+              <a href="/privacy" className="hover:text-foreground">Privacy</a>
+              <a href="/terms" className="hover:text-foreground">Terms</a>
               <a href="#" className="hover:text-foreground">Accessibility</a>
               <a href="#" className="hover:text-foreground">Contact</a>
             </div>
