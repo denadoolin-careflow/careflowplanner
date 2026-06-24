@@ -1,53 +1,39 @@
-## Goal
+# Improve mobile Task Editor
 
-Tighten the Inbox tag/category row on mobile, expand the tag editor with more icons and an Atmosphere-aware color palette, and let users override each Flow page's accent color from Settings.
+The task editor dialog (`src/components/tasks/TaskEditor.tsx`) is the screen shown in the screenshot. On mobile it has horizontal overflow: the title input runs past the right edge, the pill row clips "Medium", the notes/attachment cards extend beyond the viewport, and Cancel/Save look misaligned with the rest of the content. We'll tighten the mobile layout without changing behavior or desktop styles.
 
-## 1. Inbox: mobile-friendly tags + categories
+## Changes (frontend only, `src/components/tasks/TaskEditor.tsx`)
 
-Edit `src/pages/Inbox.tsx`.
+1. **Stop horizontal overflow at the root**
+   - `DialogContent`: add `overflow-x-hidden` alongside the existing `overflow-hidden`, and ensure mobile uses `w-screen max-w-[100vw]` so the dialog never exceeds the viewport.
+   - Wrap the scrollable body with `min-w-0 w-full` and add `min-w-0` to the inner grid so children can shrink.
 
-- **Selected chips row (above input):** wrap selected categories + extra tags into a single horizontally scrollable lane with `no-scrollbar snap-x` instead of `flex-wrap`, so a long set never pushes the input off-screen. Compact "Clear" pill stays sticky to the right edge of the lane.
-- **Categories & Tags lane:**
-  - Keep the horizontal scroller, but shrink chip padding on `<sm` (`px-3 py-1.5 text-[12px] min-h-[34px]`) so 4-5 chips peek on a 360 px screen.
-  - Add a soft fade-out mask (`mask-image: linear-gradient(to right, black 85%, transparent)`) hinting more chips to the right.
-  - Move "Manage" out of the header on mobile into a trailing "…" chip at the end of the lane so the header collapses to just the section label.
-  - Replace the "More tags" button with a leading round icon chip (`+` only) on `<sm`, full label on `≥sm`.
-- **TagPicker popover:** add `w-[min(20rem,calc(100vw-2rem))]` so it never overflows narrow viewports; pin to `align="end"` when triggered from the end of a scroll lane.
+2. **Title row wraps cleanly**
+   - Keep the title input on its own row on mobile (`basis-full`), but add `min-w-0 w-full` and `truncate`-safe sizing so long titles don't push the row wider than the screen.
+   - Reduce header horizontal padding on mobile (`px-3` → `px-4`) to match the body and align with Cancel/Save below.
 
-## 2. Tag editor: more icons + atmosphere color palette
+3. **Pill row: edge-faded horizontal scroller**
+   - Keep `overflow-x-auto` scrolling on mobile but:
+     - Add left/right padding so the first and last pill aren't flush against the edge.
+     - Add a subtle right-edge mask (`mask-image: linear-gradient(...)`) so a clipped "Medium" pill clearly looks scrollable instead of cut off.
+   - Make pill labels shrink-safe (`max-w-[10rem] truncate`) so a long project/area name doesn't blow out the row.
 
-Edit `src/components/tags/tag-icon.tsx`, `src/lib/tags.ts`, and `src/components/tags/TagPicker.tsx` (creation panel) + `src/components/tags/TagManagerDialog.tsx`.
+4. **Body cards align to one consistent gutter**
+   - Use a shared `px-4 sm:px-5` on header, body, and footer so the left edges of pills, cards, and Cancel/Save line up perfectly.
+   - Add `min-w-0` to each `Card` and to the left/right grid columns to prevent any nested input/select from forcing horizontal growth.
 
-- **Icons:** grow the curated set from 16 → ~32. Add: `Home, Briefcase, Baby, GraduationCap, ShoppingBag, Plane, Coffee, Music, BookOpen, Brush, Camera, Pill, Stethoscope, Dumbbell, Calendar, Clock, MapPin, Smile`. Group icons by theme (Essentials, Home & Family, Health, Work, Play, Travel, Symbols) and render in a tabbed/grouped grid inside both the creation panel and tag-manager dialog.
-- **Colors:**
-  - Keep `TAG_COLORS` (curated swatches).
-  - Add a new "Atmosphere" group: reads the current `atmosphere.palette` via `useAtmosphere()` and exposes each swatch as a selectable color, labelled with the atmosphere name. Updates live as the user changes atmosphere.
-  - Render two sub-rows in the picker: "Atmosphere" (top, current palette swatches), "Library" (existing curated swatches).
-  - Each swatch shows a tiny check on selection; selected swatch keeps the scale-up affordance.
+5. **Footer Cancel / Save / Delete**
+   - On mobile, render the footer as a sticky `bottom-0` bar with a 2-column grid (`grid-cols-2 gap-2`) for Cancel + Save (Save = primary, full-width within its column), and the Delete link centered underneath in muted-destructive style. This matches the spacing of the body and keeps tap targets ≥ 44px.
+   - Add `pb-[env(safe-area-inset-bottom)]` so it clears the home indicator.
 
-## 3. Per-Flow color customization in Settings
-
-New Settings section + small store.
-
-- **Storage:** new `src/lib/flow-color-prefs.ts`:
-  - `getFlowColorOverrides(): Record<flowId, number>` — palette index per flow.
-  - `setFlowColorOverride(flowId, index | null)` — null clears.
-  - LocalStorage key `careflow:flow-color-overrides`. Emits `careflow:flow-colors-change` event.
-  - `useFlowColorOverrides()` hook subscribes to storage + custom event.
-- **Wire into accent resolver:** update `getFlowAccent` / `useFlowAccent` / `useFlowAccents` in `src/lib/flow-accent.ts` to consult overrides first, falling back to `FLOW_PALETTE_INDEX`.
-- **New component:** `src/components/settings/FlowColorPicker.tsx`. For each flow in `FLOW_PALETTE_INDEX`:
-  - Show flow label + icon.
-  - Render the current atmosphere's palette as 6-8 swatches; selected one is ringed. A "Reset" pill restores the default.
-  - Live preview chip on the right (accent fill + soft + ring sample) so users see the result before leaving Settings.
-- **Settings placement:** add this above the existing "Flow colors" link card in `src/pages/Settings.tsx` (rename existing card to "Preview across atmospheres" to disambiguate). Atmosphere section stays untouched.
-
-## Files
-
-- Edit: `src/pages/Inbox.tsx`, `src/components/tags/TagPicker.tsx`, `src/components/tags/TagManagerDialog.tsx`, `src/components/tags/tag-icon.tsx`, `src/lib/tags.ts`, `src/lib/flow-accent.ts`, `src/pages/Settings.tsx`
-- New: `src/lib/flow-color-prefs.ts`, `src/components/settings/FlowColorPicker.tsx`
+6. **Notes & Attachments cards**
+   - Add `min-w-0` and `overflow-hidden` on each `Card` wrapper so the inner `BlockEditor` toolbar and `AttachmentsField` "Drag & drop…" caption wrap instead of pushing width.
+   - On mobile, allow the formatting toolbar in `BlockEditor` to wrap (`flex-wrap`) so the B/I/U/S/</>/✏️ row never overflows.
 
 ## Out of scope
+- No changes to TaskEditor logic, data model, or the mobile `/tasks/:id` `TaskDetail` page (separate surface).
+- No design-token changes; uses existing semantic colors.
 
-- No DB schema changes (overrides are client-only, per-device, just like atmosphere prefs).
-- No changes to atmosphere palettes themselves or to Tag CRUD endpoints.
-- No redesign of the inbox capture input, voice flow, or VoiceReviewSheet.
+## Verification
+- Reload `/inbox` on a 411px viewport, open a long-title task, confirm: no horizontal page scroll, pills scroll within their own row with a fade, title wraps to one row that fits, Notes/Attachments cards stay inside the viewport, Cancel/Save/Delete are aligned to the same gutter as the cards and reachable above the gesture bar.
+- Spot-check desktop (≥ sm breakpoint) — layout should be unchanged.
