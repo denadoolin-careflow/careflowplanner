@@ -37,7 +37,7 @@ export default function Terms() {
         <div className="mt-8 space-y-6 text-[15px] leading-relaxed text-foreground/85">
           <section>
             <h2 className="font-display text-2xl text-foreground">1. Acceptance</h2>
-            <p>By creating a CareFlow account or using the service, you agree to these Terms. If you do not agree, please do not use CareFlow.</p>
+            <p>CareFlow Planner ("CareFlow", "we", "us") is operated by Dena Doolin, based in the United States. By creating a CareFlow account or using the service, you agree to these Terms. If you do not agree, please do not use CareFlow.</p>
           </section>
 
           <section>
