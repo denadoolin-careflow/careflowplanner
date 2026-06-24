@@ -729,6 +729,95 @@ function InboxInner() {
             </div>
           ) : null}
 
+          {/* Schedule + Priority + Area + Project pickers */}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11.5px]">
+            {/* Day part */}
+            <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5">
+              {([
+                { v: "Morning",   Icon: Sun },
+                { v: "Afternoon", Icon: CloudSun },
+                { v: "Evening",   Icon: Moon },
+              ] as const).map(({ v, Icon }) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setDayPart(v)}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors",
+                    dayPart === v ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                  )}
+                  title={v === autoDayPart ? `${v} · auto` : v}
+                >
+                  <Icon className="h-3 w-3" />
+                  {v}
+                </button>
+              ))}
+            </div>
+
+            <PickerLabel icon={CalendarIcon}>
+              <input
+                type="date"
+                value={overrideDue}
+                onChange={(e) => setOverrideDue(e.target.value)}
+                className="bg-transparent text-[11.5px] outline-none"
+              />
+            </PickerLabel>
+
+            <PickerLabel icon={Flag}>
+              <select
+                value={overridePriority}
+                onChange={(e) => setOverridePriority(e.target.value as Priority | "")}
+                className="bg-transparent text-[11.5px] capitalize outline-none"
+              >
+                <option value="">Priority</option>
+                {(["low","medium","high"] as Priority[]).map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </PickerLabel>
+
+            <PickerLabel icon={MapPin}>
+              <select
+                value={overrideArea}
+                onChange={(e) => setOverrideArea(e.target.value as Area | "")}
+                className="bg-transparent text-[11.5px] outline-none"
+              >
+                <option value="">Area</option>
+                {(["Family","Kids","Caregiving","Home","Meals","Appointments","Holidays & Birthdays","Personal","Creative Projects","Money"] as Area[]).map(a => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </PickerLabel>
+
+            {(state.projects ?? []).length > 0 && (
+              <PickerLabel icon={Folder}>
+                <select
+                  value={overrideProjectId}
+                  onChange={(e) => setOverrideProjectId(e.target.value)}
+                  className="bg-transparent text-[11.5px] outline-none max-w-[10rem] truncate"
+                >
+                  <option value="">Project</option>
+                  {(state.projects ?? []).slice(0, 50).map((p: any) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </PickerLabel>
+            )}
+
+            {(overrideArea || overridePriority || overrideProjectId || overrideDue || dayPart !== autoDayPart) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOverrideArea(""); setOverridePriority(""); setOverrideProjectId("");
+                  setOverrideDue(""); setDayPart(autoDayPart);
+                }}
+                className="ml-1 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
           {/* Caregiver quick actions */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
             {CAREGIVER_PRESETS.map(p => {
