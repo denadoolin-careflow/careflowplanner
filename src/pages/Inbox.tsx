@@ -584,6 +584,8 @@ function InboxInner() {
                     : captureKind === "home" ? "Add a home or cleaning task…"
                     : captureKind === "care" ? "Add a care task…"
                     : captureKind === "meal" ? "Add a meal for today…"
+                    : captureKind === "connect" ? "Who to reach out to or visit?"
+                    : captureKind === "commute" ? "Where are you going?"
                     : "Add a note…"
                 }
                 className={cn(
