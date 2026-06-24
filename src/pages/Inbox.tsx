@@ -7,6 +7,7 @@ import {
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
+  MessageCircle, Flag, Folder, MapPin, CloudSun, Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,8 +84,21 @@ function InboxInner() {
   const [draft, setDraft] = useState("");
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [extraTags, setExtraTags] = useState<string[]>([]);
-  const [captureKind, setCaptureKind] = useState<"task" | "home" | "care" | "meal" | "note">("task");
+  const [captureKind, setCaptureKind] = useState<
+    "task" | "home" | "care" | "meal" | "note" | "connect" | "commute"
+  >("task");
   const [tagsOpen, setTagsOpen] = useState(false);
+  const [kindsOpen, setKindsOpen] = useState(false);
+  // Auto-detected day part — user can override via the chip below the input.
+  const autoDayPart = useMemo<"Morning" | "Afternoon" | "Evening">(() => {
+    const h = new Date().getHours();
+    return h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
+  }, []);
+  const [dayPart, setDayPart] = useState<"Morning" | "Afternoon" | "Evening">(autoDayPart);
+  const [overrideArea, setOverrideArea] = useState<Area | "">("");
+  const [overridePriority, setOverridePriority] = useState<Priority | "">("");
+  const [overrideProjectId, setOverrideProjectId] = useState<string>("");
+  const [overrideDue, setOverrideDue] = useState<string>("");
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
@@ -246,7 +260,6 @@ function InboxInner() {
     if (captureKind !== "task") {
       const today = format(new Date(), "yyyy-MM-dd");
       const h = new Date().getHours();
-      const dayPart = h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
       const mealSlot = h < 12 ? "Breakfast" : h < 17 ? "Lunch" : "Dinner";
       if (captureKind === "home") {
         await addTask({ title: raw, dueDate: today, dayPart, area: "Home" });
@@ -254,6 +267,12 @@ function InboxInner() {
       } else if (captureKind === "care") {
         await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving" });
         toast.success(`Added care task → ${dayPart}`);
+      } else if (captureKind === "connect") {
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Family" });
+        toast.success(`Added connect → ${dayPart}`);
+      } else if (captureKind === "commute") {
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Personal" });
+        toast.success(`Added commute → ${dayPart}`);
       } else if (captureKind === "meal") {
         await addMeal({ name: raw, date: today, slot: mealSlot });
         toast.success(`Added ${mealSlot} → ${raw}`);
@@ -276,8 +295,11 @@ function InboxInner() {
     const mergedTags = Array.from(new Set([...(p.tags ?? []), ...combinedTags]));
     await addTask({
       title: p.title || raw,
-      dueDate: p.dueDate,
-      area: (p.area as Area) ?? overrideArea ?? (activeCategories[0] as Area | undefined),
+      dueDate: overrideDue || p.dueDate,
+      area: (overrideArea || (p.area as Area) || (activeCategories[0] as Area | undefined)) as Area | undefined,
+      priority: (overridePriority || undefined) as Priority | undefined,
+      projectId: overrideProjectId || undefined,
+      dayPart,
       energy: p.energy,
       tags: mergedTags.length ? mergedTags : undefined,
       estMinutes: p.estMinutes,
@@ -285,6 +307,7 @@ function InboxInner() {
     });
     setDraft("");
     setExtraTags([]);
+    setOverrideDue("");
     toast.success("Caught it ✨", { description: "Safely held in your inbox." });
   };
 
@@ -484,28 +507,42 @@ function InboxInner() {
           )}
 
           {/* Kind chips + Today's note — combined quick add */}
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5 text-[11.5px]">
-              {([
-                { k: "task", Icon: ListChecks, label: "Task" },
-                { k: "home", Icon: Home, label: "Home" },
-                { k: "care", Icon: HeartHandshake, label: "Care" },
-                { k: "meal", Icon: UtensilsCrossed, label: "Meal" },
-                { k: "note", Icon: StickyNote, label: "Note" },
-              ] as const).map(({ k, Icon, label }) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setCaptureKind(k)}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 transition-colors",
-                    captureKind === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Icon className="h-3 w-3" />
-                  {label}
-                </button>
-              ))}
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5 text-[11px]">
+              {(() => {
+                const ALL = [
+                  { k: "task",    Icon: ListChecks,     label: "Task" },
+                  { k: "home",    Icon: Home,           label: "Home" },
+                  { k: "care",    Icon: HeartHandshake, label: "Care" },
+                  { k: "meal",    Icon: UtensilsCrossed,label: "Meal" },
+                  { k: "note",    Icon: StickyNote,     label: "Note" },
+                  { k: "connect", Icon: MessageCircle,  label: "Connect" },
+                  { k: "commute", Icon: Car,            label: "Commute" },
+                ] as const;
+                const visible = kindsOpen ? ALL : ALL.filter(c => c.k === "task" || c.k === captureKind);
+                return visible.map(({ k, Icon, label }) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setCaptureKind(k)}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors",
+                      captureKind === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {label}
+                  </button>
+                ));
+              })()}
+              <button
+                type="button"
+                onClick={() => setKindsOpen(o => !o)}
+                className="ml-0.5 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+                aria-label={kindsOpen ? "Fewer types" : "More types"}
+              >
+                <ChevronDown className={cn("h-3 w-3 transition-transform", kindsOpen && "rotate-180")} />
+              </button>
             </div>
             <button
               type="button"
@@ -516,7 +553,7 @@ function InboxInner() {
                   navigate(`/notes/${n.id}`);
                 } catch { toast.error("Couldn't open today's note"); }
               }}
-              className="ml-auto inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2.5 py-1 text-[11.5px] text-muted-foreground transition hover:text-foreground"
+              className="ml-auto inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2 py-0.5 text-[11px] text-muted-foreground transition hover:text-foreground"
             >
               <FileText className="h-3 w-3" />
               Today's note
@@ -547,6 +584,8 @@ function InboxInner() {
                     : captureKind === "home" ? "Add a home or cleaning task…"
                     : captureKind === "care" ? "Add a care task…"
                     : captureKind === "meal" ? "Add a meal for today…"
+                    : captureKind === "connect" ? "Who to reach out to or visit?"
+                    : captureKind === "commute" ? "Where are you going?"
                     : "Add a note…"
                 }
                 className={cn(
@@ -689,6 +728,95 @@ function InboxInner() {
               </button>
             </div>
           ) : null}
+
+          {/* Schedule + Priority + Area + Project pickers */}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11.5px]">
+            {/* Day part */}
+            <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5">
+              {([
+                { v: "Morning",   Icon: Sun },
+                { v: "Afternoon", Icon: CloudSun },
+                { v: "Evening",   Icon: Moon },
+              ] as const).map(({ v, Icon }) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setDayPart(v)}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors",
+                    dayPart === v ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                  )}
+                  title={v === autoDayPart ? `${v} · auto` : v}
+                >
+                  <Icon className="h-3 w-3" />
+                  {v}
+                </button>
+              ))}
+            </div>
+
+            <PickerLabel icon={CalendarIcon}>
+              <input
+                type="date"
+                value={overrideDue}
+                onChange={(e) => setOverrideDue(e.target.value)}
+                className="bg-transparent text-[11.5px] outline-none"
+              />
+            </PickerLabel>
+
+            <PickerLabel icon={Flag}>
+              <select
+                value={overridePriority}
+                onChange={(e) => setOverridePriority(e.target.value as Priority | "")}
+                className="bg-transparent text-[11.5px] capitalize outline-none"
+              >
+                <option value="">Priority</option>
+                {(["low","medium","high"] as Priority[]).map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </PickerLabel>
+
+            <PickerLabel icon={MapPin}>
+              <select
+                value={overrideArea}
+                onChange={(e) => setOverrideArea(e.target.value as Area | "")}
+                className="bg-transparent text-[11.5px] outline-none"
+              >
+                <option value="">Area</option>
+                {(["Family","Kids","Caregiving","Home","Meals","Appointments","Holidays & Birthdays","Personal","Creative Projects","Money"] as Area[]).map(a => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </PickerLabel>
+
+            {(state.projects ?? []).length > 0 && (
+              <PickerLabel icon={Folder}>
+                <select
+                  value={overrideProjectId}
+                  onChange={(e) => setOverrideProjectId(e.target.value)}
+                  className="bg-transparent text-[11.5px] outline-none max-w-[10rem] truncate"
+                >
+                  <option value="">Project</option>
+                  {(state.projects ?? []).slice(0, 50).map((p: any) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </PickerLabel>
+            )}
+
+            {(overrideArea || overridePriority || overrideProjectId || overrideDue || dayPart !== autoDayPart) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOverrideArea(""); setOverridePriority(""); setOverrideProjectId("");
+                  setOverrideDue(""); setDayPart(autoDayPart);
+                }}
+                className="ml-1 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+              >
+                Reset
+              </button>
+            )}
+          </div>
 
           {/* Caregiver quick actions */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -880,5 +1008,14 @@ function GlanceCard({ icon, tint, value, label, hint }: { icon: React.ReactNode;
       <div className="mt-0.5 text-[13px] font-medium">{label}</div>
       <div className="text-[11.5px] text-muted-foreground">{hint}</div>
     </div>
+  );
+}
+
+function PickerLabel({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
+  return (
+    <label className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-muted-foreground hover:text-foreground">
+      <Icon className="h-3 w-3" />
+      {children}
+    </label>
   );
 }
