@@ -84,8 +84,21 @@ function InboxInner() {
   const [draft, setDraft] = useState("");
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [extraTags, setExtraTags] = useState<string[]>([]);
-  const [captureKind, setCaptureKind] = useState<"task" | "home" | "care" | "meal" | "note">("task");
+  const [captureKind, setCaptureKind] = useState<
+    "task" | "home" | "care" | "meal" | "note" | "connect" | "commute"
+  >("task");
   const [tagsOpen, setTagsOpen] = useState(false);
+  const [kindsOpen, setKindsOpen] = useState(false);
+  // Auto-detected day part — user can override via the chip below the input.
+  const autoDayPart = useMemo<"Morning" | "Afternoon" | "Evening">(() => {
+    const h = new Date().getHours();
+    return h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
+  }, []);
+  const [dayPart, setDayPart] = useState<"Morning" | "Afternoon" | "Evening">(autoDayPart);
+  const [overrideArea, setOverrideArea] = useState<Area | "">("");
+  const [overridePriority, setOverridePriority] = useState<Priority | "">("");
+  const [overrideProjectId, setOverrideProjectId] = useState<string>("");
+  const [overrideDue, setOverrideDue] = useState<string>("");
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
