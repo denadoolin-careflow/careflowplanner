@@ -1010,3 +1010,12 @@ function GlanceCard({ icon, tint, value, label, hint }: { icon: React.ReactNode;
     </div>
   );
 }
+
+function PickerLabel({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
+  return (
+    <label className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-muted-foreground hover:text-foreground">
+      <Icon className="h-3 w-3" />
+      {children}
+    </label>
+  );
+}
