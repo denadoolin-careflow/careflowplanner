@@ -921,7 +921,7 @@ function PillPopover({
           )}
         >
           {icon}
-          <span className="truncate">{label}</span>
+          <span className="max-w-[10rem] truncate">{label}</span>
           {onClear && (
             <span
               role="button"
