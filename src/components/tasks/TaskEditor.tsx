@@ -945,7 +945,7 @@ function PillPopover({
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <section className={cn("rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm", className)}>
+    <section className={cn("min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm", className)}>
       {children}
     </section>
   );
