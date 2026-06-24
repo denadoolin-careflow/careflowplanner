@@ -507,28 +507,42 @@ function InboxInner() {
           )}
 
           {/* Kind chips + Today's note — combined quick add */}
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5 text-[11.5px]">
-              {([
-                { k: "task", Icon: ListChecks, label: "Task" },
-                { k: "home", Icon: Home, label: "Home" },
-                { k: "care", Icon: HeartHandshake, label: "Care" },
-                { k: "meal", Icon: UtensilsCrossed, label: "Meal" },
-                { k: "note", Icon: StickyNote, label: "Note" },
-              ] as const).map(({ k, Icon, label }) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setCaptureKind(k)}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 transition-colors",
-                    captureKind === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Icon className="h-3 w-3" />
-                  {label}
-                </button>
-              ))}
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5 text-[11px]">
+              {(() => {
+                const ALL = [
+                  { k: "task",    Icon: ListChecks,     label: "Task" },
+                  { k: "home",    Icon: Home,           label: "Home" },
+                  { k: "care",    Icon: HeartHandshake, label: "Care" },
+                  { k: "meal",    Icon: UtensilsCrossed,label: "Meal" },
+                  { k: "note",    Icon: StickyNote,     label: "Note" },
+                  { k: "connect", Icon: MessageCircle,  label: "Connect" },
+                  { k: "commute", Icon: Car,            label: "Commute" },
+                ] as const;
+                const visible = kindsOpen ? ALL : ALL.filter(c => c.k === "task" || c.k === captureKind);
+                return visible.map(({ k, Icon, label }) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setCaptureKind(k)}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors",
+                      captureKind === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {label}
+                  </button>
+                ));
+              })()}
+              <button
+                type="button"
+                onClick={() => setKindsOpen(o => !o)}
+                className="ml-0.5 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+                aria-label={kindsOpen ? "Fewer types" : "More types"}
+              >
+                <ChevronDown className={cn("h-3 w-3 transition-transform", kindsOpen && "rotate-180")} />
+              </button>
             </div>
             <button
               type="button"
@@ -539,7 +553,7 @@ function InboxInner() {
                   navigate(`/notes/${n.id}`);
                 } catch { toast.error("Couldn't open today's note"); }
               }}
-              className="ml-auto inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2.5 py-1 text-[11.5px] text-muted-foreground transition hover:text-foreground"
+              className="ml-auto inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2 py-0.5 text-[11px] text-muted-foreground transition hover:text-foreground"
             >
               <FileText className="h-3 w-3" />
               Today's note
