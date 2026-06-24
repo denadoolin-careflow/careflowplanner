@@ -7,6 +7,7 @@ import {
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
+  MessageCircle, Flag, Folder, MapPin, CloudSun, Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
