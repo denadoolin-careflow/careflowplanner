@@ -260,7 +260,6 @@ function InboxInner() {
     if (captureKind !== "task") {
       const today = format(new Date(), "yyyy-MM-dd");
       const h = new Date().getHours();
-      const dayPart = h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
       const mealSlot = h < 12 ? "Breakfast" : h < 17 ? "Lunch" : "Dinner";
       if (captureKind === "home") {
         await addTask({ title: raw, dueDate: today, dayPart, area: "Home" });
@@ -268,6 +267,12 @@ function InboxInner() {
       } else if (captureKind === "care") {
         await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving" });
         toast.success(`Added care task → ${dayPart}`);
+      } else if (captureKind === "connect") {
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Family" });
+        toast.success(`Added connect → ${dayPart}`);
+      } else if (captureKind === "commute") {
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Personal" });
+        toast.success(`Added commute → ${dayPart}`);
       } else if (captureKind === "meal") {
         await addMeal({ name: raw, date: today, slot: mealSlot });
         toast.success(`Added ${mealSlot} → ${raw}`);
@@ -290,8 +295,11 @@ function InboxInner() {
     const mergedTags = Array.from(new Set([...(p.tags ?? []), ...combinedTags]));
     await addTask({
       title: p.title || raw,
-      dueDate: p.dueDate,
-      area: (p.area as Area) ?? overrideArea ?? (activeCategories[0] as Area | undefined),
+      dueDate: overrideDue || p.dueDate,
+      area: (overrideArea || (p.area as Area) || (activeCategories[0] as Area | undefined)) as Area | undefined,
+      priority: (overridePriority || undefined) as Priority | undefined,
+      projectId: overrideProjectId || undefined,
+      dayPart,
       energy: p.energy,
       tags: mergedTags.length ? mergedTags : undefined,
       estMinutes: p.estMinutes,
@@ -299,6 +307,7 @@ function InboxInner() {
     });
     setDraft("");
     setExtraTags([]);
+    setOverrideDue("");
     toast.success("Caught it ✨", { description: "Safely held in your inbox." });
   };
 
