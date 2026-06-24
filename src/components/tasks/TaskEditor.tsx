@@ -267,11 +267,11 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:h-auto sm:max-h-[88vh] sm:w-[min(96vw,60rem)] sm:rounded-lg lg:w-[min(96vw,72rem)] lg:max-h-[90vh]"
+        className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-[100vw] flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none p-0 sm:h-auto sm:max-h-[88vh] sm:w-[min(96vw,60rem)] sm:max-w-none sm:rounded-lg lg:w-[min(96vw,72rem)] lg:max-h-[90vh]"
       >
         {/* Sticky header */}
-        <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-3 py-3 backdrop-blur sm:px-5">
-          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-2.5">
+        <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-2.5">
             <Checkbox
               checked={draft.done}
               onCheckedChange={() => toggleTask(draft.id)}
@@ -288,7 +288,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               onChange={e => set("title", e.target.value)}
               onBlur={() => { if (nlpOn && parsed && parsed.chips.length) applyNlp(); }}
               placeholder="Task title"
-              className="order-last h-11 w-full min-w-0 flex-1 basis-full border-0 bg-transparent px-0 text-[17px] font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:order-none sm:h-10 sm:basis-auto sm:w-auto"
+              className="order-last h-11 w-full min-w-0 max-w-full flex-1 basis-full border-0 bg-transparent px-0 text-[17px] font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:order-none sm:h-10 sm:basis-auto sm:w-auto"
             />
             <div className="ml-auto flex items-center gap-1 sm:ml-0 sm:contents">
             <TaskAIAssistPopover
@@ -399,11 +399,12 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
           {/* Quick details bar — pills */}
           <div
             className={cn(
-              "-mx-1 mt-3 flex items-center gap-1.5 px-1",
+              "-mx-4 mt-3 flex items-center gap-1.5 px-4",
               // Mobile: single horizontally-scrollable row so 6+ pills don't
               // explode the header height. Desktop: wrap normally.
               "overflow-x-auto overflow-y-hidden whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-              "sm:flex-wrap sm:overflow-visible sm:whitespace-normal",
+              "[mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]",
+              "sm:-mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible sm:whitespace-normal sm:[mask-image:none]",
             )}
           >
             <PillPopover
@@ -569,15 +570,15 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         </DialogHeader>
 
         {/* Scrollable body */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5">
+        <div className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5">
           <div className={cn(
-            "grid gap-4 transition-all",
+            "grid min-w-0 gap-4 transition-all",
             sideHidden
               ? "lg:mx-auto lg:max-w-3xl lg:grid-cols-1"
               : "lg:grid-cols-[1.55fr_1fr]",
           )}>
             {/* ─────────── Left column: work surface ─────────── */}
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               {/* Checklist */}
               <Card>
                 <CardHeader
@@ -726,7 +727,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             </div>
 
             {/* ─────────── Right column: context & assist ─────────── */}
-            <div className={cn("space-y-4", sideHidden && "lg:hidden")}>
+            <div className={cn("min-w-0 space-y-4", sideHidden && "lg:hidden")}>
               <FlowContextCard draft={draft} set={set} />
 
               {/* AI Assistant card */}
@@ -827,29 +828,54 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         </div>
 
         {/* Sticky footer */}
-        <div className="shrink-0 border-t border-border/60 bg-background/95 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-5">
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="shrink-0 border-t border-border/60 bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-5">
+          {/* Mobile: primary actions in a tight 2-col grid, Delete centered underneath */}
+          <div className="flex flex-col gap-2 sm:hidden">
+            {onUnschedule && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-11 w-full"
+                onClick={async () => { await onUnschedule(); onOpenChange(false); }}
+              >
+                {unscheduleLabel}
+              </Button>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" className="h-11 w-full" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button size="sm" className="h-11 w-full" onClick={save}>Save</Button>
+            </div>
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive sm:self-start"
+              className="mx-auto h-9 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={async () => { await deleteTask(draft.id); toast("This can wait."); onOpenChange(false); }}
             >
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </Button>
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-nowrap">
+          </div>
+          {/* Desktop: original inline layout */}
+          <div className="hidden flex-row items-center justify-between gap-2 sm:flex">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={async () => { await deleteTask(draft.id); toast("This can wait."); onOpenChange(false); }}
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </Button>
+            <div className="flex flex-nowrap gap-2">
               {onUnschedule && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full sm:w-auto"
                   onClick={async () => { await onUnschedule(); onOpenChange(false); }}
                 >
                   {unscheduleLabel}
                 </Button>
               )}
-              <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button size="sm" className="w-full sm:w-auto" onClick={save}>Save</Button>
+              <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button size="sm" onClick={save}>Save</Button>
             </div>
           </div>
         </div>
