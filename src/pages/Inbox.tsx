@@ -448,6 +448,89 @@ function InboxInner() {
     return { total, quickWins, needScheduling, needCategory };
   }, [items]);
 
+  // Priority counts for the right-rail Check-in card.
+  const priorityCounts = useMemo(() => {
+    const counts: Record<"low" | "medium" | "high" | "someday", number> = {
+      low: 0, medium: 0, high: 0, someday: 0,
+    };
+    for (const t of items as any[]) {
+      if (!t.dueDate && (!t.priority || t.priority === "low")) counts.someday += 1;
+      const p = (t.priority ?? "medium") as Priority;
+      counts[p] += 1;
+    }
+    return counts;
+  }, [items]);
+
+  // Tasks scheduled today (excluding inbox).
+  const scheduledToday = useMemo(() => {
+    return (state.tasks as any[]).filter(t =>
+      !t.inbox && !t.done && t.dueDate && isToday(parseISO(t.dueDate))
+    ).length;
+  }, [state.tasks]);
+
+  // Filter inbox items by selected priority chip.
+  const filteredItems = useMemo(() => {
+    let list = items as any[];
+    if (priorityFilter === "someday") {
+      list = list.filter(t => !t.dueDate);
+    } else if (priorityFilter !== "all") {
+      list = list.filter(t => (t.priority ?? "medium") === priorityFilter);
+    }
+    if (sortMode === "priority") {
+      const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+      list = [...list].sort((a, b) => (rank[a.priority ?? "medium"] ?? 3) - (rank[b.priority ?? "medium"] ?? 3));
+    } else if (sortMode === "due") {
+      list = [...list].sort((a, b) => (a.dueDate ?? "z").localeCompare(b.dueDate ?? "z"));
+    }
+    return list;
+  }, [items, priorityFilter, sortMode]);
+
+  // One light "Suggested for you" card derived from oldest inbox item.
+  const suggested = useMemo(() => {
+    const candidate = (items as any[])[0];
+    if (!candidate) return null;
+    return candidate;
+  }, [items]);
+
+  const greeting = personalGreeting(state.settings?.name).replace(/\.$/, "");
+
+  // Helpers for rendering rows.
+  const friendlyDate = (iso?: string | null): { label: string; tone: string } => {
+    if (!iso) return { label: "Someday", tone: "text-muted-foreground" };
+    const d = parseISO(iso);
+    if (isToday(d)) return { label: "Today", tone: "text-foreground" };
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    if (d.toDateString() === tomorrow.toDateString()) return { label: "Tomorrow", tone: "text-foreground" };
+    const diffDays = Math.round((d.getTime() - Date.now()) / 86400000);
+    if (diffDays > 0 && diffDays <= 7) return { label: "This week", tone: "text-foreground" };
+    if (diffDays > 7 && diffDays <= 14) return { label: "Next week", tone: "text-foreground" };
+    return { label: format(d, "MMM d"), tone: "text-foreground" };
+  };
+
+  const actionFor = (task: any) => {
+    if (!Array.isArray(task.tags)) return null;
+    for (const t of task.tags as string[]) {
+      const hit = ACTION_BY_KEY[String(t).toLowerCase()];
+      if (hit) return { label: t, ...hit };
+    }
+    return null;
+  };
+
+  const priorityFor = (task: any) => {
+    if (!task.dueDate && (!task.priority || task.priority === "low")) {
+      return PRIORITY_META.find(p => p.key === "someday")!;
+    }
+    const p = (task.priority ?? "medium") as Priority;
+    return PRIORITY_META.find(m => m.key === p)!;
+  };
+
+  const completeTask = (id: string) => updateTask(id, { done: true });
+  const scheduleTask = (id: string) => {
+    const today = format(new Date(), "yyyy-MM-dd");
+    updateTask(id, { dueDate: today, inbox: false, status: "active" });
+    toast.success("Scheduled for today");
+  };
+
   return (
     <div className="relative min-h-screen bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,hsl(var(--primary)/0.06),transparent_70%)]">
       <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-10">
