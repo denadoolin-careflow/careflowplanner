@@ -7,10 +7,14 @@ import {
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
-  MessageCircle, Flag, Folder, MapPin, CloudSun, Sun,
+  MessageCircle, Flag, Folder, MapPin, CloudSun, Sun, MoreHorizontal,
+  MessageSquare, HelpCircle, Sparkles as SparkleIcon, Brush, CreditCard,
+  Flame, Search, PenLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import type { Area, Priority, TaskStatus } from "@/lib/types";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
@@ -23,13 +27,13 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isToday, isFuture, parseISO, format } from "date-fns";
-import basketImg from "@/assets/inbox-basket.png";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
 import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReviewSheet";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
 import { createNote, getOrCreateDailyNote } from "@/lib/notes";
+import { personalGreeting, timeOfDayGreeting } from "@/lib/greeting";
 
 interface Suggestion {
   task_id: string;
