@@ -532,581 +532,641 @@ function InboxInner() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,hsl(var(--primary)/0.06),transparent_70%)]">
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-10">
-        {/* ────────── Header + Hero ────────── */}
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-8 animate-fade-in">
-          <div className="flex flex-col justify-center gap-3">
-            <h1 className="font-display text-4xl tracking-tight text-foreground md:text-5xl">Inbox</h1>
-            <p className="text-base font-medium text-primary/80">Your mental unloading zone.</p>
-            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground md:text-[15px]">
-              Capture anything so you can focus on what matters now.
-            </p>
-          </div>
+    <div className="relative min-h-screen bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,hsl(var(--primary)/0.05),transparent_70%)]">
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-10">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
 
-          <div className="relative overflow-hidden rounded-[28px] border border-border/40 bg-gradient-to-br from-[hsl(36_60%_97%)] via-card to-[hsl(150_30%_96%)] p-6 shadow-[0_20px_60px_-30px_hsl(var(--primary)/0.35)] md:p-8 dark:from-card dark:to-card">
-            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[hsl(20_70%_88%)]/40 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-12 -left-8 h-44 w-44 rounded-full bg-[hsl(150_40%_85%)]/40 blur-3xl" />
+          {/* ════════════════ MAIN COLUMN ════════════════ */}
+          <div className="space-y-6">
 
-            <div className="relative grid gap-5 sm:grid-cols-[160px_minmax(0,1fr)] sm:items-center md:grid-cols-[200px_minmax(0,1fr)] md:gap-7">
-              <div className="mx-auto sm:mx-0">
-                <img
-                  src={basketImg}
-                  alt="Wicker basket holding notes and a sage sprig"
-                  width={200}
-                  height={200}
-                  className="h-32 w-32 select-none object-contain transition-transform duration-700 hover:-translate-y-1 sm:h-40 sm:w-40 md:h-48 md:w-48"
-                  draggable={false}
-                />
-              </div>
-              <div className="space-y-3 text-center sm:text-left">
-                <div className="inline-flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <h2 className="font-display text-2xl tracking-tight md:text-[28px]">
-                    {items.length === 0 ? "Your mind is clear" : `${items.length} ${items.length === 1 ? "thing" : "things"} held gently`}
-                  </h2>
+            {/* ───── 1. Capture Card ───── */}
+            <section className="rounded-3xl border border-border/40 bg-card/80 p-5 shadow-[0_20px_50px_-30px_hsl(var(--primary)/0.35)] backdrop-blur-md md:p-7">
+              <div className="mb-4 flex items-start gap-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                  <Sparkles className="h-4 w-4" />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {items.length === 0
-                    ? "Nothing is waiting in your inbox."
-                    : "Capture more, or let me organize what's here."}
-                </p>
-                <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground sm:justify-start">
-                  {["Tasks", "Ideas", "Appointments", "Reminders", "Notes"].map(l => (
-                    <li key={l} className="inline-flex items-center gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-emerald-600/80" /> {l}
-                    </li>
-                  ))}
-                </ul>
-                <p className="pt-1 text-xs italic text-muted-foreground/80">Everything starts here.</p>
+                <div>
+                  <h2 className="font-display text-xl tracking-tight md:text-2xl">Capture something</h2>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    Get it out of your head. We'll help with the rest.
+                  </p>
+                </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* ────────── Quick Capture ────────── */}
-        <section className="rounded-[24px] border border-border/50 bg-card/70 p-4 shadow-[0_10px_40px_-25px_hsl(var(--primary)/0.4)] backdrop-blur-md sm:p-5 md:p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <h3 className="font-display text-lg tracking-tight">Quick Capture</h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-              onClick={() => {
-                if (items.length === 0) {
-                  toast.info("Nothing to organize yet — capture something first.");
-                  return;
-                }
-                setProcessOpen(true);
-              }}
-              disabled={triaging}
-              className="h-9 gap-2 rounded-full bg-primary px-4 text-[13px] font-medium shadow-sm hover:shadow-md"
-            >
-              {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              Organize for Me
-              </Button>
-            </div>
-          </div>
-
-          {/* Selected tag chips */}
-          {!!combinedTags.length && (
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              {combinedTags.map((t) => {
-                const isCat = activeCategories.some((c) => c.toLowerCase() === t);
-                return (
-                  <span key={t} className="shrink-0">
-                    <TagChip
-                      name={t}
-                      size="xs"
-                      onRemove={() => {
-                        if (isCat) setActiveCategories((cs) => cs.filter((c) => c.toLowerCase() !== t));
-                        else setExtraTags((ts) => ts.filter((x) => x !== t));
-                      }}
-                    />
-                  </span>
-                );
-              })}
-              <button
-                onClick={() => { setActiveCategories([]); setExtraTags([]); }}
-                className="ml-auto shrink-0 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-              >
-                Clear
-              </button>
-            </div>
-          )}
-
-          {/* Kind chips + Today's note — combined quick add */}
-          <div className="mb-3 flex flex-wrap items-center gap-1.5">
-            <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5 text-[11px]">
-              {(() => {
-                const ALL = [
-                  { k: "task",    Icon: ListChecks,     label: "Task" },
-                  { k: "home",    Icon: Home,           label: "Home" },
-                  { k: "care",    Icon: HeartHandshake, label: "Care" },
-                  { k: "meal",    Icon: UtensilsCrossed,label: "Meal" },
-                  { k: "note",    Icon: StickyNote,     label: "Note" },
-                  { k: "connect", Icon: MessageCircle,  label: "Connect" },
-                  { k: "commute", Icon: Car,            label: "Commute" },
-                ] as const;
-                const visible = kindsOpen ? ALL : ALL.filter(c => c.k === "task" || c.k === captureKind);
-                return visible.map(({ k, Icon, label }) => (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setCaptureKind(k)}
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors",
-                      captureKind === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    <Icon className="h-3 w-3" />
-                    {label}
-                  </button>
-                ));
-              })()}
-              <button
-                type="button"
-                onClick={() => setKindsOpen(o => !o)}
-                className="ml-0.5 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
-                aria-label={kindsOpen ? "Fewer types" : "More types"}
-              >
-                <ChevronDown className={cn("h-3 w-3 transition-transform", kindsOpen && "rotate-180")} />
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  const iso = format(new Date(), "yyyy-MM-dd");
-                  const n = await getOrCreateDailyNote(iso);
-                  navigate(`/notes/${n.id}`);
-                } catch { toast.error("Couldn't open today's note"); }
-              }}
-              className="ml-auto inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2 py-0.5 text-[11px] text-muted-foreground transition hover:text-foreground"
-            >
-              <FileText className="h-3 w-3" />
-              Today's note
-            </button>
-          </div>
-
-          {transcribing ? (
-            <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4 shadow-inner">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <div className="leading-tight">
-                <div className="text-sm font-medium">Organizing your thoughts…</div>
-                <div className="text-[12px] text-muted-foreground">Hold on a moment.</div>
-              </div>
-            </div>
-          ) : (
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-primary/10 text-primary">
-                <span className="text-base leading-none">＋</span>
-              </div>
-              <Input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
-                placeholder={
-                  recorder.state === "recording"
-                    ? (willCancel ? "Release to cancel…" : `Listening · ${fmtElapsed(recorder.elapsedMs)}`)
-                    : captureKind === "task" ? "What needs your attention?"
-                    : captureKind === "home" ? "Add a home or cleaning task…"
-                    : captureKind === "care" ? "Add a care task…"
-                    : captureKind === "meal" ? "Add a meal for today…"
-                    : captureKind === "connect" ? "Who to reach out to or visit?"
-                    : captureKind === "commute" ? "Where are you going?"
-                    : "Add a note…"
-                }
-                className={cn(
-                  "h-14 rounded-2xl border-border/40 bg-background/70 pl-14 pr-28 text-[15px] shadow-inner placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15",
-                  recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40",
-                )}
-                disabled={recorder.state !== "idle"}
-              />
-              <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
-                {draft.trim() && recorder.state === "idle" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={openReviewForDraft}
-                      aria-label="Edit details before saving"
-                      className="grid h-10 w-10 place-items-center rounded-xl bg-muted/60 text-muted-foreground transition hover:bg-muted"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <Button
-                      onClick={() => void submitCapture()}
-                      size="sm"
-                      className="h-10 rounded-xl px-3 text-[13px]"
-                    >
-                      Capture
-                    </Button>
-                  </>
-                )}
-                {recorder.supported && !draft.trim() && (
-                  <button
-                    type="button"
-                    onPointerDown={armHold}
-                    onPointerMove={moveHold}
-                    onPointerUp={() => void releaseHold()}
-                    onPointerCancel={() => void releaseHold()}
-                    onPointerLeave={(e) => { if (holdActive && e.buttons === 0) void releaseHold(); }}
-                    onContextMenu={(e) => e.preventDefault()}
-                    aria-label="Hold to record"
-                    style={{
-                      touchAction: "none",
-                      transform: holdActive
-                        ? `translateX(${holdDx}px) scale(${willCancel ? 0.95 : 1.08})`
-                        : undefined,
-                      transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+              {transcribing ? (
+                <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4 shadow-inner">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <div className="leading-tight">
+                    <div className="text-sm font-medium">Organizing your thoughts…</div>
+                    <div className="text-[12px] text-muted-foreground">Hold on a moment.</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative">
+                  <Textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                        e.preventDefault();
+                        void submitCapture();
+                      }
                     }}
-                    className={cn(
-                      "relative grid h-12 w-12 place-items-center rounded-2xl ring-1 select-none",
+                    placeholder={
                       recorder.state === "recording"
-                        ? willCancel
-                          ? "bg-stone-200 text-stone-600 ring-stone-300"
-                          : "bg-rose-500 text-white ring-rose-400 shadow-[0_0_0_10px_hsl(0_84%_60%/0.14)]"
-                        : "bg-rose-50 text-rose-600 ring-rose-100 hover:bg-rose-100 active:scale-95",
+                        ? (willCancel ? "Release to cancel…" : `Listening · ${fmtElapsed(recorder.elapsedMs)}`)
+                        : "What's on your mind?"
+                    }
+                    rows={4}
+                    disabled={recorder.state !== "idle"}
+                    className={cn(
+                      "min-h-[120px] resize-none rounded-2xl border-border/40 bg-background/70 px-4 py-3.5 pr-4 pb-14 text-[15px] leading-relaxed shadow-inner placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15",
+                      recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40",
                     )}
-                  >
-                    {recorder.state === "recording" && !willCancel && (
-                      <>
-                        {/* Calm breathing halos — slower than animate-ping, softer opacity */}
+                  />
+
+                  {/* Bottom action row inside the textarea */}
+                  <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between">
+                    <div className="pointer-events-auto flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                      {activeAction && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11.5px] font-medium text-primary">
+                          <Check className="h-3 w-3" /> {activeAction}
+                          <button
+                            type="button"
+                            onClick={() => setActiveAction(null)}
+                            className="ml-0.5 opacity-70 hover:opacity-100"
+                            aria-label="Clear action"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                    <div className="pointer-events-auto flex items-center gap-1.5">
+                      {recorder.supported && (
+                        <button
+                          type="button"
+                          onPointerDown={armHold}
+                          onPointerMove={moveHold}
+                          onPointerUp={() => void releaseHold()}
+                          onPointerCancel={() => void releaseHold()}
+                          onPointerLeave={(e) => { if (holdActive && e.buttons === 0) void releaseHold(); }}
+                          onContextMenu={(e) => e.preventDefault()}
+                          aria-label="Hold to record"
+                          style={{
+                            touchAction: "none",
+                            transform: holdActive
+                              ? `translateX(${holdDx}px) scale(${willCancel ? 0.95 : 1.08})`
+                              : undefined,
+                            transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+                          }}
+                          className={cn(
+                            "relative grid h-10 w-10 place-items-center rounded-xl ring-1 select-none transition",
+                            recorder.state === "recording"
+                              ? willCancel
+                                ? "bg-stone-200 text-stone-600 ring-stone-300"
+                                : "bg-rose-500 text-white ring-rose-400 shadow-[0_0_0_8px_hsl(0_84%_60%/0.14)]"
+                              : "bg-muted/60 text-muted-foreground ring-border/40 hover:bg-muted",
+                          )}
+                        >
+                          {recorder.state === "recording" && !willCancel && (
+                            <span
+                              className="pointer-events-none absolute -inset-1 rounded-2xl bg-rose-400/20 motion-reduce:hidden"
+                              style={{ animation: "careflow-breath 2.4s ease-in-out infinite" }}
+                            />
+                          )}
+                          {recorder.state === "recording" && willCancel
+                            ? <X className="relative h-4 w-4" />
+                            : <Mic className="relative h-4 w-4" />}
+                        </button>
+                      )}
+                      <Button
+                        onClick={() => void submitCapture()}
+                        disabled={!draft.trim() || recorder.state !== "idle"}
+                        size="sm"
+                        className="h-10 gap-1.5 rounded-xl bg-primary px-3.5 text-[13px] font-medium shadow-sm hover:shadow-md"
+                      >
+                        <span className="text-base leading-none">＋</span> Add
+                      </Button>
+                    </div>
+                  </div>
+
+                  {recorder.state === "recording" && (
+                    <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[11.5px] text-muted-foreground animate-fade-in">
+                      <div className="inline-flex items-center gap-2">
                         <span
-                          className="pointer-events-none absolute -inset-2 rounded-3xl bg-rose-400/20 motion-reduce:hidden"
+                          className="inline-flex h-2 w-2 rounded-full bg-rose-500 motion-reduce:animate-none"
                           style={{ animation: "careflow-breath 2.4s ease-in-out infinite" }}
                         />
-                        <span
-                          className="pointer-events-none absolute -inset-1 rounded-3xl bg-rose-300/25 motion-reduce:hidden"
-                          style={{ animation: "careflow-breath 2.4s ease-in-out infinite 0.6s" }}
+                        <span className="tabular-nums">{fmtElapsed(recorder.elapsedMs)}</span>
+                      </div>
+                      <div className={cn("transition-colors duration-200", willCancel && "font-medium text-rose-600")}>
+                        {willCancel ? "Release to cancel" : "← Slide to cancel"}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ───── 2. Quick Actions ───── */}
+              <div className="mt-5">
+                <div className="mb-2 text-[12px] font-medium text-foreground/70">Quick Actions</div>
+                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap md:overflow-visible">
+                  {QUICK_ACTIONS.map(qa => {
+                    const Icon = qa.icon;
+                    const active = activeAction === qa.key;
+                    return (
+                      <button
+                        key={qa.key}
+                        type="button"
+                        onClick={() => setActiveAction(active ? null : qa.key)}
+                        aria-pressed={active}
+                        className={cn(
+                          "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border/50 bg-background/80 px-3 text-[12.5px] font-medium text-foreground/85 transition-all hover:-translate-y-0.5 hover:border-border hover:shadow-sm",
+                          active && "border-primary/40 bg-primary/10 text-primary ring-1 ring-primary/30",
+                        )}
+                      >
+                        <Icon className={cn("h-3.5 w-3.5", active ? "text-primary" : qa.tint)} />
+                        {qa.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ───── 3. AI Helper Message ───── */}
+              <div className="mt-4 flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground">
+                <Sparkles className="h-3 w-3 text-primary" />
+                <span>I'll suggest details after you add it.</span>
+              </div>
+
+              {/* Collapsible: kind, dayPart, pickers, tags */}
+              <div className="mt-4 border-t border-border/40 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setMoreOptionsOpen(o => !o)}
+                  className="flex w-full items-center justify-between gap-2 text-[12px] text-muted-foreground transition hover:text-foreground"
+                  aria-expanded={moreOptionsOpen}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                    More options
+                    {(activeCategories.length + extraTags.length + (overrideArea ? 1 : 0) + (overridePriority ? 1 : 0) + (overrideDue ? 1 : 0)) > 0 && (
+                      <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10.5px] font-medium text-primary">
+                        {activeCategories.length + extraTags.length + (overrideArea ? 1 : 0) + (overridePriority ? 1 : 0) + (overrideDue ? 1 : 0)}
+                      </span>
+                    )}
+                  </span>
+                  <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", moreOptionsOpen && "rotate-180")} />
+                </button>
+
+                {moreOptionsOpen && (
+                  <div className="mt-3 space-y-3 animate-fade-in">
+                    {/* Kind chips */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5 text-[11px]">
+                        {[
+                          { k: "task",    Icon: ListChecks,     label: "Task" },
+                          { k: "home",    Icon: Home,           label: "Home" },
+                          { k: "care",    Icon: HeartHandshake, label: "Care" },
+                          { k: "meal",    Icon: UtensilsCrossed,label: "Meal" },
+                          { k: "note",    Icon: StickyNote,     label: "Note" },
+                          { k: "connect", Icon: MessageCircle,  label: "Connect" },
+                          { k: "commute", Icon: Car,            label: "Commute" },
+                        ].map(({ k, Icon, label }) => (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={() => setCaptureKind(k as any)}
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors",
+                              captureKind === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            <Icon className="h-3 w-3" />
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const iso = format(new Date(), "yyyy-MM-dd");
+                            const n = await getOrCreateDailyNote(iso);
+                            navigate(`/notes/${n.id}`);
+                          } catch { toast.error("Couldn't open today's note"); }
+                        }}
+                        className="ml-auto inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 px-2 py-0.5 text-[11px] text-muted-foreground transition hover:text-foreground"
+                      >
+                        <FileText className="h-3 w-3" />
+                        Today's note
+                      </button>
+                    </div>
+
+                    {/* Day part + inline pickers */}
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11.5px]">
+                      <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5">
+                        {([
+                          { v: "Morning",   Icon: Sun },
+                          { v: "Afternoon", Icon: CloudSun },
+                          { v: "Evening",   Icon: Moon },
+                        ] as const).map(({ v, Icon }) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setDayPart(v)}
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors",
+                              dayPart === v ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            <Icon className="h-3 w-3" /> {v}
+                          </button>
+                        ))}
+                      </div>
+                      <PickerLabel icon={CalendarIcon}>
+                        <input
+                          type="date"
+                          value={overrideDue}
+                          onChange={(e) => setOverrideDue(e.target.value)}
+                          className="bg-transparent text-[11.5px] outline-none"
                         />
-                      </>
-                    )}
-                    {recorder.state === "recording" && willCancel ? (
-                      <X className="relative h-5 w-5" />
-                    ) : (
-                      <Mic className="relative h-5 w-5" />
-                    )}
-                  </button>
+                      </PickerLabel>
+                      <PickerLabel icon={Flag}>
+                        <select
+                          value={overridePriority}
+                          onChange={(e) => setOverridePriority(e.target.value as Priority | "")}
+                          className="bg-transparent text-[11.5px] capitalize outline-none"
+                        >
+                          <option value="">Priority</option>
+                          {(["low","medium","high"] as Priority[]).map(p => (
+                            <option key={p} value={p}>{p}</option>
+                          ))}
+                        </select>
+                      </PickerLabel>
+                      <PickerLabel icon={MapPin}>
+                        <select
+                          value={overrideArea}
+                          onChange={(e) => setOverrideArea(e.target.value as Area | "")}
+                          className="bg-transparent text-[11.5px] outline-none"
+                        >
+                          <option value="">Area</option>
+                          {(["Family","Kids","Caregiving","Home","Meals","Appointments","Holidays & Birthdays","Personal","Creative Projects","Money"] as Area[]).map(a => (
+                            <option key={a} value={a}>{a}</option>
+                          ))}
+                        </select>
+                      </PickerLabel>
+                      {(state.projects ?? []).length > 0 && (
+                        <PickerLabel icon={Folder}>
+                          <select
+                            value={overrideProjectId}
+                            onChange={(e) => setOverrideProjectId(e.target.value)}
+                            className="bg-transparent text-[11.5px] outline-none max-w-[10rem] truncate"
+                          >
+                            <option value="">Project</option>
+                            {(state.projects ?? []).slice(0, 50).map((p: any) => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                          </select>
+                        </PickerLabel>
+                      )}
+                    </div>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {combinedTags.map((t) => {
+                        const isCat = activeCategories.some((c) => c.toLowerCase() === t);
+                        return (
+                          <TagChip
+                            key={t}
+                            name={t}
+                            size="xs"
+                            onRemove={() => {
+                              if (isCat) setActiveCategories((cs) => cs.filter((c) => c.toLowerCase() !== t));
+                              else setExtraTags((ts) => ts.filter((x) => x !== t));
+                            }}
+                          />
+                        );
+                      })}
+                      <TagPicker
+                        value={extraTags}
+                        onChange={setExtraTags}
+                        inline={false}
+                        triggerLabel="Add tag"
+                        triggerClassName="shrink-0 min-h-[28px] rounded-full px-2.5 text-[11.5px]"
+                      />
+                      <Link to="/tags" className="text-[11px] text-muted-foreground underline-offset-2 hover:underline">
+                        Manage
+                      </Link>
+                    </div>
+
+                    {/* NLP parsed suggestions */}
+                    {parsed && (parsed.dueDate || parsed.area || parsed.energy || parsed.tags?.length) ? (
+                      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-primary/20 bg-primary/[0.04] px-3 py-2 text-[12px] animate-fade-in">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-muted-foreground">I noticed:</span>
+                        {parsed.dueDate && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 ring-1 ring-border/60">
+                            <CalendarIcon className="h-3 w-3" /> {format(parseISO(parsed.dueDate), "EEE, MMM d")}
+                          </span>
+                        )}
+                        {parsed.area && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 ring-1 ring-border/60">
+                            <Heart className="h-3 w-3" /> {parsed.area}
+                          </span>
+                        )}
+                        {parsed.energy && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 capitalize ring-1 ring-border/60">
+                            <Zap className="h-3 w-3" /> {parsed.energy}
+                          </span>
+                        )}
+                        {parsed.tags?.map(t => (
+                          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 ring-1 ring-border/60">
+                            <TagIcon className="h-3 w-3" /> {t}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 )}
               </div>
-              {recorder.state === "recording" && (
-                <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[11.5px] text-muted-foreground animate-fade-in">
-                  <div className="inline-flex items-center gap-2">
-                    {/* Breathing dot */}
-                    <span
-                      className="inline-flex h-2 w-2 rounded-full bg-rose-500 motion-reduce:animate-none"
-                      style={{ animation: "careflow-breath 2.4s ease-in-out infinite" }}
-                    />
-                    <span className="tabular-nums">{fmtElapsed(recorder.elapsedMs)}</span>
-                    {/* 3-dot calm wave */}
-                    <span className="ml-1 inline-flex items-end gap-[3px] motion-reduce:hidden" aria-hidden>
-                      {[0, 1, 2].map((i) => (
-                        <span
-                          key={i}
-                          className="block w-[3px] rounded-full bg-rose-400/70"
-                          style={{
-                            height: 6,
-                            animation: "careflow-wave 1.2s ease-in-out infinite",
-                            animationDelay: `${i * 0.18}s`,
-                          }}
-                        />
-                      ))}
+            </section>
+
+            {/* ───── 4. Held in your Inbox ───── */}
+            <section className="rounded-3xl border border-border/40 bg-card/70 p-5 backdrop-blur-md md:p-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h3 className="font-display text-lg tracking-tight md:text-xl">
+                    Held in your inbox
+                    <span className="ml-2 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-muted px-2 text-[12px] font-medium text-muted-foreground">
+                      {items.length}
+                    </span>
+                  </h3>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={triaging || items.length === 0}
+                    onClick={() => setProcessOpen(true)}
+                    className="h-8 gap-1.5 rounded-full border-primary/30 bg-primary/5 px-3 text-[12px] text-primary hover:bg-primary/10"
+                  >
+                    {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    Organize this for me
+                  </Button>
+                </div>
+                <Select value={sortMode} onValueChange={(v) => setSortMode(v as any)}>
+                  <SelectTrigger className="h-8 w-[180px] rounded-full border-border/50 bg-background/60 text-[12px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recent">Sort: Recently added</SelectItem>
+                    <SelectItem value="priority">Sort: Priority</SelectItem>
+                    <SelectItem value="due">Sort: Due date</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {items.length === 0 ? (
+                <div className="grid place-items-center gap-2 rounded-2xl border border-dashed border-border/60 bg-background/40 px-4 py-10 text-center">
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                    <InboxIcon className="h-5 w-5" />
+                  </div>
+                  <p className="font-display text-base tracking-tight">Your mind is clear</p>
+                  <p className="text-[12.5px] text-muted-foreground">Nothing is waiting in your inbox.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop table */}
+                  <div className="hidden md:block">
+                    <div className="grid grid-cols-[28px_minmax(0,1fr)_160px_140px_120px_36px] gap-3 border-b border-border/50 px-3 pb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      <span aria-hidden />
+                      <span>Task</span>
+                      <span>Action</span>
+                      <span>Date</span>
+                      <span>Priority</span>
+                      <span aria-hidden />
+                    </div>
+                    <ul className="divide-y divide-border/40">
+                      {filteredItems.map((t: any) => {
+                        const action = actionFor(t);
+                        const d = friendlyDate(t.dueDate);
+                        const prio = priorityFor(t);
+                        const PrioIcon = prio.icon;
+                        const ActionIcon = action?.icon;
+                        return (
+                          <li
+                            key={t.id}
+                            tabIndex={0}
+                            onClick={() => navigate(`/tasks/${t.id}`)}
+                            onKeyDown={(e) => { if (e.key === "Enter") navigate(`/tasks/${t.id}`); }}
+                            className="group grid cursor-pointer grid-cols-[28px_minmax(0,1fr)_160px_140px_120px_36px] items-center gap-3 rounded-xl px-3 py-3.5 transition-all hover:-translate-y-px hover:bg-muted/40 hover:shadow-sm"
+                          >
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); void completeTask(t.id); }}
+                              aria-label="Mark complete"
+                              className="grid h-5 w-5 place-items-center rounded-full border border-border/70 text-transparent transition hover:border-primary hover:text-primary"
+                            >
+                              <Check className="h-3 w-3" />
+                            </button>
+                            <div className="min-w-0">
+                              <div className="truncate text-[14px] font-medium text-foreground">{t.title}</div>
+                              {(t.area || (Array.isArray(t.tags) && t.tags.length > 0)) && (
+                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                  {t.area && (
+                                    <span className="inline-flex items-center rounded-full bg-muted/60 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground">
+                                      {t.area}
+                                    </span>
+                                  )}
+                                  {(t.tags ?? []).slice(0, 3).map((tg: string) => (
+                                    <span key={tg} className="inline-flex items-center rounded-full bg-primary/5 px-2 py-0.5 text-[10.5px] font-medium text-primary/80">
+                                      {tg}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-[13px] text-foreground/85">
+                              {action && ActionIcon ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <ActionIcon className={cn("h-3.5 w-3.5", action.tint)} />
+                                  {action.label}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </div>
+                            <div className={cn("inline-flex items-center gap-1.5 text-[13px]", d.tone)}>
+                              <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" /> {d.label}
+                            </div>
+                            <div className="inline-flex items-center gap-1.5 text-[13px] text-foreground/85">
+                              <PrioIcon className="h-3.5 w-3.5 text-muted-foreground" /> {prio.label}
+                            </div>
+                            <button
+                              type="button"
+                              aria-label="More"
+                              onClick={(e) => { e.stopPropagation(); navigate(`/tasks/${t.id}`); }}
+                              className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:bg-muted"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+
+                  {/* Mobile cards with swipe */}
+                  <ul className="space-y-2 md:hidden">
+                    {filteredItems.map((t: any) => (
+                      <InboxTaskCard
+                        key={t.id}
+                        task={t}
+                        action={actionFor(t)}
+                        date={friendlyDate(t.dueDate)}
+                        priority={priorityFor(t)}
+                        onOpen={() => navigate(`/tasks/${t.id}`)}
+                        onComplete={() => completeTask(t.id)}
+                        onSchedule={() => scheduleTask(t.id)}
+                        onOrganize={() => setProcessOpen(true)}
+                      />
+                    ))}
+                  </ul>
+                </>
+              )}
+            </section>
+          </div>
+
+          {/* ════════════════ RIGHT RAIL ════════════════ */}
+          <aside className="space-y-4">
+
+            {/* ───── 5. Daily Rhythm ───── */}
+            <section className="rounded-3xl border border-border/40 bg-card/70 p-5 backdrop-blur-md">
+              <div className="mb-3 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="font-display text-base tracking-tight">{greeting}</h3>
+              </div>
+              <p className="mb-3 text-[12px] font-medium text-muted-foreground">Here's your rhythm</p>
+              <div className="space-y-2.5">
+                <RhythmRow icon={CalendarIcon} tint="text-emerald-600 bg-emerald-50" value={scheduledToday} label="Tasks scheduled" />
+                <RhythmRow icon={Lightbulb} tint="text-amber-600 bg-amber-50" value={stats.quickWins} label="Ideas captured" />
+                <RhythmRow icon={InboxIcon} tint="text-primary bg-primary/10" value={stats.total} label="Inbox items" />
+              </div>
+            </section>
+
+            {/* ───── 6. Suggested for you ───── */}
+            {suggested && (
+              <section className="rounded-3xl border border-border/40 bg-card/70 p-5 backdrop-blur-md">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h3 className="font-display text-base tracking-tight">Suggested for you</h3>
+                </div>
+                <div className="rounded-2xl border border-border/40 bg-background/60 p-3">
+                  <p className="text-[14px] font-medium leading-snug">{suggested.title}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {(suggested.tags ?? []).slice(0, 3).map((tg: string) => (
+                      <span key={tg} className="inline-flex items-center rounded-full bg-primary/8 px-2 py-0.5 text-[10.5px] font-medium text-primary/90">
+                        {tg}
+                      </span>
+                    ))}
+                    {suggested.area && (
+                      <span className="inline-flex items-center rounded-full bg-muted/60 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground">
+                        {suggested.area}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-[12px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <CalendarIcon className="h-3 w-3" /> {friendlyDate(suggested.dueDate).label}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      {(() => { const P = priorityFor(suggested).icon; return <P className="h-3 w-3" />; })()}
+                      {priorityFor(suggested).label}
                     </span>
                   </div>
-                  <div
-                    className={cn("transition-colors duration-200", willCancel ? "font-medium text-rose-600" : "")}
-                    style={{ transform: `translateX(${holdDx * 0.4}px)` }}
-                  >
-                    {willCancel ? "Release to cancel" : "← Slide to cancel"}
+                  <div className="mt-3 flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => updateTask(suggested.id, { inbox: false, status: "active" })}
+                      className="h-8 flex-1 rounded-full text-[12px]"
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/tasks/${suggested.id}`)}
+                      className="h-8 flex-1 rounded-full text-[12px]"
+                    >
+                      Edit
+                    </Button>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-
-          {parsed && (parsed.dueDate || parsed.area || parsed.energy || parsed.tags?.length) ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-primary/20 bg-primary/[0.04] px-3 py-2.5 text-[12.5px] animate-fade-in">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              <span className="text-muted-foreground">I noticed:</span>
-              {parsed.dueDate && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 ring-1 ring-border/60">
-                  <CalendarIcon className="h-3 w-3" /> {format(parseISO(parsed.dueDate), "EEE, MMM d")}
-                </span>
-              )}
-              {parsed.area && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 ring-1 ring-border/60">
-                  <Heart className="h-3 w-3" /> {parsed.area}
-                </span>
-              )}
-              {parsed.energy && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 capitalize ring-1 ring-border/60">
-                  <Zap className="h-3 w-3" /> {parsed.energy} energy
-                </span>
-              )}
-              {parsed.tags?.map(t => (
-                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 ring-1 ring-border/60">
-                  <TagIcon className="h-3 w-3" /> {t}
-                </span>
-              ))}
-              <button
-                onClick={() => void submitCapture()}
-                className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-[12px] font-medium text-primary-foreground hover:opacity-90"
-              >
-                <Check className="h-3 w-3" /> Accept suggestions
-              </button>
-            </div>
-          ) : null}
-
-          {/* Schedule + Priority + Area + Project pickers */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11.5px]">
-            {/* Day part */}
-            <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5">
-              {([
-                { v: "Morning",   Icon: Sun },
-                { v: "Afternoon", Icon: CloudSun },
-                { v: "Evening",   Icon: Moon },
-              ] as const).map(({ v, Icon }) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setDayPart(v)}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors",
-                    dayPart === v ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-                  )}
-                  title={v === autoDayPart ? `${v} · auto` : v}
-                >
-                  <Icon className="h-3 w-3" />
-                  {v}
-                </button>
-              ))}
-            </div>
-
-            <PickerLabel icon={CalendarIcon}>
-              <input
-                type="date"
-                value={overrideDue}
-                onChange={(e) => setOverrideDue(e.target.value)}
-                className="bg-transparent text-[11.5px] outline-none"
-              />
-            </PickerLabel>
-
-            <PickerLabel icon={Flag}>
-              <select
-                value={overridePriority}
-                onChange={(e) => setOverridePriority(e.target.value as Priority | "")}
-                className="bg-transparent text-[11.5px] capitalize outline-none"
-              >
-                <option value="">Priority</option>
-                {(["low","medium","high"] as Priority[]).map(p => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </PickerLabel>
-
-            <PickerLabel icon={MapPin}>
-              <select
-                value={overrideArea}
-                onChange={(e) => setOverrideArea(e.target.value as Area | "")}
-                className="bg-transparent text-[11.5px] outline-none"
-              >
-                <option value="">Area</option>
-                {(["Family","Kids","Caregiving","Home","Meals","Appointments","Holidays & Birthdays","Personal","Creative Projects","Money"] as Area[]).map(a => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </PickerLabel>
-
-            {(state.projects ?? []).length > 0 && (
-              <PickerLabel icon={Folder}>
-                <select
-                  value={overrideProjectId}
-                  onChange={(e) => setOverrideProjectId(e.target.value)}
-                  className="bg-transparent text-[11.5px] outline-none max-w-[10rem] truncate"
-                >
-                  <option value="">Project</option>
-                  {(state.projects ?? []).slice(0, 50).map((p: any) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </PickerLabel>
+              </section>
             )}
 
-            {(overrideArea || overridePriority || overrideProjectId || overrideDue || dayPart !== autoDayPart) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setOverrideArea(""); setOverridePriority(""); setOverrideProjectId("");
-                  setOverrideDue(""); setDayPart(autoDayPart);
-                }}
-                className="ml-1 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-              >
-                Reset
-              </button>
-            )}
-          </div>
-
-          {/* Caregiver quick actions */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            {CAREGIVER_PRESETS.map(p => {
-              const Icon = p.icon;
-              return (
-                <button
-                  key={p.label}
-                  type="button"
-                  onClick={() => quickAdd(p.title, p.area)}
-                  className={cn(
-                    "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
-                    p.tint,
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" /> {p.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Merged: Categories + Tags */}
-          <div className="mt-5 border-t border-border/50 pt-4">
-            <button
-              type="button"
-              onClick={() => setTagsOpen((o) => !o)}
-              aria-expanded={tagsOpen}
-              className="flex w-full items-center justify-between gap-2 text-left"
-            >
-              <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-foreground/80">
-                <TagIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                Categories & Tags
-                {(activeCategories.length + extraTags.length) > 0 && (
-                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10.5px] font-medium text-primary">
-                    {activeCategories.length + extraTags.length}
-                  </span>
-                )}
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
-                {tagsOpen ? "Hide" : "Show"}
-                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", tagsOpen && "rotate-180")} />
-              </span>
-            </button>
-            {tagsOpen && (
-            <div className="mt-3 flex flex-wrap items-center gap-2 pb-1 animate-fade-in">
-              {CATEGORIES.map((c) => {
-                const Icon = c.icon;
-                const active = activeCategories.includes(c.label);
-                return (
-                  <button
-                    key={c.label}
-                    type="button"
-                    onClick={() => setActiveCategories((cs) =>
-                      cs.includes(c.label) ? cs.filter((x) => x !== c.label) : [...cs, c.label],
-                    )}
-                    aria-pressed={active}
-                    className={cn(
-                      "inline-flex shrink-0 snap-start items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium ring-1 transition-all min-h-[34px] sm:px-3.5 sm:py-2 sm:text-[12.5px] sm:min-h-[36px] hover:-translate-y-0.5 hover:shadow-sm",
-                      c.tint,
-                      active && "ring-2 ring-primary/50 shadow-sm",
-                    )}
-                  >
-                    {active ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
-                    {c.label}
-                  </button>
-                );
-              })}
-              <TagPicker
-                value={extraTags}
-                onChange={setExtraTags}
-                inline={false}
-                triggerLabel="More tags"
-                triggerClassName="shrink-0 snap-start min-h-[34px] sm:min-h-[36px] rounded-full px-3 sm:px-3.5 text-[12px] sm:text-[12.5px]"
-              />
-              <Link
-                to="/tags"
-                className="sm:hidden shrink-0 snap-end inline-flex items-center gap-1 rounded-full border border-dashed border-border/60 bg-background px-3 text-[12px] text-muted-foreground hover:text-foreground min-h-[34px]"
-                aria-label="Manage tags"
-              >
-                Manage
-              </Link>
-            </div>
-            )}
-          </div>
-        </section>
-
-        {/* ────────── Current Inbox Items (only when present) ────────── */}
-        {items.length > 0 && (
-          <section className="rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-display text-lg tracking-tight">Held in your inbox</h3>
-              {Object.keys(suggestions).length > 0 && (
-                <Button size="sm" variant="outline" onClick={acceptAllSuggestions} className="h-8 gap-1.5 rounded-full text-[12px]">
-                  <Check className="h-3 w-3" /> Apply all suggestions
-                </Button>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              {items.map((t: any) => (
-                <div key={t.id} className="rounded-2xl transition-colors hover:bg-muted/40">
-                  <TaskRow task={t} />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ────────── Inbox at a Glance ────────── */}
-        <section className="rounded-[24px] border border-border/50 bg-card/60 p-5 backdrop-blur-md md:p-6">
-          <h3 className="mb-4 font-display text-lg tracking-tight">Inbox at a Glance</h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <GlanceCard icon={<InboxIcon className="h-4 w-4" />} tint="bg-stone-50 text-stone-600" value={stats.total} label="Inbox Items" hint="waiting" />
-            <GlanceCard icon={<Zap className="h-4 w-4" />} tint="bg-amber-50 text-amber-700" value={stats.quickWins} label="Quick Wins" hint="easy to clear" />
-            <GlanceCard icon={<CalendarIcon className="h-4 w-4" />} tint="bg-emerald-50 text-emerald-700" value={stats.needScheduling} label="Need Scheduling" hint="time to plan" />
-            <GlanceCard icon={<TagIcon className="h-4 w-4" />} tint="bg-rose-50 text-rose-600" value={stats.needCategory} label="Need Categories" hint="needs a home" />
-            <button
-              type="button"
-              onClick={() => {
-                if (items.length === 0) {
-                  toast.info("Nothing to organize yet — capture something first.");
-                  return;
-                }
-                setProcessOpen(true);
-              }}
-              className="group flex flex-col justify-between rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-4 text-left text-primary-foreground shadow-[0_15px_40px_-20px_hsl(var(--primary)/0.7)] transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_hsl(var(--primary)/0.8)]"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-display text-base tracking-tight">Process Inbox</span>
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            {/* ───── 7. Priority Check-in ───── */}
+            <section className="rounded-3xl border border-border/40 bg-card/70 p-5 backdrop-blur-md">
+              <div className="mb-1 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="font-display text-base tracking-tight">Priority Check-in</h3>
               </div>
-              <p className="mt-3 text-[11.5px] leading-relaxed opacity-85">
-                Review and organize your items step by step.
+              <p className="mb-3 text-[12px] text-muted-foreground">How's your workload right now?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {PRIORITY_META.map(p => {
+                  const Icon = p.icon;
+                  const count = priorityCounts[p.key];
+                  const active = priorityFilter === p.key;
+                  return (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => setPriorityFilter(active ? "all" : p.key)}
+                      aria-pressed={active}
+                      className={cn(
+                        "flex flex-col items-start gap-1.5 rounded-2xl border border-border/40 bg-background/70 p-3 text-left ring-1 ring-transparent transition-all hover:-translate-y-0.5 hover:shadow-sm",
+                        active && "ring-primary/40 shadow-sm",
+                      )}
+                    >
+                      <span className={cn("inline-grid h-7 w-7 place-items-center rounded-xl", p.tint)}>
+                        <Icon className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="text-[12px] font-medium text-foreground">{p.label}</span>
+                      <span className="font-display text-xl tracking-tight">{count}</span>
+                      <span className="text-[10.5px] text-muted-foreground">tasks</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {priorityFilter !== "all" && (
+                <button
+                  type="button"
+                  onClick={() => setPriorityFilter("all")}
+                  className="mt-3 inline-flex items-center gap-1 text-[11.5px] text-muted-foreground underline-offset-2 hover:underline"
+                >
+                  Clear filter
+                </button>
+              )}
+            </section>
+
+            {/* ───── 8. Let AI help you ───── */}
+            <section className="overflow-hidden rounded-3xl border border-border/40 bg-gradient-to-br from-primary/10 via-card to-card p-5 shadow-sm backdrop-blur-md">
+              <div className="mb-2 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="font-display text-base tracking-tight">Let AI help you</h3>
+              </div>
+              <p className="mb-3 text-[12.5px] leading-relaxed text-muted-foreground">
+                I can organize, schedule, and break things down.
               </p>
-            </button>
-          </div>
-        </section>
-
-        {/* ────────── Gentle Reminder ────────── */}
-        <section className="overflow-hidden rounded-[24px] border border-border/40 bg-gradient-to-br from-[hsl(150_35%_96%)] via-card to-[hsl(36_55%_97%)] p-5 shadow-sm md:p-6 dark:from-card dark:to-card">
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-100/70 text-emerald-700 ring-1 ring-emerald-200/60">
-                <Leaf className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-display text-[17px] tracking-tight">Gentle Reminder 🌿</p>
-                <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                  You don't have to carry everything in your head. Capture it here and come back later.
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/rhythm")}
-              className="h-10 shrink-0 gap-2 rounded-full border-border/60 bg-background/70 px-4 text-[13px] backdrop-blur"
-            >
-              <Moon className="h-3.5 w-3.5" /> See Lunar Insight
-            </Button>
-          </div>
-        </section>
+              <Button
+                onClick={() => navigate("/carey")}
+                className="h-10 w-full rounded-full bg-primary text-[13px] font-medium shadow-sm hover:shadow-md"
+              >
+                <MessageCircle className="mr-1.5 h-3.5 w-3.5" /> Ask CareFlow
+              </Button>
+            </section>
+          </aside>
+        </div>
       </div>
 
       {paneOpen && <TaskDetailPane />}
@@ -1127,6 +1187,143 @@ function InboxInner() {
         onSaveAndProcess={async (d) => { await saveReviewDrafts(d); setProcessOpen(true); }}
       />
     </div>
+  );
+}
+
+function RhythmRow({ icon: Icon, tint, value, label }: { icon: any; tint: string; value: number; label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className={cn("inline-grid h-9 w-9 place-items-center rounded-2xl", tint)}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="flex flex-1 items-baseline justify-between gap-2">
+        <span className="font-display text-xl tracking-tight tabular-nums">{value}</span>
+        <span className="text-[12.5px] text-muted-foreground">{label}</span>
+      </div>
+    </div>
+  );
+}
+
+function InboxTaskCard({
+  task, action, date, priority, onOpen, onComplete, onSchedule, onOrganize,
+}: {
+  task: any;
+  action: { label: string; icon: any; tint: string } | null;
+  date: { label: string; tone: string };
+  priority: { label: string; icon: any; tint: string };
+  onOpen: () => void;
+  onComplete: () => void;
+  onSchedule: () => void;
+  onOrganize: () => void;
+}) {
+  const [dx, setDx] = useState(0);
+  const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const longPressRef = useRef<number | null>(null);
+  const movedRef = useRef(false);
+
+  const reset = () => setDx(0);
+  const onPointerDown = (e: React.PointerEvent) => {
+    startRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+    movedRef.current = false;
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    longPressRef.current = window.setTimeout(() => {
+      if (!movedRef.current) { haptics.pickup?.() ?? haptics.tap(); onOrganize(); }
+    }, 600);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!startRef.current) return;
+    const ddx = e.clientX - startRef.current.x;
+    const ddy = e.clientY - startRef.current.y;
+    if (Math.abs(ddx) > 8 || Math.abs(ddy) > 8) movedRef.current = true;
+    if (Math.abs(ddx) > Math.abs(ddy)) {
+      setDx(Math.max(-140, Math.min(140, ddx)));
+    }
+  };
+  const onPointerUp = () => {
+    if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; }
+    const final = dx;
+    if (final > 80) { haptics.success?.(); onComplete(); }
+    else if (final < -80) { haptics.swipe?.(); onSchedule(); }
+    else if (!movedRef.current && startRef.current && Date.now() - startRef.current.t < 250) {
+      onOpen();
+    }
+    reset();
+    startRef.current = null;
+  };
+
+  const PrioIcon = priority.icon;
+  const ActionIcon = action?.icon;
+
+  return (
+    <li className="relative overflow-hidden rounded-2xl">
+      {/* Swipe backgrounds */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-4 text-[12px] font-medium">
+        <span className={cn("inline-flex items-center gap-1.5 text-emerald-700 transition-opacity", dx > 20 ? "opacity-100" : "opacity-0")}>
+          <Check className="h-4 w-4" /> Complete
+        </span>
+        <span className={cn("inline-flex items-center gap-1.5 text-primary transition-opacity", dx < -20 ? "opacity-100" : "opacity-0")}>
+          <CalendarIcon className="h-4 w-4" /> Schedule
+        </span>
+      </div>
+      <div
+        role="button"
+        tabIndex={0}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => { if (longPressRef.current) clearTimeout(longPressRef.current); reset(); startRef.current = null; }}
+        onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}
+        style={{ transform: `translateX(${dx}px)`, transition: dx === 0 ? "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)" : undefined, touchAction: "pan-y" }}
+        className="flex select-none items-start gap-3 rounded-2xl border border-border/40 bg-card/95 p-3.5 shadow-sm"
+      >
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onComplete(); }}
+          aria-label="Mark complete"
+          className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border border-border/70 text-transparent transition hover:border-primary hover:text-primary"
+        >
+          <Check className="h-3 w-3" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="text-[14px] font-medium leading-snug text-foreground">{task.title}</div>
+          {(task.area || (Array.isArray(task.tags) && task.tags.length > 0)) && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              {task.area && (
+                <span className="inline-flex items-center rounded-full bg-muted/60 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground">
+                  {task.area}
+                </span>
+              )}
+              {(task.tags ?? []).slice(0, 2).map((tg: string) => (
+                <span key={tg} className="inline-flex items-center rounded-full bg-primary/8 px-2 py-0.5 text-[10.5px] font-medium text-primary/90">
+                  {tg}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-muted-foreground">
+            {action && ActionIcon && (
+              <span className="inline-flex items-center gap-1">
+                <ActionIcon className={cn("h-3 w-3", action.tint)} /> {action.label}
+              </span>
+            )}
+            <span className={cn("inline-flex items-center gap-1", date.tone)}>
+              <CalendarIcon className="h-3 w-3" /> {date.label}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <PrioIcon className="h-3 w-3" /> {priority.label}
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onOpen(); }}
+          aria-label="More"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+      </div>
+    </li>
   );
 }
 
