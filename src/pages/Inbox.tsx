@@ -332,10 +332,17 @@ function InboxInner() {
     }
     const p = parseTaskInput(raw);
     const mergedTags = Array.from(new Set([...(p.tags ?? []), ...combinedTags]));
+    // If a Quick Action is selected, prefix it as a tag and infer an area.
+    const actionMeta = activeAction
+      ? QUICK_ACTIONS.find(a => a.key === activeAction)
+      : null;
+    if (actionMeta && !mergedTags.some(t => t.toLowerCase() === actionMeta.key.toLowerCase())) {
+      mergedTags.push(actionMeta.key);
+    }
     await addTask({
       title: p.title || raw,
       dueDate: overrideDue || p.dueDate,
-      area: (overrideArea || (p.area as Area) || (activeCategories[0] as Area | undefined)) as Area | undefined,
+      area: (overrideArea || (p.area as Area) || actionMeta?.area || (activeCategories[0] as Area | undefined)) as Area | undefined,
       priority: (overridePriority || undefined) as Priority | undefined,
       projectId: overrideProjectId || undefined,
       dayPart,
@@ -347,6 +354,7 @@ function InboxInner() {
     setDraft("");
     setExtraTags([]);
     setOverrideDue("");
+    setActiveAction(null);
     toast.success("Caught it ✨", { description: "Safely held in your inbox." });
   };
 
