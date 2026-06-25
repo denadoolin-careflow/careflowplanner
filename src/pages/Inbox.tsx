@@ -79,6 +79,35 @@ const CATEGORIES: { icon: any; label: string; tint: string }[] = [
   { icon: PawPrint,      label: "Pets",       tint: "bg-lime-50/70 text-lime-700 ring-lime-100" },
 ];
 
+// Quick Action pills shown beneath the capture textarea. Each pill maps to an
+// "Action" label that becomes a tag on the next captured task, and also routes
+// the task into a sensible Area.
+const QUICK_ACTIONS: { key: string; label: string; icon: any; tint: string; area?: Area }[] = [
+  { key: "Call",         label: "Call",        icon: Phone,         tint: "text-sky-600",      area: "Family" },
+  { key: "Text / Email", label: "Text / Email",icon: MessageSquare, tint: "text-violet-600",   area: "Family" },
+  { key: "Medication",   label: "Medication",  icon: Pill,          tint: "text-rose-600",     area: "Caregiving" },
+  { key: "Grocery",      label: "Grocery",     icon: ShoppingCart,  tint: "text-amber-600",    area: "Meals" },
+  { key: "Appointment",  label: "Appointment", icon: CalendarIcon,  tint: "text-emerald-600",  area: "Appointments" },
+  { key: "Errand",       label: "Errand",      icon: Car,           tint: "text-violet-600",   area: "Personal" },
+  { key: "Paperwork",    label: "Paperwork",   icon: FileText,      tint: "text-stone-600",    area: "Personal" },
+  { key: "Help",         label: "Help",        icon: HelpCircle,    tint: "text-teal-600" },
+  { key: "Cook",         label: "Cook",        icon: UtensilsCrossed, tint: "text-orange-600", area: "Meals" },
+  { key: "Clean",        label: "Clean",       icon: Brush,         tint: "text-emerald-600",  area: "Home" },
+];
+
+// Lookup for rendering Action column from a task's tags.
+const ACTION_BY_KEY: Record<string, { icon: any; tint: string }> = Object.fromEntries(
+  QUICK_ACTIONS.map(a => [a.key.toLowerCase(), { icon: a.icon, tint: a.tint }]),
+);
+
+// Priority Check-in card metadata.
+const PRIORITY_META = [
+  { key: "low"     as const, label: "Gentle",  icon: Leaf,  tint: "bg-emerald-50 text-emerald-700 ring-emerald-100" },
+  { key: "medium"  as const, label: "Normal",  icon: Sun,   tint: "bg-amber-50 text-amber-700 ring-amber-100" },
+  { key: "high"    as const, label: "Focus",   icon: Flame, tint: "bg-rose-50 text-rose-700 ring-rose-100" },
+  { key: "someday" as const, label: "Someday", icon: Moon,  tint: "bg-violet-50 text-violet-700 ring-violet-100" },
+];
+
 function InboxInner() {
   const { state, addTask, addMeal, updateTask, deleteTask } = useStore() as any;
   const navigate = useNavigate();
