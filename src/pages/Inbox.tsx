@@ -110,6 +110,12 @@ function InboxInner() {
   const [reviewDrafts, setReviewDrafts] = useState<DraftTask[]>([]);
   const [reviewTranscript, setReviewTranscript] = useState<string | undefined>(undefined);
 
+  // New redesigned-inbox UI state
+  const [activeAction, setActiveAction] = useState<string | null>(null);
+  const [priorityFilter, setPriorityFilter] = useState<"all" | Priority | "someday">("all");
+  const [sortMode, setSortMode] = useState<"recent" | "priority" | "due">("recent");
+  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
+
   // Hold-to-record state
   const [holdActive, setHoldActive] = useState(false);
   const [willCancel, setWillCancel] = useState(false);
