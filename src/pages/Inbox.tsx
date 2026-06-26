@@ -1014,13 +1014,70 @@ function bucketFor(t: any): Bucket {
   return "ready";
 }
 
-function SectionedInboxList({ items }: { items: any[] }) {
+function InboxHeldHeader({ hasSuggestions, onApplyAll }: { hasSuggestions: boolean; onApplyAll: () => void }) {
+  const { selectionMode, toggleSelectionMode, count, clear, selectAll } = useTaskSelection();
+  return (
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <h3 className="font-display text-lg tracking-tight">Held in your inbox</h3>
+      <div className="flex items-center gap-1.5">
+        {selectionMode ? (
+          <>
+            <span className="text-[12px] tabular-nums text-muted-foreground">{count} selected</span>
+            <Button size="sm" variant="ghost" onClick={selectAll} className="h-8 gap-1 rounded-full text-[12px]">
+              Select all
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { clear(); }} className="h-8 gap-1 rounded-full text-[12px]">
+              Done
+            </Button>
+          </>
+        ) : (
+          <Button size="sm" variant="outline" onClick={toggleSelectionMode} className="h-8 gap-1.5 rounded-full text-[12px]">
+            <CheckSquare className="h-3 w-3" /> Select
+          </Button>
+        )}
+        {hasSuggestions && (
+          <Button size="sm" variant="outline" onClick={onApplyAll} className="h-8 gap-1.5 rounded-full text-[12px]">
+            <Check className="h-3 w-3" /> Apply all suggestions
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SectionedInboxList({ items, autoDayPart, updateTask }: { items: any[]; autoDayPart: DayPart; updateTask: (id: string, patch: any) => Promise<void> | void }) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  // Bucket and sort by sortOrder so manual reorder persists across renders.
   const groups = useMemo(() => {
     const map = new Map<Bucket, any[]>();
     for (const b of BUCKET_ORDER) map.set(b, []);
     for (const t of items) map.get(bucketFor(t))!.push(t);
+    for (const b of BUCKET_ORDER) {
+      map.get(b)!.sort((a, b2) => (a.sortOrder ?? 0) - (b2.sortOrder ?? 0));
+    }
     return map;
   }, [items]);
+
+  const handleDragEnd = (bucket: Bucket) => async (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const list = groups.get(bucket)!;
+    const ids = list.map((t) => `inbox:${t.id}`);
+    const oldIdx = ids.indexOf(String(active.id));
+    const newIdx = ids.indexOf(String(over.id));
+    if (oldIdx < 0 || newIdx < 0) return;
+    const reordered = arrayMove(list, oldIdx, newIdx);
+    // Re-stride sortOrder with comfortable gaps so future inserts fit between.
+    haptics.snap?.();
+    await Promise.all(
+      reordered.map((t, i) => updateTask(t.id, { sortOrder: (i + 1) * 100 })),
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -1028,6 +1085,7 @@ function SectionedInboxList({ items }: { items: any[] }) {
         const list = groups.get(b)!;
         if (list.length === 0) return null;
         const meta = BUCKET_META[b];
+        const ids = list.map((t) => `inbox:${t.id}`);
         return (
           <div key={b}>
             <div className="mb-1.5 flex items-baseline justify-between gap-2 px-1">
@@ -1039,13 +1097,15 @@ function SectionedInboxList({ items }: { items: any[] }) {
               </div>
               <span className="text-[11px] text-muted-foreground">{meta.hint}</span>
             </div>
-            <div className="space-y-1.5">
-              {list.map((t: any) => (
-                <div key={t.id} className="rounded-2xl transition-colors hover:bg-muted/40">
-                  <TaskRow task={t} />
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(b)}>
+              <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+                <div className="space-y-1.5">
+                  {list.map((t: any) => (
+                    <InboxSortableRow key={t.id} task={t} autoDayPart={autoDayPart} />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
         );
       })}
