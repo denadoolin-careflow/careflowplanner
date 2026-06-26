@@ -730,37 +730,15 @@ function InboxInner() {
 
           {/* Schedule + Priority + Area + Project pickers */}
           <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11.5px]">
-            {/* Day part */}
-            <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5">
-              {([
-                { v: "Morning",   Icon: Sun },
-                { v: "Afternoon", Icon: CloudSun },
-                { v: "Evening",   Icon: Moon },
-              ] as const).map(({ v, Icon }) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setDayPart(v)}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors",
-                    dayPart === v ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-                  )}
-                  title={v === autoDayPart ? `${v} · auto` : v}
-                >
-                  <Icon className="h-3 w-3" />
-                  {v}
-                </button>
-              ))}
-            </div>
-
-            <PickerLabel icon={CalendarIcon}>
-              <input
-                type="date"
-                value={overrideDue}
-                onChange={(e) => setOverrideDue(e.target.value)}
-                className="bg-transparent text-[11.5px] outline-none"
-              />
-            </PickerLabel>
+            {/* Combined When picker (Things 3 style) — date + day-part in one popover */}
+            <WhenPopover
+              value={{ date: overrideDue || undefined, dayPart }}
+              autoDayPart={autoDayPart}
+              onChange={(v) => {
+                setOverrideDue(v.date ?? "");
+                setDayPart(v.dayPart as DayPart);
+              }}
+            />
 
             <PickerLabel icon={Flag}>
               <select
