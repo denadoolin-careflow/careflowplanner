@@ -27,16 +27,16 @@ const TOKEN_PATTERNS: { kind: TokenKind; re: RegExp }[] = [
 ];
 
 const TOKEN_CLASS: Record<TokenKind, string> = {
-  tag:      "bg-sky-100/80 text-sky-700 ring-sky-200/60",
-  area:     "bg-emerald-100/80 text-emerald-700 ring-emerald-200/60",
-  project:  "bg-violet-100/80 text-violet-700 ring-violet-200/60",
-  priority: "bg-rose-100/80 text-rose-700 ring-rose-200/60",
-  date:     "bg-amber-100/80 text-amber-800 ring-amber-200/60",
-  time:     "bg-amber-100/80 text-amber-800 ring-amber-200/60",
-  duration: "bg-stone-100/90 text-stone-700 ring-stone-200/60",
-  recur:    "bg-indigo-100/80 text-indigo-700 ring-indigo-200/60",
-  someday:  "bg-stone-100/90 text-stone-700 ring-stone-200/60",
-  energy:   "bg-fuchsia-100/80 text-fuchsia-700 ring-fuchsia-200/60",
+  tag:      "bg-sky-200/95 text-sky-950 ring-sky-300/80 dark:bg-sky-500/30 dark:text-sky-100 dark:ring-sky-400/50",
+  area:     "bg-emerald-200/95 text-emerald-950 ring-emerald-300/80 dark:bg-emerald-500/30 dark:text-emerald-100 dark:ring-emerald-400/50",
+  project:  "bg-violet-200/95 text-violet-950 ring-violet-300/80 dark:bg-violet-500/30 dark:text-violet-100 dark:ring-violet-400/50",
+  priority: "bg-rose-200/95 text-rose-950 ring-rose-300/80 dark:bg-rose-500/30 dark:text-rose-100 dark:ring-rose-400/50",
+  date:     "bg-amber-200/95 text-amber-950 ring-amber-300/80 dark:bg-amber-500/30 dark:text-amber-100 dark:ring-amber-400/50",
+  time:     "bg-amber-200/95 text-amber-950 ring-amber-300/80 dark:bg-amber-500/30 dark:text-amber-100 dark:ring-amber-400/50",
+  duration: "bg-stone-200/95 text-stone-950 ring-stone-300/80 dark:bg-stone-500/30 dark:text-stone-100 dark:ring-stone-400/50",
+  recur:    "bg-indigo-200/95 text-indigo-950 ring-indigo-300/80 dark:bg-indigo-500/30 dark:text-indigo-100 dark:ring-indigo-400/50",
+  someday:  "bg-stone-200/95 text-stone-950 ring-stone-300/80 dark:bg-stone-500/30 dark:text-stone-100 dark:ring-stone-400/50",
+  energy:   "bg-fuchsia-200/95 text-fuchsia-950 ring-fuchsia-300/80 dark:bg-fuchsia-500/30 dark:text-fuchsia-100 dark:ring-fuchsia-400/50",
 };
 
 function escapeHtml(s: string) {
