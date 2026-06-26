@@ -19,7 +19,7 @@ import { TodaysRhythmCard } from "@/components/calendar/TodaysRhythmCard";
 import { useCalendarPrefs } from "@/lib/calendar-prefs";
 import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
 import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
-import { useLongPressDrag, useLongDropListener, type LongDropDetail } from "@/lib/long-press-drag";
+import { useLongPressDrag, useLongDropListener, hourToDayPart, type LongDropDetail } from "@/lib/long-press-drag";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -192,8 +192,18 @@ export default function CalendarPage() {
   const handleTimeDrop = async (taskId: string, dateISO: string, startHour: number) => {
     const t = state.tasks.find(x => x.id === taskId);
     if (!t) return;
-    await updateTask(taskId, { dueDate: dateISO, inbox: false });
+    const dp = hourToDayPart(startHour);
+    const dayPart = dp ? ((dp[0].toUpperCase() + dp.slice(1)) as any) : undefined;
+    await updateTask(taskId, { dueDate: dateISO, inbox: false, ...(dayPart ? { dayPart } : {}) });
     toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
+  };
+
+  /** Drop an appointment onto a new time slot (week/day grid). */
+  const handleApptTimeDrop = async (apptId: string, dateISO: string, startHour: number) => {
+    const a = state.appointments.find(x => x.id === apptId);
+    if (!a) return;
+    await updateAppointment(apptId, { date: dateISO, time: hoursToHM(startHour) });
+    toast(`Moved “${a.title}” to ${hoursToHM(startHour)}`);
   };
 
   /** Unified item editor opener — used by every calendar layout. */
@@ -455,10 +465,18 @@ export default function CalendarPage() {
                 days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(cursor, { weekStartsOn: 0 }), i))}
                 appointmentsOn={eventsOnForGrid}
                 onTaskDropAt={handleTimeDrop}
+                onApptDropAt={handleApptTimeDrop}
+                onApptClick={setEditApptId}
               />
             )}
             {view === "day" && (
-              <TimeGrid days={[cursor]} appointmentsOn={eventsOnForGrid} onTaskDropAt={handleTimeDrop} />
+              <TimeGrid
+                days={[cursor]}
+                appointmentsOn={eventsOnForGrid}
+                onTaskDropAt={handleTimeDrop}
+                onApptDropAt={handleApptTimeDrop}
+                onApptClick={setEditApptId}
+              />
             )}
             {view === "year" && <YearView cursor={cursor} eventsOn={eventsOnFiltered} setCursor={setCursor} setView={setView} />}
             </>
