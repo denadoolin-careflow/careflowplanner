@@ -7,7 +7,7 @@ import {
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
-  MessageCircle, Flag, Folder, MapPin, CloudSun, Sun,
+  MessageCircle, Flag, Folder, MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,8 @@ import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
 import { createNote, getOrCreateDailyNote } from "@/lib/notes";
+import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
+import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 
 interface Suggestion {
   task_id: string;
