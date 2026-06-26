@@ -19,7 +19,7 @@ import { TodaysRhythmCard } from "@/components/calendar/TodaysRhythmCard";
 import { useCalendarPrefs } from "@/lib/calendar-prefs";
 import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
 import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
-import { useLongPressDrag, useLongDropListener, type LongDropDetail } from "@/lib/long-press-drag";
+import { useLongPressDrag, useLongDropListener, hourToDayPart, type LongDropDetail } from "@/lib/long-press-drag";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -192,7 +192,9 @@ export default function CalendarPage() {
   const handleTimeDrop = async (taskId: string, dateISO: string, startHour: number) => {
     const t = state.tasks.find(x => x.id === taskId);
     if (!t) return;
-    await updateTask(taskId, { dueDate: dateISO, inbox: false });
+    const dp = hourToDayPart(startHour);
+    const dayPart = dp ? ((dp[0].toUpperCase() + dp.slice(1)) as any) : undefined;
+    await updateTask(taskId, { dueDate: dateISO, inbox: false, ...(dayPart ? { dayPart } : {}) });
     toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
   };
 
