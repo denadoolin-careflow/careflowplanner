@@ -137,13 +137,13 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           spellCheck
           autoComplete="off"
           className={cn(
-            "relative h-14 w-full rounded-2xl border border-primary/30 bg-background/80 text-[15px] font-medium leading-[1.4] outline-none transition placeholder:text-muted-foreground/80",
+            "relative h-14 w-full rounded-2xl border border-primary/30 bg-background/80 text-[15px] font-medium leading-[1.4] text-foreground outline-none transition placeholder:text-foreground/55",
             "shadow-[0_0_0_4px_hsl(var(--primary)/0.08),0_8px_30px_-12px_hsl(var(--primary)/0.45)]",
             "hover:shadow-[0_0_0_5px_hsl(var(--primary)/0.12),0_10px_36px_-12px_hsl(var(--primary)/0.55)]",
             "focus-visible:border-primary/60 focus-visible:shadow-[0_0_0_6px_hsl(var(--primary)/0.18),0_14px_44px_-12px_hsl(var(--primary)/0.6)]",
             // Make the input's own text transparent so only the mirror shows colors,
             // but keep the caret visible.
-            value ? "text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "text-slate-900 dark:text-slate-50",
+            value ? "text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "",
             leftPad, rightPad,
             className,
           )}
