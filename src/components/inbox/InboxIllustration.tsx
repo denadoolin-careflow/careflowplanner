@@ -20,7 +20,6 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
   const prevRef = useRef(visible);
   // Trigger key — bumps every time count drops, so the exhale keyframe replays.
   const [exhaleKey, setExhaleKey] = useState(0);
-  const [bloomKey, setBloomKey] = useState(0);
   // "Clear all" celebration — fires once when count transitions from >0 to 0.
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [celebrating, setCelebrating] = useState(false);
@@ -32,7 +31,6 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
 
   useEffect(() => {
     if (isEmpty) {
-      setBloomKey((k) => k + 1);
       setCelebrateKey((k) => k + 1);
       setCelebrating(true);
       const id = window.setTimeout(() => setCelebrating(false), 2600);
