@@ -1,39 +1,82 @@
-# Improve mobile Task Editor
+# Inbox & Task System — Competitive Research + Redesign Plan
 
-The task editor dialog (`src/components/tasks/TaskEditor.tsx`) is the screen shown in the screenshot. On mobile it has horizontal overflow: the title input runs past the right edge, the pill row clips "Medium", the notes/attachment cards extend beyond the viewport, and Cancel/Save look misaligned with the rest of the content. We'll tighten the mobile layout without changing behavior or desktop styles.
+## What the leaders do well
 
-## Changes (frontend only, `src/components/tasks/TaskEditor.tsx`)
+**TickTick** — Single global "+" quick add with NLP date parsing, voice capture, smart lists (Today/Tomorrow/Next 7 Days), Eisenhower matrix view, calendar overlay with drag-to-schedule, Pomodoro built into the task row, habit tracker fused with tasks.
 
-1. **Stop horizontal overflow at the root**
-   - `DialogContent`: add `overflow-x-hidden` alongside the existing `overflow-hidden`, and ensure mobile uses `w-screen max-w-[100vw]` so the dialog never exceeds the viewport.
-   - Wrap the scrollable body with `min-w-0 w-full` and add `min-w-0` to the inner grid so children can shrink.
+**Things 3** — *Magic Plus* button (drag the + anywhere to insert exactly where you want), Quick Entry with Autofill (captures source link/email automatically), This Evening sub-bucket inside Today, Headings inside projects (lightweight sectioning), checklist nested inside a task, "When" picker that combines date + time-of-day (Morning/Afternoon/Evening) elegantly, slide-to-reveal actions, keyboard-first everywhere.
 
-2. **Title row wraps cleanly**
-   - Keep the title input on its own row on mobile (`basis-full`), but add `min-w-0 w-full` and `truncate`-safe sizing so long titles don't push the row wider than the screen.
-   - Reduce header horizontal padding on mobile (`px-3` → `px-4`) to match the body and align with Cancel/Save below.
+**Todoist** — One-line Quick Add parses project (`#`), labels (`@`), priority (`p1`), assignee (`+`), date (`tomorrow 5pm`), duration (`for 30min`), recurrence (`every Monday`); tokens highlight inline as you type so the user *sees* what's being parsed. Capture from text/image (OCR). Filters as saved smart queries. Board / list / calendar toggle per project.
 
-3. **Pill row: edge-faded horizontal scroller**
-   - Keep `overflow-x-auto` scrolling on mobile but:
-     - Add left/right padding so the first and last pill aren't flush against the edge.
-     - Add a subtle right-edge mask (`mask-image: linear-gradient(...)`) so a clipped "Medium" pill clearly looks scrollable instead of cut off.
-   - Make pill labels shrink-safe (`max-w-[10rem] truncate`) so a long project/area name doesn't blow out the row.
+**Asana** — My Tasks with sortable sections (Recently assigned → Today → Upcoming → Later), rules that auto-route incoming tasks to a section, single Inbox for notifications with bookmark/archive/filter, multi-home (one task in many projects).
 
-4. **Body cards align to one consistent gutter**
-   - Use a shared `px-4 sm:px-5` on header, body, and footer so the left edges of pills, cards, and Cancel/Save line up perfectly.
-   - Add `min-w-0` to each `Card` and to the left/right grid columns to prevent any nested input/select from forcing horizontal growth.
+**Craft** — Tasks surface from inside documents into a central hub; each task keeps a backlink to source doc; daily-note-driven capture; calendar fused with task list.
 
-5. **Footer Cancel / Save / Delete**
-   - On mobile, render the footer as a sticky `bottom-0` bar with a 2-column grid (`grid-cols-2 gap-2`) for Cancel + Save (Save = primary, full-width within its column), and the Delete link centered underneath in muted-destructive style. This matches the spacing of the body and keeps tap targets ≥ 44px.
-   - Add `pb-[env(safe-area-inset-bottom)]` so it clears the home indicator.
+## Recommendations for CareFlow Inbox + Tasks
 
-6. **Notes & Attachments cards**
-   - Add `min-w-0` and `overflow-hidden` on each `Card` wrapper so the inner `BlockEditor` toolbar and `AttachmentsField` "Drag & drop…" caption wrap instead of pushing width.
-   - On mobile, allow the formatting toolbar in `BlockEditor` to wrap (`flex-wrap`) so the B/I/U/S/</>/✏️ row never overflows.
+Grouped by impact. Implementation is iterative — each block is independently shippable.
 
-## Out of scope
-- No changes to TaskEditor logic, data model, or the mobile `/tasks/:id` `TaskDetail` page (separate surface).
-- No design-token changes; uses existing semantic colors.
+### 1. Unify capture around the NLP bar (Todoist-style token chips)
+- Keep the single text box, but render parsed tokens as **inline pills** while typing (e.g. typing "Call mom tomorrow 5pm #family !high" shows `tomorrow 5pm`, `#family`, `!high` as colored chips inline).
+- Move the hidden Categories/Tags/Schedule overrides into a single **"Details" drawer** below the bar that opens only when the user taps a chevron — replaces the four separate toggles.
+- Add a **paste / image OCR** affordance (Todoist parity) wired to existing `ai-capture-assistant`.
 
-## Verification
-- Reload `/inbox` on a 411px viewport, open a long-title task, confirm: no horizontal page scroll, pills scroll within their own row with a fade, title wraps to one row that fits, Notes/Attachments cards stay inside the viewport, Cancel/Save/Delete are aligned to the same gutter as the cards and reachable above the gesture bar.
-- Spot-check desktop (≥ sm breakpoint) — layout should be unchanged.
+### 2. "When" picker that combines date + time-of-day (Things 3)
+- Replace the separate date input + day-part chip with one popover: Today / This Evening / Tomorrow / Next Week / Pick a date, each row has a small Morning/Afternoon/Evening selector.
+- Auto-detect already exists; surface it as a subtle "Suggested: Afternoon" hint inside the popover.
+
+### 3. Magic Plus / drag-to-position (Things 3)
+- On desktop, allow the floating FAB (already lg+) to be dragged onto a specific section of a list and drop to create a task pre-slotted into that group (Today, This Evening, a project, an area).
+
+### 4. Sectioned Inbox triage view (Asana My Tasks)
+- Replace the flat inbox with auto-sections: **Just captured · Needs a date · Needs a project · Ready for Today**.
+- One-tap "Process all" steps through each item full-screen with swipe actions: ← Snooze · ↓ Move to project · → Schedule (Tinder-for-triage). Existing `ProcessInboxDialog` is the foundation.
+
+### 5. Task row interaction polish (Things 3 + TickTick)
+- Swipe-right on mobile = complete, swipe-left = reveal Schedule / Snooze / Delete (matches the desktop `TaskHoverActions` rail).
+- Long-press = enter multi-select (already partially built via `TaskSelectionProvider`).
+- Inline subtasks: typing `- ` on a new line inside the task title editor creates a checklist item (Things behavior).
+
+### 6. Smart views & saved filters (Todoist filters + TickTick smart lists)
+- Add a **Filters** rail in the sidebar with built-ins: Today, This Evening, Next 7 Days, No date, No project, Waiting on, High priority, Matches my energy (last one already exists as a toggle — promote it).
+- Allow saving the current `TaskListControls` state as a named filter.
+
+### 7. Calendar / time-blocking overlay (TickTick + Craft)
+- In Today/Upcoming, add a toggleable right-rail timeline showing day-part bands (Morning/Afternoon/Evening) with tasks drag-droppable onto times. `UnscheduledTasksRail` already exists — pair it with a time grid.
+
+### 8. Source-anchored capture (Craft + Things Autofill)
+- When capturing from a Note or Daily Note, automatically attach a backlink chip on the task so completing it can jump back to context. Reuses `note-links.ts`.
+
+### 9. Visual + density refresh
+- Tighten the Inbox header (current basket illustration + chips + bar stack feels tall on a 707px viewport). Collapse the illustration to a small mark when there are >0 items.
+- Move the kind chips (Task/Home/Care/Meal/Note/Connect/Commute) into a **segmented icon strip** (28px tall, icon-only with tooltip) instead of pills — saves a row.
+- Show the active kind's accent color as a 2px left border on the input — silent confirmation without using vertical space.
+
+### 10. Empty & success states
+- Things-style celebratory empty inbox ("Inbox zero — nicely done") instead of the current basket alone.
+- After completing the last task of the day, animate a small Today-complete moment (existing `confetti.ts`).
+
+## Suggested build order
+
+1. **Quick Add token chips + collapsible Details drawer** (#1) — biggest perceived-quality jump, replaces today's stacked override row.
+2. **Combined When picker** (#2) — small, self-contained.
+3. **Sectioned Inbox + Process flow polish** (#4) — restructures the page.
+4. **Mobile swipe actions on TaskRow** (#5).
+5. **Saved filters sidebar** (#6).
+6. **Time-block overlay** (#7).
+7. **Magic Plus drag** (#3), **source backlinks** (#8), **density pass** (#9), **empty states** (#10).
+
+## Technical notes
+
+- NLP token highlighting: extend `parseTaskInput` to return span ranges; render with a transparent overlay div positioned over the `<input>` (common pattern; or switch the field to a `contentEditable` div).
+- Sectioned inbox: add a `triageBucket` derivation in `task-grouping.ts` based on `(inbox, dueDate, projectId, area)`.
+- When picker: new `<WhenPopover>` consuming `dayPart` + `dueDate` together; replace the two existing inline pickers in `Inbox.tsx`.
+- Swipe actions: use `framer-motion` drag with snap thresholds; already a dep.
+- Saved filters: persist via existing `loadPrefs/savePrefs` keyed by `filter:<name>`.
+- All changes stay in `src/pages/Inbox.tsx`, `src/components/tasks/*`, `src/components/cards/TaskRow.tsx`, `src/lib/nlp-task.ts`, `src/lib/task-grouping.ts`. No schema changes required.
+
+## Open questions before building
+
+- Do you want to ship all 10 in sequence, or pick a starting subset (recommended: 1, 2, 4, 5)?
+- For the token-chip NLP bar, should we keep a plain `<input>` with an overlay, or upgrade to a `contentEditable` editor (richer but heavier)?
+- Should saved filters live in the left sidebar, or as a dropdown above the task list?
