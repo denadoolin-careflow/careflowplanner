@@ -8,6 +8,7 @@ import {
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
   MessageCircle, Flag, Folder, MapPin, CheckSquare, Plus, Wand2,
+  Mail, ChefHat, Sparkles as SparklesIcon, HandHelping, Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +72,16 @@ const CAREGIVER_PRESETS: { icon: any; label: string; title: string; area: Area; 
   { icon: Car,           label: "Errand",       title: "Errand — ",            area: "Personal",            tint: "bg-violet-50 text-violet-700 ring-violet-100" },
 ];
 
+// Quick-fill phrase chips — tapping prefills the capture input with a starter phrase,
+// so the user just adds the specifics.
+const QUICK_FILL: { icon: any; label: string; phrase: string; tint: string }[] = [
+  { icon: Mail,        label: "Text/Email", phrase: "Text/Email ",  tint: "bg-sky-50/80 text-sky-700 ring-sky-100" },
+  { icon: ChefHat,     label: "Cook",       phrase: "Cook ",        tint: "bg-amber-50/80 text-amber-700 ring-amber-100" },
+  { icon: SparklesIcon,label: "Clean",      phrase: "Clean ",       tint: "bg-emerald-50/80 text-emerald-700 ring-emerald-100" },
+  { icon: HandHelping, label: "Help",       phrase: "Help ",        tint: "bg-rose-50/80 text-rose-700 ring-rose-100" },
+  { icon: Package,     label: "Order",      phrase: "Order ",       tint: "bg-violet-50/80 text-violet-700 ring-violet-100" },
+];
+
 const CATEGORIES: { icon: any; label: string; tint: string }[] = [
   { icon: Home,          label: "Home",       tint: "bg-emerald-50/70 text-emerald-700 ring-emerald-100" },
   { icon: Users,         label: "Family",     tint: "bg-orange-50/70 text-orange-700 ring-orange-100" },
@@ -113,6 +124,29 @@ function InboxInner() {
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
+  const captureInputRef = useRef<HTMLInputElement>(null);
+
+  const prefillDraft = (phrase: string) => {
+    setCaptureKind("task");
+    setDraft((d) => {
+      const base = d.trim();
+      if (!base) return phrase;
+      // If already starts with this phrase, just focus.
+      if (base.toLowerCase().startsWith(phrase.trim().toLowerCase())) return d;
+      return `${phrase}${base}`;
+    });
+    haptics.tap?.();
+    // Focus + place caret at end on next frame.
+    requestAnimationFrame(() => {
+      const el = captureInputRef.current;
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        try { el.setSelectionRange(len, len); } catch {}
+      }
+    });
+  };
+
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewDrafts, setReviewDrafts] = useState<DraftTask[]>([]);
   const [reviewTranscript, setReviewTranscript] = useState<string | undefined>(undefined);
@@ -578,6 +612,7 @@ function InboxInner() {
                 <span className="text-base leading-none">＋</span>
               </div>
               <NlpHighlightedInput
+                ref={captureInputRef}
                 value={draft}
                 onChange={setDraft}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
@@ -797,8 +832,28 @@ function InboxInner() {
             )}
           </div>
 
-          {/* Caregiver quick actions */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
+          {/* Quick-fill phrase chips — tap to prefill the input */}
+          <div className="mt-4 flex flex-wrap items-center gap-1.5">
+            {QUICK_FILL.map((q) => {
+              const Icon = q.icon;
+              return (
+                <button
+                  key={q.label}
+                  type="button"
+                  onClick={() => prefillDraft(q.phrase)}
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
+                    q.tint,
+                  )}
+                >
+                  <Icon className="h-3 w-3" /> {q.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Caregiver quick actions — compact pills */}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {CAREGIVER_PRESETS.map(p => {
               const Icon = p.icon;
               return (
@@ -807,11 +862,11 @@ function InboxInner() {
                   type="button"
                   onClick={() => quickAdd(p.title, p.area)}
                   className={cn(
-                    "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
+                    "group inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
                     p.tint,
                   )}
                 >
-                  <Icon className="h-3.5 w-3.5" /> {p.label}
+                  <Icon className="h-3 w-3" /> {p.label}
                 </button>
               );
             })}

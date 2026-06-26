@@ -20,7 +20,9 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
   const prevRef = useRef(visible);
   // Trigger key — bumps every time count drops, so the exhale keyframe replays.
   const [exhaleKey, setExhaleKey] = useState(0);
-  const [bloomKey, setBloomKey] = useState(0);
+  // "Clear all" celebration — fires once when count transitions from >0 to 0.
+  const [celebrateKey, setCelebrateKey] = useState(0);
+  const [celebrating, setCelebrating] = useState(false);
 
   useEffect(() => {
     if (visible < prevRef.current) setExhaleKey((k) => k + 1);
@@ -28,7 +30,12 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
   }, [visible]);
 
   useEffect(() => {
-    if (isEmpty) setBloomKey((k) => k + 1);
+    if (isEmpty) {
+      setCelebrateKey((k) => k + 1);
+      setCelebrating(true);
+      const id = window.setTimeout(() => setCelebrating(false), 2600);
+      return () => window.clearTimeout(id);
+    }
   }, [isEmpty]);
 
   // Paper visual configs — bottom to top.
@@ -70,10 +77,11 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
       {/* Atmospheric halo — warm when holding, cools to sage when cleared */}
       <div
         className={cn(
-          "absolute inset-0 rounded-full blur-3xl transition-all duration-[1200ms] ease-out animate-[inbox-halo_5s_ease-in-out_infinite]",
+          "absolute inset-0 rounded-full blur-3xl transition-all duration-[1200ms] ease-out",
           isEmpty
             ? "bg-[hsl(150_55%_72%/0.5)] scale-110"
             : "bg-[hsl(28_85%_78%/0.45)] scale-100",
+          celebrating && "animate-[inbox-halo-pulse_2400ms_ease-out_forwards]",
         )}
       />
 
@@ -95,8 +103,7 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
                   p.offsetX,
                   // Stack offset so they appear layered
                   "transition-all duration-700 [transition-timing-function:cubic-bezier(0.4,0,0.2,1)]",
-                  present &&
-                    "opacity-100 animate-[inbox-float_5s_ease-in-out_infinite]",
+                  present && "opacity-100",
                   !present && !isExhaling && "opacity-0 pointer-events-none",
                   isExhaling &&
                     "animate-[inbox-exhale_1100ms_cubic-bezier(0.4,0,0.2,1)_forwards] pointer-events-none",
@@ -104,7 +111,6 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
                 style={{
                   bottom: `${i * 6}px`,
                   zIndex: 10 + i,
-                  animationDelay: present ? `${i * 0.4}s` : undefined,
                 }}
               >
                 <div className={cn("h-1 w-3/4 rounded-full", p.line)} />
@@ -114,20 +120,22 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
             );
           })}
 
-          {/* Sparkle bloom — fires on each paper exhale */}
+          {/* Per-task sparkle bloom — fires on each paper exhale */}
           <svg
             key={`exhale-bloom-${exhaleKey}`}
-            className="pointer-events-none absolute -top-6 left-1/2 h-24 w-24 -translate-x-1/2 animate-[inbox-bloom_1100ms_cubic-bezier(0.4,0,0.2,1)_forwards]"
+            className="pointer-events-none absolute -top-8 left-1/2 h-28 w-28 -translate-x-1/2 animate-[inbox-bloom_1300ms_cubic-bezier(0.4,0,0.2,1)_forwards]"
             viewBox="0 0 100 100"
           >
-            <circle cx="20" cy="30" r="2" className="fill-[hsl(var(--warm))]" />
-            <circle cx="80" cy="40" r="1.5" className="fill-[hsl(var(--accent))]" />
-            <circle cx="50" cy="15" r="2.5" className="fill-[hsl(var(--warm)/0.7)]" />
-            <circle cx="15" cy="60" r="1.2" className="fill-[hsl(var(--primary))]" />
-            <circle cx="85" cy="65" r="1.8" className="fill-[hsl(var(--accent)/0.8)]" />
+            <circle cx="20" cy="30" r="2.4" className="fill-[hsl(var(--warm))]" />
+            <circle cx="80" cy="40" r="1.8" className="fill-[hsl(var(--accent))]" />
+            <circle cx="50" cy="15" r="2.8" className="fill-[hsl(var(--warm)/0.8)]" />
+            <circle cx="15" cy="60" r="1.6" className="fill-[hsl(var(--primary))]" />
+            <circle cx="85" cy="65" r="2" className="fill-[hsl(var(--accent)/0.9)]" />
+            <circle cx="32" cy="78" r="1.4" className="fill-[hsl(var(--warm))]" />
+            <circle cx="68" cy="22" r="1.4" className="fill-[hsl(var(--primary)/0.7)]" />
             <path
               d="M50 35 L52 42 L59 42 L53 46 L55 53 L50 49 L45 53 L47 46 L41 42 L48 42 Z"
-              className="fill-[hsl(var(--warm)/0.85)]"
+              className="fill-[hsl(var(--warm))]"
             />
           </svg>
         </div>
@@ -136,23 +144,23 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
       {/* Frosted tray */}
       <div
         className={cn(
-          "absolute bottom-4 left-1/2 z-0 flex h-10 w-40 -translate-x-1/2 items-center justify-center rounded-2xl border border-border/60 bg-card/70 shadow-[0_18px_40px_-22px_hsl(var(--primary)/0.5)] backdrop-blur-md transition-all duration-700 animate-[inbox-tray_4s_ease-in-out_infinite]",
+          "absolute bottom-4 left-1/2 z-0 flex h-10 w-40 -translate-x-1/2 items-center justify-center rounded-2xl border border-border/60 bg-card/70 shadow-[0_18px_40px_-22px_hsl(var(--primary)/0.5)] backdrop-blur-md transition-all duration-700",
           isEmpty && "shadow-[0_18px_40px_-18px_hsl(150_60%_45%/0.45)]",
         )}
       >
         <div className="h-1 w-28 rounded-full bg-muted/70" />
       </div>
 
-      {/* Final empty-state sparkle bloom — louder, larger */}
+      {/* Final empty-state celebration — extended bloom + secondary radial burst */}
       <div
-        key={`empty-bloom-${bloomKey}`}
+        key={`empty-bloom-${celebrateKey}`}
         className={cn(
           "pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-700",
-          isEmpty ? "opacity-100" : "opacity-0",
+          celebrating ? "opacity-100" : "opacity-0",
         )}
       >
         <svg
-          className="h-32 w-32 animate-[inbox-bloom_1800ms_cubic-bezier(0.4,0,0.2,1)_forwards]"
+          className="absolute h-40 w-40 animate-[inbox-bloom-long_2400ms_cubic-bezier(0.22,1,0.36,1)_forwards]"
           viewBox="0 0 100 100"
         >
           <circle cx="20" cy="20" r="2.2" className="fill-[hsl(var(--warm))]" />
@@ -167,13 +175,29 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
             className="fill-[hsl(var(--warm)/0.9)]"
           />
         </svg>
+        {/* Secondary delayed burst for the celebratory crescendo */}
+        <svg
+          className="absolute h-48 w-48 animate-[inbox-bloom-long_2200ms_cubic-bezier(0.22,1,0.36,1)_400ms_forwards] opacity-0"
+          viewBox="0 0 100 100"
+        >
+          {Array.from({ length: 12 }).map((_, i) => {
+            const angle = (i / 12) * Math.PI * 2;
+            const cx = 50 + Math.cos(angle) * 36;
+            const cy = 50 + Math.sin(angle) * 36;
+            return (
+              <circle
+                key={i}
+                cx={cx}
+                cy={cy}
+                r={1.6}
+                className={i % 2 ? "fill-[hsl(var(--accent))]" : "fill-[hsl(var(--warm))]"}
+              />
+            );
+          })}
+        </svg>
       </div>
 
       <style>{`
-        @keyframes inbox-float {
-          0%, 100% { transform: translateY(0) rotate(var(--tw-rotate,0)); }
-          50% { transform: translateY(-4px) rotate(var(--tw-rotate,0)); }
-        }
         @keyframes inbox-exhale {
           0%   { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
           30%  { transform: translateY(-14px) scale(1.06); opacity: 0.85; filter: blur(1px); }
@@ -184,13 +208,16 @@ export function InboxIllustration({ isEmpty, count = 0, className }: Props) {
           25%  { opacity: 1; }
           100% { transform: scale(1.6) rotate(90deg); opacity: 0; }
         }
-        @keyframes inbox-halo {
-          0%, 100% { opacity: 0.5; }
-          50% { opacity: 0.8; }
+        @keyframes inbox-bloom-long {
+          0%   { transform: scale(0.35) rotate(-12deg); opacity: 0; }
+          15%  { opacity: 1; }
+          60%  { opacity: 0.9; }
+          100% { transform: scale(2) rotate(120deg); opacity: 0; }
         }
-        @keyframes inbox-tray {
-          0%, 100% { transform: translateX(-50%) scale(1); }
-          50% { transform: translateX(-50%) scale(1.02); }
+        @keyframes inbox-halo-pulse {
+          0%   { opacity: 0.5; transform: scale(1.05); }
+          40%  { opacity: 0.95; transform: scale(1.25); }
+          100% { opacity: 0.7; transform: scale(1.1); }
         }
       `}</style>
     </div>
