@@ -575,9 +575,9 @@ function InboxInner() {
               <div className="absolute left-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-primary/10 text-primary">
                 <span className="text-base leading-none">＋</span>
               </div>
-              <Input
+              <NlpHighlightedInput
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={setDraft}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
                 placeholder={
                   recorder.state === "recording"
@@ -590,11 +590,8 @@ function InboxInner() {
                     : captureKind === "commute" ? "Where are you going?"
                     : "Add a note…"
                 }
-                className={cn(
-                  "h-14 rounded-2xl border-border/40 bg-background/70 pl-14 pr-28 text-[15px] shadow-inner placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15",
-                  recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40",
-                )}
                 disabled={recorder.state !== "idle"}
+                className={cn(recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40")}
               />
               <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
                 {draft.trim() && recorder.state === "idle" && (
