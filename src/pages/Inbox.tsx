@@ -124,6 +124,29 @@ function InboxInner() {
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
+  const captureInputRef = useRef<HTMLInputElement>(null);
+
+  const prefillDraft = (phrase: string) => {
+    setCaptureKind("task");
+    setDraft((d) => {
+      const base = d.trim();
+      if (!base) return phrase;
+      // If already starts with this phrase, just focus.
+      if (base.toLowerCase().startsWith(phrase.trim().toLowerCase())) return d;
+      return `${phrase}${base}`;
+    });
+    haptics.tap?.();
+    // Focus + place caret at end on next frame.
+    requestAnimationFrame(() => {
+      const el = captureInputRef.current;
+      if (el) {
+        el.focus();
+        const len = el.value.length;
+        try { el.setSelectionRange(len, len); } catch {}
+      }
+    });
+  };
+
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewDrafts, setReviewDrafts] = useState<DraftTask[]>([]);
   const [reviewTranscript, setReviewTranscript] = useState<string | undefined>(undefined);
@@ -589,6 +612,7 @@ function InboxInner() {
                 <span className="text-base leading-none">＋</span>
               </div>
               <NlpHighlightedInput
+                ref={captureInputRef}
                 value={draft}
                 onChange={setDraft}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
