@@ -7,7 +7,7 @@ import {
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
-  MessageCircle, Flag, Folder, MapPin, CloudSun, Sun,
+  MessageCircle, Flag, Folder, MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,8 @@ import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
 import { createNote, getOrCreateDailyNote } from "@/lib/notes";
+import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
+import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 
 interface Suggestion {
   task_id: string;
@@ -573,9 +575,9 @@ function InboxInner() {
               <div className="absolute left-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-primary/10 text-primary">
                 <span className="text-base leading-none">＋</span>
               </div>
-              <Input
+              <NlpHighlightedInput
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={setDraft}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
                 placeholder={
                   recorder.state === "recording"
@@ -588,11 +590,8 @@ function InboxInner() {
                     : captureKind === "commute" ? "Where are you going?"
                     : "Add a note…"
                 }
-                className={cn(
-                  "h-14 rounded-2xl border-border/40 bg-background/70 pl-14 pr-28 text-[15px] shadow-inner placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15",
-                  recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40",
-                )}
                 disabled={recorder.state !== "idle"}
+                className={cn(recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40")}
               />
               <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
                 {draft.trim() && recorder.state === "idle" && (
@@ -731,37 +730,15 @@ function InboxInner() {
 
           {/* Schedule + Priority + Area + Project pickers */}
           <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11.5px]">
-            {/* Day part */}
-            <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5">
-              {([
-                { v: "Morning",   Icon: Sun },
-                { v: "Afternoon", Icon: CloudSun },
-                { v: "Evening",   Icon: Moon },
-              ] as const).map(({ v, Icon }) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setDayPart(v)}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-colors",
-                    dayPart === v ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-                  )}
-                  title={v === autoDayPart ? `${v} · auto` : v}
-                >
-                  <Icon className="h-3 w-3" />
-                  {v}
-                </button>
-              ))}
-            </div>
-
-            <PickerLabel icon={CalendarIcon}>
-              <input
-                type="date"
-                value={overrideDue}
-                onChange={(e) => setOverrideDue(e.target.value)}
-                className="bg-transparent text-[11.5px] outline-none"
-              />
-            </PickerLabel>
+            {/* Combined When picker (Things 3 style) — date + day-part in one popover */}
+            <WhenPopover
+              value={{ date: overrideDue || undefined, dayPart }}
+              autoDayPart={autoDayPart}
+              onChange={(v) => {
+                setOverrideDue(v.date ?? "");
+                setDayPart(v.dayPart as DayPart);
+              }}
+            />
 
             <PickerLabel icon={Flag}>
               <select
@@ -914,13 +891,7 @@ function InboxInner() {
                 </Button>
               )}
             </div>
-            <div className="space-y-1.5">
-              {items.map((t: any) => (
-                <div key={t.id} className="rounded-2xl transition-colors hover:bg-muted/40">
-                  <TaskRow task={t} />
-                </div>
-              ))}
-            </div>
+            <SectionedInboxList items={items} />
           </section>
         )}
 
@@ -1017,5 +988,66 @@ function PickerLabel({ icon: Icon, children }: { icon: any; children: React.Reac
       <Icon className="h-3 w-3" />
       {children}
     </label>
+  );
+}
+
+// ────────── Asana-style sectioned inbox ──────────
+
+type Bucket = "just" | "needsDate" | "needsCategory" | "ready";
+
+const BUCKET_META: Record<Bucket, { label: string; hint: string; tint: string }> = {
+  just:          { label: "Just captured",   hint: "Added in the last hour",          tint: "bg-sky-50/70 text-sky-700 ring-sky-100" },
+  needsDate:     { label: "Needs a date",    hint: "Decide when this happens",         tint: "bg-amber-50/70 text-amber-800 ring-amber-100" },
+  needsCategory: { label: "Needs a category",hint: "Give it a home",                   tint: "bg-rose-50/70 text-rose-700 ring-rose-100" },
+  ready:         { label: "Ready to plan",   hint: "Has a date and a category",        tint: "bg-emerald-50/70 text-emerald-700 ring-emerald-100" },
+};
+
+const BUCKET_ORDER: Bucket[] = ["just", "needsDate", "needsCategory", "ready"];
+
+function bucketFor(t: any): Bucket {
+  const createdAt = t.createdAt ? new Date(t.createdAt).getTime() : 0;
+  const ageMs = Date.now() - createdAt;
+  if (createdAt && ageMs < 60 * 60 * 1000) return "just";
+  if (!t.dueDate) return "needsDate";
+  if (!t.area) return "needsCategory";
+  return "ready";
+}
+
+function SectionedInboxList({ items }: { items: any[] }) {
+  const groups = useMemo(() => {
+    const map = new Map<Bucket, any[]>();
+    for (const b of BUCKET_ORDER) map.set(b, []);
+    for (const t of items) map.get(bucketFor(t))!.push(t);
+    return map;
+  }, [items]);
+
+  return (
+    <div className="space-y-4">
+      {BUCKET_ORDER.map((b) => {
+        const list = groups.get(b)!;
+        if (list.length === 0) return null;
+        const meta = BUCKET_META[b];
+        return (
+          <div key={b}>
+            <div className="mb-1.5 flex items-baseline justify-between gap-2 px-1">
+              <div className="inline-flex items-center gap-2">
+                <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1", meta.tint)}>
+                  {meta.label}
+                  <span className="rounded-full bg-background/60 px-1.5 text-[10.5px] font-semibold">{list.length}</span>
+                </span>
+              </div>
+              <span className="text-[11px] text-muted-foreground">{meta.hint}</span>
+            </div>
+            <div className="space-y-1.5">
+              {list.map((t: any) => (
+                <div key={t.id} className="rounded-2xl transition-colors hover:bg-muted/40">
+                  <TaskRow task={t} />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
