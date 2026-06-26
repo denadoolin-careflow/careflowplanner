@@ -459,9 +459,9 @@ function InboxInner() {
             </p>
           </div>
 
-          <div className="relative overflow-hidden rounded-[28px] border border-border/40 bg-gradient-to-br from-[hsl(36_60%_97%)] via-card to-[hsl(150_30%_96%)] p-6 shadow-[0_20px_60px_-30px_hsl(var(--primary)/0.35)] md:p-8 dark:from-card dark:to-card">
-            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[hsl(20_70%_88%)]/40 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-12 -left-8 h-44 w-44 rounded-full bg-[hsl(150_40%_85%)]/40 blur-3xl" />
+          <div className="relative overflow-hidden rounded-[28px] border border-border/40 bg-[radial-gradient(ellipse_140%_140%_at_10%_30%,hsl(150_35%_92%/0.85),hsl(36_50%_97%/0.6)_45%,hsl(var(--card))_85%)] p-6 shadow-[0_20px_60px_-30px_hsl(var(--primary)/0.35)] md:p-8 dark:bg-[radial-gradient(ellipse_140%_140%_at_10%_30%,hsl(150_25%_22%/0.5),hsl(var(--card))_70%)]">
+            <div className="pointer-events-none absolute -inset-20 rounded-full bg-[hsl(150_40%_85%)]/30 blur-[80px]" />
+            <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-[hsl(36_60%_90%)]/25 blur-[90px]" />
 
             <div className="relative grid gap-5 sm:grid-cols-[160px_minmax(0,1fr)] sm:items-center md:grid-cols-[200px_minmax(0,1fr)] md:gap-7">
               <div className="mx-auto sm:mx-0">
