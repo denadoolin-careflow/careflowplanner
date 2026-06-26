@@ -9,6 +9,7 @@ import { QuickEntryBar } from "@/components/tasks/QuickEntryBar";
 import { TodayFocusCard } from "@/components/tasks/TodayFocusCard";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { TaskListControls, useTaskListPrefs } from "@/components/tasks/TaskListControls";
+import { SavedFiltersBar } from "@/components/tasks/SavedFiltersBar";
 import { applyFilters, sortTasks, groupTasks } from "@/lib/task-grouping";
 import { KanbanBoard, type KanbanGroupBy } from "@/components/tasks/KanbanBoard";
 import { cn } from "@/lib/utils";
@@ -149,6 +150,8 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
         </Button>
         <TaskListControls prefs={prefs} onChange={setPrefs} />
       </header>
+
+      <SavedFiltersBar pageId={`tlp:${variant}`} prefs={prefs} onApply={setPrefs} />
 
       {showTimeframe && (
         <div className="flex flex-wrap gap-1 rounded-full bg-muted/50 p-1 w-fit">
