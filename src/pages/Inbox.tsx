@@ -990,3 +990,64 @@ function PickerLabel({ icon: Icon, children }: { icon: any; children: React.Reac
     </label>
   );
 }
+
+// ────────── Asana-style sectioned inbox ──────────
+
+type Bucket = "just" | "needsDate" | "needsCategory" | "ready";
+
+const BUCKET_META: Record<Bucket, { label: string; hint: string; tint: string }> = {
+  just:          { label: "Just captured",   hint: "Added in the last hour",          tint: "bg-sky-50/70 text-sky-700 ring-sky-100" },
+  needsDate:     { label: "Needs a date",    hint: "Decide when this happens",         tint: "bg-amber-50/70 text-amber-800 ring-amber-100" },
+  needsCategory: { label: "Needs a category",hint: "Give it a home",                   tint: "bg-rose-50/70 text-rose-700 ring-rose-100" },
+  ready:         { label: "Ready to plan",   hint: "Has a date and a category",        tint: "bg-emerald-50/70 text-emerald-700 ring-emerald-100" },
+};
+
+const BUCKET_ORDER: Bucket[] = ["just", "needsDate", "needsCategory", "ready"];
+
+function bucketFor(t: any): Bucket {
+  const createdAt = t.createdAt ? new Date(t.createdAt).getTime() : 0;
+  const ageMs = Date.now() - createdAt;
+  if (createdAt && ageMs < 60 * 60 * 1000) return "just";
+  if (!t.dueDate) return "needsDate";
+  if (!t.area) return "needsCategory";
+  return "ready";
+}
+
+function SectionedInboxList({ items }: { items: any[] }) {
+  const groups = useMemo(() => {
+    const map = new Map<Bucket, any[]>();
+    for (const b of BUCKET_ORDER) map.set(b, []);
+    for (const t of items) map.get(bucketFor(t))!.push(t);
+    return map;
+  }, [items]);
+
+  return (
+    <div className="space-y-4">
+      {BUCKET_ORDER.map((b) => {
+        const list = groups.get(b)!;
+        if (list.length === 0) return null;
+        const meta = BUCKET_META[b];
+        return (
+          <div key={b}>
+            <div className="mb-1.5 flex items-baseline justify-between gap-2 px-1">
+              <div className="inline-flex items-center gap-2">
+                <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1", meta.tint)}>
+                  {meta.label}
+                  <span className="rounded-full bg-background/60 px-1.5 text-[10.5px] font-semibold">{list.length}</span>
+                </span>
+              </div>
+              <span className="text-[11px] text-muted-foreground">{meta.hint}</span>
+            </div>
+            <div className="space-y-1.5">
+              {list.map((t: any) => (
+                <div key={t.id} className="rounded-2xl transition-colors hover:bg-muted/40">
+                  <TaskRow task={t} />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
