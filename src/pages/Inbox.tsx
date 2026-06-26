@@ -891,15 +891,8 @@ function InboxInner() {
         {/* ────────── Current Inbox Items (only when present) ────────── */}
         {items.length > 0 && (
           <section className="rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-display text-lg tracking-tight">Held in your inbox</h3>
-              {Object.keys(suggestions).length > 0 && (
-                <Button size="sm" variant="outline" onClick={acceptAllSuggestions} className="h-8 gap-1.5 rounded-full text-[12px]">
-                  <Check className="h-3 w-3" /> Apply all suggestions
-                </Button>
-              )}
-            </div>
-            <SectionedInboxList items={items} />
+            <InboxHeldHeader hasSuggestions={Object.keys(suggestions).length > 0} onApplyAll={acceptAllSuggestions} />
+            <SectionedInboxList items={items} autoDayPart={autoDayPart} updateTask={updateTask} />
           </section>
         )}
 
