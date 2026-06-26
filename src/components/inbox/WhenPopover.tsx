@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { addDays, format, parseISO, startOfDay } from "date-fns";
-import { Calendar as CalendarIcon, Sun, CloudSun, Moon, X } from "lucide-react";
+import { addDays, addHours, format, parseISO, startOfDay } from "date-fns";
+import { Calendar as CalendarIcon, Sun, CloudSun, Moon, X, Clock, Sunrise } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,38 @@ function nextSaturday(): string {
 
 export function WhenPopover({ value, autoDayPart, onChange, className }: Props) {
   const [open, setOpen] = useState(false);
+
+  type Snooze = { id: string; label: string; Icon: typeof Clock; build: () => WhenValue };
+  const SNOOZES: Snooze[] = [
+    {
+      id: "1h",
+      label: "+1 hour",
+      Icon: Clock,
+      build: () => {
+        const t = addHours(new Date(), 1);
+        const h = t.getHours();
+        const dp: DayPart = h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
+        return { date: format(t, "yyyy-MM-dd"), dayPart: dp };
+      },
+    },
+    {
+      id: "tonight",
+      label: "Tonight",
+      Icon: Moon,
+      build: () => ({ date: format(new Date(), "yyyy-MM-dd"), dayPart: "Evening" }),
+    },
+    {
+      id: "tmrAm",
+      label: "Tomorrow AM",
+      Icon: Sunrise,
+      build: () => ({ date: format(addDays(startOfDay(new Date()), 1), "yyyy-MM-dd"), dayPart: "Morning" }),
+    },
+  ];
+
+  const applySnooze = (s: Snooze) => {
+    onChange(s.build());
+    setOpen(false);
+  };
 
   const labelText = (() => {
     if (!value.date) return "When?";
@@ -91,6 +123,20 @@ export function WhenPopover({ value, autoDayPart, onChange, className }: Props) 
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[320px] p-3 pointer-events-auto">
+        <div className="mb-2 text-[11.5px] font-medium uppercase tracking-wide text-muted-foreground">Snooze</div>
+        <div className="mb-3 grid grid-cols-3 gap-1.5">
+          {SNOOZES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => applySnooze(s)}
+              className="inline-flex items-center justify-center gap-1 rounded-lg border border-border/60 bg-background px-2 py-1.5 text-[12px] font-medium text-foreground/80 hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+            >
+              <s.Icon className="h-3 w-3" />
+              {s.label}
+            </button>
+          ))}
+        </div>
         <div className="mb-2 text-[11.5px] font-medium uppercase tracking-wide text-muted-foreground">Schedule</div>
         <div className="grid grid-cols-2 gap-1.5">
           {PRESETS.map((p) => (
