@@ -832,8 +832,28 @@ function InboxInner() {
             )}
           </div>
 
-          {/* Caregiver quick actions */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
+          {/* Quick-fill phrase chips — tap to prefill the input */}
+          <div className="mt-4 flex flex-wrap items-center gap-1.5">
+            {QUICK_FILL.map((q) => {
+              const Icon = q.icon;
+              return (
+                <button
+                  key={q.label}
+                  type="button"
+                  onClick={() => prefillDraft(q.phrase)}
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
+                    q.tint,
+                  )}
+                >
+                  <Icon className="h-3 w-3" /> {q.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Caregiver quick actions — compact pills */}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {CAREGIVER_PRESETS.map(p => {
               const Icon = p.icon;
               return (
@@ -842,11 +862,11 @@ function InboxInner() {
                   type="button"
                   onClick={() => quickAdd(p.title, p.area)}
                   className={cn(
-                    "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
+                    "group inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
                     p.tint,
                   )}
                 >
-                  <Icon className="h-3.5 w-3.5" /> {p.label}
+                  <Icon className="h-3 w-3" /> {p.label}
                 </button>
               );
             })}
