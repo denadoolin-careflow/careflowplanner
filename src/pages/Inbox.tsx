@@ -891,13 +891,7 @@ function InboxInner() {
                 </Button>
               )}
             </div>
-            <div className="space-y-1.5">
-              {items.map((t: any) => (
-                <div key={t.id} className="rounded-2xl transition-colors hover:bg-muted/40">
-                  <TaskRow task={t} />
-                </div>
-              ))}
-            </div>
+            <SectionedInboxList items={items} />
           </section>
         )}
 
