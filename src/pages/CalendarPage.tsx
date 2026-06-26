@@ -198,6 +198,14 @@ export default function CalendarPage() {
     toast(`Scheduled “${t.title}” at ${hoursToHM(startHour)}`);
   };
 
+  /** Drop an appointment onto a new time slot (week/day grid). */
+  const handleApptTimeDrop = async (apptId: string, dateISO: string, startHour: number) => {
+    const a = state.appointments.find(x => x.id === apptId);
+    if (!a) return;
+    await updateAppointment(apptId, { date: dateISO, time: hoursToHM(startHour) });
+    toast(`Moved “${a.title}” to ${hoursToHM(startHour)}`);
+  };
+
   /** Unified item editor opener — used by every calendar layout. */
   const openItemEditor = (item: EventItem) => {
     if (item.kind === "appt" && item.id) setEditApptId(item.id);
@@ -457,10 +465,18 @@ export default function CalendarPage() {
                 days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(cursor, { weekStartsOn: 0 }), i))}
                 appointmentsOn={eventsOnForGrid}
                 onTaskDropAt={handleTimeDrop}
+                onApptDropAt={handleApptTimeDrop}
+                onApptClick={setEditApptId}
               />
             )}
             {view === "day" && (
-              <TimeGrid days={[cursor]} appointmentsOn={eventsOnForGrid} onTaskDropAt={handleTimeDrop} />
+              <TimeGrid
+                days={[cursor]}
+                appointmentsOn={eventsOnForGrid}
+                onTaskDropAt={handleTimeDrop}
+                onApptDropAt={handleApptTimeDrop}
+                onApptClick={setEditApptId}
+              />
             )}
             {view === "year" && <YearView cursor={cursor} eventsOn={eventsOnFiltered} setCursor={setCursor} setView={setView} />}
             </>
