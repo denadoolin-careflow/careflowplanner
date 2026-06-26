@@ -7,7 +7,7 @@ import {
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
-  MessageCircle, Flag, Folder, MapPin, CheckSquare,
+  MessageCircle, Flag, Folder, MapPin, CheckSquare, Plus, Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -889,10 +889,37 @@ function InboxInner() {
         </section>
 
         {/* ────────── Current Inbox Items (only when present) ────────── */}
-        {items.length > 0 && (
+        {items.length > 0 ? (
           <section className="rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
             <InboxHeldHeader hasSuggestions={Object.keys(suggestions).length > 0} onApplyAll={acceptAllSuggestions} />
-            <SectionedInboxList items={items} autoDayPart={autoDayPart} updateTask={updateTask} />
+            <SectionedInboxList
+              items={items}
+              autoDayPart={autoDayPart}
+              updateTask={updateTask}
+              onAddToBucket={async (b) => {
+                const today = format(new Date(), "yyyy-MM-dd");
+                const t = await addTask({
+                  title: "New item",
+                  inbox: true,
+                  dueDate: b === "needsDate" ? undefined : today,
+                  area: b === "needsCategory" ? undefined : undefined,
+                  dayPart: autoDayPart,
+                });
+                haptics.snap?.();
+                if (t?.id) openTaskEditor(t.id);
+              }}
+              onProcess={() => setProcessOpen(true)}
+            />
+          </section>
+        ) : (
+          <section className="rounded-[24px] border border-dashed border-border/60 bg-card/40 p-6 text-center backdrop-blur-md">
+            <div className="mx-auto grid h-10 w-10 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+              <Check className="h-4 w-4" />
+            </div>
+            <p className="mt-3 font-display text-base tracking-tight">Inbox zero, gently held.</p>
+            <p className="mx-auto mt-1 max-w-sm text-[12.5px] leading-relaxed text-muted-foreground">
+              Capture above whenever something pops in. New items will appear here sorted into calm sections.
+            </p>
           </section>
         )}
 
