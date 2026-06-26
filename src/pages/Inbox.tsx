@@ -23,7 +23,7 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isToday, isFuture, parseISO, format } from "date-fns";
-import basketImg from "@/assets/inbox-basket.png";
+import { InboxIllustration } from "@/components/inbox/InboxIllustration";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
 import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReviewSheet";
 import { TagPicker } from "@/components/tags/TagPicker";
