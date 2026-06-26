@@ -30,6 +30,7 @@ import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
 import { createNote, getOrCreateDailyNote } from "@/lib/notes";
+import { openTaskEditor } from "@/lib/open-task-editor";
 import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { InboxSortableRow } from "@/components/inbox/InboxSortableRow";
@@ -1072,7 +1073,13 @@ function InboxHeldHeader({ hasSuggestions, onApplyAll }: { hasSuggestions: boole
   );
 }
 
-function SectionedInboxList({ items, autoDayPart, updateTask }: { items: any[]; autoDayPart: DayPart; updateTask: (id: string, patch: any) => Promise<void> | void }) {
+function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onProcess }: {
+  items: any[];
+  autoDayPart: DayPart;
+  updateTask: (id: string, patch: any) => Promise<void> | void;
+  onAddToBucket?: (b: Bucket) => void | Promise<void>;
+  onProcess?: () => void;
+}) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
@@ -1112,17 +1119,42 @@ function SectionedInboxList({ items, autoDayPart, updateTask }: { items: any[]; 
         const list = groups.get(b)!;
         if (list.length === 0) return null;
         const meta = BUCKET_META[b];
+        const Icon = BUCKET_ICON[b];
         const ids = list.map((t) => `inbox:${t.id}`);
         return (
           <div key={b}>
-            <div className="mb-1.5 flex items-baseline justify-between gap-2 px-1">
+            <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
               <div className="inline-flex items-center gap-2">
                 <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1", meta.tint)}>
+                  <Icon className="h-3 w-3" />
                   {meta.label}
                   <span className="rounded-full bg-background/60 px-1.5 text-[10.5px] font-semibold">{list.length}</span>
                 </span>
+                <span className="hidden text-[11px] text-muted-foreground sm:inline">{meta.hint}</span>
               </div>
-              <span className="text-[11px] text-muted-foreground">{meta.hint}</span>
+              <div className="flex items-center gap-1">
+                {onAddToBucket && (
+                  <button
+                    type="button"
+                    onClick={() => void onAddToBucket(b)}
+                    aria-label="Quick add to this section"
+                    title="Quick add"
+                    className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                {onProcess && b !== "ready" && (
+                  <button
+                    type="button"
+                    onClick={onProcess}
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+                  >
+                    <Wand2 className="h-3 w-3" />
+                    Process
+                  </button>
+                )}
+              </div>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(b)}>
               <SortableContext items={ids} strategy={verticalListSortingStrategy}>
