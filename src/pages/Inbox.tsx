@@ -7,7 +7,7 @@ import {
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
-  MessageCircle, Flag, Folder, MapPin,
+  MessageCircle, Flag, Folder, MapPin, CheckSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,14 @@ import { haptics } from "@/lib/haptics";
 import { createNote, getOrCreateDailyNote } from "@/lib/notes";
 import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
+import { InboxSortableRow } from "@/components/inbox/InboxSortableRow";
+import {
+  DndContext, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
+  closestCenter, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 interface Suggestion {
   task_id: string;
