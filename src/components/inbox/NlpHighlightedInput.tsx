@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
  * and IME behavior stays intact.
  */
 
+
 type TokenKind =
   | "tag" | "area" | "project" | "priority"
   | "date" | "time" | "duration" | "recur" | "someday" | "energy";
