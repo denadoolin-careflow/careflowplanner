@@ -1033,6 +1033,13 @@ const BUCKET_META: Record<Bucket, { label: string; hint: string; tint: string }>
 
 const BUCKET_ORDER: Bucket[] = ["just", "needsDate", "needsCategory", "ready"];
 
+const BUCKET_ICON: Record<Bucket, typeof Sparkles> = {
+  just: Sparkles,
+  needsDate: CalendarIcon,
+  needsCategory: TagIcon,
+  ready: Check,
+};
+
 function bucketFor(t: any): Bucket {
   const createdAt = t.createdAt ? new Date(t.createdAt).getTime() : 0;
   const ageMs = Date.now() - createdAt;
