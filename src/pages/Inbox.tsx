@@ -8,6 +8,7 @@ import {
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
   MessageCircle, Flag, Folder, MapPin, CheckSquare, Plus, Wand2,
+  Mail, ChefHat, Sparkles as SparklesIcon, HandHelping, Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +70,16 @@ const CAREGIVER_PRESETS: { icon: any; label: string; title: string; area: Area; 
   { icon: GraduationCap, label: "School",       title: "School — ",            area: "Kids",                tint: "bg-teal-50 text-teal-700 ring-teal-100" },
   { icon: Cake,          label: "Birthday",     title: "Birthday — ",          area: "Holidays & Birthdays",tint: "bg-pink-50 text-pink-700 ring-pink-100" },
   { icon: Car,           label: "Errand",       title: "Errand — ",            area: "Personal",            tint: "bg-violet-50 text-violet-700 ring-violet-100" },
+];
+
+// Quick-fill phrase chips — tapping prefills the capture input with a starter phrase,
+// so the user just adds the specifics.
+const QUICK_FILL: { icon: any; label: string; phrase: string; tint: string }[] = [
+  { icon: Mail,        label: "Text/Email", phrase: "Text/Email ",  tint: "bg-sky-50/80 text-sky-700 ring-sky-100" },
+  { icon: ChefHat,     label: "Cook",       phrase: "Cook ",        tint: "bg-amber-50/80 text-amber-700 ring-amber-100" },
+  { icon: SparklesIcon,label: "Clean",      phrase: "Clean ",       tint: "bg-emerald-50/80 text-emerald-700 ring-emerald-100" },
+  { icon: HandHelping, label: "Help",       phrase: "Help ",        tint: "bg-rose-50/80 text-rose-700 ring-rose-100" },
+  { icon: Package,     label: "Order",      phrase: "Order ",       tint: "bg-violet-50/80 text-violet-700 ring-violet-100" },
 ];
 
 const CATEGORIES: { icon: any; label: string; tint: string }[] = [
