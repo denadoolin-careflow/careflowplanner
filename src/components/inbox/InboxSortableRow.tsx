@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, CheckSquare, Square } from "lucide-react";
+import { GripVertical, CheckSquare, Square, Sparkles, Mic, Tag as TagIcon, Clock } from "lucide-react";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { useStore } from "@/lib/store";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
 import type { Task } from "@/lib/types";
+import { formatDistanceToNow } from "date-fns";
 
 interface Props {
   task: Task;
@@ -34,12 +35,25 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
 
   const selected = isSelected(task.id);
 
+  // Source backlink — derive from tags/markers so the row tells you where it came from.
+  const tags = (task.tags ?? []).map((t) => t.toLowerCase());
+  const source: { icon: typeof Sparkles; label: string } | null =
+    tags.includes("voice") ? { icon: Mic, label: "voice" }
+      : tags.includes("preset") || tags.includes("quick") ? { icon: Sparkles, label: "quick" }
+      : tags.length ? { icon: TagIcon, label: tags[0] }
+      : null;
+  const ageLabel = (() => {
+    if (!task.createdAt) return null;
+    try { return formatDistanceToNow(new Date(task.createdAt), { addSuffix: true }); }
+    catch { return null; }
+  })();
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group/inbox flex items-stretch gap-1.5 rounded-2xl transition-colors",
+        "group/inbox flex items-stretch gap-1 rounded-xl px-0.5 py-0.5 transition-colors",
         selected && "bg-primary/5",
       )}
     >
@@ -49,10 +63,10 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
         {...attributes}
         aria-label="Reorder"
         title="Drag to reorder"
-        className="mt-2 grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded text-muted-foreground/40 opacity-0 transition-opacity hover:text-muted-foreground group-hover/inbox:opacity-100 active:cursor-grabbing"
+        className="mt-1.5 grid h-6 w-4 shrink-0 cursor-grab place-items-center rounded text-muted-foreground/40 opacity-0 transition-opacity hover:text-muted-foreground group-hover/inbox:opacity-100 active:cursor-grabbing"
         onPointerDown={() => haptics.tap?.()}
       >
-        <GripVertical className="h-3.5 w-3.5" />
+        <GripVertical className="h-3 w-3" />
       </button>
 
       {/* Selection checkbox (visible in select mode) */}
@@ -72,10 +86,26 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
 
       <div className="min-w-0 flex-1">
         <TaskRow task={task} />
+        {(source || ageLabel) && (
+          <div className="ml-9 mt-0.5 flex items-center gap-2 text-[10.5px] text-muted-foreground/80">
+            {source && (
+              <span className="inline-flex items-center gap-1">
+                <source.icon className="h-3 w-3" />
+                <span className="capitalize">{source.label}</span>
+              </span>
+            )}
+            {ageLabel && (
+              <span className="inline-flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {ageLabel}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* One-tap "When" reschedule */}
-      <div className="mt-1.5 shrink-0 self-start opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover/inbox:opacity-100">
+      <div className="mt-1 shrink-0 self-start opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover/inbox:opacity-100">
         <WhenPopover
           value={{ date: task.dueDate, dayPart: (task.dayPart as DayPart) ?? autoDayPart }}
           autoDayPart={autoDayPart}

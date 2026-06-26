@@ -7,7 +7,7 @@ import {
   Home, Users, Heart, BookOpen, Moon, HeartHandshake, Lightbulb, Puzzle,
   Plane, Briefcase, Palette, PawPrint, Leaf, Inbox as InboxIcon, Zap, Tag as TagIcon,
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
-  MessageCircle, Flag, Folder, MapPin, CheckSquare,
+  MessageCircle, Flag, Folder, MapPin, CheckSquare, Plus, Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ import { TagPicker } from "@/components/tags/TagPicker";
 import { TagChip } from "@/components/tags/TagChip";
 import { haptics } from "@/lib/haptics";
 import { createNote, getOrCreateDailyNote } from "@/lib/notes";
+import { openTaskEditor } from "@/lib/open-task-editor";
 import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { InboxSortableRow } from "@/components/inbox/InboxSortableRow";
@@ -889,10 +890,37 @@ function InboxInner() {
         </section>
 
         {/* ────────── Current Inbox Items (only when present) ────────── */}
-        {items.length > 0 && (
+        {items.length > 0 ? (
           <section className="rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
             <InboxHeldHeader hasSuggestions={Object.keys(suggestions).length > 0} onApplyAll={acceptAllSuggestions} />
-            <SectionedInboxList items={items} autoDayPart={autoDayPart} updateTask={updateTask} />
+            <SectionedInboxList
+              items={items}
+              autoDayPart={autoDayPart}
+              updateTask={updateTask}
+              onAddToBucket={async (b) => {
+                const today = format(new Date(), "yyyy-MM-dd");
+                const t = await addTask({
+                  title: "New item",
+                  inbox: true,
+                  dueDate: b === "needsDate" ? undefined : today,
+                  area: b === "needsCategory" ? undefined : undefined,
+                  dayPart: autoDayPart,
+                });
+                haptics.snap?.();
+                if (t?.id) openTaskEditor(t.id);
+              }}
+              onProcess={() => setProcessOpen(true)}
+            />
+          </section>
+        ) : (
+          <section className="rounded-[24px] border border-dashed border-border/60 bg-card/40 p-6 text-center backdrop-blur-md">
+            <div className="mx-auto grid h-10 w-10 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+              <Check className="h-4 w-4" />
+            </div>
+            <p className="mt-3 font-display text-base tracking-tight">Inbox zero, gently held.</p>
+            <p className="mx-auto mt-1 max-w-sm text-[12.5px] leading-relaxed text-muted-foreground">
+              Capture above whenever something pops in. New items will appear here sorted into calm sections.
+            </p>
           </section>
         )}
 
@@ -1005,6 +1033,13 @@ const BUCKET_META: Record<Bucket, { label: string; hint: string; tint: string }>
 
 const BUCKET_ORDER: Bucket[] = ["just", "needsDate", "needsCategory", "ready"];
 
+const BUCKET_ICON: Record<Bucket, typeof Sparkles> = {
+  just: Sparkles,
+  needsDate: CalendarIcon,
+  needsCategory: TagIcon,
+  ready: Check,
+};
+
 function bucketFor(t: any): Bucket {
   const createdAt = t.createdAt ? new Date(t.createdAt).getTime() : 0;
   const ageMs = Date.now() - createdAt;
@@ -1045,7 +1080,13 @@ function InboxHeldHeader({ hasSuggestions, onApplyAll }: { hasSuggestions: boole
   );
 }
 
-function SectionedInboxList({ items, autoDayPart, updateTask }: { items: any[]; autoDayPart: DayPart; updateTask: (id: string, patch: any) => Promise<void> | void }) {
+function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onProcess }: {
+  items: any[];
+  autoDayPart: DayPart;
+  updateTask: (id: string, patch: any) => Promise<void> | void;
+  onAddToBucket?: (b: Bucket) => void | Promise<void>;
+  onProcess?: () => void;
+}) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
@@ -1085,17 +1126,42 @@ function SectionedInboxList({ items, autoDayPart, updateTask }: { items: any[]; 
         const list = groups.get(b)!;
         if (list.length === 0) return null;
         const meta = BUCKET_META[b];
+        const Icon = BUCKET_ICON[b];
         const ids = list.map((t) => `inbox:${t.id}`);
         return (
           <div key={b}>
-            <div className="mb-1.5 flex items-baseline justify-between gap-2 px-1">
+            <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
               <div className="inline-flex items-center gap-2">
                 <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1", meta.tint)}>
+                  <Icon className="h-3 w-3" />
                   {meta.label}
                   <span className="rounded-full bg-background/60 px-1.5 text-[10.5px] font-semibold">{list.length}</span>
                 </span>
+                <span className="hidden text-[11px] text-muted-foreground sm:inline">{meta.hint}</span>
               </div>
-              <span className="text-[11px] text-muted-foreground">{meta.hint}</span>
+              <div className="flex items-center gap-1">
+                {onAddToBucket && (
+                  <button
+                    type="button"
+                    onClick={() => void onAddToBucket(b)}
+                    aria-label="Quick add to this section"
+                    title="Quick add"
+                    className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                {onProcess && b !== "ready" && (
+                  <button
+                    type="button"
+                    onClick={onProcess}
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+                  >
+                    <Wand2 className="h-3 w-3" />
+                    Process
+                  </button>
+                )}
+              </div>
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(b)}>
               <SortableContext items={ids} strategy={verticalListSortingStrategy}>
