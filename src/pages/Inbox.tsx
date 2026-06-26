@@ -23,7 +23,7 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isToday, isFuture, parseISO, format } from "date-fns";
-import basketImg from "@/assets/inbox-basket.png";
+import { InboxIllustration } from "@/components/inbox/InboxIllustration";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
 import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReviewSheet";
 import { TagPicker } from "@/components/tags/TagPicker";
@@ -431,14 +431,7 @@ function InboxInner() {
 
             <div className="relative grid gap-5 sm:grid-cols-[160px_minmax(0,1fr)] sm:items-center md:grid-cols-[200px_minmax(0,1fr)] md:gap-7">
               <div className="mx-auto sm:mx-0">
-                <img
-                  src={basketImg}
-                  alt="Wicker basket holding notes and a sage sprig"
-                  width={200}
-                  height={200}
-                  className="h-32 w-32 select-none object-contain transition-transform duration-700 hover:-translate-y-1 sm:h-40 sm:w-40 md:h-48 md:w-48"
-                  draggable={false}
-                />
+                <InboxIllustration isEmpty={items.length === 0} count={items.length} />
               </div>
               <div className="space-y-3 text-center sm:text-left">
                 <div className="inline-flex items-center gap-2">
