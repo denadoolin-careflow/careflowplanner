@@ -858,6 +858,17 @@ function InboxInner() {
             </div>
           )}
 
+          {!showControls && recorder.state === "idle" && (
+            <button
+              type="button"
+              onClick={() => setControlsPinned(true)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-muted-foreground/80 transition hover:text-foreground"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+              Show options
+            </button>
+          )}
+
         {showControls && (
           <div className="animate-fade-in">
           {/* Inline details / notes with light markdown formatting */}
