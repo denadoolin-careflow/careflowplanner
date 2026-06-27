@@ -766,6 +766,8 @@ function InboxInner() {
                   <>
                     <button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onTouchStart={(e) => { e.preventDefault(); openReviewForDraft(); }}
                       onClick={openReviewForDraft}
                       aria-label="Edit details before saving"
                       className="grid h-10 w-10 place-items-center rounded-xl bg-muted/60 text-muted-foreground transition hover:bg-muted"
@@ -773,6 +775,8 @@ function InboxInner() {
                       <Pencil className="h-4 w-4" />
                     </button>
                     <Button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onTouchStart={(e) => { e.preventDefault(); void submitCapture(); }}
                       onClick={() => void submitCapture()}
                       size="sm"
                       className="h-10 rounded-xl px-3 text-[13px]"
