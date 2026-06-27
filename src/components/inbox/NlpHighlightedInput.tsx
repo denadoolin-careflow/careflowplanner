@@ -143,6 +143,8 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
+          onFocus={onFocus}
+          onBlur={onBlur}
           onScroll={handleScroll}
           placeholder={placeholder}
           disabled={disabled}
