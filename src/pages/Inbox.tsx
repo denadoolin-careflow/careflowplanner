@@ -388,8 +388,9 @@ function InboxInner() {
       const today = format(new Date(), "yyyy-MM-dd");
       const h = new Date().getHours();
       const mealSlot = h < 12 ? "Breakfast" : h < 17 ? "Lunch" : "Dinner";
+      const detailsText = details.trim();
       if (captureKind === "home") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Home" });
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Home", notes: detailsText || undefined });
         toast.success(`Added home task → ${dayPart}`);
       } else if (captureKind === "care") {
         let recipientIds: string[] = [...careRecipientIds];
@@ -403,7 +404,7 @@ function InboxInner() {
           if (guess.recipientId) recipientIds = [guess.recipientId];
         }
         if (recipientIds.length === 0) {
-          await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving" });
+          await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving", notes: detailsText || undefined });
           toast.success(`Added care task → ${dayPart}`);
         } else {
           for (const rid of recipientIds) {
@@ -413,6 +414,7 @@ function InboxInner() {
               dayPart,
               area: "Caregiving",
               recipientId: rid,
+              notes: detailsText || undefined,
             });
           }
           const names = recipientIds
@@ -426,18 +428,20 @@ function InboxInner() {
           setCareRecipientIds([]);
         }
       } else if (captureKind === "connect") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Family" });
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Family", notes: detailsText || undefined });
         toast.success(`Added connect → ${dayPart}`);
       } else if (captureKind === "commute") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Personal" });
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Personal", notes: detailsText || undefined });
         toast.success(`Added commute → ${dayPart}`);
       } else if (captureKind === "meal") {
         await addMeal({ name: raw, date: today, slot: mealSlot });
         toast.success(`Added ${mealSlot} → ${raw}`);
       } else if (captureKind === "note") {
         try {
-          const n = await createNote({ title: raw });
+          const n = await createNote({ title: raw, body: detailsText || undefined });
           setDraft("");
+          setDetails("");
+          setDetailsOpen(false);
           toast.success("Note created");
           navigate(`/notes/${n.id}`);
           return;
@@ -445,8 +449,23 @@ function InboxInner() {
           toast.error("Couldn't create note");
           return;
         }
+      } else if (captureKind === "journal") {
+        try {
+          const body = [raw, detailsText].filter(Boolean).join("\n\n");
+          const entry = await addJournal({ body, type: "daily", title: raw.slice(0, 80) });
+          setDraft("");
+          setDetails("");
+          setDetailsOpen(false);
+          if (entry) toast.success("Journal entry saved ✨");
+          return;
+        } catch {
+          toast.error("Couldn't save journal entry");
+          return;
+        }
       }
       setDraft("");
+      setDetails("");
+      setDetailsOpen(false);
       return;
     }
     const p = parseTaskInput(raw);
@@ -461,11 +480,14 @@ function InboxInner() {
       energy: p.energy,
       tags: mergedTags.length ? mergedTags : undefined,
       estMinutes: p.estMinutes,
+      notes: details.trim() || undefined,
       inbox: true,
     });
     setDraft("");
     setExtraTags([]);
     setOverrideDue("");
+    setDetails("");
+    setDetailsOpen(false);
     toast.success("Caught it ✨", { description: "Safely held in your inbox." });
   };
 
