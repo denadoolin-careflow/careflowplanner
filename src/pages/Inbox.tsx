@@ -1215,6 +1215,7 @@ function InboxInner() {
             </div>
             )}
           </div>
+        )}
         </section>
 
         {/* ────────── Current Inbox Items (only when present) ────────── */}
