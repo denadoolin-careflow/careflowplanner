@@ -121,7 +121,7 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           )}
         >
           <div
-            className="min-w-0 truncate font-semibold !text-black dark:!text-white"
+            className="min-w-0 truncate font-semibold text-foreground"
             dangerouslySetInnerHTML={{ __html: highlightTokens(value) }}
           />
         </div>
