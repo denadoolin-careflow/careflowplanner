@@ -357,30 +357,39 @@ function InboxInner() {
         await addTask({ title: raw, dueDate: today, dayPart, area: "Home" });
         toast.success(`Added home task → ${dayPart}`);
       } else if (captureKind === "care") {
-        let recipientId: string | undefined =
-          careRecipientId !== "auto" ? careRecipientId : undefined;
-        if (!recipientId) {
+        let recipientIds: string[] = [...careRecipientIds];
+        if (recipientIds.length === 0) {
           const guess = detectAreaAndProject({
             title: raw,
             areas: state.areas,
             projects: state.projects,
             recipients: state.recipients,
           });
-          recipientId = guess.recipientId;
+          if (guess.recipientId) recipientIds = [guess.recipientId];
         }
-        await addTask({
-          title: raw,
-          dueDate: today,
-          dayPart,
-          area: "Caregiving",
-          recipientId,
-        });
-        const name = recipientId
-          ? state.recipients?.find((r: any) => r.id === recipientId)?.name
-          : undefined;
-        toast.success(
-          name ? `Added care task for ${name} → ${dayPart}` : `Added care task → ${dayPart}`,
-        );
+        if (recipientIds.length === 0) {
+          await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving" });
+          toast.success(`Added care task → ${dayPart}`);
+        } else {
+          for (const rid of recipientIds) {
+            await addTask({
+              title: raw,
+              dueDate: today,
+              dayPart,
+              area: "Caregiving",
+              recipientId: rid,
+            });
+          }
+          const names = recipientIds
+            .map((id) => state.recipients?.find((r: any) => r.id === id)?.name)
+            .filter(Boolean) as string[];
+          toast.success(
+            names.length === 1
+              ? `Added care task for ${names[0]} → ${dayPart}`
+              : `Added care task for ${names.length} people → ${dayPart}`,
+          );
+          setCareRecipientIds([]);
+        }
       } else if (captureKind === "connect") {
         await addTask({ title: raw, dueDate: today, dayPart, area: "Family" });
         toast.success(`Added connect → ${dayPart}`);
