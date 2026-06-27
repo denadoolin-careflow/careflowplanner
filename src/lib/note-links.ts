@@ -2,7 +2,10 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Note } from "@/lib/notes";
 
-export type EntityType = "task" | "project" | "goal" | "habit" | "appointment" | "time_block" | "person" | "meal" | "journal";
+export type EntityType =
+  | "task" | "project" | "goal" | "habit" | "appointment" | "time_block"
+  | "person" | "meal" | "journal"
+  | "note" | "date" | "cosmic_event" | "area" | "holiday" | "memory";
 
 export const ENTITY_LABEL: Record<EntityType, string> = {
   task: "Task",
@@ -14,6 +17,12 @@ export const ENTITY_LABEL: Record<EntityType, string> = {
   person: "Person",
   meal: "Meal",
   journal: "Journal",
+  note: "Note",
+  date: "Date",
+  cosmic_event: "Cosmic event",
+  area: "Area",
+  holiday: "Holiday",
+  memory: "Memory",
 };
 
 export const ENTITY_ROUTE: Record<EntityType, (id: string) => string> = {
@@ -26,6 +35,12 @@ export const ENTITY_ROUTE: Record<EntityType, (id: string) => string> = {
   person: () => "/caregiving",
   meal: () => "/meals",
   journal: () => "/journal",
+  note: (id) => `/notes/${id}`,
+  date: (id) => `/calendar?date=${id}`,
+  cosmic_event: (id) => `/cosmic-flow/event/${encodeURIComponent(id)}`,
+  area: (id) => `/areas/${id}`,
+  holiday: () => "/seasons/holidays",
+  memory: () => "/memories",
 };
 
 export interface NoteLink {

@@ -42,14 +42,18 @@ import {
   CheckCircle2, FileText, Folder, Target, Users, BookOpen, Utensils, Sparkles, CalendarDays,
   ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus, Image as ImageIcon, Paperclip,
   IndentIncrease, IndentDecrease, ChevronDown, Maximize2, Minimize2, EyeOff, Eye,
+  Heart, AtSign, GitBranch,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { linkNote, type EntityType } from "@/lib/note-links";
+import { listNotes } from "@/lib/notes";
+import { supabase } from "@/integrations/supabase/client";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
+import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { upcomingEvents } from "@/lib/cosmic/events";
@@ -302,6 +306,7 @@ type RefItem = { id: string; label: string; type: string; href?: string; icon: R
 const TYPE_TO_ENTITY: Record<string, EntityType> = {
   Task: "task", Project: "project", Goal: "goal", Habit: "habit",
   Person: "person", Appointment: "appointment", Meal: "meal", Journal: "journal",
+  Note: "note", Area: "area", Holiday: "holiday", Memory: "memory", Cosmic: "cosmic_event",
 };
 
 function buildReferences(state: ReturnType<typeof useStore>["state"], transits: RefItem[] = []): RefItem[] {
@@ -331,6 +336,12 @@ function buildReferences(state: ReturnType<typeof useStore>["state"], transits: 
   }));
   (state.journal ?? []).slice(0, 80).forEach(j => items.push({
     id: j.id, label: j.title || j.body.slice(0, 40), type: "Journal", href: "/journal", icon: BookOpen, insertText: j.title || j.date,
+  }));
+  (state.areas ?? []).forEach(a => items.push({
+    id: a.id, label: a.name, type: "Area", href: `/areas/${a.id}`, icon: Folder, insertText: a.name,
+  }));
+  (state.holidays ?? []).slice(0, 80).forEach(h => items.push({
+    id: h.id, label: h.name, type: "Holiday", href: "/seasons/holidays", icon: CalendarDays, insertText: h.name,
   }));
   return items;
 }
@@ -466,6 +477,9 @@ function Toolbar({
   isFullscreen,
   onToggleFullscreen,
   onHide,
+  onAddSubtask,
+  onOpenMentions,
+  hasSubtaskHost,
 }: {
   editor: Editor;
   onPromoteTask: () => void;
@@ -473,6 +487,9 @@ function Toolbar({
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   onHide?: () => void;
+  onAddSubtask?: () => void;
+  onOpenMentions?: () => void;
+  hasSubtaskHost?: boolean;
 }) {
   if (!editor) return null;
   const setLink = () => {
@@ -510,6 +527,9 @@ function Toolbar({
         <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-4 w-4" /></ToolbarButton>
         <ColorPickerPopover editor={editor} />
         <ToolbarButton active={editor.isActive("link")} onClick={setLink} label="Link"><LinkIcon className="h-4 w-4" /></ToolbarButton>
+        {onOpenMentions && (
+          <ToolbarButton onClick={onOpenMentions} label="Link to task, note, person, project…"><AtSign className="h-4 w-4" /></ToolbarButton>
+        )}
         <ToolbarButton onClick={onInsertImage} label="Insert image"><ImageIcon className="h-4 w-4" /></ToolbarButton>
       </div>
       <span className="h-5 w-px shrink-0 bg-border" />
@@ -521,6 +541,11 @@ function Toolbar({
         <ToolbarButton onClick={doIndent} label="Indent (Tab)"><IndentIncrease className="h-4 w-4" /></ToolbarButton>
         {editor.isActive("taskItem") && (
           <ToolbarButton onClick={onPromoteTask} label="Add this checkbox to Tasks"><ListPlus className="h-4 w-4" /></ToolbarButton>
+        )}
+        {onAddSubtask && hasSubtaskHost && (
+          <ToolbarButton onClick={onAddSubtask} label="Add subtask">
+            <GitBranch className="h-4 w-4" />
+          </ToolbarButton>
         )}
         <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-4 w-4" /></ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} label="Divider"><Minus className="h-4 w-4" /></ToolbarButton>
@@ -742,6 +767,7 @@ export function BlockEditor({
   onGoalChange,
   showFooter = true,
   minHeight,
+  subtaskHost,
 }: {
   body: string;
   onChange: (markdown: string, html: string) => void;
@@ -751,6 +777,8 @@ export function BlockEditor({
   onGoalChange?: (next: number | null) => void;
   showFooter?: boolean;
   minHeight?: string;
+  /** When provided, the "Add subtask" button creates a real Task linked here. */
+  subtaskHost?: { kind: "task" | "note" | "project"; id: string; title?: string };
 }) {
   const { state, addTask } = useStore();
   const navigate = useNavigate();
@@ -758,19 +786,43 @@ export function BlockEditor({
   const isMobile = useIsMobile();
   const { tags: registeredTags } = useTags();
   const refsRef = useRef<RefItem[]>([]);
+  const [extraRefs, setExtraRefs] = useState<RefItem[]>([]);
+  // Load notes + memories asynchronously so they appear in @-mentions
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const notes = await listNotes();
+        const memRes = await supabase.from("memories").select("id,title,date").limit(120);
+        const noteRefs: RefItem[] = notes.slice(0, 120).map(n => ({
+          id: n.id, label: n.title || "Untitled note", type: "Note",
+          href: `/notes/${n.id}`, icon: FileText, insertText: n.title || "Note",
+        }));
+        const memRefs: RefItem[] = (memRes.data ?? []).map((m: any) => ({
+          id: m.id, label: m.title || "Memory", type: "Memory",
+          href: "/memories", icon: Heart, insertText: m.title || "Memory",
+        }));
+        if (!cancelled) setExtraRefs([...noteRefs, ...memRefs]);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
   const transitRefs = useMemo<RefItem[]>(() => {
     const start = addDays(new Date(), -30);
     const events = upcomingEvents(start, 120);
     return events.map(ev => ({
       id: ev.id,
       label: `${ev.glyph}  ${ev.title}`,
-      type: `Transit · ${formatDate(new Date(ev.date), "MMM d")}`,
+      type: "Cosmic",
       href: `/cosmic-flow/event/${encodeURIComponent(ev.id)}`,
       icon: Sparkles,
       insertText: ev.title,
     }));
   }, []);
-  refsRef.current = useMemo(() => buildReferences(state, transitRefs), [state, transitRefs]);
+  refsRef.current = useMemo(
+    () => [...buildReferences(state, transitRefs), ...extraRefs],
+    [state, transitRefs, extraRefs]
+  );
   const lastSyncedRef = useRef<string>(body);
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
@@ -1458,6 +1510,44 @@ export function BlockEditor({
     }
   }, [editor]);
 
+  /** Quick-trigger the @-mention picker from a toolbar button. */
+  const openMentions = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().insertContent("@").run();
+  }, [editor]);
+
+  /** Create a real subtask Task linked back to the host, and insert a chip. */
+  const addSubtaskNow = useCallback(async () => {
+    if (!editor || !subtaskHost) return;
+    const title = window.prompt("Subtask title", "") ?? "";
+    const clean = title.trim();
+    if (!clean) return;
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u?.user?.id;
+      if (!uid) { toast.error("Sign in first"); return; }
+      const insertPayload: any = { user_id: uid, title: clean, done: false, priority: "medium", area: "Personal" };
+      if (subtaskHost.kind === "task") insertPayload.parent_task_id = subtaskHost.id;
+      if (subtaskHost.kind === "project") insertPayload.project_id = subtaskHost.id;
+      const { data, error } = await supabase.from("tasks").insert(insertPayload).select().single();
+      if (error || !data) throw error;
+      const newId = data.id as string;
+      // Insert chip in editor
+      editor.chain().focus().insertContent({
+        type: "text",
+        text: `☐ ${clean}`,
+        marks: [{ type: "link", attrs: { href: `/anytime`, class: "task-chip" } }],
+      }).insertContent(" ").run();
+      // If host is a note, also link via note_links so it surfaces in chips/sidebar
+      if (subtaskHost.kind === "note") {
+        await linkNote(subtaskHost.id, "task", newId).catch(() => {});
+      }
+      toast.success("Subtask added", { description: clean });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not add subtask");
+    }
+  }, [editor, subtaskHost]);
+
   return (
     <div
       onClick={handleClick}
@@ -1498,6 +1588,9 @@ export function BlockEditor({
           isFullscreen={fullscreen}
           onToggleFullscreen={() => setFullscreen(f => !f)}
           onHide={() => setToolbarHidden(true)}
+          onAddSubtask={addSubtaskNow}
+          onOpenMentions={openMentions}
+          hasSubtaskHost={!!subtaskHost}
         />
       )}
       {editor && !isMobile && toolbarHidden && (
@@ -1605,6 +1698,11 @@ export function BlockEditor({
         </BubbleMenu>
       )}
       <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      {fullscreen && noteId && (
+        <aside className="fixed right-4 top-20 z-[95] hidden h-[calc(100vh-6rem)] w-80 overflow-y-auto rounded-2xl border border-border/60 bg-card/95 p-3 shadow-2xl backdrop-blur lg:block">
+          <NoteLinksSidebar noteId={noteId} />
+        </aside>
+      )}
       {editor && isMobile && (
         <div className="no-swipe mt-3">
           <Toolbar
@@ -1613,6 +1711,9 @@ export function BlockEditor({
             onInsertImage={triggerImageUpload}
             isFullscreen={fullscreen}
             onToggleFullscreen={() => setFullscreen(f => !f)}
+            onAddSubtask={addSubtaskNow}
+            onOpenMentions={openMentions}
+            hasSubtaskHost={!!subtaskHost}
           />
         </div>
       )}

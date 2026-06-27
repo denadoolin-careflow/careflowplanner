@@ -7,12 +7,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Link2, Plus, X, CheckSquare, FolderOpen, Target, Flame, CalendarHeart, Clock, Users, Utensils, BookOpen } from "lucide-react";
+import { Link2, Plus, X, CheckSquare, FolderOpen, Target, Flame, CalendarHeart, Clock, Users, Utensils, BookOpen, FileText, CalendarDays, Sparkles, Layers, PartyPopper, Heart } from "lucide-react";
 import { toast } from "sonner";
 
 const ICONS: Record<EntityType, React.ComponentType<{ className?: string }>> = {
   task: CheckSquare, project: FolderOpen, goal: Target, habit: Flame, appointment: CalendarHeart, time_block: Clock,
   person: Users, meal: Utensils, journal: BookOpen,
+  note: FileText, date: CalendarDays, cosmic_event: Sparkles, area: Layers, holiday: PartyPopper, memory: Heart,
 };
 
 interface Props { noteId: string; }
@@ -38,6 +39,12 @@ export function NoteLinksSidebar({ noteId }: Props) {
           const j = state.journal.find(x => x.id === l.entityId);
           label = j ? (j.title || j.body.slice(0, 40)) : label; break;
         }
+        case "area": label = (state.areas ?? []).find(a => a.id === l.entityId)?.name ?? label; break;
+        case "holiday": label = state.holidays.find(h => h.id === l.entityId)?.name ?? label; break;
+        case "date": label = l.entityId; break;
+        case "cosmic_event": label = decodeURIComponent(l.entityId); break;
+        case "note": label = "Note"; break;
+        case "memory": label = "Memory"; break;
       }
       return { ...l, label };
     });
