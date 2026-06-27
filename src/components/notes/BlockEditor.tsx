@@ -1509,6 +1509,44 @@ export function BlockEditor({
     }
   }, [editor]);
 
+  /** Quick-trigger the @-mention picker from a toolbar button. */
+  const openMentions = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().insertContent("@").run();
+  }, [editor]);
+
+  /** Create a real subtask Task linked back to the host, and insert a chip. */
+  const addSubtaskNow = useCallback(async () => {
+    if (!editor || !subtaskHost) return;
+    const title = window.prompt("Subtask title", "") ?? "";
+    const clean = title.trim();
+    if (!clean) return;
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u?.user?.id;
+      if (!uid) { toast.error("Sign in first"); return; }
+      const insertPayload: any = { user_id: uid, title: clean, done: false, priority: "medium", area: "Personal" };
+      if (subtaskHost.kind === "task") insertPayload.parent_task_id = subtaskHost.id;
+      if (subtaskHost.kind === "project") insertPayload.project_id = subtaskHost.id;
+      const { data, error } = await supabase.from("tasks").insert(insertPayload).select().single();
+      if (error || !data) throw error;
+      const newId = data.id as string;
+      // Insert chip in editor
+      editor.chain().focus().insertContent({
+        type: "text",
+        text: `☐ ${clean}`,
+        marks: [{ type: "link", attrs: { href: `/anytime`, class: "task-chip" } }],
+      }).insertContent(" ").run();
+      // If host is a note, also link via note_links so it surfaces in chips/sidebar
+      if (subtaskHost.kind === "note") {
+        await linkNote(subtaskHost.id, "task", newId).catch(() => {});
+      }
+      toast.success("Subtask added", { description: clean });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not add subtask");
+    }
+  }, [editor, subtaskHost]);
+
   return (
     <div
       onClick={handleClick}
