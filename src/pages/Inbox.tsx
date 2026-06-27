@@ -429,6 +429,7 @@ function InboxInner() {
           setDraft("");
           setDetails("");
           setDetailsOpen(false);
+          setControlsPinned(false);
           toast.success("Note created");
           navigate(`/notes/${n.id}`);
           return;
