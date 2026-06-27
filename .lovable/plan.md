@@ -1,61 +1,46 @@
 ## Goal
+Rebuild the inbox task row to match the selected "Soft floating v3" direction: wider task surface, smooth rounded outline that softly highlights when selected/focused, symmetric left controls (drag handle + selection), inline subtask progress shown as a count label ("4 of 6"), pill tags with icons, full-width inline notes, and a clear "When" pill.
 
-Three related upgrades to how tasks surface notes and detail on the web:
+## Scope
+Frontend/presentation only. Behavior of existing controls (drag, select, complete, when picker, notes editor, hover actions) is preserved — only layout, container, and visuals change.
 
-1. Show a **collapsed notes preview** under every task that has notes, click to edit inline.
-2. Add a **quick-view detail toggle** for a lightweight side/pop detail without leaving the list.
-3. **Restore a true desktop layout** for the full Task Editor so it no longer looks like a mobile sheet on the web.
+## Changes
 
----
+1. `src/components/inbox/InboxSortableRow.tsx`
+   - Wrap the row in a soft floating card: `rounded-[22px] border bg-card shadow-sm`, padding `p-4`, gap `gap-3`.
+   - Selected/highlighted state: `border-2 border-primary` + subtle `shadow-[0_4px_18px_-8px_hsl(var(--primary)/0.35)]`. Smooth transition.
+   - Left control column: vertical stack of drag dots (3×2 grid dots, opacity 30% / 100% on hover) + selection dot (5×5 ring, filled primary dot when selected), centered, `pt-0.5`.
+   - Remove the separate meta row underneath; source/age chips move next to the When pill inside the card footer.
+   - Pass an `inCard` prop into `TaskRow` so it renders without its own border/background.
 
-## 1. Inline notes preview under tasks
+2. `src/components/cards/TaskRow.tsx`
+   - Accept new optional prop `variant: "card" | "row"` (default `row` to keep other pages stable). When `card`:
+     - Drop outer border/shadow; rely on parent card.
+     - Title uses `text-[15px] font-medium leading-snug break-words whitespace-normal`, full available width (no truncate).
+     - Priority badge becomes a small rounded pill (`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider`) right-aligned next to the title.
+     - Tags render as icon pills (`rounded-full bg-muted border text-[10px] font-semibold` with the tag's icon).
+     - Subtask progress: keep the slim 1px bar but replace the "%" text with `"{done} of {total}"` count, e.g. `4 of 6`. Hide when there are no subtasks.
+     - "When" picker pill moves to its own row beneath the title block (`rounded-lg bg-muted px-2.5 py-1.5 text-xs`), so date never collides with the title.
+     - Notes preview/inline editor sits below a hairline divider (`pt-3 border-t border-border/60`) and spans the full card width for comfortable writing.
+     - Completion checkbox stays on the right, vertically aligned with the first line of the title.
+   - Keep all existing handlers, hover actions, swipe actions, and double-click-to-edit behavior intact.
 
-In `src/components/cards/TaskRow.tsx`:
+3. `src/pages/Inbox.tsx`
+   - Increase row container width: widen the inbox column wrapper to `max-w-[640px]` (from current narrow mobile width) and use `px-3 sm:px-4` so cards have room on tablet/desktop while staying mobile-friendly.
+   - Add vertical rhythm between cards (`space-y-3`).
+   - Pass `variant="card"` when rendering rows inside `InboxSortableRow` buckets.
 
-- When `task.notes` is non-empty, render a compact `NoteMarkdownPreview` block under the title row (indented under the task body, above the subtask area).
-- Two visual states:
-  - **Collapsed (default)**: 1–2 line clamp with a soft fade. Click anywhere on the preview → expands to full markdown, no editor swap yet.
-  - **Expanded**: click again or click a small "Edit" affordance → swap to the existing `BlockEditor` inline, auto-saving via `updateTask(id, { notes })` on change with debounce. Click outside or press Esc to collapse back to preview.
-- Empty-notes case: render a subtle "Add notes" link that opens the inline `BlockEditor` directly.
-- Respect `dense` prop — hide preview when dense, show a tiny "Has notes" dot/icon instead.
-- Persist per-task expanded state in component state only (not stored).
-
-## 2. Quick-view detail toggle
-
-Add a small chevron/eye button in the task row's hover actions strip:
-
-- Click → opens a new **`TaskQuickView`** popover/sheet anchored to the row (Radix Popover on desktop, bottom Sheet on mobile).
-- Contents: title, area/project/priority chips, due chip, full notes via `BlockEditor` (read-mostly with inline edit), subtask checklist with progress, and a footer with `Edit all` (opens full `TaskEditor`), Complete, Delete.
-- This is the "lightweight detail" — no full form, no AI panels, no attachments grid.
-- Place component at `src/components/tasks/TaskQuickView.tsx`. Reuse `BlockEditor`, `SmartDueChip`, existing badges.
-- Wire it into `TaskRow` and `InboxSortableRow` action clusters with a `PanelRightOpen` icon button.
-
-## 3. Restore desktop Task Editor layout
-
-`src/components/tasks/TaskEditor.tsx` currently uses a dialog whose desktop sizing still feels like a mobile fullscreen (one stacked column, sticky bottom bar). Refactor:
-
-- Keep the same `Dialog` shell but on `lg:` apply a **two-column layout**:
-  - **Left column (main, ~62%)**: title, notes (`BlockEditor`), subtasks, attachments.
-  - **Right column (meta rail, ~38%)**: due/schedule, priority, energy, area/project/tags, recurrence, AI assist, danger zone.
-- Sticky header stays; remove the full-height `h-[100dvh]` on `lg:` so the dialog floats centered with `lg:h-[min(86vh,900px)] lg:w-[min(94vw,1100px)] lg:rounded-2xl`.
-- Replace the current single scroll body with two independently scrolling columns (`overflow-y-auto`).
-- Mobile/tablet (`<lg`) keeps today's stacked sheet behavior — no regression.
-- Also adjust `GlobalTaskEditor` so mobile still navigates to `/tasks/:id`, desktop opens the new two-column dialog (no change needed if `isMobile` already true at <768px; confirm and keep).
-
-## Technical notes
-
-- Notes preview already exists as `src/components/notes/NoteMarkdownPreview.tsx` — reuse, set `maxChars={180}` collapsed, `maxChars={2000}` expanded.
-- Debounce inline note saves at ~600 ms to avoid update storms; flush on blur.
-- `TaskQuickView` should not re-fetch — read from `useStore()` like other task surfaces.
-- No DB migrations, no store schema changes.
-
-## Files
-
-- Edit: `src/components/cards/TaskRow.tsx`, `src/components/tasks/TaskEditor.tsx`
-- Add: `src/components/tasks/TaskQuickView.tsx`
-- Touch (small): `src/components/inbox/InboxSortableRow.tsx` (expose quick-view button), `src/components/tasks/GlobalTaskEditor.tsx` (verify breakpoint).
+4. Tokens (no new colors)
+   - Reuse `--primary`, `--border`, `--muted`, `--card`. Selected border uses `hsl(var(--primary))`. No hardcoded indigo/zinc — atmosphere-aware.
 
 ## Out of scope
+- TaskListPage, Calendar, Kanban rows — they keep current `row` variant.
+- No backend, schema, or store changes.
+- No new dependencies.
 
-- No changes to task data model, sync, or list filtering.
-- No redesign of `TaskDetailPane` (the existing selection sidebar stays as-is).
+## Acceptance
+- Inbox rows look like the selected prototype, atmosphere-themed (light + dark).
+- Long titles wrap; notes editor stretches full card width.
+- Selected/highlighted row shows a smooth 2px primary outline with soft glow.
+- Drag handle and selection dot sit in a symmetric left column aligned with the title baseline.
+- Subtask progress shows "X of Y" instead of a percentage.
