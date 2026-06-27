@@ -53,47 +53,55 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group/inbox flex flex-col gap-1.5 rounded-xl px-0.5 py-1 mb-2 last:mb-0 transition-colors",
-        selected && "bg-primary/5",
+        "group/inbox flex flex-col gap-3 rounded-[22px] border bg-card p-4 shadow-sm transition-all duration-200",
+        "hover:shadow-md hover:border-border",
+        selected
+          ? "border-2 border-primary shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.45)]"
+          : "border-border/60",
       )}
     >
-      <div className="flex items-stretch gap-1">
-        {/* Drag handle (sortable) */}
-        <button
-          {...listeners}
-          {...attributes}
-          aria-label="Reorder"
-          title="Drag to reorder"
-          className="mt-2 grid h-6 w-4 shrink-0 cursor-grab place-items-center rounded text-muted-foreground/40 transition-opacity hover:text-muted-foreground sm:opacity-60 sm:group-hover/inbox:opacity-100 active:cursor-grabbing"
-          onPointerDown={() => haptics.tap?.()}
-        >
-          <GripVertical className="h-3.5 w-3.5" />
-        </button>
+      <div className="flex items-start gap-3">
+        {/* Symmetric left control column: drag dots + selection dot */}
+        <div className="flex flex-col items-center gap-2 pt-1">
+          <button
+            {...listeners}
+            {...attributes}
+            aria-label="Reorder"
+            title="Drag to reorder"
+            className="grid h-5 w-4 cursor-grab place-items-center rounded text-muted-foreground/40 transition-opacity hover:text-muted-foreground/90 sm:opacity-60 sm:group-hover/inbox:opacity-100 active:cursor-grabbing"
+            onPointerDown={() => haptics.tap?.()}
+          >
+            <div className="grid grid-cols-2 gap-[2px]">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <span key={i} className="h-[3px] w-[3px] rounded-full bg-current" />
+              ))}
+            </div>
+          </button>
 
-        {/* Selection toggle — always available, next to the drag handle */}
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); toggle(task.id, { shift: e.shiftKey, meta: e.metaKey || e.ctrlKey }); }}
-          aria-label={selected ? "Deselect" : "Select"}
-          title={selected ? "Deselect" : "Select"}
-          className={cn(
-            "mt-1.5 grid h-6 w-6 shrink-0 place-items-center rounded-md ring-1 transition-colors",
-            selected
-              ? "bg-primary/15 text-primary ring-primary/40 opacity-100"
-              : "bg-background/60 text-muted-foreground/70 ring-border/60 hover:text-foreground sm:opacity-60 sm:group-hover/inbox:opacity-100",
-            selectionMode && "opacity-100",
-          )}
-        >
-          {selected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
-        </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); toggle(task.id, { shift: e.shiftKey, meta: e.metaKey || e.ctrlKey }); }}
+            aria-label={selected ? "Deselect" : "Select"}
+            title={selected ? "Deselect" : "Select"}
+            className={cn(
+              "grid h-5 w-5 place-items-center rounded-full border bg-background transition-colors",
+              selected
+                ? "border-primary"
+                : "border-border/70 text-muted-foreground/70 hover:border-foreground/40 sm:opacity-70 sm:group-hover/inbox:opacity-100",
+              selectionMode && "opacity-100",
+            )}
+          >
+            {selected ? <span className="h-2.5 w-2.5 rounded-full bg-primary" /> : null}
+          </button>
+        </div>
 
         <div className="min-w-0 flex-1">
-          <TaskRow task={task} />
+          <TaskRow task={task} variant="card" />
         </div>
       </div>
 
       {/* Meta row below the task: source + age (left), When picker (right) */}
-      <div className="ml-12 mr-1 flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 border-t border-border/40 pt-3">
         {(source || ageLabel) && (
           <div className="flex items-center gap-2 text-[10.5px] text-muted-foreground/80">
             {source && (

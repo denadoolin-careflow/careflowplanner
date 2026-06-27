@@ -1554,7 +1554,7 @@ function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onP
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(b)}>
               <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-                <div className="space-y-1.5">
+                <div className="space-y-3">
                   {list.map((t: any) => (
                     <InboxSortableRow key={t.id} task={t} autoDayPart={autoDayPart} />
                   ))}
