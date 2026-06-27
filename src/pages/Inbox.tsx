@@ -689,6 +689,7 @@ function InboxInner() {
                   { k: "care",    Icon: HeartHandshake, label: "Care" },
                   { k: "meal",    Icon: UtensilsCrossed,label: "Meal" },
                   { k: "note",    Icon: StickyNote,     label: "Note" },
+                  { k: "journal", Icon: BookHeart,      label: "Journal" },
                   { k: "connect", Icon: MessageCircle,  label: "Connect" },
                   { k: "commute", Icon: Car,            label: "Commute" },
                 ] as const;
