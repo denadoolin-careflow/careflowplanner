@@ -1587,6 +1587,9 @@ export function BlockEditor({
           isFullscreen={fullscreen}
           onToggleFullscreen={() => setFullscreen(f => !f)}
           onHide={() => setToolbarHidden(true)}
+          onAddSubtask={addSubtaskNow}
+          onOpenMentions={openMentions}
+          hasSubtaskHost={!!subtaskHost}
         />
       )}
       {editor && !isMobile && toolbarHidden && (
