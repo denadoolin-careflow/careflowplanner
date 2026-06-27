@@ -26,6 +26,9 @@ import { useCompletionVisual, type CompletionVisualKey } from "@/lib/completion-
 import { SmartDueChip } from "@/components/tasks/SmartDueChip";
 import { Button } from "@/components/ui/button";
 import { addDays, format } from "date-fns";
+import { SubtaskLinkPicker, type PickedLink } from "@/components/tasks/SubtaskLinkPicker";
+import { linkTaskTo, TASK_LINK_LABEL } from "@/lib/task-links";
+import { X as XIcon } from "lucide-react";
 import {
   SwipeableList, SwipeableListItem, LeadingActions, TrailingActions,
   SwipeAction, Type as SwipeType,
@@ -94,6 +97,7 @@ export function TaskRow({
   const [expanded, setExpanded] = useState(false);
   const [addingSub, setAddingSub] = useState(false);
   const [subDraft, setSubDraft] = useState("");
+  const [subLinks, setSubLinks] = useState<PickedLink[]>([]);
   const [quickEditOpen, setQuickEditOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const longPressTimer = useRef<number | null>(null);
