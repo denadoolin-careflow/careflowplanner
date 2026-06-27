@@ -23,7 +23,7 @@ interface Props {
  */
 export function InboxSortableRow({ task, autoDayPart }: Props) {
   const { updateTask } = useStore() as any;
-  const { selectionMode, isSelected, toggle } = useTaskSelection();
+  const { isSelected } = useTaskSelection();
   const [rowStyle] = useInboxRowStyle();
   const sortableId = `inbox:${task.id}`;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -53,7 +53,7 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
   const containerClass = cn(
     "group/inbox flex flex-col gap-3 transition-all duration-200",
     rowStyle === "soft" && cn(
-      "rounded-[22px] border bg-card p-4 shadow-sm hover:shadow-md hover:border-border",
+      "rounded-[22px] border bg-card p-3 shadow-sm hover:shadow-md hover:border-border sm:p-4",
       selected
         ? "border-2 border-primary shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.45)]"
         : "border-border/60",
@@ -63,7 +63,7 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
       selected && "bg-primary/5 border-b-primary/40",
     ),
     rowStyle === "cozy" && cn(
-      "rounded-2xl border bg-gradient-to-br from-primary/[0.06] via-card to-card p-4 shadow-[0_4px_20px_-12px_hsl(var(--primary)/0.35)] hover:from-primary/[0.1]",
+      "rounded-2xl border bg-gradient-to-br from-primary/[0.06] via-card to-card p-3 shadow-[0_4px_20px_-12px_hsl(var(--primary)/0.35)] hover:from-primary/[0.1] sm:p-4",
       selected
         ? "border-primary/60 ring-2 ring-primary/30"
         : "border-primary/20",
@@ -71,9 +71,9 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
   );
   return (
     <div ref={setNodeRef} style={style} className={containerClass}>
-      <div className="flex items-start gap-3">
-        {/* Symmetric left control column: drag dots + selection dot */}
-        <div className="flex flex-col items-center gap-2 pt-1">
+      <div className="flex items-start gap-2 sm:gap-3">
+        {/* Drag handle only — selection lives on the TaskRow checkbox to avoid duplication */}
+        <div className="flex flex-col items-center pt-1">
           <button
             {...listeners}
             {...attributes}
@@ -87,22 +87,6 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
                 <span key={i} className="h-[3px] w-[3px] rounded-full bg-current" />
               ))}
             </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); toggle(task.id, { shift: e.shiftKey, meta: e.metaKey || e.ctrlKey }); }}
-            aria-label={selected ? "Deselect" : "Select"}
-            title={selected ? "Deselect" : "Select"}
-            className={cn(
-              "grid h-5 w-5 place-items-center rounded-full border bg-background transition-colors",
-              selected
-                ? "border-primary"
-                : "border-border/70 text-muted-foreground/70 hover:border-foreground/40 sm:opacity-70 sm:group-hover/inbox:opacity-100",
-              selectionMode && "opacity-100",
-            )}
-          >
-            {selected ? <span className="h-2.5 w-2.5 rounded-full bg-primary" /> : null}
           </button>
         </div>
 
