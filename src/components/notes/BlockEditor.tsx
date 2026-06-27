@@ -779,6 +779,21 @@ export function BlockEditor({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const editorRef = useRef<Editor | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [toolbarHidden, setToolbarHidden] = useState(false);
+
+  // Lock body scroll when fullscreen
+  useEffect(() => {
+    if (!fullscreen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFullscreen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [fullscreen]);
 
   const uploadAndInsert = useCallback(async (file: File) => {
     const tid = toast.loading("Uploading image…");
