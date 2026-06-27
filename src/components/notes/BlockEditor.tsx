@@ -53,6 +53,7 @@ import { listNotes } from "@/lib/notes";
 import { supabase } from "@/integrations/supabase/client";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
+import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { upcomingEvents } from "@/lib/cosmic/events";
@@ -1697,6 +1698,11 @@ export function BlockEditor({
         </BubbleMenu>
       )}
       <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      {fullscreen && noteId && (
+        <aside className="fixed right-4 top-20 z-[95] hidden h-[calc(100vh-6rem)] w-80 overflow-y-auto rounded-2xl border border-border/60 bg-card/95 p-3 shadow-2xl backdrop-blur lg:block">
+          <NoteLinksSidebar noteId={noteId} />
+        </aside>
+      )}
       {editor && isMobile && (
         <div className="no-swipe mt-3">
           <Toolbar
