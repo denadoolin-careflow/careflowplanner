@@ -924,12 +924,16 @@ function InboxInner() {
                     )}
                     aria-pressed={active}
                     className={cn(
-                      "inline-flex shrink-0 snap-start items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium ring-1 transition-all min-h-[34px] sm:px-3.5 sm:py-2 sm:text-[12.5px] sm:min-h-[36px] hover:-translate-y-0.5 hover:shadow-sm",
-                      c.tint,
-                      active && "ring-2 ring-primary/50 shadow-sm",
+                      "inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-transparent px-3 text-[13px] font-medium transition-all hover:border-border hover:bg-card/60 active:scale-[0.97]",
+                      c.tone,
+                      active && "border-primary/60 bg-primary/[0.06] shadow-sm",
                     )}
                   >
-                    {active ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
+                    {active ? (
+                      <Check className="h-[15px] w-[15px]" strokeWidth={1.75} />
+                    ) : (
+                      <Icon className="h-[15px] w-[15px]" strokeWidth={1.75} />
+                    )}
                     {c.label}
                   </button>
                 );
