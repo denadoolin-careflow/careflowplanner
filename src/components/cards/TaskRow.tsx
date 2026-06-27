@@ -4,10 +4,12 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   Trash2, GripVertical, ChevronRight, Sparkle, Plus,
-  Pencil, Snowflake, Star, FolderInput,
+  Pencil, Snowflake, Star, FolderInput, FileText, PanelRightOpen,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
+import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
+import { BlockEditor } from "@/components/notes/BlockEditor";
 import { PomodoroTimer } from "@/components/tasks/PomodoroTimer";
 import { useDraggable } from "@dnd-kit/core";
 import { toast } from "sonner";
