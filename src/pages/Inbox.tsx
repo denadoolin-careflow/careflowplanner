@@ -148,6 +148,11 @@ function InboxInner() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [inlineAdd, setInlineAdd] = useState<string | null>(null);
   const inlineAddRef = useRef<HTMLInputElement>(null);
+  // Focus state for the capture input — secondary controls reveal while typing
+  // or while focus is inside the capture section.
+  const [captureFocused, setCaptureFocused] = useState(false);
+  const captureSectionRef = useRef<HTMLDivElement>(null);
+  const [controlsPinned, setControlsPinned] = useState(false);
 
   const startInlineAdd = () => {
     setInlineAdd("");
@@ -197,6 +202,14 @@ function InboxInner() {
   const holdTimerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
   const lastTickRef = useRef(0);
+
+  const showControls = captureFocused || controlsPinned || draft.trim().length > 0;
+
+  const handleCaptureBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (!captureSectionRef.current?.contains(e.relatedTarget as Node)) {
+      setCaptureFocused(false);
+    }
+  };
 
   const fmtElapsed = (ms: number) => {
     const s = Math.floor(ms / 1000);
@@ -416,6 +429,7 @@ function InboxInner() {
           setDraft("");
           setDetails("");
           setDetailsOpen(false);
+          setControlsPinned(false);
           toast.success("Note created");
           navigate(`/notes/${n.id}`);
           return;
@@ -430,6 +444,7 @@ function InboxInner() {
           setDraft("");
           setDetails("");
           setDetailsOpen(false);
+          setControlsPinned(false);
           if (entry) toast.success("Journal entry saved ✨");
           return;
         } catch {
@@ -440,6 +455,7 @@ function InboxInner() {
       setDraft("");
       setDetails("");
       setDetailsOpen(false);
+      setControlsPinned(false);
       return;
     }
     const p = parseTaskInput(raw);
@@ -462,6 +478,7 @@ function InboxInner() {
     setOverrideDue("");
     setDetails("");
     setDetailsOpen(false);
+    setControlsPinned(false);
     toast.success("Caught it ✨", { description: "Safely held in your inbox." });
   };
 
@@ -503,6 +520,7 @@ function InboxInner() {
     }
     setDraft("");
     setExtraTags([]);
+    setControlsPinned(false);
     toast.success(`Saved ${drafts.length} ${drafts.length === 1 ? "item" : "items"} ✨`, { description: "Held gently in your inbox." });
   };
 
@@ -602,7 +620,7 @@ function InboxInner() {
         </section>
 
         {/* ────────── Quick Capture ────────── */}
-        <section className="rounded-[24px] border border-border/50 bg-card/70 p-4 shadow-[0_10px_40px_-25px_hsl(var(--primary)/0.4)] backdrop-blur-md sm:p-5 md:p-6">
+        <section ref={captureSectionRef} className="rounded-[24px] border border-border/50 bg-card/70 p-4 shadow-[0_10px_40px_-25px_hsl(var(--primary)/0.4)] backdrop-blur-md sm:p-5 md:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="inline-flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -726,6 +744,8 @@ function InboxInner() {
                 value={draft}
                 onChange={setDraft}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
+                onFocus={() => setCaptureFocused(true)}
+                onBlur={handleCaptureBlur}
                 placeholder={
                   recorder.state === "recording"
                     ? (willCancel ? "Release to cancel…" : `Listening · ${fmtElapsed(recorder.elapsedMs)}`)
@@ -843,6 +863,19 @@ function InboxInner() {
             </div>
           )}
 
+          {!showControls && recorder.state === "idle" && (
+            <button
+              type="button"
+              onClick={() => setControlsPinned(true)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-muted-foreground/80 transition hover:text-foreground"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+              Show options
+            </button>
+          )}
+
+        {showControls && (
+          <div className="animate-fade-in">
           {/* Inline details / notes with light markdown formatting */}
           {recorder.state === "idle" && (
             <div className="mt-2">
@@ -1198,6 +1231,19 @@ function InboxInner() {
             </div>
             )}
           </div>
+
+          {controlsPinned && !draft.trim() && !captureFocused && (
+            <button
+              type="button"
+              onClick={() => setControlsPinned(false)}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-muted-foreground/80 transition hover:text-foreground"
+            >
+              <ChevronDown className="h-3.5 w-3.5 rotate-180" />
+              Hide options
+            </button>
+          )}
+          </div>
+        )}
         </section>
 
         {/* ────────── Current Inbox Items (only when present) ────────── */}
