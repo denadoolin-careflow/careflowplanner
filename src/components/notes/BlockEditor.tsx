@@ -502,79 +502,127 @@ function Toolbar({
   const doIndent = () => {
     if (editor.can().sinkListItem("taskItem")) return editor.chain().focus().sinkListItem("taskItem").run();
     if (editor.can().sinkListItem("listItem")) return editor.chain().focus().sinkListItem("listItem").run();
-    // Fallback: insert a tab character
     editor.chain().focus().insertContent("\t").run();
   };
   const doOutdent = () => {
     if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
     if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
   };
+  const Divider = () => <span className="mx-1 h-5 w-px shrink-0 bg-border/60" aria-hidden />;
+  const headingActive = editor.isActive("heading", { level: 1 })
+    ? "H1"
+    : editor.isActive("heading", { level: 2 })
+    ? "H2"
+    : editor.isActive("heading", { level: 3 })
+    ? "H3"
+    : "T";
   return (
-    <div className="cf-editor-toolbar z-10 mb-3 flex w-full max-w-full items-center justify-between gap-2 overflow-x-auto rounded-xl border border-border/60 bg-card/90 p-1 backdrop-blur-md shadow-sm sm:sticky sm:top-2 sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="flex flex-1 items-center justify-center gap-0.5">
-        <ToolbarButton active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} label="Heading 1"><Heading1 className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} label="Heading 2"><Heading2 className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} label="Heading 3"><Heading3 className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton active={editor.isActive("paragraph")} onClick={() => editor.chain().focus().setParagraph().run()} label="Paragraph"><Type className="h-4 w-4" /></ToolbarButton>
-      </div>
-      <span className="h-5 w-px shrink-0 bg-border" />
-      <div className="flex flex-1 items-center justify-center gap-0.5">
-        <ToolbarButton active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} label="Bold"><Bold className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} label="Italic"><Italic className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()} label="Underline"><UnderlineIcon className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} label="Strikethrough"><Strikethrough className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} label="Code"><Code className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-4 w-4" /></ToolbarButton>
-        <ColorPickerPopover editor={editor} />
-        <ToolbarButton active={editor.isActive("link")} onClick={setLink} label="Link"><LinkIcon className="h-4 w-4" /></ToolbarButton>
-        {onOpenMentions && (
-          <ToolbarButton onClick={onOpenMentions} label="Link to task, note, person, project…"><AtSign className="h-4 w-4" /></ToolbarButton>
-        )}
-        <ToolbarButton onClick={onInsertImage} label="Insert image"><ImageIcon className="h-4 w-4" /></ToolbarButton>
-      </div>
-      <span className="h-5 w-px shrink-0 bg-border" />
-      <div className="flex flex-1 items-center justify-center gap-0.5">
-        <ToolbarButton active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} label="Bullet list"><List className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} label="Numbered list"><ListOrdered className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} label="To-do list"><CheckSquare className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton onClick={doOutdent} label="Outdent (Shift+Tab)"><IndentDecrease className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton onClick={doIndent} label="Indent (Tab)"><IndentIncrease className="h-4 w-4" /></ToolbarButton>
-        {editor.isActive("taskItem") && (
-          <ToolbarButton onClick={onPromoteTask} label="Add this checkbox to Tasks"><ListPlus className="h-4 w-4" /></ToolbarButton>
-        )}
-        {onAddSubtask && hasSubtaskHost && (
-          <ToolbarButton onClick={onAddSubtask} label="Add subtask">
-            <GitBranch className="h-4 w-4" />
-          </ToolbarButton>
-        )}
-        <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} label="Divider"><Minus className="h-4 w-4" /></ToolbarButton>
-        <ToolbarButton
-          active={editor.isActive("details")}
-          onClick={() => editor.chain().focus().setDetails().run()}
-          label="Toggle (nest indented content)"
-        ><ChevronRight className="h-4 w-4" /></ToolbarButton>
-      </div>
-      {(onToggleFullscreen || onHide) && (
-        <>
-          <span className="h-5 w-px shrink-0 bg-border" />
-          <div className="flex shrink-0 items-center gap-0.5">
-            {onToggleFullscreen && (
-              <ToolbarButton
-                onClick={onToggleFullscreen}
-                label={isFullscreen ? "Exit fullscreen" : "Fullscreen editor"}
-              >
-                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              </ToolbarButton>
+    <div className="cf-editor-toolbar z-10 flex w-full max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-border/50 bg-card/70 px-2 py-1.5 backdrop-blur-xl shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Text style */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            title="Text style"
+            aria-label="Text style"
+            className="h-8 min-w-[44px] inline-flex items-center justify-center gap-0.5 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground transition"
+          >
+            <span className="font-serif">{headingActive}</span>
+            <ChevronDown className="h-3 w-3 opacity-60" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" sideOffset={6} className="w-44 p-1 rounded-xl shadow-lg border-border/60">
+          {[
+            { label: "Paragraph", run: () => editor.chain().focus().setParagraph().run(), active: editor.isActive("paragraph") && !editor.isActive("heading"), Icon: Type },
+            { label: "Heading 1", run: () => editor.chain().focus().toggleHeading({ level: 1 }).run(), active: editor.isActive("heading", { level: 1 }), Icon: Heading1 },
+            { label: "Heading 2", run: () => editor.chain().focus().toggleHeading({ level: 2 }).run(), active: editor.isActive("heading", { level: 2 }), Icon: Heading2 },
+            { label: "Heading 3", run: () => editor.chain().focus().toggleHeading({ level: 3 }).run(), active: editor.isActive("heading", { level: 3 }), Icon: Heading3 },
+          ].map((opt) => (
+            <button
+              key={opt.label}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); opt.run(); }}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition",
+                opt.active ? "bg-primary/15 text-primary" : "text-foreground hover:bg-muted/60",
+              )}
+            >
+              <opt.Icon className="h-4 w-4 opacity-70" /> {opt.label}
+            </button>
+          ))}
+        </PopoverContent>
+      </Popover>
+
+      <Divider />
+
+      {/* Inline formatting */}
+      <ToolbarButton active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} label="Bold (⌘B)"><Bold className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+      <ToolbarButton active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} label="Italic (⌘I)"><Italic className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+      <ToolbarButton active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()} label="Underline (⌘U)"><UnderlineIcon className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+
+      <Divider />
+
+      {/* Lists */}
+      <ToolbarButton active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} label="Bulleted list"><List className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+      <ToolbarButton active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} label="Numbered list"><ListOrdered className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+      <ToolbarButton active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} label="Checklist"><CheckSquare className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+
+      <Divider />
+
+      {/* Link */}
+      <ToolbarButton active={editor.isActive("link")} onClick={setLink} label="Link (⌘K)"><LinkIcon className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+
+      {/* Overflow */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            title="More formatting"
+            aria-label="More formatting"
+            className="h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground transition"
+          >
+            <ChevronDown className="h-[18px] w-[18px]" strokeWidth={1.75} />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="end" sideOffset={6} className="w-64 p-2 rounded-xl shadow-lg border-border/60">
+          <div className="grid grid-cols-6 gap-0.5">
+            <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} label="Divider"><Minus className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ToolbarButton active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()} label="Inline code"><Code className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ToolbarButton active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} label="Strikethrough"><Strikethrough className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ColorPickerPopover editor={editor} />
+            <ToolbarButton onClick={onInsertImage} label="Image"><ImageIcon className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            {onOpenMentions && (
+              <ToolbarButton onClick={onOpenMentions} label="Mention / link entity"><AtSign className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             )}
-            {onHide && (
-              <ToolbarButton onClick={onHide} label="Hide toolbar">
-                <EyeOff className="h-4 w-4" />
-              </ToolbarButton>
+            <ToolbarButton active={editor.isActive("details")} onClick={() => editor.chain().focus().setDetails().run()} label="Toggle"><ChevronRight className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ToolbarButton onClick={doOutdent} label="Outdent"><IndentDecrease className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ToolbarButton onClick={doIndent} label="Indent"><IndentIncrease className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            {editor.isActive("taskItem") && (
+              <ToolbarButton onClick={onPromoteTask} label="Add to Tasks"><ListPlus className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            )}
+            {onAddSubtask && hasSubtaskHost && (
+              <ToolbarButton onClick={onAddSubtask} label="Add subtask"><GitBranch className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             )}
           </div>
-        </>
-      )}
+        </PopoverContent>
+      </Popover>
+
+      <div className="ml-auto flex shrink-0 items-center gap-0.5 pl-1">
+        <ToolbarButton onClick={() => editor.chain().focus().undo().run()} label="Undo (⌘Z)"><IndentDecrease className="hidden" /><svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-4"/></svg></ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().redo().run()} label="Redo (⌘⇧Z)"><svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h4"/></svg></ToolbarButton>
+        {onToggleFullscreen && (
+          <ToolbarButton onClick={onToggleFullscreen} label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
+            {isFullscreen ? <Minimize2 className="h-[18px] w-[18px]" strokeWidth={1.75} /> : <Maximize2 className="h-[18px] w-[18px]" strokeWidth={1.75} />}
+          </ToolbarButton>
+        )}
+        {onHide && (
+          <ToolbarButton onClick={onHide} label="Hide toolbar"><EyeOff className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+        )}
+      </div>
     </div>
   );
 }
