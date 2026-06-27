@@ -771,7 +771,7 @@ export function BlockEditor({
     return events.map(ev => ({
       id: ev.id,
       label: `${ev.glyph}  ${ev.title}`,
-      type: `Transit · ${formatDate(new Date(ev.date), "MMM d")}`,
+      type: "Cosmic",
       href: `/cosmic-flow/event/${encodeURIComponent(ev.id)}`,
       icon: Sparkles,
       insertText: ev.title,
