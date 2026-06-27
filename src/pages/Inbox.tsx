@@ -22,6 +22,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isToday, isFuture, parseISO, format } from "date-fns";
 import { InboxIllustration } from "@/components/inbox/InboxIllustration";
@@ -80,19 +81,21 @@ const QUICK_ACTIONS: { icon: any; label: string; phrase: string; tone: string }[
   { icon: Car,           label: "Errand",       phrase: "Errand — ",      tone: "text-violet-600 dark:text-violet-300" },
 ];
 
-const CATEGORIES: { icon: any; label: string; tint: string }[] = [
-  { icon: Home,          label: "Home",       tint: "bg-emerald-50/70 text-emerald-700 ring-emerald-100" },
-  { icon: Users,         label: "Family",     tint: "bg-orange-50/70 text-orange-700 ring-orange-100" },
-  { icon: Heart,         label: "Health",     tint: "bg-rose-50/70 text-rose-700 ring-rose-100" },
-  { icon: BookOpen,      label: "Learning",   tint: "bg-violet-50/70 text-violet-700 ring-violet-100" },
-  { icon: Moon,          label: "Reflection", tint: "bg-indigo-50/70 text-indigo-700 ring-indigo-100" },
-  { icon: HeartHandshake,label: "Caregiving", tint: "bg-pink-50/70 text-pink-700 ring-pink-100" },
-  { icon: Lightbulb,     label: "Ideas",      tint: "bg-amber-50/70 text-amber-700 ring-amber-100" },
-  { icon: Puzzle,        label: "Kids",       tint: "bg-teal-50/70 text-teal-700 ring-teal-100" },
-  { icon: Plane,         label: "Travel",     tint: "bg-sky-50/70 text-sky-700 ring-sky-100" },
-  { icon: Briefcase,     label: "Work",       tint: "bg-stone-50/70 text-stone-700 ring-stone-100" },
-  { icon: Palette,       label: "Creative",   tint: "bg-fuchsia-50/70 text-fuchsia-700 ring-fuchsia-100" },
-  { icon: PawPrint,      label: "Pets",       tint: "bg-lime-50/70 text-lime-700 ring-lime-100" },
+// Categories adopt the same compact outlined-chip aesthetic as Quick Actions:
+// neutral pill outline, only the icon + label are tinted.
+const CATEGORIES: { icon: any; label: string; tone: string }[] = [
+  { icon: Home,          label: "Home",       tone: "text-emerald-600 dark:text-emerald-300" },
+  { icon: Users,         label: "Family",     tone: "text-orange-600 dark:text-orange-300" },
+  { icon: Heart,         label: "Health",     tone: "text-rose-600 dark:text-rose-300" },
+  { icon: BookOpen,      label: "Learning",   tone: "text-violet-600 dark:text-violet-300" },
+  { icon: Moon,          label: "Reflection", tone: "text-indigo-600 dark:text-indigo-300" },
+  { icon: HeartHandshake,label: "Caregiving", tone: "text-pink-600 dark:text-pink-300" },
+  { icon: Lightbulb,     label: "Ideas",      tone: "text-amber-600 dark:text-amber-300" },
+  { icon: Puzzle,        label: "Kids",       tone: "text-teal-600 dark:text-teal-300" },
+  { icon: Plane,         label: "Travel",     tone: "text-sky-600 dark:text-sky-300" },
+  { icon: Briefcase,     label: "Work",       tone: "text-stone-600 dark:text-stone-300" },
+  { icon: Palette,       label: "Creative",   tone: "text-fuchsia-600 dark:text-fuchsia-300" },
+  { icon: PawPrint,      label: "Pets",       tone: "text-lime-600 dark:text-lime-300" },
 ];
 
 function InboxInner() {
@@ -119,6 +122,7 @@ function InboxInner() {
   const [overridePriority, setOverridePriority] = useState<Priority | "">("");
   const [overrideProjectId, setOverrideProjectId] = useState<string>("");
   const [overrideDue, setOverrideDue] = useState<string>("");
+  const [careRecipientId, setCareRecipientId] = useState<string>("auto");
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
@@ -325,8 +329,30 @@ function InboxInner() {
         await addTask({ title: raw, dueDate: today, dayPart, area: "Home" });
         toast.success(`Added home task → ${dayPart}`);
       } else if (captureKind === "care") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving" });
-        toast.success(`Added care task → ${dayPart}`);
+        let recipientId: string | undefined =
+          careRecipientId !== "auto" ? careRecipientId : undefined;
+        if (!recipientId) {
+          const guess = detectAreaAndProject({
+            title: raw,
+            areas: state.areas,
+            projects: state.projects,
+            recipients: state.recipients,
+          });
+          recipientId = guess.recipientId;
+        }
+        await addTask({
+          title: raw,
+          dueDate: today,
+          dayPart,
+          area: "Caregiving",
+          recipientId,
+        });
+        const name = recipientId
+          ? state.recipients?.find((r: any) => r.id === recipientId)?.name
+          : undefined;
+        toast.success(
+          name ? `Added care task for ${name} → ${dayPart}` : `Added care task → ${dayPart}`,
+        );
       } else if (captureKind === "connect") {
         await addTask({ title: raw, dueDate: today, dayPart, area: "Family" });
         toast.success(`Added connect → ${dayPart}`);
@@ -781,7 +807,7 @@ function InboxInner() {
           ) : null}
 
           {/* Schedule + Priority + Area + Project pickers */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11.5px]">
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
             {/* Combined When picker (Things 3 style) — date + day-part in one popover */}
             <WhenPopover
               value={{ date: overrideDue || undefined, dayPart }}
@@ -792,45 +818,73 @@ function InboxInner() {
               }}
             />
 
-            <PickerLabel icon={Flag}>
-              <select
-                value={overridePriority}
-                onChange={(e) => setOverridePriority(e.target.value as Priority | "")}
-                className="bg-transparent text-[11.5px] capitalize outline-none"
-              >
-                <option value="">Priority</option>
-                {(["low","medium","high"] as Priority[]).map(p => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </PickerLabel>
+            <ChipSelect
+              icon={Flag}
+              placeholder="Priority"
+              value={overridePriority}
+              tone={overridePriority === "high" ? "text-rose-600 dark:text-rose-300"
+                : overridePriority === "medium" ? "text-amber-600 dark:text-amber-300"
+                : overridePriority === "low" ? "text-emerald-600 dark:text-emerald-300"
+                : undefined}
+              onChange={(v) => setOverridePriority(v as Priority | "")}
+              options={[
+                { value: "", label: "Any priority" },
+                { value: "low", label: "Low" },
+                { value: "medium", label: "Medium" },
+                { value: "high", label: "High" },
+              ]}
+            />
 
-            <PickerLabel icon={MapPin}>
-              <select
-                value={overrideArea}
-                onChange={(e) => setOverrideArea(e.target.value as Area | "")}
-                className="bg-transparent text-[11.5px] outline-none"
-              >
-                <option value="">Area</option>
-                {(["Family","Kids","Caregiving","Home","Meals","Appointments","Holidays & Birthdays","Personal","Creative Projects","Money"] as Area[]).map(a => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </PickerLabel>
+            <ChipSelect
+              icon={MapPin}
+              placeholder="Area"
+              value={overrideArea}
+              tone={overrideArea ? "text-sky-600 dark:text-sky-300" : undefined}
+              onChange={(v) => setOverrideArea(v as Area | "")}
+              options={[
+                { value: "", label: "No area" },
+                ...(["Family","Kids","Caregiving","Home","Meals","Appointments","Holidays & Birthdays","Personal","Creative Projects","Money"] as Area[])
+                  .map(a => ({ value: a, label: a })),
+              ]}
+            />
+
+            {captureKind === "care" && (
+              (state.recipients ?? []).length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => navigate("/caregiving")}
+                  className="inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border/60 bg-transparent px-3 text-[12px] font-medium text-muted-foreground hover:border-border hover:text-foreground"
+                >
+                  <HeartHandshake className="h-[14px] w-[14px]" strokeWidth={1.75} />
+                  Add a person
+                </button>
+              ) : (
+                <ChipSelect
+                  icon={HeartHandshake}
+                  placeholder="Who?"
+                  value={careRecipientId}
+                  tone={careRecipientId !== "auto" ? "text-pink-600 dark:text-pink-300" : undefined}
+                  onChange={setCareRecipientId}
+                  options={[
+                    { value: "auto", label: "Auto-detect from text" },
+                    ...(state.recipients ?? []).map((r: any) => ({ value: r.id, label: r.name })),
+                  ]}
+                />
+              )
+            )}
 
             {(state.projects ?? []).length > 0 && (
-              <PickerLabel icon={Folder}>
-                <select
-                  value={overrideProjectId}
-                  onChange={(e) => setOverrideProjectId(e.target.value)}
-                  className="bg-transparent text-[11.5px] outline-none max-w-[10rem] truncate"
-                >
-                  <option value="">Project</option>
-                  {(state.projects ?? []).slice(0, 50).map((p: any) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </PickerLabel>
+              <ChipSelect
+                icon={Folder}
+                placeholder="Project"
+                value={overrideProjectId}
+                tone={overrideProjectId ? "text-violet-600 dark:text-violet-300" : undefined}
+                onChange={setOverrideProjectId}
+                options={[
+                  { value: "", label: "No project" },
+                  ...(state.projects ?? []).slice(0, 50).map((p: any) => ({ value: p.id, label: p.name })),
+                ]}
+              />
             )}
 
             {(overrideArea || overridePriority || overrideProjectId || overrideDue || dayPart !== autoDayPart) && (
@@ -920,12 +974,16 @@ function InboxInner() {
                     )}
                     aria-pressed={active}
                     className={cn(
-                      "inline-flex shrink-0 snap-start items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium ring-1 transition-all min-h-[34px] sm:px-3.5 sm:py-2 sm:text-[12.5px] sm:min-h-[36px] hover:-translate-y-0.5 hover:shadow-sm",
-                      c.tint,
-                      active && "ring-2 ring-primary/50 shadow-sm",
+                      "inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-transparent px-3 text-[13px] font-medium transition-all hover:border-border hover:bg-card/60 active:scale-[0.97]",
+                      c.tone,
+                      active && "border-primary/60 bg-primary/[0.06] shadow-sm",
                     )}
                   >
-                    {active ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
+                    {active ? (
+                      <Check className="h-[15px] w-[15px]" strokeWidth={1.75} />
+                    ) : (
+                      <Icon className="h-[15px] w-[15px]" strokeWidth={1.75} />
+                    )}
                     {c.label}
                   </button>
                 );
@@ -1115,30 +1173,76 @@ function PickerLabel({ icon: Icon, children }: { icon: any; children: React.Reac
   );
 }
 
+/**
+ * Compact outlined chip wrapping a native <select> — visually matches the
+ * Quick Action chips: neutral pill outline + tinted icon/label only.
+ */
+function ChipSelect({
+  icon: Icon, value, onChange, options, placeholder, tone,
+}: {
+  icon: any;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+  tone?: string;
+}) {
+  const current = options.find((o) => o.value === value);
+  const isActive = !!value && value !== "" && value !== "auto";
+  const label = current && isActive ? current.label : placeholder;
+  return (
+    <label
+      className={cn(
+        "group relative inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-transparent px-3 pr-7 text-[12px] font-medium transition-all hover:border-border hover:bg-card/60",
+        isActive ? tone : "text-muted-foreground hover:text-foreground",
+        isActive && "border-primary/40 bg-primary/[0.05]",
+      )}
+    >
+      <Icon className="h-[14px] w-[14px]" strokeWidth={1.75} />
+      <span className="max-w-[10rem] truncate">{label}</span>
+      <ChevronDown className="pointer-events-none absolute right-2 h-3 w-3 opacity-60" />
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 cursor-pointer opacity-0"
+        aria-label={placeholder}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 // ────────── Asana-style sectioned inbox ──────────
 
-type Bucket = "just" | "needsDate" | "needsCategory" | "ready";
+type Bucket = "just" | "scheduledToday" | "needsDate" | "needsCategory" | "ready";
 
 const BUCKET_META: Record<Bucket, { label: string; hint: string; tint: string }> = {
   just:          { label: "Just captured",   hint: "Added in the last hour",          tint: "bg-sky-50/70 text-sky-700 ring-sky-100" },
+  scheduledToday:{ label: "Scheduled for today", hint: "Held here until you process it", tint: "bg-primary/10 text-primary ring-primary/20" },
   needsDate:     { label: "Needs a date",    hint: "Decide when this happens",         tint: "bg-amber-50/70 text-amber-800 ring-amber-100" },
   needsCategory: { label: "Needs a category",hint: "Give it a home",                   tint: "bg-rose-50/70 text-rose-700 ring-rose-100" },
   ready:         { label: "Ready to plan",   hint: "Has a date and a category",        tint: "bg-emerald-50/70 text-emerald-700 ring-emerald-100" },
 };
 
-const BUCKET_ORDER: Bucket[] = ["just", "needsDate", "needsCategory", "ready"];
+const BUCKET_ORDER: Bucket[] = ["just", "scheduledToday", "needsDate", "needsCategory", "ready"];
 
 const BUCKET_ICON: Record<Bucket, typeof Sparkles> = {
   just: Sparkles,
+  scheduledToday: CalendarIcon,
   needsDate: CalendarIcon,
   needsCategory: TagIcon,
   ready: Check,
 };
 
 function bucketFor(t: any): Bucket {
+  const todayIso = format(new Date(), "yyyy-MM-dd");
   const createdAt = t.createdAt ? new Date(t.createdAt).getTime() : 0;
   const ageMs = Date.now() - createdAt;
   if (createdAt && ageMs < 60 * 60 * 1000) return "just";
+  if (t.dueDate === todayIso) return "scheduledToday";
   if (!t.dueDate) return "needsDate";
   if (!t.area) return "needsCategory";
   return "ready";

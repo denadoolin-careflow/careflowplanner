@@ -118,7 +118,9 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
               await updateTask(task.id, {
                 dueDate: v.date ?? undefined,
                 dayPart: v.dayPart,
-                inbox: v.date ? false : task.inbox,
+                // Keep the item in the inbox after scheduling so the user can
+                // see it move into the "Scheduled for today" / dated sections
+                // until they intentionally process it out.
               });
               haptics.snap?.();
               toast(v.date ? `Scheduled · ${v.dayPart}` : `Set time of day · ${v.dayPart}`, { description: task.title });
