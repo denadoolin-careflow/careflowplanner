@@ -448,6 +448,7 @@ function ToolbarButton({ active, onClick, label, children }: { active?: boolean;
       }}
       title={label}
       aria-label={label}
+      aria-pressed={active}
       className={cn(
         "h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-md transition",
         active ? "bg-primary/15 text-primary" : "hover:bg-muted/60 text-muted-foreground",
