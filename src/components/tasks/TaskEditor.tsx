@@ -267,7 +267,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-[100vw] flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none p-0 sm:h-auto sm:max-h-[88vh] sm:w-[min(96vw,60rem)] sm:max-w-none sm:rounded-lg lg:w-[min(96vw,72rem)] lg:max-h-[90vh]"
+        className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-[100vw] flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none p-0 sm:h-auto sm:max-h-[88vh] sm:w-[min(96vw,60rem)] sm:max-w-none sm:rounded-2xl sm:shadow-2xl md:w-[min(94vw,68rem)] md:max-h-[88vh] lg:w-[min(94vw,76rem)] lg:max-h-[90vh]"
       >
         {/* Sticky header */}
         <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
