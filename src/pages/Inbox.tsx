@@ -520,6 +520,7 @@ function InboxInner() {
     }
     setDraft("");
     setExtraTags([]);
+    setControlsPinned(false);
     toast.success(`Saved ${drafts.length} ${drafts.length === 1 ? "item" : "items"} ✨`, { description: "Held gently in your inbox." });
   };
 
