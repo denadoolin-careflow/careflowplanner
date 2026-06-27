@@ -83,8 +83,8 @@ const PRIORITY_STYLES: Record<Task["priority"], PriorityStyle> = {
 };
 
 export function TaskRow({
-  task, dense = false, showArea = true, draggable = false,
-}: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean }) {
+  task, dense = false, showArea = true, draggable = false, variant = "row",
+}: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean; variant?: "row" | "card" }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
   const selection = useTaskSelection();
   const isSelected = selection.isSelected(task.id);
@@ -294,6 +294,7 @@ export function TaskRow({
       draggable={draggable}
       celebrate={celebrate}
       selected={isSelected}
+      variant={variant}
       onPointerDown={startLongPress}
       onPointerUp={cancelLongPress}
       onPointerMove={moveLongPress}
@@ -406,7 +407,7 @@ export function TaskRow({
               )}
             />
             <span className={cn("text-[10px] tabular-nums leading-none", allDone ? "font-semibold text-primary" : "text-muted-foreground/80")}>
-              {doneSubs}/{subtasks.length}
+              {doneSubs} of {subtasks.length}
             </span>
           </div>
         )}
