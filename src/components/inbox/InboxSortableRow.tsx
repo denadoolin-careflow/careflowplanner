@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, CheckSquare, Square, Sparkles, Mic, Tag as TagIcon, Clock } from "lucide-react";
+import { Circle, CheckSquare, Sparkles, Mic, Tag as TagIcon, Clock } from "lucide-react";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { useStore } from "@/lib/store";
@@ -18,15 +18,15 @@ interface Props {
 }
 
 /**
- * Inbox row wrapper: drag handle (sortable) + selection checkbox (in select mode)
+ * Inbox row wrapper: selection checkbox on the left
  * + one-tap "When" reschedule popover on the right.
  */
 export function InboxSortableRow({ task, autoDayPart }: Props) {
   const { updateTask } = useStore() as any;
-  const { isSelected } = useTaskSelection();
+  const { isSelected, toggle } = useTaskSelection();
   const [rowStyle] = useInboxRowStyle();
   const sortableId = `inbox:${task.id}`;
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+  const { setNodeRef, transform, transition, isDragging } =
     useSortable({ id: sortableId });
 
   const style: React.CSSProperties = {
@@ -72,21 +72,27 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
   return (
     <div ref={setNodeRef} style={style} className={containerClass}>
       <div className="flex items-start gap-2 sm:gap-3">
-        {/* Drag handle only — selection lives on the TaskRow checkbox to avoid duplication */}
+        {/* Selection indicator */}
         <div className="flex flex-col items-center pt-1">
           <button
-            {...listeners}
-            {...attributes}
-            aria-label="Reorder"
-            title="Drag to reorder"
-            className="grid h-5 w-4 cursor-grab place-items-center rounded text-muted-foreground/40 transition-opacity hover:text-muted-foreground/90 sm:opacity-60 sm:group-hover/inbox:opacity-100 active:cursor-grabbing"
-            onPointerDown={() => haptics.tap?.()}
+            aria-label={selected ? "Deselect" : "Select"}
+            title={selected ? "Deselect" : "Select"}
+            onClick={() => {
+              toggle(task.id);
+              haptics.tap?.();
+            }}
+            className={cn(
+              "flex h-6 w-6 items-center justify-center rounded-full transition-all",
+              selected
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground/40 hover:text-muted-foreground/80 hover:bg-muted/50",
+            )}
           >
-            <div className="grid grid-cols-2 gap-[2px]">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <span key={i} className="h-[3px] w-[3px] rounded-full bg-current" />
-              ))}
-            </div>
+            {selected ? (
+              <CheckSquare className="h-3.5 w-3.5" />
+            ) : (
+              <Circle className="h-3.5 w-3.5" />
+            )}
           </button>
         </div>
 
