@@ -476,6 +476,9 @@ function Toolbar({
   isFullscreen,
   onToggleFullscreen,
   onHide,
+  onAddSubtask,
+  onOpenMentions,
+  hasSubtaskHost,
 }: {
   editor: Editor;
   onPromoteTask: () => void;
@@ -483,6 +486,9 @@ function Toolbar({
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   onHide?: () => void;
+  onAddSubtask?: () => void;
+  onOpenMentions?: () => void;
+  hasSubtaskHost?: boolean;
 }) {
   if (!editor) return null;
   const setLink = () => {
@@ -520,6 +526,9 @@ function Toolbar({
         <ToolbarButton active={editor.isActive("highlight")} onClick={() => editor.chain().focus().toggleHighlight().run()} label="Highlight"><HighlighterIcon className="h-4 w-4" /></ToolbarButton>
         <ColorPickerPopover editor={editor} />
         <ToolbarButton active={editor.isActive("link")} onClick={setLink} label="Link"><LinkIcon className="h-4 w-4" /></ToolbarButton>
+        {onOpenMentions && (
+          <ToolbarButton onClick={onOpenMentions} label="Link to task, note, person, project…"><AtSign className="h-4 w-4" /></ToolbarButton>
+        )}
         <ToolbarButton onClick={onInsertImage} label="Insert image"><ImageIcon className="h-4 w-4" /></ToolbarButton>
       </div>
       <span className="h-5 w-px shrink-0 bg-border" />
@@ -531,6 +540,11 @@ function Toolbar({
         <ToolbarButton onClick={doIndent} label="Indent (Tab)"><IndentIncrease className="h-4 w-4" /></ToolbarButton>
         {editor.isActive("taskItem") && (
           <ToolbarButton onClick={onPromoteTask} label="Add this checkbox to Tasks"><ListPlus className="h-4 w-4" /></ToolbarButton>
+        )}
+        {onAddSubtask && hasSubtaskHost && (
+          <ToolbarButton onClick={onAddSubtask} label="Add subtask">
+            <GitBranch className="h-4 w-4" />
+          </ToolbarButton>
         )}
         <ToolbarButton active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} label="Quote"><Quote className="h-4 w-4" /></ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} label="Divider"><Minus className="h-4 w-4" /></ToolbarButton>
