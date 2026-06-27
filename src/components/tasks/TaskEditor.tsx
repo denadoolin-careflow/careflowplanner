@@ -728,7 +728,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             </div>
 
             {/* ─────────── Right column: context & assist ─────────── */}
-            <div className={cn("min-w-0 space-y-4", sideHidden && "lg:hidden")}>
+            <div className={cn("min-w-0 space-y-4", sideHidden && "md:hidden")}>
               <FlowContextCard draft={draft} set={set} />
 
               {/* AI Assistant card */}
