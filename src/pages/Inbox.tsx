@@ -310,6 +310,24 @@ function InboxInner() {
 
   const parsed = useMemo(() => (draft.trim().length > 2 ? parseTaskInput(draft) : null), [draft]);
 
+  // Recipient name detection: scan the draft for any caregiving profile name
+  // and surface confirm/override chips so the match isn't silently applied.
+  const recipientMatches = useMemo(() => {
+    const text = draft.trim().toLowerCase();
+    if (text.length < 2) return [] as { id: string; name: string; matched: string }[];
+    const out: { id: string; name: string; matched: string }[] = [];
+    for (const r of (state.recipients ?? []) as any[]) {
+      const full = String(r.name ?? "").toLowerCase().trim();
+      if (!full) continue;
+      const first = full.split(/\s+/)[0];
+      const wordRe = new RegExp(`\\b${first.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+      if (wordRe.test(text) || (full.length >= 3 && text.includes(full))) {
+        out.push({ id: r.id, name: r.name, matched: first });
+      }
+    }
+    return out;
+  }, [draft, state.recipients]);
+
   const combinedTags = useMemo(() => {
     const lower = new Set<string>();
     activeCategories.forEach((c) => lower.add(c.toLowerCase()));
