@@ -37,9 +37,9 @@ export function SubtaskLinkPicker({
   useEffect(() => {
     let active = true;
     if (type === "note") {
-      void listNotes({ archived: false }).then((rows) => {
+      void listNotes().then((rows) => {
         if (!active) return;
-        setNotes(rows.map(n => ({ id: n.id, label: n.title || n.body.slice(0, 48) || "Untitled note" })));
+        setNotes(rows.filter(n => !n.archived).map(n => ({ id: n.id, label: n.title || n.body.slice(0, 48) || "Untitled note" })));
       }).catch(() => { if (active) setNotes([]); });
     }
     return () => { active = false; };
