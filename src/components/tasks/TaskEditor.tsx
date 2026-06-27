@@ -288,7 +288,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               onChange={e => set("title", e.target.value)}
               onBlur={() => { if (nlpOn && parsed && parsed.chips.length) applyNlp(); }}
               placeholder="Task title"
-              className="order-last h-11 w-full min-w-0 max-w-full flex-1 basis-full border-0 bg-transparent px-0 text-[17px] font-semibold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:order-none sm:h-10 sm:basis-auto sm:w-auto"
+              className="order-last h-11 w-full min-w-0 max-w-full flex-1 basis-full border-0 bg-transparent px-0 text-[17px] font-semibold text-foreground caret-primary placeholder:text-muted-foreground/60 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:order-none sm:h-10 sm:basis-auto sm:w-auto"
             />
             <div className="ml-auto flex items-center gap-1 sm:ml-0 sm:contents">
             <TaskAIAssistPopover

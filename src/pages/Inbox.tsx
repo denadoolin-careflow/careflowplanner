@@ -9,7 +9,7 @@ import {
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
   MessageCircle, Flag, Folder, MapPin, CheckSquare, Plus, Wand2,
   Mail, ChefHat, Sparkles as SparklesIcon, HandHelping, Package,
-  BookHeart, Bold, Italic, List, AlignLeft,
+  BookHeart, AlignLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,8 +37,7 @@ import { openTaskEditor } from "@/lib/open-task-editor";
 import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { InboxSortableRow } from "@/components/inbox/InboxSortableRow";
-import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
-import { Eye } from "lucide-react";
+import { BlockEditor } from "@/components/notes/BlockEditor";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
   closestCenter, type DragEndEvent,
@@ -144,37 +143,6 @@ function InboxInner() {
   // appended to the body for notes/journal entries.
   const [details, setDetails] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [detailsPreview, setDetailsPreview] = useState(false);
-  const detailsRef = useRef<HTMLTextAreaElement>(null);
-  const wrapDetailsSelection = (before: string, after = before, fallback = "") => {
-    const el = detailsRef.current;
-    if (!el) {
-      setDetails((d) => d + before + fallback + after);
-      return;
-    }
-    const start = el.selectionStart ?? el.value.length;
-    const end = el.selectionEnd ?? start;
-    const selected = el.value.slice(start, end) || fallback;
-    const next = el.value.slice(0, start) + before + selected + after + el.value.slice(end);
-    setDetails(next);
-    requestAnimationFrame(() => {
-      el.focus();
-      const pos = start + before.length + selected.length;
-      el.setSelectionRange(pos, pos);
-    });
-  };
-  const prefixLines = (prefix: string) => {
-    const el = detailsRef.current;
-    if (!el) { setDetails((d) => (d ? d + "\n" : "") + prefix); return; }
-    const start = el.selectionStart ?? 0;
-    const end = el.selectionEnd ?? start;
-    const before = el.value.slice(0, start);
-    const sel = el.value.slice(start, end) || "item";
-    const after = el.value.slice(end);
-    const lines = sel.split("\n").map(l => prefix + l).join("\n");
-    setDetails(before + lines + after);
-    requestAnimationFrame(() => detailsRef.current?.focus());
-  };
   const [inlineAdd, setInlineAdd] = useState<string | null>(null);
   const inlineAddRef = useRef<HTMLInputElement>(null);
 
@@ -880,7 +848,6 @@ function InboxInner() {
                   type="button"
                   onClick={() => {
                     setDetailsOpen(true);
-                    requestAnimationFrame(() => detailsRef.current?.focus());
                   }}
                   className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border/60 bg-transparent px-2.5 py-1 text-[11.5px] text-muted-foreground transition hover:border-border hover:text-foreground"
                 >
@@ -893,104 +860,30 @@ function InboxInner() {
                 </button>
               ) : (
                 <div className="rounded-2xl border border-border/60 bg-card/60 p-2 animate-fade-in">
-                  <div className="mb-1.5 flex items-center gap-0.5">
-                    <button
-                      type="button"
-                      onClick={() => wrapDetailsSelection("**", "**", "bold")}
-                      title="Bold (Ctrl/Cmd+B)"
-                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                    >
-                      <Bold className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => wrapDetailsSelection("_", "_", "italic")}
-                      title="Italic (Ctrl/Cmd+I)"
-                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                    >
-                      <Italic className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => prefixLines("- ")}
-                      title="Bulleted list"
-                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                    >
-                      <List className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => prefixLines("- [ ] ")}
-                      title="Checklist"
-                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                    >
-                      <CheckSquare className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="ml-auto text-[10.5px] text-muted-foreground/70">
-                      Markdown · **bold** _italic_ - list
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setDetailsPreview((v) => !v)}
-                      title="Toggle live preview"
-                      className={cn(
-                        "ml-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] transition",
-                        detailsPreview
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      <Eye className="h-3 w-3" />
-                      Preview
-                    </button>
+                  <div className="mb-1.5 flex items-center justify-end">
                     <button
                       type="button"
                       onClick={() => { setDetails(""); setDetailsOpen(false); }}
-                      className="ml-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
+                      className="rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
                     >
                       Hide
                     </button>
                   </div>
-                  <textarea
-                    ref={detailsRef}
-                    value={details}
-                    onChange={(e) => setDetails(e.target.value)}
-                    onKeyDown={(e) => {
-                      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
-                        e.preventDefault();
-                        wrapDetailsSelection("**", "**", "bold");
-                      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") {
-                        e.preventDefault();
-                        wrapDetailsSelection("_", "_", "italic");
-                      } else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                        e.preventDefault();
-                        void submitCapture();
+                  <div className="cf-inbox-rich-editor">
+                    <BlockEditor
+                      body={details}
+                      onChange={(md) => setDetails(md)}
+                      showFooter={false}
+                      minHeight={captureKind === "journal" ? "160px" : "96px"}
+                      placeholder={
+                        captureKind === "journal"
+                          ? "Let it pour. What's stirring today?"
+                          : captureKind === "note"
+                            ? "Note body — type / for blocks, @ to mention, [[ to link."
+                            : "Extra context, links, or steps for this task…"
                       }
-                    }}
-                    placeholder={
-                      captureKind === "journal"
-                        ? "Let it pour. What's stirring today? (⌘↵ to save)"
-                        : captureKind === "note"
-                          ? "Note body — supports markdown."
-                          : "Extra context, links, or steps for this task…"
-                    }
-                    rows={captureKind === "journal" ? 5 : 3}
-                    className="w-full resize-y rounded-xl border-0 bg-transparent px-2 py-1.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0"
-                  />
-                  {detailsPreview && (
-                    <div className="mt-2 rounded-xl border border-border/50 bg-background/60 px-3 py-2 animate-fade-in">
-                      <div className="mb-1 flex items-center gap-1 text-[10.5px] uppercase tracking-wide text-muted-foreground/70">
-                        <Eye className="h-3 w-3" /> Live preview
-                      </div>
-                      {details.trim() ? (
-                        <NoteMarkdownPreview body={details} maxChars={2000} />
-                      ) : (
-                        <span className="text-[12px] italic text-muted-foreground/60">
-                          Start typing to see formatted output…
-                        </span>
-                      )}
-                    </div>
-                  )}
+                    />
+                  </div>
                 </div>
               )}
             </div>
