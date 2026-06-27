@@ -536,7 +536,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             priority: task.priority, startTime: task.startTime, estMinutes: task.estMinutes,
           });
         }
+        return task.id;
       }
+      return undefined;
     },
     toggleTask: async (id) => {
       const cur = state.tasks.find(t => t.id === id); if (!cur) return;
