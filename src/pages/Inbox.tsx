@@ -329,8 +329,30 @@ function InboxInner() {
         await addTask({ title: raw, dueDate: today, dayPart, area: "Home" });
         toast.success(`Added home task → ${dayPart}`);
       } else if (captureKind === "care") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving" });
-        toast.success(`Added care task → ${dayPart}`);
+        let recipientId: string | undefined =
+          careRecipientId !== "auto" ? careRecipientId : undefined;
+        if (!recipientId) {
+          const guess = detectAreaAndProject({
+            title: raw,
+            areas: state.areas,
+            projects: state.projects,
+            recipients: state.recipients,
+          });
+          recipientId = guess.recipientId;
+        }
+        await addTask({
+          title: raw,
+          dueDate: today,
+          dayPart,
+          area: "Caregiving",
+          recipientId,
+        });
+        const name = recipientId
+          ? state.recipients?.find((r: any) => r.id === recipientId)?.name
+          : undefined;
+        toast.success(
+          name ? `Added care task for ${name} → ${dayPart}` : `Added care task → ${dayPart}`,
+        );
       } else if (captureKind === "connect") {
         await addTask({ title: raw, dueDate: today, dayPart, area: "Family" });
         toast.success(`Added connect → ${dayPart}`);
