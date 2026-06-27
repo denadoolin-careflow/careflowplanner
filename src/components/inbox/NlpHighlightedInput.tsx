@@ -109,13 +109,22 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
     };
 
     return (
-      <div className="relative">
-        {/* Mirror: shows the highlighted text behind the transparent input */}
+      <div className="group relative">
+        {/* Background shell sits behind the mirror so highlighted text is not muted by an input overlay. */}
+        <div
+          className={cn(
+            "absolute inset-0 rounded-2xl border border-primary/30 bg-background/80 transition",
+            "shadow-[0_0_0_4px_hsl(var(--primary)/0.08),0_8px_30px_-12px_hsl(var(--primary)/0.45)]",
+            "group-hover:shadow-[0_0_0_5px_hsl(var(--primary)/0.12),0_10px_36px_-12px_hsl(var(--primary)/0.55)]",
+            "group-focus-within:border-primary/60 group-focus-within:shadow-[0_0_0_6px_hsl(var(--primary)/0.18),0_14px_44px_-12px_hsl(var(--primary)/0.6)]",
+          )}
+        />
+        {/* Mirror: shows highlighted text between the shell and the transparent input. */}
         <div
           ref={mirrorRef}
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-0 overflow-hidden whitespace-pre text-[15px] font-semibold leading-[1.4]",
+            "pointer-events-none absolute inset-0 z-10 overflow-hidden whitespace-pre text-[15px] font-semibold leading-[1.4]",
             leftPad, rightPad,
             "flex items-center",
           )}
@@ -137,13 +146,10 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           spellCheck
           autoComplete="off"
           className={cn(
-            "relative h-14 w-full rounded-2xl border border-primary/30 bg-background/80 text-[15px] font-semibold leading-[1.4] text-foreground outline-none transition placeholder:text-[13px] placeholder:font-medium placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
-            "shadow-[0_0_0_4px_hsl(var(--primary)/0.08),0_8px_30px_-12px_hsl(var(--primary)/0.45)]",
-            "hover:shadow-[0_0_0_5px_hsl(var(--primary)/0.12),0_10px_36px_-12px_hsl(var(--primary)/0.55)]",
-            "focus-visible:border-primary/60 focus-visible:shadow-[0_0_0_6px_hsl(var(--primary)/0.18),0_14px_44px_-12px_hsl(var(--primary)/0.6)]",
-            // Make the input's own text transparent so only the mirror shows colors,
-            // but keep the caret visible.
-            value ? "!text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "",
+            "relative z-20 h-14 w-full rounded-2xl border-0 bg-transparent text-[15px] font-semibold leading-[1.4] outline-none transition placeholder:text-[13px] placeholder:font-medium placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
+            "disabled:opacity-60",
+            // The input's own text is transparent so the colored mirror renders, while the caret and selection remain visible.
+            value ? "!text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "text-foreground",
             leftPad, rightPad,
             className,
           )}
