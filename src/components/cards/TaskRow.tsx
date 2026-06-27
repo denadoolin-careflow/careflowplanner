@@ -692,8 +692,16 @@ type ShellHandlers = {
 };
 
 function RowShell({
-  task, dense, draggable, celebrate, selected, children, ...handlers
-}: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; selected?: boolean; children: React.ReactNode } & ShellHandlers) {
+  task, dense, draggable, celebrate, selected, variant = "row", children, ...handlers
+}: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; selected?: boolean; variant?: "row" | "card"; children: React.ReactNode } & ShellHandlers) {
+  if (variant === "card") {
+    const cls = cn(
+      "group relative flex items-start gap-2.5 px-0 py-0",
+      celebrate && "scale-[1.005]",
+    );
+    if (!draggable) return <div className={cls} data-no-swipe {...handlers}>{children}</div>;
+    return <DraggableShell task={task} className={cls} handlers={handlers}>{children}</DraggableShell>;
+  }
   const priorityGlow =
     task.priority === "high"
       ? "shadow-[0_0_0_1px_hsl(var(--priority-high)/0.35),0_10px_28px_-12px_hsl(var(--priority-high)/0.55)] hover:shadow-[0_0_0_1px_hsl(var(--priority-high)/0.45),0_14px_36px_-12px_hsl(var(--priority-high)/0.7)]"
