@@ -512,7 +512,9 @@ function makeSuggestion<T>(editor: Editor, opts: {
   getItems: (query: string) => T[];
   onSelect: (item: T, range: { from: number; to: number }, editor: Editor) => void;
   render: (item: T, active: boolean) => React.ReactNode;
+  menuComponent?: React.ComponentType<{ items: T[]; onSelect: (i: T) => void; render: (i: T, active: boolean) => React.ReactNode }>;
 }) {
+  const MenuComp = (opts.menuComponent ?? FloatingMenu) as any;
   return Suggestion({
     editor,
     pluginKey: opts.pluginKey,
@@ -525,7 +527,7 @@ function makeSuggestion<T>(editor: Editor, opts: {
       let popup: TippyInstance[] = [];
       return {
         onStart: (props: any) => {
-          component = new ReactRenderer(FloatingMenu as any, {
+          component = new ReactRenderer(MenuComp, {
             props: {
               items: props.items,
               onSelect: (it: T) => opts.onSelect(it, props.range, props.editor),
