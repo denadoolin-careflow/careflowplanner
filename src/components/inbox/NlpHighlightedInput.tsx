@@ -92,7 +92,7 @@ export interface NlpHighlightedInputProps {
 
 export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedInputProps>(
   function NlpHighlightedInput(
-    { value, onChange, onKeyDown, placeholder, disabled, className, leftPad = "pl-14", rightPad = "pr-28" },
+    { value, onChange, onKeyDown, onFocus, onBlur, placeholder, disabled, className, leftPad = "pl-14", rightPad = "pr-28" },
     ref,
   ) {
     const mirrorRef = useRef<HTMLDivElement>(null);
