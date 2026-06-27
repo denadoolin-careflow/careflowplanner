@@ -678,6 +678,23 @@
 
 /* TipTap block editor */
 .block-editor .tippy-box[data-theme~='light-border'] { background: hsl(var(--popover)); color: hsl(var(--popover-foreground)); border-color: hsl(var(--border)); }
+
+/* Atmosphere-aware BlockEditor typography + toolbar */
+.block-editor .cf-editor-toolbar,
+.block-editor .ProseMirror { font-family: var(--atmo-font-body, 'Inter', ui-sans-serif, system-ui, sans-serif); }
+.block-editor .ProseMirror h1,
+.block-editor .ProseMirror h2,
+.block-editor .ProseMirror h3,
+.block-editor .ProseMirror h4,
+.block-editor .ProseMirror h5,
+.block-editor .ProseMirror h6 { font-family: var(--atmo-font-display, 'Fraunces', ui-serif, Georgia, serif); }
+.block-editor .ProseMirror strong { color: hsl(var(--foreground)); font-weight: 650; }
+.block-editor .cf-editor-toolbar { color: hsl(var(--foreground)); }
+.block-editor .cf-editor-toolbar button { color: hsl(var(--muted-foreground)); }
+.block-editor .cf-editor-toolbar button:hover { background: hsl(var(--muted) / 0.45); color: hsl(var(--foreground)); }
+.block-editor .cf-editor-toolbar button[data-active="true"],
+.block-editor .cf-editor-toolbar button[aria-pressed="true"] { color: hsl(var(--primary)); background: hsl(var(--primary) / 0.12); }
+
 .block-editor .ProseMirror { outline: none; }
 .block-editor .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
