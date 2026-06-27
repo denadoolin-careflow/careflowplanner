@@ -805,16 +805,20 @@ function InboxInner() {
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-pink-300/40 bg-pink-50/40 px-3 py-2.5 text-[12.5px] animate-fade-in dark:border-pink-400/20 dark:bg-pink-500/[0.06]">
               <HeartHandshake className="h-3.5 w-3.5 text-pink-600 dark:text-pink-300" />
               <span className="text-muted-foreground">
-                {recipientMatches.length === 1 ? "Is this for" : "Who is this for?"}
+                {recipientMatches.length === 1
+                  ? "Is this for"
+                  : careRecipientIds.length > 1
+                    ? `For ${careRecipientIds.length} people?`
+                    : "Who is this for? (tap multiple)"}
               </span>
               {recipientMatches.map((r) => {
-                const active = careRecipientId === r.id;
+                const active = careRecipientIds.includes(r.id);
                 return (
                   <button
                     key={r.id}
                     type="button"
                     onClick={() => {
-                      setCareRecipientId(active ? "auto" : r.id);
+                      toggleCareRecipient(r.id);
                       if (!active && captureKind !== "care") setCaptureKind("care");
                       haptics.tap?.();
                     }}
@@ -825,7 +829,7 @@ function InboxInner() {
                         : "bg-card text-foreground/80 ring-border/60 hover:ring-pink-400/50",
                     )}
                     aria-pressed={active}
-                    title={active ? "Tap to clear" : `Use ${r.name}`}
+                    title={active ? "Tap to remove" : `Add ${r.name}`}
                   >
                     {active && <Check className="h-3 w-3" />}
                     {r.name}
@@ -834,31 +838,33 @@ function InboxInner() {
               })}
               {(state.recipients ?? []).length > recipientMatches.length && (
                 <select
-                  value={careRecipientId === "auto" ? "" : careRecipientId}
+                  value=""
                   onChange={(e) => {
                     const v = e.target.value;
-                    if (!v) { setCareRecipientId("auto"); return; }
-                    setCareRecipientId(v);
+                    if (!v) return;
+                    if (!careRecipientIds.includes(v)) {
+                      setCareRecipientIds((prev) => [...prev, v]);
+                    }
                     if (captureKind !== "care") setCaptureKind("care");
                   }}
                   className="ml-1 rounded-full border border-border/60 bg-card px-2 py-0.5 text-[11.5px] text-muted-foreground outline-none"
-                  aria-label="Pick a different person"
+                  aria-label="Add another person"
                 >
-                  <option value="">Someone else…</option>
+                  <option value="">Add someone else…</option>
                   {(state.recipients ?? [])
-                    .filter((r: any) => !recipientMatches.some((m) => m.id === r.id))
+                    .filter((r: any) => !recipientMatches.some((m) => m.id === r.id) && !careRecipientIds.includes(r.id))
                     .map((r: any) => (
                       <option key={r.id} value={r.id}>{r.name}</option>
                     ))}
                 </select>
               )}
-              {careRecipientId !== "auto" && (
+              {careRecipientIds.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => setCareRecipientId("auto")}
+                  onClick={() => setCareRecipientIds([])}
                   className="ml-auto rounded-full px-2 py-0.5 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
                 >
-                  Not this one
+                  Clear
                 </button>
               )}
             </div>
