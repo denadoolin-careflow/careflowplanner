@@ -115,13 +115,13 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           ref={mirrorRef}
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-0 overflow-hidden whitespace-pre text-[15px] font-medium leading-[1.4]",
+            "pointer-events-none absolute inset-0 overflow-hidden whitespace-pre text-[15px] font-semibold leading-[1.4]",
             leftPad, rightPad,
             "flex items-center",
           )}
         >
           <div
-            className="min-w-0 truncate font-semibold text-foreground"
+            className="min-w-0 truncate font-semibold text-foreground [text-shadow:0_0_0_currentColor]"
             dangerouslySetInnerHTML={{ __html: highlightTokens(value) }}
           />
         </div>
@@ -137,13 +137,13 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           spellCheck
           autoComplete="off"
           className={cn(
-            "relative h-14 w-full rounded-2xl border border-primary/30 bg-background/80 text-[15px] font-semibold leading-[1.4] text-foreground outline-none transition placeholder:text-[13px] placeholder:font-normal placeholder:text-foreground/55 dark:placeholder:text-foreground/50",
+            "relative h-14 w-full rounded-2xl border border-primary/30 bg-background/80 text-[15px] font-semibold leading-[1.4] text-foreground outline-none transition placeholder:text-[13px] placeholder:font-medium placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
             "shadow-[0_0_0_4px_hsl(var(--primary)/0.08),0_8px_30px_-12px_hsl(var(--primary)/0.45)]",
             "hover:shadow-[0_0_0_5px_hsl(var(--primary)/0.12),0_10px_36px_-12px_hsl(var(--primary)/0.55)]",
             "focus-visible:border-primary/60 focus-visible:shadow-[0_0_0_6px_hsl(var(--primary)/0.18),0_14px_44px_-12px_hsl(var(--primary)/0.6)]",
             // Make the input's own text transparent so only the mirror shows colors,
             // but keep the caret visible.
-            value ? "text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "",
+            value ? "!text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "",
             leftPad, rightPad,
             className,
           )}
