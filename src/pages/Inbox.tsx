@@ -123,6 +123,23 @@ function InboxInner() {
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
   const captureInputRef = useRef<HTMLInputElement>(null);
+  const [inlineAdd, setInlineAdd] = useState<string | null>(null);
+  const inlineAddRef = useRef<HTMLInputElement>(null);
+
+  const startInlineAdd = () => {
+    setInlineAdd("");
+    haptics.tap?.();
+    requestAnimationFrame(() => inlineAddRef.current?.focus());
+  };
+
+  const commitInlineAdd = async () => {
+    const title = (inlineAdd ?? "").trim();
+    if (!title) { setInlineAdd(null); return; }
+    await addTask({ title, inbox: true, dayPart });
+    haptics.snap?.();
+    toast.success("Added to inbox");
+    setInlineAdd(null);
+  };
 
   const prefillDraft = (phrase: string) => {
     setCaptureKind("task");
@@ -858,12 +875,7 @@ function InboxInner() {
               })}
               <button
                 type="button"
-                onClick={async () => {
-                  const t = await addTask({ title: "New item", inbox: true, dayPart });
-                  haptics.snap?.();
-                  toast.success("Added to inbox");
-                  if (t?.id) openTaskEditor(t.id);
-                }}
+                onClick={startInlineAdd}
                 className="inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border/60 bg-transparent px-3 text-[13px] font-medium text-muted-foreground transition-all hover:border-border hover:text-foreground active:scale-[0.97]"
               >
                 <Plus className="h-[15px] w-[15px]" strokeWidth={1.75} />
@@ -941,6 +953,24 @@ function InboxInner() {
         {items.length > 0 ? (
           <section className="rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
             <InboxHeldHeader hasSuggestions={Object.keys(suggestions).length > 0} onApplyAll={acceptAllSuggestions} />
+            {inlineAdd !== null && (
+              <div className="mb-3 flex items-center gap-2 rounded-2xl border border-primary/30 bg-background/80 px-3 py-2 shadow-[0_0_0_4px_hsl(var(--primary)/0.08)]">
+                <Plus className="h-4 w-4 text-primary/70" />
+                <input
+                  ref={inlineAddRef}
+                  value={inlineAdd}
+                  onChange={(e) => setInlineAdd(e.target.value)}
+                  onBlur={() => void commitInlineAdd()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); void commitInlineAdd(); }
+                    else if (e.key === "Escape") { e.preventDefault(); setInlineAdd(null); }
+                  }}
+                  placeholder="New inbox item…"
+                  className="h-7 flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground/70"
+                />
+                <span className="text-[10.5px] text-muted-foreground">Enter to save · Esc to cancel</span>
+              </div>
+            )}
             <SectionedInboxList
               items={items}
               autoDayPart={autoDayPart}
@@ -962,6 +992,23 @@ function InboxInner() {
           </section>
         ) : (
           <section className="rounded-[24px] border border-dashed border-border/60 bg-card/40 p-6 text-center backdrop-blur-md">
+            {inlineAdd !== null && (
+              <div className="mb-4 flex items-center gap-2 rounded-2xl border border-primary/30 bg-background/80 px-3 py-2 text-left shadow-[0_0_0_4px_hsl(var(--primary)/0.08)]">
+                <Plus className="h-4 w-4 text-primary/70" />
+                <input
+                  ref={inlineAddRef}
+                  value={inlineAdd}
+                  onChange={(e) => setInlineAdd(e.target.value)}
+                  onBlur={() => void commitInlineAdd()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); void commitInlineAdd(); }
+                    else if (e.key === "Escape") { e.preventDefault(); setInlineAdd(null); }
+                  }}
+                  placeholder="New inbox item…"
+                  className="h-7 flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground/70"
+                />
+              </div>
+            )}
             <div className="mx-auto grid h-10 w-10 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
               <Check className="h-4 w-4" />
             </div>
