@@ -443,6 +443,7 @@ function InboxInner() {
           setDraft("");
           setDetails("");
           setDetailsOpen(false);
+          setControlsPinned(false);
           if (entry) toast.success("Journal entry saved ✨");
           return;
         } catch {
@@ -453,6 +454,7 @@ function InboxInner() {
       setDraft("");
       setDetails("");
       setDetailsOpen(false);
+      setControlsPinned(false);
       return;
     }
     const p = parseTaskInput(raw);
@@ -475,6 +477,7 @@ function InboxInner() {
     setOverrideDue("");
     setDetails("");
     setDetailsOpen(false);
+    setControlsPinned(false);
     toast.success("Caught it ✨", { description: "Safely held in your inbox." });
   };
 
