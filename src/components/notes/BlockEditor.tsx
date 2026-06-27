@@ -302,6 +302,7 @@ type RefItem = { id: string; label: string; type: string; href?: string; icon: R
 const TYPE_TO_ENTITY: Record<string, EntityType> = {
   Task: "task", Project: "project", Goal: "goal", Habit: "habit",
   Person: "person", Appointment: "appointment", Meal: "meal", Journal: "journal",
+  Note: "note", Area: "area", Holiday: "holiday", Memory: "memory", Cosmic: "cosmic_event",
 };
 
 function buildReferences(state: ReturnType<typeof useStore>["state"], transits: RefItem[] = []): RefItem[] {
@@ -331,6 +332,12 @@ function buildReferences(state: ReturnType<typeof useStore>["state"], transits: 
   }));
   (state.journal ?? []).slice(0, 80).forEach(j => items.push({
     id: j.id, label: j.title || j.body.slice(0, 40), type: "Journal", href: "/journal", icon: BookOpen, insertText: j.title || j.date,
+  }));
+  (state.areas ?? []).forEach(a => items.push({
+    id: a.id, label: a.name, type: "Area", href: `/areas/${a.id}`, icon: Folder, insertText: a.name,
+  }));
+  (state.holidays ?? []).slice(0, 80).forEach(h => items.push({
+    id: h.id, label: h.name, type: "Holiday", href: "/seasons/holidays", icon: CalendarDays, insertText: h.name,
   }));
   return items;
 }
