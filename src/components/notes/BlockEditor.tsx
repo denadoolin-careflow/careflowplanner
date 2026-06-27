@@ -1751,8 +1751,43 @@ export function BlockEditor({
           )}
         </BubbleMenu>
       )}
+      {editor && !isMobile && toolbarPlacement === "top" && (
+        <div
+          className={cn(
+            "mb-2 transition-all duration-200",
+            (editorFocused || hasSelection) && !toolbarHidden
+              ? "opacity-100 translate-y-0 pointer-events-auto"
+              : "opacity-0 -translate-y-1 pointer-events-none h-0 overflow-hidden mb-0",
+          )}
+        >
+          <Toolbar
+            editor={editor}
+            onPromoteTask={promoteTaskItemToTask}
+            onInsertImage={triggerImageUpload}
+            isFullscreen={fullscreen}
+            onToggleFullscreen={() => setFullscreen(f => !f)}
+            onHide={() => setToolbarHidden(true)}
+            onAddSubtask={addSubtaskNow}
+            onOpenMentions={openMentions}
+            hasSubtaskHost={!!subtaskHost}
+          />
+        </div>
+      )}
+      {editor && !isMobile && toolbarPlacement === "top" && toolbarHidden && (
+        <div className="mb-2 flex justify-end">
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); setToolbarHidden(false); }}
+            aria-label="Show toolbar"
+            title="Show toolbar"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-2.5 py-1 text-[11px] text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
+          >
+            <Eye className="h-3.5 w-3.5" /> Show toolbar
+          </button>
+        </div>
+      )}
       <EditorContent editor={editor} className="pl-3 sm:pl-4" />
-      {editor && !isMobile && (
+      {editor && !isMobile && toolbarPlacement === "bottom" && (
         <div
           className={cn(
             "sticky bottom-2 mt-3 transition-all duration-200",
@@ -1774,7 +1809,7 @@ export function BlockEditor({
           />
         </div>
       )}
-      {editor && !isMobile && toolbarHidden && (
+      {editor && !isMobile && toolbarPlacement === "bottom" && toolbarHidden && (
         <div className="sticky bottom-2 mt-2 flex justify-end">
           <button
             type="button"
