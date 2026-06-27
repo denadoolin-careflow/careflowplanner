@@ -22,6 +22,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isToday, isFuture, parseISO, format } from "date-fns";
 import { InboxIllustration } from "@/components/inbox/InboxIllustration";
@@ -80,19 +81,21 @@ const QUICK_ACTIONS: { icon: any; label: string; phrase: string; tone: string }[
   { icon: Car,           label: "Errand",       phrase: "Errand — ",      tone: "text-violet-600 dark:text-violet-300" },
 ];
 
-const CATEGORIES: { icon: any; label: string; tint: string }[] = [
-  { icon: Home,          label: "Home",       tint: "bg-emerald-50/70 text-emerald-700 ring-emerald-100" },
-  { icon: Users,         label: "Family",     tint: "bg-orange-50/70 text-orange-700 ring-orange-100" },
-  { icon: Heart,         label: "Health",     tint: "bg-rose-50/70 text-rose-700 ring-rose-100" },
-  { icon: BookOpen,      label: "Learning",   tint: "bg-violet-50/70 text-violet-700 ring-violet-100" },
-  { icon: Moon,          label: "Reflection", tint: "bg-indigo-50/70 text-indigo-700 ring-indigo-100" },
-  { icon: HeartHandshake,label: "Caregiving", tint: "bg-pink-50/70 text-pink-700 ring-pink-100" },
-  { icon: Lightbulb,     label: "Ideas",      tint: "bg-amber-50/70 text-amber-700 ring-amber-100" },
-  { icon: Puzzle,        label: "Kids",       tint: "bg-teal-50/70 text-teal-700 ring-teal-100" },
-  { icon: Plane,         label: "Travel",     tint: "bg-sky-50/70 text-sky-700 ring-sky-100" },
-  { icon: Briefcase,     label: "Work",       tint: "bg-stone-50/70 text-stone-700 ring-stone-100" },
-  { icon: Palette,       label: "Creative",   tint: "bg-fuchsia-50/70 text-fuchsia-700 ring-fuchsia-100" },
-  { icon: PawPrint,      label: "Pets",       tint: "bg-lime-50/70 text-lime-700 ring-lime-100" },
+// Categories adopt the same compact outlined-chip aesthetic as Quick Actions:
+// neutral pill outline, only the icon + label are tinted.
+const CATEGORIES: { icon: any; label: string; tone: string }[] = [
+  { icon: Home,          label: "Home",       tone: "text-emerald-600 dark:text-emerald-300" },
+  { icon: Users,         label: "Family",     tone: "text-orange-600 dark:text-orange-300" },
+  { icon: Heart,         label: "Health",     tone: "text-rose-600 dark:text-rose-300" },
+  { icon: BookOpen,      label: "Learning",   tone: "text-violet-600 dark:text-violet-300" },
+  { icon: Moon,          label: "Reflection", tone: "text-indigo-600 dark:text-indigo-300" },
+  { icon: HeartHandshake,label: "Caregiving", tone: "text-pink-600 dark:text-pink-300" },
+  { icon: Lightbulb,     label: "Ideas",      tone: "text-amber-600 dark:text-amber-300" },
+  { icon: Puzzle,        label: "Kids",       tone: "text-teal-600 dark:text-teal-300" },
+  { icon: Plane,         label: "Travel",     tone: "text-sky-600 dark:text-sky-300" },
+  { icon: Briefcase,     label: "Work",       tone: "text-stone-600 dark:text-stone-300" },
+  { icon: Palette,       label: "Creative",   tone: "text-fuchsia-600 dark:text-fuchsia-300" },
+  { icon: PawPrint,      label: "Pets",       tone: "text-lime-600 dark:text-lime-300" },
 ];
 
 function InboxInner() {
@@ -119,6 +122,7 @@ function InboxInner() {
   const [overridePriority, setOverridePriority] = useState<Priority | "">("");
   const [overrideProjectId, setOverrideProjectId] = useState<string>("");
   const [overrideDue, setOverrideDue] = useState<string>("");
+  const [careRecipientId, setCareRecipientId] = useState<string>("auto");
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
