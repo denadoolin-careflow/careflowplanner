@@ -874,7 +874,12 @@ function InboxInner() {
                       body={details}
                       onChange={(md) => setDetails(md)}
                       showFooter={false}
-                      minHeight={captureKind === "journal" ? "160px" : "96px"}
+                      toolbarPlacement="top"
+                      minHeight={
+                        captureKind === "journal" ? "260px"
+                          : captureKind === "note" ? "220px"
+                          : "160px"
+                      }
                       placeholder={
                         captureKind === "journal"
                           ? "Let it pour. What's stirring today?"
