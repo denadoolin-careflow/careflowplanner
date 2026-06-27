@@ -148,6 +148,11 @@ function InboxInner() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [inlineAdd, setInlineAdd] = useState<string | null>(null);
   const inlineAddRef = useRef<HTMLInputElement>(null);
+  // Focus state for the capture input — secondary controls reveal while typing
+  // or while focus is inside the capture section.
+  const [captureFocused, setCaptureFocused] = useState(false);
+  const captureSectionRef = useRef<HTMLDivElement>(null);
+  const [controlsPinned, setControlsPinned] = useState(false);
 
   const startInlineAdd = () => {
     setInlineAdd("");
