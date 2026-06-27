@@ -1749,6 +1749,41 @@ export function BlockEditor({
         </BubbleMenu>
       )}
       <EditorContent editor={editor} className="pl-3 sm:pl-4" />
+      {editor && !isMobile && (
+        <div
+          className={cn(
+            "sticky bottom-2 mt-3 transition-all duration-200",
+            (editorFocused || hasSelection) && !toolbarHidden
+              ? "opacity-100 translate-y-0 pointer-events-auto"
+              : "opacity-0 translate-y-1 pointer-events-none",
+          )}
+        >
+          <Toolbar
+            editor={editor}
+            onPromoteTask={promoteTaskItemToTask}
+            onInsertImage={triggerImageUpload}
+            isFullscreen={fullscreen}
+            onToggleFullscreen={() => setFullscreen(f => !f)}
+            onHide={() => setToolbarHidden(true)}
+            onAddSubtask={addSubtaskNow}
+            onOpenMentions={openMentions}
+            hasSubtaskHost={!!subtaskHost}
+          />
+        </div>
+      )}
+      {editor && !isMobile && toolbarHidden && (
+        <div className="sticky bottom-2 mt-2 flex justify-end">
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); setToolbarHidden(false); }}
+            aria-label="Show toolbar"
+            title="Show toolbar"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-2.5 py-1 text-[11px] text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
+          >
+            <Eye className="h-3.5 w-3.5" /> Show toolbar
+          </button>
+        </div>
+      )}
       {fullscreen && noteId && (
         <aside className="fixed right-4 top-20 z-[95] hidden h-[calc(100vh-6rem)] w-80 overflow-y-auto rounded-2xl border border-border/60 bg-card/95 p-3 shadow-2xl backdrop-blur lg:block">
           <NoteLinksSidebar noteId={noteId} />
