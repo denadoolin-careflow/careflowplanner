@@ -403,31 +403,17 @@ export function TaskRow({
           aria-label={`Priority: ${task.priority}. Click to change.`}
           title="Click to change priority"
           className={cn(
-            "mt-[3px] inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 transition-opacity group-hover:opacity-0",
+            "mt-[3px] inline-flex h-5 shrink-0 items-center gap-1 rounded-full border px-2 text-[10px] font-medium transition-opacity group-hover:opacity-0",
             PRIORITY_STYLES[task.priority].badgeBg,
             PRIORITY_STYLES[task.priority].badgeBorder,
+            PRIORITY_STYLES[task.priority].badgeText,
           )}
         >
-          <span className="flex flex-col gap-0.5">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  "h-1.5 w-1.5 rounded-full",
-                  i < PRIORITY_DOTS[task.priority]
-                    ? PRIORITY_STYLES[task.priority].dotOn
-                    : PRIORITY_STYLES[task.priority].dotOff,
-                  task.priority === "high" && i < PRIORITY_DOTS[task.priority] && PRIORITY_STYLES.high.glow,
-                )}
-              />
-            ))}
-          </span>
-          <span className={cn(
-            "hidden text-[10px] font-bold uppercase tracking-widest sm:inline",
-            PRIORITY_STYLES[task.priority].badgeText,
-          )}>
-            {PRIORITY_STYLES[task.priority].label}
-          </span>
+          <span
+            aria-hidden
+            className={cn("h-1.5 w-1.5 rounded-full", PRIORITY_STYLES[task.priority].dotOn)}
+          />
+          <span className="tracking-wide">{PRIORITY_STYLES[task.priority].label}</span>
         </button>
       )}
 
@@ -545,9 +531,16 @@ type ShellHandlers = {
 function RowShell({
   task, dense, draggable, celebrate, selected, children, ...handlers
 }: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; selected?: boolean; children: React.ReactNode } & ShellHandlers) {
+  const priorityGlow =
+    task.priority === "high"
+      ? "shadow-[0_0_0_1px_hsl(var(--priority-high)/0.35),0_10px_28px_-12px_hsl(var(--priority-high)/0.55)] hover:shadow-[0_0_0_1px_hsl(var(--priority-high)/0.45),0_14px_36px_-12px_hsl(var(--priority-high)/0.7)]"
+      : task.priority === "medium"
+      ? "shadow-[0_0_0_1px_hsl(var(--priority-med)/0.25),0_8px_22px_-14px_hsl(var(--priority-med)/0.5)] hover:shadow-[0_0_0_1px_hsl(var(--priority-med)/0.35),0_12px_30px_-12px_hsl(var(--priority-med)/0.6)]"
+      : "";
   const cls = cn(
     "group relative flex items-start gap-2.5 rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm px-3 transition-all",
     "hover:border-primary/30 hover:bg-card/80 hover:shadow-[0_6px_22px_-14px_hsl(var(--primary)/0.45)]",
+    priorityGlow,
     dense ? "py-2" : "py-3",
     celebrate && "border-primary/40 bg-primary/5 scale-[1.005]",
     selected && "border-primary/60 bg-primary/10 ring-1 ring-primary/40",
