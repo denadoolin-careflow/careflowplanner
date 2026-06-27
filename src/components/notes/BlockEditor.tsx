@@ -1365,13 +1365,19 @@ export function BlockEditor({
         menuComponent: GroupedFloatingMenu,
         onSelect: (item, range, editor) => {
           const href = item.href || "#";
-          editor.chain().focus().deleteRange(range)
+          editor
+            .chain()
+            .focus()
+            .deleteRange(range)
             .insertContent({
               type: "text",
               text: `@${item.label}`,
               marks: [{ type: "link", attrs: { href, class: "ref-chip" } }],
             })
-            .insertContent(" ")
+            // Insert a plain space without the link mark so typing continues
+            // outside the chip instead of extending the link.
+            .insertContent({ type: "text", text: " " })
+            .unsetMark("link")
             .run();
           const entityType = TYPE_TO_ENTITY[item.type];
           if (entityType && noteIdRef.current) {
