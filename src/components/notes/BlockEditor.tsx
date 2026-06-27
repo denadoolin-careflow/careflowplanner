@@ -1340,9 +1340,29 @@ export function BlockEditor({
         pluginKey: new PluginKey("refSuggestion"),
         getItems: (query) => {
           const q = query.trim().toLowerCase();
-          if (!q) return refsRef.current.slice(0, 10);
-          return refsRef.current.filter(r => r.label.toLowerCase().includes(q)).slice(0, 10);
+          if (!q) {
+            // Empty query: surface a balanced preview across groups.
+            const perGroup: Record<string, number> = {};
+            const out: RefItem[] = [];
+            for (const r of refsRef.current) {
+              const n = perGroup[r.type] ?? 0;
+              if (n >= 4) continue;
+              perGroup[r.type] = n + 1;
+              out.push(r);
+              if (out.length >= 30) break;
+            }
+            return out;
+          }
+          const scored: Array<{ r: RefItem; s: number }> = [];
+          for (const r of refsRef.current) {
+            const s = fuzzyScore(r.label, q);
+            if (s == null) continue;
+            scored.push({ r, s });
+          }
+          scored.sort((a, b) => b.s - a.s);
+          return scored.slice(0, 40).map(x => x.r);
         },
+        menuComponent: GroupedFloatingMenu,
         onSelect: (item, range, editor) => {
           const href = item.href || "#";
           editor.chain().focus().deleteRange(range)
