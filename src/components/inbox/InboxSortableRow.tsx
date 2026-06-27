@@ -53,41 +53,49 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group/inbox flex items-stretch gap-1 rounded-xl px-0.5 py-0.5 transition-colors",
+        "group/inbox flex flex-col gap-1.5 rounded-xl px-0.5 py-1 mb-2 last:mb-0 transition-colors",
         selected && "bg-primary/5",
       )}
     >
-      {/* Drag handle (sortable) */}
-      <button
-        {...listeners}
-        {...attributes}
-        aria-label="Reorder"
-        title="Drag to reorder"
-        className="mt-1.5 grid h-6 w-4 shrink-0 cursor-grab place-items-center rounded text-muted-foreground/40 opacity-0 transition-opacity hover:text-muted-foreground group-hover/inbox:opacity-100 active:cursor-grabbing"
-        onPointerDown={() => haptics.tap?.()}
-      >
-        <GripVertical className="h-3 w-3" />
-      </button>
+      <div className="flex items-stretch gap-1">
+        {/* Drag handle (sortable) */}
+        <button
+          {...listeners}
+          {...attributes}
+          aria-label="Reorder"
+          title="Drag to reorder"
+          className="mt-2 grid h-6 w-4 shrink-0 cursor-grab place-items-center rounded text-muted-foreground/40 transition-opacity hover:text-muted-foreground sm:opacity-60 sm:group-hover/inbox:opacity-100 active:cursor-grabbing"
+          onPointerDown={() => haptics.tap?.()}
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </button>
 
-      {/* Selection checkbox (visible in select mode) */}
-      {selectionMode && (
+        {/* Selection toggle — always available, next to the drag handle */}
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); toggle(task.id, { shift: e.shiftKey, meta: e.metaKey || e.ctrlKey }); }}
           aria-label={selected ? "Deselect" : "Select"}
+          title={selected ? "Deselect" : "Select"}
           className={cn(
-            "mt-2 grid h-7 w-7 shrink-0 place-items-center rounded-lg ring-1 transition-colors",
-            selected ? "bg-primary/15 text-primary ring-primary/40" : "bg-background/60 text-muted-foreground ring-border/60 hover:text-foreground",
+            "mt-1.5 grid h-6 w-6 shrink-0 place-items-center rounded-md ring-1 transition-colors",
+            selected
+              ? "bg-primary/15 text-primary ring-primary/40 opacity-100"
+              : "bg-background/60 text-muted-foreground/70 ring-border/60 hover:text-foreground sm:opacity-60 sm:group-hover/inbox:opacity-100",
+            selectionMode && "opacity-100",
           )}
         >
           {selected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
         </button>
-      )}
 
-      <div className="min-w-0 flex-1">
-        <TaskRow task={task} />
+        <div className="min-w-0 flex-1">
+          <TaskRow task={task} />
+        </div>
+      </div>
+
+      {/* Meta row below the task: source + age (left), When picker (right) */}
+      <div className="ml-12 mr-1 flex items-center justify-between gap-2">
         {(source || ageLabel) && (
-          <div className="ml-9 mt-0.5 flex items-center gap-2 text-[10.5px] text-muted-foreground/80">
+          <div className="flex items-center gap-2 text-[10.5px] text-muted-foreground/80">
             {source && (
               <span className="inline-flex items-center gap-1">
                 <source.icon className="h-3 w-3" />
@@ -102,23 +110,21 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
             )}
           </div>
         )}
-      </div>
-
-      {/* One-tap "When" reschedule */}
-      <div className="mt-1 shrink-0 self-start opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover/inbox:opacity-100">
-        <WhenPopover
-          value={{ date: task.dueDate, dayPart: (task.dayPart as DayPart) ?? autoDayPart }}
-          autoDayPart={autoDayPart}
-          onChange={async (v) => {
-            await updateTask(task.id, {
-              dueDate: v.date ?? undefined,
-              dayPart: v.dayPart,
-              inbox: v.date ? false : task.inbox,
-            });
-            haptics.snap?.();
-            toast(v.date ? `Scheduled · ${v.dayPart}` : `Set time of day · ${v.dayPart}`, { description: task.title });
-          }}
-        />
+        <div className="ml-auto shrink-0">
+          <WhenPopover
+            value={{ date: task.dueDate, dayPart: (task.dayPart as DayPart) ?? autoDayPart }}
+            autoDayPart={autoDayPart}
+            onChange={async (v) => {
+              await updateTask(task.id, {
+                dueDate: v.date ?? undefined,
+                dayPart: v.dayPart,
+                inbox: v.date ? false : task.inbox,
+              });
+              haptics.snap?.();
+              toast(v.date ? `Scheduled · ${v.dayPart}` : `Set time of day · ${v.dayPart}`, { description: task.title });
+            }}
+          />
+        </div>
       </div>
     </div>
   );
