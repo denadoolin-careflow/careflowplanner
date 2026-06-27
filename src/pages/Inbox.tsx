@@ -1217,10 +1217,11 @@ function ChipSelect({
 
 // ────────── Asana-style sectioned inbox ──────────
 
-type Bucket = "just" | "needsDate" | "needsCategory" | "ready";
+type Bucket = "just" | "scheduledToday" | "needsDate" | "needsCategory" | "ready";
 
 const BUCKET_META: Record<Bucket, { label: string; hint: string; tint: string }> = {
   just:          { label: "Just captured",   hint: "Added in the last hour",          tint: "bg-sky-50/70 text-sky-700 ring-sky-100" },
+  scheduledToday:{ label: "Scheduled for today", hint: "Held here until you process it", tint: "bg-primary/10 text-primary ring-primary/20" },
   needsDate:     { label: "Needs a date",    hint: "Decide when this happens",         tint: "bg-amber-50/70 text-amber-800 ring-amber-100" },
   needsCategory: { label: "Needs a category",hint: "Give it a home",                   tint: "bg-rose-50/70 text-rose-700 ring-rose-100" },
   ready:         { label: "Ready to plan",   hint: "Has a date and a category",        tint: "bg-emerald-50/70 text-emerald-700 ring-emerald-100" },
