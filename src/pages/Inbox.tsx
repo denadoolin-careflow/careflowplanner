@@ -739,6 +739,8 @@ function InboxInner() {
                 value={draft}
                 onChange={setDraft}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
+                onFocus={() => setCaptureFocused(true)}
+                onBlur={handleCaptureBlur}
                 placeholder={
                   recorder.state === "recording"
                     ? (willCancel ? "Release to cancel…" : `Listening · ${fmtElapsed(recorder.elapsedMs)}`)
