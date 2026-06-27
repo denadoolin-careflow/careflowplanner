@@ -231,7 +231,7 @@ interface Ctx {
   authLoading: boolean;
   signOut: () => Promise<void>;
 
-  addTask: (t: Partial<Task> & { title: string }) => Promise<void>;
+  addTask: (t: Partial<Task> & { title: string }) => Promise<string | undefined>;
   toggleTask: (id: string) => Promise<void>;
   updateTask: (id: string, patch: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
