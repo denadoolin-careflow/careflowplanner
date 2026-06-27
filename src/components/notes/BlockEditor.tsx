@@ -1607,7 +1607,13 @@ export function BlockEditor({
       <EditorContent editor={editor} className="pl-3 sm:pl-4" />
       {editor && isMobile && (
         <div className="no-swipe mt-3">
-          <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} onInsertImage={triggerImageUpload} />
+          <Toolbar
+            editor={editor}
+            onPromoteTask={promoteTaskItemToTask}
+            onInsertImage={triggerImageUpload}
+            isFullscreen={fullscreen}
+            onToggleFullscreen={() => setFullscreen(f => !f)}
+          />
         </div>
       )}
       <input
