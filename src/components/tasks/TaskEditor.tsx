@@ -673,6 +673,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                       placeholder="Capture thoughts, links, and context…"
                       showFooter={false}
                       minHeight="min-h-[100px]"
+                      subtaskHost={{ kind: "task", id: draft.id, title: draft.title }}
                     />
                   </div>
                 </CardHeader>
