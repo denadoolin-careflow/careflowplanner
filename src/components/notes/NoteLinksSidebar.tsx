@@ -39,6 +39,12 @@ export function NoteLinksSidebar({ noteId }: Props) {
           const j = state.journal.find(x => x.id === l.entityId);
           label = j ? (j.title || j.body.slice(0, 40)) : label; break;
         }
+        case "area": label = (state.areas ?? []).find(a => a.id === l.entityId)?.name ?? label; break;
+        case "holiday": label = state.holidays.find(h => h.id === l.entityId)?.name ?? label; break;
+        case "date": label = l.entityId; break;
+        case "cosmic_event": label = decodeURIComponent(l.entityId); break;
+        case "note": label = "Note"; break;
+        case "memory": label = "Memory"; break;
       }
       return { ...l, label };
     });
