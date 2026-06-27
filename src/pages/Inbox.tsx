@@ -931,6 +931,20 @@ function InboxInner() {
                     </span>
                     <button
                       type="button"
+                      onClick={() => setDetailsPreview((v) => !v)}
+                      title="Toggle live preview"
+                      className={cn(
+                        "ml-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] transition",
+                        detailsPreview
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <Eye className="h-3 w-3" />
+                      Preview
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => { setDetails(""); setDetailsOpen(false); }}
                       className="ml-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
                     >
@@ -963,6 +977,20 @@ function InboxInner() {
                     rows={captureKind === "journal" ? 5 : 3}
                     className="w-full resize-y rounded-xl border-0 bg-transparent px-2 py-1.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0"
                   />
+                  {detailsPreview && (
+                    <div className="mt-2 rounded-xl border border-border/50 bg-background/60 px-3 py-2 animate-fade-in">
+                      <div className="mb-1 flex items-center gap-1 text-[10.5px] uppercase tracking-wide text-muted-foreground/70">
+                        <Eye className="h-3 w-3" /> Live preview
+                      </div>
+                      {details.trim() ? (
+                        <NoteMarkdownPreview body={details} maxChars={2000} />
+                      ) : (
+                        <span className="text-[12px] italic text-muted-foreground/60">
+                          Start typing to see formatted output…
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
