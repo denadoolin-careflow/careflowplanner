@@ -122,7 +122,17 @@ function InboxInner() {
   const [overridePriority, setOverridePriority] = useState<Priority | "">("");
   const [overrideProjectId, setOverrideProjectId] = useState<string>("");
   const [overrideDue, setOverrideDue] = useState<string>("");
-  const [careRecipientId, setCareRecipientId] = useState<string>("auto");
+  const [careRecipientIds, setCareRecipientIds] = useState<string[]>([]);
+  const careRecipientId = careRecipientIds[0] ?? "auto";
+  const setCareRecipientSingle = (v: string) => {
+    if (!v || v === "auto") setCareRecipientIds([]);
+    else setCareRecipientIds([v]);
+  };
+  const toggleCareRecipient = (id: string) => {
+    setCareRecipientIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
