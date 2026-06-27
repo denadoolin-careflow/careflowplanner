@@ -144,6 +144,7 @@ function InboxInner() {
   // appended to the body for notes/journal entries.
   const [details, setDetails] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsPreview, setDetailsPreview] = useState(false);
   const detailsRef = useRef<HTMLTextAreaElement>(null);
   const wrapDetailsSelection = (before: string, after = before, fallback = "") => {
     const el = detailsRef.current;
