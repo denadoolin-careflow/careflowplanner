@@ -26,6 +26,9 @@ import { useCompletionVisual, type CompletionVisualKey } from "@/lib/completion-
 import { SmartDueChip } from "@/components/tasks/SmartDueChip";
 import { Button } from "@/components/ui/button";
 import { addDays, format } from "date-fns";
+import { SubtaskLinkPicker, type PickedLink } from "@/components/tasks/SubtaskLinkPicker";
+import { linkTaskTo, TASK_LINK_LABEL } from "@/lib/task-links";
+import { X as XIcon } from "lucide-react";
 import {
   SwipeableList, SwipeableListItem, LeadingActions, TrailingActions,
   SwipeAction, Type as SwipeType,
@@ -94,6 +97,7 @@ export function TaskRow({
   const [expanded, setExpanded] = useState(false);
   const [addingSub, setAddingSub] = useState(false);
   const [subDraft, setSubDraft] = useState("");
+  const [subLinks, setSubLinks] = useState<PickedLink[]>([]);
   const [quickEditOpen, setQuickEditOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const longPressTimer = useRef<number | null>(null);
@@ -497,22 +501,58 @@ export function TaskRow({
           )}
           {subtasks.map(s => <TaskRow key={s.id} task={s} dense showArea={false} />)}
           {addingSub ? (
-            <Input
-              autoFocus
-              value={subDraft}
-              onChange={e => setSubDraft(e.target.value)}
-              placeholder="Subtask…"
-              className="h-8 text-sm"
-              onBlur={() => { if (!subDraft.trim()) setAddingSub(false); }}
-              onKeyDown={async (e) => {
-                if (e.key === "Enter" && subDraft.trim()) {
-                  await addTask({ title: subDraft.trim(), area: task.area, parentTaskId: task.id, projectId: task.projectId });
-                  setSubDraft("");
-                } else if (e.key === "Escape") {
-                  setSubDraft(""); setAddingSub(false);
-                }
-              }}
-            />
+            <div className="space-y-1.5 rounded-lg border border-border/60 bg-card/60 p-1.5">
+              {subLinks.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {subLinks.map((l, i) => (
+                    <span
+                      key={`${l.type}:${l.id}`}
+                      className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 pl-2 pr-1 py-0.5 text-[11px] text-primary"
+                      title={`${TASK_LINK_LABEL[l.type]} · ${l.label}`}
+                    >
+                      <span className="opacity-70">{TASK_LINK_LABEL[l.type]}:</span>
+                      <span className="max-w-[140px] truncate">{l.label}</span>
+                      <button
+                        type="button"
+                        onClick={() => setSubLinks(s => s.filter((_, j) => j !== i))}
+                        className="rounded-full p-0.5 text-primary/70 hover:bg-primary/15 hover:text-primary"
+                        aria-label="Remove link"
+                      >
+                        <XIcon className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-1.5">
+                <Input
+                  autoFocus
+                  value={subDraft}
+                  onChange={e => setSubDraft(e.target.value)}
+                  placeholder="Subtask…"
+                  className="h-8 flex-1 text-sm"
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter" && subDraft.trim()) {
+                      e.preventDefault();
+                      const newId = await addTask({
+                        title: subDraft.trim(), area: task.area,
+                        parentTaskId: task.id, projectId: task.projectId,
+                      });
+                      if (newId && subLinks.length > 0) {
+                        await Promise.all(subLinks.map(l =>
+                          linkTaskTo(newId, l.type, l.id).catch(() => {})
+                        ));
+                      }
+                      setSubDraft("");
+                      setSubLinks([]);
+                    } else if (e.key === "Escape") {
+                      setSubDraft(""); setSubLinks([]); setAddingSub(false);
+                    }
+                  }}
+                />
+                <SubtaskLinkPicker selected={subLinks} onChange={setSubLinks} compact />
+              </div>
+            </div>
           ) : (
             <button
               type="button"
