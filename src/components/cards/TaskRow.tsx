@@ -411,6 +411,75 @@ export function TaskRow({
           </div>
         )}
 
+        {/* Inline notes preview / inline editor */}
+        {!editing && !dense && (hasNotes || notesEditing) && (
+          <div className="mt-1.5">
+            {notesEditing ? (
+              <div
+                className="rounded-lg border border-primary/30 bg-background/60 p-1.5 shadow-sm"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.stopPropagation();
+                    setNotesEditing(false);
+                  }
+                }}
+              >
+                <BlockEditor
+                  body={task.notes ?? ""}
+                  onChange={(markdown) => scheduleNotesSave(markdown)}
+                  placeholder="Add notes…"
+                  showFooter={false}
+                  minHeight="min-h-[80px]"
+                  subtaskHost={{ kind: "task", id: task.id, title: task.title }}
+                />
+                <div className="mt-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (notesSaveTimer.current) {
+                        window.clearTimeout(notesSaveTimer.current);
+                        notesSaveTimer.current = null;
+                      }
+                      setNotesEditing(false);
+                    }}
+                    className="rounded px-2 py-0.5 text-[10.5px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (notesExpanded) setNotesEditing(true);
+                  else setNotesExpanded(true);
+                }}
+                onDoubleClick={(e) => { e.stopPropagation(); setNotesEditing(true); }}
+                className="group/notes block w-full rounded-lg border border-border/40 bg-muted/20 px-2 py-1.5 text-left transition-colors hover:border-primary/30 hover:bg-muted/40"
+                aria-label={notesExpanded ? "Click to edit notes" : "Click to expand notes"}
+                title={notesExpanded ? "Click to edit" : "Click to expand"}
+              >
+                <div className="flex items-start gap-1.5">
+                  <FileText className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/70" />
+                  <div className="min-w-0 flex-1">
+                    <NoteMarkdownPreview
+                      body={task.notes ?? ""}
+                      maxChars={notesExpanded ? 2000 : 160}
+                      className={cn(
+                        "text-[12px]",
+                        !notesExpanded && "line-clamp-2",
+                      )}
+                    />
+                  </div>
+                </div>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Inline "+ Add subtask" — hover-revealed on parent rows */}
         {!editing && !isSubtask && (
           <button
