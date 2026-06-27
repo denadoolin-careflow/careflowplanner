@@ -816,6 +816,7 @@ export function BlockEditor({
   showFooter = true,
   minHeight,
   subtaskHost,
+  toolbarPlacement = "bottom",
 }: {
   body: string;
   onChange: (markdown: string, html: string) => void;
@@ -827,6 +828,8 @@ export function BlockEditor({
   minHeight?: string;
   /** When provided, the "Add subtask" button creates a real Task linked here. */
   subtaskHost?: { kind: "task" | "note" | "project"; id: string; title?: string };
+  /** Where to anchor the formatting toolbar. Defaults to bottom (sticky). */
+  toolbarPlacement?: "top" | "bottom";
 }) {
   const { state, addTask } = useStore();
   const navigate = useNavigate();
