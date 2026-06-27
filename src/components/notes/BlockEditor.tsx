@@ -881,6 +881,8 @@ export function BlockEditor({
   const editorRef = useRef<Editor | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [toolbarHidden, setToolbarHidden] = useState(false);
+  const [editorFocused, setEditorFocused] = useState(false);
+  const [hasSelection, setHasSelection] = useState(false);
 
   // Lock body scroll when fullscreen
   useEffect(() => {
