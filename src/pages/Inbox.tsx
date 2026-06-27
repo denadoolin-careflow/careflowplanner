@@ -807,7 +807,7 @@ function InboxInner() {
           ) : null}
 
           {/* Schedule + Priority + Area + Project pickers */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11.5px]">
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px]">
             {/* Combined When picker (Things 3 style) — date + day-part in one popover */}
             <WhenPopover
               value={{ date: overrideDue || undefined, dayPart }}
@@ -818,45 +818,73 @@ function InboxInner() {
               }}
             />
 
-            <PickerLabel icon={Flag}>
-              <select
-                value={overridePriority}
-                onChange={(e) => setOverridePriority(e.target.value as Priority | "")}
-                className="bg-transparent text-[11.5px] capitalize outline-none"
-              >
-                <option value="">Priority</option>
-                {(["low","medium","high"] as Priority[]).map(p => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </PickerLabel>
+            <ChipSelect
+              icon={Flag}
+              placeholder="Priority"
+              value={overridePriority}
+              tone={overridePriority === "high" ? "text-rose-600 dark:text-rose-300"
+                : overridePriority === "medium" ? "text-amber-600 dark:text-amber-300"
+                : overridePriority === "low" ? "text-emerald-600 dark:text-emerald-300"
+                : undefined}
+              onChange={(v) => setOverridePriority(v as Priority | "")}
+              options={[
+                { value: "", label: "Any priority" },
+                { value: "low", label: "Low" },
+                { value: "medium", label: "Medium" },
+                { value: "high", label: "High" },
+              ]}
+            />
 
-            <PickerLabel icon={MapPin}>
-              <select
-                value={overrideArea}
-                onChange={(e) => setOverrideArea(e.target.value as Area | "")}
-                className="bg-transparent text-[11.5px] outline-none"
-              >
-                <option value="">Area</option>
-                {(["Family","Kids","Caregiving","Home","Meals","Appointments","Holidays & Birthdays","Personal","Creative Projects","Money"] as Area[]).map(a => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </PickerLabel>
+            <ChipSelect
+              icon={MapPin}
+              placeholder="Area"
+              value={overrideArea}
+              tone={overrideArea ? "text-sky-600 dark:text-sky-300" : undefined}
+              onChange={(v) => setOverrideArea(v as Area | "")}
+              options={[
+                { value: "", label: "No area" },
+                ...(["Family","Kids","Caregiving","Home","Meals","Appointments","Holidays & Birthdays","Personal","Creative Projects","Money"] as Area[])
+                  .map(a => ({ value: a, label: a })),
+              ]}
+            />
+
+            {captureKind === "care" && (
+              (state.recipients ?? []).length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => navigate("/caregiving")}
+                  className="inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border/60 bg-transparent px-3 text-[12px] font-medium text-muted-foreground hover:border-border hover:text-foreground"
+                >
+                  <HeartHandshake className="h-[14px] w-[14px]" strokeWidth={1.75} />
+                  Add a person
+                </button>
+              ) : (
+                <ChipSelect
+                  icon={HeartHandshake}
+                  placeholder="Who?"
+                  value={careRecipientId}
+                  tone={careRecipientId !== "auto" ? "text-pink-600 dark:text-pink-300" : undefined}
+                  onChange={setCareRecipientId}
+                  options={[
+                    { value: "auto", label: "Auto-detect from text" },
+                    ...(state.recipients ?? []).map((r: any) => ({ value: r.id, label: r.name })),
+                  ]}
+                />
+              )
+            )}
 
             {(state.projects ?? []).length > 0 && (
-              <PickerLabel icon={Folder}>
-                <select
-                  value={overrideProjectId}
-                  onChange={(e) => setOverrideProjectId(e.target.value)}
-                  className="bg-transparent text-[11.5px] outline-none max-w-[10rem] truncate"
-                >
-                  <option value="">Project</option>
-                  {(state.projects ?? []).slice(0, 50).map((p: any) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </PickerLabel>
+              <ChipSelect
+                icon={Folder}
+                placeholder="Project"
+                value={overrideProjectId}
+                tone={overrideProjectId ? "text-violet-600 dark:text-violet-300" : undefined}
+                onChange={setOverrideProjectId}
+                options={[
+                  { value: "", label: "No project" },
+                  ...(state.projects ?? []).slice(0, 50).map((p: any) => ({ value: p.id, label: p.name })),
+                ]}
+              />
             )}
 
             {(overrideArea || overridePriority || overrideProjectId || overrideDue || dayPart !== autoDayPart) && (
