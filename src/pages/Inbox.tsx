@@ -203,9 +203,12 @@ function InboxInner() {
   const tickRef = useRef<number | null>(null);
   const lastTickRef = useRef(0);
 
-  const fmtElapsed = (ms: number) => {
-    const s = Math.floor(ms / 1000);
-    return `${String(Math.floor(s / 60)).padStart(1, "0")}:${String(s % 60).padStart(2, "0")}`;
+  const showControls = captureFocused || controlsPinned || draft.trim().length > 0;
+
+  const handleCaptureBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (!captureSectionRef.current?.contains(e.relatedTarget as Node)) {
+      setCaptureFocused(false);
+    }
   };
 
   const startVoice = async () => {
