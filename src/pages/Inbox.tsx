@@ -557,7 +557,7 @@ function InboxInner() {
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,hsl(var(--primary)/0.06),transparent_70%)]">
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-10">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-2 py-6 sm:px-4 md:px-8 md:py-10">
         {/* ────────── Header + Hero ────────── */}
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-8 animate-fade-in">
           <div className="flex flex-col justify-center gap-3">
