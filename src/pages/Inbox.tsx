@@ -615,7 +615,7 @@ function InboxInner() {
         </section>
 
         {/* ────────── Quick Capture ────────── */}
-        <section className="rounded-[24px] border border-border/50 bg-card/70 p-4 shadow-[0_10px_40px_-25px_hsl(var(--primary)/0.4)] backdrop-blur-md sm:p-5 md:p-6">
+        <section ref={captureSectionRef} className="rounded-[24px] border border-border/50 bg-card/70 p-4 shadow-[0_10px_40px_-25px_hsl(var(--primary)/0.4)] backdrop-blur-md sm:p-5 md:p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="inline-flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
