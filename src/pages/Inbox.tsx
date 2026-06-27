@@ -310,6 +310,24 @@ function InboxInner() {
 
   const parsed = useMemo(() => (draft.trim().length > 2 ? parseTaskInput(draft) : null), [draft]);
 
+  // Recipient name detection: scan the draft for any caregiving profile name
+  // and surface confirm/override chips so the match isn't silently applied.
+  const recipientMatches = useMemo(() => {
+    const text = draft.trim().toLowerCase();
+    if (text.length < 2) return [] as { id: string; name: string; matched: string }[];
+    const out: { id: string; name: string; matched: string }[] = [];
+    for (const r of (state.recipients ?? []) as any[]) {
+      const full = String(r.name ?? "").toLowerCase().trim();
+      if (!full) continue;
+      const first = full.split(/\s+/)[0];
+      const wordRe = new RegExp(`\\b${first.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+      if (wordRe.test(text) || (full.length >= 3 && text.includes(full))) {
+        out.push({ id: r.id, name: r.name, matched: first });
+      }
+    }
+    return out;
+  }, [draft, state.recipients]);
+
   const combinedTags = useMemo(() => {
     const lower = new Set<string>();
     activeCategories.forEach((c) => lower.add(c.toLowerCase()));
@@ -769,6 +787,69 @@ function InboxInner() {
                     {willCancel ? "Release to cancel" : "← Slide to cancel"}
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+
+          {recipientMatches.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-pink-300/40 bg-pink-50/40 px-3 py-2.5 text-[12.5px] animate-fade-in dark:border-pink-400/20 dark:bg-pink-500/[0.06]">
+              <HeartHandshake className="h-3.5 w-3.5 text-pink-600 dark:text-pink-300" />
+              <span className="text-muted-foreground">
+                {recipientMatches.length === 1 ? "Is this for" : "Who is this for?"}
+              </span>
+              {recipientMatches.map((r) => {
+                const active = careRecipientId === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => {
+                      setCareRecipientId(active ? "auto" : r.id);
+                      if (!active && captureKind !== "care") setCaptureKind("care");
+                      haptics.tap?.();
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-medium ring-1 transition-all",
+                      active
+                        ? "bg-pink-500/15 text-pink-700 ring-pink-400/60 dark:text-pink-200"
+                        : "bg-card text-foreground/80 ring-border/60 hover:ring-pink-400/50",
+                    )}
+                    aria-pressed={active}
+                    title={active ? "Tap to clear" : `Use ${r.name}`}
+                  >
+                    {active && <Check className="h-3 w-3" />}
+                    {r.name}
+                  </button>
+                );
+              })}
+              {(state.recipients ?? []).length > recipientMatches.length && (
+                <select
+                  value={careRecipientId === "auto" ? "" : careRecipientId}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (!v) { setCareRecipientId("auto"); return; }
+                    setCareRecipientId(v);
+                    if (captureKind !== "care") setCaptureKind("care");
+                  }}
+                  className="ml-1 rounded-full border border-border/60 bg-card px-2 py-0.5 text-[11.5px] text-muted-foreground outline-none"
+                  aria-label="Pick a different person"
+                >
+                  <option value="">Someone else…</option>
+                  {(state.recipients ?? [])
+                    .filter((r: any) => !recipientMatches.some((m) => m.id === r.id))
+                    .map((r: any) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                </select>
+              )}
+              {careRecipientId !== "auto" && (
+                <button
+                  type="button"
+                  onClick={() => setCareRecipientId("auto")}
+                  className="ml-auto rounded-full px-2 py-0.5 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                >
+                  Not this one
+                </button>
               )}
             </div>
           )}
