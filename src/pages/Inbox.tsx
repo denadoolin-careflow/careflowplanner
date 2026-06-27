@@ -9,6 +9,7 @@ import {
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
   MessageCircle, Flag, Folder, MapPin, CheckSquare, Plus, Wand2,
   Mail, ChefHat, Sparkles as SparklesIcon, HandHelping, Package,
+  BookHeart, Bold, Italic, List, AlignLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,7 +100,7 @@ const CATEGORIES: { icon: any; label: string; tone: string }[] = [
 ];
 
 function InboxInner() {
-  const { state, addTask, addMeal, updateTask, deleteTask } = useStore() as any;
+  const { state, addTask, addMeal, updateTask, deleteTask, addJournal } = useStore() as any;
   const navigate = useNavigate();
   const { paneOpen, clear } = useTaskSelection();
   const [triaging, setTriaging] = useState(false);
@@ -108,7 +109,7 @@ function InboxInner() {
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [extraTags, setExtraTags] = useState<string[]>([]);
   const [captureKind, setCaptureKind] = useState<
-    "task" | "home" | "care" | "meal" | "note" | "connect" | "commute"
+    "task" | "home" | "care" | "meal" | "note" | "journal" | "connect" | "commute"
   >("task");
   const [tagsOpen, setTagsOpen] = useState(false);
   const [kindsOpen, setKindsOpen] = useState(false);
@@ -137,6 +138,40 @@ function InboxInner() {
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
   const captureInputRef = useRef<HTMLInputElement>(null);
+  // Inline details / formatting field (markdown). Attached as `notes` on tasks,
+  // appended to the body for notes/journal entries.
+  const [details, setDetails] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsRef = useRef<HTMLTextAreaElement>(null);
+  const wrapDetailsSelection = (before: string, after = before, fallback = "") => {
+    const el = detailsRef.current;
+    if (!el) {
+      setDetails((d) => d + before + fallback + after);
+      return;
+    }
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? start;
+    const selected = el.value.slice(start, end) || fallback;
+    const next = el.value.slice(0, start) + before + selected + after + el.value.slice(end);
+    setDetails(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + before.length + selected.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+  const prefixLines = (prefix: string) => {
+    const el = detailsRef.current;
+    if (!el) { setDetails((d) => (d ? d + "\n" : "") + prefix); return; }
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? start;
+    const before = el.value.slice(0, start);
+    const sel = el.value.slice(start, end) || "item";
+    const after = el.value.slice(end);
+    const lines = sel.split("\n").map(l => prefix + l).join("\n");
+    setDetails(before + lines + after);
+    requestAnimationFrame(() => detailsRef.current?.focus());
+  };
   const [inlineAdd, setInlineAdd] = useState<string | null>(null);
   const inlineAddRef = useRef<HTMLInputElement>(null);
 
@@ -353,8 +388,9 @@ function InboxInner() {
       const today = format(new Date(), "yyyy-MM-dd");
       const h = new Date().getHours();
       const mealSlot = h < 12 ? "Breakfast" : h < 17 ? "Lunch" : "Dinner";
+      const detailsText = details.trim();
       if (captureKind === "home") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Home" });
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Home", notes: detailsText || undefined });
         toast.success(`Added home task → ${dayPart}`);
       } else if (captureKind === "care") {
         let recipientIds: string[] = [...careRecipientIds];
@@ -368,7 +404,7 @@ function InboxInner() {
           if (guess.recipientId) recipientIds = [guess.recipientId];
         }
         if (recipientIds.length === 0) {
-          await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving" });
+          await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving", notes: detailsText || undefined });
           toast.success(`Added care task → ${dayPart}`);
         } else {
           for (const rid of recipientIds) {
@@ -378,6 +414,7 @@ function InboxInner() {
               dayPart,
               area: "Caregiving",
               recipientId: rid,
+              notes: detailsText || undefined,
             });
           }
           const names = recipientIds
@@ -391,18 +428,20 @@ function InboxInner() {
           setCareRecipientIds([]);
         }
       } else if (captureKind === "connect") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Family" });
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Family", notes: detailsText || undefined });
         toast.success(`Added connect → ${dayPart}`);
       } else if (captureKind === "commute") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Personal" });
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Personal", notes: detailsText || undefined });
         toast.success(`Added commute → ${dayPart}`);
       } else if (captureKind === "meal") {
         await addMeal({ name: raw, date: today, slot: mealSlot });
         toast.success(`Added ${mealSlot} → ${raw}`);
       } else if (captureKind === "note") {
         try {
-          const n = await createNote({ title: raw });
+          const n = await createNote({ title: raw, body: detailsText || undefined });
           setDraft("");
+          setDetails("");
+          setDetailsOpen(false);
           toast.success("Note created");
           navigate(`/notes/${n.id}`);
           return;
@@ -410,8 +449,23 @@ function InboxInner() {
           toast.error("Couldn't create note");
           return;
         }
+      } else if (captureKind === "journal") {
+        try {
+          const body = [raw, detailsText].filter(Boolean).join("\n\n");
+          const entry = await addJournal({ body, type: "daily", title: raw.slice(0, 80) });
+          setDraft("");
+          setDetails("");
+          setDetailsOpen(false);
+          if (entry) toast.success("Journal entry saved ✨");
+          return;
+        } catch {
+          toast.error("Couldn't save journal entry");
+          return;
+        }
       }
       setDraft("");
+      setDetails("");
+      setDetailsOpen(false);
       return;
     }
     const p = parseTaskInput(raw);
@@ -426,11 +480,14 @@ function InboxInner() {
       energy: p.energy,
       tags: mergedTags.length ? mergedTags : undefined,
       estMinutes: p.estMinutes,
+      notes: details.trim() || undefined,
       inbox: true,
     });
     setDraft("");
     setExtraTags([]);
     setOverrideDue("");
+    setDetails("");
+    setDetailsOpen(false);
     toast.success("Caught it ✨", { description: "Safely held in your inbox." });
   };
 
@@ -632,6 +689,7 @@ function InboxInner() {
                   { k: "care",    Icon: HeartHandshake, label: "Care" },
                   { k: "meal",    Icon: UtensilsCrossed,label: "Meal" },
                   { k: "note",    Icon: StickyNote,     label: "Note" },
+                  { k: "journal", Icon: BookHeart,      label: "Journal" },
                   { k: "connect", Icon: MessageCircle,  label: "Connect" },
                   { k: "commute", Icon: Car,            label: "Commute" },
                 ] as const;
@@ -703,6 +761,7 @@ function InboxInner() {
                     : captureKind === "meal" ? "Add a meal for today…"
                     : captureKind === "connect" ? "Who to reach out to or visit?"
                     : captureKind === "commute" ? "Where are you going?"
+                    : captureKind === "journal" ? "Today's journal — start with a feeling, thought, or moment…"
                     : "Add a note…"
                 }
                 disabled={recorder.state !== "idle"}
@@ -805,6 +864,102 @@ function InboxInner() {
                   >
                     {willCancel ? "Release to cancel" : "← Slide to cancel"}
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Inline details / notes with light markdown formatting */}
+          {recorder.state === "idle" && (
+            <div className="mt-2">
+              {!detailsOpen && !details.trim() ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDetailsOpen(true);
+                    requestAnimationFrame(() => detailsRef.current?.focus());
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border/60 bg-transparent px-2.5 py-1 text-[11.5px] text-muted-foreground transition hover:border-border hover:text-foreground"
+                >
+                  <AlignLeft className="h-3 w-3" />
+                  {captureKind === "journal"
+                    ? "Expand entry…"
+                    : captureKind === "note"
+                      ? "Add body…"
+                      : "Add details / notes"}
+                </button>
+              ) : (
+                <div className="rounded-2xl border border-border/60 bg-card/60 p-2 animate-fade-in">
+                  <div className="mb-1.5 flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => wrapDetailsSelection("**", "**", "bold")}
+                      title="Bold (Ctrl/Cmd+B)"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                      <Bold className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => wrapDetailsSelection("_", "_", "italic")}
+                      title="Italic (Ctrl/Cmd+I)"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                      <Italic className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => prefixLines("- ")}
+                      title="Bulleted list"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                      <List className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => prefixLines("- [ ] ")}
+                      title="Checklist"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                      <CheckSquare className="h-3.5 w-3.5" />
+                    </button>
+                    <span className="ml-auto text-[10.5px] text-muted-foreground/70">
+                      Markdown · **bold** _italic_ - list
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setDetails(""); setDetailsOpen(false); }}
+                      className="ml-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      Hide
+                    </button>
+                  </div>
+                  <textarea
+                    ref={detailsRef}
+                    value={details}
+                    onChange={(e) => setDetails(e.target.value)}
+                    onKeyDown={(e) => {
+                      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+                        e.preventDefault();
+                        wrapDetailsSelection("**", "**", "bold");
+                      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") {
+                        e.preventDefault();
+                        wrapDetailsSelection("_", "_", "italic");
+                      } else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                        e.preventDefault();
+                        void submitCapture();
+                      }
+                    }}
+                    placeholder={
+                      captureKind === "journal"
+                        ? "Let it pour. What's stirring today? (⌘↵ to save)"
+                        : captureKind === "note"
+                          ? "Note body — supports markdown."
+                          : "Extra context, links, or steps for this task…"
+                    }
+                    rows={captureKind === "journal" ? 5 : 3}
+                    className="w-full resize-y rounded-xl border-0 bg-transparent px-2 py-1.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0"
+                  />
                 </div>
               )}
             </div>
