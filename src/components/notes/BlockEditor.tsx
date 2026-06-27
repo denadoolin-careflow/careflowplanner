@@ -1705,6 +1705,9 @@ export function BlockEditor({
             onInsertImage={triggerImageUpload}
             isFullscreen={fullscreen}
             onToggleFullscreen={() => setFullscreen(f => !f)}
+            onAddSubtask={addSubtaskNow}
+            onOpenMentions={openMentions}
+            hasSubtaskHost={!!subtaskHost}
           />
         </div>
       )}
