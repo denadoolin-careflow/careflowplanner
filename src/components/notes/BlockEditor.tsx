@@ -1478,9 +1478,10 @@ export function BlockEditor({
         dragActive && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background",
         `editor-theme-${prefs.theme}`,
         `editor-density-${prefs.density}`,
+        fullscreen && "fixed inset-0 z-[90] overflow-auto bg-background p-4 sm:p-8",
       )}
       style={{
-        maxWidth: WIDTH_PX[prefs.width],
+        maxWidth: fullscreen ? "min(960px, 100%)" : WIDTH_PX[prefs.width],
         marginInline: 0,
         ["--editor-font-scale" as any]: String(prefs.fontScale),
         ...(prefs.theme === "custom" ? {
@@ -1489,7 +1490,29 @@ export function BlockEditor({
         } : {}),
       } as React.CSSProperties}
     >
-      {editor && !isMobile && <Toolbar editor={editor} onPromoteTask={promoteTaskItemToTask} onInsertImage={triggerImageUpload} />}
+      {editor && !isMobile && !toolbarHidden && (
+        <Toolbar
+          editor={editor}
+          onPromoteTask={promoteTaskItemToTask}
+          onInsertImage={triggerImageUpload}
+          isFullscreen={fullscreen}
+          onToggleFullscreen={() => setFullscreen(f => !f)}
+          onHide={() => setToolbarHidden(true)}
+        />
+      )}
+      {editor && !isMobile && toolbarHidden && (
+        <div className="mb-2 flex justify-end">
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); setToolbarHidden(false); }}
+            aria-label="Show toolbar"
+            title="Show toolbar"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-2.5 py-1 text-[11px] text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
+          >
+            <Eye className="h-3.5 w-3.5" /> Show toolbar
+          </button>
+        </div>
+      )}
       {editor && (
         <BubbleMenu
           editor={editor}
