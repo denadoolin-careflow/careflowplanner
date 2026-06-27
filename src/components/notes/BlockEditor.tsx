@@ -1385,6 +1385,32 @@ export function BlockEditor({
     if (next !== editor.getHTML()) editor.commands.setContent(next, { emitUpdate: false });
   }, [body, editor]);
 
+  // Track focus + selection so the toolbar can be context-aware.
+  useEffect(() => {
+    if (!editor) return;
+    const onFocus = () => setEditorFocused(true);
+    const onBlur = () => {
+      // Defer so clicks on toolbar buttons don't immediately hide it.
+      setTimeout(() => {
+        const active = document.activeElement;
+        const inToolbar = active && (active as HTMLElement).closest?.(".cf-editor-toolbar, .bubble-toolbar, [data-radix-popper-content-wrapper]");
+        if (!inToolbar) setEditorFocused(false);
+      }, 120);
+    };
+    const onSel = () => {
+      const { from, to } = editor.state.selection;
+      setHasSelection(to > from);
+    };
+    editor.on("focus", onFocus);
+    editor.on("blur", onBlur);
+    editor.on("selectionUpdate", onSel);
+    return () => {
+      editor.off("focus", onFocus);
+      editor.off("blur", onBlur);
+      editor.off("selectionUpdate", onSel);
+    };
+  }, [editor]);
+
   // Listen for global "insert into note" events (e.g. from PDF AI summary).
   useEffect(() => {
     const onInsert = (e: Event) => {
