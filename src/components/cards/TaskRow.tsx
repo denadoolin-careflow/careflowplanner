@@ -482,21 +482,42 @@ export function TaskRow({
 
         {/* Inline "+ Add subtask" — hover-revealed on parent rows */}
         {!editing && !isSubtask && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpanded(true);
-              setAddingSub(true);
-            }}
-            className={cn(
-              "mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition-opacity hover:bg-muted/50 hover:text-foreground",
-              hasSubs ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(true);
+                setAddingSub(true);
+              }}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition-opacity hover:bg-muted/50 hover:text-foreground",
+                hasSubs ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+              )}
+              aria-label="Add subtask"
+            >
+              <Plus className="h-3 w-3" /> Add subtask
+            </button>
+            {!hasNotes && !notesEditing && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setNotesEditing(true); }}
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground opacity-0 transition-opacity hover:bg-muted/50 hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
+                aria-label="Add notes"
+              >
+                <FileText className="h-3 w-3" /> Add notes
+              </button>
             )}
-            aria-label="Add subtask"
-          >
-            <Plus className="h-3 w-3" /> Add subtask
-          </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setQuickEditOpen(true); }}
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground opacity-0 transition-opacity hover:bg-muted/50 hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
+              aria-label="Quick view"
+              title="Quick view"
+            >
+              <PanelRightOpen className="h-3 w-3" /> Details
+            </button>
+          </div>
         )}
       </div>
 
