@@ -761,6 +761,7 @@ function InboxInner() {
                     : captureKind === "meal" ? "Add a meal for today…"
                     : captureKind === "connect" ? "Who to reach out to or visit?"
                     : captureKind === "commute" ? "Where are you going?"
+                    : captureKind === "journal" ? "Today's journal — start with a feeling, thought, or moment…"
                     : "Add a note…"
                 }
                 disabled={recorder.state !== "idle"}
