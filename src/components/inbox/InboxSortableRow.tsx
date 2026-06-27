@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Circle, CheckSquare, Square, Sparkles, Mic, Tag as TagIcon, Clock } from "lucide-react";
+import { Circle, CheckSquare, Sparkles, Mic, Tag as TagIcon, Clock } from "lucide-react";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { useStore } from "@/lib/store";
