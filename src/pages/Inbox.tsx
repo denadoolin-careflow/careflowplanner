@@ -869,6 +869,102 @@ function InboxInner() {
             </div>
           )}
 
+          {/* Inline details / notes with light markdown formatting */}
+          {recorder.state === "idle" && (
+            <div className="mt-2">
+              {!detailsOpen && !details.trim() ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDetailsOpen(true);
+                    requestAnimationFrame(() => detailsRef.current?.focus());
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border/60 bg-transparent px-2.5 py-1 text-[11.5px] text-muted-foreground transition hover:border-border hover:text-foreground"
+                >
+                  <AlignLeft className="h-3 w-3" />
+                  {captureKind === "journal"
+                    ? "Expand entry…"
+                    : captureKind === "note"
+                      ? "Add body…"
+                      : "Add details / notes"}
+                </button>
+              ) : (
+                <div className="rounded-2xl border border-border/60 bg-card/60 p-2 animate-fade-in">
+                  <div className="mb-1.5 flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => wrapDetailsSelection("**", "**", "bold")}
+                      title="Bold (Ctrl/Cmd+B)"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                      <Bold className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => wrapDetailsSelection("_", "_", "italic")}
+                      title="Italic (Ctrl/Cmd+I)"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                      <Italic className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => prefixLines("- ")}
+                      title="Bulleted list"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                      <List className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => prefixLines("- [ ] ")}
+                      title="Checklist"
+                      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                      <CheckSquare className="h-3.5 w-3.5" />
+                    </button>
+                    <span className="ml-auto text-[10.5px] text-muted-foreground/70">
+                      Markdown · **bold** _italic_ - list
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setDetails(""); setDetailsOpen(false); }}
+                      className="ml-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      Hide
+                    </button>
+                  </div>
+                  <textarea
+                    ref={detailsRef}
+                    value={details}
+                    onChange={(e) => setDetails(e.target.value)}
+                    onKeyDown={(e) => {
+                      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+                        e.preventDefault();
+                        wrapDetailsSelection("**", "**", "bold");
+                      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") {
+                        e.preventDefault();
+                        wrapDetailsSelection("_", "_", "italic");
+                      } else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                        e.preventDefault();
+                        void submitCapture();
+                      }
+                    }}
+                    placeholder={
+                      captureKind === "journal"
+                        ? "Let it pour. What's stirring today? (⌘↵ to save)"
+                        : captureKind === "note"
+                          ? "Note body — supports markdown."
+                          : "Extra context, links, or steps for this task…"
+                    }
+                    rows={captureKind === "journal" ? 5 : 3}
+                    className="w-full resize-y rounded-xl border-0 bg-transparent px-2 py-1.5 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           {recipientMatches.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-pink-300/40 bg-pink-50/40 px-3 py-2.5 text-[12.5px] animate-fade-in dark:border-pink-400/20 dark:bg-pink-500/[0.06]">
               <HeartHandshake className="h-3.5 w-3.5 text-pink-600 dark:text-pink-300" />
