@@ -101,6 +101,17 @@ export function TaskRow({
   const [subDraft, setSubDraft] = useState("");
   const [subLinks, setSubLinks] = useState<PickedLink[]>([]);
   const [quickEditOpen, setQuickEditOpen] = useState(false);
+  const [notesExpanded, setNotesExpanded] = useState(false);
+  const [notesEditing, setNotesEditing] = useState(false);
+  const notesSaveTimer = useRef<number | null>(null);
+  const scheduleNotesSave = (markdown: string) => {
+    if (notesSaveTimer.current) window.clearTimeout(notesSaveTimer.current);
+    notesSaveTimer.current = window.setTimeout(() => {
+      void updateTask(task.id, { notes: markdown });
+    }, 600);
+  };
+  useEffect(() => () => { if (notesSaveTimer.current) window.clearTimeout(notesSaveTimer.current); }, []);
+  const hasNotes = !!(task.notes && task.notes.trim().length > 0);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const longPressTimer = useRef<number | null>(null);
   const longPressStart = useRef<{ x: number; y: number } | null>(null);
