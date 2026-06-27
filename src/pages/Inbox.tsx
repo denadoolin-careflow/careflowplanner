@@ -1173,6 +1173,48 @@ function PickerLabel({ icon: Icon, children }: { icon: any; children: React.Reac
   );
 }
 
+/**
+ * Compact outlined chip wrapping a native <select> — visually matches the
+ * Quick Action chips: neutral pill outline + tinted icon/label only.
+ */
+function ChipSelect({
+  icon: Icon, value, onChange, options, placeholder, tone,
+}: {
+  icon: any;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+  tone?: string;
+}) {
+  const current = options.find((o) => o.value === value);
+  const isActive = !!value && value !== "" && value !== "auto";
+  const label = current && isActive ? current.label : placeholder;
+  return (
+    <label
+      className={cn(
+        "group relative inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-transparent px-3 pr-7 text-[12px] font-medium transition-all hover:border-border hover:bg-card/60",
+        isActive ? tone : "text-muted-foreground hover:text-foreground",
+        isActive && "border-primary/40 bg-primary/[0.05]",
+      )}
+    >
+      <Icon className="h-[14px] w-[14px]" strokeWidth={1.75} />
+      <span className="max-w-[10rem] truncate">{label}</span>
+      <ChevronDown className="pointer-events-none absolute right-2 h-3 w-3 opacity-60" />
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 cursor-pointer opacity-0"
+        aria-label={placeholder}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 // ────────── Asana-style sectioned inbox ──────────
 
 type Bucket = "just" | "needsDate" | "needsCategory" | "ready";
@@ -1184,19 +1226,22 @@ const BUCKET_META: Record<Bucket, { label: string; hint: string; tint: string }>
   ready:         { label: "Ready to plan",   hint: "Has a date and a category",        tint: "bg-emerald-50/70 text-emerald-700 ring-emerald-100" },
 };
 
-const BUCKET_ORDER: Bucket[] = ["just", "needsDate", "needsCategory", "ready"];
+const BUCKET_ORDER: Bucket[] = ["just", "scheduledToday", "needsDate", "needsCategory", "ready"];
 
 const BUCKET_ICON: Record<Bucket, typeof Sparkles> = {
   just: Sparkles,
+  scheduledToday: CalendarIcon,
   needsDate: CalendarIcon,
   needsCategory: TagIcon,
   ready: Check,
 };
 
 function bucketFor(t: any): Bucket {
+  const todayIso = format(new Date(), "yyyy-MM-dd");
   const createdAt = t.createdAt ? new Date(t.createdAt).getTime() : 0;
   const ageMs = Date.now() - createdAt;
   if (createdAt && ageMs < 60 * 60 * 1000) return "just";
+  if (t.dueDate === todayIso) return "scheduledToday";
   if (!t.dueDate) return "needsDate";
   if (!t.area) return "needsCategory";
   return "ready";
