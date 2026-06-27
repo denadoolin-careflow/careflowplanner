@@ -574,8 +574,8 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
           <div className={cn(
             "grid min-w-0 gap-4 transition-all",
             sideHidden
-              ? "lg:mx-auto lg:max-w-3xl lg:grid-cols-1"
-              : "lg:grid-cols-[1.55fr_1fr]",
+              ? "md:mx-auto md:max-w-3xl md:grid-cols-1"
+              : "md:grid-cols-[1.5fr_1fr] lg:grid-cols-[1.55fr_1fr]",
           )}>
             {/* ─────────── Left column: work surface ─────────── */}
             <div className="min-w-0 space-y-4">
