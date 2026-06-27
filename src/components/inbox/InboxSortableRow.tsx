@@ -10,6 +10,7 @@ import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
 import type { Task } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
+import { useInboxRowStyle } from "@/lib/inbox-row-style";
 
 interface Props {
   task: Task;
@@ -23,6 +24,7 @@ interface Props {
 export function InboxSortableRow({ task, autoDayPart }: Props) {
   const { updateTask } = useStore() as any;
   const { selectionMode, isSelected, toggle } = useTaskSelection();
+  const [rowStyle] = useInboxRowStyle();
   const sortableId = `inbox:${task.id}`;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: sortableId });
@@ -48,18 +50,27 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
     catch { return null; }
   })();
 
+  const containerClass = cn(
+    "group/inbox flex flex-col gap-3 transition-all duration-200",
+    rowStyle === "soft" && cn(
+      "rounded-[22px] border bg-card p-4 shadow-sm hover:shadow-md hover:border-border",
+      selected
+        ? "border-2 border-primary shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.45)]"
+        : "border-border/60",
+    ),
+    rowStyle === "minimal" && cn(
+      "rounded-md border-b border-border/40 bg-transparent px-1 py-2 hover:bg-muted/30",
+      selected && "bg-primary/5 border-b-primary/40",
+    ),
+    rowStyle === "cozy" && cn(
+      "rounded-2xl border bg-gradient-to-br from-primary/[0.06] via-card to-card p-4 shadow-[0_4px_20px_-12px_hsl(var(--primary)/0.35)] hover:from-primary/[0.1]",
+      selected
+        ? "border-primary/60 ring-2 ring-primary/30"
+        : "border-primary/20",
+    ),
+  );
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "group/inbox flex flex-col gap-3 rounded-[22px] border bg-card p-4 shadow-sm transition-all duration-200",
-        "hover:shadow-md hover:border-border",
-        selected
-          ? "border-2 border-primary shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.45)]"
-          : "border-border/60",
-      )}
-    >
+    <div ref={setNodeRef} style={style} className={containerClass}>
       <div className="flex items-start gap-3">
         {/* Symmetric left control column: drag dots + selection dot */}
         <div className="flex flex-col items-center gap-2 pt-1">
@@ -101,7 +112,14 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
       </div>
 
       {/* Meta row below the task: source + age (left), When picker (right) */}
-      <div className="flex items-center justify-between gap-2 border-t border-border/40 pt-3">
+      <div
+        className={cn(
+          "flex items-center justify-between gap-2",
+          rowStyle === "minimal"
+            ? "pt-1"
+            : "border-t border-border/40 pt-3",
+        )}
+      >
         {(source || ageLabel) && (
           <div className="flex items-center gap-2 text-[10.5px] text-muted-foreground/80">
             {source && (
