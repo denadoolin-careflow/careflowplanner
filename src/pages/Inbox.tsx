@@ -61,25 +61,23 @@ export default function Inbox() {
   );
 }
 
-const CAREGIVER_PRESETS: { icon: any; label: string; title: string; area: Area; tint: string }[] = [
-  { icon: Pill,          label: "Medication",  title: "Medication — ",        area: "Caregiving",          tint: "bg-rose-50 text-rose-700 ring-rose-100" },
-  { icon: Phone,         label: "Call",         title: "Call ",                area: "Family",              tint: "bg-sky-50 text-sky-700 ring-sky-100" },
-  { icon: CalendarIcon,  label: "Appointment",  title: "Appointment — ",       area: "Appointments",        tint: "bg-emerald-50 text-emerald-700 ring-emerald-100" },
-  { icon: ShoppingCart,  label: "Grocery",      title: "Grocery — ",           area: "Meals",               tint: "bg-amber-50 text-amber-700 ring-amber-100" },
-  { icon: FileText,      label: "Paperwork",    title: "Paperwork — ",         area: "Personal",            tint: "bg-stone-50 text-stone-700 ring-stone-100" },
-  { icon: GraduationCap, label: "School",       title: "School — ",            area: "Kids",                tint: "bg-teal-50 text-teal-700 ring-teal-100" },
-  { icon: Cake,          label: "Birthday",     title: "Birthday — ",          area: "Holidays & Birthdays",tint: "bg-pink-50 text-pink-700 ring-pink-100" },
-  { icon: Car,           label: "Errand",       title: "Errand — ",            area: "Personal",            tint: "bg-violet-50 text-violet-700 ring-violet-100" },
-];
-
-// Quick-fill phrase chips — tapping prefills the capture input with a starter phrase,
-// so the user just adds the specifics.
-const QUICK_FILL: { icon: any; label: string; phrase: string; tint: string }[] = [
-  { icon: Mail,        label: "Text/Email", phrase: "Text/Email ",  tint: "bg-sky-50/80 text-sky-700 ring-sky-100" },
-  { icon: ChefHat,     label: "Cook",       phrase: "Cook ",        tint: "bg-amber-50/80 text-amber-700 ring-amber-100" },
-  { icon: SparklesIcon,label: "Clean",      phrase: "Clean ",       tint: "bg-emerald-50/80 text-emerald-700 ring-emerald-100" },
-  { icon: HandHelping, label: "Help",       phrase: "Help ",        tint: "bg-rose-50/80 text-rose-700 ring-rose-100" },
-  { icon: Package,     label: "Order",      phrase: "Order ",       tint: "bg-violet-50/80 text-violet-700 ring-violet-100" },
+// Unified compact Quick Action chips. Neutral outlined pill, only the icon
+// + label receive a tone color. Tapping prefills the capture input with a
+// starter phrase so the user just adds the specifics.
+const QUICK_ACTIONS: { icon: any; label: string; phrase: string; tone: string }[] = [
+  { icon: Mail,          label: "Text / Email", phrase: "Text/Email ",    tone: "text-sky-600 dark:text-sky-300" },
+  { icon: ChefHat,       label: "Cook",         phrase: "Cook ",          tone: "text-amber-600 dark:text-amber-300" },
+  { icon: SparklesIcon,  label: "Clean",        phrase: "Clean ",         tone: "text-emerald-600 dark:text-emerald-300" },
+  { icon: HandHelping,   label: "Help",         phrase: "Help ",          tone: "text-pink-600 dark:text-pink-300" },
+  { icon: Package,       label: "Order",        phrase: "Order ",         tone: "text-violet-600 dark:text-violet-300" },
+  { icon: Pill,          label: "Medication",   phrase: "Medication — ",  tone: "text-pink-600 dark:text-pink-300" },
+  { icon: Phone,         label: "Call",         phrase: "Call ",          tone: "text-sky-600 dark:text-sky-300" },
+  { icon: CalendarIcon,  label: "Appointment",  phrase: "Appointment — ", tone: "text-emerald-600 dark:text-emerald-300" },
+  { icon: ShoppingCart,  label: "Grocery",      phrase: "Grocery — ",     tone: "text-amber-600 dark:text-amber-300" },
+  { icon: FileText,      label: "Paperwork",    phrase: "Paperwork — ",   tone: "text-stone-500 dark:text-stone-300" },
+  { icon: GraduationCap, label: "School",       phrase: "School — ",      tone: "text-emerald-600 dark:text-emerald-300" },
+  { icon: Cake,          label: "Birthday",     phrase: "Birthday — ",    tone: "text-pink-600 dark:text-pink-300" },
+  { icon: Car,           label: "Errand",       phrase: "Errand — ",      tone: "text-violet-600 dark:text-violet-300" },
 ];
 
 const CATEGORIES: { icon: any; label: string; tint: string }[] = [
@@ -832,44 +830,46 @@ function InboxInner() {
             )}
           </div>
 
-          {/* Quick-fill phrase chips — tap to prefill the input */}
-          <div className="mt-4 flex flex-wrap items-center gap-1.5">
-            {QUICK_FILL.map((q) => {
-              const Icon = q.icon;
-              return (
-                <button
-                  key={q.label}
-                  type="button"
-                  onClick={() => prefillDraft(q.phrase)}
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
-                    q.tint,
-                  )}
-                >
-                  <Icon className="h-3 w-3" /> {q.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Caregiver quick actions — compact pills */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            {CAREGIVER_PRESETS.map(p => {
-              const Icon = p.icon;
-              return (
-                <button
-                  key={p.label}
-                  type="button"
-                  onClick={() => quickAdd(p.title, p.area)}
-                  className={cn(
-                    "group inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
-                    p.tint,
-                  )}
-                >
-                  <Icon className="h-3 w-3" /> {p.label}
-                </button>
-              );
-            })}
+          {/* Quick Actions — compact outlined chips. Neutral pill, colored icon+label only. */}
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between px-0.5">
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-primary/70" /> Quick Actions
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {QUICK_ACTIONS.map((q) => {
+                const Icon = q.icon;
+                return (
+                  <button
+                    key={q.label}
+                    type="button"
+                    onClick={() => prefillDraft(q.phrase)}
+                    className={cn(
+                      "inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-transparent px-3 text-[13px] font-medium transition-all",
+                      "hover:border-border hover:bg-card/60 active:scale-[0.97]",
+                      q.tone,
+                    )}
+                  >
+                    <Icon className="h-[15px] w-[15px]" strokeWidth={1.75} />
+                    <span>{q.label}</span>
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={async () => {
+                  const t = await addTask({ title: "New item", inbox: true, dayPart });
+                  haptics.snap?.();
+                  toast.success("Added to inbox");
+                  if (t?.id) openTaskEditor(t.id);
+                }}
+                className="inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border/60 bg-transparent px-3 text-[13px] font-medium text-muted-foreground transition-all hover:border-border hover:text-foreground active:scale-[0.97]"
+              >
+                <Plus className="h-[15px] w-[15px]" strokeWidth={1.75} />
+                <span>Add</span>
+              </button>
+            </div>
           </div>
 
           {/* Merged: Categories + Tags */}
