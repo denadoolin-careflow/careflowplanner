@@ -830,44 +830,46 @@ function InboxInner() {
             )}
           </div>
 
-          {/* Quick-fill phrase chips — tap to prefill the input */}
-          <div className="mt-4 flex flex-wrap items-center gap-1.5">
-            {QUICK_FILL.map((q) => {
-              const Icon = q.icon;
-              return (
-                <button
-                  key={q.label}
-                  type="button"
-                  onClick={() => prefillDraft(q.phrase)}
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
-                    q.tint,
-                  )}
-                >
-                  <Icon className="h-3 w-3" /> {q.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Caregiver quick actions — compact pills */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            {CAREGIVER_PRESETS.map(p => {
-              const Icon = p.icon;
-              return (
-                <button
-                  key={p.label}
-                  type="button"
-                  onClick={() => quickAdd(p.title, p.area)}
-                  className={cn(
-                    "group inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium ring-1 transition-all hover:-translate-y-0.5 hover:shadow-sm",
-                    p.tint,
-                  )}
-                >
-                  <Icon className="h-3 w-3" /> {p.label}
-                </button>
-              );
-            })}
+          {/* Quick Actions — compact outlined chips. Neutral pill, colored icon+label only. */}
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between px-0.5">
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-primary/70" /> Quick Actions
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {QUICK_ACTIONS.map((q) => {
+                const Icon = q.icon;
+                return (
+                  <button
+                    key={q.label}
+                    type="button"
+                    onClick={() => prefillDraft(q.phrase)}
+                    className={cn(
+                      "inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-transparent px-3 text-[13px] font-medium transition-all",
+                      "hover:border-border hover:bg-card/60 active:scale-[0.97]",
+                      q.tone,
+                    )}
+                  >
+                    <Icon className="h-[15px] w-[15px]" strokeWidth={1.75} />
+                    <span>{q.label}</span>
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={async () => {
+                  const t = await addTask({ title: "New item", inbox: true, dayPart });
+                  haptics.snap?.();
+                  toast.success("Added to inbox");
+                  if (t?.id) openTaskEditor(t.id);
+                }}
+                className="inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border/60 bg-transparent px-3 text-[13px] font-medium text-muted-foreground transition-all hover:border-border hover:text-foreground active:scale-[0.97]"
+              >
+                <Plus className="h-[15px] w-[15px]" strokeWidth={1.75} />
+                <span>Add</span>
+              </button>
+            </div>
           </div>
 
           {/* Merged: Categories + Tags */}
