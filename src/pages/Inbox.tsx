@@ -1226,6 +1226,17 @@ function InboxInner() {
             </div>
             )}
           </div>
+
+          {controlsPinned && !draft.trim() && !captureFocused && (
+            <button
+              type="button"
+              onClick={() => setControlsPinned(false)}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[11.5px] text-muted-foreground/80 transition hover:text-foreground"
+            >
+              <ChevronDown className="h-3.5 w-3.5 rotate-180" />
+              Hide options
+            </button>
+          )}
           </div>
         )}
         </section>
