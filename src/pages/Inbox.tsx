@@ -961,7 +961,7 @@ function InboxInner() {
                   placeholder="Who?"
                   value={careRecipientId}
                   tone={careRecipientId !== "auto" ? "text-pink-600 dark:text-pink-300" : undefined}
-                  onChange={setCareRecipientId}
+                  onChange={setCareRecipientSingle}
                   options={[
                     { value: "auto", label: "Auto-detect from text" },
                     ...(state.recipients ?? []).map((r: any) => ({ value: r.id, label: r.name })),
