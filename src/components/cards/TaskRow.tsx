@@ -4,10 +4,12 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   Trash2, GripVertical, ChevronRight, Sparkle, Plus,
-  Pencil, Snowflake, Star, FolderInput,
+  Pencil, Snowflake, Star, FolderInput, FileText, PanelRightOpen,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
+import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
+import { BlockEditor } from "@/components/notes/BlockEditor";
 import { PomodoroTimer } from "@/components/tasks/PomodoroTimer";
 import { useDraggable } from "@dnd-kit/core";
 import { toast } from "sonner";
@@ -99,6 +101,17 @@ export function TaskRow({
   const [subDraft, setSubDraft] = useState("");
   const [subLinks, setSubLinks] = useState<PickedLink[]>([]);
   const [quickEditOpen, setQuickEditOpen] = useState(false);
+  const [notesExpanded, setNotesExpanded] = useState(false);
+  const [notesEditing, setNotesEditing] = useState(false);
+  const notesSaveTimer = useRef<number | null>(null);
+  const scheduleNotesSave = (markdown: string) => {
+    if (notesSaveTimer.current) window.clearTimeout(notesSaveTimer.current);
+    notesSaveTimer.current = window.setTimeout(() => {
+      void updateTask(task.id, { notes: markdown });
+    }, 600);
+  };
+  useEffect(() => () => { if (notesSaveTimer.current) window.clearTimeout(notesSaveTimer.current); }, []);
+  const hasNotes = !!(task.notes && task.notes.trim().length > 0);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const longPressTimer = useRef<number | null>(null);
   const longPressStart = useRef<{ x: number; y: number } | null>(null);
@@ -398,23 +411,113 @@ export function TaskRow({
           </div>
         )}
 
+        {/* Inline notes preview / inline editor */}
+        {!editing && !dense && (hasNotes || notesEditing) && (
+          <div className="mt-1.5">
+            {notesEditing ? (
+              <div
+                className="rounded-lg border border-primary/30 bg-background/60 p-1.5 shadow-sm"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.stopPropagation();
+                    setNotesEditing(false);
+                  }
+                }}
+              >
+                <BlockEditor
+                  body={task.notes ?? ""}
+                  onChange={(markdown) => scheduleNotesSave(markdown)}
+                  placeholder="Add notes…"
+                  showFooter={false}
+                  minHeight="min-h-[80px]"
+                  subtaskHost={{ kind: "task", id: task.id, title: task.title }}
+                />
+                <div className="mt-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (notesSaveTimer.current) {
+                        window.clearTimeout(notesSaveTimer.current);
+                        notesSaveTimer.current = null;
+                      }
+                      setNotesEditing(false);
+                    }}
+                    className="rounded px-2 py-0.5 text-[10.5px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (notesExpanded) setNotesEditing(true);
+                  else setNotesExpanded(true);
+                }}
+                onDoubleClick={(e) => { e.stopPropagation(); setNotesEditing(true); }}
+                className="group/notes block w-full rounded-lg border border-border/40 bg-muted/20 px-2 py-1.5 text-left transition-colors hover:border-primary/30 hover:bg-muted/40"
+                aria-label={notesExpanded ? "Click to edit notes" : "Click to expand notes"}
+                title={notesExpanded ? "Click to edit" : "Click to expand"}
+              >
+                <div className="flex items-start gap-1.5">
+                  <FileText className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/70" />
+                  <div className="min-w-0 flex-1">
+                    <NoteMarkdownPreview
+                      body={task.notes ?? ""}
+                      maxChars={notesExpanded ? 2000 : 160}
+                      className={cn(
+                        "text-[12px]",
+                        !notesExpanded && "line-clamp-2",
+                      )}
+                    />
+                  </div>
+                </div>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Inline "+ Add subtask" — hover-revealed on parent rows */}
         {!editing && !isSubtask && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpanded(true);
-              setAddingSub(true);
-            }}
-            className={cn(
-              "mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition-opacity hover:bg-muted/50 hover:text-foreground",
-              hasSubs ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(true);
+                setAddingSub(true);
+              }}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition-opacity hover:bg-muted/50 hover:text-foreground",
+                hasSubs ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+              )}
+              aria-label="Add subtask"
+            >
+              <Plus className="h-3 w-3" /> Add subtask
+            </button>
+            {!hasNotes && !notesEditing && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setNotesEditing(true); }}
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground opacity-0 transition-opacity hover:bg-muted/50 hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
+                aria-label="Add notes"
+              >
+                <FileText className="h-3 w-3" /> Add notes
+              </button>
             )}
-            aria-label="Add subtask"
-          >
-            <Plus className="h-3 w-3" /> Add subtask
-          </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setQuickEditOpen(true); }}
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground opacity-0 transition-opacity hover:bg-muted/50 hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
+              aria-label="Quick view"
+              title="Quick view"
+            >
+              <PanelRightOpen className="h-3 w-3" /> Details
+            </button>
+          </div>
         )}
       </div>
 

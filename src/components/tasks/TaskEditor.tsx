@@ -267,7 +267,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-[100vw] flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none p-0 sm:h-auto sm:max-h-[88vh] sm:w-[min(96vw,60rem)] sm:max-w-none sm:rounded-lg lg:w-[min(96vw,72rem)] lg:max-h-[90vh]"
+        className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-[100vw] flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none p-0 sm:h-auto sm:max-h-[88vh] sm:w-[min(96vw,60rem)] sm:max-w-none sm:rounded-2xl sm:shadow-2xl md:w-[min(94vw,68rem)] md:max-h-[88vh] lg:w-[min(94vw,76rem)] lg:max-h-[90vh]"
       >
         {/* Sticky header */}
         <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
@@ -574,8 +574,8 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
           <div className={cn(
             "grid min-w-0 gap-4 transition-all",
             sideHidden
-              ? "lg:mx-auto lg:max-w-3xl lg:grid-cols-1"
-              : "lg:grid-cols-[1.55fr_1fr]",
+              ? "md:mx-auto md:max-w-3xl md:grid-cols-1"
+              : "md:grid-cols-[1.5fr_1fr] lg:grid-cols-[1.55fr_1fr]",
           )}>
             {/* ─────────── Left column: work surface ─────────── */}
             <div className="min-w-0 space-y-4">
@@ -728,7 +728,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
             </div>
 
             {/* ─────────── Right column: context & assist ─────────── */}
-            <div className={cn("min-w-0 space-y-4", sideHidden && "lg:hidden")}>
+            <div className={cn("min-w-0 space-y-4", sideHidden && "md:hidden")}>
               <FlowContextCard draft={draft} set={set} />
 
               {/* AI Assistant card */}
