@@ -683,7 +683,7 @@ function InboxInner() {
                       transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
                     }}
                     className={cn(
-                      "relative grid h-12 w-12 place-items-center rounded-2xl ring-1 select-none",
+                      "relative grid h-9 w-9 place-items-center rounded-full ring-1 select-none",
                       recorder.state === "recording"
                         ? willCancel
                           ? "bg-stone-200 text-stone-600 ring-stone-300"
@@ -705,9 +705,9 @@ function InboxInner() {
                       </>
                     )}
                     {recorder.state === "recording" && willCancel ? (
-                      <X className="relative h-5 w-5" />
+                      <X className="relative h-4 w-4" />
                     ) : (
-                      <Mic className="relative h-5 w-5" />
+                      <Mic className="relative h-4 w-4" />
                     )}
                   </button>
                 )}
