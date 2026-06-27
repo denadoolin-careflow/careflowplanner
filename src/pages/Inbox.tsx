@@ -9,6 +9,7 @@ import {
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
   MessageCircle, Flag, Folder, MapPin, CheckSquare, Plus, Wand2,
   Mail, ChefHat, Sparkles as SparklesIcon, HandHelping, Package,
+  BookHeart, Bold, Italic, List, AlignLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,7 +100,7 @@ const CATEGORIES: { icon: any; label: string; tone: string }[] = [
 ];
 
 function InboxInner() {
-  const { state, addTask, addMeal, updateTask, deleteTask } = useStore() as any;
+  const { state, addTask, addMeal, updateTask, deleteTask, addJournal } = useStore() as any;
   const navigate = useNavigate();
   const { paneOpen, clear } = useTaskSelection();
   const [triaging, setTriaging] = useState(false);
@@ -108,7 +109,7 @@ function InboxInner() {
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [extraTags, setExtraTags] = useState<string[]>([]);
   const [captureKind, setCaptureKind] = useState<
-    "task" | "home" | "care" | "meal" | "note" | "connect" | "commute"
+    "task" | "home" | "care" | "meal" | "note" | "journal" | "connect" | "commute"
   >("task");
   const [tagsOpen, setTagsOpen] = useState(false);
   const [kindsOpen, setKindsOpen] = useState(false);
@@ -137,6 +138,40 @@ function InboxInner() {
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
   const captureInputRef = useRef<HTMLInputElement>(null);
+  // Inline details / formatting field (markdown). Attached as `notes` on tasks,
+  // appended to the body for notes/journal entries.
+  const [details, setDetails] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsRef = useRef<HTMLTextAreaElement>(null);
+  const wrapDetailsSelection = (before: string, after = before, fallback = "") => {
+    const el = detailsRef.current;
+    if (!el) {
+      setDetails((d) => d + before + fallback + after);
+      return;
+    }
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? start;
+    const selected = el.value.slice(start, end) || fallback;
+    const next = el.value.slice(0, start) + before + selected + after + el.value.slice(end);
+    setDetails(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + before.length + selected.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+  const prefixLines = (prefix: string) => {
+    const el = detailsRef.current;
+    if (!el) { setDetails((d) => (d ? d + "\n" : "") + prefix); return; }
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? start;
+    const before = el.value.slice(0, start);
+    const sel = el.value.slice(start, end) || "item";
+    const after = el.value.slice(end);
+    const lines = sel.split("\n").map(l => prefix + l).join("\n");
+    setDetails(before + lines + after);
+    requestAnimationFrame(() => detailsRef.current?.focus());
+  };
   const [inlineAdd, setInlineAdd] = useState<string | null>(null);
   const inlineAddRef = useRef<HTMLInputElement>(null);
 
