@@ -3,7 +3,7 @@ import { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
-  Trash2, GripVertical, ChevronRight, Sparkle,
+  Trash2, GripVertical, ChevronRight, Sparkle, Plus,
   Pencil, Snowflake, Star, FolderInput,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -392,6 +392,25 @@ export function TaskRow({
               {doneSubs}/{subtasks.length}
             </span>
           </div>
+        )}
+
+        {/* Inline "+ Add subtask" — hover-revealed on parent rows */}
+        {!editing && !isSubtask && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(true);
+              setAddingSub(true);
+            }}
+            className={cn(
+              "mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition-opacity hover:bg-muted/50 hover:text-foreground",
+              hasSubs ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+            )}
+            aria-label="Add subtask"
+          >
+            <Plus className="h-3 w-3" /> Add subtask
+          </button>
         )}
       </div>
 
