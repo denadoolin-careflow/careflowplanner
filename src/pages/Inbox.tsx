@@ -9,7 +9,7 @@ import {
   Mic, Loader2, X, Pencil, ListChecks, UtensilsCrossed, StickyNote, ChevronDown,
   MessageCircle, Flag, Folder, MapPin, CheckSquare, Plus, Wand2,
   Mail, ChefHat, Sparkles as SparklesIcon, HandHelping, Package,
-  BookHeart, Bold, Italic, List, AlignLeft,
+  BookHeart, AlignLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -143,37 +143,6 @@ function InboxInner() {
   // appended to the body for notes/journal entries.
   const [details, setDetails] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [detailsPreview, setDetailsPreview] = useState(false);
-  const detailsRef = useRef<HTMLTextAreaElement>(null);
-  const wrapDetailsSelection = (before: string, after = before, fallback = "") => {
-    const el = detailsRef.current;
-    if (!el) {
-      setDetails((d) => d + before + fallback + after);
-      return;
-    }
-    const start = el.selectionStart ?? el.value.length;
-    const end = el.selectionEnd ?? start;
-    const selected = el.value.slice(start, end) || fallback;
-    const next = el.value.slice(0, start) + before + selected + after + el.value.slice(end);
-    setDetails(next);
-    requestAnimationFrame(() => {
-      el.focus();
-      const pos = start + before.length + selected.length;
-      el.setSelectionRange(pos, pos);
-    });
-  };
-  const prefixLines = (prefix: string) => {
-    const el = detailsRef.current;
-    if (!el) { setDetails((d) => (d ? d + "\n" : "") + prefix); return; }
-    const start = el.selectionStart ?? 0;
-    const end = el.selectionEnd ?? start;
-    const before = el.value.slice(0, start);
-    const sel = el.value.slice(start, end) || "item";
-    const after = el.value.slice(end);
-    const lines = sel.split("\n").map(l => prefix + l).join("\n");
-    setDetails(before + lines + after);
-    requestAnimationFrame(() => detailsRef.current?.focus());
-  };
   const [inlineAdd, setInlineAdd] = useState<string | null>(null);
   const inlineAddRef = useRef<HTMLInputElement>(null);
 
