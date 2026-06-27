@@ -79,6 +79,8 @@ export interface NlpHighlightedInputProps {
   value: string;
   onChange: (v: string) => void;
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+  onFocus?: React.FocusEventHandler<HTMLInputElement>;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -86,6 +88,7 @@ export interface NlpHighlightedInputProps {
   leftPad?: string;
   rightPad?: string;
 }
+
 
 export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedInputProps>(
   function NlpHighlightedInput(
