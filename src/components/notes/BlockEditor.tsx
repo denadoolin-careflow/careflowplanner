@@ -381,6 +381,129 @@ function FloatingMenu<T>({ items, onSelect, render }: {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Grouped floating menu (for @-mention picker)                      */
+/* ------------------------------------------------------------------ */
+const GROUP_ORDER = [
+  "Task", "Note", "Journal", "Project", "Goal", "Habit",
+  "Person", "Appointment", "Meal", "Area", "Holiday", "Memory", "Cosmic",
+];
+const GROUP_LABELS: Record<string, string> = {
+  Task: "Tasks", Note: "Notes", Journal: "Journal entries", Project: "Projects",
+  Goal: "Goals", Habit: "Habits", Person: "People", Appointment: "Appointments",
+  Meal: "Meals", Area: "Areas", Holiday: "Holidays", Memory: "Memories",
+  Cosmic: "Cosmic events",
+};
+
+function GroupedFloatingMenu({ items, onSelect, render }: {
+  items: RefItem[];
+  onSelect: (i: RefItem) => void;
+  render: (i: RefItem, active: boolean) => React.ReactNode;
+}) {
+  // Items arrive pre-sorted by score; group preserving each group's first-seen order.
+  const groups = useMemo(() => {
+    const map = new Map<string, RefItem[]>();
+    for (const it of items) {
+      const arr = map.get(it.type) ?? [];
+      arr.push(it);
+      map.set(it.type, arr);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => {
+        const ai = GROUP_ORDER.indexOf(a); const bi = GROUP_ORDER.indexOf(b);
+        return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+      });
+  }, [items]);
+
+  // Flat order for keyboard nav (matches render order across groups).
+  const flat = useMemo(() => groups.flatMap(([, arr]) => arr), [groups]);
+  const [active, setActive] = useState(0);
+  useEffect(() => { setActive(0); }, [items]);
+
+  const rowRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  useEffect(() => {
+    rowRefs.current[active]?.scrollIntoView({ block: "nearest" });
+  }, [active]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!flat.length) return;
+      if (e.key === "ArrowDown") { e.preventDefault(); setActive(i => (i + 1) % flat.length); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); setActive(i => (i - 1 + flat.length) % flat.length); }
+      else if (e.key === "Enter") { e.preventDefault(); if (flat[active]) onSelect(flat[active]); }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [flat, active, onSelect]);
+
+  if (!flat.length) {
+    return (
+      <div className="w-72 rounded-xl border border-border/60 bg-popover p-3 text-xs text-popover-foreground/70 shadow-lg">
+        No matches — keep typing to search across tasks, notes, people, dates, and cosmic events.
+      </div>
+    );
+  }
+
+  let runningIndex = -1;
+  return (
+    <div className="max-h-80 w-80 overflow-y-auto rounded-xl border border-border/60 bg-popover text-popover-foreground p-1.5 shadow-xl">
+      {groups.map(([type, arr]) => (
+        <div key={type} className="mb-1 last:mb-0">
+          <div className="px-2 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+            {GROUP_LABELS[type] ?? type}
+          </div>
+          {arr.map((it) => {
+            runningIndex += 1;
+            const idx = runningIndex;
+            return (
+              <button
+                key={`${type}-${it.id}-${idx}`}
+                ref={(el) => { rowRefs.current[idx] = el; }}
+                onMouseDown={(e) => { e.preventDefault(); onSelect(it); }}
+                onMouseEnter={() => setActive(idx)}
+                className={cn(
+                  "w-full rounded-lg px-2 py-1.5 text-left text-sm text-popover-foreground transition",
+                  idx === active ? "bg-muted text-foreground" : "hover:bg-muted/50",
+                )}
+              >
+                {render(it, idx === active)}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Lightweight fuzzy scorer. Higher = better. Returns null if no match. */
+function fuzzyScore(label: string, query: string): number | null {
+  if (!query) return 0;
+  const l = label.toLowerCase();
+  const q = query.toLowerCase();
+  if (l === q) return 1000;
+  if (l.startsWith(q)) return 800 - l.length;
+  const idx = l.indexOf(q);
+  if (idx >= 0) {
+    // Word-boundary bonus
+    const boundary = idx === 0 || /\s|[-_./]/.test(l[idx - 1]);
+    return (boundary ? 500 : 300) - idx - Math.max(0, l.length - q.length) * 0.1;
+  }
+  // Subsequence match
+  let li = 0, qi = 0, score = 0, streak = 0, last = -2;
+  while (li < l.length && qi < q.length) {
+    if (l[li] === q[qi]) {
+      streak = li === last + 1 ? streak + 1 : 1;
+      const boundary = li === 0 || /\s|[-_./]/.test(l[li - 1]);
+      score += 10 + streak * 4 + (boundary ? 6 : 0);
+      last = li; qi += 1;
+    }
+    li += 1;
+  }
+  if (qi < q.length) return null;
+  return score - l.length * 0.05;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Suggestion factory (slash + @reference)                           */
 /* ------------------------------------------------------------------ */
 function makeSuggestion<T>(editor: Editor, opts: {
@@ -389,7 +512,9 @@ function makeSuggestion<T>(editor: Editor, opts: {
   getItems: (query: string) => T[];
   onSelect: (item: T, range: { from: number; to: number }, editor: Editor) => void;
   render: (item: T, active: boolean) => React.ReactNode;
+  menuComponent?: React.ComponentType<{ items: T[]; onSelect: (i: T) => void; render: (i: T, active: boolean) => React.ReactNode }>;
 }) {
+  const MenuComp = (opts.menuComponent ?? FloatingMenu) as any;
   return Suggestion({
     editor,
     pluginKey: opts.pluginKey,
@@ -402,7 +527,7 @@ function makeSuggestion<T>(editor: Editor, opts: {
       let popup: TippyInstance[] = [];
       return {
         onStart: (props: any) => {
-          component = new ReactRenderer(FloatingMenu as any, {
+          component = new ReactRenderer(MenuComp, {
             props: {
               items: props.items,
               onSelect: (it: T) => opts.onSelect(it, props.range, props.editor),
@@ -1215,9 +1340,29 @@ export function BlockEditor({
         pluginKey: new PluginKey("refSuggestion"),
         getItems: (query) => {
           const q = query.trim().toLowerCase();
-          if (!q) return refsRef.current.slice(0, 10);
-          return refsRef.current.filter(r => r.label.toLowerCase().includes(q)).slice(0, 10);
+          if (!q) {
+            // Empty query: surface a balanced preview across groups.
+            const perGroup: Record<string, number> = {};
+            const out: RefItem[] = [];
+            for (const r of refsRef.current) {
+              const n = perGroup[r.type] ?? 0;
+              if (n >= 4) continue;
+              perGroup[r.type] = n + 1;
+              out.push(r);
+              if (out.length >= 30) break;
+            }
+            return out;
+          }
+          const scored: Array<{ r: RefItem; s: number }> = [];
+          for (const r of refsRef.current) {
+            const s = fuzzyScore(r.label, q);
+            if (s == null) continue;
+            scored.push({ r, s });
+          }
+          scored.sort((a, b) => b.s - a.s);
+          return scored.slice(0, 40).map(x => x.r);
         },
+        menuComponent: GroupedFloatingMenu,
         onSelect: (item, range, editor) => {
           const href = item.href || "#";
           editor.chain().focus().deleteRange(range)
