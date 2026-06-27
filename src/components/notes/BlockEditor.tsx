@@ -752,6 +752,7 @@ export function BlockEditor({
   onGoalChange,
   showFooter = true,
   minHeight,
+  subtaskHost,
 }: {
   body: string;
   onChange: (markdown: string, html: string) => void;
@@ -761,6 +762,8 @@ export function BlockEditor({
   onGoalChange?: (next: number | null) => void;
   showFooter?: boolean;
   minHeight?: string;
+  /** When provided, the "Add subtask" button creates a real Task linked here. */
+  subtaskHost?: { kind: "task" | "note" | "project"; id: string; title?: string };
 }) {
   const { state, addTask } = useStore();
   const navigate = useNavigate();
@@ -768,6 +771,27 @@ export function BlockEditor({
   const isMobile = useIsMobile();
   const { tags: registeredTags } = useTags();
   const refsRef = useRef<RefItem[]>([]);
+  const [extraRefs, setExtraRefs] = useState<RefItem[]>([]);
+  // Load notes + memories asynchronously so they appear in @-mentions
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const notes = await listNotes();
+        const memRes = await supabase.from("memories").select("id,title,date").limit(120);
+        const noteRefs: RefItem[] = notes.slice(0, 120).map(n => ({
+          id: n.id, label: n.title || "Untitled note", type: "Note",
+          href: `/notes/${n.id}`, icon: FileText, insertText: n.title || "Note",
+        }));
+        const memRefs: RefItem[] = (memRes.data ?? []).map((m: any) => ({
+          id: m.id, label: m.title || "Memory", type: "Memory",
+          href: "/memories", icon: Heart, insertText: m.title || "Memory",
+        }));
+        if (!cancelled) setExtraRefs([...noteRefs, ...memRefs]);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
   const transitRefs = useMemo<RefItem[]>(() => {
     const start = addDays(new Date(), -30);
     const events = upcomingEvents(start, 120);
@@ -780,7 +804,10 @@ export function BlockEditor({
       insertText: ev.title,
     }));
   }, []);
-  refsRef.current = useMemo(() => buildReferences(state, transitRefs), [state, transitRefs]);
+  refsRef.current = useMemo(
+    () => [...buildReferences(state, transitRefs), ...extraRefs],
+    [state, transitRefs, extraRefs]
+  );
   const lastSyncedRef = useRef<string>(body);
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
