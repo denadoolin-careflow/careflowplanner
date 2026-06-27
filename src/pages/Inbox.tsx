@@ -37,8 +37,7 @@ import { openTaskEditor } from "@/lib/open-task-editor";
 import { NlpHighlightedInput } from "@/components/inbox/NlpHighlightedInput";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { InboxSortableRow } from "@/components/inbox/InboxSortableRow";
-import { NoteMarkdownPreview } from "@/components/notes/NoteMarkdownPreview";
-import { Eye } from "lucide-react";
+import { BlockEditor } from "@/components/notes/BlockEditor";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
   closestCenter, type DragEndEvent,
