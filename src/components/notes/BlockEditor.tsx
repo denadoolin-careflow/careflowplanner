@@ -1656,32 +1656,7 @@ export function BlockEditor({
         } : {}),
       } as React.CSSProperties}
     >
-      {editor && !isMobile && !toolbarHidden && (
-        <Toolbar
-          editor={editor}
-          onPromoteTask={promoteTaskItemToTask}
-          onInsertImage={triggerImageUpload}
-          isFullscreen={fullscreen}
-          onToggleFullscreen={() => setFullscreen(f => !f)}
-          onHide={() => setToolbarHidden(true)}
-          onAddSubtask={addSubtaskNow}
-          onOpenMentions={openMentions}
-          hasSubtaskHost={!!subtaskHost}
-        />
-      )}
-      {editor && !isMobile && toolbarHidden && (
-        <div className="mb-2 flex justify-end">
-          <button
-            type="button"
-            onMouseDown={(e) => { e.preventDefault(); setToolbarHidden(false); }}
-            aria-label="Show toolbar"
-            title="Show toolbar"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-2.5 py-1 text-[11px] text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
-          >
-            <Eye className="h-3.5 w-3.5" /> Show toolbar
-          </button>
-        </div>
-      )}
+      {/* Bottom toolbar moved below EditorContent (context-aware). */}
       {editor && (
         <BubbleMenu
           editor={editor}
