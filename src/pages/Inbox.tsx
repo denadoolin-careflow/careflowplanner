@@ -858,6 +858,8 @@ function InboxInner() {
             </div>
           )}
 
+        {showControls && (
+          <div className="animate-fade-in">
           {/* Inline details / notes with light markdown formatting */}
           {recorder.state === "idle" && (
             <div className="mt-2">
