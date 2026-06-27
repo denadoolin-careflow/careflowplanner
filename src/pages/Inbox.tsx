@@ -123,6 +123,23 @@ function InboxInner() {
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
   const captureInputRef = useRef<HTMLInputElement>(null);
+  const [inlineAdd, setInlineAdd] = useState<string | null>(null);
+  const inlineAddRef = useRef<HTMLInputElement>(null);
+
+  const startInlineAdd = () => {
+    setInlineAdd("");
+    haptics.tap?.();
+    requestAnimationFrame(() => inlineAddRef.current?.focus());
+  };
+
+  const commitInlineAdd = async () => {
+    const title = (inlineAdd ?? "").trim();
+    if (!title) { setInlineAdd(null); return; }
+    await addTask({ title, inbox: true, dayPart });
+    haptics.snap?.();
+    toast.success("Added to inbox");
+    setInlineAdd(null);
+  };
 
   const prefillDraft = (phrase: string) => {
     setCaptureKind("task");
@@ -858,12 +875,7 @@ function InboxInner() {
               })}
               <button
                 type="button"
-                onClick={async () => {
-                  const t = await addTask({ title: "New item", inbox: true, dayPart });
-                  haptics.snap?.();
-                  toast.success("Added to inbox");
-                  if (t?.id) openTaskEditor(t.id);
-                }}
+                onClick={startInlineAdd}
                 className="inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border/60 bg-transparent px-3 text-[13px] font-medium text-muted-foreground transition-all hover:border-border hover:text-foreground active:scale-[0.97]"
               >
                 <Plus className="h-[15px] w-[15px]" strokeWidth={1.75} />
