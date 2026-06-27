@@ -1215,6 +1215,7 @@ function InboxInner() {
             </div>
             )}
           </div>
+          </div>
         )}
         </section>
 
