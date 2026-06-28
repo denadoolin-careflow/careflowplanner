@@ -425,6 +425,12 @@ export function setAtmosphere(id: AtmosphereId, opts?: { silent?: boolean }) {
   _current = id;
   try { localStorage.setItem(K_CURRENT, id); } catch { /* */ }
   applyAtmosphere(id);
+  // Any explicit user choice disables auto-switch so the atmosphere
+  // doesn't flip back on the next tick.
+  if (!opts?.silent && _auto.enabled) {
+    _auto = { ..._auto, enabled: false };
+    try { localStorage.setItem(K_AUTO, JSON.stringify(_auto)); } catch { /* */ }
+  }
   if (!opts?.silent) {
     _recent = [id, ..._recent.filter(x => x !== id)].slice(0, 6);
     try { localStorage.setItem(K_RECENT, JSON.stringify(_recent)); } catch { /* */ }
