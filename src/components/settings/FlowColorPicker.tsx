@@ -1,7 +1,7 @@
 import { SectionCard } from "@/components/cards/SectionCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Check, RotateCcw, Palette, ChevronDown } from "lucide-react";
+import { Check, RotateCcw, Palette } from "lucide-react";
 import { useState } from "react";
 import { ATMOSPHERES, useAtmosphere, setAtmosphere } from "@/lib/atmospheres";
 import { FLOW_PALETTE_INDEX, getFlowAccent } from "@/lib/flow-accent";
@@ -20,7 +20,8 @@ const EXTRA: Array<{ id: string; label: string }> = [
 export function FlowColorPicker() {
   const { atmosphere, current } = useAtmosphere();
   const overrides = useFlowColorOverrides();
-  const [galleryOpen, setGalleryOpen] = useState(false);
+  // { atmosphereId: flowId } — only one open editor at a time
+  const [openEditor, setOpenEditor] = useState<{ atm: string; flow: string } | null>(null);
 
   const flows: Array<{ id: string; label: string; emoji?: string }> = [
     ...NAV_GROUPS
@@ -32,186 +33,172 @@ export function FlowColorPicker() {
   return (
     <SectionCard
       title="Flow colors"
-      subtitle={`Tint each Flow with a swatch from "${atmosphere.name}", or compare every atmosphere below. Changes update live across the app.`}
+      subtitle="Compare every atmosphere and tap any Flow chip to pick its color. Changes update live across the app."
       accent="sage"
     >
-      <div className="space-y-2.5">
-        {flows.map((f) => {
-          const defaultIdx = FLOW_PALETTE_INDEX[f.id] ?? 0;
-          const currentIdx = overrides[f.id] ?? defaultIdx;
-          const accent = getFlowAccent(f.id, atmosphere, overrides);
-          const isCustom = overrides[f.id] !== undefined && overrides[f.id] !== defaultIdx;
-          return (
-            <div
-              key={f.id}
-              className="rounded-2xl border border-border/60 bg-card/60 p-3"
-            >
-              <div className="mb-2 flex items-center gap-2">
-                <span
-                  className="grid h-7 w-7 place-items-center rounded-full ring-1"
-                  style={{ backgroundColor: accent.soft, color: accent.color, boxShadow: `inset 0 0 0 1px ${accent.ring}` }}
-                  aria-hidden
-                >
-                  <Palette className="h-3.5 w-3.5" />
-                </span>
-                <div className="flex-1 truncate text-sm font-medium">
-                  {f.emoji ? `${f.emoji} ` : ""}{f.label}
-                </div>
-                {isCustom && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 gap-1 rounded-full px-2 text-[11.5px] text-muted-foreground hover:text-foreground"
-                    onClick={() => setFlowColorOverride(f.id, null)}
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                    Reset
-                  </Button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {atmosphere.palette.map((hex, i) => {
-                  const selected = i === currentIdx;
-                  const isDefault = i === defaultIdx;
-                  return (
-                    <button
-                      key={`${hex}-${i}`}
-                      type="button"
-                      onClick={() => setFlowColorOverride(f.id, i === defaultIdx ? null : i)}
-                      className={cn(
-                        "relative grid h-8 w-8 place-items-center rounded-full ring-1 ring-border/40 transition",
-                        selected && "ring-2 ring-foreground/70 scale-110",
-                      )}
-                      style={{ backgroundColor: hex }}
-                      aria-label={`Swatch ${i + 1}${isDefault ? " (default)" : ""}`}
-                      aria-pressed={selected}
-                    >
-                      {selected && (
-                        <Check className="h-3.5 w-3.5" style={{ color: readableOn(hex) }} />
-                      )}
-                      {isDefault && !selected && (
-                        <span
-                          className="absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-foreground/60"
-                          aria-hidden
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+      <div className="space-y-3">
         {Object.keys(overrides).length > 0 && (
-          <div className="pt-1">
+          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card/60 px-3 py-2">
+            <span className="text-[11.5px] text-muted-foreground">
+              {Object.keys(overrides).length} flow color{Object.keys(overrides).length === 1 ? "" : "s"} customized
+            </span>
             <Button
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 rounded-full text-[12px]"
+              className="h-7 gap-1.5 rounded-full text-[11.5px]"
               onClick={() => clearFlowColorOverrides()}
             >
-              <RotateCcw className="h-3.5 w-3.5" /> Reset all flow colors
+              <RotateCcw className="h-3 w-3" /> Reset all
             </Button>
           </div>
         )}
-        <p className="pt-1 text-[11px] text-muted-foreground">
-          A dot under a swatch marks each flow's default. Swatches come from the active atmosphere — change it under "Atmosphere & feel" above.
-        </p>
 
-        {/* Compare atmospheres gallery */}
-        <div className="pt-3">
-          <button
-            type="button"
-            onClick={() => setGalleryOpen((v) => !v)}
-            className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-card/60 px-3 py-2.5 text-sm font-medium hover:bg-muted/60 transition-colors"
-            aria-expanded={galleryOpen}
-          >
-            <span className="flex items-center gap-2">
-              <Palette className="h-4 w-4 text-primary" />
-              Compare atmospheres
-            </span>
-            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", galleryOpen && "rotate-180")} />
-          </button>
+        {ATMOSPHERES.map((atm) => {
+          const isActive = current === atm.id;
+          return (
+            <div
+              key={atm.id}
+              className={cn(
+                "rounded-2xl border border-border/60 bg-card/60 p-3 transition-shadow",
+                isActive && "ring-2 ring-primary/40",
+              )}
+            >
+              <div className="flex flex-wrap items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-display text-sm font-semibold tracking-tight">{atm.name}</h4>
+                  <p className="text-[11px] text-muted-foreground">{atm.tagline}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant={isActive ? "secondary" : "default"}
+                  className="h-7 gap-1.5 rounded-full px-2.5 text-[11.5px]"
+                  onClick={() => setAtmosphere(atm.id)}
+                >
+                  {isActive ? (<><Check className="h-3 w-3" /> Active</>) : "Apply"}
+                </Button>
+              </div>
 
-          {galleryOpen && (
-            <div className="mt-3 space-y-3">
-              <p className="text-[11px] text-muted-foreground">
-                See how each Flow tints under every atmosphere. Tap <em>Apply</em> to switch — then use the pickers above to override any Flow's swatch.
-              </p>
-              {ATMOSPHERES.map((atm) => {
-                const isActive = current === atm.id;
-                return (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {atm.palette.map((hex, i) => (
                   <div
-                    key={atm.id}
-                    className={cn(
-                      "rounded-2xl border border-border/60 bg-card/60 p-3 transition-shadow",
-                      isActive && "ring-2 ring-primary/40",
-                    )}
-                  >
-                    <div className="flex flex-wrap items-start gap-2">
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-display text-sm font-semibold tracking-tight">{atm.name}</h4>
-                        <p className="text-[11px] text-muted-foreground">{atm.tagline}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant={isActive ? "secondary" : "default"}
-                        className="h-7 gap-1.5 rounded-full px-2.5 text-[11.5px]"
-                        onClick={() => setAtmosphere(atm.id)}
+                    key={`${atm.id}-sw-${i}`}
+                    className="h-6 w-6 rounded-md ring-1 ring-border/50"
+                    style={{ background: hex }}
+                    title={`${hex} (swatch ${i})`}
+                  />
+                ))}
+              </div>
+
+              <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {flows.map((f) => {
+                  const GroupIcon = NAV_GROUPS.find((g) => g.id === f.id)?.icon;
+                  const accent = getFlowAccent(f.id, atm, isActive ? overrides : undefined);
+                  const defaultIdx = FLOW_PALETTE_INDEX[f.id] ?? 0;
+                  const currentIdx = isActive ? (overrides[f.id] ?? defaultIdx) : defaultIdx;
+                  const isCustom = isActive && overrides[f.id] !== undefined && overrides[f.id] !== defaultIdx;
+                  const isOpen = openEditor?.atm === atm.id && openEditor?.flow === f.id;
+                  return (
+                    <li key={`${atm.id}-${f.id}`}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isActive) {
+                            setAtmosphere(atm.id);
+                            setOpenEditor({ atm: atm.id, flow: f.id });
+                          } else {
+                            setOpenEditor(isOpen ? null : { atm: atm.id, flow: f.id });
+                          }
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg border bg-card px-2.5 py-1.5 text-left transition hover:bg-muted/40"
+                        style={{ borderColor: accent.ring }}
+                        aria-expanded={isOpen}
                       >
-                        {isActive ? (<><Check className="h-3 w-3" /> Active</>) : "Apply"}
-                      </Button>
-                    </div>
+                        <span
+                          className="grid h-6 w-6 shrink-0 place-items-center rounded-md"
+                          style={{
+                            background: accent.soft,
+                            boxShadow: `inset 0 0 0 1px ${accent.ring}`,
+                            color: accent.color,
+                          }}
+                          aria-hidden
+                        >
+                          {GroupIcon ? <GroupIcon className="h-3.5 w-3.5" /> : <Palette className="h-3.5 w-3.5" />}
+                        </span>
+                        <span
+                          className="min-w-0 flex-1 truncate font-display text-[12.5px] font-semibold tracking-tight"
+                          style={{ color: accent.color }}
+                        >
+                          {f.emoji ? `${f.emoji} ` : ""}{f.label}
+                        </span>
+                        {isCustom && (
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">custom</span>
+                        )}
+                      </button>
 
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {atm.palette.map((hex, i) => (
-                        <div
-                          key={`${atm.id}-sw-${i}`}
-                          className="h-6 w-6 rounded-md ring-1 ring-border/50"
-                          style={{ background: hex }}
-                          title={`${hex} (swatch ${i})`}
-                        />
-                      ))}
-                    </div>
-
-                    <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {NAV_GROUPS.filter((g) => FLOW_PALETTE_INDEX[g.id] !== undefined).map((group) => {
-                        const accent = getFlowAccent(group.id, atm, isActive ? overrides : undefined);
-                        const GroupIcon = group.icon;
-                        return (
-                          <li key={`${atm.id}-${group.id}`}>
-                            <div
-                              className="flex items-center gap-2 rounded-lg border bg-card px-2.5 py-1.5"
-                              style={{ borderColor: accent.ring }}
-                            >
-                              <span
-                                className="grid h-6 w-6 shrink-0 place-items-center rounded-md"
-                                style={{
-                                  background: accent.soft,
-                                  boxShadow: `inset 0 0 0 1px ${accent.ring}`,
-                                  color: accent.color,
+                      {isOpen && isActive && (
+                        <div className="mt-1.5 rounded-lg border border-border/60 bg-background/60 p-2">
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <span className="text-[11px] text-muted-foreground">Choose a swatch</span>
+                            {isCustom && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 gap-1 rounded-full px-2 text-[10.5px] text-muted-foreground hover:text-foreground"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFlowColorOverride(f.id, null);
                                 }}
-                                aria-hidden
                               >
-                                <GroupIcon className="h-3.5 w-3.5" />
-                              </span>
-                              <span
-                                className="min-w-0 flex-1 truncate font-display text-[12.5px] font-semibold tracking-tight"
-                                style={{ color: accent.color }}
-                              >
-                                {group.label}
-                              </span>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })}
+                                <RotateCcw className="h-3 w-3" /> Reset
+                              </Button>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {atm.palette.map((hex, i) => {
+                              const selected = i === currentIdx;
+                              const isDef = i === defaultIdx;
+                              return (
+                                <button
+                                  key={`${atm.id}-${f.id}-sw-${i}`}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFlowColorOverride(f.id, i === defaultIdx ? null : i);
+                                  }}
+                                  className={cn(
+                                    "relative grid h-7 w-7 place-items-center rounded-full ring-1 ring-border/40 transition",
+                                    selected && "ring-2 ring-foreground/70 scale-110",
+                                  )}
+                                  style={{ backgroundColor: hex }}
+                                  aria-label={`Swatch ${i + 1}${isDef ? " (default)" : ""}`}
+                                  aria-pressed={selected}
+                                >
+                                  {selected && (
+                                    <Check className="h-3 w-3" style={{ color: readableOn(hex) }} />
+                                  )}
+                                  {isDef && !selected && (
+                                    <span
+                                      className="absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-foreground/60"
+                                      aria-hidden
+                                    />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-          )}
-        </div>
+          );
+        })}
+
+        <p className="text-[11px] text-muted-foreground">
+          Tap any Flow chip to pick its swatch from that atmosphere. Selecting a chip on an inactive atmosphere applies it first, then opens the picker.
+        </p>
       </div>
     </SectionCard>
   );
