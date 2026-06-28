@@ -1,6 +1,6 @@
 import { Settings2, BatteryLow, BatteryMedium } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ThemeToggle } from "./ThemeToggle";
