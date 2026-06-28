@@ -377,7 +377,7 @@ function InboxInner() {
       const mealSlot = h < 12 ? "Breakfast" : h < 17 ? "Lunch" : "Dinner";
       const detailsText = details.trim();
       if (captureKind === "home") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Home", notes: detailsText || undefined });
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Home", notes: detailsText || undefined, inbox: true });
         toast.success(`Added home task → ${dayPart}`);
       } else if (captureKind === "care") {
         let recipientIds: string[] = [...careRecipientIds];
@@ -391,7 +391,7 @@ function InboxInner() {
           if (guess.recipientId) recipientIds = [guess.recipientId];
         }
         if (recipientIds.length === 0) {
-          await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving", notes: detailsText || undefined });
+          await addTask({ title: raw, dueDate: today, dayPart, area: "Caregiving", notes: detailsText || undefined, inbox: true });
           toast.success(`Added care task → ${dayPart}`);
         } else {
           for (const rid of recipientIds) {
@@ -402,6 +402,7 @@ function InboxInner() {
               area: "Caregiving",
               recipientId: rid,
               notes: detailsText || undefined,
+              inbox: true,
             });
           }
           const names = recipientIds
@@ -415,10 +416,10 @@ function InboxInner() {
           setCareRecipientIds([]);
         }
       } else if (captureKind === "connect") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Family", notes: detailsText || undefined });
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Family", notes: detailsText || undefined, inbox: true });
         toast.success(`Added connect → ${dayPart}`);
       } else if (captureKind === "commute") {
-        await addTask({ title: raw, dueDate: today, dayPart, area: "Personal", notes: detailsText || undefined });
+        await addTask({ title: raw, dueDate: today, dayPart, area: "Personal", notes: detailsText || undefined, inbox: true });
         toast.success(`Added commute → ${dayPart}`);
       } else if (captureKind === "meal") {
         await addMeal({ name: raw, date: today, slot: mealSlot });
