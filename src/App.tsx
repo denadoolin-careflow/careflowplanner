@@ -88,7 +88,6 @@ import FamilySettings from "./pages/FamilySettings";
 import JoinHousehold from "./pages/JoinHousehold";
 import FamilyRequests from "./pages/FamilyRequests";
 import FlowLanding from "./pages/FlowLanding";
-import FlowColorsPreview from "./pages/FlowColorsPreview";
 import Seasons from "./pages/Seasons";
 import SeasonsCelebrations from "./pages/SeasonsCelebrations";
 import SeasonsCelebrationDetail from "./pages/SeasonsCelebrationDetail";
@@ -219,7 +218,6 @@ const App = () => (
                 <Route path="/family" element={<FamilySettings />} />
                 <Route path="/family/requests" element={<FamilyRequests />} />
                 <Route path="/flow/:id" element={<FlowLanding />} />
-                <Route path="/settings/flow-colors" element={<FlowColorsPreview />} />
                 <Route path="/seasons" element={<Seasons />} />
                 <Route path="/seasons/celebrations" element={<SeasonsCelebrations />} />
                 <Route path="/seasons/celebrations/:id" element={<SeasonsCelebrationDetail />} />
