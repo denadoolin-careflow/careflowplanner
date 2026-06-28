@@ -3,7 +3,7 @@ import { Sparkles, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ATMOSPHERES, AtmosphereId, useAtmosphere, getAtmosphere } from "@/lib/atmospheres";
+import { ATMOSPHERES, AtmosphereId, useAtmosphere, getAtmosphere, SEASONS } from "@/lib/atmospheres";
 import { AtmosphereCard } from "./AtmosphereCard";
 import { AutoSwitchConfig } from "./AutoSwitchConfig";
 import { AtmosphereSettingsDialog } from "./AtmosphereSettingsDialog";
@@ -87,9 +87,17 @@ export function AtmospherePicker() {
           </Section>
         )}
 
-        <Section title="All atmospheres">
-          <Grid items={ATMOSPHERES} current={current} favorites={favorites} onApply={apply} onFav={toggleFavorite} onSettings={setSettingsFor} />
-        </Section>
+        {SEASONS.map(season => {
+          const items = season.atmospheres
+            .map(id => ATMOSPHERES.find(a => a.id === id))
+            .filter((a): a is typeof ATMOSPHERES[number] => !!a);
+          if (items.length === 0) return null;
+          return (
+            <Section key={season.id} title={`${season.emoji} ${season.label}`}>
+              <Grid items={items} current={current} favorites={favorites} onApply={apply} onFav={toggleFavorite} onSettings={setSettingsFor} />
+            </Section>
+          );
+        })}
 
         {recentList.length > 0 && (
           <Section title="Recently used">
