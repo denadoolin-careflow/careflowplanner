@@ -43,6 +43,9 @@ export const ATMOSPHERE_SOUND_MAP: Record<AtmosphereId, SoundscapeId[]> = {
   "dawn":             ["forest-birds", "fire", "wind"],
   "mist":             ["rain", "stream", "wind"],
   "blossom":          ["forest-birds", "stream"],
+  "peony-bloom":      ["forest-birds", "wind"],
+  "wisteria-drift":   ["wind", "stream"],
+  "hibiscus-coast":   ["ocean", "wind", "forest-birds"],
 };
 
 /* ─────────────── Web Audio engine ─────────────── */
