@@ -209,6 +209,9 @@ export const ATMOSPHERE_DEFAULT_CHIME: Record<AtmosphereId, ChimePresetKey> = {
   "dawn":           "dawn-rise",
   "mist":           "mist-whisper",
   "blossom":        "blossom-arp",
+  "peony-bloom":    "blossom-arp",
+  "wisteria-drift": "plum-dream",
+  "hibiscus-coast": "coastal-drop",
 };
 
 export function resolveChimeFor(id: AtmosphereId): ChimePreset {
