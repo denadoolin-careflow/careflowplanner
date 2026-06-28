@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check, RotateCcw, Palette } from "lucide-react";
 import { useState } from "react";
-import { ATMOSPHERES, useAtmosphere, setAtmosphere } from "@/lib/atmospheres";
+import { ATMOSPHERES, useAtmosphere, setAtmosphere, SEASONS } from "@/lib/atmospheres";
 import { FLOW_PALETTE_INDEX, getFlowAccent } from "@/lib/flow-accent";
 import {
   setFlowColorOverride,
@@ -53,7 +53,16 @@ export function FlowColorPicker() {
           </div>
         )}
 
-        {ATMOSPHERES.map((atm) => {
+        {SEASONS.flatMap((season) => {
+          const seasonItems = season.atmospheres
+            .map((id) => ATMOSPHERES.find((a) => a.id === id))
+            .filter((a): a is typeof ATMOSPHERES[number] => !!a);
+          if (seasonItems.length === 0) return [];
+          return [
+            <div key={`season-${season.id}`} className="pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {season.emoji} {season.label}
+            </div>,
+            ...seasonItems.map((atm) => {
           const isActive = current === atm.id;
           return (
             <div
@@ -194,6 +203,8 @@ export function FlowColorPicker() {
               </ul>
             </div>
           );
+            }),
+          ];
         })}
 
         <p className="text-[11px] text-muted-foreground">

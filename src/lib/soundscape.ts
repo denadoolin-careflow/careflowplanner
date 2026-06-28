@@ -46,6 +46,15 @@ export const ATMOSPHERE_SOUND_MAP: Record<AtmosphereId, SoundscapeId[]> = {
   "peony-bloom":      ["forest-birds", "wind"],
   "wisteria-drift":   ["wind", "stream"],
   "hibiscus-coast":   ["ocean", "wind", "forest-birds"],
+  "cherry-mist":      ["forest-birds", "wind"],
+  "meadow-dew":       ["forest-birds", "stream", "wind"],
+  "lilac-rain":       ["rain", "wind"],
+  "harvest-ember":    ["fire", "wind"],
+  "amber-orchard":    ["fire", "forest-birds", "wind"],
+  "foggy-pine":       ["rain", "wind", "stream"],
+  "snowfall-hush":    ["wind", "rain"],
+  "evergreen-hearth": ["fire", "wind"],
+  "frosted-plum":     ["night-crickets", "cosmic-drone", "wind"],
 };
 
 /* ─────────────── Web Audio engine ─────────────── */
