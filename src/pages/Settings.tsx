@@ -1,7 +1,6 @@
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
-import { Link } from "react-router-dom";
-import { Palette, ArrowRight, LayoutDashboard, Sun, Inbox, CalendarClock, Clock, Calendar, Map, CalendarDays, FolderKanban, StickyNote, UtensilsCrossed, Repeat } from "lucide-react";
+import { Palette, LayoutDashboard, Sun, Inbox, CalendarClock, Clock, Calendar, Map, CalendarDays, FolderKanban, StickyNote, UtensilsCrossed, Repeat } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -139,19 +138,6 @@ export default function Settings() {
       <AtmosphereFeelSection />
 
       <FlowColorPicker />
-
-      <SectionCard title="Preview across atmospheres" subtitle="See how each Flow header tints under every atmosphere preset." accent="sage">
-        <Link
-          to="/settings/flow-colors"
-          className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/60 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors"
-        >
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-primary-soft text-primary">
-            <Palette className="h-4 w-4" />
-          </span>
-          <span className="flex-1 font-medium">Open atmosphere preview gallery</span>
-          <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
-      </SectionCard>
 
       <FontSection />
 
