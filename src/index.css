@@ -1771,3 +1771,686 @@ body.pantry-dragging * { cursor: grabbing !important; user-select: none; }
 @media (prefers-reduced-motion: reduce) {
   [style*="careflow-breath"], [style*="careflow-wave"] { animation: none !important; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   ATMOSPHERES — Seasonal additions (Spring / Summer / Fall / Winter).
+   These atmospheres are defined in src/lib/atmospheres.ts but were
+   previously missing CSS variable overrides, causing them to fall
+   back to the default (purple-ish) primary. Each block mirrors the
+   structure of the original 9 atmospheres above.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ───── Peony Bloom (Summer) ───── */
+:root[data-atmosphere="peony-bloom"] {
+  --atmo-font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 345 55% 97%;
+  --foreground: 345 30% 20%;
+  --card: 345 65% 99%;
+  --card-foreground: 345 30% 20%;
+  --popover: 345 65% 99%;
+  --popover-foreground: 345 30% 20%;
+  --primary: 345 70% 60%;
+  --primary-foreground: 345 60% 99%;
+  --primary-soft: 345 70% 92%;
+  --secondary: 150 28% 80%;
+  --secondary-foreground: 345 30% 22%;
+  --accent: 42 70% 70%;
+  --accent-foreground: 345 30% 20%;
+  --muted: 345 35% 94%;
+  --muted-foreground: 345 18% 42%;
+  --border: 345 35% 88%;
+  --input: 345 35% 88%;
+  --ring: 345 70% 60%;
+  --gradient-dawn: linear-gradient(160deg, hsl(345 70% 96%) 0%, hsl(150 35% 92%) 55%, hsl(42 70% 94%) 100%);
+  --atmo-glow: radial-gradient(60% 50% at 25% 15%, hsl(345 80% 80% / 0.40), transparent 72%),
+               radial-gradient(45% 40% at 90% 90%, hsl(42 80% 78% / 0.30), transparent 75%);
+}
+.dark[data-atmosphere="peony-bloom"] {
+  --background: 345 20% 11%;
+  --foreground: 345 30% 94%;
+  --card: 345 18% 14%;
+  --card-foreground: 345 30% 94%;
+  --popover: 345 18% 15%;
+  --popover-foreground: 345 30% 94%;
+  --primary: 345 70% 72%;
+  --primary-foreground: 345 30% 12%;
+  --primary-soft: 345 22% 24%;
+  --secondary: 345 14% 26%;
+  --secondary-foreground: 345 30% 94%;
+  --accent: 42 65% 66%;
+  --accent-foreground: 345 30% 12%;
+  --muted: 345 14% 18%;
+  --muted-foreground: 345 20% 76%;
+  --border: 345 14% 24%;
+  --input: 345 14% 24%;
+  --ring: 345 70% 72%;
+  --gradient-dawn: linear-gradient(160deg, hsl(345 22% 11%) 0%, hsl(345 26% 18%) 55%, hsl(42 22% 16%) 100%);
+}
+
+/* ───── Wisteria Drift (Summer) ───── */
+:root[data-atmosphere="wisteria-drift"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 265 35% 96%;
+  --foreground: 265 28% 20%;
+  --card: 265 45% 99%;
+  --card-foreground: 265 28% 20%;
+  --popover: 265 45% 99%;
+  --popover-foreground: 265 28% 20%;
+  --primary: 265 32% 50%;
+  --primary-foreground: 265 45% 99%;
+  --primary-soft: 265 40% 92%;
+  --secondary: 150 24% 82%;
+  --secondary-foreground: 265 28% 22%;
+  --accent: 42 60% 68%;
+  --accent-foreground: 265 28% 20%;
+  --muted: 265 25% 93%;
+  --muted-foreground: 265 14% 42%;
+  --border: 265 22% 87%;
+  --input: 265 22% 87%;
+  --ring: 265 35% 55%;
+  --gradient-dawn: linear-gradient(160deg, hsl(265 50% 96%) 0%, hsl(265 40% 92%) 55%, hsl(150 35% 94%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 20% 15%, hsl(265 55% 80% / 0.32), transparent 72%),
+               radial-gradient(45% 40% at 90% 90%, hsl(150 40% 78% / 0.22), transparent 75%);
+}
+.dark[data-atmosphere="wisteria-drift"] {
+  --background: 265 22% 11%;
+  --foreground: 265 28% 94%;
+  --card: 265 22% 14%;
+  --card-foreground: 265 28% 94%;
+  --popover: 265 22% 15%;
+  --popover-foreground: 265 28% 94%;
+  --primary: 265 45% 74%;
+  --primary-foreground: 265 28% 12%;
+  --primary-soft: 265 22% 24%;
+  --secondary: 265 16% 26%;
+  --secondary-foreground: 265 28% 94%;
+  --accent: 42 55% 64%;
+  --accent-foreground: 265 28% 12%;
+  --muted: 265 16% 18%;
+  --muted-foreground: 265 18% 76%;
+  --border: 265 16% 24%;
+  --input: 265 16% 24%;
+  --ring: 265 45% 74%;
+  --gradient-dawn: linear-gradient(160deg, hsl(265 24% 11%) 0%, hsl(265 28% 18%) 55%, hsl(150 18% 16%) 100%);
+}
+
+/* ───── Hibiscus Coast (Summer) ───── */
+:root[data-atmosphere="hibiscus-coast"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 18 65% 96%;
+  --foreground: 12 35% 20%;
+  --card: 18 75% 99%;
+  --card-foreground: 12 35% 20%;
+  --popover: 18 75% 99%;
+  --popover-foreground: 12 35% 20%;
+  --primary: 14 75% 58%;
+  --primary-foreground: 18 70% 99%;
+  --primary-soft: 18 80% 92%;
+  --secondary: 180 32% 78%;
+  --secondary-foreground: 12 35% 22%;
+  --accent: 42 75% 66%;
+  --accent-foreground: 12 35% 20%;
+  --muted: 18 45% 93%;
+  --muted-foreground: 12 18% 42%;
+  --border: 18 40% 87%;
+  --input: 18 40% 87%;
+  --ring: 14 75% 58%;
+  --gradient-dawn: linear-gradient(160deg, hsl(18 80% 96%) 0%, hsl(180 40% 92%) 55%, hsl(42 75% 94%) 100%);
+  --atmo-glow: radial-gradient(60% 50% at 18% 12%, hsl(14 85% 75% / 0.36), transparent 72%),
+               radial-gradient(50% 45% at 92% 90%, hsl(180 55% 75% / 0.26), transparent 75%);
+}
+.dark[data-atmosphere="hibiscus-coast"] {
+  --background: 12 25% 10%;
+  --foreground: 18 35% 94%;
+  --card: 12 22% 13%;
+  --card-foreground: 18 35% 94%;
+  --popover: 12 22% 14%;
+  --popover-foreground: 18 35% 94%;
+  --primary: 14 80% 68%;
+  --primary-foreground: 12 35% 10%;
+  --primary-soft: 12 25% 22%;
+  --secondary: 180 18% 26%;
+  --secondary-foreground: 18 35% 94%;
+  --accent: 42 70% 64%;
+  --accent-foreground: 12 35% 10%;
+  --muted: 12 18% 17%;
+  --muted-foreground: 18 22% 76%;
+  --border: 12 18% 22%;
+  --input: 12 18% 22%;
+  --ring: 14 80% 68%;
+  --gradient-dawn: linear-gradient(160deg, hsl(12 28% 10%) 0%, hsl(12 30% 17%) 55%, hsl(180 20% 15%) 100%);
+}
+
+/* ───── Cherry Mist (Spring) ───── */
+:root[data-atmosphere="cherry-mist"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 350 50% 97%;
+  --foreground: 350 28% 20%;
+  --card: 350 60% 99%;
+  --card-foreground: 350 28% 20%;
+  --popover: 350 60% 99%;
+  --popover-foreground: 350 28% 20%;
+  --primary: 350 55% 58%;
+  --primary-foreground: 350 60% 99%;
+  --primary-soft: 350 60% 92%;
+  --secondary: 205 38% 82%;
+  --secondary-foreground: 350 28% 22%;
+  --accent: 42 65% 70%;
+  --accent-foreground: 350 28% 20%;
+  --muted: 350 30% 94%;
+  --muted-foreground: 350 14% 42%;
+  --border: 350 28% 88%;
+  --input: 350 28% 88%;
+  --ring: 350 55% 60%;
+  --gradient-dawn: linear-gradient(160deg, hsl(350 60% 96%) 0%, hsl(205 50% 92%) 55%, hsl(42 60% 94%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 22% 15%, hsl(350 70% 82% / 0.32), transparent 72%),
+               radial-gradient(45% 40% at 90% 90%, hsl(205 55% 80% / 0.24), transparent 75%);
+}
+.dark[data-atmosphere="cherry-mist"] {
+  --background: 350 20% 11%;
+  --foreground: 350 28% 94%;
+  --card: 350 18% 14%;
+  --card-foreground: 350 28% 94%;
+  --popover: 350 18% 15%;
+  --popover-foreground: 350 28% 94%;
+  --primary: 350 60% 70%;
+  --primary-foreground: 350 28% 12%;
+  --primary-soft: 350 22% 24%;
+  --secondary: 350 14% 26%;
+  --secondary-foreground: 350 28% 94%;
+  --accent: 42 60% 64%;
+  --accent-foreground: 350 28% 12%;
+  --muted: 350 14% 18%;
+  --muted-foreground: 350 18% 76%;
+  --border: 350 14% 24%;
+  --input: 350 14% 24%;
+  --ring: 350 60% 70%;
+  --gradient-dawn: linear-gradient(160deg, hsl(350 22% 11%) 0%, hsl(350 26% 18%) 55%, hsl(205 18% 16%) 100%);
+}
+
+/* ───── Meadow Dew (Spring) ───── */
+:root[data-atmosphere="meadow-dew"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 90 35% 96%;
+  --foreground: 110 30% 18%;
+  --card: 90 45% 99%;
+  --card-foreground: 110 30% 18%;
+  --popover: 90 45% 99%;
+  --popover-foreground: 110 30% 18%;
+  --primary: 110 32% 42%;
+  --primary-foreground: 90 45% 99%;
+  --primary-soft: 90 40% 90%;
+  --secondary: 50 50% 82%;
+  --secondary-foreground: 110 30% 20%;
+  --accent: 200 38% 70%;
+  --accent-foreground: 110 30% 18%;
+  --muted: 90 25% 92%;
+  --muted-foreground: 110 14% 40%;
+  --border: 90 22% 86%;
+  --input: 90 22% 86%;
+  --ring: 110 35% 48%;
+  --gradient-dawn: linear-gradient(160deg, hsl(90 50% 96%) 0%, hsl(50 55% 92%) 55%, hsl(200 45% 94%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 12%, hsl(90 55% 78% / 0.30), transparent 72%),
+               radial-gradient(45% 40% at 90% 90%, hsl(50 70% 80% / 0.26), transparent 75%);
+}
+.dark[data-atmosphere="meadow-dew"] {
+  --background: 110 20% 10%;
+  --foreground: 90 30% 94%;
+  --card: 110 20% 13%;
+  --card-foreground: 90 30% 94%;
+  --popover: 110 20% 14%;
+  --popover-foreground: 90 30% 94%;
+  --primary: 110 38% 64%;
+  --primary-foreground: 110 30% 10%;
+  --primary-soft: 110 22% 22%;
+  --secondary: 110 14% 26%;
+  --secondary-foreground: 90 30% 94%;
+  --accent: 50 55% 64%;
+  --accent-foreground: 110 30% 10%;
+  --muted: 110 14% 17%;
+  --muted-foreground: 90 18% 74%;
+  --border: 110 14% 22%;
+  --input: 110 14% 22%;
+  --ring: 110 38% 64%;
+  --gradient-dawn: linear-gradient(160deg, hsl(110 22% 10%) 0%, hsl(110 26% 16%) 55%, hsl(50 18% 15%) 100%);
+}
+
+/* ───── Lilac Rain (Spring) ───── */
+:root[data-atmosphere="lilac-rain"] {
+  --atmo-font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
+  --atmo-font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 275 30% 96%;
+  --foreground: 275 28% 20%;
+  --card: 275 40% 99%;
+  --card-foreground: 275 28% 20%;
+  --popover: 275 40% 99%;
+  --popover-foreground: 275 28% 20%;
+  --primary: 275 32% 50%;
+  --primary-foreground: 275 40% 99%;
+  --primary-soft: 275 35% 92%;
+  --secondary: 200 28% 82%;
+  --secondary-foreground: 275 28% 22%;
+  --accent: 38 50% 68%;
+  --accent-foreground: 275 28% 20%;
+  --muted: 275 22% 93%;
+  --muted-foreground: 275 14% 42%;
+  --border: 275 20% 87%;
+  --input: 275 20% 87%;
+  --ring: 275 35% 55%;
+  --gradient-dawn: linear-gradient(160deg, hsl(275 40% 96%) 0%, hsl(200 40% 92%) 55%, hsl(38 50% 94%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 20% 15%, hsl(275 55% 78% / 0.28), transparent 72%),
+               radial-gradient(45% 40% at 90% 90%, hsl(200 45% 78% / 0.22), transparent 75%);
+}
+.dark[data-atmosphere="lilac-rain"] {
+  --background: 275 22% 11%;
+  --foreground: 275 28% 94%;
+  --card: 275 22% 14%;
+  --card-foreground: 275 28% 94%;
+  --popover: 275 22% 15%;
+  --popover-foreground: 275 28% 94%;
+  --primary: 275 45% 74%;
+  --primary-foreground: 275 28% 12%;
+  --primary-soft: 275 22% 24%;
+  --secondary: 275 16% 26%;
+  --secondary-foreground: 275 28% 94%;
+  --accent: 38 50% 64%;
+  --accent-foreground: 275 28% 12%;
+  --muted: 275 16% 18%;
+  --muted-foreground: 275 18% 76%;
+  --border: 275 16% 24%;
+  --input: 275 16% 24%;
+  --ring: 275 45% 74%;
+  --gradient-dawn: linear-gradient(160deg, hsl(275 24% 11%) 0%, hsl(275 28% 18%) 55%, hsl(200 18% 16%) 100%);
+}
+
+/* ───── Harvest Ember (Fall) ───── */
+:root[data-atmosphere="harvest-ember"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --background: 28 45% 95%;
+  --foreground: 18 40% 18%;
+  --card: 28 55% 98%;
+  --card-foreground: 18 40% 18%;
+  --popover: 28 55% 98%;
+  --popover-foreground: 18 40% 18%;
+  --primary: 18 60% 42%;
+  --primary-foreground: 28 55% 98%;
+  --primary-soft: 18 55% 90%;
+  --secondary: 35 50% 76%;
+  --secondary-foreground: 18 40% 20%;
+  --accent: 38 70% 56%;
+  --accent-foreground: 18 40% 18%;
+  --muted: 28 30% 92%;
+  --muted-foreground: 18 22% 40%;
+  --border: 28 28% 86%;
+  --input: 28 28% 86%;
+  --ring: 18 60% 48%;
+  --gradient-dawn: linear-gradient(160deg, hsl(28 60% 94%) 0%, hsl(18 55% 88%) 55%, hsl(38 60% 92%) 100%);
+  --atmo-glow: radial-gradient(60% 50% at 20% 12%, hsl(18 75% 65% / 0.30), transparent 72%),
+               radial-gradient(50% 45% at 90% 90%, hsl(38 80% 65% / 0.22), transparent 75%);
+}
+.dark[data-atmosphere="harvest-ember"] {
+  --background: 18 28% 9%;
+  --foreground: 28 35% 93%;
+  --card: 18 24% 12%;
+  --card-foreground: 28 35% 93%;
+  --popover: 18 24% 13%;
+  --popover-foreground: 28 35% 93%;
+  --primary: 18 70% 60%;
+  --primary-foreground: 18 30% 10%;
+  --primary-soft: 18 30% 22%;
+  --secondary: 18 18% 26%;
+  --secondary-foreground: 28 35% 93%;
+  --accent: 38 70% 60%;
+  --accent-foreground: 18 30% 10%;
+  --muted: 18 18% 17%;
+  --muted-foreground: 28 22% 74%;
+  --border: 18 18% 22%;
+  --input: 18 18% 22%;
+  --ring: 18 70% 60%;
+  --gradient-dawn: linear-gradient(160deg, hsl(18 32% 10%) 0%, hsl(18 36% 17%) 55%, hsl(38 22% 15%) 100%);
+}
+
+/* ───── Amber Orchard (Fall) ───── */
+:root[data-atmosphere="amber-orchard"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 32 55% 95%;
+  --foreground: 22 38% 18%;
+  --card: 32 65% 98%;
+  --card-foreground: 22 38% 18%;
+  --popover: 32 65% 98%;
+  --popover-foreground: 22 38% 18%;
+  --primary: 18 65% 48%;
+  --primary-foreground: 32 60% 98%;
+  --primary-soft: 32 65% 90%;
+  --secondary: 90 22% 72%;
+  --secondary-foreground: 22 38% 20%;
+  --accent: 38 75% 58%;
+  --accent-foreground: 22 38% 18%;
+  --muted: 32 35% 92%;
+  --muted-foreground: 22 20% 40%;
+  --border: 32 32% 86%;
+  --input: 32 32% 86%;
+  --ring: 18 65% 52%;
+  --gradient-dawn: linear-gradient(160deg, hsl(32 70% 94%) 0%, hsl(18 60% 88%) 55%, hsl(90 35% 92%) 100%);
+  --atmo-glow: radial-gradient(60% 50% at 22% 12%, hsl(38 85% 65% / 0.30), transparent 72%),
+               radial-gradient(50% 45% at 90% 90%, hsl(18 70% 60% / 0.24), transparent 75%);
+}
+.dark[data-atmosphere="amber-orchard"] {
+  --background: 22 26% 9%;
+  --foreground: 32 35% 93%;
+  --card: 22 22% 12%;
+  --card-foreground: 32 35% 93%;
+  --popover: 22 22% 13%;
+  --popover-foreground: 32 35% 93%;
+  --primary: 28 75% 62%;
+  --primary-foreground: 22 30% 10%;
+  --primary-soft: 22 28% 22%;
+  --secondary: 22 18% 26%;
+  --secondary-foreground: 32 35% 93%;
+  --accent: 38 75% 62%;
+  --accent-foreground: 22 30% 10%;
+  --muted: 22 16% 17%;
+  --muted-foreground: 32 22% 74%;
+  --border: 22 16% 22%;
+  --input: 22 16% 22%;
+  --ring: 28 75% 62%;
+  --gradient-dawn: linear-gradient(160deg, hsl(22 30% 10%) 0%, hsl(22 34% 17%) 55%, hsl(38 22% 15%) 100%);
+}
+
+/* ───── Foggy Pine (Fall) ───── */
+:root[data-atmosphere="foggy-pine"] {
+  --atmo-font-display: 'Playfair Display', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 140 14% 94%;
+  --foreground: 150 28% 16%;
+  --card: 140 20% 98%;
+  --card-foreground: 150 28% 16%;
+  --popover: 140 20% 98%;
+  --popover-foreground: 150 28% 16%;
+  --primary: 150 28% 28%;
+  --primary-foreground: 140 25% 98%;
+  --primary-soft: 140 22% 88%;
+  --secondary: 38 28% 78%;
+  --secondary-foreground: 150 28% 18%;
+  --accent: 38 50% 62%;
+  --accent-foreground: 150 28% 16%;
+  --muted: 140 14% 91%;
+  --muted-foreground: 150 12% 38%;
+  --border: 140 14% 84%;
+  --input: 140 14% 84%;
+  --ring: 150 30% 38%;
+  --gradient-dawn: linear-gradient(160deg, hsl(140 22% 94%) 0%, hsl(150 20% 88%) 55%, hsl(38 28% 92%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 12%, hsl(150 35% 60% / 0.22), transparent 72%),
+               radial-gradient(45% 40% at 90% 90%, hsl(38 55% 70% / 0.20), transparent 75%);
+}
+.dark[data-atmosphere="foggy-pine"] {
+  --background: 150 22% 8%;
+  --foreground: 140 25% 93%;
+  --card: 150 20% 11%;
+  --card-foreground: 140 25% 93%;
+  --popover: 150 20% 12%;
+  --popover-foreground: 140 25% 93%;
+  --primary: 150 32% 58%;
+  --primary-foreground: 150 28% 10%;
+  --primary-soft: 150 22% 20%;
+  --secondary: 150 16% 25%;
+  --secondary-foreground: 140 25% 93%;
+  --accent: 38 55% 60%;
+  --accent-foreground: 150 28% 10%;
+  --muted: 150 14% 15%;
+  --muted-foreground: 140 14% 72%;
+  --border: 150 14% 20%;
+  --input: 150 14% 20%;
+  --ring: 150 32% 58%;
+  --gradient-dawn: linear-gradient(160deg, hsl(150 24% 8%) 0%, hsl(150 26% 14%) 55%, hsl(38 18% 14%) 100%);
+}
+
+/* ───── Snowfall Hush (Winter) ───── */
+:root[data-atmosphere="snowfall-hush"] {
+  --atmo-font-display: 'Playfair Display', ui-serif, Georgia, serif;
+  --atmo-font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 210 28% 96%;
+  --foreground: 215 30% 18%;
+  --card: 210 35% 99%;
+  --card-foreground: 215 30% 18%;
+  --popover: 210 35% 99%;
+  --popover-foreground: 215 30% 18%;
+  --primary: 215 35% 42%;
+  --primary-foreground: 210 40% 99%;
+  --primary-soft: 210 30% 92%;
+  --secondary: 210 28% 82%;
+  --secondary-foreground: 215 30% 20%;
+  --accent: 38 45% 68%;
+  --accent-foreground: 215 30% 18%;
+  --muted: 210 22% 93%;
+  --muted-foreground: 215 14% 40%;
+  --border: 210 22% 87%;
+  --input: 210 22% 87%;
+  --ring: 215 38% 50%;
+  --gradient-dawn: linear-gradient(160deg, hsl(210 40% 97%) 0%, hsl(210 30% 92%) 55%, hsl(38 45% 94%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 18% 15%, hsl(210 55% 80% / 0.26), transparent 72%),
+               radial-gradient(45% 40% at 90% 90%, hsl(38 55% 78% / 0.18), transparent 75%);
+}
+.dark[data-atmosphere="snowfall-hush"] {
+  --background: 215 28% 10%;
+  --foreground: 210 30% 94%;
+  --card: 215 24% 13%;
+  --card-foreground: 210 30% 94%;
+  --popover: 215 24% 14%;
+  --popover-foreground: 210 30% 94%;
+  --primary: 210 45% 70%;
+  --primary-foreground: 215 30% 12%;
+  --primary-soft: 215 22% 24%;
+  --secondary: 215 16% 26%;
+  --secondary-foreground: 210 30% 94%;
+  --accent: 38 50% 64%;
+  --accent-foreground: 215 30% 12%;
+  --muted: 215 18% 17%;
+  --muted-foreground: 210 18% 76%;
+  --border: 215 18% 22%;
+  --input: 215 18% 22%;
+  --ring: 210 45% 70%;
+  --gradient-dawn: linear-gradient(160deg, hsl(215 28% 10%) 0%, hsl(215 30% 17%) 55%, hsl(38 18% 15%) 100%);
+}
+
+/* ───── Evergreen Hearth (Winter) ───── */
+:root[data-atmosphere="evergreen-hearth"] {
+  --atmo-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --atmo-font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --background: 40 40% 95%;
+  --foreground: 145 38% 16%;
+  --card: 40 50% 98%;
+  --card-foreground: 145 38% 16%;
+  --popover: 40 50% 98%;
+  --popover-foreground: 145 38% 16%;
+  --primary: 145 42% 28%;
+  --primary-foreground: 40 50% 98%;
+  --primary-soft: 145 32% 88%;
+  --secondary: 10 55% 70%;
+  --secondary-foreground: 145 38% 16%;
+  --accent: 38 70% 56%;
+  --accent-foreground: 145 38% 16%;
+  --muted: 40 30% 92%;
+  --muted-foreground: 145 14% 36%;
+  --border: 40 28% 86%;
+  --input: 40 28% 86%;
+  --ring: 145 42% 36%;
+  --gradient-dawn: linear-gradient(160deg, hsl(40 55% 95%) 0%, hsl(145 30% 90%) 55%, hsl(10 50% 92%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 20% 15%, hsl(145 45% 50% / 0.24), transparent 72%),
+               radial-gradient(50% 45% at 90% 90%, hsl(10 65% 65% / 0.24), transparent 75%);
+}
+.dark[data-atmosphere="evergreen-hearth"] {
+  --background: 145 26% 9%;
+  --foreground: 40 38% 93%;
+  --card: 145 22% 12%;
+  --card-foreground: 40 38% 93%;
+  --popover: 145 22% 13%;
+  --popover-foreground: 40 38% 93%;
+  --primary: 145 38% 56%;
+  --primary-foreground: 145 30% 10%;
+  --primary-soft: 145 22% 22%;
+  --secondary: 10 35% 36%;
+  --secondary-foreground: 40 38% 93%;
+  --accent: 38 70% 58%;
+  --accent-foreground: 145 30% 10%;
+  --muted: 145 16% 17%;
+  --muted-foreground: 40 22% 74%;
+  --border: 145 16% 22%;
+  --input: 145 16% 22%;
+  --ring: 145 38% 56%;
+  --gradient-dawn: linear-gradient(160deg, hsl(145 28% 9%) 0%, hsl(145 30% 16%) 55%, hsl(10 26% 16%) 100%);
+}
+
+/* ───── Frosted Plum (Winter) ───── */
+:root[data-atmosphere="frosted-plum"] {
+  --atmo-font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
+  --atmo-font-body: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --background: 280 28% 96%;
+  --foreground: 280 32% 18%;
+  --card: 280 40% 99%;
+  --card-foreground: 280 32% 18%;
+  --popover: 280 40% 99%;
+  --popover-foreground: 280 32% 18%;
+  --primary: 280 32% 48%;
+  --primary-foreground: 280 40% 99%;
+  --primary-soft: 280 35% 92%;
+  --secondary: 200 25% 82%;
+  --secondary-foreground: 280 32% 20%;
+  --accent: 38 55% 66%;
+  --accent-foreground: 280 32% 18%;
+  --muted: 280 22% 93%;
+  --muted-foreground: 280 14% 42%;
+  --border: 280 22% 87%;
+  --input: 280 22% 87%;
+  --ring: 280 35% 52%;
+  --gradient-dawn: linear-gradient(160deg, hsl(280 40% 96%) 0%, hsl(200 35% 92%) 55%, hsl(38 50% 94%) 100%);
+  --atmo-glow: radial-gradient(55% 45% at 20% 15%, hsl(280 60% 78% / 0.34), transparent 72%),
+               radial-gradient(45% 40% at 90% 90%, hsl(200 45% 78% / 0.22), transparent 75%);
+}
+.dark[data-atmosphere="frosted-plum"] {
+  --background: 280 26% 11%;
+  --foreground: 280 28% 94%;
+  --card: 280 22% 14%;
+  --card-foreground: 280 28% 94%;
+  --popover: 280 22% 15%;
+  --popover-foreground: 280 28% 94%;
+  --primary: 280 50% 74%;
+  --primary-foreground: 280 32% 12%;
+  --primary-soft: 280 22% 24%;
+  --secondary: 280 16% 26%;
+  --secondary-foreground: 280 28% 94%;
+  --accent: 38 55% 64%;
+  --accent-foreground: 280 32% 12%;
+  --muted: 280 16% 18%;
+  --muted-foreground: 280 18% 76%;
+  --border: 280 16% 24%;
+  --input: 280 16% 24%;
+  --ring: 280 50% 74%;
+  --gradient-dawn: linear-gradient(160deg, hsl(280 26% 11%) 0%, hsl(280 30% 18%) 55%, hsl(200 18% 16%) 100%);
+  --shadow-glow: 0 0 28px -6px hsl(280 55% 55% / 0.40), 0 0 0 1px hsl(38 50% 60% / 0.18);
+}
+
+/* ───── Ambient motion + glass for new atmospheres ───── */
+html[data-atmosphere="peony-bloom"] .atmo-ambient,
+html[data-atmosphere="cherry-mist"] .atmo-ambient,
+html[data-atmosphere="hibiscus-coast"] .atmo-ambient,
+html[data-atmosphere="amber-orchard"] .atmo-ambient,
+html[data-atmosphere="harvest-ember"] .atmo-ambient,
+html[data-atmosphere="evergreen-hearth"] .atmo-ambient,
+html[data-atmosphere="meadow-dew"] .atmo-ambient {
+  animation: atmo-breath 22s ease-in-out infinite;
+}
+html[data-atmosphere="wisteria-drift"] .atmo-ambient,
+html[data-atmosphere="lilac-rain"] .atmo-ambient,
+html[data-atmosphere="frosted-plum"] .atmo-ambient,
+html[data-atmosphere="foggy-pine"] .atmo-ambient {
+  animation: atmo-plum-drift 32s ease-in-out infinite;
+}
+html[data-atmosphere="snowfall-hush"] .atmo-ambient {
+  animation: atmo-still 40s ease-in-out infinite;
+}
+
+html[data-atmosphere="peony-bloom"] .cozy-card,
+html[data-atmosphere="wisteria-drift"] .cozy-card,
+html[data-atmosphere="cherry-mist"] .cozy-card,
+html[data-atmosphere="lilac-rain"] .cozy-card,
+html[data-atmosphere="snowfall-hush"] .cozy-card,
+html[data-atmosphere="frosted-plum"] .cozy-card,
+html[data-atmosphere="foggy-pine"] .cozy-card {
+  background: hsl(var(--card) / 0.78);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  border: 1px solid hsl(var(--border) / 0.7);
+}
+
+/* ───── Priority palette for new atmospheres ───── */
+:root[data-atmosphere="peony-bloom"] {
+  --priority-high: 345 65% 58%; --priority-med: 42 70% 58%; --priority-low: 150 28% 50%;
+}
+:root[data-atmosphere="wisteria-drift"] {
+  --priority-high: 345 50% 60%; --priority-med: 42 60% 58%; --priority-low: 265 28% 56%;
+}
+:root[data-atmosphere="hibiscus-coast"] {
+  --priority-high: 14 70% 56%; --priority-med: 42 70% 58%; --priority-low: 180 30% 48%;
+}
+:root[data-atmosphere="cherry-mist"] {
+  --priority-high: 350 60% 60%; --priority-med: 42 60% 58%; --priority-low: 205 35% 52%;
+}
+:root[data-atmosphere="meadow-dew"] {
+  --priority-high: 14 55% 58%; --priority-med: 50 60% 52%; --priority-low: 110 28% 44%;
+}
+:root[data-atmosphere="lilac-rain"] {
+  --priority-high: 340 50% 60%; --priority-med: 38 55% 58%; --priority-low: 275 28% 56%;
+}
+:root[data-atmosphere="harvest-ember"] {
+  --priority-high: 8 65% 52%; --priority-med: 38 75% 54%; --priority-low: 95 22% 44%;
+}
+:root[data-atmosphere="amber-orchard"] {
+  --priority-high: 10 65% 54%; --priority-med: 38 75% 56%; --priority-low: 90 25% 46%;
+}
+:root[data-atmosphere="foggy-pine"] {
+  --priority-high: 8 55% 58%; --priority-med: 38 55% 56%; --priority-low: 150 22% 42%;
+}
+:root[data-atmosphere="snowfall-hush"] {
+  --priority-high: 350 55% 62%; --priority-med: 38 55% 58%; --priority-low: 215 32% 52%;
+}
+:root[data-atmosphere="evergreen-hearth"] {
+  --priority-high: 10 60% 52%; --priority-med: 38 70% 54%; --priority-low: 145 35% 36%;
+}
+:root[data-atmosphere="frosted-plum"] {
+  --priority-high: 340 50% 60%; --priority-med: 38 55% 58%; --priority-low: 280 32% 54%;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   LIGHT-ATMOSPHERE CONTRAST PASS
+   Darken body/muted text and strengthen borders on cream/pastel light
+   themes so text passes WCAG AA against the soft backgrounds.
+   Dark variants already have ample contrast and are not touched.
+   ════════════════════════════════════════════════════════════════════════ */
+:root[data-atmosphere="sage-sanctuary"]      { --foreground: 285 22% 14%; --muted-foreground: 285 14% 36%; --border: 50 22% 82%; }
+:root[data-atmosphere="moonlit-plum"]        { --foreground: 285 38% 14%; --muted-foreground: 285 16% 36%; --border: 285 22% 82%; }
+:root[data-atmosphere="soft-linen"]          { --foreground: 28 24% 16%; --muted-foreground: 28 16% 34%; --border: 35 24% 84%; }
+:root[data-atmosphere="coastal-calm"]        { --foreground: 195 30% 14%; --muted-foreground: 195 16% 34%; --border: 190 22% 82%; }
+:root[data-atmosphere="golden-hearth"]       { --foreground: 25 40% 16%; --muted-foreground: 25 22% 34%; --border: 35 32% 82%; }
+:root[data-atmosphere="dawn"]                { --foreground: 20 40% 18%; --muted-foreground: 20 22% 36%; --border: 28 38% 82%; }
+:root[data-atmosphere="mist"]                { --foreground: 180 12% 18%; --muted-foreground: 180 10% 34%; --border: 80 12% 84%; }
+:root[data-atmosphere="blossom"]             { --foreground: 335 28% 16%; --muted-foreground: 335 20% 38%; --border: 338 32% 84%; }
+:root[data-atmosphere="peony-bloom"]         { --foreground: 345 34% 16%; --muted-foreground: 345 20% 36%; --border: 345 36% 84%; }
+:root[data-atmosphere="wisteria-drift"]      { --foreground: 265 32% 16%; --muted-foreground: 265 16% 36%; --border: 265 24% 83%; }
+:root[data-atmosphere="hibiscus-coast"]      { --foreground: 12 38% 16%; --muted-foreground: 12 22% 36%; --border: 18 42% 83%; }
+:root[data-atmosphere="cherry-mist"]         { --foreground: 350 32% 16%; --muted-foreground: 350 16% 36%; --border: 350 30% 84%; }
+:root[data-atmosphere="meadow-dew"]          { --foreground: 110 34% 14%; --muted-foreground: 110 16% 34%; --border: 90 24% 82%; }
+:root[data-atmosphere="lilac-rain"]          { --foreground: 275 32% 16%; --muted-foreground: 275 16% 36%; --border: 275 22% 83%; }
+:root[data-atmosphere="harvest-ember"]       { --foreground: 18 44% 14%; --muted-foreground: 18 24% 34%; --border: 28 30% 82%; }
+:root[data-atmosphere="amber-orchard"]       { --foreground: 22 42% 14%; --muted-foreground: 22 22% 34%; --border: 32 34% 82%; }
+:root[data-atmosphere="foggy-pine"]          { --foreground: 150 32% 12%; --muted-foreground: 150 14% 32%; --border: 140 16% 80%; }
+:root[data-atmosphere="snowfall-hush"]       { --foreground: 215 34% 14%; --muted-foreground: 215 16% 34%; --border: 210 24% 83%; }
+:root[data-atmosphere="evergreen-hearth"]    { --foreground: 145 42% 12%; --muted-foreground: 145 16% 32%; --border: 40 30% 82%; }
+:root[data-atmosphere="frosted-plum"]        { --foreground: 280 36% 14%; --muted-foreground: 280 16% 36%; --border: 280 24% 83%; }
