@@ -13,7 +13,16 @@ export type AtmosphereId =
   | "blossom"
   | "peony-bloom"
   | "wisteria-drift"
-  | "hibiscus-coast";
+  | "hibiscus-coast"
+  | "cherry-mist"
+  | "meadow-dew"
+  | "lilac-rain"
+  | "harvest-ember"
+  | "amber-orchard"
+  | "foggy-pine"
+  | "snowfall-hush"
+  | "evergreen-hearth"
+  | "frosted-plum";
 
 export type AtmosphereVibe = {
   /** how strong the gradients feel */
@@ -175,9 +184,147 @@ export const ATMOSPHERES: Atmosphere[] = [
     fontBody: "Plus Jakarta Sans",
     vibe: { gradient: "rich", glow: "warm", glass: false, prefersDark: false, animation: "breath" },
   },
+  // ───── Spring ─────
+  {
+    id: "cherry-mist",
+    name: "Cherry Mist",
+    tagline: "First petals after a long thaw.",
+    mood: ["fresh", "tender", "hopeful"],
+    bestFor: ["Spring mornings", "Gentle planning", "New beginnings"],
+    palette: ["#F8D2DA", "#E8A8B5", "#F5F8FB", "#B9D5E8", "#E8C77E", "#6E4F58"],
+    fontDisplay: "Fraunces",
+    fontBody: "Plus Jakarta Sans",
+    vibe: { gradient: "soft", glow: "subtle", glass: true, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "meadow-dew",
+    name: "Meadow Dew",
+    tagline: "Morning grass and open windows.",
+    mood: ["fresh", "energizing", "clear"],
+    bestFor: ["Spring resets", "Outdoor planning", "Bright focus"],
+    palette: ["#C8DDB0", "#9BBE82", "#FBF9EC", "#F4E2A3", "#A8C8D9", "#4F6244"],
+    fontDisplay: "Fraunces",
+    fontBody: "DM Sans",
+    vibe: { gradient: "soft", glow: "subtle", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "lilac-rain",
+    name: "Lilac Rain",
+    tagline: "Gentle April showers.",
+    mood: ["dreamy", "cooling", "soft"],
+    bestFor: ["Rainy days", "Slow journaling", "Reflection"],
+    palette: ["#D8C8E4", "#B8A2D0", "#F4F2F8", "#CBD6DD", "#E0CDB4", "#5A4A6B"],
+    fontDisplay: "Cormorant Garamond",
+    fontBody: "DM Sans",
+    vibe: { gradient: "whisper", glow: "subtle", glass: true, prefersDark: false, animation: "drift" },
+  },
+  // ───── Fall ─────
+  {
+    id: "harvest-ember",
+    name: "Harvest Ember",
+    tagline: "Wood smoke and golden hour.",
+    mood: ["warm", "grounding", "cozy"],
+    bestFor: ["Autumn evenings", "Hearth planning", "Comfort routines"],
+    palette: ["#D67A45", "#A8512E", "#F4E4CE", "#8A6A3F", "#6B3A2A", "#2E1F18"],
+    fontDisplay: "Fraunces",
+    fontBody: "Inter",
+    vibe: { gradient: "rich", glow: "warm", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "amber-orchard",
+    name: "Amber Orchard",
+    tagline: "Cider on the porch.",
+    mood: ["warm", "abundant", "homely"],
+    bestFor: ["Seasonal cooking", "Family rituals", "Gratitude"],
+    palette: ["#E0A152", "#C25C3A", "#FBF1DC", "#8A9B6E", "#B4663C", "#4A2E22"],
+    fontDisplay: "Fraunces",
+    fontBody: "Plus Jakarta Sans",
+    vibe: { gradient: "rich", glow: "warm", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "foggy-pine",
+    name: "Foggy Pine",
+    tagline: "Cold pine and quiet trails.",
+    mood: ["grounded", "introspective", "cool"],
+    bestFor: ["Deep focus", "Outdoor planning", "Rainy afternoons"],
+    palette: ["#3A4A40", "#5C7062", "#D8DDD6", "#9BAA9F", "#C7A878", "#1C2620"],
+    fontDisplay: "Playfair Display",
+    fontBody: "Plus Jakarta Sans",
+    vibe: { gradient: "rich", glow: "subtle", glass: true, prefersDark: true, animation: "drift" },
+  },
+  // ───── Winter ─────
+  {
+    id: "snowfall-hush",
+    name: "Snowfall Hush",
+    tagline: "First snow at dusk.",
+    mood: ["quiet", "spacious", "still"],
+    bestFor: ["Winter mornings", "Reset days", "Mindful focus"],
+    palette: ["#E6EDF2", "#C4D1DC", "#F8FAFC", "#A3B4C2", "#D4C7A8", "#475568"],
+    fontDisplay: "Playfair Display",
+    fontBody: "DM Sans",
+    vibe: { gradient: "whisper", glow: "subtle", glass: true, prefersDark: false, animation: "still" },
+  },
+  {
+    id: "evergreen-hearth",
+    name: "Evergreen Hearth",
+    tagline: "Firelight under the tree.",
+    mood: ["warm", "festive", "rooted"],
+    bestFor: ["Holiday planning", "Family evenings", "Cozy work"],
+    palette: ["#2E4A34", "#C0432A", "#F4E8D2", "#D4A14C", "#6E8A6A", "#1A2A20"],
+    fontDisplay: "Fraunces",
+    fontBody: "Inter",
+    vibe: { gradient: "rich", glow: "warm", glass: false, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "frosted-plum",
+    name: "Frosted Plum",
+    tagline: "Long nights, soft candlelight.",
+    mood: ["reflective", "intimate", "magical"],
+    bestFor: ["Winter journaling", "Evening rituals", "Slow reflection"],
+    palette: ["#7A6488", "#A893B8", "#E8E4EE", "#C9D6DC", "#D4B98A", "#2E2438"],
+    fontDisplay: "Cormorant Garamond",
+    fontBody: "DM Sans",
+    vibe: { gradient: "rich", glow: "luminous", glass: true, prefersDark: true, animation: "drift" },
+  },
 ];
 
 export const DEFAULT_ATMOSPHERE: AtmosphereId = "sage-sanctuary";
+
+/** Seasonal collections for the picker. Some atmospheres feel right in multiple seasons. */
+export type Season = "spring" | "summer" | "fall" | "winter" | "anytime";
+
+export const SEASONS: Array<{ id: Season; label: string; emoji: string; atmospheres: AtmosphereId[] }> = [
+  {
+    id: "spring",
+    label: "Spring",
+    emoji: "🌸",
+    atmospheres: ["cherry-mist", "meadow-dew", "lilac-rain", "blossom", "dawn"],
+  },
+  {
+    id: "summer",
+    label: "Summer",
+    emoji: "☀️",
+    atmospheres: ["peony-bloom", "wisteria-drift", "hibiscus-coast", "coastal-calm"],
+  },
+  {
+    id: "fall",
+    label: "Fall",
+    emoji: "🍂",
+    atmospheres: ["harvest-ember", "amber-orchard", "foggy-pine", "golden-hearth"],
+  },
+  {
+    id: "winter",
+    label: "Winter",
+    emoji: "❄️",
+    atmospheres: ["snowfall-hush", "evergreen-hearth", "frosted-plum", "mist", "moonlit-plum", "dark-sage-glass"],
+  },
+  {
+    id: "anytime",
+    label: "Anytime",
+    emoji: "✨",
+    atmospheres: ["sage-sanctuary", "soft-linen"],
+  },
+];
 
 export function getAtmosphere(id: AtmosphereId | string | null | undefined): Atmosphere {
   return ATMOSPHERES.find(a => a.id === id) ?? ATMOSPHERES[0];
