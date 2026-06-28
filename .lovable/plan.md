@@ -1,50 +1,32 @@
-# Atmosphere persistence + seasonal collections
+## Problem
 
-## 1. Persistence (verify + harden)
-The current atmosphere already saves to `localStorage` (`careflow:atmosphere`) and re-applies on load in `src/lib/atmospheres.ts`. I'll:
-- Add a small hydration guard in `applyAtmosphere` so the `data-atmosphere` attribute is re-asserted on every route change (one `useEffect` in `AppLayout`) to prevent any stray code from clearing it.
-- Confirm `AtmospherePicker` (already mounted in `HeaderQuickSettings` → `AppLayout`) shows on every page.
+`src/lib/atmospheres.ts` defines 21 atmospheres, but `src/index.css` only ships CSS variable overrides for the original 9 (`sage-sanctuary`, `moonlit-plum`, `soft-linen`, `coastal-calm`, `golden-hearth`, `dark-sage-glass`, `dawn`, `mist`, `blossom`). The 12 newer themes (peony-bloom, wisteria-drift, hibiscus-coast, cherry-mist, meadow-dew, lilac-rain, **harvest-ember, amber-orchard, foggy-pine**, snowfall-hush, evergreen-hearth, frosted-plum) set `data-atmosphere` on `<html>` but have no matching CSS block — so the app keeps the default tokens (purple-ish primary), which is exactly why fall themes still render purple.
 
-## 2. New atmospheres (9 added → 3 per season)
+A second pass on contrast is needed for the light themes where `--foreground` / muted-foreground are too pale against the cream backgrounds.
 
-**Spring (new)**
-- `cherry-mist` — pale pink + sky blue, "First petals after a long thaw."
-- `meadow-dew` — fresh green + buttercream, "Morning grass and open windows."
-- `lilac-rain` — soft lilac + silver, "Gentle April showers."
+## Plan
 
-**Summer** — reuse the 3 already created: `peony-bloom`, `wisteria-drift`, `hibiscus-coast`.
+1. **Add full CSS variable blocks in `src/index.css`** for all 12 missing atmospheres, mirroring the structure used by the existing 9:
+   - `:root[data-atmosphere="<id>"]` — light theme tokens: `--background`, `--foreground`, `--card`, `--card-foreground`, `--popover*`, `--primary` (+ foreground), `--secondary`, `--muted`, `--accent`, `--border`, `--input`, `--ring`, `--sidebar-*`, plus the atmosphere helpers already used (`--atmo-ambient-1/2/3`, gradient/glow vars if present).
+   - `.dark[data-atmosphere="<id>"]` — dark-mode counterparts (deeper background, lifted foreground), even for themes flagged `prefersDark:false`, so dark mode still re-skins.
+   - `html[data-atmosphere="<id>"] .atmo-ambient` — gradient background tuned to the palette.
+   - Where `glass: true`, include the cozy-card translucency override already used by `blossom` / `moonlit-plum`.
+   - Each theme's `--primary` is sourced from the bolder palette swatch (e.g. harvest-ember → burnt orange `#A8512E`, foggy-pine → pine `#3A4A40`, evergreen-hearth → fir green `#2E4A34`) so buttons, links, focus rings, and chips immediately reflect the chosen mood instead of falling back to default purple.
 
-**Fall (new)**
-- `harvest-ember` — burnt orange + cinnamon, "Wood smoke and golden hour."
-- `amber-orchard` — apple red + ochre + cream, "Cider on the porch."
-- `foggy-pine` — deep evergreen + slate mist, "Cold pine and quiet trails."
+2. **Contrast pass for light atmospheres** (cherry-mist, meadow-dew, lilac-rain, peony-bloom, wisteria-drift, hibiscus-coast, snowfall-hush, soft-linen, dawn, blossom, mist, sage-sanctuary, coastal-calm, golden-hearth):
+   - Darken `--foreground` to at least ~18% lightness for body text on cream/pastel backgrounds.
+   - Bump `--muted-foreground` from very low contrast greys to ~40–45% lightness.
+   - Strengthen `--border` opacity so cards and inputs are visible on near-white surfaces.
+   - Verify WCAG AA for body text against `--background` and `--card`.
 
-**Winter (new)**
-- `snowfall-hush` — pale ice blue + pearl, "First snow at dusk."
-- `evergreen-hearth` — deep spruce + ember red + gold, "Firelight under the tree."
-- `frosted-plum` — icy plum + silver, "Long nights, soft candlelight."
+3. **Audit the seasonal token map block (line ~1716+)** that currently lists only the original 9 atmospheres for the `cozy-card` / `cozy-tint` accents, and extend it to all 21 IDs so secondary surfaces also re-theme.
 
-Each gets palette, fonts (from already-loaded set), and a vibe tuned to its season. Added to `AtmosphereId` union and `ATMOSPHERES` array in `src/lib/atmospheres.ts`. Default chime mapping in `src/lib/completion-sound.ts` extended for each new id (falls back to a seasonally-appropriate existing preset).
+4. **Verify** by running the Playwright script against `/inbox`, `/calendar`, `/cosmic-flow`, and `/today` after switching to harvest-ember, foggy-pine, evergreen-hearth, lilac-rain, and snowfall-hush; capture screenshots in both light and dark mode and confirm:
+   - Primary buttons, active nav, focus rings, and accent chips pick up the new hue (no residual purple).
+   - Body text remains AA-readable on light themes.
 
-## 3. Seasonal grouping UI
-Add a `SEASONS` map in `src/lib/atmospheres.ts`:
-```text
-spring  → cherry-mist, meadow-dew, lilac-rain, blossom, dawn
-summer  → peony-bloom, wisteria-drift, hibiscus-coast, coastal-calm
-fall    → harvest-ember, amber-orchard, foggy-pine, golden-hearth
-winter  → snowfall-hush, evergreen-hearth, frosted-plum, mist, moonlit-plum, dark-sage-glass
-anytime → sage-sanctuary, soft-linen
-```
-In `src/components/atmospheres/AtmospherePicker.tsx`, replace the single "All atmospheres" grid with one `Section` per season (Spring · Summer · Fall · Winter · Anytime), keeping Favorites / Recommended / Recently used sections unchanged. Each section uses the existing `Grid` component.
+## Technical notes
 
-Also extend the same seasonal grouping in `src/components/settings/FlowColorPicker.tsx`'s "Compare atmospheres" gallery so cards are grouped under season headers.
-
-## Files touched
-- `src/lib/atmospheres.ts` — new ids, palettes, `SEASONS` export, route-change re-apply helper.
-- `src/lib/completion-sound.ts` — defaults for 9 new ids.
-- `src/components/atmospheres/AtmospherePicker.tsx` — render by season.
-- `src/components/settings/FlowColorPicker.tsx` — group gallery by season.
-- `src/components/layout/AppLayout.tsx` — re-assert atmosphere attribute on mount.
-
-## Out of scope
-No changes to auto-switch logic, flow-accent overrides, or anywhere else atmospheres are consumed — new ids flow through automatically.
+- No changes to `src/lib/atmospheres.ts`, the picker, or persistence — those already work; the gap is purely missing CSS.
+- All new variables use the same `H S% L%` HSL token format already in use so Tailwind utilities (`bg-primary`, `text-foreground`, `border-border`) pick them up without component edits.
+- No component file edits required.
