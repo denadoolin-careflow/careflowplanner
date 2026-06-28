@@ -1,34 +1,39 @@
-# Combine Flow Colors settings + preview gallery
+## Add 3 summer pastel floral atmospheres
 
-Today there are two separate surfaces:
-- `FlowColorPicker` (in Settings) — per-flow swatch picker for the **active** atmosphere only.
-- `FlowColorsPreview` page at `/settings/flow-colors` — read-only gallery showing how every atmosphere tints each Flow, with an "Apply" button per atmosphere.
+Extend `src/lib/atmospheres.ts` with three new soft pastel summer atmospheres named after flowers. Each follows the existing `Atmosphere` shape (id, name, tagline, mood, bestFor, 5–6 hex palette, fonts, vibe).
 
-Goal: one combined "Flow colors" panel in Settings where the user can both **preview every atmosphere** and **pick a swatch override for each Flow** in the same place. Remove the separate page link.
+### New atmospheres
 
-## Changes
+1. **Peony Bloom** — `peony-bloom`
+   - Tagline: "Sun-warmed petals and porch breezes."
+   - Palette: `#F7C8D1` (blush), `#F4A6B8` (peony pink), `#FBF4EE` (cream), `#B5D3C2` (mint leaf), `#E8C77E` (butter), `#7A5563` (deep mauve)
+   - Mood: tender, romantic, light
+   - Best for: Journaling, gentle planning, summer mornings
+   - Fonts: Cormorant Garamond + Plus Jakarta Sans
+   - Vibe: gradient `soft`, glow `warm`, glass `true`, prefersDark `false`, animation `breath`
 
-1. **Rebuild `src/components/settings/FlowColorPicker.tsx`** into a single panel with two stacked regions:
+2. **Wisteria Drift** — `wisteria-drift`
+   - Tagline: "Lavender shade on a long July afternoon."
+   - Palette: `#C9B8E0` (wisteria lilac), `#A99BC9` (dusty violet), `#F4F0F8` (pale cream), `#CFE2D5` (sage mist), `#E8C77E` (sunlit honey), `#6E5A8A` (twilight plum)
+   - Mood: dreamy, cooling, contemplative
+   - Best for: Afternoon resets, creative drift, slow reading
+   - Fonts: Fraunces + DM Sans
+   - Vibe: gradient `soft`, glow `subtle`, glass `true`, prefersDark `false`, animation `drift`
 
-   a. **Per-flow picker (top)** — keep current behavior (one row per Flow, swatches from the *active* atmosphere, Reset/Reset-all). This stays the primary editor since overrides are indexed against the active atmosphere's palette.
+3. **Hibiscus Coast** — `hibiscus-coast`
+   - Tagline: "Coral blossoms over turquoise tide."
+   - Palette: `#FFB8A1` (hibiscus coral), `#FF9E83` (sun coral), `#FFF6EE` (shell white), `#9CD3D0` (lagoon), `#F2C879` (sand gold), `#6B4A52` (deep shell)
+   - Mood: bright, restorative, breezy
+   - Best for: Travel, beach days, energetic summer planning
+   - Fonts: Fraunces + Plus Jakarta Sans
+   - Vibe: gradient `rich`, glow `warm`, glass `false`, prefersDark `false`, animation `breath`
 
-   b. **Atmosphere gallery (bottom, collapsible "Compare atmospheres" disclosure, collapsed by default)** — port the layout from `FlowColorsPreview.tsx`:
-      - One card per atmosphere in `ATMOSPHERES`, showing name, tagline, palette swatches, and the Flow header chips rendered via `getFlowAccent(group.id, atm, overrides)`.
-      - Each atmosphere card shows an **Apply** / **Active** button (calls `setAtmosphere`).
-      - Active atmosphere card gets a `ring-2 ring-primary/40` highlight.
-      - When the active atmosphere card is rendered, each Flow chip becomes a button that opens an inline swatch row (same swatch grid as the top picker) so users can change overrides directly from the gallery too. For non-active atmospheres, chips stay read-only previews (overrides are tied to the active atmosphere's palette indices).
-      - Live updates: the gallery reads `useAtmosphere()` + `useFlowColorOverrides()` so swatch changes immediately reflect in both regions.
+### Edits
 
-2. **Update `src/pages/Settings.tsx`**:
-   - Delete the standalone "Preview across atmospheres" `SectionCard` block (lines ~143–154) and its `Link` to `/settings/flow-colors`.
-   - Remove the now-unused `ArrowRight` / `Palette` / `Link` imports if no other usage remains in this file (verify before removing).
+- `src/lib/atmospheres.ts`
+  - Add `"peony-bloom" | "wisteria-drift" | "hibiscus-coast"` to the `AtmosphereId` union.
+  - Append the three new entries to the `ATMOSPHERES` array (after `blossom`).
 
-3. **Routing cleanup in `src/App.tsx`**:
-   - Remove the `import FlowColorsPreview from "./pages/FlowColorsPreview"` line.
-   - Remove the `<Route path="/settings/flow-colors" element={<FlowColorsPreview />} />` route.
-
-4. **Delete `src/pages/FlowColorsPreview.tsx`** since its content is fully absorbed into the combined panel.
-
-## Out of scope
-- No changes to `flow-color-prefs`, `flow-accent`, atmosphere data, or any consumer of `getFlowAccent`.
-- No new persistence model — overrides remain palette-index based against the active atmosphere.
+### Out of scope
+- No changes to auto-switch rules, flow color overrides, or settings UI — the new atmospheres show up automatically in the existing picker and the "Flow colors" comparison gallery.
+- No font additions; all chosen fonts are already loaded in `index.html`.

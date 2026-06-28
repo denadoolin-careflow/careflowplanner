@@ -10,7 +10,10 @@ export type AtmosphereId =
   | "dark-sage-glass"
   | "dawn"
   | "mist"
-  | "blossom";
+  | "blossom"
+  | "peony-bloom"
+  | "wisteria-drift"
+  | "hibiscus-coast";
 
 export type AtmosphereVibe = {
   /** how strong the gradients feel */
@@ -138,6 +141,39 @@ export const ATMOSPHERES: Atmosphere[] = [
     fontDisplay: "Cormorant Garamond",
     fontBody: "Plus Jakarta Sans",
     vibe: { gradient: "rich", glow: "warm", glass: true, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "peony-bloom",
+    name: "Peony Bloom",
+    tagline: "Sun-warmed petals and porch breezes.",
+    mood: ["tender", "romantic", "light"],
+    bestFor: ["Journaling", "Gentle planning", "Summer mornings"],
+    palette: ["#F7C8D1", "#F4A6B8", "#FBF4EE", "#B5D3C2", "#E8C77E", "#7A5563"],
+    fontDisplay: "Cormorant Garamond",
+    fontBody: "Plus Jakarta Sans",
+    vibe: { gradient: "soft", glow: "warm", glass: true, prefersDark: false, animation: "breath" },
+  },
+  {
+    id: "wisteria-drift",
+    name: "Wisteria Drift",
+    tagline: "Lavender shade on a long July afternoon.",
+    mood: ["dreamy", "cooling", "contemplative"],
+    bestFor: ["Afternoon resets", "Creative drift", "Slow reading"],
+    palette: ["#C9B8E0", "#A99BC9", "#F4F0F8", "#CFE2D5", "#E8C77E", "#6E5A8A"],
+    fontDisplay: "Fraunces",
+    fontBody: "DM Sans",
+    vibe: { gradient: "soft", glow: "subtle", glass: true, prefersDark: false, animation: "drift" },
+  },
+  {
+    id: "hibiscus-coast",
+    name: "Hibiscus Coast",
+    tagline: "Coral blossoms over turquoise tide.",
+    mood: ["bright", "restorative", "breezy"],
+    bestFor: ["Travel", "Beach days", "Energetic summer planning"],
+    palette: ["#FFB8A1", "#FF9E83", "#FFF6EE", "#9CD3D0", "#F2C879", "#6B4A52"],
+    fontDisplay: "Fraunces",
+    fontBody: "Plus Jakarta Sans",
+    vibe: { gradient: "rich", glow: "warm", glass: false, prefersDark: false, animation: "breath" },
   },
 ];
 
