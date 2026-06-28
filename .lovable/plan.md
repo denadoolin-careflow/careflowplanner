@@ -1,39 +1,50 @@
-## Add 3 summer pastel floral atmospheres
+# Atmosphere persistence + seasonal collections
 
-Extend `src/lib/atmospheres.ts` with three new soft pastel summer atmospheres named after flowers. Each follows the existing `Atmosphere` shape (id, name, tagline, mood, bestFor, 5–6 hex palette, fonts, vibe).
+## 1. Persistence (verify + harden)
+The current atmosphere already saves to `localStorage` (`careflow:atmosphere`) and re-applies on load in `src/lib/atmospheres.ts`. I'll:
+- Add a small hydration guard in `applyAtmosphere` so the `data-atmosphere` attribute is re-asserted on every route change (one `useEffect` in `AppLayout`) to prevent any stray code from clearing it.
+- Confirm `AtmospherePicker` (already mounted in `HeaderQuickSettings` → `AppLayout`) shows on every page.
 
-### New atmospheres
+## 2. New atmospheres (9 added → 3 per season)
 
-1. **Peony Bloom** — `peony-bloom`
-   - Tagline: "Sun-warmed petals and porch breezes."
-   - Palette: `#F7C8D1` (blush), `#F4A6B8` (peony pink), `#FBF4EE` (cream), `#B5D3C2` (mint leaf), `#E8C77E` (butter), `#7A5563` (deep mauve)
-   - Mood: tender, romantic, light
-   - Best for: Journaling, gentle planning, summer mornings
-   - Fonts: Cormorant Garamond + Plus Jakarta Sans
-   - Vibe: gradient `soft`, glow `warm`, glass `true`, prefersDark `false`, animation `breath`
+**Spring (new)**
+- `cherry-mist` — pale pink + sky blue, "First petals after a long thaw."
+- `meadow-dew` — fresh green + buttercream, "Morning grass and open windows."
+- `lilac-rain` — soft lilac + silver, "Gentle April showers."
 
-2. **Wisteria Drift** — `wisteria-drift`
-   - Tagline: "Lavender shade on a long July afternoon."
-   - Palette: `#C9B8E0` (wisteria lilac), `#A99BC9` (dusty violet), `#F4F0F8` (pale cream), `#CFE2D5` (sage mist), `#E8C77E` (sunlit honey), `#6E5A8A` (twilight plum)
-   - Mood: dreamy, cooling, contemplative
-   - Best for: Afternoon resets, creative drift, slow reading
-   - Fonts: Fraunces + DM Sans
-   - Vibe: gradient `soft`, glow `subtle`, glass `true`, prefersDark `false`, animation `drift`
+**Summer** — reuse the 3 already created: `peony-bloom`, `wisteria-drift`, `hibiscus-coast`.
 
-3. **Hibiscus Coast** — `hibiscus-coast`
-   - Tagline: "Coral blossoms over turquoise tide."
-   - Palette: `#FFB8A1` (hibiscus coral), `#FF9E83` (sun coral), `#FFF6EE` (shell white), `#9CD3D0` (lagoon), `#F2C879` (sand gold), `#6B4A52` (deep shell)
-   - Mood: bright, restorative, breezy
-   - Best for: Travel, beach days, energetic summer planning
-   - Fonts: Fraunces + Plus Jakarta Sans
-   - Vibe: gradient `rich`, glow `warm`, glass `false`, prefersDark `false`, animation `breath`
+**Fall (new)**
+- `harvest-ember` — burnt orange + cinnamon, "Wood smoke and golden hour."
+- `amber-orchard` — apple red + ochre + cream, "Cider on the porch."
+- `foggy-pine` — deep evergreen + slate mist, "Cold pine and quiet trails."
 
-### Edits
+**Winter (new)**
+- `snowfall-hush` — pale ice blue + pearl, "First snow at dusk."
+- `evergreen-hearth` — deep spruce + ember red + gold, "Firelight under the tree."
+- `frosted-plum` — icy plum + silver, "Long nights, soft candlelight."
 
-- `src/lib/atmospheres.ts`
-  - Add `"peony-bloom" | "wisteria-drift" | "hibiscus-coast"` to the `AtmosphereId` union.
-  - Append the three new entries to the `ATMOSPHERES` array (after `blossom`).
+Each gets palette, fonts (from already-loaded set), and a vibe tuned to its season. Added to `AtmosphereId` union and `ATMOSPHERES` array in `src/lib/atmospheres.ts`. Default chime mapping in `src/lib/completion-sound.ts` extended for each new id (falls back to a seasonally-appropriate existing preset).
 
-### Out of scope
-- No changes to auto-switch rules, flow color overrides, or settings UI — the new atmospheres show up automatically in the existing picker and the "Flow colors" comparison gallery.
-- No font additions; all chosen fonts are already loaded in `index.html`.
+## 3. Seasonal grouping UI
+Add a `SEASONS` map in `src/lib/atmospheres.ts`:
+```text
+spring  → cherry-mist, meadow-dew, lilac-rain, blossom, dawn
+summer  → peony-bloom, wisteria-drift, hibiscus-coast, coastal-calm
+fall    → harvest-ember, amber-orchard, foggy-pine, golden-hearth
+winter  → snowfall-hush, evergreen-hearth, frosted-plum, mist, moonlit-plum, dark-sage-glass
+anytime → sage-sanctuary, soft-linen
+```
+In `src/components/atmospheres/AtmospherePicker.tsx`, replace the single "All atmospheres" grid with one `Section` per season (Spring · Summer · Fall · Winter · Anytime), keeping Favorites / Recommended / Recently used sections unchanged. Each section uses the existing `Grid` component.
+
+Also extend the same seasonal grouping in `src/components/settings/FlowColorPicker.tsx`'s "Compare atmospheres" gallery so cards are grouped under season headers.
+
+## Files touched
+- `src/lib/atmospheres.ts` — new ids, palettes, `SEASONS` export, route-change re-apply helper.
+- `src/lib/completion-sound.ts` — defaults for 9 new ids.
+- `src/components/atmospheres/AtmospherePicker.tsx` — render by season.
+- `src/components/settings/FlowColorPicker.tsx` — group gallery by season.
+- `src/components/layout/AppLayout.tsx` — re-assert atmosphere attribute on mount.
+
+## Out of scope
+No changes to auto-switch logic, flow-accent overrides, or anywhere else atmospheres are consumed — new ids flow through automatically.
