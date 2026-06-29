@@ -6159,6 +6159,8 @@ export type Database = {
           end_time: string | null
           energy: string | null
           est_minutes: number | null
+          follow_up_at: string | null
+          follow_up_note: string | null
           goal_id: string | null
           icon: string | null
           id: string
@@ -6202,6 +6204,8 @@ export type Database = {
           end_time?: string | null
           energy?: string | null
           est_minutes?: number | null
+          follow_up_at?: string | null
+          follow_up_note?: string | null
           goal_id?: string | null
           icon?: string | null
           id?: string
@@ -6245,6 +6249,8 @@ export type Database = {
           end_time?: string | null
           energy?: string | null
           est_minutes?: number | null
+          follow_up_at?: string | null
+          follow_up_note?: string | null
           goal_id?: string | null
           icon?: string | null
           id?: string
