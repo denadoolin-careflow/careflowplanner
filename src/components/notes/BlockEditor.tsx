@@ -1485,6 +1485,35 @@ export function BlockEditor({
     },
   }), []);
 
+  // Decorate the top-level block containing the selection so CSS can dim others
+  // when focus mode is enabled. The decoration is always present (cheap); the
+  // dim only renders when the wrapper has `.cf-focus`.
+  const focusBlockExtension = useMemo(() => Extension.create({
+    name: "focusBlock",
+    addProseMirrorPlugins() {
+      return [new Plugin({
+        key: new PluginKey("focusBlock"),
+        props: {
+          decorations(state) {
+            const { from } = state.selection;
+            try {
+              const $pos = state.doc.resolve(from);
+              if ($pos.depth < 1) return DecorationSet.empty;
+              const start = $pos.start(1) - 1;
+              const node = state.doc.nodeAt(start);
+              if (!node) return DecorationSet.empty;
+              return DecorationSet.create(state.doc, [
+                Decoration.node(start, start + node.nodeSize, { "data-active-block": "true" }),
+              ]);
+            } catch {
+              return DecorationSet.empty;
+            }
+          },
+        },
+      })];
+    },
+  }), []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -1515,6 +1544,7 @@ export function BlockEditor({
       refExtension,
       hashtagExtension,
       toggleKeymap,
+      focusBlockExtension,
     ],
     content: bodyToHtml(body),
     editorProps: {
