@@ -294,6 +294,26 @@ export function InboxOverview() {
     return { tasksToday, completedToday, tasksUpcoming, needs, apptsToday, apptsUpcoming, bdaysUpcoming, holidaysUpcoming };
   }, [state.tasks, state.appointments, state.birthdays, state.holidays, todayISO, today, weekEnd]);
 
+  // Sorted Upcoming combined list — computed before any early return so hook
+  // order stays stable across renders.
+  const upcomingItems = useMemo(() => {
+    type Item = { id: string; date: string; kind: "task" | "appt" | "bday" | "holiday"; title: string; subtitle?: string; task?: Task; raw?: any };
+    const out: Item[] = [];
+    data.tasksUpcoming.forEach(t => out.push({ id: `t-${t.id}`, date: t.dueDate!, kind: "task", title: t.title, subtitle: t.area, task: t }));
+    (data.apptsUpcoming as any[]).forEach(a => out.push({ id: `a-${a.id}`, date: a.date, kind: "appt", title: a.title, subtitle: a.location ?? a.recipientId ?? "Appointment", raw: a }));
+    (data.bdaysUpcoming as any[]).forEach(b => {
+      const md = String(b.date).slice(5, 10);
+      let occur = todayISO;
+      for (let i = 0; i <= 7; i++) {
+        const d = addDays(today, i);
+        if (format(d, "MM-dd") === md) { occur = format(d, "yyyy-MM-dd"); break; }
+      }
+      out.push({ id: `b-${b.id}`, date: occur, kind: "bday", title: `${b.name ?? "Birthday"}`, subtitle: "Birthday", raw: b });
+    });
+    (data.holidaysUpcoming as any[]).forEach(h => out.push({ id: `h-${h.id}`, date: h.date, kind: "holiday", title: h.name ?? "Holiday", subtitle: "Holiday", raw: h }));
+    return out.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
+  }, [data, today, todayISO]);
+
   const todayCount = data.tasksToday.length + data.apptsToday.length;
   const upcomingCount = data.tasksUpcoming.length + data.apptsUpcoming.length + data.bdaysUpcoming.length + data.holidaysUpcoming.length;
   const needsCount = data.needs.length;
@@ -387,25 +407,6 @@ export function InboxOverview() {
   };
 
   const suggestedTask = suggestion ? (state.tasks as Task[]).find(t => t.id === suggestion.taskId) : null;
-
-  // Sorted Upcoming combined list
-  const upcomingItems = useMemo(() => {
-    type Item = { id: string; date: string; kind: "task" | "appt" | "bday" | "holiday"; title: string; subtitle?: string; task?: Task; raw?: any };
-    const out: Item[] = [];
-    data.tasksUpcoming.forEach(t => out.push({ id: `t-${t.id}`, date: t.dueDate!, kind: "task", title: t.title, subtitle: t.area, task: t }));
-    (data.apptsUpcoming as any[]).forEach(a => out.push({ id: `a-${a.id}`, date: a.date, kind: "appt", title: a.title, subtitle: a.location ?? a.recipientId ?? "Appointment", raw: a }));
-    (data.bdaysUpcoming as any[]).forEach(b => {
-      const md = String(b.date).slice(5, 10);
-      let occur = todayISO;
-      for (let i = 0; i <= 7; i++) {
-        const d = addDays(today, i);
-        if (format(d, "MM-dd") === md) { occur = format(d, "yyyy-MM-dd"); break; }
-      }
-      out.push({ id: `b-${b.id}`, date: occur, kind: "bday", title: `${b.name ?? "Birthday"}`, subtitle: "Birthday", raw: b });
-    });
-    (data.holidaysUpcoming as any[]).forEach(h => out.push({ id: `h-${h.id}`, date: h.date, kind: "holiday", title: h.name ?? "Holiday", subtitle: "Holiday", raw: h }));
-    return out.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
-  }, [data, today, todayISO]);
 
   const showToday = focus === "all" || focus === "today";
   const showUpcoming = focus === "all" || focus === "upcoming";
