@@ -8,10 +8,12 @@ import { resolveTaskIcon } from "@/lib/task-icons";
 import {
   Sun, CalendarRange, Inbox as InboxIcon, Calendar as CalendarIcon,
   Cake, TreePine, Sparkles, Hourglass, Clock, FolderOpen, MoreHorizontal,
-  ArrowRight, CalendarPlus, Bell, ChevronRight,
+  ArrowRight, CalendarPlus, Bell, ChevronRight, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
+import { toast } from "sonner";
+import { haptics } from "@/lib/haptics";
 
 const FOCUS_KEY = "careflow:inbox-overview-focus";
 type Focus = "all" | "today" | "upcoming" | "needs";
@@ -226,6 +228,8 @@ export function InboxOverview() {
   const { state, toggleTask, updateTask } = useStore() as any;
   const navigate = useNavigate();
   const [focus, setFocus] = useState<Focus>(() => readFocus());
+  const [dropActive, setDropActive] = useState(false);
+  const [suggestion, setSuggestion] = useState<{ taskId: string; date: string; time: string; label: string } | null>(null);
 
   const setFocusPersist = (f: Focus) => {
     setFocus(f);
@@ -315,6 +319,60 @@ export function InboxOverview() {
   const needsInsight = featured
     ? `You have ${needsCount} task${needsCount === 1 ? "" : "s"} waiting.`
     : "Inbox is clear of unscheduled items.";
+
+  // Compute a "best opening" for a dropped task: scan today + next 5 days at
+  // 9am/1pm/3pm/7pm and pick the first slot not already filled by a task with
+  // matching startTime.
+  const findBestOpening = (taskId: string) => {
+    const t = (state.tasks as Task[]).find(x => x.id === taskId);
+    const taken = new Set(
+      (state.tasks as Task[])
+        .filter(x => x.dueDate && x.startTime && !x.done)
+        .map(x => `${x.dueDate}T${x.startTime}`),
+    );
+    const slots = ["09:00", "13:00", "15:00", "19:00"];
+    for (let d = 0; d < 6; d++) {
+      const date = format(addDays(today, d), "yyyy-MM-dd");
+      for (const time of slots) {
+        if (!taken.has(`${date}T${time}`)) {
+          const rel = relativeDay(date, today);
+          const label = `${rel}, ${fmtTime(time) || time}`;
+          return { taskId, date, time, label, task: t };
+        }
+      }
+    }
+    const date = format(addDays(today, 1), "yyyy-MM-dd");
+    return { taskId, date, time: "15:00", label: `${relativeDay(date, today)}, 3pm`, task: t };
+  };
+
+  const handleScheduleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDropActive(false);
+    const id = e.dataTransfer.getData("application/x-careflow-task");
+    if (!id) return;
+    const s = findBestOpening(id);
+    setSuggestion({ taskId: s.taskId, date: s.date, time: s.time, label: s.label });
+    haptics.snap?.();
+    toast("Scheduling suggestion ready", { description: s.label });
+  };
+
+  const handleScheduleDragOver = (e: React.DragEvent) => {
+    if (Array.from(e.dataTransfer.types).includes("application/x-careflow-task")) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      if (!dropActive) setDropActive(true);
+    }
+  };
+
+  const acceptSuggestion = async () => {
+    if (!suggestion) return;
+    await updateTask(suggestion.taskId, { dueDate: suggestion.date, startTime: suggestion.time, inbox: false });
+    haptics.snap?.();
+    toast("Scheduled", { description: suggestion.label });
+    setSuggestion(null);
+  };
+
+  const suggestedTask = suggestion ? (state.tasks as Task[]).find(t => t.id === suggestion.taskId) : null;
 
   // Sorted Upcoming combined list
   const upcomingItems = useMemo(() => {
@@ -494,6 +552,15 @@ export function InboxOverview() {
         {/* NEEDS SCHEDULING */}
         {showNeeds && (
         <CardShell accent="from-amber-300/25 via-amber-100/10 to-transparent dark:from-amber-500/15">
+        <div
+          onDragOver={handleScheduleDragOver}
+          onDragLeave={() => setDropActive(false)}
+          onDrop={handleScheduleDrop}
+          className={cn(
+            "rounded-2xl transition-all",
+            dropActive && "ring-2 ring-amber-400/60 ring-offset-2 ring-offset-background",
+          )}
+        >
           <header className="mb-3 flex items-start gap-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-100/70 ring-1 ring-amber-200/60 dark:bg-amber-500/15 dark:ring-amber-500/25">
               <Hourglass className="h-4.5 w-4.5 text-amber-600 dark:text-amber-300" />
@@ -512,6 +579,35 @@ export function InboxOverview() {
           </header>
 
           <InsightBanner tone="amber">{needsInsight}</InsightBanner>
+
+          {suggestion && suggestedTask && (
+            <div className="mt-3 rounded-2xl border border-emerald-300/50 bg-emerald-50/70 p-3 ring-1 ring-emerald-200/50 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:ring-emerald-500/20">
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                  <Sparkles className="h-3 w-3" /> Suggested slot
+                </span>
+                <button type="button" onClick={() => setSuggestion(null)} aria-label="Dismiss suggestion"
+                  className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+              <button type="button" onClick={() => openTaskEditor(suggestedTask.id)}
+                className="mt-1 block w-full truncate text-left text-[13.5px] font-medium text-foreground">
+                {suggestedTask.title}
+              </button>
+              <div className="mt-1 text-[12px] text-foreground/80">{suggestion.label}</div>
+              <div className="mt-2 flex gap-2">
+                <button type="button" onClick={acceptSuggestion}
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 px-3 py-2 text-[12.5px] font-semibold text-white shadow-sm transition-transform hover:scale-[1.02]">
+                  <CalendarPlus className="h-3.5 w-3.5" /> Schedule
+                </button>
+                <button type="button" onClick={() => setSuggestion(null)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-[12.5px] font-medium text-foreground transition-colors hover:bg-muted">
+                  Not now
+                </button>
+              </div>
+            </div>
+          )}
 
           {featured ? (
             <div className="mt-3 rounded-2xl border border-amber-200/40 bg-background/70 p-3 shadow-sm dark:border-amber-500/20">
@@ -575,9 +671,16 @@ export function InboxOverview() {
               </div>
             </div>
           ) : (
-            <div className="mt-3 grid place-items-center rounded-2xl border border-dashed border-border/60 bg-background/40 px-4 py-6 text-center">
+            <div className={cn(
+              "mt-3 grid place-items-center rounded-2xl border border-dashed px-4 py-6 text-center transition-colors",
+              dropActive
+                ? "border-amber-400 bg-amber-50/70 dark:bg-amber-500/10"
+                : "border-border/60 bg-background/40",
+            )}>
               <CalendarPlus className="mb-1 h-5 w-5 text-muted-foreground" />
-              <p className="text-[12.5px] font-medium text-foreground">Drag tasks here to schedule</p>
+              <p className="text-[12.5px] font-medium text-foreground">
+                {dropActive ? "Drop to suggest a time" : "Drag tasks here to schedule"}
+              </p>
               <p className="text-[11px] text-muted-foreground">Suggestions will appear as your inbox fills.</p>
             </div>
           )}
@@ -594,6 +697,7 @@ export function InboxOverview() {
               </button>
             </footer>
           )}
+        </div>
         </CardShell>
         )}
       </div>
