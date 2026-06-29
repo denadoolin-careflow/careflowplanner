@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { toast } from "sonner";
 import { haptics } from "@/lib/haptics";
+import { TaskHoverActions } from "@/components/tasks/TaskHoverActions";
 
 const FOCUS_KEY = "careflow:inbox-overview-focus";
 type Focus = "all" | "today" | "upcoming" | "needs";
@@ -123,7 +124,15 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
     return r.kind === "lucide" ? { Icon: r.Icon } : { Icon: InboxIcon };
   })();
   return (
-    <div className="group flex items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-muted/40">
+    <div
+      className="group flex items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-muted/40"
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/x-careflow-task", t.id);
+        e.dataTransfer.setData("text/plain", t.title);
+      }}
+    >
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onToggle(); }}
@@ -150,10 +159,15 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
         </span>
       )}
       {rightPill && (
-        <span className="shrink-0 rounded-full bg-background/70 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground ring-1 ring-border/50">
+        <span className="shrink-0 rounded-full bg-background/70 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground ring-1 ring-border/50 group-hover:hidden">
           {rightPill}
         </span>
       )}
+      <TaskHoverActions
+        task={t}
+        onEdit={() => openTaskEditor(t.id)}
+        onDetails={() => openTaskEditor(t.id)}
+      />
     </div>
   );
 }
@@ -280,6 +294,26 @@ export function InboxOverview() {
     return { tasksToday, completedToday, tasksUpcoming, needs, apptsToday, apptsUpcoming, bdaysUpcoming, holidaysUpcoming };
   }, [state.tasks, state.appointments, state.birthdays, state.holidays, todayISO, today, weekEnd]);
 
+  // Sorted Upcoming combined list — computed before any early return so hook
+  // order stays stable across renders.
+  const upcomingItems = useMemo(() => {
+    type Item = { id: string; date: string; kind: "task" | "appt" | "bday" | "holiday"; title: string; subtitle?: string; task?: Task; raw?: any };
+    const out: Item[] = [];
+    data.tasksUpcoming.forEach(t => out.push({ id: `t-${t.id}`, date: t.dueDate!, kind: "task", title: t.title, subtitle: t.area, task: t }));
+    (data.apptsUpcoming as any[]).forEach(a => out.push({ id: `a-${a.id}`, date: a.date, kind: "appt", title: a.title, subtitle: a.location ?? a.recipientId ?? "Appointment", raw: a }));
+    (data.bdaysUpcoming as any[]).forEach(b => {
+      const md = String(b.date).slice(5, 10);
+      let occur = todayISO;
+      for (let i = 0; i <= 7; i++) {
+        const d = addDays(today, i);
+        if (format(d, "MM-dd") === md) { occur = format(d, "yyyy-MM-dd"); break; }
+      }
+      out.push({ id: `b-${b.id}`, date: occur, kind: "bday", title: `${b.name ?? "Birthday"}`, subtitle: "Birthday", raw: b });
+    });
+    (data.holidaysUpcoming as any[]).forEach(h => out.push({ id: `h-${h.id}`, date: h.date, kind: "holiday", title: h.name ?? "Holiday", subtitle: "Holiday", raw: h }));
+    return out.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
+  }, [data, today, todayISO]);
+
   const todayCount = data.tasksToday.length + data.apptsToday.length;
   const upcomingCount = data.tasksUpcoming.length + data.apptsUpcoming.length + data.bdaysUpcoming.length + data.holidaysUpcoming.length;
   const needsCount = data.needs.length;
@@ -372,26 +406,16 @@ export function InboxOverview() {
     setSuggestion(null);
   };
 
-  const suggestedTask = suggestion ? (state.tasks as Task[]).find(t => t.id === suggestion.taskId) : null;
-
-  // Sorted Upcoming combined list
-  const upcomingItems = useMemo(() => {
-    type Item = { id: string; date: string; kind: "task" | "appt" | "bday" | "holiday"; title: string; subtitle?: string; task?: Task; raw?: any };
-    const out: Item[] = [];
-    data.tasksUpcoming.forEach(t => out.push({ id: `t-${t.id}`, date: t.dueDate!, kind: "task", title: t.title, subtitle: t.area, task: t }));
-    (data.apptsUpcoming as any[]).forEach(a => out.push({ id: `a-${a.id}`, date: a.date, kind: "appt", title: a.title, subtitle: a.location ?? a.recipientId ?? "Appointment", raw: a }));
-    (data.bdaysUpcoming as any[]).forEach(b => {
-      const md = String(b.date).slice(5, 10);
-      let occur = todayISO;
-      for (let i = 0; i <= 7; i++) {
-        const d = addDays(today, i);
-        if (format(d, "MM-dd") === md) { occur = format(d, "yyyy-MM-dd"); break; }
-      }
-      out.push({ id: `b-${b.id}`, date: occur, kind: "bday", title: `${b.name ?? "Birthday"}`, subtitle: "Birthday", raw: b });
+  const updateSuggestion = (patch: Partial<{ date: string; time: string }>) => {
+    setSuggestion(s => {
+      if (!s) return s;
+      const next = { ...s, ...patch };
+      const rel = relativeDay(next.date, today);
+      return { ...next, label: `${rel}, ${fmtTime(next.time) || next.time}` };
     });
-    (data.holidaysUpcoming as any[]).forEach(h => out.push({ id: `h-${h.id}`, date: h.date, kind: "holiday", title: h.name ?? "Holiday", subtitle: "Holiday", raw: h }));
-    return out.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 8);
-  }, [data, today, todayISO]);
+  };
+
+  const suggestedTask = suggestion ? (state.tasks as Task[]).find(t => t.id === suggestion.taskId) : null;
 
   const showToday = focus === "all" || focus === "today";
   const showUpcoming = focus === "all" || focus === "upcoming";
@@ -596,6 +620,26 @@ export function InboxOverview() {
                 {suggestedTask.title}
               </button>
               <div className="mt-1 text-[12px] text-foreground/80">{suggestion.label}</div>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-300/80">Date</span>
+                  <input
+                    type="date"
+                    value={suggestion.date}
+                    onChange={(e) => updateSuggestion({ date: e.target.value })}
+                    className="h-8 w-full rounded-lg border border-emerald-200/60 bg-background/80 px-2 text-[12px] text-foreground focus:border-emerald-400 focus:outline-none dark:border-emerald-500/30"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-300/80">Time</span>
+                  <input
+                    type="time"
+                    value={suggestion.time}
+                    onChange={(e) => updateSuggestion({ time: e.target.value })}
+                    className="h-8 w-full rounded-lg border border-emerald-200/60 bg-background/80 px-2 text-[12px] text-foreground focus:border-emerald-400 focus:outline-none dark:border-emerald-500/30"
+                  />
+                </label>
+              </div>
               <div className="mt-2 flex gap-2">
                 <button type="button" onClick={acceptSuggestion}
                   className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 px-3 py-2 text-[12.5px] font-semibold text-white shadow-sm transition-transform hover:scale-[1.02]">
