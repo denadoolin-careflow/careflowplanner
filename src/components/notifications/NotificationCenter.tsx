@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, AlertCircle, Calendar, Clock, CheckCircle2, Check, X, CalendarClock, Pencil, Sparkles } from "lucide-react";
+import { Bell, BellRing, AlertCircle, Calendar, Clock, CheckCircle2, Check, X, CalendarClock, Pencil, Sparkles, Inbox as InboxIcon } from "lucide-react";
 import { format, isBefore, isAfter, addDays, parseISO, startOfDay, startOfWeek, differenceInCalendarYears } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -52,10 +52,24 @@ export function NotificationCenter() {
     const dueToday: typeof state.tasks = [];
     const dueTomorrow: typeof state.tasks = [];
     const upcoming: typeof state.tasks = [];
+    const inbox: typeof state.tasks = [];
+    const followUp: typeof state.tasks = [];
+    const nowMs = Date.now();
     for (const t of state.tasks) {
       if (t.done || t.parentTaskId || t.status === "parked") continue;
-      if (!t.dueDate) continue;
       if (dismissed.has(t.id)) continue;
+      // Follow-up reminders that have come due — surface separately.
+      if (t.followUpAt) {
+        const fu = new Date(t.followUpAt).getTime();
+        if (!Number.isNaN(fu) && fu <= nowMs) {
+          followUp.push(t);
+          continue;
+        }
+      }
+      if (!t.dueDate) {
+        if (t.inbox) inbox.push(t);
+        continue;
+      }
       const d = parseISO(t.dueDate);
       if (t.dueDate === todayISO) dueToday.push(t);
       else if (t.dueDate === tomorrowISO) dueTomorrow.push(t);
@@ -63,13 +77,16 @@ export function NotificationCenter() {
       else if (isAfter(d, today) && isBefore(d, weekEnd)) upcoming.push(t);
     }
     const todayAppts = state.appointments.filter(a => apptOccursOn(a, todayISO) && !dismissed.has(a.id));
-    return { overdue, dueToday, dueTomorrow, upcoming, todayAppts };
+    return { overdue, dueToday, dueTomorrow, upcoming, todayAppts, inbox, followUp };
   }, [state.tasks, state.appointments, todayISO, tomorrowISO, today, weekEnd, dismissed]);
 
-  const count = buckets.overdue.length + buckets.dueToday.length + buckets.todayAppts.length + onThisDay.length + cycleCount;
+  const count =
+    buckets.overdue.length + buckets.dueToday.length + buckets.todayAppts.length +
+    onThisDay.length + cycleCount + buckets.inbox.length + buckets.followUp.length;
   const totalShown =
     buckets.overdue.length + buckets.dueToday.length + buckets.dueTomorrow.length +
-    buckets.upcoming.length + buckets.todayAppts.length + onThisDay.length;
+    buckets.upcoming.length + buckets.todayAppts.length + onThisDay.length +
+    buckets.inbox.length + buckets.followUp.length;
 
   const handleComplete = async (id: string, title: string) => {
     await toggleTask(id);
@@ -109,11 +126,13 @@ export function NotificationCenter() {
       </button>
       <button
         className="min-w-0 flex-1 text-left"
-        onClick={() => setEditingId(editingId === t.id ? null : t.id)}
+        onClick={() => { openTaskEditor(t.id); setOpen(false); }}
       >
         <div className="truncate text-xs font-medium">{t.title}</div>
         <div className="truncate text-[10px] text-muted-foreground">
-          {t.dueDate ? format(parseISO(t.dueDate), "EEE MMM d") : "No date"}
+          {t.followUpAt && (!t.dueDate || new Date(t.followUpAt).getTime() <= Date.now())
+            ? `Follow up · ${format(new Date(t.followUpAt), "EEE MMM d · h:mm a")}`
+            : t.dueDate ? format(parseISO(t.dueDate), "EEE MMM d") : t.inbox ? "Inbox" : "No date"}
           {t.area ? ` · ${t.area}` : ""}
         </div>
       </button>
@@ -128,8 +147,16 @@ export function NotificationCenter() {
         </Button>
         <Button
           variant="ghost" size="icon" className="h-6 w-6"
-          title="Dismiss notification"
-          onClick={(e) => { e.stopPropagation(); handleDismiss(t.id, t.title); }}
+          title={t.followUpAt ? "Clear follow-up" : "Dismiss notification"}
+          onClick={async (e) => {
+            e.stopPropagation();
+            if (t.followUpAt && new Date(t.followUpAt).getTime() <= Date.now()) {
+              await updateTask(t.id, { followUpAt: null as any });
+              toast("Follow-up cleared");
+            } else {
+              handleDismiss(t.id, t.title);
+            }
+          }}
         >
           <X className="h-3 w-3" />
         </Button>
@@ -232,6 +259,8 @@ export function NotificationCenter() {
         </div>
         <div className="max-h-[60vh] overflow-y-auto">
           <CycleNotificationsSection onCount={setCycleCount} />
+          <Section kind="task" label="Follow up" items={buckets.followUp} icon={<BellRing className="h-3 w-3" />} color="text-primary" />
+          <Section kind="task" label="Inbox" items={buckets.inbox} icon={<InboxIcon className="h-3 w-3" />} color="text-muted-foreground" />
           {onThisDay.length > 0 && (
             <div>
               <div className="flex items-center gap-1.5 px-2 pb-1 pt-2 text-[10px] uppercase tracking-[0.15em] text-[hsl(350_55%_55%)]">
