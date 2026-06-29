@@ -2434,7 +2434,7 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
    themes so text passes WCAG AA against the soft backgrounds.
    Dark variants already have ample contrast and are not touched.
    ════════════════════════════════════════════════════════════════════════ */
-:root[data-atmosphere="sage-sanctuary"]      { --foreground: 285 22% 14%; --muted-foreground: 285 14% 36%; --border: 50 22% 82%; }
+:root[data-atmosphere="sage-sanctuary"]:not(.dark)      { --foreground: 285 22% 14%; --muted-foreground: 285 14% 36%; --border: 50 22% 82%; }
 :root[data-atmosphere="moonlit-plum"]        { --foreground: 285 38% 14%; --muted-foreground: 285 16% 36%; --border: 285 22% 82%; }
 :root[data-atmosphere="soft-linen"]          { --foreground: 28 24% 16%; --muted-foreground: 28 16% 34%; --border: 35 24% 84%; }
 :root[data-atmosphere="coastal-calm"]:not(.dark)        { --foreground: 195 30% 14%; --muted-foreground: 195 16% 34%; --border: 190 22% 82%; }
