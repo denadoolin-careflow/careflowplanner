@@ -622,6 +622,8 @@ function Toolbar({
   onAddSubtask,
   onOpenMentions,
   hasSubtaskHost,
+  focusMode,
+  onToggleFocusMode,
 }: {
   editor: Editor;
   onPromoteTask: () => void;
@@ -632,6 +634,8 @@ function Toolbar({
   onAddSubtask?: () => void;
   onOpenMentions?: () => void;
   hasSubtaskHost?: boolean;
+  focusMode?: boolean;
+  onToggleFocusMode?: () => void;
 }) {
   if (!editor) return null;
   const setLink = () => {
@@ -756,6 +760,15 @@ function Toolbar({
       <div className="ml-auto flex shrink-0 items-center gap-0.5 pl-1">
         <ToolbarButton onClick={() => editor.chain().focus().undo().run()} label="Undo (⌘Z)"><svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-4"/></svg></ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().redo().run()} label="Redo (⌘⇧Z)"><svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h4"/></svg></ToolbarButton>
+        {onToggleFocusMode && (
+          <ToolbarButton
+            active={focusMode}
+            onClick={onToggleFocusMode}
+            label={focusMode ? "Exit focus mode" : "Focus on current block"}
+          >
+            <FocusIcon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+          </ToolbarButton>
+        )}
         {onToggleFullscreen && (
           <ToolbarButton onClick={onToggleFullscreen} label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
             {isFullscreen ? <Minimize2 className="h-[18px] w-[18px]" strokeWidth={1.75} /> : <Maximize2 className="h-[18px] w-[18px]" strokeWidth={1.75} />}
