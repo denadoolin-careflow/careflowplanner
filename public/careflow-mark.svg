@@ -1,24 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6">
-  <defs>
-    <linearGradient id="g" x1="6" y1="6" x2="42" y2="42" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#e8a3a3"/>
-      <stop offset="55%" stop-color="#c98ab8"/>
-      <stop offset="100%" stop-color="#8aa9d6"/>
-    </linearGradient>
-  </defs>
-  <g stroke="url(#g)">
-    <circle cx="24" cy="24" r="21"/>
-    <path d="M24 3 C 14 12 34 24 24 45"/>
-    <rect x="9" y="14" width="13" height="11" rx="1.6"/>
-    <path d="M12 13v2.4M19 13v2.4M9 17.4h13"/>
-    <path d="M14.4 20.4c0-.7.55-1.2 1.15-1.2.42 0 .78.22 1 .55.22-.33.58-.55 1-.55.6 0 1.15.5 1.15 1.2 0 1.05-2.15 2.3-2.15 2.3s-2.15-1.25-2.15-2.3z"/>
-    <path d="M11 31 C 13 28 16 27 19 27"/>
-    <path d="M12.4 29.6c-.9-.2-1.6-.9-1.8-1.8.9.2 1.6.9 1.8 1.8z"/>
-    <path d="M14.6 28.4c-.7-.5-1-1.4-.8-2.3.7.5 1 1.4.8 2.3z"/>
-    <path d="M17 27.6c-.4-.7-.3-1.7.3-2.4.4.7.3 1.7-.3 2.4z"/>
-    <circle cx="33.5" cy="22" r="2.4"/>
-    <path d="M27.5 33 C 27.5 28 30.2 25.4 33.5 25.4 C 36.8 25.4 39.5 28 39.5 32"/>
-    <path d="M29.6 33 C 29.8 30.4 31.6 28.8 33.7 28.8"/>
-    <path d="M31.6 32.4c0-1 .8-1.7 1.65-1.7.6 0 1.1.32 1.4.8.3-.48.8-.8 1.4-.8.85 0 1.65.7 1.65 1.7 0 1.5-3.05 3.3-3.05 3.3s-3.05-1.8-3.05-3.3z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect x="2" y="2" width="96" height="96" rx="22" fill="#f4ecdb"/>
+  <path d="M50 8 A42 42 0 0 0 50 92 A21 21 0 0 1 50 50 A21 21 0 0 0 50 8 Z" fill="#f4ecdb"/>
+  <path d="M50 8 A42 42 0 0 1 50 92 A21 21 0 0 0 50 50 A21 21 0 0 1 50 8 Z" fill="#7d9a7a"/>
+  <g fill="none" stroke="#5e7a5b" stroke-width="0.9" stroke-linejoin="round">
+    <path d="M40 78 Q 38 62 44 50 Q 50 38 52 22"/>
   </g>
+  <g fill="#a8c0a0" stroke="#5e7a5b" stroke-width="0.8">
+    <path d="M40 76 Q 33 74 31 68 Q 38 67 42 72 Z"/>
+    <path d="M40 60 Q 32 56 32 48 Q 40 49 44 56 Z"/>
+    <path d="M52 40 Q 62 36 70 40 Q 64 48 54 48 Z"/>
+    <path d="M62 32 Q 70 28 78 32 Q 72 40 62 40 Z"/>
+  </g>
+  <circle cx="52" cy="30" r="10" fill="#7d9a7a" stroke="#f4ecdb" stroke-width="1.2"/>
+  <path d="M52 35 C 49 32 46.5 30.2 46.5 27.8 C 46.5 26.2 47.8 25 49.4 25 C 50.5 25 51.5 25.6 52 26.5 C 52.5 25.6 53.5 25 54.6 25 C 56.2 25 57.5 26.2 57.5 27.8 C 57.5 30.2 55 32 52 35 Z" fill="#f4d9a4"/>
+  <circle cx="58" cy="72" r="11" fill="#f4ecdb" stroke="#cdbf9f" stroke-width="0.8"/>
+  <g stroke="#7d9a7a" stroke-width="1" stroke-linecap="round" fill="none">
+    <rect x="52" y="68" width="12" height="9" rx="1.2"/>
+    <path d="M54.5 67v2 M61.5 67v2 M52 71h12"/>
+  </g>
+  <path d="M58 76 C 56.6 74.7 55.4 73.9 55.4 72.8 C 55.4 72.1 55.95 71.6 56.65 71.6 C 57.15 71.6 57.6 71.85 58 72.25 C 58.4 71.85 58.85 71.6 59.35 71.6 C 60.05 71.6 60.6 72.1 60.6 72.8 C 60.6 73.9 59.4 74.7 58 76 Z" fill="#f4d9a4"/>
 </svg>
