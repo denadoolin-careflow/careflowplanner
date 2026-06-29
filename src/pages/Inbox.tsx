@@ -27,6 +27,7 @@ import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isToday, isFuture, parseISO, format } from "date-fns";
 import { InboxIllustration } from "@/components/inbox/InboxIllustration";
+import { InboxOverview } from "@/components/inbox/InboxOverview";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
 import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReviewSheet";
 import { TagPicker } from "@/components/tags/TagPicker";
@@ -367,9 +368,17 @@ function InboxInner() {
     return Array.from(lower);
   }, [activeCategories, extraTags]);
 
-  const submitCapture = async (overrideArea?: Area) => {
-    const raw = draft.trim();
+  // Capture-in-flight guard prevents an accidental double-submit when Enter
+  // races with a click on the Capture button.
+  const submittingRef = useRef(false);
+  const submitCapture = async (overrideArea?: Area, explicitRaw?: string) => {
+    if (submittingRef.current) return;
+    const liveDraft = typeof explicitRaw === "string" ? explicitRaw : draft;
+    const raw = (liveDraft ?? "").trim();
     if (!raw) return;
+    submittingRef.current = true;
+    // Reset the guard after a tick — covers both success and thrown errors.
+    setTimeout(() => { submittingRef.current = false; }, 600);
     // When kind is not "task", route into today's schedule instead of inbox.
     if (captureKind !== "task") {
       const today = format(new Date(), "yyyy-MM-dd");
@@ -744,7 +753,16 @@ function InboxInner() {
                 ref={captureInputRef}
                 value={draft}
                 onChange={setDraft}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Pass the input's current value directly so a pending
+                    // state update can't swallow the submit.
+                    const v = (e.currentTarget as HTMLInputElement).value;
+                    void submitCapture(undefined, v);
+                  }
+                }}
                 onFocus={() => setCaptureFocused(true)}
                 onBlur={handleCaptureBlur}
                 placeholder={
@@ -1251,9 +1269,12 @@ function InboxInner() {
         )}
         </section>
 
+        {/* ────────── Today / Upcoming / Needs scheduling ────────── */}
+        <InboxOverview />
+
         {/* ────────── Current Inbox Items (only when present) ────────── */}
         {items.length > 0 ? (
-          <section className="rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
+          <section id="inbox-held" className="scroll-mt-24 rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
             <InboxHeldHeader hasSuggestions={Object.keys(suggestions).length > 0} onApplyAll={acceptAllSuggestions} />
             {inlineAdd !== null && (
               <div className="mb-3 flex items-center gap-2 rounded-2xl border border-primary/30 bg-background/80 px-3 py-2 shadow-[0_0_0_4px_hsl(var(--primary)/0.08)]">

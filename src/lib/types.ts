@@ -70,6 +70,11 @@ export interface Task {
   updatedAt?: string;
   /** CARE anchor link (default-anchor key or custom anchor key). */
   anchorKey?: string;
+  /** ISO timestamp for an optional follow-up reminder. Surfaces in the
+   *  Notification Center when reached. */
+  followUpAt?: string;
+  /** Optional note shown alongside the follow-up reminder. */
+  followUpNote?: string;
 }
 
 

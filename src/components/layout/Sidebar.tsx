@@ -182,6 +182,27 @@ function useSidebarData(forceExpanded: boolean) {
   useEffect(() => {
     try { window.localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0"); } catch {}
   }, [collapsed]);
+
+  // Focus mode: when a task editor opens, auto-collapse the sidebar so the
+  // writing surface is centered. Restore the previous state on close.
+  const prevCollapsedRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    const onFocusMode = (e: Event) => {
+      const detail = (e as CustomEvent<{ on: boolean }>).detail;
+      if (!detail) return;
+      if (detail.on) {
+        if (prevCollapsedRef.current === null) prevCollapsedRef.current = collapsed;
+        if (!collapsed) setCollapsed(true);
+      } else {
+        if (prevCollapsedRef.current !== null) {
+          setCollapsed(prevCollapsedRef.current);
+          prevCollapsedRef.current = null;
+        }
+      }
+    };
+    window.addEventListener("careflow:focus-mode", onFocusMode as EventListener);
+    return () => window.removeEventListener("careflow:focus-mode", onFocusMode as EventListener);
+  }, [collapsed]);
   const { state, updateArea } = useStore();
   // Dedupe areas by name as a defensive guard against any prior duplicates.
   const areas = (() => {

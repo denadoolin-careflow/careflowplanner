@@ -39,6 +39,7 @@ import { useAtmosphere } from "@/lib/atmospheres";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TaskAIAssistPopover } from "@/components/tasks/TaskAIAssistPopover";
 import { PomodoroDialog } from "@/components/routines/PomodoroDialog";
+import { FollowUpPopover } from "@/components/tasks/FollowUpPopover";
 
 type Props = {
   open: boolean;
@@ -154,6 +155,16 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
       setNotesExpanded(!!(task.notes && task.notes.trim().length > 0));
     }
   }, [task?.id]);
+
+  // Focus mode: when the editor opens, collapse the sidebar so the writing
+  // surface is centered. Restore on close.
+  useEffect(() => {
+    if (!open) return;
+    try { window.dispatchEvent(new CustomEvent("careflow:focus-mode", { detail: { on: true } })); } catch {}
+    return () => {
+      try { window.dispatchEvent(new CustomEvent("careflow:focus-mode", { detail: { on: false } })); } catch {}
+    };
+  }, [open]);
 
   const parsed = nlpOn && draft?.title.trim() ? parseTaskInput(draft.title) : null;
 
@@ -549,6 +560,17 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               projects={state.projects ?? []}
               onSelect={(id) => set("projectId", id)}
               onClear={() => set("projectId", undefined)}
+            />
+
+            <FollowUpPopover
+              variant="pill"
+              value={draft.followUpAt ?? null}
+              note={draft.followUpNote ?? null}
+              onChange={async ({ followUpAt, followUpNote }) => {
+                set("followUpAt", followUpAt ?? undefined);
+                set("followUpNote", followUpNote ?? undefined);
+                await updateTask(draft.id, { followUpAt: followUpAt ?? undefined, followUpNote: followUpNote ?? undefined } as any);
+              }}
             />
           </div>
 

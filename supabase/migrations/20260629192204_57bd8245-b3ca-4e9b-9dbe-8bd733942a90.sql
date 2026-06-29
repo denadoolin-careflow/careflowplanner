@@ -1,0 +1,1 @@
+ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS follow_up_at timestamptz; ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS follow_up_note text;

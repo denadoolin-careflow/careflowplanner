@@ -1,47 +1,90 @@
-## Goal
-Replace the existing CareFlow logo with the uploaded yin-yang + leaves + heart + calendar mark, rebuilt as a themable SVG so it follows the active atmosphere and light/dark mode. Add the tagline "Plan · Care · Grow" everywhere the wordmark appears.
+## Goals
+Five connected improvements to the Inbox / Task system.
 
-## New themable SVG mark
+---
 
-Create `src/components/widgets/CareFlowMark.tsx` (replacing the current raster wrapper) that renders the design as inline SVG using semantic tokens — no hex colors:
+### 1. Fix "Capture" + Enter reliability
+**Problem:** Pressing Enter after typing sometimes doesn't fire because the recipient-suggestion strip / kind chips / area override controls steal focus and `submitCapture` short-circuits (`captureKind` reset, blur firing before submit).
 
-- Outer rounded-square plate → `fill: hsl(var(--card))` with a 1px `stroke: hsl(var(--border))` and a soft inner highlight.
-- Yin half (lighter side) → `fill: hsl(var(--background))` with a hairline `hsl(var(--border))` outline for the S-curve.
-- Yang half (darker side) → `fill: hsl(var(--primary))`.
-- Leaf stem and three leaves → `fill: hsl(var(--primary) / 0.45)` with `stroke: hsl(var(--primary) / 0.7)` outline so they read on both halves.
-- Heart inside top circle → `fill: hsl(var(--accent))`, circle `fill: hsl(var(--primary))`.
-- Calendar inside bottom circle → outer circle `fill: hsl(var(--background))`, calendar body `stroke: hsl(var(--primary))`, mini heart `fill: hsl(var(--accent))`.
-- A subtle inner shadow / highlight via `<filter>` (drop-shadow + inset) for the embossed feel; intensity stays soft enough to read in dark mode.
+**Fix** in `src/pages/Inbox.tsx`:
+- In the input's `onKeyDown`, capture the current `draft`/`captureKind`/`overrideDue` into local consts before awaiting, and call `submitCapture` synchronously with `e.preventDefault()` + `e.stopPropagation()`.
+- Make `submitCapture` accept a `raw` argument so the Enter handler passes the trimmed value directly, bypassing any race with `setDraft("")` from a blur.
+- Defer `handleCaptureBlur`'s "hide controls" with a `requestAnimationFrame` guard so it doesn't run between keydown and submit.
+- Add a button-level guard: keep `onMouseDown`/`onTouchStart` (already present) but also bind `onPointerDown` to cover stylus / hybrid devices.
 
-Because every fill/stroke is an HSL token, the mark automatically re-tints when the atmosphere changes (sage-sanctuary stays cream/green, harvest-ember becomes cream/burnt-orange, snowfall-hush becomes pale-blue/navy, etc.) and inverts naturally in dark mode (card/background tokens are deep, primary stays the atmosphere accent).
+---
 
-Props mirror today's API (`size`, `className`, `rounded`, `decorative`) so existing call sites don't change.
+### 2. Sync Inbox tasks → Notification Center
+In `src/components/notifications/NotificationCenter.tsx`:
+- Add a new "Inbox" bucket: tasks where `t.inbox === true && !t.dueDate && !t.done && !t.parentTaskId`, deduped against dated buckets.
+- Render the bucket above "Overdue" with an `InboxIcon` and the same row UI as other tasks.
+- Wire the row's title click to `openTaskEditor(t.id)` (already imported but unused) and close the popover.
+- Include inbox count in the bell `count` so the badge reflects unprocessed items.
+- Add per-row "Schedule today / tomorrow" via the existing `ReschedulePopover` (already works because it just sets `dueDate`).
 
-## Wordmark with tagline
+---
 
-Update `src/components/widgets/CareFlowLogo.tsx` into a two-line lockup:
-- Line 1: "CareFlow" in `font-display`.
-- Line 2: "Plan · Care · Grow" in uppercase, tracked, `text-muted-foreground`.
-- New `showTagline` prop (default `true`); `size` prop controls the icon alongside.
-- Internally renders the new `<CareFlowMark>` next to the text. When used as icon-only (size-only, no text) it falls back to just the mark.
+### 3. Focused Task Editor (sidebar hidden, centered)
+In `src/components/tasks/TaskEditor.tsx`:
+- When the editor opens on desktop, dispatch a `careflow:focus-mode` event that `Sidebar.tsx` listens for and collapses (restoring previous state on close).
+- Widen the desktop `DialogContent` to `max-w-3xl`, center it with extra top padding, and make the notes/subtasks column the primary area (full width below the title; metadata moves to a slim collapsible drawer on the right).
+- Add a "Focus" toggle in the editor header so users can opt out.
+- Persist focus-mode preference in `localStorage` (`careflow:editor-focus-mode`).
 
-## Tagline placements
+`src/components/layout/Sidebar.tsx`:
+- Subscribe to `careflow:focus-mode` (`{ on: boolean }`); when `on`, collapse and remember prior state; when `off`, restore.
 
-Add or correct "Plan · Care · Grow" wherever the wordmark appears:
+---
 
-- `src/components/layout/Sidebar.tsx` line ~947 → change the existing "Care · Plan · Grow" to "Plan · Care · Grow".
-- `src/components/layout/AppLayout.tsx` header → the existing `<CareFlowLogo size={32} />` becomes the icon-only mark; the page header already shows "CareFlow" eyebrow text — update that block to use the wordmark with tagline on `sm:` and above.
-- `src/pages/Landing.tsx` → swap the three `<CareFlowMark>` brand usages (header line ~606, footer line ~962) for the wordmark+tagline lockup; CTA button instances keep the icon-only mark.
-- `src/pages/Auth.tsx` line ~167 and `src/pages/Waitlist.tsx` line ~25 → wrap the mark with the tagline lockup beneath.
-- `index.html` → keep `<title>` but append "· Plan · Care · Grow" so the browser tab carries it.
-- `public/careflow-mark.svg` → regenerate to match the new SVG (used as favicon / share icon) so external surfaces match.
+### 4. New top-of-Inbox sections: Today · Upcoming · Needs scheduling
+In `src/pages/Inbox.tsx`, add a new `InboxOverview` block above "Held in your inbox":
+- **Today** — tasks where `dueDate === today` OR `appointments` occurring today (uses `apptOccursOn`). Groups by morning/afternoon/evening via existing `dayPart`.
+- **Upcoming** — next 7 days (tasks + appointments + birthdays + holidays from store), grouped by date.
+- **Needs scheduling** — inbox tasks with no `dueDate` (limit 8, "View all" jumps to "Held in your inbox" anchor).
+- Each row reuses `TaskRow` for tasks and a compact `EventRow` for appointments/events. Click opens `openTaskEditor` or the appointment editor (`openAppointmentEditor` if present, else navigates to `/calendar?appt=`).
+- Section headers show counts; sections collapse with state persisted in `localStorage` (`careflow:inbox-overview`).
 
-## Cleanup
-- Delete the now-unused raster asset pointers `src/assets/careflow-logo.png.asset.json`, `careflow-app-icon.png.asset.json`, and `careflow-logo-full.png.asset.json` only after confirming no other imports remain (rg pass).
-- No changes to atmosphere CSS — the SVG inherits everything from existing tokens.
+---
 
-## Verify
-Run Playwright on `/today`, `/landing`, `/auth` after switching atmospheres (sage-sanctuary, harvest-ember, snowfall-hush) in both light and dark mode; screenshot the sidebar header and confirm:
-- The mark recolors per atmosphere (yang half = primary, plate = card).
-- "Plan · Care · Grow" appears under "CareFlow" in sidebar, header, landing, auth, waitlist.
-- Contrast remains AA in dark mode.
+### 5. Follow-up reminders on tasks
+Schema + types:
+- Add `follow_up_at timestamptz` and `follow_up_note text` columns to `public.tasks` (migration with appropriate GRANTs already in place — table exists).
+- Extend `Task` in `src/lib/types.ts` with `followUpAt?: string; followUpNote?: string;`.
+- Update store mappers (`src/lib/store.ts` + Supabase row converters) to read/write the new fields.
+
+UI:
+- New `FollowUpPopover` component (in `src/components/tasks/FollowUpPopover.tsx`) with presets: "In 1 hour", "Tonight", "Tomorrow morning", "In 3 days", "Next week", custom date+time.
+- Integrate in `TaskEditor` (metadata column) and as a small bell icon in `TaskRow` hover controls.
+- When `followUpAt <= now()` and the task is still active, surface it in the Notification Center as a new "Follow up" section (similar styling to "Overdue", icon `BellRing`); dismissing clears `followUpAt`.
+- Toasts on set/clear; haptics on set.
+
+---
+
+## Technical notes
+
+```text
+Inbox page
+├── InboxOverview (new)              ← Today / Upcoming / Needs scheduling
+├── Quick Capture (Enter fix)
+└── Held in your inbox (existing buckets)
+
+NotificationCenter
+├── Cycle
+├── On this day
+├── Inbox (new — undated inbox tasks)
+├── Follow up (new — followUpAt due)
+├── Overdue / Today / Tomorrow / Upcoming
+└── Appointments today
+```
+
+Files touched:
+- `src/pages/Inbox.tsx` — Enter fix, new overview section
+- `src/components/notifications/NotificationCenter.tsx` — Inbox + Follow-up buckets, editor open on click
+- `src/components/tasks/TaskEditor.tsx` — focus mode, wider centered layout
+- `src/components/layout/Sidebar.tsx` — listen for focus-mode collapse
+- `src/components/tasks/FollowUpPopover.tsx` — new
+- `src/components/cards/TaskRow.tsx` — follow-up bell trigger
+- `src/lib/types.ts`, `src/lib/store.ts` — `followUpAt` field
+- Supabase migration — add `follow_up_at`, `follow_up_note` to `tasks`
+
+No design-system tokens are hardcoded; all uses semantic atmosphere colors.
