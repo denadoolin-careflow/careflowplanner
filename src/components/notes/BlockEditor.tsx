@@ -1982,6 +1982,8 @@ export function BlockEditor({
             onAddSubtask={addSubtaskNow}
             onOpenMentions={openMentions}
             hasSubtaskHost={!!subtaskHost}
+            focusMode={prefs.focusMode}
+            onToggleFocusMode={() => setPrefs({ focusMode: !prefs.focusMode })}
           />
         </div>
       )}
@@ -2018,6 +2020,8 @@ export function BlockEditor({
             onAddSubtask={addSubtaskNow}
             onOpenMentions={openMentions}
             hasSubtaskHost={!!subtaskHost}
+            focusMode={prefs.focusMode}
+            onToggleFocusMode={() => setPrefs({ focusMode: !prefs.focusMode })}
           />
         </div>
       )}
@@ -2050,6 +2054,8 @@ export function BlockEditor({
             onAddSubtask={addSubtaskNow}
             onOpenMentions={openMentions}
             hasSubtaskHost={!!subtaskHost}
+            focusMode={prefs.focusMode}
+            onToggleFocusMode={() => setPrefs({ focusMode: !prefs.focusMode })}
           />
         </div>
       )}
