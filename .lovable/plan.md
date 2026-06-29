@@ -1,90 +1,43 @@
-## Goals
-Five connected improvements to the Inbox / Task system.
+## Scope
+Redesign only `src/components/inbox/InboxOverview.tsx` — the three planning cards (Today, Upcoming, Needs Scheduling) on the Inbox page. Quick Capture, nav, top bar, and the "Held in your inbox" buckets below remain untouched.
 
----
+## Visual Language (shared across all three)
+- Soft translucent cards: `bg-card/60 backdrop-blur-md` with a faint inner highlight (top gradient) and `rounded-[20px]`.
+- Atmospheric accent gradients per card derived from semantic tokens (no hardcoded colors): Today = warm amber/sun, Upcoming = primary/cool, Needs Scheduling = amber/glow.
+- Soft elevation `shadow-[0_8px_30px_-12px_hsl(var(--foreground)/0.08)]`, 1px hairline border `border-border/50`.
+- Larger row height (44–48px), rounded metadata pills, contextual icons via existing `categoryIconFor` / `task-icons` helpers, colored priority dots (red/amber/blue from tokens).
+- A small toggle at the top of the 3-card section: **All · Today (n) · Upcoming (n) · Needs (n)** — on mobile collapses to a single visible card; on desktop dims the others and emphasizes the selected. Persists to `localStorage` (`careflow:inbox-overview-focus`).
 
-### 1. Fix "Capture" + Enter reliability
-**Problem:** Pressing Enter after typing sometimes doesn't fire because the recipient-suggestion strip / kind chips / area override controls steal focus and `submitCapture` short-circuits (`captureKind` reset, blur firing before submit).
+## Today Card
+- Header: ☀️ icon chip · "Today" · `n tasks • Xh Ym` (sum task `estMinutes`) · right-side **circular completion ring** (SVG) showing `% done today`.
+- AI insight banner (glass pill) using existing copy heuristics — e.g. "Three tasks can be completed in under 15 min." (derived locally from `estMinutes ≤ 15` count). No new edge function.
+- Tasks grouped by **Morning / Afternoon / Evening** using existing `dayPart` logic + start-time inference. Each group header shows count chip.
+- Row: checkbox (toggles `done`), contextual icon, title (wrap), priority dot, day-part / time pill on the right.
+- Footer: `✓ N completed today · View all →` (navigates to `/today`).
 
-**Fix** in `src/pages/Inbox.tsx`:
-- In the input's `onKeyDown`, capture the current `draft`/`captureKind`/`overrideDue` into local consts before awaiting, and call `submitCapture` synchronously with `e.preventDefault()` + `e.stopPropagation()`.
-- Make `submitCapture` accept a `raw` argument so the Enter handler passes the trimmed value directly, bypassing any race with `setDraft("")` from a blur.
-- Defer `handleCaptureBlur`'s "hide controls" with a `requestAnimationFrame` guard so it doesn't run between keydown and submit.
-- Add a button-level guard: keep `onMouseDown`/`onTouchStart` (already present) but also bind `onPointerDown` to cover stylus / hybrid devices.
+## Upcoming Card
+- Header: 📅 icon chip · "Upcoming" · `n items • Next 7 days` · calendar icon button (navigates `/calendar`).
+- AI insight banner: localized rule-based copy ("Tomorrow is your busiest day", "Friday has the most free time", "You have N family activities this week") derived from grouped counts.
+- Rows merge tasks + appointments + birthdays + holidays sorted by date. Each row: contextual icon (appointment / cake / holiday tree / task icon), title, area/category subtitle, **relative-date pill** ("Tomorrow", "In 3 days") + absolute date underneath.
+- Holiday rows use amber pill; appointments use primary pill; birthdays use rose pill.
+- Footer: `📅 View full calendar →`.
 
----
+## Needs Scheduling Card
+- Warm amber palette throughout (token-based, `bg-amber-500/10` + `ring-amber-500/20` already used; keep consistent with light/dark).
+- Header: ⏳ icon chip · "Needs Scheduling" · `n task waiting` · sparkle suggestion button.
+- AI scheduling insight banner ("You have 1 task waiting", "Best opening tomorrow afternoon", "This task fits a 30-min window") — rule-based using `estMinutes` + free time from today's tasks.
+- Featured elevated card for the top unscheduled task: folder icon, title, category, est. time, priority pill, **Best Opening** suggestion block ("Tomorrow, 3:00 PM · 60 min available") computed locally from free slots.
+- Quick action row: **Schedule** (primary gradient — uses `--primary` token), **Snooze**, **More** (overflow menu with Park, Delete).
+- Dashed drop zone below ("📅 Drag tasks here to schedule") — visual only this iteration; existing inbox DnD already handles drops, will register the area as a drop target wired to set `dueDate=today` in a follow-up if needed.
+- Footer: `View unscheduled (N) →` scrolls to `#inbox-held`.
 
-### 2. Sync Inbox tasks → Notification Center
-In `src/components/notifications/NotificationCenter.tsx`:
-- Add a new "Inbox" bucket: tasks where `t.inbox === true && !t.dueDate && !t.done && !t.parentTaskId`, deduped against dated buckets.
-- Render the bucket above "Overdue" with an `InboxIcon` and the same row UI as other tasks.
-- Wire the row's title click to `openTaskEditor(t.id)` (already imported but unused) and close the popover.
-- Include inbox count in the bell `count` so the badge reflects unprocessed items.
-- Add per-row "Schedule today / tomorrow" via the existing `ReschedulePopover` (already works because it just sets `dueDate`).
-
----
-
-### 3. Focused Task Editor (sidebar hidden, centered)
-In `src/components/tasks/TaskEditor.tsx`:
-- When the editor opens on desktop, dispatch a `careflow:focus-mode` event that `Sidebar.tsx` listens for and collapses (restoring previous state on close).
-- Widen the desktop `DialogContent` to `max-w-3xl`, center it with extra top padding, and make the notes/subtasks column the primary area (full width below the title; metadata moves to a slim collapsible drawer on the right).
-- Add a "Focus" toggle in the editor header so users can opt out.
-- Persist focus-mode preference in `localStorage` (`careflow:editor-focus-mode`).
-
-`src/components/layout/Sidebar.tsx`:
-- Subscribe to `careflow:focus-mode` (`{ on: boolean }`); when `on`, collapse and remember prior state; when `off`, restore.
-
----
-
-### 4. New top-of-Inbox sections: Today · Upcoming · Needs scheduling
-In `src/pages/Inbox.tsx`, add a new `InboxOverview` block above "Held in your inbox":
-- **Today** — tasks where `dueDate === today` OR `appointments` occurring today (uses `apptOccursOn`). Groups by morning/afternoon/evening via existing `dayPart`.
-- **Upcoming** — next 7 days (tasks + appointments + birthdays + holidays from store), grouped by date.
-- **Needs scheduling** — inbox tasks with no `dueDate` (limit 8, "View all" jumps to "Held in your inbox" anchor).
-- Each row reuses `TaskRow` for tasks and a compact `EventRow` for appointments/events. Click opens `openTaskEditor` or the appointment editor (`openAppointmentEditor` if present, else navigates to `/calendar?appt=`).
-- Section headers show counts; sections collapse with state persisted in `localStorage` (`careflow:inbox-overview`).
-
----
-
-### 5. Follow-up reminders on tasks
-Schema + types:
-- Add `follow_up_at timestamptz` and `follow_up_note text` columns to `public.tasks` (migration with appropriate GRANTs already in place — table exists).
-- Extend `Task` in `src/lib/types.ts` with `followUpAt?: string; followUpNote?: string;`.
-- Update store mappers (`src/lib/store.ts` + Supabase row converters) to read/write the new fields.
-
-UI:
-- New `FollowUpPopover` component (in `src/components/tasks/FollowUpPopover.tsx`) with presets: "In 1 hour", "Tonight", "Tomorrow morning", "In 3 days", "Next week", custom date+time.
-- Integrate in `TaskEditor` (metadata column) and as a small bell icon in `TaskRow` hover controls.
-- When `followUpAt <= now()` and the task is still active, surface it in the Notification Center as a new "Follow up" section (similar styling to "Overdue", icon `BellRing`); dismissing clears `followUpAt`.
-- Toasts on set/clear; haptics on set.
-
----
-
-## Technical notes
-
-```text
-Inbox page
-├── InboxOverview (new)              ← Today / Upcoming / Needs scheduling
-├── Quick Capture (Enter fix)
-└── Held in your inbox (existing buckets)
-
-NotificationCenter
-├── Cycle
-├── On this day
-├── Inbox (new — undated inbox tasks)
-├── Follow up (new — followUpAt due)
-├── Overdue / Today / Tomorrow / Upcoming
-└── Appointments today
-```
-
+## Technical Notes
 Files touched:
-- `src/pages/Inbox.tsx` — Enter fix, new overview section
-- `src/components/notifications/NotificationCenter.tsx` — Inbox + Follow-up buckets, editor open on click
-- `src/components/tasks/TaskEditor.tsx` — focus mode, wider centered layout
-- `src/components/layout/Sidebar.tsx` — listen for focus-mode collapse
-- `src/components/tasks/FollowUpPopover.tsx` — new
-- `src/components/cards/TaskRow.tsx` — follow-up bell trigger
-- `src/lib/types.ts`, `src/lib/store.ts` — `followUpAt` field
-- Supabase migration — add `follow_up_at`, `follow_up_note` to `tasks`
+- `src/components/inbox/InboxOverview.tsx` — full rewrite of the three sections; keep public export name and props (none).
+- No new dependencies. Uses existing helpers: `apptOccursOn`, `openTaskEditor`, `categoryIconFor`, `useStore`.
+- Relative-date helper added inline (`formatRelative(date)` returning "Today", "Tomorrow", "In N days", weekday).
+- Insight strings derived locally — no edge function, no schema changes.
+- All colors via semantic tokens or existing token-scoped utility classes; no hex literals.
+- Toggle state persisted via `localStorage` alongside existing `careflow:inbox-overview` open-map.
 
-No design-system tokens are hardcoded; all uses semantic atmosphere colors.
+No other files modified.
