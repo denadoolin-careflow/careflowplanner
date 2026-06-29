@@ -40,7 +40,9 @@ function relativeDay(iso: string, today: Date): string {
 }
 
 function partOfDay(t: Task): "morning" | "afternoon" | "evening" {
-  if (t.dayPart === "morning" || t.dayPart === "afternoon" || t.dayPart === "evening") return t.dayPart;
+  if (t.dayPart === "Morning") return "morning";
+  if (t.dayPart === "Afternoon") return "afternoon";
+  if (t.dayPart === "Evening" || t.dayPart === "Late Night") return "evening";
   if (t.startTime) {
     const h = parseInt(t.startTime.split(":")[0], 10);
     if (h < 12) return "morning";
