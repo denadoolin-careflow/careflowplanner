@@ -27,6 +27,7 @@ import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isToday, isFuture, parseISO, format } from "date-fns";
 import { InboxIllustration } from "@/components/inbox/InboxIllustration";
+import { InboxOverview } from "@/components/inbox/InboxOverview";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
 import { VoiceReviewSheet, type DraftTask } from "@/components/inbox/VoiceReviewSheet";
 import { TagPicker } from "@/components/tags/TagPicker";
