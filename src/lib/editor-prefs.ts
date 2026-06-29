@@ -22,6 +22,8 @@ export interface EditorPrefs {
   customBg: string;   // any CSS color
   customFg: string;   // any CSS color
   titleSize: NoteTitleSize;
+  /** Dim non-active blocks while typing (Craft-style focus). */
+  focusMode: boolean;
 }
 
 const KEY = "careflow.editorPrefs.v1";
@@ -34,6 +36,7 @@ const DEFAULTS: EditorPrefs = {
   customBg: "#f4ede2",
   customFg: "#2a2218",
   titleSize: "medium",
+  focusMode: false,
 };
 
 function read(): EditorPrefs {
