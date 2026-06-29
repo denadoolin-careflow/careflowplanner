@@ -406,6 +406,15 @@ export function InboxOverview() {
     setSuggestion(null);
   };
 
+  const updateSuggestion = (patch: Partial<{ date: string; time: string }>) => {
+    setSuggestion(s => {
+      if (!s) return s;
+      const next = { ...s, ...patch };
+      const rel = relativeDay(next.date, today);
+      return { ...next, label: `${rel}, ${fmtTime(next.time) || next.time}` };
+    });
+  };
+
   const suggestedTask = suggestion ? (state.tasks as Task[]).find(t => t.id === suggestion.taskId) : null;
 
   const showToday = focus === "all" || focus === "today";
@@ -611,6 +620,26 @@ export function InboxOverview() {
                 {suggestedTask.title}
               </button>
               <div className="mt-1 text-[12px] text-foreground/80">{suggestion.label}</div>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-300/80">Date</span>
+                  <input
+                    type="date"
+                    value={suggestion.date}
+                    onChange={(e) => updateSuggestion({ date: e.target.value })}
+                    className="h-8 w-full rounded-lg border border-emerald-200/60 bg-background/80 px-2 text-[12px] text-foreground focus:border-emerald-400 focus:outline-none dark:border-emerald-500/30"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-300/80">Time</span>
+                  <input
+                    type="time"
+                    value={suggestion.time}
+                    onChange={(e) => updateSuggestion({ time: e.target.value })}
+                    className="h-8 w-full rounded-lg border border-emerald-200/60 bg-background/80 px-2 text-[12px] text-foreground focus:border-emerald-400 focus:outline-none dark:border-emerald-500/30"
+                  />
+                </label>
+              </div>
               <div className="mt-2 flex gap-2">
                 <button type="button" onClick={acceptSuggestion}
                   className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 px-3 py-2 text-[12.5px] font-semibold text-white shadow-sm transition-transform hover:scale-[1.02]">
