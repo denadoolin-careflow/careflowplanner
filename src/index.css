@@ -840,6 +840,14 @@
 .bubble-toolbar { gap: 2px; }
 .bubble-toolbar button { transition: transform 120ms ease, background 120ms ease; }
 .bubble-toolbar button:hover { transform: translateY(-1px); }
+.bubble-toolbar { animation: cf-bubble-in 160ms cubic-bezier(.2,.8,.2,1) both; will-change: transform, opacity; }
+@keyframes cf-bubble-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+.bubble-toolbar button:active { transform: scale(0.96); }
+/* Slash + @-mention popup soft entrance via tippy */
+.tippy-box[data-theme~='light-border'] { animation: cf-bubble-in 160ms cubic-bezier(.2,.8,.2,1) both; }
 
 /* ---------- Editor density + font scale ---------- */
 .block-editor { --editor-font-scale: 1; }
