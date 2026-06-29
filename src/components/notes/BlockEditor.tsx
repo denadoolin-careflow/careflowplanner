@@ -1858,6 +1858,7 @@ export function BlockEditor({
         dragActive && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background",
         `editor-theme-${prefs.theme}`,
         `editor-density-${prefs.density}`,
+        prefs.focusMode && "cf-focus",
         fullscreen && "fixed inset-0 z-[90] overflow-auto bg-background p-4 sm:p-8",
       )}
       style={{
