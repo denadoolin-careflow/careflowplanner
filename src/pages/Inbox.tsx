@@ -1268,9 +1268,12 @@ function InboxInner() {
         )}
         </section>
 
+        {/* ────────── Today / Upcoming / Needs scheduling ────────── */}
+        <InboxOverview />
+
         {/* ────────── Current Inbox Items (only when present) ────────── */}
         {items.length > 0 ? (
-          <section className="rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
+          <section id="inbox-held" className="scroll-mt-24 rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
             <InboxHeldHeader hasSuggestions={Object.keys(suggestions).length > 0} onApplyAll={acceptAllSuggestions} />
             {inlineAdd !== null && (
               <div className="mb-3 flex items-center gap-2 rounded-2xl border border-primary/30 bg-background/80 px-3 py-2 shadow-[0_0_0_4px_hsl(var(--primary)/0.08)]">
