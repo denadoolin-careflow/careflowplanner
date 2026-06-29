@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Circle, CheckSquare, Sparkles, Mic, Tag as TagIcon, Clock } from "lucide-react";
+import { Circle, CheckSquare, Sparkles, Mic, Tag as TagIcon, Clock, CalendarPlus } from "lucide-react";
 import { TaskRow } from "@/components/cards/TaskRow";
 import { WhenPopover, type DayPart } from "@/components/inbox/WhenPopover";
 import { useStore } from "@/lib/store";
@@ -99,6 +99,23 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
         <div className="min-w-0 flex-1">
           <TaskRow task={task} variant="card" />
         </div>
+        {/* Tiny native HTML5 drag handle to drop the task on schedule targets
+            (e.g. Needs Scheduling card). Uses HTML5 drag so it doesn't fight
+            with dnd-kit's pointer-based row sort. */}
+        <span
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("application/x-careflow-task", task.id);
+            e.dataTransfer.setData("text/plain", task.title);
+            haptics.tap?.();
+          }}
+          title="Drag to schedule"
+          aria-label="Drag to schedule"
+          className="mt-1 hidden h-6 w-6 shrink-0 cursor-grab items-center justify-center rounded-full text-muted-foreground/40 transition-colors hover:bg-muted/50 hover:text-muted-foreground/80 active:cursor-grabbing sm:inline-flex"
+        >
+          <CalendarPlus className="h-3.5 w-3.5" />
+        </span>
       </div>
 
       {/* Meta row below the task: source + age (left), When picker (right) */}
