@@ -27,7 +27,8 @@ import { Color } from "@tiptap/extension-color";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
 import Suggestion from "@tiptap/suggestion";
 import { Extension, Node as TiptapNode } from "@tiptap/core";
-import { PluginKey } from "@tiptap/pm/state";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import tippy, { Instance as TippyInstance } from "tippy.js";
 import { marked } from "marked";
@@ -43,6 +44,7 @@ import {
   ChevronRight, Palette, ListPlus, Hash, Tag as TagIcon, Plus, Image as ImageIcon, Paperclip,
   IndentIncrease, IndentDecrease, ChevronDown, Maximize2, Minimize2, EyeOff, Eye,
   Heart, AtSign, GitBranch,
+  Focus as FocusIcon,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
@@ -620,6 +622,8 @@ function Toolbar({
   onAddSubtask,
   onOpenMentions,
   hasSubtaskHost,
+  focusMode,
+  onToggleFocusMode,
 }: {
   editor: Editor;
   onPromoteTask: () => void;
@@ -630,6 +634,8 @@ function Toolbar({
   onAddSubtask?: () => void;
   onOpenMentions?: () => void;
   hasSubtaskHost?: boolean;
+  focusMode?: boolean;
+  onToggleFocusMode?: () => void;
 }) {
   if (!editor) return null;
   const setLink = () => {
@@ -754,6 +760,15 @@ function Toolbar({
       <div className="ml-auto flex shrink-0 items-center gap-0.5 pl-1">
         <ToolbarButton onClick={() => editor.chain().focus().undo().run()} label="Undo (⌘Z)"><svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-4"/></svg></ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().redo().run()} label="Redo (⌘⇧Z)"><svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h4"/></svg></ToolbarButton>
+        {onToggleFocusMode && (
+          <ToolbarButton
+            active={focusMode}
+            onClick={onToggleFocusMode}
+            label={focusMode ? "Exit focus mode" : "Focus on current block"}
+          >
+            <FocusIcon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+          </ToolbarButton>
+        )}
         {onToggleFullscreen && (
           <ToolbarButton onClick={onToggleFullscreen} label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
             {isFullscreen ? <Minimize2 className="h-[18px] w-[18px]" strokeWidth={1.75} /> : <Maximize2 className="h-[18px] w-[18px]" strokeWidth={1.75} />}
@@ -973,7 +988,7 @@ export function BlockEditor({
 }) {
   const { state, addTask } = useStore();
   const navigate = useNavigate();
-  const [prefs] = useEditorPrefs();
+  const [prefs, setPrefs] = useEditorPrefs();
   const isMobile = useIsMobile();
   const { tags: registeredTags } = useTags();
   const refsRef = useRef<RefItem[]>([]);
@@ -1470,6 +1485,35 @@ export function BlockEditor({
     },
   }), []);
 
+  // Decorate the top-level block containing the selection so CSS can dim others
+  // when focus mode is enabled. The decoration is always present (cheap); the
+  // dim only renders when the wrapper has `.cf-focus`.
+  const focusBlockExtension = useMemo(() => Extension.create({
+    name: "focusBlock",
+    addProseMirrorPlugins() {
+      return [new Plugin({
+        key: new PluginKey("focusBlock"),
+        props: {
+          decorations(state) {
+            const { from } = state.selection;
+            try {
+              const $pos = state.doc.resolve(from);
+              if ($pos.depth < 1) return DecorationSet.empty;
+              const start = $pos.start(1) - 1;
+              const node = state.doc.nodeAt(start);
+              if (!node) return DecorationSet.empty;
+              return DecorationSet.create(state.doc, [
+                Decoration.node(start, start + node.nodeSize, { "data-active-block": "true" }),
+              ]);
+            } catch {
+              return DecorationSet.empty;
+            }
+          },
+        },
+      })];
+    },
+  }), []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -1500,6 +1544,7 @@ export function BlockEditor({
       refExtension,
       hashtagExtension,
       toggleKeymap,
+      focusBlockExtension,
     ],
     content: bodyToHtml(body),
     editorProps: {
@@ -1813,6 +1858,7 @@ export function BlockEditor({
         dragActive && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background",
         `editor-theme-${prefs.theme}`,
         `editor-density-${prefs.density}`,
+        prefs.focusMode && "cf-focus",
         fullscreen && "fixed inset-0 z-[90] overflow-auto bg-background p-4 sm:p-8",
       )}
       style={{
@@ -1936,6 +1982,8 @@ export function BlockEditor({
             onAddSubtask={addSubtaskNow}
             onOpenMentions={openMentions}
             hasSubtaskHost={!!subtaskHost}
+            focusMode={prefs.focusMode}
+            onToggleFocusMode={() => setPrefs({ focusMode: !prefs.focusMode })}
           />
         </div>
       )}
@@ -1972,6 +2020,8 @@ export function BlockEditor({
             onAddSubtask={addSubtaskNow}
             onOpenMentions={openMentions}
             hasSubtaskHost={!!subtaskHost}
+            focusMode={prefs.focusMode}
+            onToggleFocusMode={() => setPrefs({ focusMode: !prefs.focusMode })}
           />
         </div>
       )}
@@ -2004,6 +2054,8 @@ export function BlockEditor({
             onAddSubtask={addSubtaskNow}
             onOpenMentions={openMentions}
             hasSubtaskHost={!!subtaskHost}
+            focusMode={prefs.focusMode}
+            onToggleFocusMode={() => setPrefs({ focusMode: !prefs.focusMode })}
           />
         </div>
       )}

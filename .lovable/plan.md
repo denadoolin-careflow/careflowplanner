@@ -1,43 +1,64 @@
-## Scope
-Redesign only `src/components/inbox/InboxOverview.tsx` — the three planning cards (Today, Upcoming, Needs Scheduling) on the Inbox page. Quick Capture, nav, top bar, and the "Held in your inbox" buckets below remain untouched.
+# Craft-style Editor Polish
 
-## Visual Language (shared across all three)
-- Soft translucent cards: `bg-card/60 backdrop-blur-md` with a faint inner highlight (top gradient) and `rounded-[20px]`.
-- Atmospheric accent gradients per card derived from semantic tokens (no hardcoded colors): Today = warm amber/sun, Upcoming = primary/cool, Needs Scheduling = amber/glow.
-- Soft elevation `shadow-[0_8px_30px_-12px_hsl(var(--foreground)/0.08)]`, 1px hairline border `border-border/50`.
-- Larger row height (44–48px), rounded metadata pills, contextual icons via existing `categoryIconFor` / `task-icons` helpers, colored priority dots (red/amber/blue from tokens).
-- A small toggle at the top of the 3-card section: **All · Today (n) · Upcoming (n) · Needs (n)** — on mobile collapses to a single visible card; on desktop dims the others and emphasizes the selected. Persists to `localStorage` (`careflow:inbox-overview-focus`).
+Goal: make the writing surface used by Notes, Tasks, and Journal feel as fluid as Craft Docs — softer typography, calmer motion, polished block affordances, a contextual selection toolbar, and an optional dim-other-blocks focus mode. All three surfaces share `src/components/notes/BlockEditor.tsx`, so the bulk of the work happens there once and benefits everywhere.
 
-## Today Card
-- Header: ☀️ icon chip · "Today" · `n tasks • Xh Ym` (sum task `estMinutes`) · right-side **circular completion ring** (SVG) showing `% done today`.
-- AI insight banner (glass pill) using existing copy heuristics — e.g. "Three tasks can be completed in under 15 min." (derived locally from `estMinutes ≤ 15` count). No new edge function.
-- Tasks grouped by **Morning / Afternoon / Evening** using existing `dayPart` logic + start-time inference. Each group header shows count chip.
-- Row: checkbox (toggles `done`), contextual icon, title (wrap), priority dot, day-part / time pill on the right.
-- Footer: `✓ N completed today · View all →` (navigates to `/today`).
+## What changes
 
-## Upcoming Card
-- Header: 📅 icon chip · "Upcoming" · `n items • Next 7 days` · calendar icon button (navigates `/calendar`).
-- AI insight banner: localized rule-based copy ("Tomorrow is your busiest day", "Friday has the most free time", "You have N family activities this week") derived from grouped counts.
-- Rows merge tasks + appointments + birthdays + holidays sorted by date. Each row: contextual icon (appointment / cake / holiday tree / task icon), title, area/category subtitle, **relative-date pill** ("Tomorrow", "In 3 days") + absolute date underneath.
-- Holiday rows use amber pill; appointments use primary pill; birthdays use rose pill.
-- Footer: `📅 View full calendar →`.
+### 1. Typography & rhythm
+- Install and wire a Craft-like display + reading pair: `@fontsource-variable/fraunces` (display, for H1/H2) and `@fontsource-variable/inter` (body) via `bun add`, imported in `src/main.tsx`, exposed as Tailwind families `font-display` and `font-prose` (kept additive so existing atmospheres still win where set).
+- New `.cf-editor-prose` class (scoped to BlockEditor wrapper) overrides the current Tailwind `prose` defaults:
+  - Body line-height `1.7`, paragraph spacing tightened, max measure ~68ch.
+  - H1 gets Fraunces 600, generous tracking, optical-sizing on; subtle 1px hairline underline.
+  - Soft caret color (`hsl(var(--primary))`), thicker (`caret-width: 2px` via `caret-color` + `::selection` using `--primary / 0.18`).
+  - Bullet/check markers softened with muted hue + consistent vertical rhythm.
+  - List indent uses `padding-inline-start: 1.25rem` for predictable nesting.
+- Code, blockquote, hr, and task list checkbox restyled to match atmosphere tokens (no hardcoded colors).
 
-## Needs Scheduling Card
-- Warm amber palette throughout (token-based, `bg-amber-500/10` + `ring-amber-500/20` already used; keep consistent with light/dark).
-- Header: ⏳ icon chip · "Needs Scheduling" · `n task waiting` · sparkle suggestion button.
-- AI scheduling insight banner ("You have 1 task waiting", "Best opening tomorrow afternoon", "This task fits a 30-min window") — rule-based using `estMinutes` + free time from today's tasks.
-- Featured elevated card for the top unscheduled task: folder icon, title, category, est. time, priority pill, **Best Opening** suggestion block ("Tomorrow, 3:00 PM · 60 min available") computed locally from free slots.
-- Quick action row: **Schedule** (primary gradient — uses `--primary` token), **Snooze**, **More** (overflow menu with Park, Delete).
-- Dashed drop zone below ("📅 Drag tasks here to schedule") — visual only this iteration; existing inbox DnD already handles drops, will register the area as a drop target wired to set `dueDate=today` in a follow-up if needed.
-- Footer: `View unscheduled (N) →` scrolls to `#inbox-held`.
+### 2. Smooth motion
+- Replace abrupt slash menu / link menu open with `animate-scale-in` + 120 ms ease-out (`@/tailwind` already has `scale-in`).
+- Bubble toolbar uses Tippy with `animation: "shift-away-subtle"` (already loaded) plus a CSS `will-change: transform` on the menu shell to avoid jank.
+- Block insert / drag handle fade in via `transition-opacity duration-150` instead of instant toggle.
+- Toolbar buttons get `transition-[background,transform] duration-150 active:scale-[0.96]` for soft tactile feel.
+- Editor caret + selection respect `prefers-reduced-motion` (skip the scale-in keyframes).
 
-## Technical Notes
-Files touched:
-- `src/components/inbox/InboxOverview.tsx` — full rewrite of the three sections; keep public export name and props (none).
-- No new dependencies. Uses existing helpers: `apptOccursOn`, `openTaskEditor`, `categoryIconFor`, `useStore`.
-- Relative-date helper added inline (`formatRelative(date)` returning "Today", "Tomorrow", "In N days", weekday).
-- Insight strings derived locally — no edge function, no schema changes.
-- All colors via semantic tokens or existing token-scoped utility classes; no hex literals.
-- Toggle state persisted via `localStorage` alongside existing `careflow:inbox-overview` open-map.
+### 3. Block UX (drag, hover, indent)
+- `tiptap-extension-global-drag-handle` is already in use — restyle its handle/add button:
+  - Round 22 px button, neutral icon, soft hover ring, only visible when hovering the block row (opacity 0 → 70).
+  - Add a sibling “＋” button that opens the slash menu at that block via `editor.chain().focus().insertContent("/").run()`.
+- Smoother indent/outdent: bind `Tab` / `Shift+Tab` at the editor level so they work in paragraphs (wrap into a bullet on first Tab inside a list-less paragraph, then sinkListItem after).
+- Hovered block gets a faint left-edge marker (`border-l-2 border-primary/0` → `border-primary/40` on hover) for a Craft-like “block aware” feel.
+- Nested toggles (`Details`) get smoother chevron rotation (`transition-transform duration-200`).
 
-No other files modified.
+### 4. Floating bubble toolbar
+- Replace the current always-mounted toolbar block (when there is a text selection) with TipTap’s `BubbleMenu` (already imported but unused for inline formatting):
+  - Pill-shaped container, backdrop blur, atmosphere-tinted border.
+  - Buttons: Bold, Italic, Underline, Strikethrough, Code, Link, Highlight (color popover), Heading toggle, Clear formatting.
+  - Appears only on non-empty selection; hides for code blocks and image nodes (`shouldShow`).
+  - Subtle arrow + 180 ms `scale-in + fade-in`.
+- Existing top toolbar stays for structural blocks (headings, lists, quote, divider, fullscreen, focus toggle) but is visually slimmed: smaller icons, single row on desktop, horizontally scrollable on mobile, divider lines between groups.
+
+### 5. Dim-focus mode (Craft “Focus”)
+- New toolbar toggle `Focus` (eye icon) stored in `editor-prefs.ts` (`focusMode: boolean`).
+- When on: add `.cf-focus` class on the editor wrapper; CSS dims every direct child of `.ProseMirror` to `opacity: 0.45` and re-fades the block containing the current selection to `opacity: 1` via a small TipTap plugin that adds `data-active="true"` on the focused top-level node (transaction-driven, no React re-render).
+- Smooth `transition: opacity 200ms ease-out` so the dim feels gentle.
+- Persists per-user via existing `useEditorPrefs` hook.
+
+## Where the edits land
+
+- `src/main.tsx` — font imports.
+- `tailwind.config.ts` — register `display` (Fraunces) + `prose` (Inter) families; no token color changes.
+- `src/lib/editor-prefs.ts` — add `focusMode` boolean with persistence.
+- `src/components/notes/BlockEditor.tsx` — toolbar slim-down, bubble menu, focus-mode plugin + class, drag-handle restyle, slash-menu animation, `.cf-editor-prose` wrapper class, indent key bindings.
+- `src/index.css` — add the `.cf-editor-prose` and `.cf-focus` rule blocks (semantic tokens only, light + dark friendly), plus styling for the drag handle / add button.
+- No changes to Notes / Tasks / Journal page files needed — they already render `BlockEditor`, and the polish is inherited.
+
+## Out of scope
+
+- No new collaboration, no AI rewrite, no data-model changes.
+- No removal of existing slash commands, @-mention picker, file embed, or markdown round-trip — those keep working unchanged.
+- No edits to `src/integrations/supabase/client.ts` or other auto-generated files.
+
+## Verification
+
+- Build + targeted typecheck after edits.
+- Manually check Notes page, Task editor notes panel, and Journal Flow: typography reads softly, bubble toolbar appears on selection, drag handle + “＋” feel responsive, focus mode dims correctly in light and dark atmospheres.
