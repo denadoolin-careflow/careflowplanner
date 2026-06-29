@@ -367,9 +367,17 @@ function InboxInner() {
     return Array.from(lower);
   }, [activeCategories, extraTags]);
 
-  const submitCapture = async (overrideArea?: Area) => {
-    const raw = draft.trim();
+  // Capture-in-flight guard prevents an accidental double-submit when Enter
+  // races with a click on the Capture button.
+  const submittingRef = useRef(false);
+  const submitCapture = async (overrideArea?: Area, explicitRaw?: string) => {
+    if (submittingRef.current) return;
+    const liveDraft = typeof explicitRaw === "string" ? explicitRaw : draft;
+    const raw = (liveDraft ?? "").trim();
     if (!raw) return;
+    submittingRef.current = true;
+    // Reset the guard after a tick — covers both success and thrown errors.
+    setTimeout(() => { submittingRef.current = false; }, 600);
     // When kind is not "task", route into today's schedule instead of inbox.
     if (captureKind !== "task") {
       const today = format(new Date(), "yyyy-MM-dd");
@@ -744,7 +752,16 @@ function InboxInner() {
                 ref={captureInputRef}
                 value={draft}
                 onChange={setDraft}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitCapture(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Pass the input's current value directly so a pending
+                    // state update can't swallow the submit.
+                    const v = (e.currentTarget as HTMLInputElement).value;
+                    void submitCapture(undefined, v);
+                  }
+                }}
                 onFocus={() => setCaptureFocused(true)}
                 onBlur={handleCaptureBlur}
                 placeholder={
