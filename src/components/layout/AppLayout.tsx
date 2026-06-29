@@ -49,7 +49,9 @@ export function AppLayout() {
             <div className="flex min-w-0 flex-nowrap items-center gap-2">
               <MobileSidebarTrigger />
               <div className="min-w-0">
-                <p className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:block">CareFlow</p>
+                <p className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:block">
+                  CareFlow · Plan · Care · Grow
+                </p>
                 <h1 className="font-display text-base font-semibold leading-tight sm:text-2xl">{current.label}</h1>
               </div>
             </div>

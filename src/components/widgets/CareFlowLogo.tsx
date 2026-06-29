@@ -1,53 +1,47 @@
 import { cn } from "@/lib/utils";
-import logo from "@/assets/careflow-logo.png.asset.json";
+import { CareFlowMark } from "./CareFlowMark";
 
-type Tint = "primary" | "accent" | "auto";
 type Rounded = "md" | "lg" | "xl";
 
-const roundedMap: Record<Rounded, string> = {
-  md: "rounded-md",
-  lg: "rounded-lg",
-  xl: "rounded-xl",
-};
-
 /**
- * CareFlow brand logo. Raster icon retinted to the active theme via
- * `mix-blend-mode: luminosity` over the current --primary token, so it
- * follows light/dark + atmosphere automatically.
+ * CareFlow brand logo. Renders the themable SVG mark; optionally
+ * pairs it with the wordmark and "Plan · Care · Grow" tagline.
  */
 export function CareFlowLogo({
   size = 28,
   className,
-  tint = "primary",
   rounded = "xl",
+  showTagline = false,
+  showWordmark = false,
 }: {
   size?: number;
   className?: string;
-  tint?: Tint;
+  /** Legacy prop, ignored. Kept for call-site compatibility. */
+  tint?: "primary" | "accent" | "auto";
   rounded?: Rounded;
+  showTagline?: boolean;
+  showWordmark?: boolean;
 }) {
-  const bg =
-    tint === "accent"
-      ? "hsl(var(--accent, var(--primary)))"
-      : "hsl(var(--primary))";
+  if (!showWordmark && !showTagline) {
+    return (
+      <CareFlowMark size={size} rounded={rounded} className={className} decorative={false} />
+    );
+  }
   return (
-    <span
-      aria-label="CareFlow"
-      role="img"
-      className={cn(
-        "relative inline-grid shrink-0 place-items-center overflow-hidden ring-1 ring-border/40 shadow-sm",
-        roundedMap[rounded],
-        className,
-      )}
-      style={{ width: size, height: size, background: tint === "auto" ? undefined : bg }}
-    >
-      <img
-        src={logo.url}
-        alt=""
-        draggable={false}
-        className="h-full w-full object-cover select-none"
-        style={{ mixBlendMode: tint === "auto" ? undefined : "luminosity" }}
-      />
+    <span className={cn("inline-flex items-center gap-2.5", className)}>
+      <CareFlowMark size={size} rounded={rounded} decorative={false} />
+      <span className="min-w-0 leading-tight">
+        {showWordmark && (
+          <span className="block font-display text-[15px] font-semibold text-foreground">
+            CareFlow
+          </span>
+        )}
+        {showTagline && (
+          <span className="block text-[9.5px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Plan · Care · Grow
+          </span>
+        )}
+      </span>
     </span>
   );
 }
