@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { toast } from "sonner";
 import { haptics } from "@/lib/haptics";
+import { TaskHoverActions } from "@/components/tasks/TaskHoverActions";
 
 const FOCUS_KEY = "careflow:inbox-overview-focus";
 type Focus = "all" | "today" | "upcoming" | "needs";
@@ -123,7 +124,15 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
     return r.kind === "lucide" ? { Icon: r.Icon } : { Icon: InboxIcon };
   })();
   return (
-    <div className="group flex items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-muted/40">
+    <div
+      className="group flex items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-muted/40"
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/x-careflow-task", t.id);
+        e.dataTransfer.setData("text/plain", t.title);
+      }}
+    >
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onToggle(); }}
@@ -150,10 +159,15 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
         </span>
       )}
       {rightPill && (
-        <span className="shrink-0 rounded-full bg-background/70 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground ring-1 ring-border/50">
+        <span className="shrink-0 rounded-full bg-background/70 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground ring-1 ring-border/50 group-hover:hidden">
           {rightPill}
         </span>
       )}
+      <TaskHoverActions
+        task={t}
+        onEdit={() => openTaskEditor(t.id)}
+        onDetails={() => openTaskEditor(t.id)}
+      />
     </div>
   );
 }
