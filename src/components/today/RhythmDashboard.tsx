@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, parseISO, addDays } from "date-fns";
 import { Link } from "react-router-dom";
 import {
@@ -69,7 +69,7 @@ function Hero({
 }: { date: Date; onDateChange: (d: Date) => void; isReallyToday: boolean }) {
   const { state } = useStore();
   const [now, setNow] = useState(() => new Date());
-  useMemo(() => {
+  useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
   }, []);
