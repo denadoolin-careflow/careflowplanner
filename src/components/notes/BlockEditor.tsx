@@ -32,6 +32,7 @@ import { TableCell } from "@tiptap/extension-table-cell";
 import Suggestion from "@tiptap/suggestion";
 import { Extension, Node as TiptapNode } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { TextSelection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import tippy, { Instance as TippyInstance } from "tippy.js";
@@ -63,6 +64,7 @@ import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { haptics } from "@/lib/haptics";
 import { upcomingEvents } from "@/lib/cosmic/events";
 import { addDays, format as formatDate } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -304,6 +306,8 @@ const slashItems = (): SlashItem[] => [
   { title: "Highlight", icon: HighlighterIcon, keywords: ["mark"], command: (e) => e.chain().focus().toggleHighlight().run() },
   { title: "Toggle", icon: ChevronRight, keywords: ["toggle", "collapse", "details", "fold", "nest"], command: (e) => e.chain().focus().setDetails().run() },
   { title: "Table", icon: TableIcon, keywords: ["table", "grid", "rows", "columns"], command: (e) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+  { title: "Table 2×2", icon: TableIcon, keywords: ["table", "2x2", "small"], command: (e) => e.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run() },
+  { title: "Table 4×3", icon: TableIcon, keywords: ["table", "4x3", "large"], command: (e) => e.chain().focus().insertTable({ rows: 4, cols: 3, withHeaderRow: true }).run() },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -1044,6 +1048,7 @@ export function BlockEditor({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const editorRef = useRef<Editor | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [toolbarHidden, setToolbarHidden] = useState(false);
   const [editorFocused, setEditorFocused] = useState(false);
@@ -1640,6 +1645,145 @@ export function BlockEditor({
     };
   }, [editor]);
 
+  /* ----------------------------------------------------------------- *
+   *  Mobile swipe-to-select: long-press to arm, drag to extend.       *
+   *  Haptic feedback fires on arm, on each word boundary, and on      *
+   *  release.                                                          *
+   * ----------------------------------------------------------------- */
+  useEffect(() => {
+    if (!isMobile || !editor) return;
+    const wrap = wrapperRef.current;
+    if (!wrap) return;
+
+    const LONG_PRESS_MS = 220;
+    const MOVE_TOLERANCE = 6;
+
+    let timer: number | null = null;
+    let armed = false;
+    let anchorPos: number | null = null;
+    let lastWordHead = -1;
+    let startX = 0;
+    let startY = 0;
+    let rafId: number | null = null;
+    let pendingClientX = 0;
+    let pendingClientY = 0;
+    let hint: HTMLDivElement | null = null;
+
+    const showHint = (x: number, y: number) => {
+      hint = document.createElement("div");
+      hint.className = "cf-select-hint";
+      hint.textContent = "Selecting…";
+      hint.style.left = `${x}px`;
+      hint.style.top = `${y - 40}px`;
+      document.body.appendChild(hint);
+      requestAnimationFrame(() => hint && hint.classList.add("show"));
+    };
+    const hideHint = () => {
+      if (!hint) return;
+      const el = hint; hint = null;
+      el.classList.remove("show");
+      setTimeout(() => el.remove(), 200);
+    };
+
+    const clearTimer = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    const reset = () => {
+      clearTimer();
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      if (armed) wrap.classList.remove("cf-selecting");
+      hideHint();
+      armed = false;
+      anchorPos = null;
+      lastWordHead = -1;
+    };
+
+    const extendTo = (clientX: number, clientY: number) => {
+      if (!armed || anchorPos == null) return;
+      const view = editor.view;
+      const head = view.posAtCoords({ left: clientX, top: clientY })?.pos;
+      if (head == null) return;
+      const { doc } = view.state;
+      try {
+        const sel = TextSelection.create(doc, anchorPos, head);
+        view.dispatch(view.state.tr.setSelection(sel));
+      } catch { /* doc moved */ }
+      // Tick haptic on word boundary crossings.
+      const wordHead = Math.floor(head / 4);
+      if (wordHead !== lastWordHead) {
+        lastWordHead = wordHead;
+        haptics.swipe();
+      }
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) { reset(); return; }
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      // Ignore touches on interactive controls or drag handle.
+      if (target.closest("button, a, input, textarea, [contenteditable=false], .drag-handle, [data-no-swipe-select]")) return;
+      if (!target.closest(".ProseMirror")) return;
+      const t = e.touches[0];
+      startX = t.clientX; startY = t.clientY;
+      clearTimer();
+      timer = window.setTimeout(() => {
+        const view = editor.view;
+        const pos = view.posAtCoords({ left: startX, top: startY })?.pos;
+        if (pos == null) return;
+        anchorPos = pos;
+        armed = true;
+        wrap.classList.add("cf-selecting");
+        haptics.longPress();
+        showHint(startX, startY);
+        try {
+          const sel = TextSelection.create(view.state.doc, pos, pos);
+          view.dispatch(view.state.tr.setSelection(sel));
+          view.focus();
+        } catch { /* */ }
+      }, LONG_PRESS_MS);
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!e.touches[0]) return;
+      const t = e.touches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (!armed) {
+        if (Math.hypot(dx, dy) > MOVE_TOLERANCE) clearTimer();
+        return;
+      }
+      // Prevent native page scroll while actively selecting.
+      if (e.cancelable) e.preventDefault();
+      pendingClientX = t.clientX;
+      pendingClientY = t.clientY;
+      if (rafId == null) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          extendTo(pendingClientX, pendingClientY);
+        });
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (armed) {
+        const { from, to } = editor.state.selection;
+        if (to > from) haptics.success();
+      }
+      reset();
+    };
+    const onTouchCancel = () => reset();
+
+    wrap.addEventListener("touchstart", onTouchStart, { passive: true });
+    wrap.addEventListener("touchmove", onTouchMove, { passive: false });
+    wrap.addEventListener("touchend", onTouchEnd, { passive: true });
+    wrap.addEventListener("touchcancel", onTouchCancel, { passive: true });
+    return () => {
+      wrap.removeEventListener("touchstart", onTouchStart);
+      wrap.removeEventListener("touchmove", onTouchMove);
+      wrap.removeEventListener("touchend", onTouchEnd);
+      wrap.removeEventListener("touchcancel", onTouchCancel);
+      reset();
+    };
+  }, [editor, isMobile]);
+
   // Listen for global "insert into note" events (e.g. from PDF AI summary).
   useEffect(() => {
     const onInsert = (e: Event) => {
@@ -1855,6 +1999,7 @@ export function BlockEditor({
 
   return (
     <div
+      ref={wrapperRef}
       onClick={handleClick}
       onDragEnter={(e) => { if (Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === "file")) { setDragActive(true); } }}
       onDragOver={(e) => { if (Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === "file")) { e.preventDefault(); setDragActive(true); } }}
@@ -1979,9 +2124,13 @@ export function BlockEditor({
           {(editor.isActive("table") || editor.isActive("tableCell") || editor.isActive("tableHeader")) && (
             <>
               <span className="mx-1 h-4 w-px bg-border" />
+              <ToolbarButton onClick={() => editor.chain().focus().addRowBefore().run()} label="Add row above"><Rows3 className="h-3.5 w-3.5 -scale-y-100" /></ToolbarButton>
               <ToolbarButton onClick={() => editor.chain().focus().addRowAfter().run()} label="Add row below"><Rows3 className="h-3.5 w-3.5" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().addColumnBefore().run()} label="Add column left"><Columns3 className="h-3.5 w-3.5 -scale-x-100" /></ToolbarButton>
               <ToolbarButton onClick={() => editor.chain().focus().addColumnAfter().run()} label="Add column right"><Columns3 className="h-3.5 w-3.5" /></ToolbarButton>
+              <span className="mx-1 h-4 w-px bg-border" />
               <ToolbarButton onClick={() => editor.chain().focus().toggleHeaderRow().run()} label="Toggle header row"><Heading1 className="h-3.5 w-3.5" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().mergeOrSplit().run()} label="Merge / split cells"><GitBranch className="h-3.5 w-3.5" /></ToolbarButton>
               <ToolbarButton onClick={() => editor.chain().focus().deleteRow().run()} label="Delete row"><Minus className="h-3.5 w-3.5" /></ToolbarButton>
               <ToolbarButton onClick={() => editor.chain().focus().deleteColumn().run()} label="Delete column"><Minus className="h-3.5 w-3.5 rotate-90" /></ToolbarButton>
               <ToolbarButton onClick={() => editor.chain().focus().deleteTable().run()} label="Delete table"><Trash2 className="h-3.5 w-3.5" /></ToolbarButton>
