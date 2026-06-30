@@ -18,6 +18,7 @@ import { useStore, todayISO } from "@/lib/store";
 import { personalGreeting } from "@/lib/greeting";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { getMoonPhase, MOON_INFO, getIllumination } from "@/lib/moon";
+import { getMoonSign, SIGN_EMOJI, ELEMENT_EMOJI } from "@/lib/zodiac";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { getDailyEnergyGuidance } from "@/lib/daily-energy-guidance";
@@ -38,17 +39,20 @@ export function RhythmDashboard({
   isReallyToday,
   onTaskClick,
   onApptClick,
+  slot,
 }: {
   date: Date;
   onDateChange: (d: Date) => void;
   isReallyToday: boolean;
   onTaskClick: (id: string) => void;
   onApptClick: (id: string) => void;
+  slot?: React.ReactNode;
 }) {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 px-1 sm:px-2">
       <Hero date={date} onDateChange={onDateChange} isReallyToday={isReallyToday} />
       <Triptych date={date} />
+      {slot}
       <div className="grid gap-6 lg:grid-cols-3">
         <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
         <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />
@@ -151,6 +155,8 @@ function MoonPanel({ date }: { date: Date }) {
   const phase = getMoonPhase(date);
   const info = MOON_INFO[phase];
   const illum = getIllumination(date);
+  const sign = useMemo(() => getMoonSign(date), [date]);
+  const keywords = MOON_KEYWORDS[phase];
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-7 text-center">
       <MoonGlyph date={date} size={56} />
@@ -159,9 +165,37 @@ function MoonPanel({ date }: { date: Date }) {
       <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
         {illum}% lit
       </p>
+      <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background/50 px-2.5 py-1 text-[11px] text-foreground/85">
+        <span aria-hidden>{SIGN_EMOJI[sign.name]}</span>
+        <span className="font-medium">{sign.name}</span>
+        <span className="text-muted-foreground/60">·</span>
+        <span aria-hidden>{ELEMENT_EMOJI[sign.element]}</span>
+        <span className="text-muted-foreground">{sign.element}</span>
+      </div>
+      <p className="mt-1 max-w-[16rem] text-balance font-display text-[12px] italic leading-snug text-foreground/75">
+        {info.invitation}
+      </p>
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
+        {keywords.map((k) => (
+          <span key={k} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-primary/90">
+            {k}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
+
+const MOON_KEYWORDS: Record<ReturnType<typeof getMoonPhase>, string[]> = {
+  "new": ["intention", "begin", "quiet"],
+  "waxing-crescent": ["stir", "tend", "build"],
+  "first-quarter": ["decide", "act", "commit"],
+  "waxing-gibbous": ["refine", "adjust", "focus"],
+  "full": ["illuminate", "feel", "release"],
+  "waning-gibbous": ["share", "gratitude", "exhale"],
+  "last-quarter": ["release", "clear", "let go"],
+  "waning-crescent": ["rest", "reflect", "soften"],
+};
 
 function EnergyPanel({ date }: { date: Date }) {
   const { periods, settings } = useCycle();
@@ -267,17 +301,35 @@ function CyclePanel({ date }: { date: Date }) {
   const { periods, settings } = useCycle();
   const cycle = useMemo(() => { try { return getPhaseInfo(date, periods, settings); } catch { return null; } },
     [date, periods, settings]);
+  const meta = cycle ? PHASE_META[cycle.phase] : null;
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-7 text-center">
-      <span aria-hidden className="text-4xl leading-none">🌷</span>
+      <span aria-hidden className="text-4xl leading-none">{meta?.glyph ?? "🌷"}</span>
       <p className="font-display text-[11px] italic uppercase tracking-[0.24em] text-muted-foreground">Cycle</p>
-      {cycle ? (
+      {cycle && meta ? (
         <>
           <p className="font-display text-xl font-semibold text-foreground">Day {cycle.cycleDay}</p>
           <p className="text-[10px] uppercase tracking-[0.2em]"
-             style={{ color: `hsl(var(${PHASE_META[cycle.phase].tokenVar}))` }}>
-            {PHASE_META[cycle.phase].label}
+             style={{ color: `hsl(var(${meta.tokenVar}))` }}>
+            {meta.label}
           </p>
+          <p className="mt-1 max-w-[16rem] text-balance font-display text-[12px] italic leading-snug text-foreground/75">
+            {meta.invitation}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
+            {meta.planningHints.slice(0, 3).map((k) => (
+              <span
+                key={k}
+                className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.14em]"
+                style={{
+                  background: `hsl(var(${meta.tokenVar}) / 0.14)`,
+                  color: `hsl(var(${meta.tokenVar}))`,
+                }}
+              >
+                {k}
+              </span>
+            ))}
+          </div>
         </>
       ) : (
         <>
