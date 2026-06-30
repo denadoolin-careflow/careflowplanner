@@ -167,7 +167,7 @@ export function localDebriefFallback(
   alignment: RhythmAlignment,
   cycle: ReturnType<typeof getPhaseInfo> | null,
 ): DebriefPayload {
-  const g = getDailyEnergyGuidance(date, [], cycle ? { startDate: format(date, "yyyy-MM-dd") } as any : undefined as any);
+  const g = getDailyEnergyGuidance(date);
   const capLine =
     capacity.label === "gentle" ? "Your plan is gentle — leave room to enjoy it."
     : capacity.label === "steady" ? "Today's plan feels steady and within range."
