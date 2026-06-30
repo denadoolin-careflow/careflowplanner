@@ -33,6 +33,9 @@ import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 import { DayContextStrip } from "@/components/calendar/DayContextStrip";
 import { WeekHabitsStrip } from "@/components/week/WeekHabitsStrip";
 import { ScopeHero } from "@/components/layout/ScopeHero";
+import { PlanningHero } from "@/components/today/rhythm/PlanningHero";
+import { Triptych } from "@/components/today/RhythmDashboard";
+import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { addWeeks, subWeeks, isSameWeek } from "date-fns";
 import { useSidebarHidden } from "@/lib/today-view";
@@ -111,6 +114,13 @@ export default function Week() {
         : "lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)]",
     )}>
       <div className="min-w-0 space-y-6">
+        <PlanningHero
+          date={start}
+          title={`Week of ${format(start, "MMM d")}`}
+          subtitle="Your greeting, weather, and cosmic rhythm — carried across each planning view."
+        />
+        <Triptych date={start} />
+        <DailyDebrief date={selectedDate} />
         <ScopeHero
           scope="week"
           date={start}
