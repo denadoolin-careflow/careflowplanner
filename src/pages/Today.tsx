@@ -124,7 +124,10 @@ function TodayInner() {
         className="mx-auto w-full min-w-0 max-w-6xl space-y-6 overflow-x-clip px-2 pb-10 sm:px-4"
       >
         <DemoTasksBanner />
-        <div className="flex flex-wrap items-center justify-center gap-1.5 px-1">
+        {(() => {
+          const controls = (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 px-1">
           <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Plan with</span>
           <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
             {(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map((k) => (
@@ -169,17 +172,24 @@ function TodayInner() {
               </label>
             </PopoverContent>
           </Popover>
-        </div>
-        {prefs.showQuickAdd && <QuickAddBar date={day} />}
-        {view === "rhythm" && (
-          <RhythmDashboard
-            date={day}
-            onDateChange={setDayAndUrl}
-            isReallyToday={isReallyToday}
-            onTaskClick={setEditTaskId}
-            onApptClick={setEditApptId}
-          />
-        )}
+              </div>
+              {prefs.showQuickAdd && <QuickAddBar date={day} />}
+            </div>
+          );
+          if (view === "rhythm") {
+            return (
+              <RhythmDashboard
+                date={day}
+                onDateChange={setDayAndUrl}
+                isReallyToday={isReallyToday}
+                onTaskClick={setEditTaskId}
+                onApptClick={setEditApptId}
+                slot={controls}
+              />
+            );
+          }
+          return controls;
+        })()}
         {view === "timeofday" && <TimeOfDayBoard date={day} onTaskClick={setEditTaskId} />}
         {view === "plan" && <DayPlanBoard date={day} onTaskClick={setEditTaskId} />}
         {view === "schedule" && <ScheduleBoard date={day} onTaskClick={setEditTaskId} onApptClick={setEditApptId} />}
