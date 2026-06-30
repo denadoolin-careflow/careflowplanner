@@ -303,6 +303,7 @@ const slashItems = (): SlashItem[] => [
   { title: "Divider", icon: Minus, keywords: ["hr", "rule"], command: (e) => e.chain().focus().setHorizontalRule().run() },
   { title: "Highlight", icon: HighlighterIcon, keywords: ["mark"], command: (e) => e.chain().focus().toggleHighlight().run() },
   { title: "Toggle", icon: ChevronRight, keywords: ["toggle", "collapse", "details", "fold", "nest"], command: (e) => e.chain().focus().setDetails().run() },
+  { title: "Table", icon: TableIcon, keywords: ["table", "grid", "rows", "columns"], command: (e) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
 ];
 
 /* ------------------------------------------------------------------ */
