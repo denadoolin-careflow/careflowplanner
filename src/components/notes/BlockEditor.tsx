@@ -25,6 +25,10 @@ import Highlight from "@tiptap/extension-highlight";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableHeader from "@tiptap/extension-table-header";
+import TableCell from "@tiptap/extension-table-cell";
 import Suggestion from "@tiptap/suggestion";
 import { Extension, Node as TiptapNode } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
@@ -45,6 +49,7 @@ import {
   IndentIncrease, IndentDecrease, ChevronDown, Maximize2, Minimize2, EyeOff, Eye,
   Heart, AtSign, GitBranch,
   Focus as FocusIcon,
+  Table as TableIcon, Rows3, Columns3, Trash2,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
