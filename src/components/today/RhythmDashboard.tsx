@@ -18,7 +18,7 @@ import { useStore, todayISO } from "@/lib/store";
 import { personalGreeting } from "@/lib/greeting";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { getMoonPhase, MOON_INFO, getIllumination } from "@/lib/moon";
-import { getMoonSign, SIGN_EMOJI, ELEMENT_EMOJI } from "@/lib/zodiac";
+import { getMoonSign, SIGN_EMOJI, ELEMENT_EMOJI, ELEMENT_ARCHETYPE, SIGN_KEYWORDS } from "@/lib/zodiac";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { getDailyEnergyGuidance } from "@/lib/daily-energy-guidance";
@@ -40,6 +40,7 @@ export function RhythmDashboard({
   onTaskClick,
   onApptClick,
   slot,
+  debrief,
 }: {
   date: Date;
   onDateChange: (d: Date) => void;
@@ -47,12 +48,14 @@ export function RhythmDashboard({
   onTaskClick: (id: string) => void;
   onApptClick: (id: string) => void;
   slot?: React.ReactNode;
+  debrief?: React.ReactNode;
 }) {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 px-1 sm:px-2">
       <Hero date={date} onDateChange={onDateChange} isReallyToday={isReallyToday} />
       <Triptych date={date} />
       {slot}
+      {debrief}
       <div className="grid gap-6 lg:grid-cols-3">
         <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
         <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />
