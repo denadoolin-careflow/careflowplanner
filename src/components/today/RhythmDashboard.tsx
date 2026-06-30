@@ -18,7 +18,7 @@ import { useStore, todayISO } from "@/lib/store";
 import { personalGreeting } from "@/lib/greeting";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { getMoonPhase, MOON_INFO, getIllumination } from "@/lib/moon";
-import { getMoonSign, SIGN_EMOJI, ELEMENT_EMOJI } from "@/lib/zodiac";
+import { getMoonSign, SIGN_EMOJI, ELEMENT_EMOJI, ELEMENT_ARCHETYPE, SIGN_KEYWORDS } from "@/lib/zodiac";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { getDailyEnergyGuidance } from "@/lib/daily-energy-guidance";
@@ -40,6 +40,7 @@ export function RhythmDashboard({
   onTaskClick,
   onApptClick,
   slot,
+  debrief,
 }: {
   date: Date;
   onDateChange: (d: Date) => void;
@@ -47,12 +48,14 @@ export function RhythmDashboard({
   onTaskClick: (id: string) => void;
   onApptClick: (id: string) => void;
   slot?: React.ReactNode;
+  debrief?: React.ReactNode;
 }) {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 px-1 sm:px-2">
       <Hero date={date} onDateChange={onDateChange} isReallyToday={isReallyToday} />
       <Triptych date={date} />
       {slot}
+      {debrief}
       <div className="grid gap-6 lg:grid-cols-3">
         <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
         <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />
@@ -129,7 +132,7 @@ function Hero({
 /* =====================================================================
  * Triptych — Moon | Daily Energy | Cycle (single card, 3 equal panels)
  * =================================================================== */
-function Triptych({ date }: { date: Date }) {
+export function Triptych({ date }: { date: Date }) {
   return (
     <section
       className={cn(
@@ -172,12 +175,25 @@ function MoonPanel({ date }: { date: Date }) {
         <span aria-hidden>{ELEMENT_EMOJI[sign.element]}</span>
         <span className="text-muted-foreground">{sign.element}</span>
       </div>
+      <p className="mt-1 max-w-[16rem] text-balance text-[11px] leading-snug text-foreground/70">
+        {ELEMENT_ARCHETYPE[sign.element]}
+      </p>
       <p className="mt-1 max-w-[16rem] text-balance font-display text-[12px] italic leading-snug text-foreground/75">
         {info.invitation}
       </p>
       <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
         {keywords.map((k) => (
           <span key={k} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-primary/90">
+            {k}
+          </span>
+        ))}
+      </div>
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-1 border-t border-border/30 pt-2">
+        {SIGN_KEYWORDS[sign.name].map((k) => (
+          <span
+            key={k}
+            className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-foreground/70"
+          >
             {k}
           </span>
         ))}

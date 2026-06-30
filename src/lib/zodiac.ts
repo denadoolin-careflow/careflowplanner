@@ -56,6 +56,30 @@ export const ELEMENT_EMOJI: Record<ZodiacInfo["element"], string> = {
   Water: "💧",
 };
 
+/** One-line archetype per element — used under Moon panel as zodiac insight. */
+export const ELEMENT_ARCHETYPE: Record<ZodiacInfo["element"], string> = {
+  Fire:  "Fire moon — move with warmth; act from spark, not pressure.",
+  Earth: "Earth moon — slow, steady, body-led; small grounded choices win.",
+  Air:   "Air moon — make space to think and talk it through.",
+  Water: "Water moon — feel first, plan second; honor what surfaces.",
+};
+
+/** Three keyword vibes per sign — for the Moon panel zodiac insight chip row. */
+export const SIGN_KEYWORDS: Record<ZodiacSign, string[]> = {
+  Aries:       ["spark", "courage", "begin"],
+  Taurus:      ["steady", "savor", "tend"],
+  Gemini:      ["curious", "connect", "play"],
+  Cancer:      ["nurture", "home", "soften"],
+  Leo:         ["radiate", "create", "celebrate"],
+  Virgo:       ["refine", "tidy", "serve"],
+  Libra:       ["balance", "relate", "beautify"],
+  Scorpio:     ["depth", "release", "renew"],
+  Sagittarius: ["expand", "explore", "trust"],
+  Capricorn:   ["build", "commit", "structure"],
+  Aquarius:    ["reimagine", "gather", "innovate"],
+  Pisces:      ["dream", "rest", "imagine"],
+};
+
 /** Lookup full sign info (element, modality, ruler…) by sign name. */
 export function getSignInfo(sign: ZodiacSign): ZodiacInfo {
   return SIGN_BY_NAME[sign];
