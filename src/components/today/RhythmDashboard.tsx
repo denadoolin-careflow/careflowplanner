@@ -301,17 +301,35 @@ function CyclePanel({ date }: { date: Date }) {
   const { periods, settings } = useCycle();
   const cycle = useMemo(() => { try { return getPhaseInfo(date, periods, settings); } catch { return null; } },
     [date, periods, settings]);
+  const meta = cycle ? PHASE_META[cycle.phase] : null;
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-7 text-center">
-      <span aria-hidden className="text-4xl leading-none">🌷</span>
+      <span aria-hidden className="text-4xl leading-none">{meta?.glyph ?? "🌷"}</span>
       <p className="font-display text-[11px] italic uppercase tracking-[0.24em] text-muted-foreground">Cycle</p>
-      {cycle ? (
+      {cycle && meta ? (
         <>
           <p className="font-display text-xl font-semibold text-foreground">Day {cycle.cycleDay}</p>
           <p className="text-[10px] uppercase tracking-[0.2em]"
-             style={{ color: `hsl(var(${PHASE_META[cycle.phase].tokenVar}))` }}>
-            {PHASE_META[cycle.phase].label}
+             style={{ color: `hsl(var(${meta.tokenVar}))` }}>
+            {meta.label}
           </p>
+          <p className="mt-1 max-w-[16rem] text-balance font-display text-[12px] italic leading-snug text-foreground/75">
+            {meta.invitation}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
+            {meta.planningHints.slice(0, 3).map((k) => (
+              <span
+                key={k}
+                className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.14em]"
+                style={{
+                  background: `hsl(var(${meta.tokenVar}) / 0.14)`,
+                  color: `hsl(var(${meta.tokenVar}))`,
+                }}
+              >
+                {k}
+              </span>
+            ))}
+          </div>
         </>
       ) : (
         <>
