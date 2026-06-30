@@ -1047,6 +1047,62 @@
 .block-editor .ProseMirror.resize-cursor { cursor: col-resize; }
 .block-editor .ProseMirror .tableWrapper { overflow-x: auto; border-radius: 14px; }
 
+/* Sticky header + scroll hint */
+.block-editor .ProseMirror .tableWrapper {
+  position: relative;
+  background:
+    linear-gradient(to right, hsl(var(--background)) 30%, hsl(var(--background) / 0)) left center / 24px 100% no-repeat,
+    linear-gradient(to left,  hsl(var(--background)) 30%, hsl(var(--background) / 0)) right center / 24px 100% no-repeat,
+    radial-gradient(8px at left,  hsl(var(--foreground) / 0.08), transparent) left center / 14px 100% no-repeat,
+    radial-gradient(8px at right, hsl(var(--foreground) / 0.08), transparent) right center / 14px 100% no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}
+.block-editor .ProseMirror table th { position: sticky; top: 0; z-index: 1; }
+.block-editor .ProseMirror table td:focus-within,
+.block-editor .ProseMirror table th:focus-within {
+  outline: 2px solid hsl(var(--primary) / 0.55);
+  outline-offset: -2px;
+  background: hsl(var(--primary) / 0.06);
+}
+@media (max-width: 640px) {
+  .block-editor .ProseMirror table td,
+  .block-editor .ProseMirror table th { padding: 7px 9px; font-size: 13px; }
+}
+
+/* ----- Swipe-to-select (mobile) ----------------------------------- */
+.block-editor.cf-selecting {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.block-editor.cf-selecting .ProseMirror {
+  caret-color: hsl(var(--primary));
+  transition: background-color 200ms ease;
+}
+.block-editor.cf-selecting .ProseMirror ::selection {
+  background: hsl(var(--primary) / 0.28);
+  color: inherit;
+}
+.cf-select-hint {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  transform: translate(-50%, -4px) scale(0.96);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 22px hsl(var(--primary) / 0.35);
+  opacity: 0;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.cf-select-hint.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
 /* ----- Interactive checklists -------------------------------------- */
 .block-editor .ProseMirror ul[data-type="taskList"] {
   list-style: none;
