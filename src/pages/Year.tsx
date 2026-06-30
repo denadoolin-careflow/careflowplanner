@@ -5,9 +5,15 @@ import { Progress } from "@/components/ui/progress";
 import { format, parseISO, startOfYear, endOfYear, addDays, getDay, differenceInCalendarDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { PlanningHeader } from "@/components/today/PlanningHeader";
+import { QuickAddBar } from "@/components/today/QuickAddBar";
+import { TaskEditor } from "@/components/tasks/TaskEditor";
 
 export default function Year() {
   const { state } = useStore();
+  const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
+  const today = useMemo(() => new Date(), []);
   const months = Array.from({ length: 12 }, (_, i) => new Date(new Date().getFullYear(), i, 1));
   const quarters = [["Q1", [0,1,2]], ["Q2", [3,4,5]], ["Q3", [6,7,8]], ["Q4", [9,10,11]]] as const;
   const habitsAvg = state.habits.length ? Math.round(state.habits.reduce((s, h) => s + Math.min(100, h.streak * 5), 0) / state.habits.length) : 0;
@@ -71,6 +77,13 @@ export default function Year() {
 
   return (
     <div className="space-y-6">
+      <PlanningHeader
+        date={today}
+        title={`${today.getFullYear()}`}
+        subtitle="Your greeting, weather, and cosmic rhythm — carried across each planning view."
+        slot={<QuickAddBar date={today} />}
+        onTaskClick={setEditTaskId}
+      />
       <div className="cozy-card gradient-dawn p-6">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Year</p>
         <h2 className="font-display text-3xl font-semibold sm:text-4xl">{new Date().getFullYear()}</h2>
@@ -186,6 +199,7 @@ export default function Year() {
           </ul>
         </SectionCard>
       </div>
+      <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
     </div>
   );
 }
