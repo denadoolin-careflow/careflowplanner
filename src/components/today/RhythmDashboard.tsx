@@ -175,12 +175,25 @@ function MoonPanel({ date }: { date: Date }) {
         <span aria-hidden>{ELEMENT_EMOJI[sign.element]}</span>
         <span className="text-muted-foreground">{sign.element}</span>
       </div>
+      <p className="mt-1 max-w-[16rem] text-balance text-[11px] leading-snug text-foreground/70">
+        {ELEMENT_ARCHETYPE[sign.element]}
+      </p>
       <p className="mt-1 max-w-[16rem] text-balance font-display text-[12px] italic leading-snug text-foreground/75">
         {info.invitation}
       </p>
       <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
         {keywords.map((k) => (
           <span key={k} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-primary/90">
+            {k}
+          </span>
+        ))}
+      </div>
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-1 border-t border-border/30 pt-2">
+        {SIGN_KEYWORDS[sign.name].map((k) => (
+          <span
+            key={k}
+            className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-foreground/70"
+          >
             {k}
           </span>
         ))}
