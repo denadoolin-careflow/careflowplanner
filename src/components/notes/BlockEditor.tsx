@@ -1534,6 +1534,14 @@ export function BlockEditor({
       Details.configure({ persist: true, HTMLAttributes: { class: "cf-toggle" } }),
       DetailsSummary,
       DetailsContent,
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: { class: "cf-table" },
+        allowTableNodeSelection: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Image.configure({
         inline: false,
         allowBase64: false,
