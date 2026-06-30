@@ -25,6 +25,10 @@ import Highlight from "@tiptap/extension-highlight";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import { Details, DetailsSummary, DetailsContent } from "@tiptap/extension-details";
+import { Table } from "@tiptap/extension-table";
+import { TableRow } from "@tiptap/extension-table-row";
+import { TableHeader } from "@tiptap/extension-table-header";
+import { TableCell } from "@tiptap/extension-table-cell";
 import Suggestion from "@tiptap/suggestion";
 import { Extension, Node as TiptapNode } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
@@ -45,6 +49,7 @@ import {
   IndentIncrease, IndentDecrease, ChevronDown, Maximize2, Minimize2, EyeOff, Eye,
   Heart, AtSign, GitBranch,
   Focus as FocusIcon,
+  Table as TableIcon, Rows3, Columns3, Trash2,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
@@ -298,6 +303,7 @@ const slashItems = (): SlashItem[] => [
   { title: "Divider", icon: Minus, keywords: ["hr", "rule"], command: (e) => e.chain().focus().setHorizontalRule().run() },
   { title: "Highlight", icon: HighlighterIcon, keywords: ["mark"], command: (e) => e.chain().focus().toggleHighlight().run() },
   { title: "Toggle", icon: ChevronRight, keywords: ["toggle", "collapse", "details", "fold", "nest"], command: (e) => e.chain().focus().setDetails().run() },
+  { title: "Table", icon: TableIcon, keywords: ["table", "grid", "rows", "columns"], command: (e) => e.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -745,6 +751,7 @@ function Toolbar({
               <ToolbarButton onClick={onOpenMentions} label="Mention / link entity"><AtSign className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             )}
             <ToolbarButton active={editor.isActive("details")} onClick={() => editor.chain().focus().setDetails().run()} label="Toggle"><ChevronRight className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} label="Insert table"><TableIcon className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             <ToolbarButton onClick={doOutdent} label="Outdent"><IndentDecrease className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             <ToolbarButton onClick={doIndent} label="Indent"><IndentIncrease className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             {editor.isActive("taskItem") && (
@@ -1529,6 +1536,14 @@ export function BlockEditor({
       Details.configure({ persist: true, HTMLAttributes: { class: "cf-toggle" } }),
       DetailsSummary,
       DetailsContent,
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: { class: "cf-table" },
+        allowTableNodeSelection: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Image.configure({
         inline: false,
         allowBase64: false,
@@ -1959,6 +1974,17 @@ export function BlockEditor({
               <ToolbarButton onClick={promoteTaskItemToTask} label="Add to Tasks">
                 <ListPlus className="h-3.5 w-3.5" />
               </ToolbarButton>
+            </>
+          )}
+          {(editor.isActive("table") || editor.isActive("tableCell") || editor.isActive("tableHeader")) && (
+            <>
+              <span className="mx-1 h-4 w-px bg-border" />
+              <ToolbarButton onClick={() => editor.chain().focus().addRowAfter().run()} label="Add row below"><Rows3 className="h-3.5 w-3.5" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().addColumnAfter().run()} label="Add column right"><Columns3 className="h-3.5 w-3.5" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().toggleHeaderRow().run()} label="Toggle header row"><Heading1 className="h-3.5 w-3.5" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().deleteRow().run()} label="Delete row"><Minus className="h-3.5 w-3.5" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().deleteColumn().run()} label="Delete column"><Minus className="h-3.5 w-3.5 rotate-90" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().deleteTable().run()} label="Delete table"><Trash2 className="h-3.5 w-3.5" /></ToolbarButton>
             </>
           )}
         </BubbleMenu>
