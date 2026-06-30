@@ -1976,6 +1976,17 @@ export function BlockEditor({
               </ToolbarButton>
             </>
           )}
+          {(editor.isActive("table") || editor.isActive("tableCell") || editor.isActive("tableHeader")) && (
+            <>
+              <span className="mx-1 h-4 w-px bg-border" />
+              <ToolbarButton onClick={() => editor.chain().focus().addRowAfter().run()} label="Add row below"><Rows3 className="h-3.5 w-3.5" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().addColumnAfter().run()} label="Add column right"><Columns3 className="h-3.5 w-3.5" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().toggleHeaderRow().run()} label="Toggle header row"><Heading1 className="h-3.5 w-3.5" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().deleteRow().run()} label="Delete row"><Minus className="h-3.5 w-3.5" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().deleteColumn().run()} label="Delete column"><Minus className="h-3.5 w-3.5 rotate-90" /></ToolbarButton>
+              <ToolbarButton onClick={() => editor.chain().focus().deleteTable().run()} label="Delete table"><Trash2 className="h-3.5 w-3.5" /></ToolbarButton>
+            </>
+          )}
         </BubbleMenu>
       )}
       {editor && !isMobile && toolbarPlacement === "top" && (
