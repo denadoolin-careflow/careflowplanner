@@ -11,6 +11,7 @@ import { Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { RhythmDashboard } from "@/components/today/RhythmDashboard";
+import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
 import { DayPlanBoard } from "@/components/today/DayPlanBoard";
@@ -185,6 +186,7 @@ function TodayInner() {
                 onTaskClick={setEditTaskId}
                 onApptClick={setEditApptId}
                 slot={controls}
+                debrief={<DailyDebrief date={day} />}
               />
             );
           }
