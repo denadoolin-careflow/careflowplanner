@@ -4,13 +4,19 @@ import { getMoonPhase, MOON_INFO, getIllumination } from "@/lib/moon";
 import { getMoonSign } from "@/lib/zodiac";
 import { getPhaseInfo, PHASE_META, type CyclePhase } from "@/lib/cycle";
 import { getDailyEnergyGuidance } from "@/lib/daily-energy-guidance";
+import type { BurnoutLevel } from "@/lib/burnout-checkin";
+import { burnoutMultiplier } from "@/lib/burnout-checkin";
+import type { DebriefTone } from "@/lib/debrief-tone";
+import { applyTone } from "@/lib/debrief-tone";
 
 export interface CapacitySnapshot {
   plannedMinutes: number;
   ceilingMinutes: number;
+  baseCeilingMinutes: number;  // before burnout adjustment, after cycle
   ratio: number;             // plannedMinutes / ceilingMinutes
   label: "gentle" | "steady" | "stretched" | "overflowing";
   cyclePhase: CyclePhase | null;
+  burnout: BurnoutLevel | null;
 }
 
 /** Base soft daily ceiling, in minutes of focused/estimated work. */
@@ -30,6 +36,7 @@ export function computeCapacitySnapshot(
   appointments: Appointment[],
   date: Date,
   cyclePhase: CyclePhase | null,
+  burnout: BurnoutLevel | null = null,
 ): CapacitySnapshot {
   const iso = format(date, "yyyy-MM-dd");
   const taskMin = tasks
@@ -45,13 +52,14 @@ export function computeCapacitySnapshot(
     }, 0);
   const plannedMinutes = taskMin + apptMin;
   const mult = cyclePhase ? PHASE_CEILING_MULTIPLIER[cyclePhase] : 1;
-  const ceilingMinutes = Math.round(BASE_CEILING_MIN * mult);
+  const baseCeilingMinutes = Math.round(BASE_CEILING_MIN * mult);
+  const ceilingMinutes = Math.max(15, Math.round(baseCeilingMinutes * burnoutMultiplier(burnout)));
   const ratio = ceilingMinutes > 0 ? plannedMinutes / ceilingMinutes : 0;
   let label: CapacitySnapshot["label"] = "gentle";
   if (ratio >= 1.25) label = "overflowing";
   else if (ratio >= 0.9) label = "stretched";
   else if (ratio >= 0.4) label = "steady";
-  return { plannedMinutes, ceilingMinutes, ratio, label, cyclePhase };
+  return { plannedMinutes, ceilingMinutes, baseCeilingMinutes, ratio, label, cyclePhase, burnout };
 }
 
 export interface RhythmAlignment {
@@ -114,8 +122,10 @@ export interface DebriefContext {
   moon: { phase: string; sign: string; element: string; illumination: number };
   cycle: { phase: CyclePhase; day: number } | null;
   capacity: { plannedMinutes: number; ceilingMinutes: number; label: string };
-  tasks: { title: string; time?: string; estMinutes?: number }[];
+  tasks: { id: string; title: string; time?: string; estMinutes?: number }[];
   appointments: { title: string; time?: string }[];
+  tone?: DebriefTone;
+  burnout?: { level: BurnoutLevel | null; mvd: boolean; mvdTaskTitle?: string | null };
 }
 
 export function buildDebriefContext(
@@ -145,7 +155,7 @@ export function buildDebriefContext(
     tasks: tasks
       .filter(t => t.dueDate === iso && !t.parentTaskId && t.status !== "parked")
       .slice(0, 12)
-      .map(t => ({ title: t.title, time: t.startTime ?? undefined, estMinutes: t.estMinutes ?? undefined })),
+      .map(t => ({ id: t.id, title: t.title, time: t.startTime ?? undefined, estMinutes: t.estMinutes ?? undefined })),
     appointments: appointments
       .filter(a => a.date === iso)
       .slice(0, 8)
@@ -155,9 +165,25 @@ export function buildDebriefContext(
 
 export interface DebriefPayload {
   summary: string;
-  honors: string[];
-  reshape: string[];
+  /** Strings are kept for back-compat with cached payloads. */
+  honors: (string | DebriefItem)[];
+  reshape: (string | DebriefItem)[];
   rhythmNote: string;
+}
+
+export interface DebriefItem {
+  id?: string | null;
+  title: string;
+  reason: string;
+}
+
+/** Normalize cached/legacy payload entries into structured items. */
+export function toDebriefItem(entry: string | DebriefItem): DebriefItem {
+  if (typeof entry === "string") {
+    const [title, ...rest] = entry.split(" — ");
+    return { id: null, title: title.trim(), reason: rest.join(" — ").trim() };
+  }
+  return entry;
 }
 
 /** Local fallback when AI is unavailable. */
@@ -166,21 +192,32 @@ export function localDebriefFallback(
   capacity: CapacitySnapshot,
   alignment: RhythmAlignment,
   cycle: ReturnType<typeof getPhaseInfo> | null,
+  opts: { tone?: DebriefTone; mvdTitle?: string | null } = {},
 ): DebriefPayload {
+  const tone = opts.tone ?? "gentle";
   const g = getDailyEnergyGuidance(date);
-  const capLine =
+  let capLine =
     capacity.label === "gentle" ? "Your plan is gentle — leave room to enjoy it."
     : capacity.label === "steady" ? "Today's plan feels steady and within range."
     : capacity.label === "stretched" ? "You're stretched — consider trimming one thing."
     : "Today is overflowing — let one item soften or shift.";
+  if (capacity.burnout === "depleted") {
+    capLine = opts.mvdTitle
+      ? `Minimum viable day: ${opts.mvdTitle}. Everything else can wait.`
+      : "Minimum viable day — pick one tender thing and rest the rest.";
+  } else if (capacity.burnout === "tender") {
+    capLine = "Tender capacity today — shave the edges and protect your energy.";
+  } else if (capacity.burnout === "spacious") {
+    capLine = "You've named spacious capacity — a gentle stretch is welcome.";
+  }
   const rhythmNote = cycle
     ? `${PHASE_META[cycle.phase].label} phase invites ${PHASE_META[cycle.phase].planningHints[0]}.`
     : g.headline;
   return {
-    summary: capLine,
-    honors: alignment.honors.map(h => `${h.title} — ${h.reason}`),
-    reshape: alignment.reshape.map(r => `${r.title} — ${r.reason}`),
-    rhythmNote,
+    summary: applyTone(tone, capLine),
+    honors: alignment.honors.map(h => ({ id: h.id, title: h.title, reason: h.reason })),
+    reshape: alignment.reshape.map(r => ({ id: r.id, title: r.title, reason: r.reason })),
+    rhythmNote: applyTone(tone, rhythmNote),
   };
 }
 
