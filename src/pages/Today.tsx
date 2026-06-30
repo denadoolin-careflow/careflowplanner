@@ -12,6 +12,15 @@ import { Button } from "@/components/ui/button";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { RhythmDashboard } from "@/components/today/RhythmDashboard";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
+import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
+import { DayPlanBoard } from "@/components/today/DayPlanBoard";
+import { ScheduleBoard } from "@/components/today/ScheduleBoard";
+import { QuickAddBar } from "@/components/today/QuickAddBar";
+import { useTodayView, TODAY_VIEW_LABELS, type TodayView, useTodayPrefs } from "@/lib/today-view";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
+import { Settings2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Today() {
   return (
@@ -28,6 +37,8 @@ function TodayInner() {
   const location = useLocation();
   useEnsureWeather();
   const [exhaleOpen, setExhaleOpen] = useState(false);
+  const [view, setView] = useTodayView();
+  const [prefs, setPrefs] = useTodayPrefs();
 
   // When arriving with a #slot-morning|afternoon|evening hash, scroll to it.
   useEffect(() => {
@@ -113,13 +124,65 @@ function TodayInner() {
         className="mx-auto w-full min-w-0 max-w-6xl space-y-6 overflow-x-clip px-2 pb-10 sm:px-4"
       >
         <DemoTasksBanner />
-        <RhythmDashboard
-          date={day}
-          onDateChange={setDayAndUrl}
-          isReallyToday={isReallyToday}
-          onTaskClick={setEditTaskId}
-          onApptClick={setEditApptId}
-        />
+        <div className="flex flex-wrap items-center justify-center gap-1.5 px-1">
+          <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Plan with</span>
+          <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
+            {(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setView(k)}
+                className={cn(
+                  "rounded-full px-2.5 py-1 transition-colors",
+                  view === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {TODAY_VIEW_LABELS[k]}
+              </button>
+            ))}
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="ml-1 inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/70 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                title="Today preferences"
+              >
+                <Settings2 className="h-3 w-3" /> Preferences
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 space-y-3 p-3">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Today preferences</div>
+              <label className="flex items-start justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-foreground">Try this now from Carey</span>
+                  <span className="block text-[11px] leading-snug text-muted-foreground">Show Carey's actionable suggestions at the top of Today.</span>
+                </span>
+                <Switch checked={prefs.showCareyNudges} onCheckedChange={(v) => setPrefs({ showCareyNudges: v })} />
+              </label>
+              <label className="flex items-start justify-between gap-3">
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-foreground">Quick add bar</span>
+                  <span className="block text-[11px] leading-snug text-muted-foreground">Inline input to drop tasks or meals into the right time slot.</span>
+                </span>
+                <Switch checked={prefs.showQuickAdd} onCheckedChange={(v) => setPrefs({ showQuickAdd: v })} />
+              </label>
+            </PopoverContent>
+          </Popover>
+        </div>
+        {prefs.showQuickAdd && <QuickAddBar date={day} />}
+        {view === "rhythm" && (
+          <RhythmDashboard
+            date={day}
+            onDateChange={setDayAndUrl}
+            isReallyToday={isReallyToday}
+            onTaskClick={setEditTaskId}
+            onApptClick={setEditApptId}
+          />
+        )}
+        {view === "timeofday" && <TimeOfDayBoard date={day} onTaskClick={setEditTaskId} />}
+        {view === "plan" && <DayPlanBoard date={day} onTaskClick={setEditTaskId} />}
+        {view === "schedule" && <ScheduleBoard date={day} onTaskClick={setEditTaskId} onApptClick={setEditApptId} />}
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/40 bg-card/55 p-4 shadow-soft backdrop-blur-xl">
           <div className="min-w-0">
             <div className="font-display text-sm font-semibold text-foreground">End-of-day exhale</div>
