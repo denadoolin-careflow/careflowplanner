@@ -132,7 +132,7 @@ function Hero({
 /* =====================================================================
  * Triptych — Moon | Daily Energy | Cycle (single card, 3 equal panels)
  * =================================================================== */
-function Triptych({ date }: { date: Date }) {
+export function Triptych({ date }: { date: Date }) {
   return (
     <section
       className={cn(
