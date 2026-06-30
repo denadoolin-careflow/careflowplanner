@@ -1046,6 +1046,7 @@ export function BlockEditor({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const editorRef = useRef<Editor | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [toolbarHidden, setToolbarHidden] = useState(false);
   const [editorFocused, setEditorFocused] = useState(false);
