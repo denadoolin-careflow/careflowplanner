@@ -77,6 +77,13 @@ export default function Year() {
 
   return (
     <div className="space-y-6">
+      <PlanningHeader
+        date={today}
+        title={`${today.getFullYear()}`}
+        subtitle="Your greeting, weather, and cosmic rhythm — carried across each planning view."
+        slot={<QuickAddBar date={today} />}
+        onTaskClick={setEditTaskId}
+      />
       <div className="cozy-card gradient-dawn p-6">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Year</p>
         <h2 className="font-display text-3xl font-semibold sm:text-4xl">{new Date().getFullYear()}</h2>
@@ -192,6 +199,7 @@ export default function Year() {
           </ul>
         </SectionCard>
       </div>
+      <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
     </div>
   );
 }
