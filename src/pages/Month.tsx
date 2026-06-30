@@ -47,9 +47,8 @@ import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { getTransitsForDate } from "@/lib/transits";
 import { useTransitsEnabled } from "@/lib/astrology-prefs";
 import { ScopeHero } from "@/components/layout/ScopeHero";
-import { PlanningHero } from "@/components/today/rhythm/PlanningHero";
-import { Triptych } from "@/components/today/RhythmDashboard";
-import { DailyDebrief } from "@/components/today/DailyDebrief";
+import { PlanningHeader } from "@/components/today/PlanningHeader";
+import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { isSameMonth as isSameMonthFn } from "date-fns";
 import { useSidebarHidden } from "@/lib/today-view";
@@ -178,13 +177,16 @@ export default function Month() {
         : "lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)]",
     )}>
       <div className="min-w-0 space-y-6">
-        <PlanningHero
+        <PlanningHeader
           date={cursor}
           title={format(cursor, "MMMM yyyy")}
           subtitle="Your greeting, weather, and cosmic rhythm — carried across each planning view."
+          slot={<QuickAddBar date={cursor} />}
+          onTaskClick={(id) => {
+            const t = state.tasks.find(x => x.id === id);
+            if (t) setEditingTask(t);
+          }}
         />
-        <Triptych date={cursor} />
-        <DailyDebrief date={cursor} />
         <ScopeHero
           scope="month"
           date={cursor}
