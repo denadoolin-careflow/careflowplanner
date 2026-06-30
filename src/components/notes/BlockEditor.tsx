@@ -751,6 +751,7 @@ function Toolbar({
               <ToolbarButton onClick={onOpenMentions} label="Mention / link entity"><AtSign className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             )}
             <ToolbarButton active={editor.isActive("details")} onClick={() => editor.chain().focus().setDetails().run()} label="Toggle"><ChevronRight className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} label="Insert table"><TableIcon className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             <ToolbarButton onClick={doOutdent} label="Outdent"><IndentDecrease className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             <ToolbarButton onClick={doIndent} label="Indent"><IndentIncrease className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             {editor.isActive("taskItem") && (
