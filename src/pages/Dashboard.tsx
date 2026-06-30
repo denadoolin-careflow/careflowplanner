@@ -8,6 +8,9 @@ import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
 import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
 import { ElementBadge } from "@/components/rhythm/ElementBadge";
 import { PhaseBadge } from "@/components/cycle/PhaseBadge";
+import { PlanningHeader } from "@/components/today/PlanningHeader";
+import { QuickAddBar } from "@/components/today/QuickAddBar";
+import { TaskEditor } from "@/components/tasks/TaskEditor";
 
 function greeting() {
   const h = new Date().getHours();
@@ -22,6 +25,9 @@ export default function Dashboard() {
   const { state } = useStore();
   const navigate = useNavigate();
   const [now, setNow] = useState(new Date());
+  const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
+  const today = new Date();
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
@@ -29,6 +35,13 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <PlanningHeader
+        date={today}
+        title={format(today, "EEEE, MMMM d")}
+        subtitle="Your greeting, weather, and cosmic rhythm — carried across each planning view."
+        slot={<QuickAddBar date={today} />}
+        onTaskClick={setEditTaskId}
+      />
       <div className="cozy-card overflow-hidden">
         <div className="flex flex-col items-center gap-4 p-6 text-center gradient-warm sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:p-8 sm:text-left">
           <div className="flex flex-col items-center sm:items-start">
@@ -75,6 +88,7 @@ export default function Dashboard() {
       </div>
 
       <CustomizableGrid pageKey="home" />
+      <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
     </div>
   );
 }
