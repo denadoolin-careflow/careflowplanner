@@ -155,6 +155,8 @@ function MoonPanel({ date }: { date: Date }) {
   const phase = getMoonPhase(date);
   const info = MOON_INFO[phase];
   const illum = getIllumination(date);
+  const sign = useMemo(() => getMoonSign(date), [date]);
+  const keywords = MOON_KEYWORDS[phase];
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-7 text-center">
       <MoonGlyph date={date} size={56} />
@@ -163,9 +165,37 @@ function MoonPanel({ date }: { date: Date }) {
       <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
         {illum}% lit
       </p>
+      <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background/50 px-2.5 py-1 text-[11px] text-foreground/85">
+        <span aria-hidden>{SIGN_EMOJI[sign.name]}</span>
+        <span className="font-medium">{sign.name}</span>
+        <span className="text-muted-foreground/60">·</span>
+        <span aria-hidden>{ELEMENT_EMOJI[sign.element]}</span>
+        <span className="text-muted-foreground">{sign.element}</span>
+      </div>
+      <p className="mt-1 max-w-[16rem] text-balance font-display text-[12px] italic leading-snug text-foreground/75">
+        {info.invitation}
+      </p>
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
+        {keywords.map((k) => (
+          <span key={k} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-primary/90">
+            {k}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
+
+const MOON_KEYWORDS: Record<ReturnType<typeof getMoonPhase>, string[]> = {
+  "new": ["intention", "begin", "quiet"],
+  "waxing-crescent": ["stir", "tend", "build"],
+  "first-quarter": ["decide", "act", "commit"],
+  "waxing-gibbous": ["refine", "adjust", "focus"],
+  "full": ["illuminate", "feel", "release"],
+  "waning-gibbous": ["share", "gratitude", "exhale"],
+  "last-quarter": ["release", "clear", "let go"],
+  "waning-crescent": ["rest", "reflect", "soften"],
+};
 
 function EnergyPanel({ date }: { date: Date }) {
   const { periods, settings } = useCycle();
