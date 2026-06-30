@@ -990,6 +990,120 @@
 .block-editor .ProseMirror li.cf-collapsed::marker {
   color: hsl(var(--primary));
 }
+/* ----- Tables ------------------------------------------------------- */
+.block-editor .ProseMirror .cf-table,
+.block-editor .ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0.85em 0;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid hsl(var(--border) / 0.7);
+  background: hsl(var(--card) / 0.55);
+  box-shadow: 0 1px 0 hsl(var(--border) / 0.4);
+  font-variant-numeric: tabular-nums;
+}
+.block-editor .ProseMirror table td,
+.block-editor .ProseMirror table th {
+  border: 1px solid hsl(var(--border) / 0.55);
+  padding: 8px 12px;
+  vertical-align: top;
+  position: relative;
+  min-width: 80px;
+  transition: background-color 140ms ease;
+}
+.block-editor .ProseMirror table th {
+  background: hsl(var(--muted) / 0.55);
+  font-weight: 600;
+  text-align: left;
+  color: hsl(var(--foreground));
+}
+.block-editor .ProseMirror table tr:nth-child(even) td {
+  background: hsl(var(--muted) / 0.18);
+}
+.block-editor .ProseMirror table td:hover,
+.block-editor .ProseMirror table th:hover {
+  background: hsl(var(--primary) / 0.06);
+}
+.block-editor .ProseMirror table .selectedCell {
+  background: hsl(var(--primary) / 0.14) !important;
+  outline: 2px solid hsl(var(--primary) / 0.35);
+  outline-offset: -2px;
+}
+.block-editor .ProseMirror table p { margin: 0; }
+.block-editor .ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: hsl(var(--primary) / 0.6);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.block-editor .ProseMirror table:hover .column-resize-handle { opacity: 0.7; }
+.block-editor .ProseMirror.resize-cursor { cursor: col-resize; }
+.block-editor .ProseMirror .tableWrapper { overflow-x: auto; border-radius: 14px; }
+
+/* ----- Interactive checklists -------------------------------------- */
+.block-editor .ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+  margin: 0.4em 0;
+}
+.block-editor .ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55em;
+  padding: 2px 0;
+}
+.block-editor .ProseMirror ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-top: 0.32em;
+  user-select: none;
+}
+.block-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+  appearance: none;
+  width: 1.05em;
+  height: 1.05em;
+  border-radius: 6px;
+  border: 1.5px solid hsl(var(--border));
+  background: hsl(var(--background));
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+.block-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:hover {
+  border-color: hsl(var(--primary) / 0.8);
+  transform: scale(1.05);
+}
+.block-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+.block-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+  content: "";
+  width: 0.55em;
+  height: 0.32em;
+  border-left: 2px solid hsl(var(--primary-foreground));
+  border-bottom: 2px solid hsl(var(--primary-foreground));
+  transform: rotate(-45deg) translate(1px, -1px);
+  animation: cf-check-pop 200ms ease both;
+}
+.block-editor .ProseMirror ul[data-type="taskList"] li > div { flex: 1 1 auto; min-width: 0; }
+.block-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: hsl(var(--muted-foreground));
+  text-decoration: line-through;
+  text-decoration-color: hsl(var(--muted-foreground) / 0.55);
+  transition: color 200ms ease;
+}
+@keyframes cf-check-pop {
+  from { opacity: 0; transform: rotate(-45deg) scale(0.6) translate(1px, -1px); }
+  to   { opacity: 1; transform: rotate(-45deg) scale(1) translate(1px, -1px); }
+}
 @keyframes cf-toggle-expand {
   from { opacity: 0; transform: translateY(-3px); max-height: 0; }
   to   { opacity: 1; transform: none;            max-height: 9999px; }
