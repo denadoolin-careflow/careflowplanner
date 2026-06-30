@@ -1643,6 +1643,145 @@ export function BlockEditor({
     };
   }, [editor]);
 
+  /* ----------------------------------------------------------------- *
+   *  Mobile swipe-to-select: long-press to arm, drag to extend.       *
+   *  Haptic feedback fires on arm, on each word boundary, and on      *
+   *  release.                                                          *
+   * ----------------------------------------------------------------- */
+  useEffect(() => {
+    if (!isMobile || !editor) return;
+    const wrap = wrapperRef.current;
+    if (!wrap) return;
+
+    const LONG_PRESS_MS = 220;
+    const MOVE_TOLERANCE = 6;
+
+    let timer: number | null = null;
+    let armed = false;
+    let anchorPos: number | null = null;
+    let lastWordHead = -1;
+    let startX = 0;
+    let startY = 0;
+    let rafId: number | null = null;
+    let pendingClientX = 0;
+    let pendingClientY = 0;
+    let hint: HTMLDivElement | null = null;
+
+    const showHint = (x: number, y: number) => {
+      hint = document.createElement("div");
+      hint.className = "cf-select-hint";
+      hint.textContent = "Selecting…";
+      hint.style.left = `${x}px`;
+      hint.style.top = `${y - 40}px`;
+      document.body.appendChild(hint);
+      requestAnimationFrame(() => hint && hint.classList.add("show"));
+    };
+    const hideHint = () => {
+      if (!hint) return;
+      const el = hint; hint = null;
+      el.classList.remove("show");
+      setTimeout(() => el.remove(), 200);
+    };
+
+    const clearTimer = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    const reset = () => {
+      clearTimer();
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      if (armed) wrap.classList.remove("cf-selecting");
+      hideHint();
+      armed = false;
+      anchorPos = null;
+      lastWordHead = -1;
+    };
+
+    const extendTo = (clientX: number, clientY: number) => {
+      if (!armed || anchorPos == null) return;
+      const view = editor.view;
+      const head = view.posAtCoords({ left: clientX, top: clientY })?.pos;
+      if (head == null) return;
+      const { doc } = view.state;
+      try {
+        const sel = TextSelection.create(doc, anchorPos, head);
+        view.dispatch(view.state.tr.setSelection(sel));
+      } catch { /* doc moved */ }
+      // Tick haptic on word boundary crossings.
+      const wordHead = Math.floor(head / 4);
+      if (wordHead !== lastWordHead) {
+        lastWordHead = wordHead;
+        haptics.swipe();
+      }
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) { reset(); return; }
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      // Ignore touches on interactive controls or drag handle.
+      if (target.closest("button, a, input, textarea, [contenteditable=false], .drag-handle, [data-no-swipe-select]")) return;
+      if (!target.closest(".ProseMirror")) return;
+      const t = e.touches[0];
+      startX = t.clientX; startY = t.clientY;
+      clearTimer();
+      timer = window.setTimeout(() => {
+        const view = editor.view;
+        const pos = view.posAtCoords({ left: startX, top: startY })?.pos;
+        if (pos == null) return;
+        anchorPos = pos;
+        armed = true;
+        wrap.classList.add("cf-selecting");
+        haptics.longPress();
+        showHint(startX, startY);
+        try {
+          const sel = TextSelection.create(view.state.doc, pos, pos);
+          view.dispatch(view.state.tr.setSelection(sel));
+          view.focus();
+        } catch { /* */ }
+      }, LONG_PRESS_MS);
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!e.touches[0]) return;
+      const t = e.touches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (!armed) {
+        if (Math.hypot(dx, dy) > MOVE_TOLERANCE) clearTimer();
+        return;
+      }
+      // Prevent native page scroll while actively selecting.
+      if (e.cancelable) e.preventDefault();
+      pendingClientX = t.clientX;
+      pendingClientY = t.clientY;
+      if (rafId == null) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          extendTo(pendingClientX, pendingClientY);
+        });
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (armed) {
+        const { from, to } = editor.state.selection;
+        if (to > from) haptics.success();
+      }
+      reset();
+    };
+    const onTouchCancel = () => reset();
+
+    wrap.addEventListener("touchstart", onTouchStart, { passive: true });
+    wrap.addEventListener("touchmove", onTouchMove, { passive: false });
+    wrap.addEventListener("touchend", onTouchEnd, { passive: true });
+    wrap.addEventListener("touchcancel", onTouchCancel, { passive: true });
+    return () => {
+      wrap.removeEventListener("touchstart", onTouchStart);
+      wrap.removeEventListener("touchmove", onTouchMove);
+      wrap.removeEventListener("touchend", onTouchEnd);
+      wrap.removeEventListener("touchcancel", onTouchCancel);
+      reset();
+    };
+  }, [editor, isMobile]);
+
   // Listen for global "insert into note" events (e.g. from PDF AI summary).
   useEffect(() => {
     const onInsert = (e: Event) => {
