@@ -1858,6 +1858,7 @@ export function BlockEditor({
 
   return (
     <div
+      ref={wrapperRef}
       onClick={handleClick}
       onDragEnter={(e) => { if (Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === "file")) { setDragActive(true); } }}
       onDragOver={(e) => { if (Array.from(e.dataTransfer?.items ?? []).some(i => i.kind === "file")) { e.preventDefault(); setDragActive(true); } }}
