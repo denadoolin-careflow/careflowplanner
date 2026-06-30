@@ -5,9 +5,15 @@ import { Progress } from "@/components/ui/progress";
 import { format, parseISO, startOfYear, endOfYear, addDays, getDay, differenceInCalendarDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { PlanningHeader } from "@/components/today/PlanningHeader";
+import { QuickAddBar } from "@/components/today/QuickAddBar";
+import { TaskEditor } from "@/components/tasks/TaskEditor";
 
 export default function Year() {
   const { state } = useStore();
+  const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
+  const today = useMemo(() => new Date(), []);
   const months = Array.from({ length: 12 }, (_, i) => new Date(new Date().getFullYear(), i, 1));
   const quarters = [["Q1", [0,1,2]], ["Q2", [3,4,5]], ["Q3", [6,7,8]], ["Q4", [9,10,11]]] as const;
   const habitsAvg = state.habits.length ? Math.round(state.habits.reduce((s, h) => s + Math.min(100, h.streak * 5), 0) / state.habits.length) : 0;
