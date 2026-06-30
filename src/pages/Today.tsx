@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { RhythmDashboard } from "@/components/today/RhythmDashboard";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
+import { BurnoutCheckIn } from "@/components/today/BurnoutCheckIn";
+import { SlotWeatherStrip } from "@/components/today/SlotWeatherStrip";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
 import { DayPlanBoard } from "@/components/today/DayPlanBoard";
@@ -186,11 +188,24 @@ function TodayInner() {
                 onTaskClick={setEditTaskId}
                 onApptClick={setEditApptId}
                 slot={controls}
-                debrief={<DailyDebrief date={day} />}
+                debrief={
+                  <div className="space-y-6">
+                    <SlotWeatherStrip />
+                    <BurnoutCheckIn date={day} />
+                    <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+                  </div>
+                }
               />
             );
           }
-          return controls;
+          return (
+            <div className="space-y-6">
+              <SlotWeatherStrip />
+              <BurnoutCheckIn date={day} />
+              <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+              {controls}
+            </div>
+          );
         })()}
         {view === "timeofday" && <TimeOfDayBoard date={day} onTaskClick={setEditTaskId} />}
         {view === "plan" && <DayPlanBoard date={day} onTaskClick={setEditTaskId} />}
