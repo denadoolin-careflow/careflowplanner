@@ -6,7 +6,7 @@ import {
   Plus, Sparkles, Star, ChevronLeft, ChevronRight, ArrowRight, Moon, BookHeart,
   FileText, StickyNote, PenLine, Sunrise, Sun, Sandwich, Apple, Loader2,
   Heart, Activity, Droplet, Zap, Pill, Footprints, Target, ChevronRight as ChevronRightIcon,
-  ShoppingBasket, Sparkle, Leaf, Users, Sparkles as SparklesIcon, Brush, Palette,
+  ShoppingBasket, Sparkle, Leaf, Users, Sparkles as SparklesIcon, Brush, Palette, Sprout,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,6 +32,12 @@ import { cn } from "@/lib/utils";
 import type { Task, Meal } from "@/lib/types";
 import { getIntention, setIntention as saveIntention } from "@/lib/daily-intention";
 import { getCheckIn, setCheckIn, type DailyCheckIn } from "@/lib/daily-checkin";
+import { SlotWeather } from "@/components/today/rhythm/SlotWeather";
+import { TodayHabitsCard } from "@/components/today/TodayHabitsCard";
+import { routines as routinesApi } from "@/lib/routines";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 /** ----------------------------------------------------------------
  *  Today page — calm daily command center
@@ -70,6 +76,7 @@ export function RhythmDashboard({
       <div className="grid gap-6 lg:grid-cols-4">
         <div className="space-y-6">
           <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
+          <HabitsRoutinesCard date={date} />
           <UpcomingColumn date={date} />
         </div>
         <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />
@@ -445,9 +452,10 @@ function ScheduleColumn({
         title="Today's Schedule"
         action={<Link to="/calendar" className="text-[11px] uppercase tracking-wider text-primary/80 hover:text-primary">View calendar</Link>}
       />
-      <div className="space-y-4">
-        {SLOTS.map(({ label, icon }) => {
+      <div className="space-y-5">
+        {SLOTS.map(({ label, icon }, si) => {
           const rows = groups[label];
+          const weatherSlot = label.toLowerCase() as "morning" | "afternoon" | "evening";
           return (
             <div key={label}>
               <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/70">
@@ -462,33 +470,12 @@ function ScheduleColumn({
                   {rows.map((r) => {
                     const isNow = items.indexOf(r) === currentIdx;
                     return (
-                      <li
+                      <ScheduleRow
                         key={`${r.kind}-${r.id}`}
-                        className={cn(
-                          "flex items-start gap-3 rounded-xl border border-border/40 bg-background/50 px-3 py-2 transition",
-                          "hover:border-primary/40 hover:bg-background/80",
-                          isNow && "border-primary/50 shadow-[0_0_0_2px_hsl(var(--primary)/0.15)]",
-                        )}
-                      >
-                        <span className="mt-0.5 shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
-                          {r.time ? format12(r.time) : "—"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => r.kind === "task" ? onTaskClick(r.id) : onApptClick(r.id)}
-                          className={cn(
-                            "min-w-0 flex-1 whitespace-normal break-words text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
-                            r.done && "text-muted-foreground line-through",
-                          )}
-                        >
-                          {r.label}
-                        </button>
-                        {r.durationMin ? (
-                          <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {fmtDur(r.durationMin)}
-                          </span>
-                        ) : null}
-                      </li>
+                        row={r}
+                        isNow={isNow}
+                        onOpen={() => r.kind === "task" ? onTaskClick(r.id) : onApptClick(r.id)}
+                      />
                     );
                   })}
                 </ul>
@@ -499,11 +486,105 @@ function ScheduleColumn({
               >
                 <Plus className="h-3 w-3" /> Add Event
               </Link>
+              <div className="mt-2">
+                <SlotWeather slot={weatherSlot} />
+              </div>
             </div>
           );
         })}
       </div>
     </Card>
+  );
+}
+
+/** Schedule row with inline note editing, checkbox for tasks, and consistent hover UX. */
+function ScheduleRow({
+  row, isNow, onOpen,
+}: {
+  row: { id: string; time?: string; label: string; kind: "appt" | "task"; durationMin?: number; done?: boolean };
+  isNow: boolean;
+  onOpen: () => void;
+}) {
+  const { state, toggleTask, updateTask, updateAppointment } = useStore();
+  const source = row.kind === "task"
+    ? state.tasks.find(t => t.id === row.id)
+    : state.appointments.find(a => a.id === row.id);
+  const notes: string = (source as any)?.notes ?? "";
+  const [showNote, setShowNote] = useState(!!notes);
+  const [draft, setDraft] = useState(notes);
+  useEffect(() => { setDraft(notes); }, [notes]);
+
+  const persistNote = async () => {
+    if (draft === notes) return;
+    if (row.kind === "task") await updateTask(row.id, { notes: draft } as any);
+    else await updateAppointment(row.id, { notes: draft } as any);
+  };
+
+  return (
+    <li
+      className={cn(
+        "group rounded-xl border border-border/40 bg-background/50 px-3 py-2 transition",
+        "hover:border-primary/40 hover:bg-background/80",
+        isNow && "border-primary/50 shadow-[0_0_0_2px_hsl(var(--primary)/0.15)]",
+      )}
+    >
+      <div className="flex items-start gap-2.5">
+        {row.kind === "task" ? (
+          <Checkbox
+            checked={!!row.done}
+            onCheckedChange={() => void toggleTask(row.id)}
+            className="mt-1 h-4 w-4"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-primary/60"
+          />
+        )}
+        <span className="mt-0.5 shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
+          {row.time ? format12(row.time) : "—"}
+        </span>
+        <button
+          type="button" onClick={onOpen}
+          className={cn(
+            "min-w-0 flex-1 whitespace-normal break-words text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
+            row.done && "text-muted-foreground line-through",
+          )}
+        >
+          {row.label}
+        </button>
+        {row.durationMin ? (
+          <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {fmtDur(row.durationMin)}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setShowNote(v => !v)}
+          className={cn(
+            "shrink-0 rounded-full p-0.5 text-muted-foreground/60 opacity-0 transition group-hover:opacity-100 hover:bg-primary/10 hover:text-primary",
+            (showNote || notes) && "opacity-100",
+          )}
+          aria-label="Toggle note"
+          title="Add / edit note"
+        >
+          <StickyNote className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      {showNote && (
+        <Textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={persistNote}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void persistNote(); }
+          }}
+          placeholder="Add a note…"
+          rows={2}
+          className="mt-2 min-h-[44px] resize-none rounded-xl border-border/40 bg-background/70 text-[12px] leading-snug"
+        />
+      )}
+    </li>
   );
 }
 
@@ -795,6 +876,7 @@ function MealCard({
  * =================================================================== */
 function UpcomingColumn({ date }: { date: Date }) {
   const { state } = useStore();
+  const navigate = useNavigate();
   const iso = format(date, "yyyy-MM-dd");
   const events = useMemo(() => state.appointments
     .filter(a => a.date > iso)
@@ -812,22 +894,37 @@ function UpcomingColumn({ date }: { date: Date }) {
       {events.length === 0 ? (
         <EmptyState text="Nothing on the horizon." />
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-1.5">
           {events.map(e => {
             const d = parseISO(e.date);
             const dayLabel = relativeDay(d);
             return (
-              <li key={e.id} className="flex items-center gap-3">
-                <div className="w-20 shrink-0 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <li
+                key={e.id}
+                className="group flex items-center gap-2.5 rounded-xl border border-border/40 bg-background/50 px-3 py-2 transition hover:border-primary/40 hover:bg-background/80"
+              >
+                <span
+                  aria-hidden
+                  className="mt-0.5 inline-block h-2 w-2 shrink-0 rounded-full bg-primary/60"
+                />
+                <div className="w-20 shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {dayLabel}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-foreground">{e.title}</div>
-                  {e.location && <div className="truncate text-[11px] text-muted-foreground">{e.location}</div>}
-                </div>
-                <div className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/calendar?appt=${e.id}`)}
+                  className="min-w-0 flex-1 text-left"
+                >
+                  <div className="whitespace-normal break-words text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                    {e.title}
+                  </div>
+                  {e.location && (
+                    <div className="truncate text-[11px] text-muted-foreground">{e.location}</div>
+                  )}
+                </button>
+                <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] tabular-nums text-muted-foreground">
                   {e.allDay ? "All day" : e.time ? format12(e.time) : ""}
-                </div>
+                </span>
               </li>
             );
           })}
@@ -1033,6 +1130,14 @@ function MetricStepper({
 }) {
   const clamp = (v: number) => Math.max(min, Math.min(max, v));
   const display = format ? format(value) : String(value);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => { setDraft(String(value)); }, [value]);
+  const commit = () => {
+    const n = Number(draft);
+    if (!Number.isNaN(n)) onChange(clamp(n));
+    setEditing(false);
+  };
   return (
     <div className="group flex flex-col items-center justify-center rounded-2xl border border-border/40 bg-background/40 px-2 py-3 text-center transition hover:border-primary/40">
       <span className="text-primary">{icon}</span>
@@ -1043,7 +1148,29 @@ function MetricStepper({
           onClick={() => onChange(clamp(value - step))}
           className="h-5 w-5 rounded-full text-muted-foreground opacity-0 transition hover:bg-muted group-hover:opacity-100"
         >−</button>
-        <span className="font-display text-lg font-semibold tabular-nums text-foreground">{display}</span>
+        {editing ? (
+          <input
+            autoFocus
+            inputMode="decimal"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); commit(); }
+              if (e.key === "Escape") { setDraft(String(value)); setEditing(false); }
+            }}
+            className="w-12 rounded-md border border-border/50 bg-background/70 px-1 text-center font-display text-lg font-semibold tabular-nums text-foreground outline-none focus:border-primary/60"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setDraft(String(value)); setEditing(true); }}
+            className="rounded-md px-1 font-display text-lg font-semibold tabular-nums text-foreground hover:bg-muted/40"
+            title="Tap to edit"
+          >
+            {display}
+          </button>
+        )}
         <button
           type="button" aria-label={`Increase ${label}`}
           onClick={() => onChange(clamp(value + step))}
@@ -1244,62 +1371,205 @@ function InProgressProjectsCard() {
 /* =====================================================================
  * Current Project Focus
  * =================================================================== */
+const FOCUS_KEY = "careflow:today:focus-project:v1";
+function readFocusId(): string | null {
+  if (typeof localStorage === "undefined") return null;
+  return localStorage.getItem(FOCUS_KEY);
+}
+function writeFocusId(id: string | null) {
+  try {
+    if (id) localStorage.setItem(FOCUS_KEY, id);
+    else localStorage.removeItem(FOCUS_KEY);
+  } catch { /* noop */ }
+}
+
 function CurrentProjectFocusCard() {
-  const { state } = useStore();
+  const { state, toggleTask } = useStore();
   const rows = useProjectProgress();
+  const [focusId, setFocusId] = useState<string | null>(() => readFocusId());
+
   const focus = useMemo(() => {
-    const fav = rows.find(r => r.p.isFavorite);
-    if (fav) return fav;
-    return rows[0] ?? null;
-  }, [rows]);
-  const nextStep = useMemo(() => {
-    if (!focus) return null;
-    return state.tasks.find(t => t.projectId === focus.p.id && !t.done && !t.parentTaskId) ?? null;
+    if (focusId) {
+      const hit = rows.find(r => r.p.id === focusId);
+      if (hit) return hit;
+    }
+    return rows.find(r => r.p.isFavorite) ?? rows[0] ?? null;
+  }, [rows, focusId]);
+
+  const openTasks = useMemo(() => {
+    if (!focus) return [];
+    return state.tasks
+      .filter(t => t.projectId === focus.p.id && !t.done && !t.parentTaskId)
+      .slice(0, 3);
   }, [focus, state.tasks]);
+
+  const setFocus = (id: string) => {
+    setFocusId(id);
+    writeFocusId(id);
+  };
 
   return (
     <Card>
-      <CardHeader icon={<Target className="h-4 w-4" />} title="Current Project Focus" />
+      <CardHeader
+        icon={<Target className="h-4 w-4" />}
+        title="Project Focus"
+        action={
+          rows.length > 0 && focus ? (
+            <Select value={focus.p.id} onValueChange={setFocus}>
+              <SelectTrigger className="h-7 w-[150px] rounded-full border-border/50 bg-background/70 text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {rows.map(r => (
+                  <SelectItem key={r.p.id} value={r.p.id} className="text-xs">
+                    <span className="mr-1">{r.p.icon ?? "✨"}</span>{r.p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null
+        }
+      />
       {!focus ? (
         <EmptyState text="Pick a favorite project to focus on." />
       ) : (
         <>
-          <div className="flex items-start gap-3">
+          <div className="flex items-center gap-3">
             <div
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-lg"
-              style={{ background: `${focus.p.color ?? "hsl(var(--primary))"}22`, color: focus.p.color ?? "hsl(var(--primary))" }}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-lg"
+              style={{
+                background: `${focus.p.color ?? "hsl(var(--primary))"}22`,
+                color: focus.p.color ?? "hsl(var(--primary))",
+              }}
             >
               {focus.p.icon ?? "✨"}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold text-foreground">{focus.p.name}</div>
-              {focus.p.notes && (
-                <p className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">{focus.p.notes}</p>
-              )}
-            </div>
+            <Link
+              to={`/projects/${focus.p.id}`}
+              className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground hover:text-primary"
+            >
+              {focus.p.name}
+            </Link>
+            <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">
+              {focus.pct}%
+            </span>
           </div>
-          <div className="mt-3">
-            <div className="mb-1 flex items-baseline justify-between text-[11px]">
-              <span className="uppercase tracking-wider text-muted-foreground">Progress</span>
-              <span className="tabular-nums font-semibold text-foreground">{focus.pct}%</span>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
-              <div className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary" style={{ width: `${focus.pct}%` }} />
-            </div>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-[width] duration-700"
+              style={{ width: `${focus.pct}%` }}
+            />
           </div>
-          <div className="mt-3 rounded-2xl border border-border/40 bg-background/50 p-3">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Next Step</div>
-            <div className="mt-1 flex items-start gap-2 text-sm text-foreground/90">
-              <Checkbox checked={false} className="mt-0.5 h-4 w-4" disabled />
-              <span className="whitespace-normal break-words">
-                {nextStep?.title ?? "No open tasks. Add one to keep going."}
-              </span>
-            </div>
+          <div className="mt-4">
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Next steps</div>
+            {openTasks.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-border/50 px-3 py-2 text-center text-[11px] text-muted-foreground">
+                All caught up here.
+              </p>
+            ) : (
+              <ul className="space-y-1">
+                {openTasks.map(t => (
+                  <li
+                    key={t.id}
+                    className="group flex items-start gap-2 rounded-lg px-1 py-1 transition hover:bg-muted/40"
+                  >
+                    <Checkbox
+                      checked={t.done}
+                      onCheckedChange={() => void toggleTask(t.id)}
+                      className="mt-0.5 h-4 w-4"
+                    />
+                    <span className="min-w-0 flex-1 whitespace-normal break-words text-[13px] text-foreground/90">
+                      {t.title}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <CardFooter>
-            <FooterAction icon={<ArrowRight className="h-3.5 w-3.5" />} label="View Project" to={`/projects/${focus.p.id}`} />
+            <FooterAction
+              icon={<ArrowRight className="h-3.5 w-3.5" />}
+              label="View Project"
+              to={`/projects/${focus.p.id}`}
+            />
           </CardFooter>
         </>
+      )}
+    </Card>
+  );
+}
+
+/* =====================================================================
+ * Habits + Routines mini card (near Today's schedule)
+ * =================================================================== */
+function HabitsRoutinesCard({ date }: { date: Date }) {
+  const { state } = useStore();
+  const iso = format(date, "yyyy-MM-dd");
+  const dow = date.getDay();
+  const [open, setOpen] = useState(false);
+
+  const todayHabits = useMemo(() => state.habits.filter(h => {
+    if (h.cadence === "daily") return true;
+    if (h.cadence === "weekly") {
+      if (h.daysOfWeek?.length) return h.daysOfWeek.includes(dow);
+      return true;
+    }
+    return (h.linkedTaskIds ?? []).some(id => {
+      const t = state.tasks.find(x => x.id === id);
+      return t?.dueDate === iso;
+    });
+  }), [state.habits, state.tasks, iso, dow]);
+
+  const total = todayHabits.length;
+  const done = todayHabits.filter(h => h.log[iso]).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  const routineTotal = (() => {
+    try { return routinesApi.list().length; } catch { return 0; }
+  })();
+
+  return (
+    <Card>
+      <CardHeader
+        icon={<Sprout className="h-4 w-4" />}
+        title="Habits & Routines"
+        action={
+          <button
+            type="button"
+            onClick={() => setOpen(v => !v)}
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold text-primary/80 transition hover:bg-primary/10 hover:text-primary"
+          >
+            {open ? "Hide" : "Show"}
+            <ChevronRightIcon
+              className={cn("h-3 w-3 transition-transform", open && "rotate-90")}
+            />
+          </button>
+        }
+      />
+      <div className="flex items-center gap-3">
+        <Ring pct={pct} color="hsl(var(--primary))" size={40} />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium text-foreground">
+            {done} of {total} habits tended
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            {routineTotal
+              ? `${routineTotal} routine${routineTotal === 1 ? "" : "s"} available · tap Show to run timer`
+              : "Add a routine to run a guided timer"}
+          </div>
+        </div>
+        <Link
+          to="/routines"
+          className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary hover:bg-primary/15"
+          title="Open routines with focus timer"
+        >
+          Timer
+        </Link>
+      </div>
+      {open && (
+        <div className="mt-4 border-t border-border/40 pt-4">
+          <TodayHabitsCard date={date} />
+        </div>
       )}
     </Card>
   );

@@ -190,7 +190,6 @@ function TodayInner() {
                 slot={controls}
                 debrief={
                   <div className="space-y-6">
-                    <SlotWeatherStrip />
                     <BurnoutCheckIn date={day} />
                     <DailyDebrief date={day} onTaskClick={setEditTaskId} />
                   </div>
