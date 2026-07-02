@@ -626,7 +626,7 @@ function TaskRow({
       <button
         type="button" onClick={onOpen}
         className={cn(
-          "min-w-0 flex-1 truncate text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
+          "min-w-0 flex-1 whitespace-normal break-words text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
           t.done && "line-through text-muted-foreground",
         )}
       >
