@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import type { Area, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type Defaults = Partial<Pick<Task, "dueDate" | "dueTime" | "area" | "projectId" | "priority" | "tags" | "status" | "parentTaskId">>;
+type Defaults = Partial<Pick<Task, "dueDate" | "area" | "projectId" | "priority" | "tags" | "status" | "parentTaskId">> & { dueTime?: string };
 
 interface Props {
   label?: string;
