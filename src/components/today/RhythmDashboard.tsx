@@ -903,6 +903,7 @@ function UpcomingColumn({ date }: { date: Date }) {
   const { state } = useStore();
   const navigate = useNavigate();
   const iso = format(date, "yyyy-MM-dd");
+  const tomorrow = format(addDays(date, 1), "yyyy-MM-dd");
   const events = useMemo(() => state.appointments
     .filter(a => a.date > iso)
     .sort((a, b) => (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")))
@@ -955,6 +956,9 @@ function UpcomingColumn({ date }: { date: Date }) {
           })}
         </ul>
       )}
+      <div className="mt-3 border-t border-border/40 pt-2">
+        <InlineNlpAdd label="Add upcoming" defaults={{ dueDate: tomorrow }} />
+      </div>
     </Card>
   );
 }
