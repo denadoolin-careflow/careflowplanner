@@ -217,6 +217,9 @@ export default function Week() {
               {view === "agenda" && (
                 <AgendaView days={isMobile ? [selectedDate] : days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} onLunarOpen={setLunarDate} />
               )}
+              {view === "month" && (
+                <MonthGridView cursor={start} onCursorChange={(d) => setStart(startOfWeek(d, { weekStartsOn: 1 }))} />
+              )}
             </SectionCard>
 
             <CalendarTasksPanel days={days} />
