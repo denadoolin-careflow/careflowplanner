@@ -520,12 +520,12 @@ function ScheduleColumn({
                   })}
                 </ul>
               )}
-              <Link
-                to="/calendar?new=appt"
-                className="mt-1.5 flex items-center justify-center gap-1 rounded-full py-1 text-[11px] font-medium text-primary/80 hover:bg-primary/10 hover:text-primary"
-              >
-                <Plus className="h-3 w-3" /> Add Event
-              </Link>
+              <InlineNlpAdd
+                label={`Add to ${label.toLowerCase()}`}
+                placeholder={`Add to ${label.toLowerCase()}…`}
+                defaults={{ dueDate: iso }}
+                slotHours={label === "Morning" ? [6, 12] : label === "Afternoon" ? [12, 17] : [17, 22]}
+              />
               <div className="mt-2">
                 <SlotWeather slot={weatherSlot} />
               </div>
