@@ -6,7 +6,7 @@ import {
   Plus, Sparkles, Star, ChevronLeft, ChevronRight, ArrowRight, Moon, BookHeart,
   FileText, StickyNote, PenLine, Sunrise, Sun, Sandwich, Apple, Loader2,
   Heart, Activity, Droplet, Zap, Pill, Footprints, Target, ChevronRight as ChevronRightIcon,
-  ShoppingBasket, Sparkle, Leaf, Users, Sparkles as SparklesIcon, Brush, Palette, Sprout,
+  ShoppingBasket, Sparkle, Leaf, Users, Sparkles as SparklesIcon, Brush, Palette, Sprout, EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
