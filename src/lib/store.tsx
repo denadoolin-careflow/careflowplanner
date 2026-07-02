@@ -162,6 +162,8 @@ const apptFrom = (r: any): Appointment => ({
   googleEventId: r.google_event_id ?? undefined,
   googleCalendarId: r.google_calendar_id ?? undefined,
   googleLastSyncedAt: r.google_last_synced_at ?? undefined,
+  recurrenceRule: r.recurrence_rule ?? undefined,
+  reminderMinutesBefore: r.reminder_minutes_before ?? undefined,
   updatedAt: r.updated_at ?? undefined,
 });
 const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined, updatedAt: r.updated_at ?? undefined });
