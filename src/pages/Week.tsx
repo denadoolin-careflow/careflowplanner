@@ -17,6 +17,9 @@ import { CalendarViewToggle, useCalView } from "@/components/calendar/CalendarVi
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { MonthGridView } from "@/components/calendar/MonthGridView";
+import { MyCalendarsPanel } from "@/components/calendar/MyCalendarsPanel";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Layers } from "lucide-react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { WeekNavigator } from "@/components/week/WeekNavigator";
 import { hoursToHM } from "@/lib/time-blocks";
@@ -170,6 +173,15 @@ export default function Week() {
             <SectionCard title="This week" accent="warm" action={
               <div className="flex items-center gap-2">
                 <QuickAddCalendarPopover days={days} />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-full">
+                      <Layers className="h-3.5 w-3.5" />
+                      <span className="hidden text-xs sm:inline">Calendars</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 p-2"><MyCalendarsPanel /></PopoverContent>
+                </Popover>
                 <div className="hidden sm:inline-flex">
                   <CalendarViewToggle value={view} onChange={setView} />
                 </div>
