@@ -5,6 +5,8 @@ import {
   Clock, CloudSun, CalendarClock, CalendarDays, ListTodo, UtensilsCrossed,
   Plus, Sparkles, Star, ChevronLeft, ChevronRight, ArrowRight, Moon, BookHeart,
   FileText, StickyNote, PenLine, Sunrise, Sun, Sandwich, Apple, Loader2,
+  Heart, Activity, Droplet, Zap, Pill, Footprints, Target, ChevronRight as ChevronRightIcon,
+  ShoppingBasket, Sparkle, Leaf, Users, Sparkles as SparklesIcon, Brush, Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,6 +30,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Task, Meal } from "@/lib/types";
+import { getIntention, setIntention as saveIntention } from "@/lib/daily-intention";
+import { getCheckIn, setCheckIn, type DailyCheckIn } from "@/lib/daily-checkin";
 
 /** ----------------------------------------------------------------
  *  Today page — calm daily command center
@@ -51,17 +55,31 @@ export function RhythmDashboard({
   debrief?: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-1 sm:px-2">
+    <div className="mx-auto w-full max-w-[1400px] space-y-8 px-1 sm:px-2">
       <Hero date={date} onDateChange={onDateChange} isReallyToday={isReallyToday} />
       <Triptych date={date} />
       {slot}
       {debrief}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
+      {/* Row 1 — Intention · Check-In · Goals */}
+      <div className="grid gap-6 lg:grid-cols-4">
+        <IntentionCard date={date} />
+        <div className="lg:col-span-2"><DailyCheckInCard date={date} /></div>
+        <GoalCheckInCard />
+      </div>
+      {/* Row 2 — Schedule · Progress · Meals · Projects */}
+      <div className="grid gap-6 lg:grid-cols-4">
+        <div className="space-y-6">
+          <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
+          <UpcomingColumn date={date} />
+        </div>
         <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />
         <div className="space-y-6">
           <MealsColumn date={date} />
-          <UpcomingColumn date={date} />
+          <GroceryCard />
+        </div>
+        <div className="space-y-6">
+          <InProgressProjectsCard />
+          <CurrentProjectFocusCard />
         </div>
       </div>
     </div>
@@ -401,6 +419,25 @@ function ScheduleColumn({
     return idx;
   }, [items, iso, now]);
 
+  const groups = useMemo(() => {
+    const g: Record<"Morning" | "Afternoon" | "Evening", typeof items> = {
+      Morning: [], Afternoon: [], Evening: [],
+    };
+    for (const r of items) {
+      const h = r.time ? Number(r.time.slice(0, 2)) : 12;
+      if (h < 12) g.Morning.push(r);
+      else if (h < 17) g.Afternoon.push(r);
+      else g.Evening.push(r);
+    }
+    return g;
+  }, [items]);
+
+  const SLOTS: { label: "Morning" | "Afternoon" | "Evening"; icon: string }[] = [
+    { label: "Morning", icon: "☀️" },
+    { label: "Afternoon", icon: "🌤" },
+    { label: "Evening", icon: "🌙" },
+  ];
+
   return (
     <Card>
       <CardHeader
@@ -408,54 +445,64 @@ function ScheduleColumn({
         title="Today's Schedule"
         action={<Link to="/calendar" className="text-[11px] uppercase tracking-wider text-primary/80 hover:text-primary">View calendar</Link>}
       />
-      {items.length === 0 ? (
-        <EmptyState text="No events scheduled." />
-      ) : (
-        <ul className="relative space-y-3 pl-1">
-          <span aria-hidden className="absolute left-[3.4rem] top-2 bottom-2 w-px bg-border/60" />
-          {items.map((r, i) => {
-            const isNow = i === currentIdx;
-            return (
-              <li key={`${r.kind}-${r.id}`} className="relative grid grid-cols-[3rem_auto_1fr_auto] items-center gap-3">
-                <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
-                  {r.time ? format12(r.time) : "—"}
-                </span>
-                <span
-                  className={cn(
-                    "relative z-10 h-2.5 w-2.5 rounded-full transition-all",
-                    isNow
-                      ? "bg-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.18),0_0_18px_hsl(var(--primary)/0.55)] animate-pulse"
-                      : r.kind === "appt"
-                        ? "bg-accent/80"
-                        : "bg-primary/50",
-                  )}
-                />
-                <button
-                  type="button"
-                  onClick={() => r.kind === "task" ? onTaskClick(r.id) : onApptClick(r.id)}
-                  className={cn(
-                    "min-w-0 truncate text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
-                    r.done && "text-muted-foreground line-through",
-                  )}
-                >
-                  {r.label}
-                </button>
-                {r.durationMin ? (
-                  <span className={cn(
-                    "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
-                    isNow ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground",
-                  )}>
-                    {fmtDur(r.durationMin)}
-                  </span>
-                ) : <span />}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <CardFooter>
-        <FooterAction icon={<Plus className="h-3.5 w-3.5" />} label="Add Event" to="/calendar?new=appt" />
-      </CardFooter>
+      <div className="space-y-4">
+        {SLOTS.map(({ label, icon }) => {
+          const rows = groups[label];
+          return (
+            <div key={label}>
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/70">
+                <span aria-hidden>{icon}</span>{label}
+              </div>
+              {rows.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/50 px-3 py-3 text-center text-[11px] text-muted-foreground">
+                  No events scheduled.
+                </div>
+              ) : (
+                <ul className="space-y-1.5">
+                  {rows.map((r) => {
+                    const isNow = items.indexOf(r) === currentIdx;
+                    return (
+                      <li
+                        key={`${r.kind}-${r.id}`}
+                        className={cn(
+                          "flex items-start gap-3 rounded-xl border border-border/40 bg-background/50 px-3 py-2 transition",
+                          "hover:border-primary/40 hover:bg-background/80",
+                          isNow && "border-primary/50 shadow-[0_0_0_2px_hsl(var(--primary)/0.15)]",
+                        )}
+                      >
+                        <span className="mt-0.5 shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
+                          {r.time ? format12(r.time) : "—"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => r.kind === "task" ? onTaskClick(r.id) : onApptClick(r.id)}
+                          className={cn(
+                            "min-w-0 flex-1 whitespace-normal break-words text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
+                            r.done && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {r.label}
+                        </button>
+                        {r.durationMin ? (
+                          <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {fmtDur(r.durationMin)}
+                          </span>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <Link
+                to="/calendar?new=appt"
+                className="mt-1.5 flex items-center justify-center gap-1 rounded-full py-1 text-[11px] font-medium text-primary/80 hover:bg-primary/10 hover:text-primary"
+              >
+                <Plus className="h-3 w-3" /> Add Event
+              </Link>
+            </div>
+          );
+        })}
+      </div>
     </Card>
   );
 }
@@ -579,7 +626,7 @@ function TaskRow({
       <button
         type="button" onClick={onOpen}
         className={cn(
-          "min-w-0 flex-1 truncate text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
+          "min-w-0 flex-1 whitespace-normal break-words text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
           t.done && "line-through text-muted-foreground",
         )}
       >
@@ -843,5 +890,417 @@ function EmptyState({ text }: { text: string }) {
     <p className="rounded-2xl border border-dashed border-border/50 px-3 py-5 text-center text-xs text-muted-foreground">
       {text}
     </p>
+  );
+}
+
+/* =====================================================================
+ * Daily Plan Intention
+ * =================================================================== */
+function IntentionCard({ date }: { date: Date }) {
+  const iso = format(date, "yyyy-MM-dd");
+  const [text, setText] = useState(() => getIntention(iso));
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(text);
+  useEffect(() => {
+    const v = getIntention(iso);
+    setText(v); setDraft(v); setEditing(false);
+  }, [iso]);
+
+  const commit = () => {
+    const v = draft.trim();
+    saveIntention(iso, v); setText(v); setEditing(false);
+  };
+
+  return (
+    <section
+      className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/55 p-6 shadow-soft backdrop-blur-xl transition hover:border-border/70 hover:shadow-md"
+      style={{
+        backgroundImage:
+          "radial-gradient(120% 90% at 0% 0%, hsl(var(--primary)/0.10), transparent 55%)," +
+          "radial-gradient(120% 90% at 100% 100%, hsl(var(--accent)/0.10), transparent 55%)",
+      }}
+    >
+      <div className="mb-3 flex items-center gap-2">
+        <Heart className="h-4 w-4 text-primary" />
+        <h3 className="font-display text-base font-semibold text-foreground">Daily Plan Intention</h3>
+      </div>
+      {editing ? (
+        <>
+          <Textarea
+            autoFocus rows={4} value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) commit(); }}
+            placeholder="Choose focus. Set the tone. Let today flow with purpose."
+            className="min-h-[96px] resize-none rounded-2xl border-border/50 bg-background/70 text-sm leading-relaxed"
+          />
+          <div className="mt-2 flex justify-end">
+            <button type="button" onClick={commit}
+              className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground shadow-soft">
+              Save
+            </button>
+          </div>
+        </>
+      ) : (
+        <button
+          type="button" onClick={() => { setDraft(text); setEditing(true); }}
+          className="group block w-full rounded-2xl border border-border/40 bg-background/40 p-4 text-left transition hover:border-primary/40"
+        >
+          <p className={cn(
+            "font-display text-sm leading-relaxed",
+            text ? "text-foreground/90 italic" : "text-muted-foreground",
+          )}>
+            {text || "Choose focus. Set the tone. Let today flow with purpose."}
+          </p>
+          <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-primary/80 group-hover:text-primary">
+            <PenLine className="h-3 w-3" /> Edit
+          </div>
+        </button>
+      )}
+    </section>
+  );
+}
+
+/* =====================================================================
+ * Daily Check-In — Sleep · Water · Energy · Medicine · Movement
+ * =================================================================== */
+function DailyCheckInCard({ date }: { date: Date }) {
+  const iso = format(date, "yyyy-MM-dd");
+  const [ci, setCi] = useState<DailyCheckIn>(() => getCheckIn(iso));
+  useEffect(() => { setCi(getCheckIn(iso)); }, [iso]);
+  const patch = (p: Partial<DailyCheckIn>) => setCi(setCheckIn(iso, p));
+
+  return (
+    <Card>
+      <CardHeader icon={<Activity className="h-4 w-4" />} title="Daily Check-In" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <MetricStepper
+          icon={<Moon className="h-4 w-4" />} label="Sleep" unit="hrs"
+          value={ci.sleepHours ?? 0} step={0.5} min={0} max={14}
+          onChange={(v) => patch({ sleepHours: v })}
+          format={(v) => v.toFixed(1)}
+        />
+        <MetricStepper
+          icon={<Droplet className="h-4 w-4" />} label="Water" unit="cups"
+          value={ci.waterCups ?? 0} step={1} min={0} max={24}
+          onChange={(v) => patch({ waterCups: v })}
+        />
+        <MetricStepper
+          icon={<Zap className="h-4 w-4" />} label="Energy" unit="/10"
+          value={ci.energy ?? 0} step={1} min={0} max={10}
+          onChange={(v) => patch({ energy: v })}
+        />
+        <button
+          type="button"
+          onClick={() => patch({ medicineDone: !ci.medicineDone })}
+          className={cn(
+            "flex flex-col items-center justify-center rounded-2xl border px-2 py-3 text-center transition",
+            ci.medicineDone
+              ? "border-primary/50 bg-primary/10"
+              : "border-border/40 bg-background/40 hover:border-primary/40",
+          )}
+        >
+          <Pill className={cn("h-4 w-4", ci.medicineDone ? "text-primary" : "text-muted-foreground")} />
+          <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">Medicine</span>
+          <span className={cn("mt-0.5 font-display text-base font-semibold", ci.medicineDone ? "text-primary" : "text-foreground/80")}>
+            {ci.medicineDone ? "Logged" : "Log"}
+          </span>
+        </button>
+        <MetricStepper
+          icon={<Footprints className="h-4 w-4" />} label="Movement" unit="mins"
+          value={ci.movementMinutes ?? 0} step={5} min={0} max={480}
+          onChange={(v) => patch({ movementMinutes: v })}
+        />
+      </div>
+      <div className="mt-3">
+        <Textarea
+          value={ci.note ?? ""} onChange={(e) => patch({ note: e.target.value })}
+          placeholder="Add a note…"
+          rows={2}
+          className="min-h-[52px] resize-none rounded-xl border-border/40 bg-background/50 text-xs"
+        />
+      </div>
+    </Card>
+  );
+}
+
+function MetricStepper({
+  icon, label, unit, value, step, min, max, onChange, format,
+}: {
+  icon: React.ReactNode; label: string; unit: string;
+  value: number; step: number; min: number; max: number;
+  onChange: (v: number) => void; format?: (v: number) => string;
+}) {
+  const clamp = (v: number) => Math.max(min, Math.min(max, v));
+  const display = format ? format(value) : String(value);
+  return (
+    <div className="group flex flex-col items-center justify-center rounded-2xl border border-border/40 bg-background/40 px-2 py-3 text-center transition hover:border-primary/40">
+      <span className="text-primary">{icon}</span>
+      <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <div className="mt-0.5 inline-flex items-center gap-1">
+        <button
+          type="button" aria-label={`Decrease ${label}`}
+          onClick={() => onChange(clamp(value - step))}
+          className="h-5 w-5 rounded-full text-muted-foreground opacity-0 transition hover:bg-muted group-hover:opacity-100"
+        >−</button>
+        <span className="font-display text-lg font-semibold tabular-nums text-foreground">{display}</span>
+        <button
+          type="button" aria-label={`Increase ${label}`}
+          onClick={() => onChange(clamp(value + step))}
+          className="h-5 w-5 rounded-full text-muted-foreground opacity-0 transition hover:bg-muted group-hover:opacity-100"
+        >+</button>
+      </div>
+      <span className="text-[10px] text-muted-foreground">{unit}</span>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * Goal Check-In — progress rings per category
+ * =================================================================== */
+function GoalCheckInCard() {
+  const { state } = useStore();
+  const groups = useMemo(() => {
+    const map = new Map<string, { total: number; sum: number; label: string }>();
+    const groupOf: Record<string, string> = {
+      Family: "Family & Relationships",
+      Relationship: "Family & Relationships",
+      Caregiving: "Family & Relationships",
+      Health: "Health & Wellness",
+      Home: "Health & Wellness",
+      Personal: "Personal Growth",
+      Creative: "Personal Growth",
+      Financial: "Personal Growth",
+    };
+    for (const g of state.goals ?? []) {
+      if (g.status !== "active") continue;
+      const key = groupOf[g.category] ?? "Personal Growth";
+      const cur = map.get(key) ?? { total: 0, sum: 0, label: key };
+      cur.total += 1; cur.sum += Math.max(0, Math.min(100, g.progress ?? 0));
+      map.set(key, cur);
+    }
+    const order = ["Health & Wellness", "Family & Relationships", "Personal Growth"];
+    return order.map(k => {
+      const v = map.get(k);
+      return { label: k, pct: v && v.total ? Math.round(v.sum / v.total) : 0 };
+    });
+  }, [state.goals]);
+
+  const RING_TONE: Record<string, string> = {
+    "Health & Wellness": "hsl(var(--primary))",
+    "Family & Relationships": "hsl(45 80% 60%)",
+    "Personal Growth": "hsl(160 60% 55%)",
+  };
+
+  return (
+    <Card>
+      <CardHeader icon={<Target className="h-4 w-4" />} title="Goal Check-In" />
+      <ul className="space-y-3">
+        {groups.map(g => (
+          <li key={g.label} className="flex items-center gap-3">
+            <Ring pct={g.pct} color={RING_TONE[g.label]} />
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{g.label}</span>
+            <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">{g.pct}%</span>
+            <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          </li>
+        ))}
+      </ul>
+      <CardFooter>
+        <FooterAction icon={<Plus className="h-3.5 w-3.5" />} label="Add Goal" to="/goals" />
+      </CardFooter>
+    </Card>
+  );
+}
+
+function Ring({ pct, color, size = 36 }: { pct: number; color: string; size?: number }) {
+  const r = (size - 6) / 2;
+  const c = 2 * Math.PI * r;
+  const off = c - (pct / 100) * c;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="hsl(var(--muted))" strokeOpacity="0.4" strokeWidth="3" />
+      <circle
+        cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="3"
+        strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: "stroke-dashoffset 700ms ease" }}
+      />
+    </svg>
+  );
+}
+
+/* =====================================================================
+ * Grocery Card
+ * =================================================================== */
+function GroceryCard() {
+  const { state, toggleGrocery, addGrocery } = useStore();
+  const items = useMemo(
+    () => [...state.grocery].sort((a, b) => Number(a.bought) - Number(b.bought)).slice(0, 6),
+    [state.grocery],
+  );
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+  const commit = async () => {
+    const v = draft.trim();
+    if (!v) { setAdding(false); return; }
+    await addGrocery(v);
+    setDraft(""); setAdding(false);
+  };
+  return (
+    <Card>
+      <CardHeader
+        icon={<ShoppingBasket className="h-4 w-4" />}
+        title="Grocery List"
+        action={
+          adding ? null : (
+            <button
+              type="button" onClick={() => setAdding(true)}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary/80 hover:text-primary"
+            ><Plus className="h-3 w-3" /> Add Item</button>
+          )
+        }
+      />
+      {items.length === 0 && !adding ? (
+        <EmptyState text="Your list is empty." />
+      ) : (
+        <ul className="space-y-1.5">
+          {items.map(i => (
+            <li key={i.id} className="flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-muted/40">
+              <Checkbox checked={i.bought} onCheckedChange={() => void toggleGrocery(i.id)} className="h-4 w-4" />
+              <span className={cn(
+                "min-w-0 flex-1 truncate text-sm",
+                i.bought ? "text-muted-foreground line-through" : "text-foreground/90",
+              )}>{i.name}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {adding && (
+        <Input
+          autoFocus value={draft} onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => { if (e.key === "Enter") void commit(); if (e.key === "Escape") { setDraft(""); setAdding(false); } }}
+          placeholder="Add grocery item…"
+          className="mt-2 h-8 rounded-full bg-background/70 text-xs"
+        />
+      )}
+      <CardFooter>
+        <FooterAction icon={<ArrowRight className="h-3.5 w-3.5" />} label="View All" to="/home?tab=groceries" />
+      </CardFooter>
+    </Card>
+  );
+}
+
+/* =====================================================================
+ * In Progress Projects
+ * =================================================================== */
+function useProjectProgress() {
+  const { state } = useStore();
+  return useMemo(() => {
+    const list = (state.projects ?? []).filter(p => p.status === "active" && !p.archivedAt);
+    return list.map(p => {
+      const tasks = state.tasks.filter(t => t.projectId === p.id && !t.parentTaskId);
+      const done = tasks.filter(t => t.done).length;
+      const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+      return { p, pct, total: tasks.length, done };
+    }).sort((a, b) => b.pct - a.pct);
+  }, [state.projects, state.tasks]);
+}
+
+function InProgressProjectsCard() {
+  const rows = useProjectProgress().slice(0, 4);
+  return (
+    <Card>
+      <CardHeader icon={<SparklesIcon className="h-4 w-4" />} title="In Progress" />
+      {rows.length === 0 ? (
+        <EmptyState text="No active projects." />
+      ) : (
+        <ul className="space-y-3">
+          {rows.map(({ p, pct }) => (
+            <li key={p.id}>
+              <div className="flex items-baseline justify-between gap-2">
+                <Link to={`/projects/${p.id}`} className="min-w-0 truncate text-sm font-medium text-foreground hover:text-primary">
+                  {p.name}
+                </Link>
+                <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">{pct}%</span>
+              </div>
+              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-[width] duration-700"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <CardFooter>
+        <FooterAction icon={<ArrowRight className="h-3.5 w-3.5" />} label="View All" to="/projects" />
+      </CardFooter>
+    </Card>
+  );
+}
+
+/* =====================================================================
+ * Current Project Focus
+ * =================================================================== */
+function CurrentProjectFocusCard() {
+  const { state } = useStore();
+  const rows = useProjectProgress();
+  const focus = useMemo(() => {
+    const fav = rows.find(r => r.p.isFavorite);
+    if (fav) return fav;
+    return rows[0] ?? null;
+  }, [rows]);
+  const nextStep = useMemo(() => {
+    if (!focus) return null;
+    return state.tasks.find(t => t.projectId === focus.p.id && !t.done && !t.parentTaskId) ?? null;
+  }, [focus, state.tasks]);
+
+  return (
+    <Card>
+      <CardHeader icon={<Target className="h-4 w-4" />} title="Current Project Focus" />
+      {!focus ? (
+        <EmptyState text="Pick a favorite project to focus on." />
+      ) : (
+        <>
+          <div className="flex items-start gap-3">
+            <div
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-lg"
+              style={{ background: `${focus.p.color ?? "hsl(var(--primary))"}22`, color: focus.p.color ?? "hsl(var(--primary))" }}
+            >
+              {focus.p.icon ?? "✨"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold text-foreground">{focus.p.name}</div>
+              {focus.p.notes && (
+                <p className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">{focus.p.notes}</p>
+              )}
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="mb-1 flex items-baseline justify-between text-[11px]">
+              <span className="uppercase tracking-wider text-muted-foreground">Progress</span>
+              <span className="tabular-nums font-semibold text-foreground">{focus.pct}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
+              <div className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary" style={{ width: `${focus.pct}%` }} />
+            </div>
+          </div>
+          <div className="mt-3 rounded-2xl border border-border/40 bg-background/50 p-3">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Next Step</div>
+            <div className="mt-1 flex items-start gap-2 text-sm text-foreground/90">
+              <Checkbox checked={false} className="mt-0.5 h-4 w-4" disabled />
+              <span className="whitespace-normal break-words">
+                {nextStep?.title ?? "No open tasks. Add one to keep going."}
+              </span>
+            </div>
+          </div>
+          <CardFooter>
+            <FooterAction icon={<ArrowRight className="h-3.5 w-3.5" />} label="View Project" to={`/projects/${focus.p.id}`} />
+          </CardFooter>
+        </>
+      )}
+    </Card>
   );
 }
