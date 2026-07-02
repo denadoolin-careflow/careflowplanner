@@ -1444,10 +1444,15 @@ function writeFocusId(id: string | null) {
   } catch { /* noop */ }
 }
 
-function CurrentProjectFocusCard() {
+function CurrentProjectFocusCard({ onTaskClick }: { onTaskClick?: (id: string) => void }) {
   const { state, toggleTask } = useStore();
   const rows = useProjectProgress();
   const [focusId, setFocusId] = useState<string | null>(() => readFocusId());
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => { if (e.key === FOCUS_KEY) setFocusId(readFocusId()); };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const focus = useMemo(() => {
     if (focusId) {
@@ -1461,13 +1466,38 @@ function CurrentProjectFocusCard() {
     if (!focus) return [];
     return state.tasks
       .filter(t => t.projectId === focus.p.id && !t.done && !t.parentTaskId)
-      .slice(0, 3);
+      .sort((a, b) => {
+        const ad = a.dueDate ?? "z"; const bd = b.dueDate ?? "z";
+        if (ad !== bd) return ad.localeCompare(bd);
+        const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        return (rank[a.priority] ?? 1) - (rank[b.priority] ?? 1);
+      })
+      .slice(0, 5);
   }, [focus, state.tasks]);
 
   const setFocus = (id: string) => {
     setFocusId(id);
     writeFocusId(id);
   };
+
+  // Local "why this matters today" hint derived from project + task data
+  const whyHint = useMemo(() => {
+    if (!focus) return null;
+    const iso = format(new Date(), "yyyy-MM-dd");
+    const proj = focus.p as any;
+    const projTasks = state.tasks.filter(t => t.projectId === focus.p.id && !t.done && !t.parentTaskId);
+    const dueToday = projTasks.filter(t => t.dueDate === iso);
+    const overdue = projTasks.filter(t => t.dueDate && t.dueDate < iso);
+    if (overdue.length) return `${overdue.length} overdue task${overdue.length === 1 ? "" : "s"} — clearing these unblocks the rest.`;
+    if (dueToday.length) return `${dueToday.length} task${dueToday.length === 1 ? "" : "s"} due today — a small push closes the loop.`;
+    if (proj?.dueDate) {
+      const days = Math.round((new Date(proj.dueDate).getTime() - new Date(iso).getTime()) / 86400000);
+      if (days >= 0 && days <= 14) return `Deadline in ${days} day${days === 1 ? "" : "s"} — steady progress keeps it calm.`;
+    }
+    if (focus.pct < 25) return "Early momentum matters most — one next step compounds.";
+    if (focus.pct >= 75) return "So close — a short session may finish it today.";
+    return "Keep the thread warm — a light touch keeps it alive.";
+  }, [focus, state.tasks]);
 
   return (
     <Card>
@@ -1477,13 +1507,23 @@ function CurrentProjectFocusCard() {
         action={
           rows.length > 0 && focus ? (
             <Select value={focus.p.id} onValueChange={setFocus}>
-              <SelectTrigger className="h-7 w-[150px] rounded-full border-border/50 bg-background/70 text-[11px]">
-                <SelectValue />
+              <SelectTrigger className="h-7 w-[160px] rounded-full border-border/50 bg-background/70 text-[11px]">
+                <SelectValue asChild>
+                  <span className="inline-flex min-w-0 items-center gap-1.5">
+                    <ProjectIconGlyph project={focus.p} className="h-3.5 w-3.5 shrink-0" />
+                    <span className="min-w-0 truncate">{focus.p.name}</span>
+                  </span>
+                </SelectValue>
               </SelectTrigger>
               <SelectContent align="end">
                 {rows.map(r => (
                   <SelectItem key={r.p.id} value={r.p.id} className="text-xs">
-                    <span className="mr-1">{r.p.icon ?? "✨"}</span>{r.p.name}
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="grid h-5 w-5 place-items-center rounded-md" style={projectIconTileStyle(r.p)}>
+                        <ProjectIconGlyph project={r.p} className="h-3 w-3" />
+                      </span>
+                      <span className="min-w-0 truncate">{r.p.name}</span>
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1497,13 +1537,10 @@ function CurrentProjectFocusCard() {
         <>
           <div className="flex items-center gap-3">
             <div
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-lg"
-              style={{
-                background: `${focus.p.color ?? "hsl(var(--primary))"}22`,
-                color: focus.p.color ?? "hsl(var(--primary))",
-              }}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl"
+              style={projectIconTileStyle(focus.p)}
             >
-              {focus.p.icon ?? "✨"}
+              <ProjectIconGlyph project={focus.p} className="h-5 w-5" />
             </div>
             <Link
               to={`/projects/${focus.p.id}`}
@@ -1521,6 +1558,12 @@ function CurrentProjectFocusCard() {
               style={{ width: `${focus.pct}%` }}
             />
           </div>
+          {whyHint && (
+            <p className="mt-2 rounded-xl bg-primary/8 px-2.5 py-1.5 text-[11px] italic leading-snug text-foreground/80">
+              <Sparkles className="mr-1 inline h-3 w-3 text-primary" />
+              Why this matters today — {whyHint}
+            </p>
+          )}
           <div className="mt-4">
             <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Next steps</div>
             {openTasks.length === 0 ? (
@@ -1539,13 +1582,25 @@ function CurrentProjectFocusCard() {
                       onCheckedChange={() => void toggleTask(t.id)}
                       className="mt-0.5 h-4 w-4"
                     />
-                    <span className="min-w-0 flex-1 whitespace-normal break-words text-[13px] text-foreground/90">
+                    <button
+                      type="button"
+                      onClick={() => onTaskClick?.(t.id)}
+                      className="min-w-0 flex-1 whitespace-normal break-words text-left text-[13px] text-foreground/90 hover:text-primary"
+                    >
                       {t.title}
-                    </span>
+                    </button>
+                    <div className="opacity-0 transition group-hover:opacity-100">
+                      <TaskHoverActions task={t} onEdit={() => onTaskClick?.(t.id)} onDetails={() => onTaskClick?.(t.id)} />
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
+            <InlineNlpAdd
+              label="Add next step"
+              placeholder="Add next step for this project…"
+              defaults={{ projectId: focus.p.id, dueDate: format(new Date(), "yyyy-MM-dd") }}
+            />
           </div>
           <CardFooter>
             <FooterAction
