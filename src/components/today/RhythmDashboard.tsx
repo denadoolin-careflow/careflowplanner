@@ -5,6 +5,8 @@ import {
   Clock, CloudSun, CalendarClock, CalendarDays, ListTodo, UtensilsCrossed,
   Plus, Sparkles, Star, ChevronLeft, ChevronRight, ArrowRight, Moon, BookHeart,
   FileText, StickyNote, PenLine, Sunrise, Sun, Sandwich, Apple, Loader2,
+  Heart, Activity, Droplet, Zap, Pill, Footprints, Target, ChevronRight as ChevronRightIcon,
+  ShoppingBasket, Sparkle, Leaf, Users, Sparkles as SparklesIcon, Brush, Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,6 +30,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Task, Meal } from "@/lib/types";
+import { getIntention, setIntention as saveIntention } from "@/lib/daily-intention";
+import { getCheckIn, setCheckIn, type DailyCheckIn } from "@/lib/daily-checkin";
 
 /** ----------------------------------------------------------------
  *  Today page — calm daily command center
@@ -51,17 +55,31 @@ export function RhythmDashboard({
   debrief?: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-1 sm:px-2">
+    <div className="mx-auto w-full max-w-[1400px] space-y-8 px-1 sm:px-2">
       <Hero date={date} onDateChange={onDateChange} isReallyToday={isReallyToday} />
       <Triptych date={date} />
       {slot}
       {debrief}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
+      {/* Row 1 — Intention · Check-In · Goals */}
+      <div className="grid gap-6 lg:grid-cols-4">
+        <IntentionCard date={date} />
+        <div className="lg:col-span-2"><DailyCheckInCard date={date} /></div>
+        <GoalCheckInCard />
+      </div>
+      {/* Row 2 — Schedule · Progress · Meals · Projects */}
+      <div className="grid gap-6 lg:grid-cols-4">
+        <div className="space-y-6">
+          <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
+          <UpcomingColumn date={date} />
+        </div>
         <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />
         <div className="space-y-6">
           <MealsColumn date={date} />
-          <UpcomingColumn date={date} />
+          <GroceryCard />
+        </div>
+        <div className="space-y-6">
+          <InProgressProjectsCard />
+          <CurrentProjectFocusCard />
         </div>
       </div>
     </div>
