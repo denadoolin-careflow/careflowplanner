@@ -32,6 +32,11 @@ import { cn } from "@/lib/utils";
 import type { Task, Meal } from "@/lib/types";
 import { getIntention, setIntention as saveIntention } from "@/lib/daily-intention";
 import { getCheckIn, setCheckIn, type DailyCheckIn } from "@/lib/daily-checkin";
+import { SlotWeather } from "@/components/today/rhythm/SlotWeather";
+import { TodayHabitsCard } from "@/components/today/TodayHabitsCard";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 /** ----------------------------------------------------------------
  *  Today page — calm daily command center
@@ -70,6 +75,7 @@ export function RhythmDashboard({
       <div className="grid gap-6 lg:grid-cols-4">
         <div className="space-y-6">
           <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
+          <HabitsRoutinesCard date={date} />
           <UpcomingColumn date={date} />
         </div>
         <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />
