@@ -6,7 +6,7 @@ import {
   Plus, Sparkles, Star, ChevronLeft, ChevronRight, ArrowRight, Moon, BookHeart,
   FileText, StickyNote, PenLine, Sunrise, Sun, Sandwich, Apple, Loader2,
   Heart, Activity, Droplet, Zap, Pill, Footprints, Target, ChevronRight as ChevronRightIcon,
-  ShoppingBasket, Sparkle, Leaf, Users, Sparkles as SparklesIcon, Brush, Palette, Sprout,
+  ShoppingBasket, Sparkle, Leaf, Users, Sparkles as SparklesIcon, Brush, Palette, Sprout, EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,6 +38,27 @@ import { routines as routinesApi } from "@/lib/routines";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { TileEditProvider, useTileEdit } from "@/lib/today-tiles";
+import { TileFrame, TileEditToggle, TilePalette } from "@/components/today/tiles/TileFrame";
+import { InlineNlpAdd } from "@/components/today/InlineNlpAdd";
+import { ProjectIconGlyph, projectIconTileStyle } from "@/lib/project-icon";
+import { useGoalGroups, DEFAULT_GOAL_GROUPS, type GoalGroupCfg } from "@/lib/goal-checkin-prefs";
+import { TaskHoverActions } from "@/components/tasks/TaskHoverActions";
+import { Settings2, GripVertical, ExternalLink } from "lucide-react";
+
+const TODAY_TILES: { id: string; title: string; defaultSize?: "sm" | "md" | "lg" | "xl" }[] = [
+  { id: "intention", title: "Daily Intention", defaultSize: "md" },
+  { id: "checkin",   title: "Daily Check-In",  defaultSize: "lg" },
+  { id: "goals",     title: "Goal Check-In",   defaultSize: "md" },
+  { id: "schedule",  title: "Today's Schedule", defaultSize: "md" },
+  { id: "habits",    title: "Habits & Routines", defaultSize: "md" },
+  { id: "upcoming",  title: "Upcoming",         defaultSize: "md" },
+  { id: "progress",  title: "Today's Progress", defaultSize: "md" },
+  { id: "meals",     title: "Today's Meals",    defaultSize: "md" },
+  { id: "grocery",   title: "Grocery List",     defaultSize: "md" },
+  { id: "projects",  title: "In Progress",      defaultSize: "md" },
+  { id: "focus",     title: "Project Focus",    defaultSize: "md" },
+];
 
 /** ----------------------------------------------------------------
  *  Today page — calm daily command center
@@ -61,34 +82,53 @@ export function RhythmDashboard({
   debrief?: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-[1400px] space-y-8 px-1 sm:px-2">
-      <Hero date={date} onDateChange={onDateChange} isReallyToday={isReallyToday} />
-      <Triptych date={date} />
-      {slot}
-      {debrief}
-      {/* Row 1 — Intention · Check-In · Goals */}
-      <div className="grid gap-6 lg:grid-cols-4">
-        <IntentionCard date={date} />
-        <div className="lg:col-span-2"><DailyCheckInCard date={date} /></div>
-        <GoalCheckInCard />
+    <TileEditProvider>
+      <div className="mx-auto w-full max-w-[1400px] space-y-8 px-1 sm:px-2">
+        <Hero date={date} onDateChange={onDateChange} isReallyToday={isReallyToday} />
+        <Triptych date={date} />
+        {slot}
+        {debrief}
+        <div className="flex items-center justify-end px-1">
+          <TileEditToggle />
+        </div>
+        <TilePalette tiles={TODAY_TILES} />
+        <TileGrid date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
       </div>
-      {/* Row 2 — Schedule · Progress · Meals · Projects */}
-      <div className="grid gap-6 lg:grid-cols-4">
-        <div className="space-y-6">
-          <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
-          <HabitsRoutinesCard date={date} />
-          <UpcomingColumn date={date} />
-        </div>
-        <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />
-        <div className="space-y-6">
-          <MealsColumn date={date} />
-          <GroceryCard />
-        </div>
-        <div className="space-y-6">
-          <InProgressProjectsCard />
-          <CurrentProjectFocusCard />
-        </div>
-      </div>
+    </TileEditProvider>
+  );
+}
+
+function TileGrid({ date, onTaskClick, onApptClick }: { date: Date; onTaskClick: (id: string) => void; onApptClick: (id: string) => void }) {
+  const { order } = useTileEdit();
+  // Merge registered order with canonical list so new tiles append.
+  const known = new Map(TODAY_TILES.map(t => [t.id, t]));
+  const merged = [
+    ...order.filter(id => known.has(id)),
+    ...TODAY_TILES.map(t => t.id).filter(id => !order.includes(id)),
+  ];
+  const renderers: Record<string, () => React.ReactNode> = {
+    intention: () => <IntentionCard date={date} />,
+    checkin:   () => <DailyCheckInCard date={date} />,
+    goals:     () => <GoalCheckInCard />,
+    schedule:  () => <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />,
+    habits:    () => <HabitsRoutinesCard date={date} />,
+    upcoming:  () => <UpcomingColumn date={date} />,
+    progress:  () => <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />,
+    meals:     () => <MealsColumn date={date} />,
+    grocery:   () => <GroceryCard />,
+    projects:  () => <InProgressProjectsCard />,
+    focus:     () => <CurrentProjectFocusCard onTaskClick={onTaskClick} />,
+  };
+  return (
+    <div className="grid gap-6 lg:grid-cols-4">
+      {merged.map(id => {
+        const meta = known.get(id)!;
+        return (
+          <TileFrame key={id} id={id} title={meta.title} defaultSize={meta.defaultSize ?? "md"}>
+            {renderers[id]?.()}
+          </TileFrame>
+        );
+      })}
     </div>
   );
 }
@@ -480,12 +520,12 @@ function ScheduleColumn({
                   })}
                 </ul>
               )}
-              <Link
-                to="/calendar?new=appt"
-                className="mt-1.5 flex items-center justify-center gap-1 rounded-full py-1 text-[11px] font-medium text-primary/80 hover:bg-primary/10 hover:text-primary"
-              >
-                <Plus className="h-3 w-3" /> Add Event
-              </Link>
+              <InlineNlpAdd
+                label={`Add to ${label.toLowerCase()}`}
+                placeholder={`Add to ${label.toLowerCase()}…`}
+                defaults={{ dueDate: iso }}
+                slotHours={label === "Morning" ? [6, 12] : label === "Afternoon" ? [12, 17] : [17, 22]}
+              />
               <div className="mt-2">
                 <SlotWeather slot={weatherSlot} />
               </div>
@@ -623,15 +663,6 @@ function ProgressTasksColumn({
 
   const projectName = (id?: string) => id ? state.projects.find(p => p.id === id)?.name : undefined;
 
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState("");
-  const commit = async () => {
-    const v = draft.trim();
-    if (!v) { setAdding(false); return; }
-    await addTask({ title: v, dueDate: iso, priority: "med", area: "general" } as any);
-    setDraft(""); setAdding(false);
-  };
-
   return (
     <Card>
       <CardHeader
@@ -660,7 +691,7 @@ function ProgressTasksColumn({
         <Link to="/tasks" className="text-[11px] uppercase tracking-wider text-primary/80 hover:text-primary">View all</Link>
       </div>
 
-      {tasks.length === 0 && !adding ? (
+      {tasks.length === 0 ? (
         <EmptyState text="Nothing on the list yet." />
       ) : (
         <ul className="mt-2 space-y-1">
@@ -670,18 +701,12 @@ function ProgressTasksColumn({
         </ul>
       )}
 
-      <CardFooter>
-        {adding ? (
-          <Input
-            autoFocus value={draft} onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => { if (e.key === "Enter") void commit(); if (e.key === "Escape") { setDraft(""); setAdding(false); } }}
-            placeholder="What needs doing?" className="h-8 rounded-full bg-background/70 text-xs"
-          />
-        ) : (
-          <FooterAction icon={<Plus className="h-3.5 w-3.5" />} label="Add Task" onClick={() => setAdding(true)} />
-        )}
-      </CardFooter>
+      <div className="mt-4 border-t border-border/40 pt-3">
+        <InlineNlpAdd
+          label="Add task"
+          defaults={{ dueDate: iso }}
+        />
+      </div>
     </Card>
   );
 }
@@ -878,6 +903,7 @@ function UpcomingColumn({ date }: { date: Date }) {
   const { state } = useStore();
   const navigate = useNavigate();
   const iso = format(date, "yyyy-MM-dd");
+  const tomorrow = format(addDays(date, 1), "yyyy-MM-dd");
   const events = useMemo(() => state.appointments
     .filter(a => a.date > iso)
     .sort((a, b) => (a.date + (a.time ?? "")).localeCompare(b.date + (b.time ?? "")))
@@ -930,6 +956,9 @@ function UpcomingColumn({ date }: { date: Date }) {
           })}
         </ul>
       )}
+      <div className="mt-3 border-t border-border/40 pt-2">
+        <InlineNlpAdd label="Add upcoming" defaults={{ dueDate: tomorrow }} />
+      </div>
     </Card>
   );
 }
@@ -1187,55 +1216,114 @@ function MetricStepper({
  * =================================================================== */
 function GoalCheckInCard() {
   const { state } = useStore();
-  const groups = useMemo(() => {
-    const map = new Map<string, { total: number; sum: number; label: string }>();
-    const groupOf: Record<string, string> = {
-      Family: "Family & Relationships",
-      Relationship: "Family & Relationships",
-      Caregiving: "Family & Relationships",
-      Health: "Health & Wellness",
-      Home: "Health & Wellness",
-      Personal: "Personal Growth",
-      Creative: "Personal Growth",
-      Financial: "Personal Growth",
-    };
-    for (const g of state.goals ?? []) {
-      if (g.status !== "active") continue;
-      const key = groupOf[g.category] ?? "Personal Growth";
-      const cur = map.get(key) ?? { total: 0, sum: 0, label: key };
-      cur.total += 1; cur.sum += Math.max(0, Math.min(100, g.progress ?? 0));
-      map.set(key, cur);
-    }
-    const order = ["Health & Wellness", "Family & Relationships", "Personal Growth"];
-    return order.map(k => {
-      const v = map.get(k);
-      return { label: k, pct: v && v.total ? Math.round(v.sum / v.total) : 0 };
-    });
-  }, [state.goals]);
+  const [groups, updateGroups, resetGroups] = useGoalGroups();
 
-  const RING_TONE: Record<string, string> = {
-    "Health & Wellness": "hsl(var(--primary))",
-    "Family & Relationships": "hsl(45 80% 60%)",
-    "Personal Growth": "hsl(160 60% 55%)",
-  };
+  const rows = useMemo(() => {
+    return groups.filter(g => !g.hidden).map(g => {
+      const cats = new Set(g.categories.map(c => c.toLowerCase()));
+      const goals = (state.goals ?? []).filter(x => x.status === "active" && cats.has((x.category ?? "").toLowerCase()));
+      const pct = goals.length
+        ? Math.round(goals.reduce((s, x) => s + Math.max(0, Math.min(100, x.progress ?? 0)), 0) / goals.length)
+        : 0;
+      return { ...g, pct, count: goals.length };
+    });
+  }, [groups, state.goals]);
 
   return (
     <Card>
-      <CardHeader icon={<Target className="h-4 w-4" />} title="Goal Check-In" />
-      <ul className="space-y-3">
-        {groups.map(g => (
-          <li key={g.label} className="flex items-center gap-3">
-            <Ring pct={g.pct} color={RING_TONE[g.label]} />
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{g.label}</span>
-            <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">{g.pct}%</span>
-            <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          </li>
-        ))}
-      </ul>
+      <CardHeader
+        icon={<Target className="h-4 w-4" />}
+        title="Goal Check-In"
+        action={<GoalCheckInSettings groups={groups} update={updateGroups} reset={resetGroups} />}
+      />
+      {rows.length === 0 ? (
+        <EmptyState text="No goal groups visible. Add one from settings." />
+      ) : (
+        <ul className="space-y-3">
+          {rows.map(g => (
+            <li key={g.id} className="flex items-center gap-3">
+              <Ring pct={g.pct} color={g.color} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-foreground">{g.label}</div>
+                <div className="text-[10px] text-muted-foreground">{g.count} active goal{g.count === 1 ? "" : "s"}</div>
+              </div>
+              <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">{g.pct}%</span>
+              <Link to="/goals" aria-label="Open goals">
+                <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground hover:text-primary" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
       <CardFooter>
         <FooterAction icon={<Plus className="h-3.5 w-3.5" />} label="Add Goal" to="/goals" />
       </CardFooter>
     </Card>
+  );
+}
+
+function GoalCheckInSettings({
+  groups, update, reset,
+}: {
+  groups: GoalGroupCfg[];
+  update: (u: (prev: GoalGroupCfg[]) => GoalGroupCfg[]) => void;
+  reset: () => void;
+}) {
+  const [newLabel, setNewLabel] = useState("");
+  const [newCats, setNewCats] = useState("");
+  const move = (id: string, dir: -1 | 1) => update(prev => {
+    const i = prev.findIndex(x => x.id === id);
+    if (i < 0) return prev;
+    const j = i + dir;
+    if (j < 0 || j >= prev.length) return prev;
+    const next = prev.slice();
+    [next[i], next[j]] = [next[j], next[i]];
+    return next;
+  });
+  const toggle = (id: string) => update(prev => prev.map(g => g.id === id ? { ...g, hidden: !g.hidden } : g));
+  const remove = (id: string) => update(prev => prev.filter(g => g.id !== id));
+  const add = () => {
+    const label = newLabel.trim();
+    if (!label) return;
+    const cats = newCats.split(",").map(s => s.trim()).filter(Boolean);
+    update(prev => [...prev, { id: `custom-${Date.now()}`, label, categories: cats.length ? cats : [label], color: "hsl(280 60% 60%)" }]);
+    setNewLabel(""); setNewCats("");
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground" title="Customize goal groups">
+          <Settings2 className="h-3 w-3" /> Customize
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-3 space-y-3">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Goal groups</div>
+        <ul className="space-y-1.5">
+          {groups.map(g => (
+            <li key={g.id} className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-background/60 px-2 py-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: g.color }} />
+              <div className="min-w-0 flex-1">
+                <div className={cn("truncate text-xs font-medium", g.hidden && "text-muted-foreground line-through")}>{g.label}</div>
+                <div className="truncate text-[10px] text-muted-foreground">{g.categories.join(", ")}</div>
+              </div>
+              <button type="button" onClick={() => move(g.id, -1)} className="h-5 w-5 rounded hover:bg-muted" aria-label="Move up">↑</button>
+              <button type="button" onClick={() => move(g.id, 1)} className="h-5 w-5 rounded hover:bg-muted" aria-label="Move down">↓</button>
+              <button type="button" onClick={() => toggle(g.id)} className="h-5 w-5 rounded hover:bg-muted" aria-label="Hide"><EyeOff className="mx-auto h-3 w-3" /></button>
+              <button type="button" onClick={() => remove(g.id)} className="h-5 w-5 rounded text-destructive hover:bg-destructive/10" aria-label="Remove">×</button>
+            </li>
+          ))}
+        </ul>
+        <div className="space-y-1 border-t border-border/40 pt-2">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Add group</div>
+          <Input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Label (e.g. Learning)" className="h-7 text-xs" />
+          <Input value={newCats} onChange={(e) => setNewCats(e.target.value)} placeholder="Categories (comma-separated)" className="h-7 text-xs" />
+          <div className="flex justify-end gap-1">
+            <button type="button" onClick={reset} className="rounded px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground">Reset</button>
+            <button type="button" onClick={add} className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-primary-foreground">Add</button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -1336,29 +1424,61 @@ function useProjectProgress() {
 
 function InProgressProjectsCard() {
   const rows = useProjectProgress().slice(0, 4);
+  const navigate = useNavigate();
   return (
     <Card>
       <CardHeader icon={<SparklesIcon className="h-4 w-4" />} title="In Progress" />
       {rows.length === 0 ? (
         <EmptyState text="No active projects." />
       ) : (
-        <ul className="space-y-3">
-          {rows.map(({ p, pct }) => (
-            <li key={p.id}>
-              <div className="flex items-baseline justify-between gap-2">
-                <Link to={`/projects/${p.id}`} className="min-w-0 truncate text-sm font-medium text-foreground hover:text-primary">
-                  {p.name}
-                </Link>
-                <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">{pct}%</span>
-              </div>
-              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
+        <ul className="space-y-2">
+          {rows.map(({ p, pct, total, done }) => {
+            const tile = projectIconTileStyle(p);
+            const onFocus = () => { try { localStorage.setItem(FOCUS_KEY, p.id); } catch { /* */ } window.dispatchEvent(new StorageEvent("storage", { key: FOCUS_KEY })); };
+            return (
+              <li key={p.id}>
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-[width] duration-700"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </li>
-          ))}
+                  className="group flex items-center gap-3 rounded-2xl border border-transparent px-2 py-2 transition hover:border-primary/30 hover:bg-background/60"
+                >
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/projects/${p.id}`)}
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-xl"
+                    style={tile}
+                    aria-label={p.name}
+                  >
+                    <ProjectIconGlyph project={p} className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/projects/${p.id}`)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="min-w-0 truncate text-sm font-medium text-foreground group-hover:text-primary">{p.name}</span>
+                      <span className="shrink-0 tabular-nums text-[11px] font-semibold text-muted-foreground">{pct}%</span>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
+                      <div className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-[width] duration-700" style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="mt-0.5 text-[10px] text-muted-foreground">{done} of {total} · tap to open</div>
+                  </button>
+                  <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
+                    <button
+                      type="button" onClick={onFocus}
+                      className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      title="Set as focus"
+                    ><Target className="h-3.5 w-3.5" /></button>
+                    <button
+                      type="button" onClick={() => navigate(`/projects/${p.id}`)}
+                      className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      title="Open project"
+                    ><ExternalLink className="h-3.5 w-3.5" /></button>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
       <CardFooter>
@@ -1383,10 +1503,15 @@ function writeFocusId(id: string | null) {
   } catch { /* noop */ }
 }
 
-function CurrentProjectFocusCard() {
+function CurrentProjectFocusCard({ onTaskClick }: { onTaskClick?: (id: string) => void }) {
   const { state, toggleTask } = useStore();
   const rows = useProjectProgress();
   const [focusId, setFocusId] = useState<string | null>(() => readFocusId());
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => { if (e.key === FOCUS_KEY) setFocusId(readFocusId()); };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const focus = useMemo(() => {
     if (focusId) {
@@ -1400,13 +1525,38 @@ function CurrentProjectFocusCard() {
     if (!focus) return [];
     return state.tasks
       .filter(t => t.projectId === focus.p.id && !t.done && !t.parentTaskId)
-      .slice(0, 3);
+      .sort((a, b) => {
+        const ad = a.dueDate ?? "z"; const bd = b.dueDate ?? "z";
+        if (ad !== bd) return ad.localeCompare(bd);
+        const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        return (rank[a.priority] ?? 1) - (rank[b.priority] ?? 1);
+      })
+      .slice(0, 5);
   }, [focus, state.tasks]);
 
   const setFocus = (id: string) => {
     setFocusId(id);
     writeFocusId(id);
   };
+
+  // Local "why this matters today" hint derived from project + task data
+  const whyHint = useMemo(() => {
+    if (!focus) return null;
+    const iso = format(new Date(), "yyyy-MM-dd");
+    const proj = focus.p as any;
+    const projTasks = state.tasks.filter(t => t.projectId === focus.p.id && !t.done && !t.parentTaskId);
+    const dueToday = projTasks.filter(t => t.dueDate === iso);
+    const overdue = projTasks.filter(t => t.dueDate && t.dueDate < iso);
+    if (overdue.length) return `${overdue.length} overdue task${overdue.length === 1 ? "" : "s"} — clearing these unblocks the rest.`;
+    if (dueToday.length) return `${dueToday.length} task${dueToday.length === 1 ? "" : "s"} due today — a small push closes the loop.`;
+    if (proj?.dueDate) {
+      const days = Math.round((new Date(proj.dueDate).getTime() - new Date(iso).getTime()) / 86400000);
+      if (days >= 0 && days <= 14) return `Deadline in ${days} day${days === 1 ? "" : "s"} — steady progress keeps it calm.`;
+    }
+    if (focus.pct < 25) return "Early momentum matters most — one next step compounds.";
+    if (focus.pct >= 75) return "So close — a short session may finish it today.";
+    return "Keep the thread warm — a light touch keeps it alive.";
+  }, [focus, state.tasks]);
 
   return (
     <Card>
@@ -1416,13 +1566,23 @@ function CurrentProjectFocusCard() {
         action={
           rows.length > 0 && focus ? (
             <Select value={focus.p.id} onValueChange={setFocus}>
-              <SelectTrigger className="h-7 w-[150px] rounded-full border-border/50 bg-background/70 text-[11px]">
-                <SelectValue />
+              <SelectTrigger className="h-7 w-[160px] rounded-full border-border/50 bg-background/70 text-[11px]">
+                <SelectValue asChild>
+                  <span className="inline-flex min-w-0 items-center gap-1.5">
+                    <ProjectIconGlyph project={focus.p} className="h-3.5 w-3.5 shrink-0" />
+                    <span className="min-w-0 truncate">{focus.p.name}</span>
+                  </span>
+                </SelectValue>
               </SelectTrigger>
               <SelectContent align="end">
                 {rows.map(r => (
                   <SelectItem key={r.p.id} value={r.p.id} className="text-xs">
-                    <span className="mr-1">{r.p.icon ?? "✨"}</span>{r.p.name}
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="grid h-5 w-5 place-items-center rounded-md" style={projectIconTileStyle(r.p)}>
+                        <ProjectIconGlyph project={r.p} className="h-3 w-3" />
+                      </span>
+                      <span className="min-w-0 truncate">{r.p.name}</span>
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1436,13 +1596,10 @@ function CurrentProjectFocusCard() {
         <>
           <div className="flex items-center gap-3">
             <div
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-lg"
-              style={{
-                background: `${focus.p.color ?? "hsl(var(--primary))"}22`,
-                color: focus.p.color ?? "hsl(var(--primary))",
-              }}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl"
+              style={projectIconTileStyle(focus.p)}
             >
-              {focus.p.icon ?? "✨"}
+              <ProjectIconGlyph project={focus.p} className="h-5 w-5" />
             </div>
             <Link
               to={`/projects/${focus.p.id}`}
@@ -1460,6 +1617,12 @@ function CurrentProjectFocusCard() {
               style={{ width: `${focus.pct}%` }}
             />
           </div>
+          {whyHint && (
+            <p className="mt-2 rounded-xl bg-primary/8 px-2.5 py-1.5 text-[11px] italic leading-snug text-foreground/80">
+              <Sparkles className="mr-1 inline h-3 w-3 text-primary" />
+              Why this matters today — {whyHint}
+            </p>
+          )}
           <div className="mt-4">
             <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Next steps</div>
             {openTasks.length === 0 ? (
@@ -1478,13 +1641,25 @@ function CurrentProjectFocusCard() {
                       onCheckedChange={() => void toggleTask(t.id)}
                       className="mt-0.5 h-4 w-4"
                     />
-                    <span className="min-w-0 flex-1 whitespace-normal break-words text-[13px] text-foreground/90">
+                    <button
+                      type="button"
+                      onClick={() => onTaskClick?.(t.id)}
+                      className="min-w-0 flex-1 whitespace-normal break-words text-left text-[13px] text-foreground/90 hover:text-primary"
+                    >
                       {t.title}
-                    </span>
+                    </button>
+                    <div className="opacity-0 transition group-hover:opacity-100">
+                      <TaskHoverActions task={t} onEdit={() => onTaskClick?.(t.id)} onDetails={() => onTaskClick?.(t.id)} />
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
+            <InlineNlpAdd
+              label="Add next step"
+              placeholder="Add next step for this project…"
+              defaults={{ projectId: focus.p.id, dueDate: format(new Date(), "yyyy-MM-dd") }}
+            />
           </div>
           <CardFooter>
             <FooterAction
