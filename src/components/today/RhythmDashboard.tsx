@@ -1365,29 +1365,61 @@ function useProjectProgress() {
 
 function InProgressProjectsCard() {
   const rows = useProjectProgress().slice(0, 4);
+  const navigate = useNavigate();
   return (
     <Card>
       <CardHeader icon={<SparklesIcon className="h-4 w-4" />} title="In Progress" />
       {rows.length === 0 ? (
         <EmptyState text="No active projects." />
       ) : (
-        <ul className="space-y-3">
-          {rows.map(({ p, pct }) => (
-            <li key={p.id}>
-              <div className="flex items-baseline justify-between gap-2">
-                <Link to={`/projects/${p.id}`} className="min-w-0 truncate text-sm font-medium text-foreground hover:text-primary">
-                  {p.name}
-                </Link>
-                <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">{pct}%</span>
-              </div>
-              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
+        <ul className="space-y-2">
+          {rows.map(({ p, pct, total, done }) => {
+            const tile = projectIconTileStyle(p);
+            const onFocus = () => { try { localStorage.setItem(FOCUS_KEY, p.id); } catch { /* */ } window.dispatchEvent(new StorageEvent("storage", { key: FOCUS_KEY })); };
+            return (
+              <li key={p.id}>
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-[width] duration-700"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </li>
-          ))}
+                  className="group flex items-center gap-3 rounded-2xl border border-transparent px-2 py-2 transition hover:border-primary/30 hover:bg-background/60"
+                >
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/projects/${p.id}`)}
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-xl"
+                    style={tile}
+                    aria-label={p.name}
+                  >
+                    <ProjectIconGlyph project={p} className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/projects/${p.id}`)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="min-w-0 truncate text-sm font-medium text-foreground group-hover:text-primary">{p.name}</span>
+                      <span className="shrink-0 tabular-nums text-[11px] font-semibold text-muted-foreground">{pct}%</span>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
+                      <div className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-[width] duration-700" style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="mt-0.5 text-[10px] text-muted-foreground">{done} of {total} · tap to open</div>
+                  </button>
+                  <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
+                    <button
+                      type="button" onClick={onFocus}
+                      className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      title="Set as focus"
+                    ><Target className="h-3.5 w-3.5" /></button>
+                    <button
+                      type="button" onClick={() => navigate(`/projects/${p.id}`)}
+                      className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      title="Open project"
+                    ><ExternalLink className="h-3.5 w-3.5" /></button>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
       <CardFooter>
