@@ -419,6 +419,25 @@ function ScheduleColumn({
     return idx;
   }, [items, iso, now]);
 
+  const groups = useMemo(() => {
+    const g: Record<"Morning" | "Afternoon" | "Evening", typeof items> = {
+      Morning: [], Afternoon: [], Evening: [],
+    };
+    for (const r of items) {
+      const h = r.time ? Number(r.time.slice(0, 2)) : 12;
+      if (h < 12) g.Morning.push(r);
+      else if (h < 17) g.Afternoon.push(r);
+      else g.Evening.push(r);
+    }
+    return g;
+  }, [items]);
+
+  const SLOTS: { label: "Morning" | "Afternoon" | "Evening"; icon: string }[] = [
+    { label: "Morning", icon: "☀️" },
+    { label: "Afternoon", icon: "🌤" },
+    { label: "Evening", icon: "🌙" },
+  ];
+
   return (
     <Card>
       <CardHeader
@@ -426,54 +445,64 @@ function ScheduleColumn({
         title="Today's Schedule"
         action={<Link to="/calendar" className="text-[11px] uppercase tracking-wider text-primary/80 hover:text-primary">View calendar</Link>}
       />
-      {items.length === 0 ? (
-        <EmptyState text="No events scheduled." />
-      ) : (
-        <ul className="relative space-y-3 pl-1">
-          <span aria-hidden className="absolute left-[3.4rem] top-2 bottom-2 w-px bg-border/60" />
-          {items.map((r, i) => {
-            const isNow = i === currentIdx;
-            return (
-              <li key={`${r.kind}-${r.id}`} className="relative grid grid-cols-[3rem_auto_1fr_auto] items-center gap-3">
-                <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
-                  {r.time ? format12(r.time) : "—"}
-                </span>
-                <span
-                  className={cn(
-                    "relative z-10 h-2.5 w-2.5 rounded-full transition-all",
-                    isNow
-                      ? "bg-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.18),0_0_18px_hsl(var(--primary)/0.55)] animate-pulse"
-                      : r.kind === "appt"
-                        ? "bg-accent/80"
-                        : "bg-primary/50",
-                  )}
-                />
-                <button
-                  type="button"
-                  onClick={() => r.kind === "task" ? onTaskClick(r.id) : onApptClick(r.id)}
-                  className={cn(
-                    "min-w-0 truncate text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
-                    r.done && "text-muted-foreground line-through",
-                  )}
-                >
-                  {r.label}
-                </button>
-                {r.durationMin ? (
-                  <span className={cn(
-                    "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
-                    isNow ? "bg-primary/20 text-primary" : "bg-muted/60 text-muted-foreground",
-                  )}>
-                    {fmtDur(r.durationMin)}
-                  </span>
-                ) : <span />}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <CardFooter>
-        <FooterAction icon={<Plus className="h-3.5 w-3.5" />} label="Add Event" to="/calendar?new=appt" />
-      </CardFooter>
+      <div className="space-y-4">
+        {SLOTS.map(({ label, icon }) => {
+          const rows = groups[label];
+          return (
+            <div key={label}>
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/70">
+                <span aria-hidden>{icon}</span>{label}
+              </div>
+              {rows.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/50 px-3 py-3 text-center text-[11px] text-muted-foreground">
+                  No events scheduled.
+                </div>
+              ) : (
+                <ul className="space-y-1.5">
+                  {rows.map((r) => {
+                    const isNow = items.indexOf(r) === currentIdx;
+                    return (
+                      <li
+                        key={`${r.kind}-${r.id}`}
+                        className={cn(
+                          "flex items-start gap-3 rounded-xl border border-border/40 bg-background/50 px-3 py-2 transition",
+                          "hover:border-primary/40 hover:bg-background/80",
+                          isNow && "border-primary/50 shadow-[0_0_0_2px_hsl(var(--primary)/0.15)]",
+                        )}
+                      >
+                        <span className="mt-0.5 shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
+                          {r.time ? format12(r.time) : "—"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => r.kind === "task" ? onTaskClick(r.id) : onApptClick(r.id)}
+                          className={cn(
+                            "min-w-0 flex-1 whitespace-normal break-words text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
+                            r.done && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {r.label}
+                        </button>
+                        {r.durationMin ? (
+                          <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {fmtDur(r.durationMin)}
+                          </span>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <Link
+                to="/calendar?new=appt"
+                className="mt-1.5 flex items-center justify-center gap-1 rounded-full py-1 text-[11px] font-medium text-primary/80 hover:bg-primary/10 hover:text-primary"
+              >
+                <Plus className="h-3 w-3" /> Add Event
+              </Link>
+            </div>
+          );
+        })}
+      </div>
     </Card>
   );
 }
