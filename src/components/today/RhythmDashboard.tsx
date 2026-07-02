@@ -451,9 +451,10 @@ function ScheduleColumn({
         title="Today's Schedule"
         action={<Link to="/calendar" className="text-[11px] uppercase tracking-wider text-primary/80 hover:text-primary">View calendar</Link>}
       />
-      <div className="space-y-4">
-        {SLOTS.map(({ label, icon }) => {
+      <div className="space-y-5">
+        {SLOTS.map(({ label, icon }, si) => {
           const rows = groups[label];
+          const weatherSlot = label.toLowerCase() as "morning" | "afternoon" | "evening";
           return (
             <div key={label}>
               <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/70">
@@ -468,33 +469,12 @@ function ScheduleColumn({
                   {rows.map((r) => {
                     const isNow = items.indexOf(r) === currentIdx;
                     return (
-                      <li
+                      <ScheduleRow
                         key={`${r.kind}-${r.id}`}
-                        className={cn(
-                          "flex items-start gap-3 rounded-xl border border-border/40 bg-background/50 px-3 py-2 transition",
-                          "hover:border-primary/40 hover:bg-background/80",
-                          isNow && "border-primary/50 shadow-[0_0_0_2px_hsl(var(--primary)/0.15)]",
-                        )}
-                      >
-                        <span className="mt-0.5 shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
-                          {r.time ? format12(r.time) : "—"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => r.kind === "task" ? onTaskClick(r.id) : onApptClick(r.id)}
-                          className={cn(
-                            "min-w-0 flex-1 whitespace-normal break-words text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
-                            r.done && "text-muted-foreground line-through",
-                          )}
-                        >
-                          {r.label}
-                        </button>
-                        {r.durationMin ? (
-                          <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {fmtDur(r.durationMin)}
-                          </span>
-                        ) : null}
-                      </li>
+                        row={r}
+                        isNow={isNow}
+                        onOpen={() => r.kind === "task" ? onTaskClick(r.id) : onApptClick(r.id)}
+                      />
                     );
                   })}
                 </ul>
@@ -505,11 +485,105 @@ function ScheduleColumn({
               >
                 <Plus className="h-3 w-3" /> Add Event
               </Link>
+              <div className="mt-2">
+                <SlotWeather slot={weatherSlot} />
+              </div>
             </div>
           );
         })}
       </div>
     </Card>
+  );
+}
+
+/** Schedule row with inline note editing, checkbox for tasks, and consistent hover UX. */
+function ScheduleRow({
+  row, isNow, onOpen,
+}: {
+  row: { id: string; time?: string; label: string; kind: "appt" | "task"; durationMin?: number; done?: boolean };
+  isNow: boolean;
+  onOpen: () => void;
+}) {
+  const { state, toggleTask, updateTask, updateAppointment } = useStore();
+  const source = row.kind === "task"
+    ? state.tasks.find(t => t.id === row.id)
+    : state.appointments.find(a => a.id === row.id);
+  const notes: string = (source as any)?.notes ?? "";
+  const [showNote, setShowNote] = useState(!!notes);
+  const [draft, setDraft] = useState(notes);
+  useEffect(() => { setDraft(notes); }, [notes]);
+
+  const persistNote = async () => {
+    if (draft === notes) return;
+    if (row.kind === "task") await updateTask(row.id, { notes: draft } as any);
+    else await updateAppointment(row.id, { notes: draft } as any);
+  };
+
+  return (
+    <li
+      className={cn(
+        "group rounded-xl border border-border/40 bg-background/50 px-3 py-2 transition",
+        "hover:border-primary/40 hover:bg-background/80",
+        isNow && "border-primary/50 shadow-[0_0_0_2px_hsl(var(--primary)/0.15)]",
+      )}
+    >
+      <div className="flex items-start gap-2.5">
+        {row.kind === "task" ? (
+          <Checkbox
+            checked={!!row.done}
+            onCheckedChange={() => void toggleTask(row.id)}
+            className="mt-1 h-4 w-4"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-primary/60"
+          />
+        )}
+        <span className="mt-0.5 shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
+          {row.time ? format12(row.time) : "—"}
+        </span>
+        <button
+          type="button" onClick={onOpen}
+          className={cn(
+            "min-w-0 flex-1 whitespace-normal break-words text-left text-sm font-medium text-foreground transition-colors hover:text-primary",
+            row.done && "text-muted-foreground line-through",
+          )}
+        >
+          {row.label}
+        </button>
+        {row.durationMin ? (
+          <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {fmtDur(row.durationMin)}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setShowNote(v => !v)}
+          className={cn(
+            "shrink-0 rounded-full p-0.5 text-muted-foreground/60 opacity-0 transition group-hover:opacity-100 hover:bg-primary/10 hover:text-primary",
+            (showNote || notes) && "opacity-100",
+          )}
+          aria-label="Toggle note"
+          title="Add / edit note"
+        >
+          <StickyNote className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      {showNote && (
+        <Textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={persistNote}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void persistNote(); }
+          }}
+          placeholder="Add a note…"
+          rows={2}
+          className="mt-2 min-h-[44px] resize-none rounded-xl border-border/40 bg-background/70 text-[12px] leading-snug"
+        />
+      )}
+    </li>
   );
 }
 
