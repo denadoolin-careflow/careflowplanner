@@ -663,15 +663,6 @@ function ProgressTasksColumn({
 
   const projectName = (id?: string) => id ? state.projects.find(p => p.id === id)?.name : undefined;
 
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState("");
-  const commit = async () => {
-    const v = draft.trim();
-    if (!v) { setAdding(false); return; }
-    await addTask({ title: v, dueDate: iso, priority: "med", area: "general" } as any);
-    setDraft(""); setAdding(false);
-  };
-
   return (
     <Card>
       <CardHeader
@@ -700,7 +691,7 @@ function ProgressTasksColumn({
         <Link to="/tasks" className="text-[11px] uppercase tracking-wider text-primary/80 hover:text-primary">View all</Link>
       </div>
 
-      {tasks.length === 0 && !adding ? (
+      {tasks.length === 0 ? (
         <EmptyState text="Nothing on the list yet." />
       ) : (
         <ul className="mt-2 space-y-1">
@@ -710,18 +701,12 @@ function ProgressTasksColumn({
         </ul>
       )}
 
-      <CardFooter>
-        {adding ? (
-          <Input
-            autoFocus value={draft} onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => { if (e.key === "Enter") void commit(); if (e.key === "Escape") { setDraft(""); setAdding(false); } }}
-            placeholder="What needs doing?" className="h-8 rounded-full bg-background/70 text-xs"
-          />
-        ) : (
-          <FooterAction icon={<Plus className="h-3.5 w-3.5" />} label="Add Task" onClick={() => setAdding(true)} />
-        )}
-      </CardFooter>
+      <div className="mt-4 border-t border-border/40 pt-3">
+        <InlineNlpAdd
+          label="Add task"
+          defaults={{ dueDate: iso }}
+        />
+      </div>
     </Card>
   );
 }
