@@ -6,7 +6,7 @@ import {
   Plus, Sparkles, Star, ChevronLeft, ChevronRight, ArrowRight, Moon, BookHeart,
   FileText, StickyNote, PenLine, Sunrise, Sun, Sandwich, Apple, Loader2,
   Heart, Activity, Droplet, Zap, Pill, Footprints, Target, ChevronRight as ChevronRightIcon,
-  ShoppingBasket, Sparkle, Leaf, Users, Sparkles as SparklesIcon, Brush, Palette,
+  ShoppingBasket, Sparkle, Leaf, Users, Sparkles as SparklesIcon, Brush, Palette, Sprout,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,6 +34,7 @@ import { getIntention, setIntention as saveIntention } from "@/lib/daily-intenti
 import { getCheckIn, setCheckIn, type DailyCheckIn } from "@/lib/daily-checkin";
 import { SlotWeather } from "@/components/today/rhythm/SlotWeather";
 import { TodayHabitsCard } from "@/components/today/TodayHabitsCard";
+import { routines as routinesApi } from "@/lib/routines";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
