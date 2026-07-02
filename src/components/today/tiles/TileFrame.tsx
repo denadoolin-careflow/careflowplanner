@@ -1,7 +1,8 @@
-import { EyeOff, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
-import { useEffect } from "react";
+import { EyeOff, ChevronLeft, ChevronRight, Maximize2, GripVertical } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { SIZE_LABEL, SIZE_TO_COL, useTileEdit, type TileSize } from "@/lib/today-tiles";
+import { haptics } from "@/lib/haptics";
 
 /** Chrome wrapper around every Today card. Provides hide/move/resize in edit mode
  *  and enforces the tile's column span in the parent grid. */
@@ -18,7 +19,10 @@ export function TileFrame({
   className?: string;
   children: React.ReactNode;
 }) {
-  const { editing, hidden, toggleHidden, sizes, cycleSize, move, registerTile } = useTileEdit();
+  const {
+    editing, hidden, toggleHidden, sizes, cycleSize, move, registerTile,
+    order, moveTo, dragging, setDragging,
+  } = useTileEdit();
   useEffect(() => { registerTile(id); }, [id, registerTile]);
 
   const isHidden = hidden.has(id);
@@ -27,18 +31,80 @@ export function TileFrame({
   const size = sizes[id] ?? defaultSize;
   const span = SIZE_TO_COL[size];
 
+  const [dropSide, setDropSide] = useState<"before" | "after" | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const onDragStart = (e: React.DragEvent) => {
+    if (!editing) { e.preventDefault(); return; }
+    setDragging(id);
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("application/x-tile-id", id); } catch { /* */ }
+    haptics.tap();
+  };
+  const onDragEnd = () => { setDragging(null); setDropSide(null); };
+  const onDragOver = (e: React.DragEvent) => {
+    if (!editing || !dragging || dragging === id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const midX = rect.left + rect.width / 2;
+    setDropSide(e.clientX < midX ? "before" : "after");
+  };
+  const onDragLeave = () => setDropSide(null);
+  const onDrop = (e: React.DragEvent) => {
+    if (!editing) return;
+    const src = e.dataTransfer.getData("application/x-tile-id") || dragging;
+    if (!src || src === id) { setDropSide(null); return; }
+    e.preventDefault();
+    const targetIdx = order.indexOf(id);
+    if (targetIdx < 0) { setDropSide(null); return; }
+    const insertAt = dropSide === "after" ? targetIdx + 1 : targetIdx;
+    moveTo(src, insertAt);
+    setDropSide(null);
+    setDragging(null);
+    haptics.success();
+  };
+
+  // Mobile long-press to initiate drag: start dragging via pointer.
+  // We fall back to marking as dragging + relying on drag handle for touch reorder via move buttons.
+  const isBeingDragged = dragging === id;
+
   return (
     <div
+      ref={rootRef}
       className={cn(
         "relative",
         span,
         editing && "rounded-3xl outline outline-1 outline-dashed outline-primary/40 outline-offset-4",
         isHidden && editing && "opacity-45",
+        editing && "transition-transform",
+        isBeingDragged && "opacity-60 scale-[0.98]",
         className,
       )}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
+      {editing && dropSide && dragging && dragging !== id && (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-y-0 z-40 w-1 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary))]",
+            dropSide === "before" ? "-left-2" : "-right-2",
+          )}
+        />
+      )}
       {editing && (
-        <div className="absolute -top-3 left-3 z-30 flex items-center gap-0.5 rounded-full border border-border/60 bg-card/95 px-1 py-0.5 text-[10px] shadow-sm backdrop-blur">
+        <div
+          className="absolute -top-3 left-3 z-30 flex items-center gap-0.5 rounded-full border border-border/60 bg-card/95 px-1 py-0.5 text-[10px] shadow-sm backdrop-blur"
+          draggable
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          title="Drag to reorder"
+        >
+          <span className="grid h-5 w-5 cursor-grab place-items-center rounded-full text-muted-foreground hover:bg-muted active:cursor-grabbing">
+            <GripVertical className="h-3 w-3" />
+          </span>
           <span className="px-1 font-medium text-foreground/80">{title}</span>
           <button type="button" onClick={() => move(id, -1)} className="grid h-5 w-5 place-items-center rounded-full hover:bg-muted" aria-label="Move up">
             <ChevronLeft className="h-3 w-3" />
