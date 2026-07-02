@@ -14,7 +14,11 @@ export function MyCalendarsPanel() {
   const [hidden, toggle] = useHiddenCalendars();
   const [gcals, setGcals] = useState<GCalCalendar[]>([]);
 
-  useEffect(() => { gcalListCalendars().then(setGcals).catch(() => {}); }, []);
+  useEffect(() => {
+    gcalListCalendars()
+      .then((s) => setGcals(s.calendars ?? []))
+      .catch(() => {});
+  }, []);
 
   const areas = state.areas ?? [];
 
@@ -55,8 +59,8 @@ export function MyCalendarsPanel() {
       {gcals.length > 0 && (
         <div>
           <div className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Google</div>
-          {gcals.slice(0, 8).map(g => (
-            <Row key={g.id} id={`gcal:${g.id}`} label={g.summary} color={g.backgroundColor} />
+          {gcals.slice(0, 8).map((g) => (
+            <Row key={g.id} id={`gcal:${g.id}`} label={g.summary} color={g.color} />
           ))}
         </div>
       )}
