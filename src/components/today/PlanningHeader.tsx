@@ -1,6 +1,5 @@
 import { PlanningHero } from "@/components/today/rhythm/PlanningHero";
 import { Triptych } from "@/components/today/RhythmDashboard";
-import { SlotWeatherStrip } from "@/components/today/SlotWeatherStrip";
 import { BurnoutCheckIn } from "@/components/today/BurnoutCheckIn";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
 
@@ -31,7 +30,6 @@ export function PlanningHeader({
     <div className="space-y-6">
       {!hideHero && <PlanningHero date={date} title={title} subtitle={subtitle} />}
       <Triptych date={date} />
-      <SlotWeatherStrip />
       <BurnoutCheckIn date={date} />
       <DailyDebrief date={date} onTaskClick={onTaskClick} />
       {slot}
