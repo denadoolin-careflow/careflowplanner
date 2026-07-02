@@ -1129,6 +1129,14 @@ function MetricStepper({
 }) {
   const clamp = (v: number) => Math.max(min, Math.min(max, v));
   const display = format ? format(value) : String(value);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => { setDraft(String(value)); }, [value]);
+  const commit = () => {
+    const n = Number(draft);
+    if (!Number.isNaN(n)) onChange(clamp(n));
+    setEditing(false);
+  };
   return (
     <div className="group flex flex-col items-center justify-center rounded-2xl border border-border/40 bg-background/40 px-2 py-3 text-center transition hover:border-primary/40">
       <span className="text-primary">{icon}</span>
@@ -1139,7 +1147,29 @@ function MetricStepper({
           onClick={() => onChange(clamp(value - step))}
           className="h-5 w-5 rounded-full text-muted-foreground opacity-0 transition hover:bg-muted group-hover:opacity-100"
         >−</button>
-        <span className="font-display text-lg font-semibold tabular-nums text-foreground">{display}</span>
+        {editing ? (
+          <input
+            autoFocus
+            inputMode="decimal"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); commit(); }
+              if (e.key === "Escape") { setDraft(String(value)); setEditing(false); }
+            }}
+            className="w-12 rounded-md border border-border/50 bg-background/70 px-1 text-center font-display text-lg font-semibold tabular-nums text-foreground outline-none focus:border-primary/60"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setDraft(String(value)); setEditing(true); }}
+            className="rounded-md px-1 font-display text-lg font-semibold tabular-nums text-foreground hover:bg-muted/40"
+            title="Tap to edit"
+          >
+            {display}
+          </button>
+        )}
         <button
           type="button" aria-label={`Increase ${label}`}
           onClick={() => onChange(clamp(value + step))}
