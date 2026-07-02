@@ -14,6 +14,9 @@ import { LocationAutocomplete } from "@/components/common/LocationAutocomplete";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useHousehold } from "@/lib/household";
 import { supabase } from "@/integrations/supabase/client";
+import { RepeatSelector } from "./RepeatSelector";
+import { ReminderPicker } from "./ReminderPicker";
+import type { RecurrenceRule } from "@/lib/types";
 
 interface Props {
   appointment: Appointment | null;
@@ -68,6 +71,8 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
   const [areaName, setAreaName] = useState<string | undefined>(undefined);
   const [color, setColor] = useState<string | undefined>(undefined);
   const [syncToGoogle, setSyncToGoogle] = useState(false);
+  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | undefined>(undefined);
+  const [reminderMinutes, setReminderMinutes] = useState<number | undefined>(undefined);
   const { current: currentHousehold } = useHousehold(userId);
   const [shareWithFamily, setShareWithFamily] = useState(false);
 
@@ -86,6 +91,8 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
     setAreaName(appointment.areaName);
     setColor(appointment.color);
     setSyncToGoogle(!!appointment.syncToGoogle);
+    setRecurrenceRule((appointment as any).recurrenceRule ?? undefined);
+    setReminderMinutes((appointment as any).reminderMinutesBefore ?? undefined);
     // Hydrate share state from row
     (async () => {
       const { data } = await supabase
@@ -144,6 +151,8 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
       areaName: areaName,
       color: color,
       syncToGoogle,
+      recurrenceRule,
+      reminderMinutesBefore: reminderMinutes,
     } as any);
     // Persist sharing fields directly (not in store typings).
     await supabase
@@ -315,6 +324,16 @@ export function AppointmentEditor({ appointment, open, onOpenChange }: Props) {
               <p className="text-xs text-muted-foreground">Saves this appointment to your connected Google calendar.</p>
             </div>
             <Switch checked={syncToGoogle} onCheckedChange={setSyncToGoogle} />
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div>
+              <Label className="text-xs">Repeats</Label>
+              <RepeatSelector value={recurrenceRule} onChange={setRecurrenceRule} />
+            </div>
+            <div>
+              <Label className="text-xs">Reminder</Label>
+              <ReminderPicker value={reminderMinutes} onChange={setReminderMinutes} />
+            </div>
           </div>
           {currentHousehold && (
             <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-3 py-2">
