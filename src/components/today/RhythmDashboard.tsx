@@ -875,6 +875,7 @@ function MealCard({
  * =================================================================== */
 function UpcomingColumn({ date }: { date: Date }) {
   const { state } = useStore();
+  const navigate = useNavigate();
   const iso = format(date, "yyyy-MM-dd");
   const events = useMemo(() => state.appointments
     .filter(a => a.date > iso)
@@ -892,22 +893,37 @@ function UpcomingColumn({ date }: { date: Date }) {
       {events.length === 0 ? (
         <EmptyState text="Nothing on the horizon." />
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-1.5">
           {events.map(e => {
             const d = parseISO(e.date);
             const dayLabel = relativeDay(d);
             return (
-              <li key={e.id} className="flex items-center gap-3">
-                <div className="w-20 shrink-0 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <li
+                key={e.id}
+                className="group flex items-center gap-2.5 rounded-xl border border-border/40 bg-background/50 px-3 py-2 transition hover:border-primary/40 hover:bg-background/80"
+              >
+                <span
+                  aria-hidden
+                  className="mt-0.5 inline-block h-2 w-2 shrink-0 rounded-full bg-primary/60"
+                />
+                <div className="w-20 shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {dayLabel}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-foreground">{e.title}</div>
-                  {e.location && <div className="truncate text-[11px] text-muted-foreground">{e.location}</div>}
-                </div>
-                <div className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/calendar?appt=${e.id}`)}
+                  className="min-w-0 flex-1 text-left"
+                >
+                  <div className="whitespace-normal break-words text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                    {e.title}
+                  </div>
+                  {e.location && (
+                    <div className="truncate text-[11px] text-muted-foreground">{e.location}</div>
+                  )}
+                </button>
+                <span className="shrink-0 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] tabular-nums text-muted-foreground">
                   {e.allDay ? "All day" : e.time ? format12(e.time) : ""}
-                </div>
+                </span>
               </li>
             );
           })}
