@@ -1524,7 +1524,9 @@ function HabitsRoutinesCard({ date }: { date: Date }) {
   const done = todayHabits.filter(h => h.log[iso]).length;
   const pct = total ? Math.round((done / total) * 100) : 0;
 
-  const routineTotal = state.routines?.length ?? 0;
+  const routineTotal = (() => {
+    try { return routinesApi.list().length; } catch { return 0; }
+  })();
 
   return (
     <Card>
@@ -1572,6 +1574,3 @@ function HabitsRoutinesCard({ date }: { date: Date }) {
     </Card>
   );
 }
-
-// Re-export for local use
-import { Sprout } from "lucide-react";
