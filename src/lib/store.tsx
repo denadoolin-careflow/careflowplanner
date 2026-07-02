@@ -932,6 +932,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         area_name: a.areaName ?? null,
         color: a.color ?? null,
         sync_to_google: !!a.syncToGoogle,
+        recurrence_rule: (a as any).recurrenceRule ?? null,
+        reminder_minutes_before: (a as any).reminderMinutesBefore ?? null,
       }).select().single();
       if (!data) return null;
       const appt = apptFrom(data);
@@ -968,6 +970,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.areaName !== undefined) dbPatch.area_name = patch.areaName ?? null;
       if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
       if (patch.recipientId !== undefined) dbPatch.recipient_id = patch.recipientId ?? null;
+      if ((patch as any).recurrenceRule !== undefined) dbPatch.recurrence_rule = (patch as any).recurrenceRule ?? null;
+      if ((patch as any).reminderMinutesBefore !== undefined) dbPatch.reminder_minutes_before = (patch as any).reminderMinutesBefore ?? null;
       const localTs = nowIso();
       setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch, updatedAt: localTs } : a) }));
       await syncOp({ kind: "update", table: "appointments", id, values: dbPatch, localTs });
