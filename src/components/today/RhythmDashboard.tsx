@@ -38,6 +38,27 @@ import { routines as routinesApi } from "@/lib/routines";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { TileEditProvider, useTileEdit } from "@/lib/today-tiles";
+import { TileFrame, TileEditToggle, TilePalette } from "@/components/today/tiles/TileFrame";
+import { InlineNlpAdd } from "@/components/today/InlineNlpAdd";
+import { ProjectIconGlyph, projectIconTileStyle } from "@/lib/project-icon";
+import { useGoalGroups, DEFAULT_GOAL_GROUPS, type GoalGroupCfg } from "@/lib/goal-checkin-prefs";
+import { TaskHoverActions } from "@/components/tasks/TaskHoverActions";
+import { Settings2, GripVertical, ExternalLink } from "lucide-react";
+
+const TODAY_TILES: { id: string; title: string; defaultSize?: "sm" | "md" | "lg" | "xl" }[] = [
+  { id: "intention", title: "Daily Intention", defaultSize: "md" },
+  { id: "checkin",   title: "Daily Check-In",  defaultSize: "lg" },
+  { id: "goals",     title: "Goal Check-In",   defaultSize: "md" },
+  { id: "schedule",  title: "Today's Schedule", defaultSize: "md" },
+  { id: "habits",    title: "Habits & Routines", defaultSize: "md" },
+  { id: "upcoming",  title: "Upcoming",         defaultSize: "md" },
+  { id: "progress",  title: "Today's Progress", defaultSize: "md" },
+  { id: "meals",     title: "Today's Meals",    defaultSize: "md" },
+  { id: "grocery",   title: "Grocery List",     defaultSize: "md" },
+  { id: "projects",  title: "In Progress",      defaultSize: "md" },
+  { id: "focus",     title: "Project Focus",    defaultSize: "md" },
+];
 
 /** ----------------------------------------------------------------
  *  Today page — calm daily command center
@@ -61,34 +82,53 @@ export function RhythmDashboard({
   debrief?: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-[1400px] space-y-8 px-1 sm:px-2">
-      <Hero date={date} onDateChange={onDateChange} isReallyToday={isReallyToday} />
-      <Triptych date={date} />
-      {slot}
-      {debrief}
-      {/* Row 1 — Intention · Check-In · Goals */}
-      <div className="grid gap-6 lg:grid-cols-4">
-        <IntentionCard date={date} />
-        <div className="lg:col-span-2"><DailyCheckInCard date={date} /></div>
-        <GoalCheckInCard />
+    <TileEditProvider>
+      <div className="mx-auto w-full max-w-[1400px] space-y-8 px-1 sm:px-2">
+        <Hero date={date} onDateChange={onDateChange} isReallyToday={isReallyToday} />
+        <Triptych date={date} />
+        {slot}
+        {debrief}
+        <div className="flex items-center justify-end px-1">
+          <TileEditToggle />
+        </div>
+        <TilePalette tiles={TODAY_TILES} />
+        <TileGrid date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
       </div>
-      {/* Row 2 — Schedule · Progress · Meals · Projects */}
-      <div className="grid gap-6 lg:grid-cols-4">
-        <div className="space-y-6">
-          <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />
-          <HabitsRoutinesCard date={date} />
-          <UpcomingColumn date={date} />
-        </div>
-        <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />
-        <div className="space-y-6">
-          <MealsColumn date={date} />
-          <GroceryCard />
-        </div>
-        <div className="space-y-6">
-          <InProgressProjectsCard />
-          <CurrentProjectFocusCard />
-        </div>
-      </div>
+    </TileEditProvider>
+  );
+}
+
+function TileGrid({ date, onTaskClick, onApptClick }: { date: Date; onTaskClick: (id: string) => void; onApptClick: (id: string) => void }) {
+  const { order } = useTileEdit();
+  // Merge registered order with canonical list so new tiles append.
+  const known = new Map(TODAY_TILES.map(t => [t.id, t]));
+  const merged = [
+    ...order.filter(id => known.has(id)),
+    ...TODAY_TILES.map(t => t.id).filter(id => !order.includes(id)),
+  ];
+  const renderers: Record<string, () => React.ReactNode> = {
+    intention: () => <IntentionCard date={date} />,
+    checkin:   () => <DailyCheckInCard date={date} />,
+    goals:     () => <GoalCheckInCard />,
+    schedule:  () => <ScheduleColumn date={date} onTaskClick={onTaskClick} onApptClick={onApptClick} />,
+    habits:    () => <HabitsRoutinesCard date={date} />,
+    upcoming:  () => <UpcomingColumn date={date} />,
+    progress:  () => <ProgressTasksColumn date={date} onTaskClick={onTaskClick} />,
+    meals:     () => <MealsColumn date={date} />,
+    grocery:   () => <GroceryCard />,
+    projects:  () => <InProgressProjectsCard />,
+    focus:     () => <CurrentProjectFocusCard onTaskClick={onTaskClick} />,
+  };
+  return (
+    <div className="grid gap-6 lg:grid-cols-4">
+      {merged.map(id => {
+        const meta = known.get(id)!;
+        return (
+          <TileFrame key={id} id={id} title={meta.title} defaultSize={meta.defaultSize ?? "md"}>
+            {renderers[id]?.()}
+          </TileFrame>
+        );
+      })}
     </div>
   );
 }
