@@ -1,74 +1,92 @@
 
-## Goals
+This is a large request. Splitting into two coordinated tracks so we can ship incrementally without regressing what's already working.
 
-Turn the Today page into a fully editable, xTiles-style tile board where every card can be resized, removed, added, and rearranged, and every task-like row (Schedule, Today's Progress, Upcoming, In-Progress Projects, Current Project Focus next steps) uses the same inline NLP quick-add and hover actions as the Inbox.
+## Track A — Today dashboard: real widget-style drag & drop
 
-## 1. Inline NLP quick-add on task-like cards
+The xTiles-style tile grid already has hide / show / resize / order arrows. Missing piece is true pointer drag-to-rearrange.
 
-Reuse `NlpHighlightedInput` + `parseNlpTask` (already used in Inbox) so every card that lists tasks/events gets the same "+ Add task" affordance:
+- `src/components/today/tiles/TileFrame.tsx`
+  - Add a drag handle (grip) visible in edit mode. On pointer down, capture the tile id and start an HTML5 drag with a translucent preview.
+  - Add drop targets between tiles (thin insertion zone) and on tiles themselves (swap). Highlight the active target.
+  - Wire touch: use pointer events + a 200ms long-press to start drag on mobile with haptic tick; scroll suppression while dragging.
+- `src/lib/today-tiles.ts`
+  - Add `moveTo(id, targetIndex)` alongside existing `move(id, dir)`; persist to the same `K_ORDER` key.
+- Behavior: reordering only enabled while `editing` is true (keeps normal reading calm). Ordering persists across sessions via existing localStorage.
 
-- **ScheduleColumn (Morning/Afternoon/Evening)** — add a hover-revealed `+ Add to morning/afternoon/evening` row at the bottom of each slot. Enter parses NLP (date/time/priority/#tag/@person), auto-fills `dueDate = today` and `dueTime` snapped into the slot's window (M 6–12, A 12–17, E 17–22), then `createTask`.
-- **ProgressTasksColumn (Today's Progress by category)** — same inline composer per category, pre-tagging the new task with that category/area.
-- **UpcomingColumn** — inline composer defaulting `dueDate = tomorrow`; NLP overrides parsed date.
-- **InProgressProjectsCard rows** — clickable rows that open the project; hover reveals `+ Add task` that creates a task linked to that project.
-- **CurrentProjectFocusCard "Next Steps"** — inline composer that creates a subtask/linked task under the focused project.
+## Track B — Calendar upgrades (in the order the user suggested)
 
-All rows get the same `TaskHoverActions` (when, priority, snooze, complete, delete) used in `InboxOverview`, plus consistent completion checkbox, wrapped title, and click-to-open editor via `openTaskEditor`.
+### 1. Real month grid view (highest priority)
+- New file `src/components/calendar/MonthGridView.tsx`
+  - 7-col × 5–6 row grid built with `date-fns` (`startOfWeek`, `eachDayOfInterval`).
+  - Each cell: date header, up to 3 stacked chips (appointments → time blocks → birthdays → tasks-with-due-date, in that priority), plus `+N more` button that opens a Popover listing every item for that day.
+  - Click day → route to day view for that ISO (`navigate('/calendar?view=day&date=…')`).
+  - Chip drag: reuse the HTML5 dnd pattern already in `TimeGrid.tsx` (`dataTransfer` with a JSON payload of `{kind, id}`). Drop on a day cell reschedules (`updateAppointment` / `updateTimeBlock` / `updateTask({dueDate})`).
+  - Mobile: long-press on a chip starts drag using the same pointer helpers already in `TimeGrid.tsx`.
+- `src/components/calendar/CalendarViewToggle.tsx`
+  - Add a `"month"` mode next to Schedule / Time-of-day / Agenda. Persisted to the same localStorage key already used.
+- `src/pages/CalendarPage.tsx` (or wherever the toggle switch renders): route the new mode to `MonthGridView`. Keep `MonthPlanningDashboard.tsx` mounted only on the existing "Month reflection" tab.
 
-## 2. Current Project Focus improvements
+### 2. Recurring events
+- Types: add `recurrenceRule?: RecurrenceRule` to `Appointment` and `TimeBlock`.
+  ```ts
+  type RecurrenceRule = {
+    freq: 'daily'|'weekly'|'monthly'|'yearly';
+    interval?: number;
+    byWeekday?: number[];   // 0=Sun
+    until?: string;         // ISO date
+    count?: number;
+    exdates?: string[];     // per-instance overrides/deletes (ISO)
+  }
+  ```
+- New helper `src/lib/recurrence.ts` — pure functions `expandOccurrences(rule, rangeStart, rangeEnd)`, `nextOccurrence(rule, from)`, `serializeRRule` / `parseRRule` (RFC-5545 subset). No new dep — hand-rolled since we only need a small subset.
+- `src/lib/store.ts` — when a query asks for events in a range, expand recurring parents into virtual instances tagged `{parentId, occurrenceDate}`. Persist edits by writing to `exdates` on the parent + optionally creating an override child event.
+- UI: new `src/components/calendar/RepeatSelector.tsx` reused inside `AppointmentEditor.tsx` and the block-edit form in `TimeGrid.tsx`.
+- Edit/delete recurring: `RecurringInstanceDialog.tsx` prompts "This event / All future events / All events" (Google-style).
 
-`CurrentProjectFocusCard`:
-- Dropdown items show project icon/emoji only (no "Project:" label prefix); selected trigger shows icon + name.
-- On change, refetch and rerender the Next Steps checklist for that project (top ~5 open tasks by due/priority).
-- Add a one-line **"Why this matters today"** hint under the title: derived locally from project metadata — nearest milestone/due date, count of overdue tasks, or the project's stated outcome. If a lightweight AI hint is desired later, wire to `ai-project-overview`, but v1 stays local so it's instant and free.
-- Rows are clickable (open task editor) and support hover actions.
+### 3. Reminders
+- Types: `reminderMinutesBefore?: number` on appointment/time block.
+- `src/lib/reminders.ts` — background scheduler (setTimeout per upcoming reminder, refreshed on data change and every 5 min). Uses `Notification.requestPermission()` + `new Notification(...)` when granted; falls back to `toast()` from sonner.
+- Options in editor: at-time / 5 / 15 / 30 / 60 min / 1 day before.
 
-`InProgressProjectsCard`:
-- Each project row is individually clickable → navigates to `/projects/:id` (or opens project sheet).
-- Hover reveals: set as focus, quick-add task, open.
-- Replace text labels in front of names with the project icon component (`project-icon.tsx`).
+### 4. Natural-language quick add
+- Reuse `parseTaskInput` from `src/lib/nlp-task.ts` and extend with a small event parser (`src/lib/nlp-event.ts`) that also captures duration ("for 30 min", "1h", "2 hours").
+- `src/components/calendar/QuickAddCalendarPopover.tsx` — put a single text field at top; on debounce, populate the existing manual fields (title, date, start time, duration). User can still tweak before saving.
 
-## 3. Customizable Goal Check-In
+### 5. Keyboard shortcuts
+- New `src/hooks/useGlobalShortcuts.ts` mounted once in `src/App.tsx`.
+  - `Cmd/Ctrl+K` → open quick add (dispatches custom event; popover listens).
+  - `D` / `W` / `M` / `A` → set calendar view mode via the same localStorage-backed setter used by the toggle.
+  - `T` → set current date to today.
+  - `Esc` → close topmost popover/dialog (dispatches a scoped custom event; components listen if open).
+- Discoverable hint: small `?` button near the view toggle opens `ShortcutsPopover.tsx`.
 
-`GoalCheckInCard`:
-- Add a settings popover: choose which goals appear, reorder them, pick metric type per goal (progress %, streak, count, custom target), and set daily target.
-- Persist to `localStorage` under `careflow:today:goal-checkin:v1` (goals list + per-goal config).
-- Inline edit progress by clicking the ring/number (same pattern as `MetricStepper`).
+### 6. Smart scheduling suggestions
+- `src/lib/schedule-suggest.ts` — given a duration and a day's blocks/appointments, find the next open gap ≥ duration (working-hours window from user settings, default 8am–8pm).
+- In `UnscheduledTasksRail.tsx`, for tasks with `estimatedMinutes`, render a "Suggest a time" ghost chip; clicking previews the slot on the day grid and one-tap confirms (same drag-drop path as manual placement).
 
-## 4. xTiles-style editable widget grid
+### 7. Unified calendar/category legend
+- New `src/components/calendar/MyCalendarsPanel.tsx` — collapsible list grouped by:
+  - Google-synced calendars (source: `GoogleCalendarSection` data).
+  - Areas (color from area).
+  - Projects (color from project).
+  - Birthdays & Holidays.
+- Each row: swatch + name + eye toggle. Selection persisted in `localStorage` under `careflow:calendar:visibility:v1`.
+- Filter applied to `TimeGrid`, `MonthGridView`, and Agenda so hidden groups disappear everywhere.
 
-Research note: xTiles uses a freeform tile canvas where each block (note, list, embed) is drag-resizable on a snapping grid, addable from a "+" palette, and removable/duplicatable via hover controls — layout persists per page.
+### 8. Two-way Google sync polish
+- `src/components/calendar/GoogleCalendarSection.tsx` — per-calendar row shows: last-synced relative time, spinner while pending, red dot with tooltip on error (with retry). Uses existing sync state; extend the reducer/store to carry `{calendarId → {lastSyncedAt, status, error}}`.
 
-Apply that model to Today. The project already has `dashboard-pack.ts` (bin-packing) and `useDailyPlanLayout` — build on them rather than adding a new grid lib.
+## Design constraints honored
+- Reuse existing cozy card + rounded chip aesthetic from `MonthPlanningDashboard.tsx`; no new fonts/colors, no new deps beyond what's already installed (`date-fns`, `framer-motion`, `lucide-react`, `sonner`, shadcn).
+- Mobile-first: every new drag path uses the same long-press pointer pattern already in `TimeGrid.tsx`.
+- Nothing existing gets removed. `MonthPlanningDashboard.tsx`, `AppointmentEditor.tsx`, `TimeGrid.tsx`, `UnscheduledTasksRail.tsx`, `GoogleCalendarSection.tsx` are extended in place.
 
-- Wrap every RhythmDashboard card (Intention, Check-In, Goals, Schedule, Habits, Progress, Meals, Grocery, Projects, Current Focus, End-of-Day Exhale, plus the header triptych pieces) in a shared `<TileFrame id title>` that provides:
-  - Drag handle (top-left, appears on hover / edit mode).
-  - Resize handle (bottom-right) with size steps `S / M / L / XL` mapped to grid `w` (1–4 cols) and `h` (1–3 rows).
-  - Hover menu: collapse, hide, duplicate, settings (opens the card's own settings if it has one, e.g. Goal Check-In config).
-- Add a top-right **Edit layout** toggle on Today. In edit mode: dashed outlines, drag/resize enabled, and a `+ Add tile` palette listing hidden/available tiles (grouped by Planning, Wellness, Schedule, Projects, Kitchen).
-- Persist layout `{ order, sizes, hidden }` to `localStorage` under `careflow:today:tiles:v1`; add **Reset layout**.
-- Reuse `compactLayout` from `dashboard-pack.ts` so tiles reflow with no gaps after resize/remove.
-- Mobile: force single-column stack; edit mode allows reorder + hide only (no resize).
+## Suggested delivery order (matches user's list)
+1. Widget drag on Today (Track A) — small, unblocks the visible request.
+2. Month grid view (#1).
+3. Recurring events + reminders (#2, #3).
+4. NLP quick add + shortcuts (#4, #5).
+5. Legend + smart suggestions (#7, #6).
+6. Sync status polish (#8).
 
-## 5. Technical outline
-
-Files to add:
-- `src/components/today/tiles/TileFrame.tsx` — drag/resize/hover chrome.
-- `src/components/today/tiles/TileGrid.tsx` — grid container using `compactLayout`.
-- `src/components/today/tiles/tile-registry.ts` — id → {title, defaultSize, render}.
-- `src/lib/today-tiles.ts` — layout persistence hook (order, sizes, hidden), mirroring `widget-order.ts`.
-- `src/components/common/InlineTaskComposer.tsx` — shared NLP composer (wraps `NlpHighlightedInput` + `parseNlpTask` + `createTask` with per-slot defaults).
-- `src/lib/goal-checkin-prefs.ts` — customization persistence.
-
-Files to update:
-- `src/components/today/RhythmDashboard.tsx` — render through `TileGrid`; drop bespoke column layout.
-- `ScheduleColumn`, `UpcomingColumn`, `ProgressTasksColumn`, `InProgressProjectsCard`, `CurrentProjectFocusCard`, `GoalCheckInCard` — add inline composer, hover actions, click-to-open, icon-only project labels, customizable goals.
-- `src/pages/Today.tsx` — add "Edit layout" toggle in the existing controls row.
-
-No backend or schema changes; all customization lives in `localStorage` alongside existing Today prefs.
-
-## Out of scope
-
-- Freeform (non-grid) canvas positioning — sticking to snap grid to match the rest of CareFlow.
-- Cross-page tile sharing (Week/Month/Year keep their existing `WidgetRail`); can be a follow-up once the Today model settles.
-- New AI calls; "why this matters today" is derived locally in v1.
+Ship each step as its own turn so preview stays green throughout. Reply "go" to start with step 1 (widget drag), or tell me to reorder / cut anything.

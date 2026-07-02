@@ -31,6 +31,9 @@ interface Ctx {
   order: string[];
   registerTile: (id: string) => void;
   move: (id: string, dir: -1 | 1) => void;
+  moveTo: (id: string, targetIndex: number) => void;
+  dragging: string | null;
+  setDragging: (id: string | null) => void;
   reset: () => void;
 }
 
@@ -84,15 +87,34 @@ export function TileEditProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const moveTo = useCallback((id: string, targetIndex: number) => {
+    setOrder(prev => {
+      const idx = prev.indexOf(id);
+      if (idx < 0) return prev;
+      const clamped = Math.max(0, Math.min(prev.length - 1, targetIndex));
+      if (clamped === idx) return prev;
+      const next = prev.slice();
+      next.splice(idx, 1);
+      // If we removed before the target, shift target left by one
+      const insertAt = clamped > idx ? clamped : clamped;
+      const adjusted = clamped > idx ? Math.max(0, insertAt - 1) : insertAt;
+      next.splice(adjusted, 0, id);
+      return next;
+    });
+  }, []);
+
+  const [dragging, setDragging] = useState<string | null>(null);
+
   const reset = useCallback(() => {
     setHidden(new Set());
     setSizes({});
     setOrder([]);
+    setDragging(null);
   }, []);
 
   const value = useMemo<Ctx>(() => ({
-    editing, setEditing, hidden, toggleHidden, sizes, cycleSize, setSize, order, registerTile, move, reset,
-  }), [editing, hidden, sizes, order, toggleHidden, cycleSize, setSize, registerTile, move, reset]);
+    editing, setEditing, hidden, toggleHidden, sizes, cycleSize, setSize, order, registerTile, move, moveTo, dragging, setDragging, reset,
+  }), [editing, hidden, sizes, order, toggleHidden, cycleSize, setSize, registerTile, move, moveTo, dragging, reset]);
 
   return createElement(TileCtx.Provider, { value }, children);
 }
