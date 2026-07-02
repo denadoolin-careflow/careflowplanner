@@ -1,8 +1,8 @@
-import { CalendarDays, ListChecks, Sunrise } from "lucide-react";
+import { CalendarDays, ListChecks, Sunrise, Grid3x3 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export type CalView = "schedule" | "parts" | "agenda";
+export type CalView = "schedule" | "parts" | "agenda" | "month";
 
 const STORAGE_KEY = "careflow:cal-view:v1";
 const listeners = new Set<(v: CalView) => void>();
@@ -10,7 +10,7 @@ const listeners = new Set<(v: CalView) => void>();
 function read(): CalView {
   if (typeof localStorage === "undefined") return "parts";
   const v = localStorage.getItem(STORAGE_KEY);
-  return v === "schedule" || v === "parts" || v === "agenda" ? v : "parts";
+  return v === "schedule" || v === "parts" || v === "agenda" || v === "month" ? v : "parts";
 }
 
 let current: CalView = read();
@@ -56,6 +56,13 @@ export function CalendarViewToggle({ value, onChange }: { value: CalView; onChan
           value === "agenda" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground")}
       >
         <ListChecks className="h-3.5 w-3.5" /> Agenda
+      </button>
+      <button
+        onClick={() => onChange("month")}
+        className={cn("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 transition-colors",
+          value === "month" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground")}
+      >
+        <Grid3x3 className="h-3.5 w-3.5" /> Month
       </button>
     </div>
   );

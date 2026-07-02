@@ -96,6 +96,8 @@ export type Database = {
           notes: string | null
           project_id: string | null
           recipient_id: string | null
+          recurrence_rule: Json | null
+          reminder_minutes_before: number | null
           sync_to_google: boolean
           time: string | null
           title: string
@@ -123,6 +125,8 @@ export type Database = {
           notes?: string | null
           project_id?: string | null
           recipient_id?: string | null
+          recurrence_rule?: Json | null
+          reminder_minutes_before?: number | null
           sync_to_google?: boolean
           time?: string | null
           title: string
@@ -150,6 +154,8 @@ export type Database = {
           notes?: string | null
           project_id?: string | null
           recipient_id?: string | null
+          recurrence_rule?: Json | null
+          reminder_minutes_before?: number | null
           sync_to_google?: boolean
           time?: string | null
           title?: string

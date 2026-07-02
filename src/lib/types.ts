@@ -240,7 +240,20 @@ export interface Appointment {
   googleEventId?: string;
   googleCalendarId?: string;
   googleLastSyncedAt?: string;
+  /** Repeats this appointment on the given rule until removed. */
+  recurrenceRule?: RecurrenceRule;
+  /** Fire a browser reminder N minutes before the appointment starts. */
+  reminderMinutesBefore?: number;
   updatedAt?: string;
+}
+
+export type RecurrenceFreq = "daily" | "weekly" | "monthly" | "yearly";
+export interface RecurrenceRule {
+  freq: RecurrenceFreq;
+  interval?: number;    // every N periods (default 1)
+  count?: number;       // total occurrences
+  until?: string;       // ISO date last inclusive
+  byWeekday?: number[]; // 0=Sun..6=Sat (weekly only)
 }
 
 export interface Birthday { id: string; name: string; date: string; relation?: string; notes?: string; updatedAt?: string; }

@@ -115,6 +115,7 @@ import { MoonPrefetcher } from "@/components/rhythm/MoonPrefetcher";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CyclePlanningListener } from "@/components/cycle/CyclePlanningListener";
 import { ExhaleReminderHost } from "@/components/today/ExhaleReminderHost";
+import { CalendarBackgroundServices } from "@/components/calendar/CalendarBackgroundServices";
 
 const queryClient = new QueryClient();
 
@@ -138,6 +139,7 @@ const App = () => (
             <ExhaleReminderHost />
             <InlineTagPreviewLayer />
             <MediaLightbox />
+            <CalendarBackgroundServices />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/join/:token" element={<JoinHousehold />} />

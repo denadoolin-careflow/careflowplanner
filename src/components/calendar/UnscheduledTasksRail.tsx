@@ -15,6 +15,9 @@ import { format, parseISO, isAfter, startOfDay, addDays } from "date-fns";
 import { Link } from "react-router-dom";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongPressDrag } from "@/lib/long-press-drag";
+import { suggestSlotForTask } from "@/lib/schedule-suggest";
+import { toast } from "sonner";
+import { format as fmtDate } from "date-fns";
 
 export const TASK_DRAG_MIME = "application/x-careflow-task";
 export const EVENT_DRAG_MIME = "application/x-careflow-event";
@@ -347,11 +350,32 @@ function TaskRailItem({
   onClick?: (id: string) => void;
   onDragStart: (e: React.DragEvent, t: Task) => void;
 }) {
-  const { toggleTask } = useStore();
+  const { toggleTask, state, updateTask } = useStore();
   const drag = useLongPressDrag(
     () => ({ type: "task", id: task.id, label: task.title }),
     { onClick: () => onClick?.(task.id) },
   );
+  const handleSuggest = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const today = new Date().toISOString().slice(0, 10);
+    // Prefer the task's dueDate, otherwise search the next 7 days.
+    let candidate: string | null = null;
+    let suggestion = null;
+    const target = task.dueDate ?? today;
+    for (let offset = 0; offset < 7; offset++) {
+      const iso = new Date(new Date(target).getTime() + offset * 86_400_000).toISOString().slice(0, 10);
+      const s = suggestSlotForTask(task, iso, state.appointments ?? []);
+      if (s) { suggestion = s; candidate = iso; break; }
+    }
+    if (!suggestion || !candidate) {
+      toast("No free slot found in the next week");
+      return;
+    }
+    void updateTask(task.id, { dueDate: candidate, time: suggestion.time } as any);
+    toast(`Suggested ${fmtDate(new Date(candidate), "EEE MMM d")} at ${suggestion.time}`, {
+      description: suggestion.reason,
+    });
+  };
   return (
     <li
       draggable
@@ -391,6 +415,15 @@ function TaskRailItem({
           {task.dueDate && <span className="ml-auto shrink-0">{task.dueDate.slice(5)}</span>}
         </div>
       </div>
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={handleSuggest}
+        title="Suggest a free time slot"
+        className="ml-1 hidden shrink-0 rounded-full border border-border/60 bg-card/70 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary/40 hover:text-primary group-hover:inline-flex"
+      >
+        <Sparkles className="mr-1 h-3 w-3" /> Suggest
+      </button>
     </li>
   );
 }

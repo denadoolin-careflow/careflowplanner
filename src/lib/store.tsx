@@ -162,6 +162,8 @@ const apptFrom = (r: any): Appointment => ({
   googleEventId: r.google_event_id ?? undefined,
   googleCalendarId: r.google_calendar_id ?? undefined,
   googleLastSyncedAt: r.google_last_synced_at ?? undefined,
+  recurrenceRule: r.recurrence_rule ?? undefined,
+  reminderMinutesBefore: r.reminder_minutes_before ?? undefined,
   updatedAt: r.updated_at ?? undefined,
 });
 const bdayFrom = (r: any): Birthday => ({ id: r.id, name: r.name, date: r.date, relation: r.relation ?? undefined, notes: r.notes ?? undefined, updatedAt: r.updated_at ?? undefined });
@@ -930,6 +932,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         area_name: a.areaName ?? null,
         color: a.color ?? null,
         sync_to_google: !!a.syncToGoogle,
+        recurrence_rule: (a as any).recurrenceRule ?? null,
+        reminder_minutes_before: (a as any).reminderMinutesBefore ?? null,
       }).select().single();
       if (!data) return null;
       const appt = apptFrom(data);
@@ -966,6 +970,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (patch.areaName !== undefined) dbPatch.area_name = patch.areaName ?? null;
       if (patch.color !== undefined) dbPatch.color = patch.color ?? null;
       if (patch.recipientId !== undefined) dbPatch.recipient_id = patch.recipientId ?? null;
+      if ((patch as any).recurrenceRule !== undefined) dbPatch.recurrence_rule = (patch as any).recurrenceRule ?? null;
+      if ((patch as any).reminderMinutesBefore !== undefined) dbPatch.reminder_minutes_before = (patch as any).reminderMinutesBefore ?? null;
       const localTs = nowIso();
       setState(s => ({ ...s, appointments: s.appointments.map(a => a.id === id ? { ...a, ...patch, updatedAt: localTs } : a) }));
       await syncOp({ kind: "update", table: "appointments", id, values: dbPatch, localTs });

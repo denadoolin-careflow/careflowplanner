@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, CheckSquare, CalendarHeart } from "lucide-react";
+import { Plus, CheckSquare, CalendarHeart, Sparkles } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { parseTaskInput } from "@/lib/nlp-task";
+import { cn } from "@/lib/utils";
 
 interface Props {
   /** Single day = locked date. Multiple = user picks. */
@@ -28,11 +30,37 @@ export function QuickAddCalendarPopover({ days, label = "Quick add" }: Props) {
 
   useEffect(() => { if (open) { setDate(defaultDate); setTitle(""); setTime(""); setDayPart(""); } }, [open, defaultDate]);
 
+  // Listen to global ⌘K to auto-open.
+  useEffect(() => {
+    const h = () => setOpen(true);
+    window.addEventListener("careflow:quick-add", h as EventListener);
+    return () => window.removeEventListener("careflow:quick-add", h as EventListener);
+  }, []);
+
+  // NLP live parse of the title — surfaces chips + auto-fills date/time.
+  const parsed = useMemo(() => title.trim() ? parseTaskInput(title) : null, [title]);
+  useEffect(() => {
+    if (!parsed) return;
+    if (parsed.dueDate) setDate(parsed.dueDate);
+    if (parsed.time) setTime(parsed.time);
+  }, [parsed?.dueDate, parsed?.time]);
+
   const submit = async () => {
-    const t = title.trim();
+    const raw = title.trim();
+    const t = parsed?.title?.trim() || raw;
     if (!t) return;
     if (tab === "task") {
-      await addTask({ title: t, dueDate: date, area: "Personal", priority: "medium", inbox: false, ...(dayPart ? { dayPart } : {}) } as any);
+      await addTask({
+        title: t,
+        dueDate: date,
+        area: parsed?.area ?? "Personal",
+        priority: parsed?.priority ?? "medium",
+        inbox: false,
+        ...(dayPart ? { dayPart } : {}),
+        ...(parsed?.time ? { time: parsed.time } : {}),
+        ...(parsed?.estMinutes ? { estMinutes: parsed.estMinutes } : {}),
+        ...(parsed?.tags?.length ? { tags: parsed.tags } : {}),
+      } as any);
       toast(`Task added for ${format(new Date(date), "MMM d")}${dayPart ? ` · ${dayPart}` : ""}`);
     } else {
       await addAppointment({ title: t, date, time: time || undefined });
@@ -57,9 +85,26 @@ export function QuickAddCalendarPopover({ days, label = "Quick add" }: Props) {
           </TabsList>
           <TabsContent value="task" className="mt-3 space-y-3">
             <div>
-              <Label className="text-xs">Title</Label>
+              <Label className="flex items-center gap-1 text-xs">
+                Title
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Sparkles className="h-3 w-3" /> try "gym tomorrow at 7am 45m p1 #health"
+                </span>
+              </Label>
               <Input autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="What needs doing?" />
+              {parsed && parsed.chips.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {parsed.chips.map((c, i) => (
+                    <span key={i} className={cn(
+                      "rounded-full border px-2 py-0.5 text-[10px]",
+                      c.kind === "priority" ? "border-rose-300/40 bg-rose-500/10 text-rose-600 dark:text-rose-300"
+                      : c.kind === "date" || c.kind === "time" ? "border-primary/40 bg-primary/10 text-primary"
+                      : "border-border/60 bg-muted/40 text-muted-foreground"
+                    )}>{c.label}</span>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="min-w-0">
@@ -83,7 +128,12 @@ export function QuickAddCalendarPopover({ days, label = "Quick add" }: Props) {
           </TabsContent>
           <TabsContent value="appointment" className="mt-3 space-y-3">
             <div>
-              <Label className="text-xs">Title</Label>
+              <Label className="flex items-center gap-1 text-xs">
+                Title
+                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Sparkles className="h-3 w-3" /> "dentist friday 2pm"
+                </span>
+              </Label>
               <Input autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="Doctor, meeting…" />
             </div>
