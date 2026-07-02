@@ -1216,55 +1216,114 @@ function MetricStepper({
  * =================================================================== */
 function GoalCheckInCard() {
   const { state } = useStore();
-  const groups = useMemo(() => {
-    const map = new Map<string, { total: number; sum: number; label: string }>();
-    const groupOf: Record<string, string> = {
-      Family: "Family & Relationships",
-      Relationship: "Family & Relationships",
-      Caregiving: "Family & Relationships",
-      Health: "Health & Wellness",
-      Home: "Health & Wellness",
-      Personal: "Personal Growth",
-      Creative: "Personal Growth",
-      Financial: "Personal Growth",
-    };
-    for (const g of state.goals ?? []) {
-      if (g.status !== "active") continue;
-      const key = groupOf[g.category] ?? "Personal Growth";
-      const cur = map.get(key) ?? { total: 0, sum: 0, label: key };
-      cur.total += 1; cur.sum += Math.max(0, Math.min(100, g.progress ?? 0));
-      map.set(key, cur);
-    }
-    const order = ["Health & Wellness", "Family & Relationships", "Personal Growth"];
-    return order.map(k => {
-      const v = map.get(k);
-      return { label: k, pct: v && v.total ? Math.round(v.sum / v.total) : 0 };
-    });
-  }, [state.goals]);
+  const [groups, updateGroups, resetGroups] = useGoalGroups();
 
-  const RING_TONE: Record<string, string> = {
-    "Health & Wellness": "hsl(var(--primary))",
-    "Family & Relationships": "hsl(45 80% 60%)",
-    "Personal Growth": "hsl(160 60% 55%)",
-  };
+  const rows = useMemo(() => {
+    return groups.filter(g => !g.hidden).map(g => {
+      const cats = new Set(g.categories.map(c => c.toLowerCase()));
+      const goals = (state.goals ?? []).filter(x => x.status === "active" && cats.has((x.category ?? "").toLowerCase()));
+      const pct = goals.length
+        ? Math.round(goals.reduce((s, x) => s + Math.max(0, Math.min(100, x.progress ?? 0)), 0) / goals.length)
+        : 0;
+      return { ...g, pct, count: goals.length };
+    });
+  }, [groups, state.goals]);
 
   return (
     <Card>
-      <CardHeader icon={<Target className="h-4 w-4" />} title="Goal Check-In" />
-      <ul className="space-y-3">
-        {groups.map(g => (
-          <li key={g.label} className="flex items-center gap-3">
-            <Ring pct={g.pct} color={RING_TONE[g.label]} />
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{g.label}</span>
-            <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">{g.pct}%</span>
-            <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          </li>
-        ))}
-      </ul>
+      <CardHeader
+        icon={<Target className="h-4 w-4" />}
+        title="Goal Check-In"
+        action={<GoalCheckInSettings groups={groups} update={updateGroups} reset={resetGroups} />}
+      />
+      {rows.length === 0 ? (
+        <EmptyState text="No goal groups visible. Add one from settings." />
+      ) : (
+        <ul className="space-y-3">
+          {rows.map(g => (
+            <li key={g.id} className="flex items-center gap-3">
+              <Ring pct={g.pct} color={g.color} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-foreground">{g.label}</div>
+                <div className="text-[10px] text-muted-foreground">{g.count} active goal{g.count === 1 ? "" : "s"}</div>
+              </div>
+              <span className="shrink-0 tabular-nums text-xs font-semibold text-muted-foreground">{g.pct}%</span>
+              <Link to="/goals" aria-label="Open goals">
+                <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground hover:text-primary" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
       <CardFooter>
         <FooterAction icon={<Plus className="h-3.5 w-3.5" />} label="Add Goal" to="/goals" />
       </CardFooter>
     </Card>
+  );
+}
+
+function GoalCheckInSettings({
+  groups, update, reset,
+}: {
+  groups: GoalGroupCfg[];
+  update: (u: (prev: GoalGroupCfg[]) => GoalGroupCfg[]) => void;
+  reset: () => void;
+}) {
+  const [newLabel, setNewLabel] = useState("");
+  const [newCats, setNewCats] = useState("");
+  const move = (id: string, dir: -1 | 1) => update(prev => {
+    const i = prev.findIndex(x => x.id === id);
+    if (i < 0) return prev;
+    const j = i + dir;
+    if (j < 0 || j >= prev.length) return prev;
+    const next = prev.slice();
+    [next[i], next[j]] = [next[j], next[i]];
+    return next;
+  });
+  const toggle = (id: string) => update(prev => prev.map(g => g.id === id ? { ...g, hidden: !g.hidden } : g));
+  const remove = (id: string) => update(prev => prev.filter(g => g.id !== id));
+  const add = () => {
+    const label = newLabel.trim();
+    if (!label) return;
+    const cats = newCats.split(",").map(s => s.trim()).filter(Boolean);
+    update(prev => [...prev, { id: `custom-${Date.now()}`, label, categories: cats.length ? cats : [label], color: "hsl(280 60% 60%)" }]);
+    setNewLabel(""); setNewCats("");
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground" title="Customize goal groups">
+          <Settings2 className="h-3 w-3" /> Customize
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-3 space-y-3">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Goal groups</div>
+        <ul className="space-y-1.5">
+          {groups.map(g => (
+            <li key={g.id} className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-background/60 px-2 py-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: g.color }} />
+              <div className="min-w-0 flex-1">
+                <div className={cn("truncate text-xs font-medium", g.hidden && "text-muted-foreground line-through")}>{g.label}</div>
+                <div className="truncate text-[10px] text-muted-foreground">{g.categories.join(", ")}</div>
+              </div>
+              <button type="button" onClick={() => move(g.id, -1)} className="h-5 w-5 rounded hover:bg-muted" aria-label="Move up">↑</button>
+              <button type="button" onClick={() => move(g.id, 1)} className="h-5 w-5 rounded hover:bg-muted" aria-label="Move down">↓</button>
+              <button type="button" onClick={() => toggle(g.id)} className="h-5 w-5 rounded hover:bg-muted" aria-label="Hide"><EyeOff className="mx-auto h-3 w-3" /></button>
+              <button type="button" onClick={() => remove(g.id)} className="h-5 w-5 rounded text-destructive hover:bg-destructive/10" aria-label="Remove">×</button>
+            </li>
+          ))}
+        </ul>
+        <div className="space-y-1 border-t border-border/40 pt-2">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Add group</div>
+          <Input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Label (e.g. Learning)" className="h-7 text-xs" />
+          <Input value={newCats} onChange={(e) => setNewCats(e.target.value)} placeholder="Categories (comma-separated)" className="h-7 text-xs" />
+          <div className="flex justify-end gap-1">
+            <button type="button" onClick={reset} className="rounded px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground">Reset</button>
+            <button type="button" onClick={add} className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-primary-foreground">Add</button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
