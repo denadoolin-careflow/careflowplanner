@@ -295,7 +295,7 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId, on
           )}
         </Group>
 
-        <Group title={`Related tasks · ${relatedTasks.length}`} icon={CheckSquare} open={open.tasks} onToggle={() => toggle("tasks")}>
+        <Group title={`Related tasks · ${relatedTasks.length}`} icon={CheckSquare} open={open.relatedTasks ?? true} onToggle={() => toggle("relatedTasks")}>
           {relatedTasks.length === 0 ? (
             <Empty>No matching tasks yet.</Empty>
           ) : (
