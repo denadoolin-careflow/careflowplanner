@@ -450,10 +450,11 @@ const GROUP_LABELS: Record<string, string> = {
   Cosmic: "Cosmic events",
 };
 
-function GroupedFloatingMenu({ items, onSelect, render }: {
+function GroupedFloatingMenu({ items, onSelect, render, query }: {
   items: RefItem[];
   onSelect: (i: RefItem) => void;
   render: (i: RefItem, active: boolean) => React.ReactNode;
+  query?: string;
 }) {
   // Items arrive pre-sorted by score; group preserving each group's first-seen order.
   const groups = useMemo(() => {
@@ -493,8 +494,12 @@ function GroupedFloatingMenu({ items, onSelect, render }: {
 
   if (!flat.length) {
     return (
-      <div className="w-72 rounded-xl border border-border/60 bg-popover p-3 text-xs text-popover-foreground/70 shadow-lg">
-        No matches — keep typing to search across tasks, notes, people, dates, and cosmic events.
+      <div className="w-80 rounded-xl border border-border/60 bg-popover p-2 text-popover-foreground shadow-xl animate-scale-in">
+        <div className="mb-1 flex items-center gap-1.5 rounded-lg bg-muted/50 px-2 py-1.5 text-[11px] text-muted-foreground">
+          <SearchIcon className="h-3 w-3 opacity-70" />
+          <span className="truncate">{query ? query : "Search tasks, notes, people…"}</span>
+        </div>
+        <div className="px-2 py-3 text-xs text-popover-foreground/70">No matches</div>
       </div>
     );
   }
@@ -502,10 +507,14 @@ function GroupedFloatingMenu({ items, onSelect, render }: {
   let runningIndex = -1;
   return (
     <div
-      className="max-h-80 w-80 overflow-y-auto overscroll-contain rounded-xl border border-border/60 bg-popover text-popover-foreground p-1.5 shadow-xl"
+      className="max-h-96 w-80 overflow-y-auto overscroll-contain rounded-xl border border-border/60 bg-popover text-popover-foreground p-1.5 shadow-xl animate-scale-in"
       style={{ WebkitOverflowScrolling: "touch" }}
       onPointerDown={(e) => { e.stopPropagation(); }}
     >
+      <div className="sticky top-0 z-10 mb-1 flex items-center gap-1.5 rounded-lg bg-popover/95 px-2 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
+        <SearchIcon className="h-3 w-3 opacity-70" />
+        <span className="truncate">{query ? query : "Search tasks, notes, people…"}</span>
+      </div>
       {groups.map(([type, arr]) => (
         <div key={type} className="mb-1 last:mb-0">
           <div className="px-2 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
