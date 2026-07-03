@@ -62,6 +62,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
+import { InlineEntityCard } from "@/components/notes/InlineEntityCardNode";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
@@ -137,6 +138,16 @@ turndown.addRule("fileEmbed", {
     const name = el.getAttribute("data-name") || "file";
     const mime = el.getAttribute("data-mime") || "";
     return `\n\n<div data-file-embed data-src="${src}" data-name="${name}" data-mime="${mime}"></div>\n\n`;
+  },
+});
+// Preserve inline entity cards as `[[Label]]` markdown tokens so notes stay
+// portable and re-open into the same node view.
+turndown.addRule("inlineEntityCard", {
+  filter: (node) => node.nodeName === "SPAN" && (node as HTMLElement).hasAttribute("data-inline-entity"),
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const label = el.getAttribute("data-label") || el.textContent?.replace(/^\[\[|\]\]$/g, "") || "";
+    return `[[${label}]]`;
   },
 });
 
@@ -1603,6 +1614,7 @@ export function BlockEditor({
         HTMLAttributes: { class: "cf-note-image" },
       }),
       FileEmbed,
+      InlineEntityCard,
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
