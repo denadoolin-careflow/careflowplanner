@@ -71,6 +71,12 @@ export default function NoteDetail() {
   const focusContainerRef = useRef<HTMLDivElement | null>(null);
   const isMobile = useIsMobile();
   const [noteOrder, setNoteOrder] = useState<string[]>([]);
+  const [sidebarHidden, setSidebarHidden] = useState<boolean>(() => {
+    try { return localStorage.getItem("careflow.notes.sidebarHidden") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("careflow.notes.sidebarHidden", sidebarHidden ? "1" : "0"); } catch {/**/}
+  }, [sidebarHidden]);
   useEffect(() => {
     if (!isMobile) return;
     let cancelled = false;
