@@ -2706,3 +2706,38 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 :root[data-atmosphere="snowfall-hush"]:not(.dark)       { --foreground: 215 34% 14%; --muted-foreground: 215 16% 34%; --border: 210 24% 83%; }
 :root[data-atmosphere="evergreen-hearth"]:not(.dark)    { --foreground: 145 42% 12%; --muted-foreground: 145 16% 32%; --border: 40 30% 82%; }
 :root[data-atmosphere="frosted-plum"]:not(.dark)        { --foreground: 280 36% 14%; --muted-foreground: 280 16% 36%; --border: 280 24% 83%; }
+
+/* --- Heading collapse gutter marker + hidden section --- */
+.block-editor .ProseMirror h1,
+.block-editor .ProseMirror h2,
+.block-editor .ProseMirror h3 { position: relative; }
+.block-editor .ProseMirror h1::before,
+.block-editor .ProseMirror h2::before,
+.block-editor .ProseMirror h3::before {
+  content: "";
+  position: absolute;
+  left: -18px; top: 50%;
+  width: 10px; height: 10px;
+  transform: translateY(-50%) rotate(90deg);
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") center/contain no-repeat;
+          mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") center/contain no-repeat;
+  opacity: 0;
+  transition: opacity 180ms ease, transform 220ms cubic-bezier(.2,.8,.2,1);
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+}
+.block-editor .ProseMirror h1:hover::before,
+.block-editor .ProseMirror h2:hover::before,
+.block-editor .ProseMirror h3:hover::before { opacity: 0.7; }
+.block-editor .ProseMirror h1.cf-heading-collapsed::before,
+.block-editor .ProseMirror h2.cf-heading-collapsed::before,
+.block-editor .ProseMirror h3.cf-heading-collapsed::before {
+  opacity: 0.9;
+  transform: translateY(-50%) rotate(0deg);
+}
+.block-editor .ProseMirror .cf-h-hidden {
+  display: none !important;
+}
+/* Subtle fade-in for menu items */
+.tippy-box .animate-scale-in { animation: scale-in 180ms ease-out; }
