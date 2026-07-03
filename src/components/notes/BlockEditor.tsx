@@ -2061,7 +2061,8 @@ export function BlockEditor({
     if (/^H[1-3]$/.test(el.tagName) && el.closest(".ProseMirror")) {
       const h = el as HTMLElement;
       const rect = h.getBoundingClientRect();
-      if (e.clientX - rect.left < 24) {
+      const dx = e.clientX - rect.left;
+      if (dx >= -44 && dx <= 8) {
         e.preventDefault();
         const level = parseInt(h.tagName[1], 10);
         const collapsed = h.classList.toggle("cf-heading-collapsed");
