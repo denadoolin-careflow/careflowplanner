@@ -62,6 +62,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
+import { InlineEntityCard } from "@/components/notes/InlineEntityCardNode";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
@@ -139,6 +140,16 @@ turndown.addRule("fileEmbed", {
     return `\n\n<div data-file-embed data-src="${src}" data-name="${name}" data-mime="${mime}"></div>\n\n`;
   },
 });
+// Preserve inline entity cards as `[[Label]]` markdown tokens so notes stay
+// portable and re-open into the same node view.
+turndown.addRule("inlineEntityCard", {
+  filter: (node) => node.nodeName === "SPAN" && (node as HTMLElement).hasAttribute("data-inline-entity"),
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const label = el.getAttribute("data-label") || el.textContent?.replace(/^\[\[|\]\]$/g, "") || "";
+    return `[[${label}]]`;
+  },
+});
 
 /**
  * Marked emits GFM task lists as <ul><li><input type="checkbox" .../> text</li></ul>.
@@ -174,9 +185,26 @@ export function bodyToHtml(body: string): string {
   if (!body) return "";
   const trimmed = body.trim();
   // Heuristic: if it starts with an HTML tag, treat as HTML already.
-  if (/^<[a-zA-Z!]/.test(trimmed)) return normalizeTaskListsForTipTap(trimmed);
+  if (/^<[a-zA-Z!]/.test(trimmed)) return hydrateInlineEntities(normalizeTaskListsForTipTap(trimmed));
   const html = marked.parse(body, { async: false, gfm: true, breaks: false }) as string;
-  return normalizeTaskListsForTipTap(html);
+  return hydrateInlineEntities(normalizeTaskListsForTipTap(html));
+}
+
+/** Rewrite `[[Title]]` tokens (outside of code blocks) into inline-entity spans
+ *  so TipTap's InlineEntityCard node view hydrates them on load. */
+function hydrateInlineEntities(html: string): string {
+  if (!html) return html;
+  // Skip code blocks / inline code to avoid corrupting samples.
+  const parts = html.split(/(<code[\s\S]*?<\/code>|<pre[\s\S]*?<\/pre>)/g);
+  return parts
+    .map((chunk, i) => {
+      if (i % 2 === 1) return chunk; // preserved code
+      return chunk.replace(/\[\[([^\[\]\n<>]{1,80})\]\]/g, (_, label: string) => {
+        const safe = label.trim().replace(/"/g, "&quot;");
+        return `<span data-inline-entity data-label="${safe}" data-entity-type="wiki" data-size="md" class="inline-entity-card">[[${safe}]]</span>`;
+      });
+    })
+    .join("");
 }
 export function htmlToMarkdown(html: string): string {
   if (!html || html === "<p></p>") return "";
@@ -1603,6 +1631,7 @@ export function BlockEditor({
         HTMLAttributes: { class: "cf-note-image" },
       }),
       FileEmbed,
+      InlineEntityCard,
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
