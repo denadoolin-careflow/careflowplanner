@@ -94,6 +94,7 @@ export default {
         "scale-in": { from: { opacity: "0", transform: "scale(0.96)" }, to: { opacity: "1", transform: "scale(1)" } },
         "soft-pulse": { "0%, 100%": { opacity: "1" }, "50%": { opacity: "0.6" } },
         "task-sweep": { from: { transform: "translateX(0)" }, to: { transform: "translateX(360%)" } },
+        shimmer: { "100%": { transform: "translateX(100%)" } },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -102,6 +103,7 @@ export default {
         "scale-in": "scale-in 0.25s ease-out",
         "soft-pulse": "soft-pulse 2.4s ease-in-out infinite",
         "task-sweep": "task-sweep 0.9s ease-out forwards",
+        shimmer: "shimmer 1.6s infinite",
       },
     },
   },
