@@ -2716,11 +2716,11 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 .block-editor .ProseMirror h3::before {
   content: "";
   position: absolute;
-  left: -32px; top: 50%;
-  width: 14px; height: 14px;
-  padding: 2px;
+  left: -56px; top: 50%;
+  width: 16px; height: 16px;
+  padding: 4px;
   box-sizing: content-box;
-  border-radius: 4px;
+  border-radius: 6px;
   transform: translateY(-50%) rotate(90deg);
   background: currentColor;
   -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") center/contain no-repeat;
@@ -2732,7 +2732,10 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 }
 .block-editor .ProseMirror h1:hover::before,
 .block-editor .ProseMirror h2:hover::before,
-.block-editor .ProseMirror h3:hover::before { opacity: 0.75; background-color: hsl(var(--muted) / 0.4); }
+.block-editor .ProseMirror h3:hover::before {
+  opacity: 0.75;
+  background-color: hsl(var(--muted) / 0.4);
+}
 .block-editor .ProseMirror h1.cf-heading-collapsed::before,
 .block-editor .ProseMirror h2.cf-heading-collapsed::before,
 .block-editor .ProseMirror h3.cf-heading-collapsed::before {
