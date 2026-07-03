@@ -576,9 +576,8 @@ export default function NoteDetail() {
 
         {id && (
           <div className="mt-4">
-            <AttachmentsField
-              scope={"note" as any}
-              ownerId={id}
+            <AttachmentPopover
+              noteId={id}
               value={note.attachments ?? []}
               onChange={(next: Attachment[]) => {
                 setNote({ ...note, attachments: next });
