@@ -412,6 +412,18 @@ export default function NoteDetail() {
             ]}
           />
           <EditorPrefsMenu />
+          <NoteIconPicker
+            value={note.icon ?? null}
+            resolved={resolvedIcon}
+            onChange={(next) => void setIcon(next)}
+          />
+          <NoteCoverPicker
+            hasCover={!!note.coverUrl || !!note.coverGradient}
+            busy={coverBusy}
+            onPickGradient={(gid) => void setGradientCover(gid)}
+            onPickImage={(f) => void setCover(f)}
+            onRemove={() => void removeCover()}
+          />
           <Button variant="ghost" size="icon" onClick={togglePin} aria-label={note.pinned ? "Unpin" : "Pin"} title={note.pinned ? "Unpin" : "Pin"}>
             <Pin className={cn("h-4 w-4", note.pinned && "fill-current text-accent-foreground")} />
           </Button>
@@ -432,29 +444,6 @@ export default function NoteDetail() {
               }}>
                 <Copy className="mr-2 h-4 w-4" /> Copy contents
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <NoteIconPicker
-                value={note.icon ?? null}
-                resolved={resolvedIcon}
-                onChange={(next) => void setIcon(next)}
-                trigger={
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <span className="mr-2 grid h-4 w-4 place-items-center text-[13px]">{"★"}</span> Change icon…
-                  </DropdownMenuItem>
-                }
-              />
-              <NoteCoverPicker
-                hasCover={!!note.coverUrl || !!note.coverGradient}
-                busy={coverBusy}
-                onPickGradient={(gid) => void setGradientCover(gid)}
-                onPickImage={(f) => void setCover(f)}
-                onRemove={() => void removeCover()}
-                trigger={
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <ImagePlus className="mr-2 h-4 w-4" /> {note.coverUrl || note.coverGradient ? "Change cover…" : "Add cover…"}
-                  </DropdownMenuItem>
-                }
-              />
               <NoteTemplatesDialog
                 defaultTab="save"
                 source={{ title, body, icon: note.icon, coverGradient: note.coverGradient, tags }}
