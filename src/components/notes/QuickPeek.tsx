@@ -40,7 +40,7 @@ function usePeekPayload(type: PeekType, id: string): PeekPayload | null {
       case "task": {
         const t = (state.tasks ?? []).find(x => x.id === key || x.title === key);
         if (!t) return null;
-        return { title: t.title, subtitle: t.status === "done" ? "Completed" : (t.due ? `Due ${t.due}` : "Task"), href: "/anytime", Icon: CheckCircle2 };
+        return { title: t.title, subtitle: t.status === "done" ? "Completed" : (t.dueDate ? `Due ${t.dueDate}` : "Task"), href: "/anytime", Icon: CheckCircle2 };
       }
       case "project": {
         const p = (state.projects ?? []).find(x => x.id === key || x.name === key);
@@ -50,12 +50,12 @@ function usePeekPayload(type: PeekType, id: string): PeekPayload | null {
       case "person": {
         const r = (state.recipients ?? []).find(x => x.id === key || x.name === key);
         if (!r) return null;
-        return { title: r.name, subtitle: r.relation ?? "Person", href: "/caregiving", Icon: Users };
+        return { title: r.name, subtitle: r.kind ?? "Person", href: "/caregiving", Icon: Users };
       }
       case "event": {
         const a = (state.appointments ?? []).find(x => x.id === key || x.title === key);
         if (!a) return null;
-        return { title: a.title, subtitle: a.startTime ? `${a.date} · ${a.startTime}` : a.date, href: "/calendar", Icon: CalendarDays };
+        return { title: a.title, subtitle: a.time ? `${a.date} · ${a.time}` : a.date, href: "/calendar", Icon: CalendarDays };
       }
       case "recipe": {
         const m = (state.meals ?? []).find(x => x.id === key || x.name === key);
