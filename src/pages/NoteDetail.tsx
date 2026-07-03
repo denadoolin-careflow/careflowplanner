@@ -412,54 +412,67 @@ export default function NoteDetail() {
             ]}
           />
           <EditorPrefsMenu />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={async () => {
-              const headerText = note.kind === "daily" && note.date
-                ? format(parseISO(note.date), "EEEE, MMMM d, yyyy")
-                : (title || "Untitled");
-              const ok = await copyToClipboard(`${headerText}\n\n${body}`);
-              if (ok) toast.success("Copied to clipboard");
-              else toast.error("Copy failed");
-            }}
-            className="gap-1.5 text-muted-foreground hover:text-foreground"
-          >
-            <Copy className="h-4 w-4" /> Copy
-          </Button>
-          <NoteIconPicker
-            value={note.icon ?? null}
-            resolved={resolvedIcon}
-            onChange={(next) => void setIcon(next)}
-          />
-          <NoteCoverPicker
-            hasCover={!!note.coverUrl || !!note.coverGradient}
-            busy={coverBusy}
-            onPickGradient={(gid) => void setGradientCover(gid)}
-            onPickImage={(f) => void setCover(f)}
-            onRemove={() => void removeCover()}
-          />
-          <Button variant="ghost" size="icon" onClick={togglePin} aria-label="Pin">
+          <Button variant="ghost" size="icon" onClick={togglePin} aria-label={note.pinned ? "Unpin" : "Pin"} title={note.pinned ? "Unpin" : "Pin"}>
             <Pin className={cn("h-4 w-4", note.pinned && "fill-current text-accent-foreground")} />
           </Button>
-          <NoteTemplatesDialog
-            defaultTab="save"
-            source={{
-              title,
-              body,
-              icon: note.icon,
-              coverGradient: note.coverGradient,
-              tags,
-            }}
-            trigger={
-              <Button variant="ghost" size="icon" aria-label="Save as template" title="Save as template">
-                <BookTemplate className="h-4 w-4" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="More actions" title="More actions">
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
-            }
-          />
-          <Button variant="ghost" size="icon" onClick={remove} aria-label="Delete">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onSelect={async () => {
+                const headerText = note.kind === "daily" && note.date
+                  ? format(parseISO(note.date), "EEEE, MMMM d, yyyy")
+                  : (title || "Untitled");
+                const ok = await copyToClipboard(`${headerText}\n\n${body}`);
+                if (ok) toast.success("Copied to clipboard");
+                else toast.error("Copy failed");
+              }}>
+                <Copy className="mr-2 h-4 w-4" /> Copy contents
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <NoteIconPicker
+                value={note.icon ?? null}
+                resolved={resolvedIcon}
+                onChange={(next) => void setIcon(next)}
+                trigger={
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <span className="mr-2 grid h-4 w-4 place-items-center text-[13px]">{"★"}</span> Change icon…
+                  </DropdownMenuItem>
+                }
+              />
+              <NoteCoverPicker
+                hasCover={!!note.coverUrl || !!note.coverGradient}
+                busy={coverBusy}
+                onPickGradient={(gid) => void setGradientCover(gid)}
+                onPickImage={(f) => void setCover(f)}
+                onRemove={() => void removeCover()}
+                trigger={
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <ImagePlus className="mr-2 h-4 w-4" /> {note.coverUrl || note.coverGradient ? "Change cover…" : "Add cover…"}
+                  </DropdownMenuItem>
+                }
+              />
+              <NoteTemplatesDialog
+                defaultTab="save"
+                source={{ title, body, icon: note.icon, coverGradient: note.coverGradient, tags }}
+                trigger={
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <BookTemplate className="mr-2 h-4 w-4" /> Save as template…
+                  </DropdownMenuItem>
+                }
+              />
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={remove}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Delete note
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
