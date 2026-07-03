@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { format, parseISO, isAfter, isBefore, addDays } from "date-fns";
 import {
   Sparkles, CheckSquare, CalendarDays, Users, ListPlus, ShoppingCart,
-  BellPlus, Loader2, ChevronDown, ChevronRight,
+  BellPlus, Loader2, ChevronDown, ChevronRight, List, Link2, X, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,9 @@ import { useStore, todayISO } from "@/lib/store";
 import { aiInvoke } from "@/lib/ai-invoke";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { NoteMarkdown } from "@/components/notes/NoteMarkdown";
+import { NoteTOC } from "@/components/notes/NoteTOC";
+import { useNoteEntities } from "@/hooks/useNoteEntities";
+import { toggleTaskLine, deleteTaskLine, editTaskLine } from "@/lib/note-entities";
 
 interface Props {
   noteId: string;
@@ -19,6 +23,8 @@ interface Props {
   body: string;
   tags: string[];
   projectId?: string | null;
+  /** When provided, checkbox toggles / edits inside detected tasks update the note body in place. */
+  onBodyChange?: (nextBody: string) => void;
 }
 
 function stripMd(s: string): string {
@@ -31,12 +37,17 @@ function stripMd(s: string): string {
 
 function uniq<T>(arr: T[]): T[] { return Array.from(new Set(arr)); }
 
-export function NoteIntelligencePanel({ noteId, title, body, tags, projectId }: Props) {
+export function NoteIntelligencePanel({ noteId, title, body, tags, projectId, onBodyChange }: Props) {
   const { state, addTask } = useStore();
   const nav = useNavigate();
   const bodyLc = (body || "").toLowerCase();
   const titleLc = (title || "").toLowerCase();
   const tagSet = new Set(tags.map(t => t.toLowerCase()));
+
+  const entities = useNoteEntities(body);
+  const inlineTasks = entities.tasks;
+  const [editingLine, setEditingLine] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState("");
 
   const relatedTasks = useMemo(() => {
     const out = (state.tasks ?? []).filter(t => {
@@ -99,7 +110,7 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId }: 
   const [summary, setSummary] = useState<string>("");
   const [summaryBusy, setSummaryBusy] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({
-    tasks: true, events: true, people: true, ai: true, actions: true,
+    toc: true, tasks: true, linked: true, events: true, people: true, ai: true, actions: true,
   });
 
   // Reset summary when note id changes.
@@ -151,6 +162,31 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId }: 
 
   const toggle = (k: string) => setOpen(o => ({ ...o, [k]: !o[k] }));
 
+  const persistOpenRef = useMemo(() => ({
+    save() {
+      try { localStorage.setItem("careflow.notes.rail.open", JSON.stringify(open)); } catch {}
+    },
+  }), [open]);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("careflow.notes.rail.open");
+      if (raw) setOpen(o => ({ ...o, ...JSON.parse(raw) }));
+    } catch {}
+  }, []);
+  useEffect(() => { persistOpenRef.save(); }, [persistOpenRef]);
+
+  const linkedItems = useMemo(() => {
+    const out: { key: string; label: string; to?: string }[] = [];
+    for (const w of entities.wikilinks.slice(0, 8)) {
+      out.push({ key: `w:${w}`, label: `[[${w}]]`, to: `/notes?q=${encodeURIComponent(w)}` });
+    }
+    for (const m of entities.mentions.slice(0, 8)) {
+      const proj = (state.projects ?? []).find(p => p.name.toLowerCase() === m.toLowerCase());
+      out.push({ key: `m:${m}`, label: `@${m}`, to: proj ? `/projects/${proj.id}` : undefined });
+    }
+    return out;
+  }, [entities.wikilinks, entities.mentions, state.projects]);
+
   return (
     <aside className="flex w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur">
       <header className="border-b border-border/40 px-4 py-3">
@@ -161,6 +197,104 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId }: 
       </header>
 
       <div className="space-y-4 p-4">
+        <Group title="On this page" icon={List} open={open.toc} onToggle={() => toggle("toc")}>
+          <NoteTOC body={body} title="" className="ml-1" />
+        </Group>
+
+        <Group
+          title={`Tasks · ${inlineTasks.length}`}
+          icon={CheckSquare}
+          open={open.tasks}
+          onToggle={() => toggle("tasks")}
+        >
+          {inlineTasks.length === 0 ? (
+            <Empty>Add `- [ ] task` lines and they'll show up here.</Empty>
+          ) : (
+            <ul className="space-y-1">
+              {inlineTasks.map(t => (
+                <li key={`${t.line}:${t.text}`} className="group flex items-start gap-2 rounded-md px-1.5 py-1 text-xs hover:bg-muted/40">
+                  <button
+                    type="button"
+                    onClick={() => onBodyChange?.(toggleTaskLine(body, t.line))}
+                    className={cn(
+                      "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border transition-all",
+                      t.done ? "border-primary/60 bg-primary/80 text-primary-foreground" : "border-border/60 bg-background hover:border-primary/60",
+                    )}
+                    aria-label={t.done ? "Mark incomplete" : "Mark complete"}
+                  >
+                    {t.done && <CheckSquare className="h-3 w-3" strokeWidth={2.5} />}
+                  </button>
+                  {editingLine === t.line ? (
+                    <input
+                      autoFocus
+                      value={editDraft}
+                      onChange={(e) => setEditDraft(e.target.value)}
+                      onBlur={() => {
+                        if (editDraft.trim()) onBodyChange?.(editTaskLine(body, t.line, editDraft));
+                        setEditingLine(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); }
+                        if (e.key === "Escape") { setEditingLine(null); }
+                      }}
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-xs outline-none focus:ring-0"
+                    />
+                  ) : (
+                    <span
+                      className={cn(
+                        "min-w-0 flex-1 truncate transition-colors",
+                        t.done && "text-muted-foreground line-through",
+                      )}
+                      onDoubleClick={() => { setEditingLine(t.line); setEditDraft(t.text); }}
+                      title="Double-click to edit"
+                    >
+                      {t.text || <em className="text-muted-foreground/70">empty</em>}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setEditingLine(t.line); setEditDraft(t.text); }}
+                    className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-foreground text-muted-foreground/70"
+                    aria-label="Edit"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onBodyChange?.(deleteTaskLine(body, t.line))}
+                    className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive text-muted-foreground/70"
+                    aria-label="Delete"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Group>
+
+        <Group title={`Linked · ${linkedItems.length}`} icon={Link2} open={open.linked} onToggle={() => toggle("linked")}>
+          {linkedItems.length === 0 ? (
+            <Empty>Type [[Title]] or @Project to link.</Empty>
+          ) : (
+            <ul className="flex flex-wrap gap-1.5">
+              {linkedItems.map(l => (
+                <li key={l.key}>
+                  {l.to ? (
+                    <Link to={l.to} className="inline-flex items-center rounded-full border border-border/50 bg-background/70 px-2 py-0.5 text-[11px] text-primary hover:bg-primary/10">
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full border border-border/50 bg-background/70 px-2 py-0.5 text-[11px] text-muted-foreground">
+                      {l.label}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Group>
+
         <Group title={`Related tasks · ${relatedTasks.length}`} icon={CheckSquare} open={open.tasks} onToggle={() => toggle("tasks")}>
           {relatedTasks.length === 0 ? (
             <Empty>No matching tasks yet.</Empty>
@@ -227,7 +361,7 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId }: 
           )}
         </Group>
 
-        <Group title="AI summary" icon={Sparkles} open={open.ai} onToggle={() => toggle("ai")}>
+        <Group title="AI summary" icon={Sparkles} open={open.ai} onToggle={() => toggle("ai")} shimmer={summaryBusy}>
           {summary ? (
             <div className="rounded-xl border border-border/40 bg-background/60 p-3 text-[13px] leading-relaxed text-foreground/90 shadow-soft">
               <NoteMarkdown body={summary} />
@@ -261,26 +395,47 @@ export function NoteIntelligencePanel({ noteId, title, body, tags, projectId }: 
 }
 
 function Group({
-  title, icon: Icon, open, onToggle, children,
+  title, icon: Icon, open, onToggle, children, shimmer,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   open: boolean;
   onToggle: () => void;
   children: React.ReactNode;
+  shimmer?: boolean;
 }) {
   return (
     <section>
       <button
         type="button"
         onClick={onToggle}
-        className="mb-1.5 flex w-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground"
+        className={cn(
+          "mb-1.5 flex w-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground",
+          shimmer && "relative overflow-hidden",
+        )}
       >
-        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        <ChevronRight
+          className={cn("h-3 w-3 transition-transform duration-200", open && "rotate-90")}
+        />
         <Icon className="h-3 w-3" />
         <span className="flex-1 text-left">{title}</span>
+        {shimmer && (
+          <span className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmer_1.6s_infinite] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        )}
       </button>
-      {open && <div>{children}</div>}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 26 }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="pt-0.5">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
