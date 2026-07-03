@@ -4,7 +4,7 @@ import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import {
   startOfMonth, eachDayOfInterval, format, isSameMonth, isSameDay,
-  startOfWeek, addDays, addMonths, subMonths,
+  startOfWeek, addDays, addMonths, subMonths, isSameWeek, endOfWeek,
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -84,7 +84,7 @@ export default function Month() {
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [view, setView] = useState<CalView>("schedule");
-  const [showMoon, setShowMoon] = useState(false);
+  const [showMoon, setShowMoon] = useState(true);
   const [sheetISO, setSheetISO] = useState<string | null>(null);
   const [lunarDate, setLunarDate] = useState<Date | null>(null);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
@@ -162,12 +162,20 @@ export default function Month() {
 
   // Element → soft tint + dot color for the monthly grid overlay.
   // earth=green, water=blue, air=yellow, fire=orange.
-  const ELEMENT_STYLE: Record<Element, { tint: string; ring: string; dot: string; label: string }> = {
-    earth: { tint: "bg-emerald-500/10", ring: "ring-emerald-500/30", dot: "bg-emerald-500", label: "Earth" },
-    water: { tint: "bg-sky-500/10",     ring: "ring-sky-500/30",     dot: "bg-sky-500",     label: "Water" },
-    air:   { tint: "bg-yellow-400/15",  ring: "ring-yellow-500/30",  dot: "bg-yellow-500",  label: "Air"   },
-    fire:  { tint: "bg-orange-500/10",  ring: "ring-orange-500/30",  dot: "bg-orange-500",  label: "Fire"  },
+  // Element palette per redesign: earth=sage, water=soft blue, fire=soft orange, air=lavender.
+  const ELEMENT_STYLE: Record<Element, { tint: string; ring: string; dot: string; label: string; pill: string; pillText: string }> = {
+    earth: { tint: "bg-emerald-500/[0.06]", ring: "ring-emerald-500/20", dot: "bg-emerald-500", label: "Earth",
+             pill: "bg-emerald-500/15 border-emerald-500/25", pillText: "text-emerald-700 dark:text-emerald-300" },
+    water: { tint: "bg-sky-500/[0.06]",     ring: "ring-sky-500/20",     dot: "bg-sky-500",     label: "Water",
+             pill: "bg-sky-500/15 border-sky-500/25",         pillText: "text-sky-700 dark:text-sky-300" },
+    air:   { tint: "bg-violet-400/[0.07]",  ring: "ring-violet-400/25",  dot: "bg-violet-400",  label: "Air",
+             pill: "bg-violet-400/15 border-violet-400/25",   pillText: "text-violet-700 dark:text-violet-300" },
+    fire:  { tint: "bg-orange-500/[0.06]",  ring: "ring-orange-500/20",  dot: "bg-orange-500",  label: "Fire",
+             pill: "bg-orange-500/15 border-orange-500/25",   pillText: "text-orange-700 dark:text-orange-300" },
   };
+
+  const todayForecast = getRhythmForecast(new Date());
+  const todayEl = ELEMENT_STYLE[todayForecast.element];
 
   return (
     <div className={cn(
