@@ -2,9 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy, Maximize2, Minimize2, ChevronLeft, ChevronRight, BookTemplate } from "lucide-react";
+import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy, Maximize2, Minimize2, ChevronLeft, ChevronRight, BookTemplate, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { deleteNote, extractBacklinks, findBacklinksTo, getNote, updateNote, type Note } from "@/lib/notes";
 import { uploadNoteImage } from "@/lib/note-images";
 import { toast } from "sonner";
@@ -16,6 +20,7 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { AttachmentsField } from "@/components/attachments/AttachmentsField";
+import { AttachmentPopover } from "@/components/notes/AttachmentPopover";
 import type { Attachment } from "@/lib/types";
 import { NoteTOC } from "@/components/notes/NoteTOC";
 import { NoteContextRail } from "@/components/notes/NoteContextRail";
@@ -407,21 +412,6 @@ export default function NoteDetail() {
             ]}
           />
           <EditorPrefsMenu />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={async () => {
-              const headerText = note.kind === "daily" && note.date
-                ? format(parseISO(note.date), "EEEE, MMMM d, yyyy")
-                : (title || "Untitled");
-              const ok = await copyToClipboard(`${headerText}\n\n${body}`);
-              if (ok) toast.success("Copied to clipboard");
-              else toast.error("Copy failed");
-            }}
-            className="gap-1.5 text-muted-foreground hover:text-foreground"
-          >
-            <Copy className="h-4 w-4" /> Copy
-          </Button>
           <NoteIconPicker
             value={note.icon ?? null}
             resolved={resolvedIcon}
@@ -434,27 +424,44 @@ export default function NoteDetail() {
             onPickImage={(f) => void setCover(f)}
             onRemove={() => void removeCover()}
           />
-          <Button variant="ghost" size="icon" onClick={togglePin} aria-label="Pin">
+          <Button variant="ghost" size="icon" onClick={togglePin} aria-label={note.pinned ? "Unpin" : "Pin"} title={note.pinned ? "Unpin" : "Pin"}>
             <Pin className={cn("h-4 w-4", note.pinned && "fill-current text-accent-foreground")} />
           </Button>
-          <NoteTemplatesDialog
-            defaultTab="save"
-            source={{
-              title,
-              body,
-              icon: note.icon,
-              coverGradient: note.coverGradient,
-              tags,
-            }}
-            trigger={
-              <Button variant="ghost" size="icon" aria-label="Save as template" title="Save as template">
-                <BookTemplate className="h-4 w-4" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="More actions" title="More actions">
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
-            }
-          />
-          <Button variant="ghost" size="icon" onClick={remove} aria-label="Delete">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onSelect={async () => {
+                const headerText = note.kind === "daily" && note.date
+                  ? format(parseISO(note.date), "EEEE, MMMM d, yyyy")
+                  : (title || "Untitled");
+                const ok = await copyToClipboard(`${headerText}\n\n${body}`);
+                if (ok) toast.success("Copied to clipboard");
+                else toast.error("Copy failed");
+              }}>
+                <Copy className="mr-2 h-4 w-4" /> Copy contents
+              </DropdownMenuItem>
+              <NoteTemplatesDialog
+                defaultTab="save"
+                source={{ title, body, icon: note.icon, coverGradient: note.coverGradient, tags }}
+                trigger={
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <BookTemplate className="mr-2 h-4 w-4" /> Save as template…
+                  </DropdownMenuItem>
+                }
+              />
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={remove}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Delete note
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -569,9 +576,8 @@ export default function NoteDetail() {
 
         {id && (
           <div className="mt-4">
-            <AttachmentsField
-              scope={"note" as any}
-              ownerId={id}
+            <AttachmentPopover
+              noteId={id}
               value={note.attachments ?? []}
               onChange={(next: Attachment[]) => {
                 setNote({ ...note, attachments: next });

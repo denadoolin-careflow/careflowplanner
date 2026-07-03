@@ -771,6 +771,22 @@
 .block-editor .ProseMirror > * { position: relative; padding: 2px 6px; margin-inline: -6px; border-radius: 10px; transition: background 140ms ease; }
 .block-editor .ProseMirror > *:hover { background: hsl(var(--muted) / 0.22); }
 .block-editor .ProseMirror ::selection { background: hsl(var(--primary) / 0.18); border-radius: 4px; }
+/* ---------- Craft/Capacities-style writing polish ---------- */
+.block-editor .ProseMirror { line-height: 1.72; letter-spacing: 0.001em; }
+.block-editor .ProseMirror p { margin: 0.35em 0; }
+.block-editor .ProseMirror ul,
+.block-editor .ProseMirror ol { padding-left: 1.25rem; margin: 0.35em 0; }
+.block-editor .ProseMirror ul > li::marker { color: hsl(var(--muted-foreground) / 0.75); }
+.block-editor .ProseMirror hr {
+  border: 0;
+  height: 1px;
+  background: hsl(var(--border) / 0.5);
+  margin: 1.5em 0;
+}
+.block-editor .ProseMirror blockquote { font-style: italic; }
+/* Inline entity chip lift (read + edit mode) */
+.inline-entity-card { transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease; }
+.inline-entity-card:hover { transform: translateY(-1px); }
 .block-editor .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.25rem 0; }
 .block-editor .ProseMirror ul[data-type="taskList"] li { display: flex; gap: 0.5rem; align-items: baseline; margin: 0.1rem 0; }
 .block-editor .ProseMirror ul[data-type="taskList"] li > label {
