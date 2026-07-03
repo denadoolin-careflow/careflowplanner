@@ -42,6 +42,7 @@ import Image from "@tiptap/extension-image";
 import { uploadNoteImage, uploadNoteFile } from "@/lib/note-images";
 import { openMediaLightbox } from "@/components/media/MediaLightbox";
 import { getNote, updateNote } from "@/lib/notes";
+import { createNote } from "@/lib/notes";
 import type { Attachment } from "@/lib/types";
 import {
   Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
@@ -51,6 +52,7 @@ import {
   Heart, AtSign, GitBranch,
   Focus as FocusIcon,
   Table as TableIcon, Rows3, Columns3, Trash2,
+  FilePlus, FolderPlus, Search as SearchIcon, StickyNote,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
