@@ -1621,6 +1621,63 @@ export function BlockEditor({
     },
   }), []);
 
+  // Wiki-link `[[` typeahead — searches notes to insert an inline-entity chip.
+  type WikiItem = { id?: string; label: string; create?: boolean };
+  const wikiExtension = useMemo(() => Extension.create({
+    name: "wikiLink",
+    addProseMirrorPlugins() {
+      return [makeSuggestion<WikiItem>(this.editor as Editor, {
+        char: "[[",
+        pluginKey: new PluginKey("wikiSuggestion"),
+        getItems: (query) => {
+          const q = query.trim().toLowerCase();
+          const notesOnly = refsRef.current.filter(r => r.type === "Note" || r.type === "Memory");
+          const scored: Array<{ r: RefItem; s: number }> = [];
+          for (const r of notesOnly) {
+            const s = q ? fuzzyScore(r.label, q) : 0;
+            if (s == null) continue;
+            scored.push({ r, s });
+          }
+          scored.sort((a, b) => b.s - a.s);
+          const items: WikiItem[] = scored.slice(0, 8).map(x => ({ id: x.r.id, label: x.r.label }));
+          if (q && !items.some(i => i.label.toLowerCase() === q)) {
+            items.unshift({ label: query, create: true });
+          }
+          return items;
+        },
+        onSelect: (item, range, editor) => {
+          haptics.tap();
+          const label = item.label.trim().replace(/[[\]]/g, "");
+          if (!label) return;
+          if (item.create) {
+            void createNote({ title: label }).then((n) => {
+              toast.success("Note created", { description: label, action: { label: "Open", onClick: () => navigate(`/notes/${n.id}`) } });
+            }).catch(() => toast.error("Could not create note"));
+          }
+          editor.chain().focus().deleteRange(range).insertContent({
+            type: "inlineEntityCard",
+            attrs: { label, entityType: "wiki", size: "md" },
+          }).insertContent(" ").run();
+        },
+        render: (item, active) => (
+          <span className="flex items-center gap-2">
+            <span className={cn("flex h-7 w-7 items-center justify-center rounded-md", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>
+              {item.create ? <Plus className="h-3.5 w-3.5" /> : <StickyNote className="h-3.5 w-3.5" />}
+            </span>
+            <span className="flex-1">
+              <span className="block font-medium leading-tight">
+                {item.create ? `Create note "${item.label}"` : item.label}
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                {item.create ? "New note & link" : "Link existing note"}
+              </span>
+            </span>
+          </span>
+        ),
+      })];
+    },
+  }), [navigate]);
+
   // Decorate the top-level block containing the selection so CSS can dim others
   // when focus mode is enabled. The decoration is always present (cheap); the
   // dim only renders when the wrapper has `.cf-focus`.
