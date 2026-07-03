@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useMemo } from "react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { QuickPeek, inferPeek } from "@/components/notes/QuickPeek";
 
 /**
  * Interactive markdown renderer for modals/popovers.
@@ -73,15 +74,19 @@ export function InteractiveNoteMarkdown({
           a: ({ href, children, ...rest }) => {
             const h = href ?? "";
             if (h.startsWith("/") || h.startsWith("#")) {
-              return (
+              const peek = inferPeek(h);
+              const link = (
                 <Link
                   to={h}
                   onClick={() => onNavigate?.()}
-                  className="rounded bg-primary/10 px-1 text-primary hover:bg-primary/20"
+                  className="inline-entity-card rounded bg-primary/10 px-1 text-primary transition-all hover:-translate-y-px hover:bg-primary/20 hover:shadow-sm"
                 >
                   {children}
                 </Link>
               );
+              return peek ? (
+                <QuickPeek type={peek.type} id={peek.id}>{link}</QuickPeek>
+              ) : link;
             }
             // External — open safely
             return (
