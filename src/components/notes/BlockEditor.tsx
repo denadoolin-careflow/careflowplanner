@@ -1050,7 +1050,7 @@ export function BlockEditor({
   /** Where to anchor the formatting toolbar. Defaults to bottom (sticky). */
   toolbarPlacement?: "top" | "bottom";
 }) {
-  const { state, addTask } = useStore();
+  const { state, addTask, addProject } = useStore();
   const navigate = useNavigate();
   const [prefs, setPrefs] = useEditorPrefs();
   const isMobile = useIsMobile();
