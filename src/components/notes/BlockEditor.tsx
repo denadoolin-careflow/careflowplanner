@@ -42,6 +42,7 @@ import Image from "@tiptap/extension-image";
 import { uploadNoteImage, uploadNoteFile } from "@/lib/note-images";
 import { openMediaLightbox } from "@/components/media/MediaLightbox";
 import { getNote, updateNote } from "@/lib/notes";
+import { createNote } from "@/lib/notes";
 import type { Attachment } from "@/lib/types";
 import {
   Heading1, Heading2, Heading3, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Minus, Link as LinkIcon, Highlighter as HighlighterIcon, Type,
@@ -51,6 +52,7 @@ import {
   Heart, AtSign, GitBranch,
   Focus as FocusIcon,
   Table as TableIcon, Rows3, Columns3, Trash2,
+  FilePlus, FolderPlus, Search as SearchIcon, StickyNote,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
@@ -389,8 +391,8 @@ function buildReferences(state: ReturnType<typeof useStore>["state"], transits: 
 /* ------------------------------------------------------------------ */
 /*  Generic floating menu component                                   */
 /* ------------------------------------------------------------------ */
-function FloatingMenu<T>({ items, onSelect, render }: {
-  items: T[]; onSelect: (i: T) => void; render: (i: T, active: boolean) => React.ReactNode;
+function FloatingMenu<T>({ items, onSelect, render, query }: {
+  items: T[]; onSelect: (i: T) => void; render: (i: T, active: boolean) => React.ReactNode; query?: string;
 }) {
   const [active, setActive] = useState(0);
   useEffect(() => { setActive(0); }, [items]);
@@ -403,9 +405,21 @@ function FloatingMenu<T>({ items, onSelect, render }: {
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, [items, active, onSelect]);
-  if (!items.length) return <div className="rounded-xl border border-border/60 bg-popover p-3 text-xs text-popover-foreground/70 shadow-lg">No matches</div>;
+  const header = (
+    <div className="mb-1 flex items-center gap-1.5 rounded-lg bg-muted/50 px-2 py-1.5 text-[11px] text-muted-foreground">
+      <SearchIcon className="h-3 w-3 opacity-70" />
+      <span className="truncate">{query ? query : "Type to search…"}</span>
+    </div>
+  );
+  if (!items.length) return (
+    <div className="w-72 rounded-xl border border-border/60 bg-popover p-2 text-popover-foreground shadow-xl animate-scale-in">
+      {header}
+      <div className="px-2 py-3 text-xs text-popover-foreground/70">No matches</div>
+    </div>
+  );
   return (
-    <div className="max-h-72 w-72 overflow-y-auto overscroll-contain rounded-xl border border-border/60 bg-popover text-popover-foreground p-1.5 shadow-xl" style={{ WebkitOverflowScrolling: "touch" }}>
+    <div className="max-h-80 w-72 overflow-y-auto overscroll-contain rounded-xl border border-border/60 bg-popover text-popover-foreground p-1.5 shadow-xl animate-scale-in" style={{ WebkitOverflowScrolling: "touch" }}>
+      {header}
       {items.map((it, i) => (
         <button
           key={i}
@@ -436,10 +450,11 @@ const GROUP_LABELS: Record<string, string> = {
   Cosmic: "Cosmic events",
 };
 
-function GroupedFloatingMenu({ items, onSelect, render }: {
+function GroupedFloatingMenu({ items, onSelect, render, query }: {
   items: RefItem[];
   onSelect: (i: RefItem) => void;
   render: (i: RefItem, active: boolean) => React.ReactNode;
+  query?: string;
 }) {
   // Items arrive pre-sorted by score; group preserving each group's first-seen order.
   const groups = useMemo(() => {
@@ -479,8 +494,12 @@ function GroupedFloatingMenu({ items, onSelect, render }: {
 
   if (!flat.length) {
     return (
-      <div className="w-72 rounded-xl border border-border/60 bg-popover p-3 text-xs text-popover-foreground/70 shadow-lg">
-        No matches — keep typing to search across tasks, notes, people, dates, and cosmic events.
+      <div className="w-80 rounded-xl border border-border/60 bg-popover p-2 text-popover-foreground shadow-xl animate-scale-in">
+        <div className="mb-1 flex items-center gap-1.5 rounded-lg bg-muted/50 px-2 py-1.5 text-[11px] text-muted-foreground">
+          <SearchIcon className="h-3 w-3 opacity-70" />
+          <span className="truncate">{query ? query : "Search tasks, notes, people…"}</span>
+        </div>
+        <div className="px-2 py-3 text-xs text-popover-foreground/70">No matches</div>
       </div>
     );
   }
@@ -488,10 +507,14 @@ function GroupedFloatingMenu({ items, onSelect, render }: {
   let runningIndex = -1;
   return (
     <div
-      className="max-h-80 w-80 overflow-y-auto overscroll-contain rounded-xl border border-border/60 bg-popover text-popover-foreground p-1.5 shadow-xl"
+      className="max-h-96 w-80 overflow-y-auto overscroll-contain rounded-xl border border-border/60 bg-popover text-popover-foreground p-1.5 shadow-xl animate-scale-in"
       style={{ WebkitOverflowScrolling: "touch" }}
       onPointerDown={(e) => { e.stopPropagation(); }}
     >
+      <div className="sticky top-0 z-10 mb-1 flex items-center gap-1.5 rounded-lg bg-popover/95 px-2 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
+        <SearchIcon className="h-3 w-3 opacity-70" />
+        <span className="truncate">{query ? query : "Search tasks, notes, people…"}</span>
+      </div>
       {groups.map(([type, arr]) => (
         <div key={type} className="mb-1 last:mb-0">
           <div className="px-2 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
@@ -587,6 +610,7 @@ function makeSuggestion<T>(editor: Editor, opts: {
               items: props.items,
               onSelect: (it: T) => opts.onSelect(it, props.range, props.editor),
               render: opts.render,
+              query: props.query,
             },
             editor: props.editor,
           });
@@ -610,6 +634,7 @@ function makeSuggestion<T>(editor: Editor, opts: {
             items: props.items,
             onSelect: (it: T) => opts.onSelect(it, props.range, props.editor),
             render: opts.render,
+            query: props.query,
           });
           if (popup[0] && props.clientRect) popup[0].setProps({ getReferenceClientRect: props.clientRect });
         },
@@ -1025,7 +1050,7 @@ export function BlockEditor({
   /** Where to anchor the formatting toolbar. Defaults to bottom (sticky). */
   toolbarPlacement?: "top" | "bottom";
 }) {
-  const { state, addTask } = useStore();
+  const { state, addTask, addProject } = useStore();
   const navigate = useNavigate();
   const [prefs, setPrefs] = useEditorPrefs();
   const isMobile = useIsMobile();
@@ -1072,6 +1097,7 @@ export function BlockEditor({
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
   const promoteRef = useRef<() => void>(() => {});
+  const quickCreateRef = useRef<{ note: () => void; task: () => void; project: () => void } | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -1227,12 +1253,34 @@ export function BlockEditor({
               keywords: ["task", "todo", "promote", "add", "send"],
               command: () => promoteRef.current?.(),
             },
+            {
+              title: "New note",
+              description: "Create a linked note and insert a wiki-link",
+              icon: FilePlus,
+              keywords: ["note", "new", "create", "page", "doc"],
+              command: () => quickCreateRef.current?.note(),
+            },
+            {
+              title: "New task",
+              description: "Add a task to your inbox and insert a chip",
+              icon: CheckSquare,
+              keywords: ["task", "todo", "new", "add"],
+              command: () => quickCreateRef.current?.task(),
+            },
+            {
+              title: "New project",
+              description: "Create a project and insert a mention",
+              icon: FolderPlus,
+              keywords: ["project", "new", "create"],
+              command: () => quickCreateRef.current?.project(),
+            },
           ];
           return [...slashItems(), ...extra].filter(i =>
             i.title.toLowerCase().includes(q) || (i.keywords ?? []).some(k => k.includes(q))
-          ).slice(0, 10);
+          ).slice(0, 12);
         },
         onSelect: (item, range, editor) => {
+          haptics.tap();
           editor.chain().focus().deleteRange(range).run();
           item.command(editor);
         },
@@ -1573,6 +1621,63 @@ export function BlockEditor({
     },
   }), []);
 
+  // Wiki-link `[[` typeahead — searches notes to insert an inline-entity chip.
+  type WikiItem = { id?: string; label: string; create?: boolean };
+  const wikiExtension = useMemo(() => Extension.create({
+    name: "wikiLink",
+    addProseMirrorPlugins() {
+      return [makeSuggestion<WikiItem>(this.editor as Editor, {
+        char: "[[",
+        pluginKey: new PluginKey("wikiSuggestion"),
+        getItems: (query) => {
+          const q = query.trim().toLowerCase();
+          const notesOnly = refsRef.current.filter(r => r.type === "Note" || r.type === "Memory");
+          const scored: Array<{ r: RefItem; s: number }> = [];
+          for (const r of notesOnly) {
+            const s = q ? fuzzyScore(r.label, q) : 0;
+            if (s == null) continue;
+            scored.push({ r, s });
+          }
+          scored.sort((a, b) => b.s - a.s);
+          const items: WikiItem[] = scored.slice(0, 8).map(x => ({ id: x.r.id, label: x.r.label }));
+          if (q && !items.some(i => i.label.toLowerCase() === q)) {
+            items.unshift({ label: query, create: true });
+          }
+          return items;
+        },
+        onSelect: (item, range, editor) => {
+          haptics.tap();
+          const label = item.label.trim().replace(/[[\]]/g, "");
+          if (!label) return;
+          if (item.create) {
+            void createNote({ title: label }).then((n) => {
+              toast.success("Note created", { description: label, action: { label: "Open", onClick: () => navigate(`/notes/${n.id}`) } });
+            }).catch(() => toast.error("Could not create note"));
+          }
+          editor.chain().focus().deleteRange(range).insertContent({
+            type: "inlineEntityCard",
+            attrs: { label, entityType: "wiki", size: "md" },
+          }).insertContent(" ").run();
+        },
+        render: (item, active) => (
+          <span className="flex items-center gap-2">
+            <span className={cn("flex h-7 w-7 items-center justify-center rounded-md", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>
+              {item.create ? <Plus className="h-3.5 w-3.5" /> : <StickyNote className="h-3.5 w-3.5" />}
+            </span>
+            <span className="flex-1">
+              <span className="block font-medium leading-tight">
+                {item.create ? `Create note "${item.label}"` : item.label}
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                {item.create ? "New note & link" : "Link existing note"}
+              </span>
+            </span>
+          </span>
+        ),
+      })];
+    },
+  }), [navigate]);
+
   // Decorate the top-level block containing the selection so CSS can dim others
   // when focus mode is enabled. The decoration is always present (cheap); the
   // dim only renders when the wrapper has `.cf-focus`.
@@ -1640,6 +1745,7 @@ export function BlockEditor({
       slashExtension,
       refExtension,
       hashtagExtension,
+      wikiExtension,
       toggleKeymap,
       focusBlockExtension,
     ],
@@ -1945,11 +2051,32 @@ export function BlockEditor({
     // Haptic + tiny scale pulse when collapsing/expanding a toggle
     const summary = el.closest("summary");
     if (summary && summary.parentElement?.classList.contains("cf-toggle")) {
-      try { (navigator as any).vibrate?.(8); } catch {}
+      haptics.tap();
       summary.animate(
         [{ transform: "scale(1)" }, { transform: "scale(0.985)" }, { transform: "scale(1)" }],
         { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" },
       );
+    }
+    // Click gutter of a heading (H1/H2/H3) collapses the section below it.
+    if (/^H[1-3]$/.test(el.tagName) && el.closest(".ProseMirror")) {
+      const h = el as HTMLElement;
+      const rect = h.getBoundingClientRect();
+      if (e.clientX - rect.left < 24) {
+        e.preventDefault();
+        const level = parseInt(h.tagName[1], 10);
+        const collapsed = h.classList.toggle("cf-heading-collapsed");
+        let sib = h.nextElementSibling as HTMLElement | null;
+        while (sib) {
+          if (/^H[1-6]$/.test(sib.tagName)) {
+            const l = parseInt(sib.tagName[1], 10);
+            if (l <= level) break;
+          }
+          sib.classList.toggle("cf-h-hidden", collapsed);
+          sib = sib.nextElementSibling as HTMLElement | null;
+        }
+        haptics.tap();
+        return;
+      }
     }
     const target = el.closest("a") as HTMLAnchorElement | null;
     if (!target) return;
@@ -1990,6 +2117,52 @@ export function BlockEditor({
     toast.message("Place cursor on a checkbox first");
   }, [editor, addTask]);
   promoteRef.current = promoteTaskItemToTask;
+
+  // Slash-menu quick creators — used from the "/New note", "/New task",
+  // "/New project" commands. Each inserts a chip and haptics.
+  quickCreateRef.current = {
+    note: () => {
+      if (!editor) return;
+      const label = window.prompt("Note title", "")?.trim();
+      if (!label) return;
+      void createNote({ title: label }).then((n) => {
+        toast.success("Note created", { description: label, action: { label: "Open", onClick: () => navigate(`/notes/${n.id}`) } });
+      }).catch(() => toast.error("Could not create note"));
+      editor.chain().focus().insertContent({
+        type: "inlineEntityCard",
+        attrs: { label, entityType: "wiki", size: "md" },
+      }).insertContent(" ").run();
+      haptics.success();
+    },
+    task: () => {
+      if (!editor) return;
+      const title = window.prompt("Task title", "")?.trim();
+      if (!title) return;
+      void addTask({ title });
+      editor.chain().focus().insertContent({
+        type: "text",
+        text: `☐ ${title}`,
+        marks: [{ type: "link", attrs: { href: "/anytime", class: "task-chip" } }],
+      }).insertContent(" ").unsetMark("link").run();
+      haptics.success();
+      toast.success("Task added", { description: title });
+    },
+    project: () => {
+      if (!editor) return;
+      const name = window.prompt("Project name", "")?.trim();
+      if (!name) return;
+      void addProject({ name }).then((p) => {
+        if (!p) return;
+        editor.chain().focus().insertContent({
+          type: "text",
+          text: `@${name}`,
+          marks: [{ type: "link", attrs: { href: `/projects/${p.id}`, class: "ref-chip" } }],
+        }).insertContent(" ").unsetMark("link").run();
+        haptics.success();
+        toast.success("Project created", { description: name });
+      }).catch(() => toast.error("Could not create project"));
+    },
+  };
 
   /** Turn the current selection into a real Task and tag the chip. */
   const promoteSelectionToTask = useCallback(() => {
@@ -2174,6 +2347,28 @@ export function BlockEditor({
           )}
           <ToolbarButton onClick={promoteSelectionToTask} label="Add selection to Tasks">
             <ListPlus className="h-3.5 w-3.5" />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => {
+              if (!editor) return;
+              const { from, to, empty } = editor.state.selection;
+              if (empty) { toast.message("Select some text first"); return; }
+              const text = editor.state.doc.textBetween(from, to, " ").trim();
+              if (!text) return;
+              const title = text.length > 80 ? text.slice(0, 80).replace(/\s+\S*$/, "") : text;
+              haptics.tap();
+              void createNote({ title, body: text }).then((n) => {
+                toast.success("Note created", { description: title, action: { label: "Open", onClick: () => navigate(`/notes/${n.id}`) } });
+              }).catch(() => toast.error("Could not create note"));
+              // Replace selection with an inline wiki chip pointing to the new note title.
+              editor.chain().focus().deleteRange({ from, to }).insertContent({
+                type: "inlineEntityCard",
+                attrs: { label: title, entityType: "wiki", size: "md" },
+              }).insertContent(" ").run();
+            }}
+            label="Save selection as new note"
+          >
+            <FilePlus className="h-3.5 w-3.5" />
           </ToolbarButton>
           <BubbleTagPicker
             tagNames={tagNamesRef.current}

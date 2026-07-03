@@ -71,6 +71,12 @@ export default function NoteDetail() {
   const focusContainerRef = useRef<HTMLDivElement | null>(null);
   const isMobile = useIsMobile();
   const [noteOrder, setNoteOrder] = useState<string[]>([]);
+  const [sidebarHidden, setSidebarHidden] = useState<boolean>(() => {
+    try { return localStorage.getItem("careflow.notes.sidebarHidden") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("careflow.notes.sidebarHidden", sidebarHidden ? "1" : "0"); } catch {/**/}
+  }, [sidebarHidden]);
   useEffect(() => {
     if (!isMobile) return;
     let cancelled = false;
@@ -640,9 +646,20 @@ export default function NoteDetail() {
         <NoteLinksSidebar noteId={note.id} />
       </div>
       </div>
-      {!focusMode && (
+      {!focusMode && !sidebarHidden && (
       <div className="hidden lg:block">
-        <div className="sticky top-20 space-y-3">
+        <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto overscroll-contain space-y-3 pr-1 animate-fade-in [scrollbar-width:thin]">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => { haptics.tap(); setSidebarHidden(true); }}
+              className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/80 px-2 py-1 text-[11px] text-muted-foreground shadow-sm backdrop-blur hover:text-foreground transition"
+              aria-label="Hide sidebar"
+              title="Hide sidebar"
+            >
+              <ChevronRight className="h-3.5 w-3.5" /> Hide
+            </button>
+          </div>
           <NoteIntelligencePanel
             noteId={note.id}
             title={title}
@@ -664,6 +681,17 @@ export default function NoteDetail() {
           />
         </div>
       </div>
+      )}
+      {!focusMode && sidebarHidden && (
+        <button
+          type="button"
+          onClick={() => { haptics.tap(); setSidebarHidden(false); }}
+          className="fixed right-3 top-24 z-20 hidden lg:inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/90 px-2.5 py-1 text-[11px] text-muted-foreground shadow-md backdrop-blur hover:text-foreground animate-fade-in"
+          aria-label="Show sidebar"
+          title="Show sidebar"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" /> Panel
+        </button>
       )}
     </>
   );
@@ -695,7 +723,10 @@ export default function NoteDetail() {
   return (
     <div
       ref={focusContainerRef}
-      className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6 lg:grid-cols-[minmax(0,1fr)_300px]"
+      className={cn(
+        "mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-3 py-4 md:px-6 md:py-6",
+        sidebarHidden ? "lg:grid-cols-1" : "lg:grid-cols-[minmax(0,1fr)_300px]",
+      )}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
