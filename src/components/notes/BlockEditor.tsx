@@ -1097,6 +1097,7 @@ export function BlockEditor({
   const noteIdRef = useRef<string | undefined>(noteId);
   noteIdRef.current = noteId;
   const promoteRef = useRef<() => void>(() => {});
+  const quickCreateRef = useRef<{ note: () => void; task: () => void; project: () => void } | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
