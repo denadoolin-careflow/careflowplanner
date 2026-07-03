@@ -2348,6 +2348,28 @@ export function BlockEditor({
           <ToolbarButton onClick={promoteSelectionToTask} label="Add selection to Tasks">
             <ListPlus className="h-3.5 w-3.5" />
           </ToolbarButton>
+          <ToolbarButton
+            onClick={() => {
+              if (!editor) return;
+              const { from, to, empty } = editor.state.selection;
+              if (empty) { toast.message("Select some text first"); return; }
+              const text = editor.state.doc.textBetween(from, to, " ").trim();
+              if (!text) return;
+              const title = text.length > 80 ? text.slice(0, 80).replace(/\s+\S*$/, "") : text;
+              haptics.tap();
+              void createNote({ title, body: text }).then((n) => {
+                toast.success("Note created", { description: title, action: { label: "Open", onClick: () => navigate(`/notes/${n.id}`) } });
+              }).catch(() => toast.error("Could not create note"));
+              // Replace selection with an inline wiki chip pointing to the new note title.
+              editor.chain().focus().deleteRange({ from, to }).insertContent({
+                type: "inlineEntityCard",
+                attrs: { label: title, entityType: "wiki", size: "md" },
+              }).insertContent(" ").run();
+            }}
+            label="Save selection as new note"
+          >
+            <FilePlus className="h-3.5 w-3.5" />
+          </ToolbarButton>
           <BubbleTagPicker
             tagNames={tagNamesRef.current}
             onPick={insertTagAtSelection}
