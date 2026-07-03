@@ -2062,7 +2062,9 @@ export function BlockEditor({
       const h = el as HTMLElement;
       const rect = h.getBoundingClientRect();
       const dx = e.clientX - rect.left;
-      if (dx >= -44 && dx <= 8) {
+      // Gutter marker is now positioned at left: -56px with padding; keep the
+      // clickable zone in the gutter only so it doesn't overlap heading text.
+      if (dx >= -72 && dx <= -24) {
         e.preventDefault();
         const level = parseInt(h.tagName[1], 10);
         const collapsed = h.classList.toggle("cf-heading-collapsed");
