@@ -4,7 +4,7 @@ import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import {
   startOfMonth, eachDayOfInterval, format, isSameMonth, isSameDay,
-  startOfWeek, addDays, addMonths, subMonths,
+  startOfWeek, addDays, addMonths, subMonths, isSameWeek, endOfWeek,
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -84,7 +84,7 @@ export default function Month() {
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [view, setView] = useState<CalView>("schedule");
-  const [showMoon, setShowMoon] = useState(false);
+  const [showMoon, setShowMoon] = useState(true);
   const [sheetISO, setSheetISO] = useState<string | null>(null);
   const [lunarDate, setLunarDate] = useState<Date | null>(null);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
@@ -104,7 +104,7 @@ export default function Month() {
   const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task") =>
     k === "appt" ? "bg-primary-soft text-foreground"
     : k === "bday" ? "bg-accent-soft text-accent-foreground"
-    : k === "hol" ? "bg-secondary-soft text-secondary-foreground"
+    : k === "hol" ? "bg-gradient-to-r from-rose-500/15 to-amber-500/15 text-foreground/85 border border-rose-500/25"
     : k === "task" ? "bg-warm-soft text-warm-foreground border border-primary/30"
     : "bg-muted text-foreground";
 
@@ -162,12 +162,20 @@ export default function Month() {
 
   // Element → soft tint + dot color for the monthly grid overlay.
   // earth=green, water=blue, air=yellow, fire=orange.
-  const ELEMENT_STYLE: Record<Element, { tint: string; ring: string; dot: string; label: string }> = {
-    earth: { tint: "bg-emerald-500/10", ring: "ring-emerald-500/30", dot: "bg-emerald-500", label: "Earth" },
-    water: { tint: "bg-sky-500/10",     ring: "ring-sky-500/30",     dot: "bg-sky-500",     label: "Water" },
-    air:   { tint: "bg-yellow-400/15",  ring: "ring-yellow-500/30",  dot: "bg-yellow-500",  label: "Air"   },
-    fire:  { tint: "bg-orange-500/10",  ring: "ring-orange-500/30",  dot: "bg-orange-500",  label: "Fire"  },
+  // Element palette per redesign: earth=sage, water=soft blue, fire=soft orange, air=lavender.
+  const ELEMENT_STYLE: Record<Element, { tint: string; ring: string; dot: string; label: string; pill: string; pillText: string }> = {
+    earth: { tint: "bg-emerald-500/[0.06]", ring: "ring-emerald-500/20", dot: "bg-emerald-500", label: "Earth",
+             pill: "bg-emerald-500/15 border-emerald-500/25", pillText: "text-emerald-700 dark:text-emerald-300" },
+    water: { tint: "bg-sky-500/[0.06]",     ring: "ring-sky-500/20",     dot: "bg-sky-500",     label: "Water",
+             pill: "bg-sky-500/15 border-sky-500/25",         pillText: "text-sky-700 dark:text-sky-300" },
+    air:   { tint: "bg-violet-400/[0.07]",  ring: "ring-violet-400/25",  dot: "bg-violet-400",  label: "Air",
+             pill: "bg-violet-400/15 border-violet-400/25",   pillText: "text-violet-700 dark:text-violet-300" },
+    fire:  { tint: "bg-orange-500/[0.06]",  ring: "ring-orange-500/20",  dot: "bg-orange-500",  label: "Fire",
+             pill: "bg-orange-500/15 border-orange-500/25",   pillText: "text-orange-700 dark:text-orange-300" },
   };
+
+  const todayForecast = getRhythmForecast(new Date());
+  const todayEl = ELEMENT_STYLE[todayForecast.element];
 
   return (
     <div className={cn(
@@ -251,18 +259,22 @@ export default function Month() {
             />
           ) : (
           <>
-          {showMoon && (
-            <div className="mb-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-              <span className="font-medium uppercase tracking-wider">Moon overlay · element:</span>
-              {(Object.keys(ELEMENT_STYLE) as Element[]).map(el => (
-                <span key={el} className="inline-flex items-center gap-1.5">
-                  <span className={cn("h-2.5 w-2.5 rounded-full", ELEMENT_STYLE[el].dot)} />
-                  {ELEMENT_STYLE[el].label}
-                </span>
-              ))}
-              <span className="sm:hidden italic opacity-80">Tap any day's moon for guidance</span>
-            </div>
-          )}
+          {/* Weekly astrology strip: current week's moon signature */}
+          <div className={cn(
+            "mb-3 flex flex-wrap items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] backdrop-blur-sm transition-colors",
+            todayEl.pill,
+          )}>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">This week</span>
+            <span className="inline-flex items-center gap-1.5 text-sm" aria-hidden>
+              <span className="text-base leading-none">{todayForecast.glyph}</span>
+              <span className={cn("font-medium", todayEl.pillText)}>
+                {todayForecast.phaseLabel} · {todayForecast.sign.sign}
+              </span>
+            </span>
+            <span className="ml-auto text-[11px] italic text-muted-foreground">
+              Focus · {todayForecast.guidance.keywords.slice(0, 3).join(" • ")}
+            </span>
+          </div>
           <div className="grid grid-cols-7 gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground sm:text-xs">
             {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
               <div key={d} className="px-1 py-1 text-center sm:px-2">
@@ -276,6 +288,8 @@ export default function Month() {
               const k = d.toISOString().slice(0,10);
               const inMonth = isSameMonth(d, cursor);
               const today = isSameDay(d, new Date());
+              const inCurrentWeek = isSameWeek(d, new Date(), { weekStartsOn: 0 });
+              const dow = d.getDay(); // 0..6 for week-edge rounding
               const ev = eventsOn(k);
               const phase = cycleSettings.enabled ? phaseForDate(d, cyclePeriods, cycleSettings) : null;
               const phaseVar = phase ? PHASE_META[phase].tokenVar : null;
@@ -321,55 +335,59 @@ export default function Month() {
                     setSheetISO(k);
                   } : undefined}
                   className={cn(
-                    "group/day relative min-h-16 rounded-lg border p-1.5 text-xs transition-all duration-200 ease-out sm:min-h-28 sm:p-2 cursor-pointer",
+                    "group/day relative min-h-16 rounded-xl border p-1.5 text-xs transition-all duration-200 ease-out sm:min-h-28 sm:p-2 cursor-pointer",
                     inMonth
                       ? cn("border-border/60", moonStyle ? cn(moonStyle.tint, "ring-1 ring-inset", moonStyle.ring) : "bg-card")
                       : "border-transparent bg-transparent text-muted-foreground/50 cursor-default",
-                    today && "ring-2 ring-primary",
+                    today && "ring-2 ring-primary shadow-sm",
+                    inCurrentWeek && !today && "bg-primary/[0.04] ring-1 ring-primary/20",
+                    inCurrentWeek && dow === 0 && "rounded-l-2xl",
+                    inCurrentWeek && dow === 6 && "rounded-r-2xl",
                     inMonth && elementChanged && "ring-2 ring-offset-1 ring-offset-background ring-foreground/40",
                     hoverISO === k && "scale-[1.03] bg-primary/10 ring-2 ring-primary shadow-md",
+                    inMonth && "hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30",
                   )}
                   style={inMonth && keyPhase && !today ? {
                     boxShadow: `inset 0 0 0 2px hsl(${keyPhase.hsl} / 0.55)`,
                   } : undefined}
                 >
-                  <div className="flex items-center justify-between">
-                    {moon ? (
-                      <button
-                        type="button"
-                        data-day-item
-                        onClick={(e) => { e.stopPropagation(); setLunarDate(d); }}
-                        title={`${moon.phaseLabel} · Moon in ${moon.sign.sign} (${moonStyle!.label})${keyPhase ? ` · ${keyPhase.verb}` : ""}`}
-                        aria-label={`${moon.phaseLabel}, moon in ${moon.sign.sign}`}
-                        className="inline-flex items-center gap-1 rounded text-[10px] leading-none hover:bg-foreground/5 sm:text-[11px]"
-                      >
-                        <span aria-hidden>{moon.glyph}</span>
-                        <span className="hidden text-[10px] text-muted-foreground sm:inline" aria-hidden>{moon.sign.glyph}</span>
-                        {keyPhase && (
-                          <span
-                            className="hidden rounded-full px-1 text-[9px] font-medium sm:inline"
-                            style={{ background: `hsl(${keyPhase.hsl} / 0.18)`, color: `hsl(${keyPhase.hsl})` }}
-                          >
-                            {keyPhase.verb}
-                          </span>
-                        )}
-                      </button>
-                    ) : keyPhase ? (
-                      <button
-                        type="button"
-                        data-day-item
-                        onClick={(e) => { e.stopPropagation(); setLunarDate(d); }}
-                        title={`${keyPhase.label} · ${keyPhase.invitation}`}
-                        aria-label={keyPhase.label}
-                        className="inline-flex items-center gap-1 rounded-full px-1 text-[10px] font-medium hover:brightness-95 sm:text-[11px]"
-                        style={{ background: `hsl(${keyPhase.hsl} / 0.18)`, color: `hsl(${keyPhase.hsl})` }}
-                      >
-                        <span aria-hidden>{keyPhase.glyph}</span>
-                        <span className="hidden sm:inline">{keyPhase.verb}</span>
-                      </button>
-                    ) : <span />}
-                    <div className={cn("text-right text-[10px] font-medium sm:text-[11px]", today && "text-primary")}>{format(d, "d")}</div>
+                  {/* Top row: date + moon glyph */}
+                  <div className="flex items-center justify-between gap-1">
+                    <div className={cn(
+                      "text-[11px] font-semibold tabular-nums sm:text-[12px]",
+                      today ? "grid h-5 w-5 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm sm:h-6 sm:w-6" : "text-foreground/85",
+                    )}>{format(d, "d")}</div>
+                    {moon && (
+                      <span
+                        aria-hidden
+                        className="text-[13px] leading-none opacity-90 sm:text-[15px]"
+                        title={`${moon.phaseLabel} · Moon in ${moon.sign.sign}`}
+                      >{moon.glyph}</span>
+                    )}
                   </div>
+                  {/* Combined element pill: phase • sign, colored by element */}
+                  {inMonth && moon && moonStyle && (
+                    <button
+                      type="button"
+                      data-day-item
+                      onClick={(e) => { e.stopPropagation(); setLunarDate(d); }}
+                      title={`${moon.phaseLabel} · Moon in ${moon.sign.sign} (${moonStyle.label})${keyPhase ? ` · ${keyPhase.verb}` : ""}`}
+                      aria-label={`${moon.phaseLabel}, moon in ${moon.sign.sign}`}
+                      className={cn(
+                        "mt-1 hidden w-full items-center gap-1 rounded-full border px-1.5 py-[2px] text-[9.5px] font-medium leading-none transition hover:brightness-105 md:inline-flex",
+                        moonStyle.pill, moonStyle.pillText,
+                      )}
+                    >
+                      <span aria-hidden className={cn("h-1.5 w-1.5 shrink-0 rounded-full", moonStyle.dot)} />
+                      <span className="truncate">{moon.phaseLabel} · {moon.sign.sign}</span>
+                    </button>
+                  )}
+                  {/* Tiny muted moon theme */}
+                  {inMonth && moon && (
+                    <div className="mt-0.5 hidden text-[10px] italic leading-tight text-muted-foreground md:block">
+                      {moon.guidance.keywords.slice(0, 2).map(k => k[0].toUpperCase() + k.slice(1)).join(" • ")}
+                    </div>
+                  )}
                   {inMonth && (phaseVar || wx) && (
                     <div className="mt-0.5 flex items-center gap-1 text-[9px] leading-none text-muted-foreground sm:text-[10px]">
                       {phaseVar && (
