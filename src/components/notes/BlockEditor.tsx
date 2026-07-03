@@ -391,7 +391,7 @@ function buildReferences(state: ReturnType<typeof useStore>["state"], transits: 
 /* ------------------------------------------------------------------ */
 /*  Generic floating menu component                                   */
 /* ------------------------------------------------------------------ */
-function FloatingMenu<T>({ items, onSelect, render }: {
+function FloatingMenu<T>({ items, onSelect, render, query }: {
   items: T[]; onSelect: (i: T) => void; render: (i: T, active: boolean) => React.ReactNode; query?: string;
 }) {
   const [active, setActive] = useState(0);
@@ -405,7 +405,6 @@ function FloatingMenu<T>({ items, onSelect, render }: {
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, [items, active, onSelect]);
-  const query = (arguments[0] as any)?.query as string | undefined;
   const header = (
     <div className="mb-1 flex items-center gap-1.5 rounded-lg bg-muted/50 px-2 py-1.5 text-[11px] text-muted-foreground">
       <SearchIcon className="h-3 w-3 opacity-70" />
