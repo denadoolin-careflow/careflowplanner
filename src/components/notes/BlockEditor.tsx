@@ -1252,12 +1252,34 @@ export function BlockEditor({
               keywords: ["task", "todo", "promote", "add", "send"],
               command: () => promoteRef.current?.(),
             },
+            {
+              title: "New note",
+              description: "Create a linked note and insert a wiki-link",
+              icon: FilePlus,
+              keywords: ["note", "new", "create", "page", "doc"],
+              command: () => quickCreateRef.current?.note(),
+            },
+            {
+              title: "New task",
+              description: "Add a task to your inbox and insert a chip",
+              icon: CheckSquare,
+              keywords: ["task", "todo", "new", "add"],
+              command: () => quickCreateRef.current?.task(),
+            },
+            {
+              title: "New project",
+              description: "Create a project and insert a mention",
+              icon: FolderPlus,
+              keywords: ["project", "new", "create"],
+              command: () => quickCreateRef.current?.project(),
+            },
           ];
           return [...slashItems(), ...extra].filter(i =>
             i.title.toLowerCase().includes(q) || (i.keywords ?? []).some(k => k.includes(q))
-          ).slice(0, 10);
+          ).slice(0, 12);
         },
         onSelect: (item, range, editor) => {
+          haptics.tap();
           editor.chain().focus().deleteRange(range).run();
           item.command(editor);
         },
