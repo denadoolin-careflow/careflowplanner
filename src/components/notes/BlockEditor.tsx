@@ -2051,11 +2051,32 @@ export function BlockEditor({
     // Haptic + tiny scale pulse when collapsing/expanding a toggle
     const summary = el.closest("summary");
     if (summary && summary.parentElement?.classList.contains("cf-toggle")) {
-      try { (navigator as any).vibrate?.(8); } catch {}
+      haptics.tap();
       summary.animate(
         [{ transform: "scale(1)" }, { transform: "scale(0.985)" }, { transform: "scale(1)" }],
         { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" },
       );
+    }
+    // Click gutter of a heading (H1/H2/H3) collapses the section below it.
+    if (/^H[1-3]$/.test(el.tagName) && el.closest(".ProseMirror")) {
+      const h = el as HTMLElement;
+      const rect = h.getBoundingClientRect();
+      if (e.clientX - rect.left < 24) {
+        e.preventDefault();
+        const level = parseInt(h.tagName[1], 10);
+        const collapsed = h.classList.toggle("cf-heading-collapsed");
+        let sib = h.nextElementSibling as HTMLElement | null;
+        while (sib) {
+          if (/^H[1-6]$/.test(sib.tagName)) {
+            const l = parseInt(sib.tagName[1], 10);
+            if (l <= level) break;
+          }
+          sib.classList.toggle("cf-h-hidden", collapsed);
+          sib = sib.nextElementSibling as HTMLElement | null;
+        }
+        haptics.tap();
+        return;
+      }
     }
     const target = el.closest("a") as HTMLAnchorElement | null;
     if (!target) return;
