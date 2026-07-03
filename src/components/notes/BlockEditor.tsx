@@ -610,6 +610,7 @@ function makeSuggestion<T>(editor: Editor, opts: {
               items: props.items,
               onSelect: (it: T) => opts.onSelect(it, props.range, props.editor),
               render: opts.render,
+              query: props.query,
             },
             editor: props.editor,
           });
@@ -633,6 +634,7 @@ function makeSuggestion<T>(editor: Editor, opts: {
             items: props.items,
             onSelect: (it: T) => opts.onSelect(it, props.range, props.editor),
             render: opts.render,
+            query: props.query,
           });
           if (popup[0] && props.clientRect) popup[0].setProps({ getReferenceClientRect: props.clientRect });
         },
