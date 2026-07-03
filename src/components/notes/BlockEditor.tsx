@@ -185,9 +185,26 @@ export function bodyToHtml(body: string): string {
   if (!body) return "";
   const trimmed = body.trim();
   // Heuristic: if it starts with an HTML tag, treat as HTML already.
-  if (/^<[a-zA-Z!]/.test(trimmed)) return normalizeTaskListsForTipTap(trimmed);
+  if (/^<[a-zA-Z!]/.test(trimmed)) return hydrateInlineEntities(normalizeTaskListsForTipTap(trimmed));
   const html = marked.parse(body, { async: false, gfm: true, breaks: false }) as string;
-  return normalizeTaskListsForTipTap(html);
+  return hydrateInlineEntities(normalizeTaskListsForTipTap(html));
+}
+
+/** Rewrite `[[Title]]` tokens (outside of code blocks) into inline-entity spans
+ *  so TipTap's InlineEntityCard node view hydrates them on load. */
+function hydrateInlineEntities(html: string): string {
+  if (!html) return html;
+  // Skip code blocks / inline code to avoid corrupting samples.
+  const parts = html.split(/(<code[\s\S]*?<\/code>|<pre[\s\S]*?<\/pre>)/g);
+  return parts
+    .map((chunk, i) => {
+      if (i % 2 === 1) return chunk; // preserved code
+      return chunk.replace(/\[\[([^\[\]\n<>]{1,80})\]\]/g, (_, label: string) => {
+        const safe = label.trim().replace(/"/g, "&quot;");
+        return `<span data-inline-entity data-label="${safe}" data-entity-type="wiki" data-size="md" class="inline-entity-card">[[${safe}]]</span>`;
+      });
+    })
+    .join("");
 }
 export function htmlToMarkdown(html: string): string {
   if (!html || html === "<p></p>") return "";
