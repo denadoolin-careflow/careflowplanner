@@ -1745,6 +1745,7 @@ export function BlockEditor({
       slashExtension,
       refExtension,
       hashtagExtension,
+      wikiExtension,
       toggleKeymap,
       focusBlockExtension,
     ],
