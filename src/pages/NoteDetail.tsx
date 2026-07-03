@@ -133,9 +133,18 @@ export default function NoteDetail() {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("careflow.notes.focusMode") === "1";
   });
+  // Per-note focus mode: last chosen value for this note wins on next open.
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const v = window.localStorage.getItem(`careflow.notes.focusMode.${id}`);
+      if (v === "1" || v === "0") setFocusMode(v === "1");
+    } catch {}
+  }, [id]);
   useEffect(() => {
     try { window.localStorage.setItem("careflow.notes.focusMode", focusMode ? "1" : "0"); } catch {}
-  }, [focusMode]);
+    try { if (id) window.localStorage.setItem(`careflow.notes.focusMode.${id}`, focusMode ? "1" : "0"); } catch {}
+  }, [focusMode, id]);
   // Preserve scroll position across focus toggles. Entering: remember window scrollY.
   // Exiting: restore window scrollY on next frame (after the overlay unmounts).
   const enterFocus = () => {
@@ -634,6 +643,7 @@ export default function NoteDetail() {
             body={body}
             tags={tags}
             projectId={note.projectId ?? null}
+            onBodyChange={(next) => { setBody(next); save({ body: next }); }}
           />
           <NoteContextRail
             noteId={note.id}
@@ -646,7 +656,6 @@ export default function NoteDetail() {
               if (patch.tags !== undefined) setTags(patch.tags ?? []);
             }}
           />
-          <NoteTOC body={body} />
         </div>
       </div>
       )}

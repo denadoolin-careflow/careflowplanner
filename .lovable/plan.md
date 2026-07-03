@@ -1,92 +1,102 @@
+# CareFlow Notes Editor — Craft/Capacities-style upgrade
 
-This is a large request. Splitting into two coordinated tracks so we can ship incrementally without regressing what's already working.
+Reuse what's already there — `BlockEditor.tsx` (TipTap w/ details/toggle, slash menu, toolbar, focus-block), `NoteIntelligencePanel.tsx`, `NoteContextRail.tsx`, `NoteTOC.tsx`, `NoteHoverPreview.tsx`, `NoteLinkChips.tsx`, `InteractiveNoteMarkdown.tsx`, `NoteDetail.tsx` (already has `focusMode` + Esc). Keep the sage/cream/gold dark aesthetic and rounded, glassy cards. No new deps beyond what's installed (TipTap, framer-motion, lucide, shadcn).
 
-## Track A — Today dashboard: real widget-style drag & drop
+## 1. Smarter toggle lists (`BlockEditor.tsx`)
+- Extend the existing `details` node styling in the ProseMirror CSS: rotate the marker arrow 180° with `transition-transform 200ms`, animate open with a CSS grid `grid-template-rows: 0fr → 1fr` height + fade trick (no JS measure).
+- Add a TipTap keymap: `Alt+ArrowRight` opens the nearest `details`, `Alt+ArrowLeft` closes it; `Cmd/Ctrl+.` toggles.
+- Slash-menu: add "Toggle heading" that wraps the current line in a details block whose summary is the current text.
+- Add an input rule: typing `>` + space at the start of a line converts to a toggle (matching Craft).
+- Support infinite nesting (details already nests; just tune left padding and connector line).
 
-The xTiles-style tile grid already has hide / show / resize / order arrows. Missing piece is true pointer drag-to-rearrange.
+## 2. Smarter AI note parsing (real-time entity detection)
+- New `src/lib/note-entities.ts`: pure client-side regex + `chrono-node`-style parsing already available via `nlp-task.ts` and `task-auto-detect.ts`. Extract `{ tasks, dates, people, places, events, links, files }` from the current markdown.
+- New `src/hooks/useNoteEntities.ts`: debounce 400ms, memoize by body hash, expose a single `entities` object.
+- Feed the sidebar (§3) from this hook. No writing interruption — detection is background only.
+- Optional AI pass (throttled, existing `ai-notes` edge function) merges richer entities; falls back gracefully when offline.
 
-- `src/components/today/tiles/TileFrame.tsx`
-  - Add a drag handle (grip) visible in edit mode. On pointer down, capture the tile id and start an HTML5 drag with a translucent preview.
-  - Add drop targets between tiles (thin insertion zone) and on tiles themselves (swap). Highlight the active target.
-  - Wire touch: use pointer events + a 200ms long-press to start drag on mobile with haptic tick; scroll suppression while dragging.
-- `src/lib/today-tiles.ts`
-  - Add `moveTo(id, targetIndex)` alongside existing `move(id, dir)`; persist to the same `K_ORDER` key.
-- Behavior: reordering only enabled while `editing` is true (keeps normal reading calm). Ordering persists across sessions via existing localStorage.
+## 3. Interactive sidebar (replace/reshape `NoteIntelligencePanel.tsx`)
+Right rail becomes a stacked, collapsible workspace with these sections in order:
 
-## Track B — Calendar upgrades (in the order the user suggested)
+1. **Table of Contents** (moved from wherever it lives now; sticky, active heading highlighted on scroll via `IntersectionObserver`).
+2. **Tasks** — interactive checkboxes bound to the detected task lines. Check → strike + toggles the markdown `- [ ]`/`- [x]` in place via a TipTap transaction. Row actions: edit inline, delete, convert to plain text, assign due date (existing date popover), drag to reorder.
+3. **Linked items** — pulls from `note-links.ts` matcher (Daily notes, journals, astrology, contacts, recipes, projects, care plans, budgets). Click opens `NoteHoverPreview`-style quick preview dialog (no navigation).
+4. **AI summary** — reuses existing `ai-notes` summary call; regenerates on debounced body change with a shimmer while pending.
+5. **Suggested actions** — chips driven by entities: Create task, Add to calendar, Save recipe, Add to grocery list, Add reminder, Create project, Link existing note. Each dispatches to existing stores.
 
-### 1. Real month grid view (highest priority)
-- New file `src/components/calendar/MonthGridView.tsx`
-  - 7-col × 5–6 row grid built with `date-fns` (`startOfWeek`, `eachDayOfInterval`).
-  - Each cell: date header, up to 3 stacked chips (appointments → time blocks → birthdays → tasks-with-due-date, in that priority), plus `+N more` button that opens a Popover listing every item for that day.
-  - Click day → route to day view for that ISO (`navigate('/calendar?view=day&date=…')`).
-  - Chip drag: reuse the HTML5 dnd pattern already in `TimeGrid.tsx` (`dataTransfer` with a JSON payload of `{kind, id}`). Drop on a day cell reschedules (`updateAppointment` / `updateTimeBlock` / `updateTask({dueDate})`).
-  - Mobile: long-press on a chip starts drag using the same pointer helpers already in `TimeGrid.tsx`.
-- `src/components/calendar/CalendarViewToggle.tsx`
-  - Add a `"month"` mode next to Schedule / Time-of-day / Agenda. Persisted to the same localStorage key already used.
-- `src/pages/CalendarPage.tsx` (or wherever the toggle switch renders): route the new mode to `MonthGridView`. Keep `MonthPlanningDashboard.tsx` mounted only on the existing "Month reflection" tab.
+Each section: shadcn `Collapsible`, spring open/close (framer-motion), remembers open state per-user in localStorage.
 
-### 2. Recurring events
-- Types: add `recurrenceRule?: RecurrenceRule` to `Appointment` and `TimeBlock`.
-  ```ts
-  type RecurrenceRule = {
-    freq: 'daily'|'weekly'|'monthly'|'yearly';
-    interval?: number;
-    byWeekday?: number[];   // 0=Sun
-    until?: string;         // ISO date
-    count?: number;
-    exdates?: string[];     // per-instance overrides/deletes (ISO)
-  }
-  ```
-- New helper `src/lib/recurrence.ts` — pure functions `expandOccurrences(rule, rangeStart, rangeEnd)`, `nextOccurrence(rule, from)`, `serializeRRule` / `parseRRule` (RFC-5545 subset). No new dep — hand-rolled since we only need a small subset.
-- `src/lib/store.ts` — when a query asks for events in a range, expand recurring parents into virtual instances tagged `{parentId, occurrenceDate}`. Persist edits by writing to `exdates` on the parent + optionally creating an override child event.
-- UI: new `src/components/calendar/RepeatSelector.tsx` reused inside `AppointmentEditor.tsx` and the block-edit form in `TimeGrid.tsx`.
-- Edit/delete recurring: `RecurringInstanceDialog.tsx` prompts "This event / All future events / All events" (Google-style).
+## 4. Rich inline cards
+- Extend the current `@mention`/`[[wikilink]]` decoration in `InteractiveNoteMarkdown.tsx` and add a TipTap node view `InlineEntityCard` for the editor itself.
+- Card contents by entity type (people → avatar + role + last-updated; project/note → icon + counts + updated; recipe → thumb + time; event → date chip).
+- Behaviors: expandable (chevron), hoverable (uses existing `NoteHoverPreview`), draggable (HTML5 drag with existing patterns), clickable (opens quick peek), resizable via `data-size="sm|md|lg"` attribute, collapsible back to a chip.
 
-### 3. Reminders
-- Types: `reminderMinutesBefore?: number` on appointment/time block.
-- `src/lib/reminders.ts` — background scheduler (setTimeout per upcoming reminder, refreshed on data change and every 5 min). Uses `Notification.requestPermission()` + `new Notification(...)` when granted; falls back to `toast()` from sonner.
-- Options in editor: at-time / 5 / 15 / 30 / 60 min / 1 day before.
+## 5. Quick peek (`NoteHoverPreview` upgrade)
+- Single `<QuickPeekProvider>` mounted in `NoteDetail`. Any element with `data-peek-id` / `data-peek-type` triggers a floating card on hover (200ms delay) with entity summary + top actions. No navigation needed; "Open" button still available.
+- Types: note, task, event, contact, recipe, astrology transit, project.
 
-### 4. Natural-language quick add
-- Reuse `parseTaskInput` from `src/lib/nlp-task.ts` and extend with a small event parser (`src/lib/nlp-event.ts`) that also captures duration ("for 30 min", "1h", "2 hours").
-- `src/components/calendar/QuickAddCalendarPopover.tsx` — put a single text field at top; on debounce, populate the existing manual fields (title, date, start time, duration). User can still tweak before saving.
+## 6. Focus mode polish (`NoteDetail.tsx` already has the scaffold)
+- Ensure Focus hides: left sidebar, right rail, floating AI FAB, toolbar (fade toolbar on idle, reveal on caret movement), attachment area, properties strip.
+- Add a subtle floating "Exit focus (Esc)" pill top-right; keep vignette background.
+- Persist focus-mode preference per-note in localStorage.
 
-### 5. Keyboard shortcuts
-- New `src/hooks/useGlobalShortcuts.ts` mounted once in `src/App.tsx`.
-  - `Cmd/Ctrl+K` → open quick add (dispatches custom event; popover listens).
-  - `D` / `W` / `M` / `A` → set calendar view mode via the same localStorage-backed setter used by the toggle.
-  - `T` → set current date to today.
-  - `Esc` → close topmost popover/dialog (dispatches a scoped custom event; components listen if open).
-- Discoverable hint: small `?` button near the view toggle opens `ShortcutsPopover.tsx`.
+## 7. Cleaner header
+- Collapse the busy header into a single line: `Updated Jul 3 · 5:19 PM · #Astrology #Journal #Personal` plus a `…` menu for cover/icon/template/export. Title stays large.
+- Everything else (properties, share, links count) moves behind the `…` menu or into the right rail.
 
-### 6. Smart scheduling suggestions
-- `src/lib/schedule-suggest.ts` — given a duration and a day's blocks/appointments, find the next open gap ≥ duration (working-hours window from user settings, default 8am–8pm).
-- In `UnscheduledTasksRail.tsx`, for tasks with `estimatedMinutes`, render a "Suggest a time" ghost chip; clicking previews the slot on the day grid and one-tap confirms (same drag-drop path as manual placement).
+## 8. Collapsible attachments
+- Replace the always-visible attachment strip with a `📎 Add files` button that expands into a Popover: Drag-drop zone, Browse, Paste image, Paste PDF, Upload voice (reuse `use-audio-recorder`). Auto-collapse ~1s after successful upload; show attached count on the pill.
 
-### 7. Unified calendar/category legend
-- New `src/components/calendar/MyCalendarsPanel.tsx` — collapsible list grouped by:
-  - Google-synced calendars (source: `GoogleCalendarSection` data).
-  - Areas (color from area).
-  - Projects (color from project).
-  - Birthdays & Holidays.
-- Each row: swatch + name + eye toggle. Selection persisted in `localStorage` under `careflow:calendar:visibility:v1`.
-- Filter applied to `TimeGrid`, `MonthGridView`, and Agenda so hidden groups disappear everywhere.
+## 9. Right sidebar order
+Final stack (top → bottom, all sticky within the rail):
 
-### 8. Two-way Google sync polish
-- `src/components/calendar/GoogleCalendarSection.tsx` — per-calendar row shows: last-synced relative time, spinner while pending, red dot with tooltip on error (with retry). Uses existing sync state; extend the reducer/store to carry `{calendarId → {lastSyncedAt, status, error}}`.
+```text
+┌─ Table of Contents (sticky top)
+├─ Intelligence
+│    Tasks
+│    Linked pages
+│    People
+│    AI summary
+│    Suggested actions
+```
 
-## Design constraints honored
-- Reuse existing cozy card + rounded chip aesthetic from `MonthPlanningDashboard.tsx`; no new fonts/colors, no new deps beyond what's already installed (`date-fns`, `framer-motion`, `lucide-react`, `sonner`, shadcn).
-- Mobile-first: every new drag path uses the same long-press pointer pattern already in `TimeGrid.tsx`.
-- Nothing existing gets removed. `MonthPlanningDashboard.tsx`, `AppointmentEditor.tsx`, `TimeGrid.tsx`, `UnscheduledTasksRail.tsx`, `GoogleCalendarSection.tsx` are extended in place.
+TOC uses smooth-scroll on click and highlights the current heading during scroll.
 
-## Suggested delivery order (matches user's list)
-1. Widget drag on Today (Track A) — small, unblocks the visible request.
-2. Month grid view (#1).
-3. Recurring events + reminders (#2, #3).
-4. NLP quick add + shortcuts (#4, #5).
-5. Legend + smart suggestions (#7, #6).
-6. Sync status polish (#8).
+## 10. Better writing experience (CSS-only tweaks in `BlockEditor.tsx` ProseMirror styles)
+- Line-height 1.7, block spacing +25%, wider column (`WIDTH_PX.wide` becomes the default for new notes), refined heading scale (H1 2.25rem, H2 1.6rem, H3 1.2rem), softer `hr` (`bg-border/40`), better bullet indent (1.25rem, marker color muted), smooth caret via `caret-color: hsl(var(--primary))`.
+- Respect existing `useEditorPrefs` (density/width/fontScale).
 
-Ship each step as its own turn so preview stays green throughout. Reply "go" to start with step 1 (widget drag), or tell me to reorder / cut anything.
+## 11. Microinteractions
+- Toggle open: 220ms ease-out height + fade.
+- Checkbox complete: scale 0.9→1.05→1 with check draw-in (SVG stroke dash).
+- Inline cards: `hover:-translate-y-0.5 hover:shadow-md` transition 180ms.
+- Sidebar sections: framer-motion spring `{stiffness: 260, damping: 26}`.
+- TOC active heading: soft primary underline slides between items.
+- AI entity detection: subtle shimmer overlay on the sidebar section header (no content flicker).
+- New cards: `animate-in fade-in slide-in-from-bottom-1` 250ms.
+- Drag & drop: reuse existing insertion-bar pattern (`bg-primary shadow-[0_0_12px_hsl(var(--primary))]`).
+
+---
+
+## Technical notes / file map
+- **Edit** `src/components/notes/BlockEditor.tsx` — toggle keymap, input rule, ProseMirror CSS for details animation, typography tweaks, inline card node view registration.
+- **Edit** `src/pages/NoteDetail.tsx` — header simplification, attachments popover, sidebar order, focus-mode polish, mount `QuickPeekProvider`.
+- **Rework** `src/components/notes/NoteIntelligencePanel.tsx` — becomes the stacked interactive rail (TOC + Tasks + Linked + Summary + Actions).
+- **Edit** `src/components/notes/NoteTOC.tsx` — active-heading `IntersectionObserver`, smooth scroll.
+- **Edit** `src/components/notes/NoteHoverPreview.tsx` → generalize into `QuickPeek`.
+- **New** `src/lib/note-entities.ts`, `src/hooks/useNoteEntities.ts`.
+- **New** `src/components/notes/InlineEntityCard.tsx` (TipTap node view + read-mode renderer).
+- **New** `src/components/notes/AttachmentPopover.tsx`.
+- No schema changes. No new backend functions (reuse `ai-notes`).
+
+## Delivery order
+1. Sidebar restructure + TOC move + microinteraction pass (§3, §9, §11) — biggest visible win.
+2. Smarter toggles + writing typography (§1, §10).
+3. Entity detection + AI summary + suggested actions (§2, §3 wiring).
+4. Inline cards + Quick peek (§4, §5).
+5. Header + attachments cleanup + focus polish (§6, §7, §8).
+
+## Out of scope
+- No changes to the note storage schema, sync queue, or notes list pages.
+- No new AI providers.
+- No changes to the mobile notes shell beyond CSS reflow from the rail/header edits.
