@@ -2,9 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy, Maximize2, Minimize2, ChevronLeft, ChevronRight, BookTemplate } from "lucide-react";
+import { ArrowLeft, Pin, Trash2, Link2, ImagePlus, X, Move, Check, Copy, Maximize2, Minimize2, ChevronLeft, ChevronRight, BookTemplate, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { deleteNote, extractBacklinks, findBacklinksTo, getNote, updateNote, type Note } from "@/lib/notes";
 import { uploadNoteImage } from "@/lib/note-images";
 import { toast } from "sonner";
@@ -16,6 +20,7 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { EditorPrefsMenu } from "@/components/notes/EditorPrefsMenu";
 import { TagPicker } from "@/components/tags/TagPicker";
 import { AttachmentsField } from "@/components/attachments/AttachmentsField";
+import { AttachmentPopover } from "@/components/notes/AttachmentPopover";
 import type { Attachment } from "@/lib/types";
 import { NoteTOC } from "@/components/notes/NoteTOC";
 import { NoteContextRail } from "@/components/notes/NoteContextRail";
