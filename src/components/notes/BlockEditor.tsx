@@ -1370,6 +1370,54 @@ export function BlockEditor({
           if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
           return false;
         },
+        "Alt-ArrowRight": ({ editor }) => {
+          const { state } = editor;
+          const { $from } = state.selection;
+          for (let d = $from.depth; d > 0; d--) {
+            const node = $from.node(d);
+            if (node.type.name === "details") {
+              const pos = $from.before(d);
+              editor.chain().command(({ tr }) => {
+                tr.setNodeMarkup(pos, undefined, { ...node.attrs, open: true });
+                return true;
+              }).run();
+              return true;
+            }
+          }
+          return false;
+        },
+        "Alt-ArrowLeft": ({ editor }) => {
+          const { state } = editor;
+          const { $from } = state.selection;
+          for (let d = $from.depth; d > 0; d--) {
+            const node = $from.node(d);
+            if (node.type.name === "details") {
+              const pos = $from.before(d);
+              editor.chain().command(({ tr }) => {
+                tr.setNodeMarkup(pos, undefined, { ...node.attrs, open: false });
+                return true;
+              }).run();
+              return true;
+            }
+          }
+          return false;
+        },
+        "Mod-.": ({ editor }) => {
+          const { state } = editor;
+          const { $from } = state.selection;
+          for (let d = $from.depth; d > 0; d--) {
+            const node = $from.node(d);
+            if (node.type.name === "details") {
+              const pos = $from.before(d);
+              editor.chain().command(({ tr }) => {
+                tr.setNodeMarkup(pos, undefined, { ...node.attrs, open: !node.attrs.open });
+                return true;
+              }).run();
+              return true;
+            }
+          }
+          return false;
+        },
       };
     },
   }), []);
