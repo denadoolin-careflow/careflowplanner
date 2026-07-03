@@ -2118,6 +2118,52 @@ export function BlockEditor({
   }, [editor, addTask]);
   promoteRef.current = promoteTaskItemToTask;
 
+  // Slash-menu quick creators — used from the "/New note", "/New task",
+  // "/New project" commands. Each inserts a chip and haptics.
+  quickCreateRef.current = {
+    note: () => {
+      if (!editor) return;
+      const label = window.prompt("Note title", "")?.trim();
+      if (!label) return;
+      void createNote({ title: label }).then((n) => {
+        toast.success("Note created", { description: label, action: { label: "Open", onClick: () => navigate(`/notes/${n.id}`) } });
+      }).catch(() => toast.error("Could not create note"));
+      editor.chain().focus().insertContent({
+        type: "inlineEntityCard",
+        attrs: { label, entityType: "wiki", size: "md" },
+      }).insertContent(" ").run();
+      haptics.success();
+    },
+    task: () => {
+      if (!editor) return;
+      const title = window.prompt("Task title", "")?.trim();
+      if (!title) return;
+      void addTask({ title });
+      editor.chain().focus().insertContent({
+        type: "text",
+        text: `☐ ${title}`,
+        marks: [{ type: "link", attrs: { href: "/anytime", class: "task-chip" } }],
+      }).insertContent(" ").unsetMark("link").run();
+      haptics.success();
+      toast.success("Task added", { description: title });
+    },
+    project: () => {
+      if (!editor) return;
+      const name = window.prompt("Project name", "")?.trim();
+      if (!name) return;
+      void addProject({ name }).then((p) => {
+        if (!p) return;
+        editor.chain().focus().insertContent({
+          type: "text",
+          text: `@${name}`,
+          marks: [{ type: "link", attrs: { href: `/projects/${p.id}`, class: "ref-chip" } }],
+        }).insertContent(" ").unsetMark("link").run();
+        haptics.success();
+        toast.success("Project created", { description: name });
+      }).catch(() => toast.error("Could not create project"));
+    },
+  };
+
   /** Turn the current selection into a real Task and tag the chip. */
   const promoteSelectionToTask = useCallback(() => {
     if (!editor) return;
