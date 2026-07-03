@@ -104,7 +104,7 @@ export default function Month() {
   const colorOf = (k: "appt"|"bday"|"hol"|"gcal"|"task") =>
     k === "appt" ? "bg-primary-soft text-foreground"
     : k === "bday" ? "bg-accent-soft text-accent-foreground"
-    : k === "hol" ? "bg-secondary-soft text-secondary-foreground"
+    : k === "hol" ? "bg-gradient-to-r from-rose-500/15 to-amber-500/15 text-foreground/85 border border-rose-500/25"
     : k === "task" ? "bg-warm-soft text-warm-foreground border border-primary/30"
     : "bg-muted text-foreground";
 
