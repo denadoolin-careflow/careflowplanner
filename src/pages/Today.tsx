@@ -181,8 +181,6 @@ function TodayInner() {
               {prefs.showQuickAdd && <QuickAddBar date={day} />}
             </div>
           );
-          // expose controls to sibling branches via the closure below
-          (window as any).__todayControls = controls;
           if (view === "rhythm") {
             return (
               <RhythmDashboard
