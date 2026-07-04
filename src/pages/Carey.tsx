@@ -175,7 +175,12 @@ export default function Carey() {
               {threads.length === 0 && (
                 <p className="px-2 py-3 text-xs text-muted-foreground">No conversations yet.</p>
               )}
-              {threads.map(t => (
+              {threads.map(t => {
+                const d = new Date(t.last_message_at);
+                const label = isNaN(d.getTime())
+                  ? (t.title || "Conversation")
+                  : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+                return (
                 <div key={t.id} className={cn(
                   "group flex items-center gap-1 rounded-md px-2 py-1.5 text-sm",
                   threadId === t.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60",
@@ -184,8 +189,9 @@ export default function Carey() {
                     type="button"
                     onClick={() => navigate(`/carey/${t.id}`)}
                     className="min-w-0 flex-1 truncate text-left"
+                    title={t.title || "Conversation"}
                   >
-                    {t.title || "Conversation"}
+                    {label}
                   </button>
                   <button
                     type="button"
@@ -196,7 +202,8 @@ export default function Carey() {
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
           )}
