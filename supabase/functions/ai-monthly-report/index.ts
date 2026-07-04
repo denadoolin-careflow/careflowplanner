@@ -1,7 +1,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
 
 interface Payload {
   recipient: {
@@ -84,14 +84,14 @@ Ground every recommendation in the supplied data. Never diagnose. If a domain (m
       `\nCheck-in data:\n${JSON.stringify(body.checkins, null, 2)}`,
     ].filter(Boolean).join("\n");
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${LOVABLE_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-5-mini",
         messages: [
           { role: "system", content: system },
           { role: "user", content: userMsg },

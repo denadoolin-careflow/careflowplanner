@@ -36,17 +36,17 @@ Deno.serve(async (req) => {
     const { template = "daily", mood = "", energy = "", context = "" } = await req.json();
     const hint = TEMPLATE_HINTS[template] ?? TEMPLATE_HINTS.daily;
 
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    const apiKey = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!apiKey) return new Response(JSON.stringify({ error: "AI not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const system = "You generate gentle, caregiver-aware journaling prompts. Return exactly 4 short, open-ended prompts as a JSON array of strings. No markdown, no preamble, no numbering — just the JSON array.";
     const userMsg = `Template: ${hint}\nMood: ${mood || "(unspecified)"}\nEnergy: ${energy || "(unspecified)"}\nContext: ${context || "(none)"}\n\nReturn ONLY a JSON array like [\"prompt one\", \"prompt two\", \"prompt three\", \"prompt four\"].`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "gpt-5-mini",
         messages: [
           { role: "system", content: system },
           { role: "user", content: userMsg },

@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
     if (!LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     ];
 
     const callBody: any = {
-      model: "google/gemini-2.5-flash",
+      model: "gpt-5-mini",
       messages: finalMessages,
     };
     if (action !== "chat") {
@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
       callBody.tool_choice = { type: "function", function: { name: "propose_plan" } };
     }
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify(callBody),

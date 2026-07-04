@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     const personName = typeof person === "string" && person.trim() ? person.trim() : "this person";
     const slotName = typeof slot === "string" ? slot : "anytime";
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "AI not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -31,11 +31,11 @@ Deno.serve(async (req) => {
 Each step should be 2-6 words, action-led, calm. Pick a single relevant emoji icon and a realistic duration in minutes (1-30) for each.
 Optimized for neurodivergent users: small, scannable, low cognitive load.`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-5-mini",
         messages: [
           { role: "system", content: "You break down vague routine goals into small, icon-tagged, time-boxed steps. Always respond via the provided tool." },
           { role: "user", content: prompt },

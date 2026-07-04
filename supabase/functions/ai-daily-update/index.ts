@@ -1,7 +1,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 
-const LOVABLE_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const LOVABLE_GATEWAY = "https://api.openai.com/v1/chat/completions";
 
 interface TaskLite { title: string; dueDate?: string; isTopThree?: boolean; done?: boolean; area?: string; }
 interface ApptLite { title: string; date?: string; time?: string; }
@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
   try {
     const __gate = await meterRequest(req, WEIGHTS.light, corsHeaders);
     if ("response" in __gate) return __gate.response;
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    const apiKey = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-5-mini",
         messages: [
           { role: "system", content: system },
           { role: "user", content: ctx || "Give a gentle daily briefing." },

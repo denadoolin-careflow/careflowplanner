@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY not configured" }, 500);
 
     const userClient = createClient(SUPABASE_URL, ANON_KEY, {
@@ -112,11 +112,11 @@ Budget level: ${prefs.budget_level}. Max prep minutes: ${prefs.max_prep_minutes}
 Low energy mode: ${prefs.low_energy}. Picky notes: ${prefs.picky_notes ?? "none"}.
 Make recipes feel cozy, doable, and varied. Description is one warm sentence.`;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-5-mini",
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: userMsg },
@@ -149,7 +149,7 @@ Make recipes feel cozy, doable, and varied. Description is one warm sentence.`;
       if (withImages && m.title) {
         try {
           const prompt = `Cozy overhead food photography of "${m.title}". ${m.description ?? ""}. Warm natural light, rustic linen and ceramic plate, shallow depth of field, inviting and homemade, soft shadows, no text, no watermark.`;
-          const imgResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          const imgResp = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
             body: JSON.stringify({

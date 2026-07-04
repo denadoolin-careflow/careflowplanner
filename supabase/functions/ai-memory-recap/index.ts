@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
     const __gate = await meterRequest(req, WEIGHTS.medium, corsHeaders);
     if ("response" in __gate) return __gate.response;
     const { scope, memories } = await req.json();
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    const apiKey = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
 
     const system = `You write tender, calm, emotionally warm reflections about a person's preserved memories.
@@ -17,11 +17,11 @@ No bullet lists, no headers, no emojis. Just a soft, nostalgic prose paragraph t
 
     const user = `Scope: ${scope}\n\nMemories (JSON):\n${JSON.stringify(memories, null, 2)}\n\nWrite the gentle reflection.`;
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-5-mini",
         messages: [{ role: "system", content: system }, { role: "user", content: user }],
       }),
     });
