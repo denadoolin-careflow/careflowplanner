@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 
-export type TodayView = "rhythm" | "timeofday" | "plan" | "schedule";
+export type TodayView = "rhythm" | "timeofday" | "plan" | "schedule" | "custom";
 
 export const TODAY_VIEW_LABELS: Record<TodayView, string> = {
   rhythm: "Rhythm",
   timeofday: "Time of day",
   plan: "Day plan",
   schedule: "Schedule",
+  custom: "Custom board",
 };
 
 const VIEW_KEY = "careflow:today-view:v1";
@@ -19,7 +20,7 @@ const viewListeners = new Set<(v: TodayView) => void>();
 function readView(): TodayView {
   if (typeof localStorage === "undefined") return "rhythm";
   const v = localStorage.getItem(VIEW_KEY);
-  return v === "rhythm" || v === "timeofday" || v === "plan" || v === "schedule" ? v : "rhythm";
+  return v === "rhythm" || v === "timeofday" || v === "plan" || v === "schedule" || v === "custom" ? v : "rhythm";
 }
 
 export function useTodayView(): [TodayView, (v: TodayView) => void] {

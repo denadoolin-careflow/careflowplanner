@@ -11,6 +11,8 @@ import { Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
 import { RhythmDashboard } from "@/components/today/RhythmDashboard";
+import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
+import { QuickPresetSwitcher } from "@/components/dashboard/QuickPresetSwitcher";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { BurnoutCheckIn } from "@/components/today/BurnoutCheckIn";
 import { SlotWeatherStrip } from "@/components/today/SlotWeatherStrip";
@@ -209,6 +211,11 @@ function TodayInner() {
         {view === "timeofday" && <TimeOfDayBoard date={day} onTaskClick={setEditTaskId} />}
         {view === "plan" && <DayPlanBoard date={day} onTaskClick={setEditTaskId} />}
         {view === "schedule" && <ScheduleBoard date={day} onTaskClick={setEditTaskId} onApptClick={setEditApptId} />}
+        {view === "custom" && (
+          <div className="space-y-6">
+            <CustomizableGrid pageKey="today" />
+          </div>
+        )}
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/40 bg-card/55 p-4 shadow-soft backdrop-blur-xl">
           <div className="min-w-0">
             <div className="font-display text-sm font-semibold text-foreground">End-of-day exhale</div>
@@ -223,6 +230,7 @@ function TodayInner() {
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <ExhaleFlow open={exhaleOpen} onOpenChange={setExhaleOpen} date={day} />
+      <QuickPresetSwitcher pageKey="today" />
     </>
   );
 }
