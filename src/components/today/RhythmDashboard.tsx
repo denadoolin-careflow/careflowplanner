@@ -1455,7 +1455,7 @@ function InProgressProjectsCard() {
                     className="min-w-0 flex-1 text-left"
                   >
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="min-w-0 truncate text-sm font-medium text-foreground group-hover:text-primary">{p.name}</span>
+                      <span className="min-w-0 break-words text-sm font-medium text-foreground group-hover:text-primary line-clamp-2">{p.name}</span>
                       <span className="shrink-0 tabular-nums text-[11px] font-semibold text-muted-foreground">{pct}%</span>
                     </div>
                     <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
