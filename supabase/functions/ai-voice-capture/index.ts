@@ -55,33 +55,24 @@ const TOOL = {
 } as const;
 
 async function transcribeAudio(apiKey: string, audioBase64: string, mimeType: string): Promise<string> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  // OpenAI Whisper via multipart/form-data
+  const bin = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
+  const ext = mimeType.includes("wav") ? "wav" : mimeType.includes("mp3") ? "mp3" : mimeType.includes("mp4") ? "mp4" : "webm";
+  const form = new FormData();
+  form.append("file", new Blob([bin], { type: mimeType }), `audio.${ext}`);
+  form.append("model", "whisper-1");
+  form.append("response_format", "json");
+  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "gpt-5-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a precise transcriber. Return only the verbatim transcript of the spoken audio. No commentary.",
-        },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Transcribe this voice note:" },
-            { type: "input_audio", input_audio: { data: audioBase64, format: mimeType.includes("wav") ? "wav" : "webm" } },
-          ],
-        },
-      ],
-    }),
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: form,
   });
   if (!res.ok) {
     const txt = await res.text();
     throw new Error(`transcribe_failed:${res.status}:${txt.slice(0, 200)}`);
   }
   const json = await res.json();
-  return (json.choices?.[0]?.message?.content ?? "").trim();
+  return String(json.text ?? "").trim();
 }
 
 async function organizeTranscript(apiKey: string, transcript: string, todayISO: string) {
