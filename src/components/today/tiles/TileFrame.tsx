@@ -79,7 +79,7 @@ export function TileFrame({
     <div
       ref={rootRef}
       className={cn(
-        "relative",
+        "relative self-start",
         span,
         editing && "rounded-3xl outline outline-1 outline-dashed outline-primary/40 outline-offset-4",
         isHidden && editing && "opacity-45",
