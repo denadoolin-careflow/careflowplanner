@@ -1,102 +1,73 @@
-# CareFlow Notes Editor — Craft/Capacities-style upgrade
+# Integrate ChatGPT (OpenAI) across CareFlow — no Lovable AI credits
 
-Reuse what's already there — `BlockEditor.tsx` (TipTap w/ details/toggle, slash menu, toolbar, focus-block), `NoteIntelligencePanel.tsx`, `NoteContextRail.tsx`, `NoteTOC.tsx`, `NoteHoverPreview.tsx`, `NoteLinkChips.tsx`, `InteractiveNoteMarkdown.tsx`, `NoteDetail.tsx` (already has `focusMode` + Esc). Keep the sage/cream/gold dark aesthetic and rounded, glassy cards. No new deps beyond what's installed (TipTap, framer-motion, lucide, shadcn).
+Goal: every AI edge function calls OpenAI directly using your `OPENAI_API_KEY` by default, with per-user overrides supported. Lovable AI credits are no longer consumed for AI calls.
 
-## 1. Smarter toggle lists (`BlockEditor.tsx`)
-- Extend the existing `details` node styling in the ProseMirror CSS: rotate the marker arrow 180° with `transition-transform 200ms`, animate open with a CSS grid `grid-template-rows: 0fr → 1fr` height + fade trick (no JS measure).
-- Add a TipTap keymap: `Alt+ArrowRight` opens the nearest `details`, `Alt+ArrowLeft` closes it; `Cmd/Ctrl+.` toggles.
-- Slash-menu: add "Toggle heading" that wraps the current line in a details block whose summary is the current text.
-- Add an input rule: typing `>` + space at the start of a line converts to a toggle (matching Craft).
-- Support infinite nesting (details already nests; just tune left padding and connector line).
+## 1. Secrets & key resolution
 
-## 2. Smarter AI note parsing (real-time entity detection)
-- New `src/lib/note-entities.ts`: pure client-side regex + `chrono-node`-style parsing already available via `nlp-task.ts` and `task-auto-detect.ts`. Extract `{ tasks, dates, people, places, events, links, files }` from the current markdown.
-- New `src/hooks/useNoteEntities.ts`: debounce 400ms, memoize by body hash, expose a single `entities` object.
-- Feed the sidebar (§3) from this hook. No writing interruption — detection is background only.
-- Optional AI pass (throttled, existing `ai-notes` edge function) merges richer entities; falls back gracefully when offline.
+- Add backend secret `OPENAI_API_KEY` (your shared key) via `add_secret`.
+- New table `public.user_ai_keys` (`user_id` PK, `provider` text, `encrypted_key` text, `created_at`) with RLS so only the owning user can read/write their own row. GRANTs for `authenticated` + `service_role`.
+- Settings page (`/settings` or new `Settings → AI`) lets a user paste their own OpenAI key. Stored via an edge function `save-user-ai-key` that writes to `user_ai_keys` (never returned to the client after save; show masked "sk-••••1234").
+- Shared helper `supabase/functions/_shared/openai.ts`:
+  - `resolveOpenAIKey(userId)` → returns user's key if present, else `Deno.env.get("OPENAI_API_KEY")`.
+  - `callOpenAI({ userId, messages, model = "gpt-5-mini", response_format?, stream? })` → hits `https://api.openai.com/v1/chat/completions` with `Authorization: Bearer <key>`.
+  - Handles 401 (bad key), 429 (rate limit), 402/insufficient_quota errors and returns normalized `{ error }`.
 
-## 3. Interactive sidebar (replace/reshape `NoteIntelligencePanel.tsx`)
-Right rail becomes a stacked, collapsible workspace with these sections in order:
+## 2. Replace Lovable AI gateway across all edge functions
 
-1. **Table of Contents** (moved from wherever it lives now; sticky, active heading highlighted on scroll via `IntersectionObserver`).
-2. **Tasks** — interactive checkboxes bound to the detected task lines. Check → strike + toggles the markdown `- [ ]`/`- [x]` in place via a TipTap transaction. Row actions: edit inline, delete, convert to plain text, assign due date (existing date popover), drag to reorder.
-3. **Linked items** — pulls from `note-links.ts` matcher (Daily notes, journals, astrology, contacts, recipes, projects, care plans, budgets). Click opens `NoteHoverPreview`-style quick preview dialog (no navigation).
-4. **AI summary** — reuses existing `ai-notes` summary call; regenerates on debounced body change with a shimmer while pending.
-5. **Suggested actions** — chips driven by entities: Create task, Add to calendar, Save recipe, Add to grocery list, Add reminder, Create project, Link existing note. Each dispatches to existing stores.
+For every function under `supabase/functions/ai-*` and `carey-chat` (~40 functions), swap:
 
-Each section: shadcn `Collapsible`, spring open/close (framer-motion), remembers open state per-user in localStorage.
+- `fetch("https://ai.gateway.lovable.dev/v1/chat/completions", { headers: { "Lovable-API-Key": ... } })`
+- → `callOpenAI({ userId, ... })` from the shared helper.
 
-## 4. Rich inline cards
-- Extend the current `@mention`/`[[wikilink]]` decoration in `InteractiveNoteMarkdown.tsx` and add a TipTap node view `InlineEntityCard` for the editor itself.
-- Card contents by entity type (people → avatar + role + last-updated; project/note → icon + counts + updated; recipe → thumb + time; event → date chip).
-- Behaviors: expandable (chevron), hoverable (uses existing `NoteHoverPreview`), draggable (HTML5 drag with existing patterns), clickable (opens quick peek), resizable via `data-size="sm|md|lg"` attribute, collapsible back to a chip.
+Model mapping (all default to `gpt-5-mini` unless a function explicitly needs stronger reasoning):
 
-## 5. Quick peek (`NoteHoverPreview` upgrade)
-- Single `<QuickPeekProvider>` mounted in `NoteDetail`. Any element with `data-peek-id` / `data-peek-type` triggers a floating card on hover (200ms delay) with entity summary + top actions. No navigation needed; "Open" button still available.
-- Types: note, task, event, contact, recipe, astrology transit, project.
 
-## 6. Focus mode polish (`NoteDetail.tsx` already has the scaffold)
-- Ensure Focus hides: left sidebar, right rail, floating AI FAB, toolbar (fade toolbar on idle, reveal on caret movement), attachment area, properties strip.
-- Add a subtle floating "Exit focus (Esc)" pill top-right; keep vignette background.
-- Persist focus-mode preference per-note in localStorage.
+| Current call site                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | New model                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Fast/summary/JSON functions (ai-notes, ai-inbox-triage, ai-subtasks, ai-task-assist, ai-grocery-assistant, ai-dinner-tonight, ai-capture-assistant, ai-cleaning-*, ai-cosmic-daily, ai-daily-*, ai-exhale, ai-mental-load, ai-memory-recap, ai-rhythm-insights, ai-habit-overview, ai-planner, ai-month-plan, ai-monthly-report, ai-projects-summary, ai-routine-*, ai-seasons-assistant, ai-today-guidance, ai-weekly-review, ai-library-meals, ai-meal-plan, ai-person-overview, ai-project-overview, ai-care-guide, ai-care-note, ai-caregiving-hub, ai-cosmic-*, ai-journal, ai-pdf-summary, ai-voice-capture, ai-home-assistant) | `gpt-5-mini`                                                            |
+| `carey-chat` (streaming assistant)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `gpt-5-mini` with streaming                                             |
+| Voice (`ai-voice-capture`) — still needs Whisper                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `whisper-1` via `/v1/audio/transcriptions` (also OpenAI, uses same key) |
 
-## 7. Cleaner header
-- Collapse the busy header into a single line: `Updated Jul 3 · 5:19 PM · #Astrology #Journal #Personal` plus a `…` menu for cover/icon/template/export. Title stays large.
-- Everything else (properties, share, links count) moves behind the `…` menu or into the right rail.
 
-## 8. Collapsible attachments
-- Replace the always-visible attachment strip with a `📎 Add files` button that expands into a Popover: Drag-drop zone, Browse, Paste image, Paste PDF, Upload voice (reuse `use-audio-recorder`). Auto-collapse ~1s after successful upload; show attached count on the pill.
+JSON-mode calls use `response_format: { type: "json_object" }` (already the shape most functions expect).
 
-## 9. Right sidebar order
-Final stack (top → bottom, all sticky within the rail):
+## 3. Remove Lovable credit metering
 
-```text
-┌─ Table of Contents (sticky top)
-├─ Intelligence
-│    Tasks
-│    Linked pages
-│    People
-│    AI summary
-│    Suggested actions
-```
+- `_shared/ai-meter.ts` currently gates on Lovable credit weight. Two options; plan uses **B**:
+  - **A.** Delete the meter — every AI call is free from your app's perspective (you pay OpenAI directly).
+  - **B.** Keep the table but only record usage counts (no gating), so you still see per-user AI call volume in `ai_usage`. Recommended for cost visibility.
+- Update `meterRequest` to skip the quota check and just increment `ai_usage` with a per-model weight (1 for mini, 3 for gpt-5, etc.).
+- Client `useAIUsage` keeps working; the "upgrade" prompt in `aiInvoke` (`ai_quota_exceeded` 402) still fires only if you explicitly enforce a cap later.
 
-TOC uses smooth-scroll on click and highlights the current heading during scroll.
+## 4. Frontend touches
 
-## 10. Better writing experience (CSS-only tweaks in `BlockEditor.tsx` ProseMirror styles)
-- Line-height 1.7, block spacing +25%, wider column (`WIDTH_PX.wide` becomes the default for new notes), refined heading scale (H1 2.25rem, H2 1.6rem, H3 1.2rem), softer `hr` (`bg-border/40`), better bullet indent (1.25rem, marker color muted), smooth caret via `caret-color: hsl(var(--primary))`.
-- Respect existing `useEditorPrefs` (density/width/fontScale).
+- `src/pages/Settings*` → new "AI (ChatGPT)" section: paste-your-own-key field, test button, "using shared key" indicator.
+- Wording: replace user-facing "AI credits" copy with "AI usage" (Cosmic, Mental Load, etc.). No changes to component logic.
+- No changes to `aiInvoke` transport — same edge-function calls, same shape.
 
-## 11. Microinteractions
-- Toggle open: 220ms ease-out height + fade.
-- Checkbox complete: scale 0.9→1.05→1 with check draw-in (SVG stroke dash).
-- Inline cards: `hover:-translate-y-0.5 hover:shadow-md` transition 180ms.
-- Sidebar sections: framer-motion spring `{stiffness: 260, damping: 26}`.
-- TOC active heading: soft primary underline slides between items.
-- AI entity detection: subtle shimmer overlay on the sidebar section header (no content flicker).
-- New cards: `animate-in fade-in slide-in-from-bottom-1` 250ms.
-- Drag & drop: reuse existing insertion-bar pattern (`bg-primary shadow-[0_0_12px_hsl(var(--primary))]`).
+## 5. Streaming (carey-chat)
 
----
+`carey-chat` currently streams from Lovable gateway. Switch to OpenAI SSE streaming:
 
-## Technical notes / file map
-- **Edit** `src/components/notes/BlockEditor.tsx` — toggle keymap, input rule, ProseMirror CSS for details animation, typography tweaks, inline card node view registration.
-- **Edit** `src/pages/NoteDetail.tsx` — header simplification, attachments popover, sidebar order, focus-mode polish, mount `QuickPeekProvider`.
-- **Rework** `src/components/notes/NoteIntelligencePanel.tsx` — becomes the stacked interactive rail (TOC + Tasks + Linked + Summary + Actions).
-- **Edit** `src/components/notes/NoteTOC.tsx` — active-heading `IntersectionObserver`, smooth scroll.
-- **Edit** `src/components/notes/NoteHoverPreview.tsx` → generalize into `QuickPeek`.
-- **New** `src/lib/note-entities.ts`, `src/hooks/useNoteEntities.ts`.
-- **New** `src/components/notes/InlineEntityCard.tsx` (TipTap node view + read-mode renderer).
-- **New** `src/components/notes/AttachmentPopover.tsx`.
-- No schema changes. No new backend functions (reuse `ai-notes`).
+- POST `/v1/chat/completions` with `stream: true`.
+- Pipe SSE chunks straight through as `text/event-stream` (or reformat to the existing `useChat` UI stream shape — keep the client contract unchanged so no UI edits needed).
 
-## Delivery order
-1. Sidebar restructure + TOC move + microinteraction pass (§3, §9, §11) — biggest visible win.
-2. Smarter toggles + writing typography (§1, §10).
-3. Entity detection + AI summary + suggested actions (§2, §3 wiring).
-4. Inline cards + Quick peek (§4, §5).
-5. Header + attachments cleanup + focus polish (§6, §7, §8).
+## 6. Verification checklist
 
-## Out of scope
-- No changes to the note storage schema, sync queue, or notes list pages.
-- No new AI providers.
-- No changes to the mobile notes shell beyond CSS reflow from the rail/header edits.
+- `OPENAI_API_KEY` present in secrets; a call from `ai-notes` returns a real completion.
+- User pastes a per-user key → subsequent call uses it (log the resolved-key source, not the value).
+- `carey-chat` streams token-by-token in the UI.
+- `ai-voice-capture` transcribes via Whisper.
+- `ai_usage` table increments; no credit-exhausted banner appears.
+- Grep for `ai.gateway.lovable.dev` → zero remaining hits in `supabase/functions/`.
+
+## Technical details
+
+- Migration: `user_ai_keys` (RLS: `auth.uid() = user_id` for select/insert/update/delete; GRANT select/insert/update/delete to `authenticated`, all to `service_role`).
+- Encryption at rest: pgcrypto `pgp_sym_encrypt` with a `USER_AI_KEY_SECRET` (generated via `generate_secret`, 64 chars). Decrypt only inside the `_shared/openai.ts` helper.
+- OpenAI errors surface via existing `aiInvoke` → toast; keep the 402 dispatcher for future paid tiers but no default trigger.
+- No changes to `src/integrations/supabase/client.ts`, `.env`, or `config.toml`.
+
+- Anthropic/Claude support.
+- Per-feature model overrides in Settings (e.g. "use gpt-5 for Rhythm Insights").
+- Streaming for functions other than `carey-chat`.
