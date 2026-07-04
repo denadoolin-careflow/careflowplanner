@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     if (!u.user) return json({ error: "unauthorized" }, 401);
     const uid = u.user.id;
 
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    const apiKey = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!apiKey) return json({ error: "LOVABLE_API_KEY missing" }, 500);
 
     const body = await req.json();
@@ -204,12 +204,12 @@ The person is asking themselves: "${prompt}"
 
 Answer in 3-5 short, kind sentences. Offer permission, not pressure. Name 1-3 concrete things from their list (use the task titles) where helpful, but never list more than 3.`;
 
-  const data = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const data = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      max_tokens: 600,
+      model: "gpt-5-mini",
+      max_completion_tokens: 600,
       messages: [
         { role: "system", content: SYSTEM_TONE },
         { role: "user", content: user },
@@ -260,12 +260,12 @@ async function callAI(apiKey: string, messages: any[], tool: any): Promise<
   | { ok: true; args: any }
   | { ok: false; errResponse: Response }
 > {
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      max_tokens: 4096,
+      model: "gpt-5-mini",
+      max_completion_tokens: 4096,
       messages,
       tools: [{ type: "function", function: tool }],
       tool_choice: { type: "function", function: { name: tool.name } },

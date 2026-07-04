@@ -3,7 +3,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 import { COSMIC_SYSTEM_PROMPT, COSMIC_TONE_REMINDER } from "../_shared/cosmic-tone.ts";
 
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
 
 interface Body {
   entries?: Array<{ date: string; text: string }>;
@@ -44,11 +44,11 @@ Return JSON exactly:
 ${COSMIC_TONE_REMINDER}`;
 
   try {
-    const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "gpt-5-mini",
         messages: [
           { role: "system", content: COSMIC_SYSTEM_PROMPT },
           { role: "user", content: user },

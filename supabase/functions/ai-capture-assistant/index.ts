@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     const gate = await meterRequest(req, WEIGHTS.light, corsHeaders);
     if ("response" in gate) return gate.response;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "Server not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -61,11 +61,11 @@ Deno.serve(async (req) => {
     }
 
     const todayISO = new Date().toISOString().slice(0, 10);
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-5-mini",
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: `Today is ${todayISO}.\nText:\n"""${trimmed}"""\n\nReturn the structured action.` },

@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     }
     const base64 = b64encode(buf);
 
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    const apiKey = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!apiKey) return new Response(JSON.stringify({ error: "AI not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const SYSTEM = [
@@ -66,11 +66,11 @@ Deno.serve(async (req) => {
       "`text` is the plain extracted text of the document (best-effort, up to ~8000 chars). No preamble.",
     ].join(" ");
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-5-mini",
         messages: [
           { role: "system", content: SYSTEM },
           {

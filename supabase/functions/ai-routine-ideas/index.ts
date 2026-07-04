@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     const personName = typeof person === "string" && person.trim() ? person.trim() : "this person";
     const planningStyle = typeof style === "string" && style.trim() ? style.trim() : "gentle, calm";
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "AI not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -32,11 +32,11 @@ Deno.serve(async (req) => {
 Planning style preference: ${planningStyle}.
 Each item should be 2-7 words, concrete, and warm. No numbering, no extra explanation.`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gpt-5-mini",
         messages: [
           { role: "system", content: "You suggest short, gentle, practical routine ideas for caregivers and families. Always respond via the provided tool." },
           { role: "user", content: prompt },
