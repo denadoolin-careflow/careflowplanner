@@ -95,6 +95,7 @@ export async function checkAndIncrementAi(
     p_weight: weight,
   });
   return { ok: true, plan, used: (newTotal as number) ?? current + weight, limit };
+  */
 }
 
 export function quotaExceededResponse(meter: Extract<MeterResult, { ok: false }>, corsHeaders: Record<string, string>) {
