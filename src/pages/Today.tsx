@@ -181,6 +181,8 @@ function TodayInner() {
               {prefs.showQuickAdd && <QuickAddBar date={day} />}
             </div>
           );
+          // expose controls to sibling branches via the closure below
+          (window as any).__todayControls = controls;
           if (view === "rhythm") {
             return (
               <RhythmDashboard
@@ -213,7 +215,6 @@ function TodayInner() {
         {view === "schedule" && <ScheduleBoard date={day} onTaskClick={setEditTaskId} onApptClick={setEditApptId} />}
         {view === "custom" && (
           <div className="space-y-6">
-            {controlsForCustom}
             <CustomizableGrid pageKey="today" />
           </div>
         )}
