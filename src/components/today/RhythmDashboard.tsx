@@ -1603,7 +1603,7 @@ function CurrentProjectFocusCard({ onTaskClick }: { onTaskClick?: (id: string) =
             </div>
             <Link
               to={`/projects/${focus.p.id}`}
-              className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground hover:text-primary"
+              className="min-w-0 flex-1 break-words text-sm font-semibold text-foreground hover:text-primary line-clamp-2"
             >
               {focus.p.name}
             </Link>
