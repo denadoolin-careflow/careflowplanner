@@ -68,12 +68,6 @@ export function SlotWeather({ slot }: { slot: Slot }) {
             {!hasData && (
               <span className="text-xs text-muted-foreground">Forecast unavailable</span>
             )}
-            {showLocationControls && (
-              <div className="ml-auto flex items-center gap-1.5">
-                <LocationPickerPopover />
-                <UnitToggle />
-              </div>
-            )}
           </div>
           {hasData && (
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-muted-foreground">
@@ -105,6 +99,12 @@ export function SlotWeather({ slot }: { slot: Slot }) {
               </div>
             );
           })()}
+          {showLocationControls && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-border/40 pt-2">
+              <LocationPickerPopover />
+              <UnitToggle />
+            </div>
+          )}
         </div>
       </div>
     </div>
