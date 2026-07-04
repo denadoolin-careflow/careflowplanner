@@ -835,11 +835,11 @@ function MealCard({
         className="min-w-0 flex-1 text-left"
       >
         <div className="flex items-baseline justify-between gap-2">
-          <span className="truncate text-sm font-semibold text-foreground">{slot}</span>
+          <span className="min-w-0 break-words text-sm font-semibold text-foreground">{slot}</span>
         </div>
-        <p className="truncate text-xs text-muted-foreground">{meal?.name ?? preview}</p>
+        <p className="break-words text-xs text-muted-foreground line-clamp-2">{meal?.name ?? preview}</p>
         {meal?.name && meal.ingredients?.length ? (
-          <p className="truncate text-[10px] text-muted-foreground/80">{meal.ingredients.slice(0, 3).join(" · ")}</p>
+          <p className="break-words text-[10px] text-muted-foreground/80 line-clamp-2">{meal.ingredients.slice(0, 3).join(" · ")}</p>
         ) : null}
       </button>
       <Popover open={open} onOpenChange={setOpen}>
