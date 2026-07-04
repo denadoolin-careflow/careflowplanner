@@ -67,13 +67,19 @@ export async function checkAndIncrementAi(
 ): Promise<MeterResult> {
   const svc = getServiceClient();
   const plan = await resolvePlan(userId);
-  // Admins (resolved as "lifetime" via has_role) bypass metering entirely.
-  const { data: isAdmin } = await svc.rpc("has_role", { _user_id: userId, _role: "admin" });
-  if (isAdmin) {
-    return { ok: true, plan, used: 0, limit: Number.MAX_SAFE_INTEGER };
-  }
-  const limit = PLAN_AI_LIMITS[plan];
   const month = ymKey();
+  // Credit gating is disabled: CareFlow now calls OpenAI directly with the
+  // workspace's OPENAI_API_KEY, so per-plan monthly limits do not apply.
+  // We still record weighted usage for visibility.
+  try {
+    await svc.rpc("increment_ai_usage", {
+      p_user_id: userId, p_year_month: month, p_weight: weight,
+    });
+  } catch (_e) { /* non-fatal */ }
+  return { ok: true, plan, used: 0, limit: Number.MAX_SAFE_INTEGER };
+  // Legacy gating (disabled):
+  /*
+  const limit = PLAN_AI_LIMITS[plan];
 
   // Read current usage
   const { data: row } = await svc.from("ai_usage")
