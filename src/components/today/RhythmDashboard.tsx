@@ -1383,7 +1383,7 @@ function GroceryCard() {
             <li key={i.id} className="flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-muted/40">
               <Checkbox checked={i.bought} onCheckedChange={() => void toggleGrocery(i.id)} className="h-4 w-4" />
               <span className={cn(
-                "min-w-0 flex-1 truncate text-sm",
+                "min-w-0 flex-1 break-words text-sm",
                 i.bought ? "text-muted-foreground line-through" : "text-foreground/90",
               )}>{i.name}</span>
             </li>
