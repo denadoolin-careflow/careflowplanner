@@ -137,7 +137,10 @@ export default function Carey() {
           "hidden shrink-0 flex-col rounded-2xl border border-border/60 bg-card/40 md:flex",
           sidebarOpen ? "w-64" : "w-14",
         )}>
-          <div className="flex items-center gap-2 border-b border-border/60 px-3 py-3">
+          <div className={cn(
+            "border-b border-border/60 px-3 py-3",
+            sidebarOpen ? "flex items-center gap-2" : "flex flex-col items-center gap-3"
+          )}>
             <Button
               size="icon"
               variant="ghost"
@@ -159,8 +162,8 @@ export default function Carey() {
             {!sidebarOpen && (
               <Button
                 size="icon"
-                variant="ghost"
-                className="ml-auto h-8 w-8"
+                variant="default"
+                className="h-8 w-8 shadow-[0_0_16px] shadow-primary/50 ring-2 ring-primary/30 transition-all hover:shadow-[0_0_24px] hover:shadow-primary/60 hover:ring-primary/50"
                 onClick={newThread}
                 aria-label="New conversation"
                 title="New conversation"
