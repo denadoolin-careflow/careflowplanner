@@ -120,7 +120,7 @@ function TileGrid({ date, onTaskClick, onApptClick }: { date: Date; onTaskClick:
     focus:     () => <CurrentProjectFocusCard onTaskClick={onTaskClick} />,
   };
   return (
-    <div className="grid gap-6 lg:grid-cols-4">
+    <div className="grid auto-rows-min grid-flow-dense gap-6 lg:grid-cols-4">
       {merged.map(id => {
         const meta = known.get(id)!;
         return (
