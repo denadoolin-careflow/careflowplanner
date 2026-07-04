@@ -835,11 +835,11 @@ function MealCard({
         className="min-w-0 flex-1 text-left"
       >
         <div className="flex items-baseline justify-between gap-2">
-          <span className="truncate text-sm font-semibold text-foreground">{slot}</span>
+          <span className="min-w-0 break-words text-sm font-semibold text-foreground">{slot}</span>
         </div>
-        <p className="truncate text-xs text-muted-foreground">{meal?.name ?? preview}</p>
+        <p className="break-words text-xs text-muted-foreground line-clamp-2">{meal?.name ?? preview}</p>
         {meal?.name && meal.ingredients?.length ? (
-          <p className="truncate text-[10px] text-muted-foreground/80">{meal.ingredients.slice(0, 3).join(" · ")}</p>
+          <p className="break-words text-[10px] text-muted-foreground/80 line-clamp-2">{meal.ingredients.slice(0, 3).join(" · ")}</p>
         ) : null}
       </button>
       <Popover open={open} onOpenChange={setOpen}>
@@ -1383,7 +1383,7 @@ function GroceryCard() {
             <li key={i.id} className="flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-muted/40">
               <Checkbox checked={i.bought} onCheckedChange={() => void toggleGrocery(i.id)} className="h-4 w-4" />
               <span className={cn(
-                "min-w-0 flex-1 truncate text-sm",
+                "min-w-0 flex-1 break-words text-sm",
                 i.bought ? "text-muted-foreground line-through" : "text-foreground/90",
               )}>{i.name}</span>
             </li>
@@ -1455,7 +1455,7 @@ function InProgressProjectsCard() {
                     className="min-w-0 flex-1 text-left"
                   >
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="min-w-0 truncate text-sm font-medium text-foreground group-hover:text-primary">{p.name}</span>
+                      <span className="min-w-0 break-words text-sm font-medium text-foreground group-hover:text-primary line-clamp-2">{p.name}</span>
                       <span className="shrink-0 tabular-nums text-[11px] font-semibold text-muted-foreground">{pct}%</span>
                     </div>
                     <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
@@ -1603,7 +1603,7 @@ function CurrentProjectFocusCard({ onTaskClick }: { onTaskClick?: (id: string) =
             </div>
             <Link
               to={`/projects/${focus.p.id}`}
-              className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground hover:text-primary"
+              className="min-w-0 flex-1 break-words text-sm font-semibold text-foreground hover:text-primary line-clamp-2"
             >
               {focus.p.name}
             </Link>

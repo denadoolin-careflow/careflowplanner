@@ -31,7 +31,7 @@ export function TileFrame({
   const size = sizes[id] ?? defaultSize;
   const span = SIZE_TO_COL[size];
 
-  const [dropSide, setDropSide] = useState<"before" | "after" | null>(null);
+  const [dropSide, setDropSide] = useState<"before" | "after" | "above" | "below" | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   const onDragStart = (e: React.DragEvent) => {
@@ -48,8 +48,12 @@ export function TileFrame({
     e.dataTransfer.dropEffect = "move";
     const rect = rootRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const midX = rect.left + rect.width / 2;
-    setDropSide(e.clientX < midX ? "before" : "after");
+    const relX = (e.clientX - rect.left) / rect.width;
+    const relY = (e.clientY - rect.top) / rect.height;
+    // Prefer vertical (above/below) when the pointer is near the top/bottom edge.
+    if (relY > 0.7) setDropSide("below");
+    else if (relY < 0.3) setDropSide("above");
+    else setDropSide(relX < 0.5 ? "before" : "after");
   };
   const onDragLeave = () => setDropSide(null);
   const onDrop = (e: React.DragEvent) => {
@@ -59,7 +63,8 @@ export function TileFrame({
     e.preventDefault();
     const targetIdx = order.indexOf(id);
     if (targetIdx < 0) { setDropSide(null); return; }
-    const insertAt = dropSide === "after" ? targetIdx + 1 : targetIdx;
+    const insertAfter = dropSide === "after" || dropSide === "below";
+    const insertAt = insertAfter ? targetIdx + 1 : targetIdx;
     moveTo(src, insertAt);
     setDropSide(null);
     setDragging(null);
@@ -87,12 +92,21 @@ export function TileFrame({
       onDrop={onDrop}
     >
       {editing && dropSide && dragging && dragging !== id && (
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-y-0 z-40 w-1 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary))]",
-            dropSide === "before" ? "-left-2" : "-right-2",
-          )}
-        />
+        (dropSide === "above" || dropSide === "below") ? (
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-x-0 z-40 h-1 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary))]",
+              dropSide === "above" ? "-top-2" : "-bottom-2",
+            )}
+          />
+        ) : (
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-y-0 z-40 w-1 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary))]",
+              dropSide === "before" ? "-left-2" : "-right-2",
+            )}
+          />
+        )
       )}
       {editing && (
         <div
