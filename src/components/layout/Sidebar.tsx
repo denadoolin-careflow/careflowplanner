@@ -281,7 +281,7 @@ function SectionToggleRow({
 
 /** Slim divider between collapsed-rail sections. */
 function RailDivider() {
-  return <div aria-hidden className="my-2 h-px w-6 rounded-full bg-sidebar-border/40" />;
+  return <div aria-hidden className="my-2 h-px w-6 rounded-full bg-sidebar-border/70" />;
 }
 
 function usePinnedNotes(enabled: boolean) {
@@ -346,7 +346,7 @@ function PinnedTagsSection({
                   onClick={onNavigate}
                   className={cn(
                     "relative grid h-12 w-12 place-items-center rounded-xl transition-colors duration-150",
-                    "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     active && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
@@ -376,11 +376,11 @@ function PinnedTagsSection({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/95 hover:text-sidebar-foreground transition-colors"
       >
         <Pin className="h-3.5 w-3.5 opacity-70" />
         <span className="flex-1 text-left">Pinned tags</span>
-        <span className="text-[10px] text-sidebar-foreground/50">{tags.length}</span>
+        <span className="text-[10px] text-sidebar-foreground/90">{tags.length}</span>
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} />
       </button>
       <div className={cn("grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
@@ -396,7 +396,7 @@ function PinnedTagsSection({
                   onClick={onNavigate}
                   className={({ isActive }) => cn(
                     "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
-                    "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     isActive && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
@@ -421,7 +421,7 @@ function MiniDatePickerButton({ onPick, label }: { onPick: (d: Date) => void; la
           type="button"
           aria-label={label}
           onClick={(e) => e.stopPropagation()}
-          className="grid h-5 w-5 place-items-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          className="grid h-5 w-5 place-items-center rounded text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-foreground"
         >
           <CalendarDays className="h-3 w-3" />
         </button>
@@ -459,7 +459,7 @@ function PinnedNotesSection({
                   onClick={onNavigate}
                   className={cn(
                     "relative grid h-12 w-12 place-items-center rounded-xl transition-colors duration-150",
-                    "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     active && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
@@ -488,11 +488,11 @@ function PinnedNotesSection({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/95 hover:text-sidebar-foreground transition-colors"
       >
         <Pin className="h-3.5 w-3.5 opacity-70" />
         <span className="flex-1 text-left">Pinned</span>
-        <span className="text-[10px] text-sidebar-foreground/50">{notes.length}</span>
+        <span className="text-[10px] text-sidebar-foreground/90">{notes.length}</span>
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")} />
       </button>
       <div className={cn("grid overflow-hidden transition-[grid-template-rows] duration-300 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
@@ -508,7 +508,7 @@ function PinnedNotesSection({
                   onClick={onNavigate}
                   className={({ isActive }) => cn(
                     "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
-                    "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     isActive && "bg-primary-soft text-foreground shadow-soft",
                   )}
                 >
@@ -559,13 +559,13 @@ function QuickDateRows({
             onClick={onNavigate}
             className={cn(
               "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
-              "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               active && "bg-primary-soft text-foreground shadow-soft",
             )}
           >
             {kind === "week" ? <CalendarRange className="h-3.5 w-3.5 shrink-0 opacity-70" /> : <CalendarDays className="h-3.5 w-3.5 shrink-0 opacity-70" />}
             <span className="flex-1 truncate">{it.label}</span>
-            <span className="text-[10px] text-sidebar-foreground/50">{it.sub}</span>
+            <span className="text-[10px] text-sidebar-foreground/90">{it.sub}</span>
           </NavLink>
         );
       })}
@@ -584,7 +584,7 @@ function QuickDatesSection({
         <button
           type="button"
           onClick={onToggle}
-          className="flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+          className="flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/95 hover:text-sidebar-foreground transition-colors"
         >
           <Icon className="h-3.5 w-3.5 opacity-70" />
           <span className="flex-1 text-left">{label}</span>
@@ -743,7 +743,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           onClick={onClick}
           className={({ isActive }) => cn(
             "group relative grid h-12 w-12 shrink-0 place-items-center rounded-xl transition-colors duration-150",
-            "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             isActive && "bg-primary-soft text-foreground shadow-soft",
           )}
         >
@@ -783,7 +783,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           onClick={onClick}
           aria-label={label}
           aria-pressed={ariaPressed}
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-150"
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-150"
         >
           <span className="grid h-6 w-6 place-items-center">
             <Icon className="h-5 w-5" />
@@ -824,7 +824,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         <div
           className={cn(
             "group flex items-center gap-1 rounded-lg px-1 py-1 text-sm transition-colors",
-            "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            "text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             hasActive && "text-foreground",
           )}
           draggable
@@ -925,7 +925,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
           )}>
             <div className="min-h-0 overflow-hidden">
-              <div className="ml-5 mt-0.5 flex flex-col gap-0.5 border-l border-sidebar-border/60 pl-2">
+              <div className="ml-5 mt-0.5 flex flex-col gap-0.5 border-l border-sidebar-border/80 pl-2">
                 {children.map(c => renderProjectNode(c, depth + 1, allProjects, areaName))}
               </div>
             </div>
@@ -953,7 +953,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 type="button"
                 onClick={() => setCollapsed(false)}
                 aria-label="Expand sidebar"
-                className="grid h-9 w-9 place-items-center rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                className="grid h-9 w-9 place-items-center rounded-lg text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
               >
                 <PanelLeftOpen className="h-4 w-4" />
               </button>
@@ -977,7 +977,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   type="button"
                   onClick={cycleTheme}
                   aria-label={`Sidebar theme: ${themePref}`}
-                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
                   {themePref === "dark" ? <Moon className="h-4 w-4" /> :
                    themePref === "light" ? <Sun className="h-4 w-4" /> :
@@ -993,7 +993,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   type="button"
                   onClick={toggleSide}
                   aria-label={side === "left" ? "Move sidebar to right" : "Move sidebar to left"}
-                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
                   {side === "left" ? <PanelRight className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
                 </button>
@@ -1007,7 +1007,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                     <button
                       type="button"
                       aria-label="Sidebar sections"
-                      className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       <SlidersHorizontal className="h-4 w-4" />
                     </button>
@@ -1057,7 +1057,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   type="button"
                   onClick={() => setCollapsed(true)}
                   aria-label="Collapse sidebar"
-                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
                   <PanelLeftClose className="h-4 w-4" />
                 </button>
@@ -1073,7 +1073,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 type="button"
                 onClick={() => setCollapsed(true)}
                 aria-label="Collapse sidebar"
-                className="grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                className="grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               >
                 <PanelLeftClose className="h-4 w-4" />
               </button>
@@ -1096,7 +1096,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 onClick={handleNavClick(to)}
                 className={({ isActive }) => cn(
                   "group relative flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-all",
-                  "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                   isActive && "bg-primary-soft text-foreground shadow-soft",
                 )}
               >
@@ -1171,7 +1171,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         {!collapsed && (
           <div className="mb-2 px-1">
             <div className="relative">
-              <SearchIcon className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-sidebar-foreground/50" />
+              <SearchIcon className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-sidebar-foreground/90" />
               <input
                 type="text"
                 value={pquery}
@@ -1182,14 +1182,14 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 aria-expanded={pqTerm.length > 0}
                 aria-controls="sidebar-search-results"
                 aria-activedescendant={results[activeIdx] ? `sidebar-search-opt-${activeIdx}` : undefined}
-                className="w-full rounded-md border border-sidebar-border/60 bg-sidebar-accent/40 py-1.5 pl-7 pr-7 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 outline-none focus:border-primary/50 focus:bg-sidebar-accent/70"
+                className="w-full rounded-md border border-sidebar-border/80 bg-sidebar-accent/40 py-1.5 pl-7 pr-7 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/60 outline-none focus:border-primary/50 focus:bg-sidebar-accent/70"
               />
               {pquery && (
                 <button
                   type="button"
                   aria-label="Clear search"
                   onClick={() => setPquery("")}
-                  className="absolute right-1.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  className="absolute right-1.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 >
                   <XIcon className="h-3 w-3" />
                 </button>
@@ -1201,7 +1201,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         {!collapsed && pqTerm && (
           <div className="mb-2">
             {results.length === 0 ? (
-              <div className="px-2 py-2 text-[11px] italic text-sidebar-foreground/50">No matches</div>
+              <div className="px-2 py-2 text-[11px] italic text-sidebar-foreground/90">No matches</div>
             ) : (
               <div id="sidebar-search-results" role="listbox" className="flex flex-col gap-0.5">
                 {results.map((r, idx) => {
@@ -1218,15 +1218,15 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                       onMouseEnter={() => setActiveIdx(idx)}
                       onClick={() => { setPquery(""); onNavigate?.(); }}
                       className={cn(
-                        "flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent",
+                        "flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-sidebar-foreground/95 hover:bg-sidebar-accent",
                         isActive && "bg-sidebar-accent text-foreground",
                       )}
                     >
                       <Icon className="h-3.5 w-3.5 opacity-80" style={r.color ? { color: r.color } : undefined} />
                       <span className="flex-1 truncate">{r.name}</span>
                       {r.kind === "area"
-                        ? <span className="text-[10px] text-sidebar-foreground/50">Area</span>
-                        : r.areaName && <span className="text-[10px] text-sidebar-foreground/50 truncate">{r.areaName}</span>}
+                        ? <span className="text-[10px] text-sidebar-foreground/90">Area</span>
+                        : r.areaName && <span className="text-[10px] text-sidebar-foreground/90 truncate">{r.areaName}</span>}
                     </NavLink>
                   );
                 })}
@@ -1238,7 +1238,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         {!collapsed && !pqTerm && projects.some(p => p.isFavorite) && (
           <div className="mb-2">
             <div className="flex items-center justify-between px-2 py-1.5">
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60">
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/95">
                 <Star className="h-3 w-3 text-amber-400" /> Favorites
               </span>
             </div>
@@ -1246,7 +1246,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
               {projects.filter(p => p.isFavorite).map(fav => {
                 const FavIcon = getAreaIcon(fav.icon);
                 return (
-                  <div key={fav.id} className="group flex items-center gap-1 rounded-lg px-1 py-1 text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent">
+                  <div key={fav.id} className="group flex items-center gap-1 rounded-lg px-1 py-1 text-sm text-sidebar-foreground/95 hover:bg-sidebar-accent">
                     <span className="h-5 w-5" />
                     <FavIcon className="h-3.5 w-3.5 opacity-80" style={fav.color ? { color: fav.color } : undefined} />
                     <NavLink
@@ -1277,12 +1277,12 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
         {areas.length > 0 && !collapsed && !pqTerm && (
           <div className="mb-2">
             <div className="flex items-center justify-between px-2 py-1.5">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60">Areas</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/95">Areas</span>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   aria-label="Add area"
-                  className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                  className="text-[10px] text-sidebar-foreground/90 hover:text-sidebar-foreground"
                   onClick={async () => {
                     const name = window.prompt("New area name")?.trim();
                     if (!name) return;
@@ -1293,7 +1293,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                     if (created) navigate(`/areas/${encodeURIComponent(created.name)}`);
                   }}
                 >+ Add</button>
-                <NavLink to="/projects" onClick={onNavigate} className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground">All</NavLink>
+                <NavLink to="/projects" onClick={onNavigate} className="text-[10px] text-sidebar-foreground/90 hover:text-sidebar-foreground">All</NavLink>
               </div>
             </div>
             <div className="flex flex-col gap-0.5">
@@ -1308,7 +1308,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                     <div
                       className={cn(
                         "group flex w-full items-center gap-1 rounded-lg px-1 py-1 text-sm",
-                        "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
+                        "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
                         hasActive && "text-foreground",
                       )}
                     >
@@ -1337,7 +1337,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                         {area.name}
                       </NavLink>
                       {areaProjects.length > 0 && (
-                        <span className="text-[10px] text-sidebar-foreground/50">{areaProjects.length}</span>
+                        <span className="text-[10px] text-sidebar-foreground/90">{areaProjects.length}</span>
                       )}
                       <button
                         type="button"
@@ -1367,7 +1367,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                       open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
                     )}>
                       <div className="min-h-0 overflow-hidden">
-                        <div className="ml-5 mt-0.5 flex flex-col gap-0.5 border-l border-sidebar-border/60 pl-2">
+                        <div className="ml-5 mt-0.5 flex flex-col gap-0.5 border-l border-sidebar-border/80 pl-2">
                           {areaProjects.length === 0 ? (
                             <div className="px-2 py-1 text-[11px] italic text-sidebar-foreground/40">No projects</div>
                           ) : areaProjects
@@ -1446,7 +1446,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   onClick={handleNavClick(`/flow/${group.id}`)}
                   className={cn(
                     "flex flex-1 items-start gap-2 rounded-lg px-2 py-1.5 text-left",
-                    "text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors",
+                    "text-sidebar-foreground/95 hover:text-sidebar-foreground transition-colors",
                     hasActive && "text-sidebar-foreground/90",
                   )}
                 >
@@ -1476,7 +1476,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                   type="button"
                   onClick={() => toggle(group.id)}
                   aria-label={open ? `Collapse ${group.label}` : `Expand ${group.label}`}
-                  className="mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  className="mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 >
                   <ChevronDown
                     className={cn("h-3.5 w-3.5 transition-transform duration-200", open ? "rotate-0" : "-rotate-90")}
@@ -1505,7 +1505,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                         className={({ isActive }) =>
                           cn(
                             "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
-                            "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                            "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                             isActive && "bg-primary-soft text-foreground shadow-soft",
                           )
                         }
@@ -1535,7 +1535,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                     type="button"
                     aria-label="Sidebar position"
                     className={cn(
-                      "grid place-items-center rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
+                      "grid place-items-center rounded-lg text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
                       collapsed ? "h-9 w-9" : "h-8 w-8",
                     )}
                   >
