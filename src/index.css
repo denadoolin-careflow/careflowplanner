@@ -2753,30 +2753,22 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
    Scoped tokens + glass utility, applied via .reset-theme wrapper.
    ============================================================= */
 .reset-theme {
-  --reset-cream: 36 45% 96%;
-  --reset-cream-deep: 36 30% 90%;
-  --reset-sage: 140 22% 62%;
-  --reset-sage-soft: 140 30% 88%;
-  --reset-sage-deep: 150 25% 30%;
-  --reset-gold: 40 55% 55%;
-  --reset-gold-soft: 40 60% 90%;
-  --reset-charcoal: 150 12% 18%;
-  --reset-ink: 150 15% 22%;
-  --reset-line: 40 20% 82%;
-  --reset-glass-shadow: 0 20px 60px -30px hsl(150 30% 20% / 0.35),
-                        0 4px 14px -8px hsl(150 30% 20% / 0.18);
+  /* Reset tokens are aliased to the active atmosphere's semantic tokens
+     so the Home Reset surface inherits whatever atmosphere/theme is active. */
+  --reset-cream: var(--background);
+  --reset-cream-deep: var(--card);
+  --reset-sage: var(--primary);
+  --reset-sage-soft: var(--muted);
+  --reset-sage-deep: var(--primary);
+  --reset-gold: var(--accent);
+  --reset-gold-soft: var(--muted);
+  --reset-charcoal: var(--foreground);
+  --reset-ink: var(--foreground);
+  --reset-line: var(--border);
+  --reset-glass-shadow: 0 20px 60px -30px hsl(var(--foreground) / 0.25),
+                        0 4px 14px -8px hsl(var(--foreground) / 0.12);
 }
 .dark .reset-theme {
-  --reset-cream: 150 12% 10%;
-  --reset-cream-deep: 150 12% 14%;
-  --reset-sage: 140 22% 52%;
-  --reset-sage-soft: 140 18% 22%;
-  --reset-sage-deep: 140 30% 82%;
-  --reset-gold: 40 55% 65%;
-  --reset-gold-soft: 40 25% 22%;
-  --reset-charcoal: 40 15% 92%;
-  --reset-ink: 40 10% 88%;
-  --reset-line: 150 12% 22%;
   --reset-glass-shadow: 0 20px 60px -30px hsl(0 0% 0% / 0.55),
                         0 4px 14px -8px hsl(0 0% 0% / 0.35);
 }
