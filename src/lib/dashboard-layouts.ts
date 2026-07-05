@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { WidgetTheme } from "./widget-themes";
 
@@ -284,6 +284,39 @@ export function useDashboardLayout(page: PageKey) {
   const [preset, setPresetState] = useState<string>(() => getActivePreset(page));
   const [presets, setPresets] = useState<string[]>([DEFAULT_PRESET]);
 
+  // ── Undo / redo history ────────────────────────────────────────────
+  const past = useRef<DashboardLayoutData[]>([]);
+  const future = useRef<DashboardLayoutData[]>([]);
+  const skipHistory = useRef(false);
+  const [historyTick, setHistoryTick] = useState(0);
+  const HISTORY_LIMIT = 50;
+
+  /** Wrap setData so every user-driven mutation is pushed onto the undo stack. */
+  const mutate = useCallback(
+    (updater: (prev: DashboardLayoutData) => DashboardLayoutData) => {
+      setData((prev) => {
+        if (!prev) return prev;
+        const next = updater(prev);
+        if (!skipHistory.current) {
+          past.current.push(prev);
+          if (past.current.length > HISTORY_LIMIT) past.current.shift();
+          future.current = [];
+          setHistoryTick((t) => t + 1);
+        }
+        upsertRow(page, preset, next).catch(() => {});
+        return next;
+      });
+    },
+    [page, preset],
+  );
+
+  // Reset history whenever preset/page swap happens.
+  useEffect(() => {
+    past.current = [];
+    future.current = [];
+    setHistoryTick((t) => t + 1);
+  }, [page, preset]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -351,20 +384,14 @@ export function useDashboardLayout(page: PageKey) {
 
   const updateLayout = useCallback(
     (layout: GridItem[]) => {
-      setData((prev) => {
-        if (!prev) return prev;
-        const next = { ...prev, layout };
-        upsertRow(page, preset, next).catch(() => {});
-        return next;
-      });
+      mutate((prev) => ({ ...prev, layout }));
     },
-    [page, preset],
+    [mutate],
   );
 
   const addWidget = useCallback(
     (type: WidgetType, defaultSize: { w: number; h: number }, props?: Record<string, any>) => {
-      setData((prev) => {
-        const base = prev ?? { widgets: [], layout: [] };
+      mutate((base) => {
         const id = uid();
         const widgets = [...base.widgets, { id, type, props }];
         const maxY = base.layout.reduce((m, l) => Math.max(m, l.y + l.h), 0);
@@ -372,99 +399,96 @@ export function useDashboardLayout(page: PageKey) {
           ...base.layout,
           { i: id, x: 0, y: maxY, w: defaultSize.w, h: defaultSize.h, minW: 3, minH: 3 },
         ];
-        const next = { widgets, layout };
-        upsertRow(page, preset, next).catch(() => {});
-        return next;
+        return { ...base, widgets, layout };
       });
     },
-    [page, preset],
+    [mutate],
   );
 
   const removeWidget = useCallback(
     (id: string) => {
-      setData((prev) => {
-        if (!prev) return prev;
-        const next = {
-          widgets: prev.widgets.filter((w) => w.id !== id),
-          layout: prev.layout.filter((l) => l.i !== id),
-        };
-        upsertRow(page, preset, next).catch(() => {});
-        return next;
-      });
+      mutate((prev) => ({
+        ...prev,
+        widgets: prev.widgets.filter((w) => w.id !== id),
+        layout: prev.layout.filter((l) => l.i !== id),
+      }));
     },
-    [page, preset],
+    [mutate],
   );
 
   const hideWidget = useCallback(
     (id: string, hidden = true) => {
-      setData((prev) => {
-        if (!prev) return prev;
-        const next = {
-          ...prev,
-          widgets: prev.widgets.map((w) => (w.id === id ? { ...w, hidden } : w)),
-        };
-        upsertRow(page, preset, next).catch(() => {});
-        return next;
-      });
+      mutate((prev) => ({
+        ...prev,
+        widgets: prev.widgets.map((w) => (w.id === id ? { ...w, hidden } : w)),
+      }));
     },
-    [page, preset],
+    [mutate],
   );
 
   const updateWidgetProps = useCallback(
     (id: string, props: Record<string, any>) => {
-      setData((prev) => {
-        if (!prev) return prev;
-        const next = {
-          ...prev,
-          widgets: prev.widgets.map((w) =>
-            w.id === id ? { ...w, props: { ...(w.props ?? {}), ...props } } : w,
-          ),
-        };
-        upsertRow(page, preset, next).catch(() => {});
-        return next;
-      });
+      mutate((prev) => ({
+        ...prev,
+        widgets: prev.widgets.map((w) =>
+          w.id === id ? { ...w, props: { ...(w.props ?? {}), ...props } } : w,
+        ),
+      }));
     },
-    [page, preset],
+    [mutate],
   );
 
   const resetToDefault = useCallback(() => {
-    const def = defaultLayout(page);
-    setData(def);
-    upsertRow(page, preset, def).catch(() => {});
-  }, [page, preset]);
+    mutate(() => defaultLayout(page));
+  }, [mutate, page]);
 
   /* Theming + collapsing */
   const setPageTheme = useCallback((theme: WidgetTheme | null) => {
-    setData((prev) => {
-      if (!prev) return prev;
-      const next = { ...prev, pageTheme: theme };
-      upsertRow(page, preset, next).catch(() => {});
-      return next;
-    });
-  }, [page, preset]);
+    mutate((prev) => ({ ...prev, pageTheme: theme }));
+  }, [mutate]);
 
   const setWidgetTheme = useCallback((id: string, theme: WidgetTheme | null) => {
-    setData((prev) => {
-      if (!prev) return prev;
-      const next = {
-        ...prev,
-        widgets: prev.widgets.map((w) => (w.id === id ? { ...w, theme } : w)),
-      };
-      upsertRow(page, preset, next).catch(() => {});
-      return next;
-    });
-  }, [page, preset]);
+    mutate((prev) => ({
+      ...prev,
+      widgets: prev.widgets.map((w) => (w.id === id ? { ...w, theme } : w)),
+    }));
+  }, [mutate]);
 
   const toggleCollapsed = useCallback((id: string) => {
-    setData((prev) => {
-      if (!prev) return prev;
-      const next = {
-        ...prev,
-        widgets: prev.widgets.map((w) => (w.id === id ? { ...w, collapsed: !w.collapsed } : w)),
-      };
+    mutate((prev) => ({
+      ...prev,
+      widgets: prev.widgets.map((w) => (w.id === id ? { ...w, collapsed: !w.collapsed } : w)),
+    }));
+  }, [mutate]);
+
+  const undo = useCallback(() => {
+    if (!past.current.length) return false;
+    setData((cur) => {
+      if (!cur) return cur;
+      const prev = past.current.pop()!;
+      future.current.push(cur);
+      skipHistory.current = true;
+      upsertRow(page, preset, prev).catch(() => {});
+      queueMicrotask(() => { skipHistory.current = false; });
+      setHistoryTick((t) => t + 1);
+      return prev;
+    });
+    return true;
+  }, [page, preset]);
+
+  const redo = useCallback(() => {
+    if (!future.current.length) return false;
+    setData((cur) => {
+      if (!cur) return cur;
+      const next = future.current.pop()!;
+      past.current.push(cur);
+      skipHistory.current = true;
       upsertRow(page, preset, next).catch(() => {});
+      queueMicrotask(() => { skipHistory.current = false; });
+      setHistoryTick((t) => t + 1);
       return next;
     });
+    return true;
   }, [page, preset]);
 
   /* Presets */
@@ -514,5 +538,10 @@ export function useDashboardLayout(page: PageKey) {
     switchPreset,
     createPreset,
     deletePreset,
+    undo,
+    redo,
+    canUndo: past.current.length > 0,
+    canRedo: future.current.length > 0,
+    historyTick,
   };
 }
