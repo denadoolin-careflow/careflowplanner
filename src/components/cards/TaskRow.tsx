@@ -483,7 +483,7 @@ export function TaskRow({
 
         {/* Inline "+ Add subtask" — hover-revealed on parent rows */}
         {!editing && !isSubtask && (
-          <div className="mt-1 flex flex-wrap items-center gap-1">
+          <div className="mt-1 hidden flex-wrap items-center gap-1 group-hover:flex focus-within:flex">
             <button
               type="button"
               onClick={(e) => {
