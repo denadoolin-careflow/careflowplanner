@@ -760,7 +760,6 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
               <span className="grid h-6 w-6 place-items-center">
                 <Icon
                   className="h-5 w-5"
-                  strokeWidth={2.25}
                   style={isActive && accentColor ? { color: accentColor } : undefined}
                 />
               </span>
