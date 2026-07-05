@@ -2747,3 +2747,91 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 }
 /* Subtle fade-in for menu items */
 .tippy-box .animate-scale-in { animation: scale-in 180ms ease-out; }
+
+/* =============================================================
+   Home Reset — sage / cream / gold atmosphere
+   Scoped tokens + glass utility, applied via .reset-theme wrapper.
+   ============================================================= */
+.reset-theme {
+  --reset-cream: 36 45% 96%;
+  --reset-cream-deep: 36 30% 90%;
+  --reset-sage: 140 22% 62%;
+  --reset-sage-soft: 140 30% 88%;
+  --reset-sage-deep: 150 25% 30%;
+  --reset-gold: 40 55% 55%;
+  --reset-gold-soft: 40 60% 90%;
+  --reset-charcoal: 150 12% 18%;
+  --reset-ink: 150 15% 22%;
+  --reset-line: 40 20% 82%;
+  --reset-glass-shadow: 0 20px 60px -30px hsl(150 30% 20% / 0.35),
+                        0 4px 14px -8px hsl(150 30% 20% / 0.18);
+}
+.dark .reset-theme {
+  --reset-cream: 150 12% 10%;
+  --reset-cream-deep: 150 12% 14%;
+  --reset-sage: 140 22% 52%;
+  --reset-sage-soft: 140 18% 22%;
+  --reset-sage-deep: 140 30% 82%;
+  --reset-gold: 40 55% 65%;
+  --reset-gold-soft: 40 25% 22%;
+  --reset-charcoal: 40 15% 92%;
+  --reset-ink: 40 10% 88%;
+  --reset-line: 150 12% 22%;
+  --reset-glass-shadow: 0 20px 60px -30px hsl(0 0% 0% / 0.55),
+                        0 4px 14px -8px hsl(0 0% 0% / 0.35);
+}
+.reset-glass {
+  background: linear-gradient(180deg,
+    hsl(var(--reset-cream) / 0.85) 0%,
+    hsl(var(--reset-cream) / 0.55) 100%);
+  backdrop-filter: blur(20px) saturate(1.05);
+  -webkit-backdrop-filter: blur(20px) saturate(1.05);
+  border: 1px solid hsl(var(--reset-line) / 0.6);
+  box-shadow: var(--reset-glass-shadow);
+  border-radius: 24px;
+  color: hsl(var(--reset-ink));
+}
+.dark .reset-glass {
+  background: linear-gradient(180deg,
+    hsl(var(--reset-cream-deep) / 0.75) 0%,
+    hsl(var(--reset-cream) / 0.55) 100%);
+  border-color: hsl(0 0% 100% / 0.06);
+}
+.reset-glass-strong {
+  background: hsl(var(--reset-cream) / 0.92);
+  backdrop-filter: blur(24px) saturate(1.1);
+  -webkit-backdrop-filter: blur(24px) saturate(1.1);
+  border: 1px solid hsl(var(--reset-line) / 0.7);
+  box-shadow: var(--reset-glass-shadow);
+  border-radius: 28px;
+  color: hsl(var(--reset-ink));
+}
+.dark .reset-glass-strong {
+  background: hsl(var(--reset-cream-deep) / 0.9);
+  border-color: hsl(0 0% 100% / 0.08);
+}
+.reset-chip {
+  background: hsl(var(--reset-cream) / 0.7);
+  border: 1px solid hsl(var(--reset-line) / 0.55);
+  color: hsl(var(--reset-ink));
+  backdrop-filter: blur(10px);
+}
+.dark .reset-chip {
+  background: hsl(var(--reset-cream-deep) / 0.7);
+  border-color: hsl(0 0% 100% / 0.06);
+}
+@keyframes reset-leaf-float {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  20%  { opacity: 0.9; }
+  100% { transform: translateY(-120px) rotate(24deg); opacity: 0; }
+}
+.reset-leaf { animation: reset-leaf-float 2.6s ease-out forwards; }
+@keyframes reset-plant-grow {
+  0%   { transform: scaleY(0.2); opacity: 0; transform-origin: bottom center; }
+  60%  { opacity: 1; }
+  100% { transform: scaleY(1); opacity: 1; transform-origin: bottom center; }
+}
+.reset-plant-grow { animation: reset-plant-grow 900ms cubic-bezier(.2,.8,.2,1) forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .reset-leaf, .reset-plant-grow { animation: none !important; }
+}

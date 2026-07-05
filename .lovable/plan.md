@@ -1,73 +1,65 @@
-# Integrate ChatGPT (OpenAI) across CareFlow — no Lovable AI credits
+## Full redesign of `/home-reset`
 
-Goal: every AI edge function calls OpenAI directly using your `OPENAI_API_KEY` by default, with per-user overrides supported. Lovable AI credits are no longer consumed for AI calls.
+Rebuild the Home Reset page top-to-bottom in the sage/cream/gold "atmosphere" you described. All existing data plumbing stays intact — this is a pure presentation + composition rework wired to the same hooks (`useResetChecklists`, `logResetCompletion`, `pomodoro`, `processDueResets`, `ResetHistorySheet`, `ResetScheduleDialog`, `AIGenerateMenu`, etc.). No database changes.
 
-## 1. Secrets & key resolution
+### Palette + tokens (added as CSS vars, dark-mode aware)
 
-- Add backend secret `OPENAI_API_KEY` (your shared key) via `add_secret`.
-- New table `public.user_ai_keys` (`user_id` PK, `provider` text, `encrypted_key` text, `created_at`) with RLS so only the owning user can read/write their own row. GRANTs for `authenticated` + `service_role`.
-- Settings page (`/settings` or new `Settings → AI`) lets a user paste their own OpenAI key. Stored via an edge function `save-user-ai-key` that writes to `user_ai_keys` (never returned to the client after save; show masked "sk-••••1234").
-- Shared helper `supabase/functions/_shared/openai.ts`:
-  - `resolveOpenAIKey(userId)` → returns user's key if present, else `Deno.env.get("OPENAI_API_KEY")`.
-  - `callOpenAI({ userId, messages, model = "gpt-5-mini", response_format?, stream? })` → hits `https://api.openai.com/v1/chat/completions` with `Authorization: Bearer <key>`.
-  - Handles 401 (bad key), 429 (rate limit), 402/insufficient_quota errors and returns normalized `{ error }`.
+- `--reset-cream`  light: `36 45% 96%` / dark: `36 15% 10%`
+- `--reset-sage`   light: `140 22% 62%` / dark: `140 25% 45%`
+- `--reset-sage-deep` light: `150 25% 30%` / dark: `150 30% 78%`
+- `--reset-gold`   light: `40 55% 55%` / dark: `40 60% 68%`
+- `--reset-charcoal` light: `150 12% 18%` / dark: `40 15% 92%`
+- Glass surface utility: `.reset-glass` → `bg-[hsl(var(--card)/0.55)] backdrop-blur-2xl border border-white/40 dark:border-white/8 shadow-[0_20px_60px_-30px_hsl(150_30%_20%/0.35)]` + 24px radius.
 
-## 2. Replace Lovable AI gateway across all edge functions
+### Page structure (top → bottom)
 
-For every function under `supabase/functions/ai-*` and `carey-chat` (~40 functions), swap:
+1. **Hero band** — soft cream→sage gradient, generated calming illustration on the right, overlay quote *"A peaceful home starts with one small reset."* + three CTAs (Start reset · Continue · Reset entire home).
+2. **Progress ring card** — animated SVG circular ring showing today's % complete, streak, today's focus, est. time remaining. Confetti + chime on 100%.
+3. **View switcher** — segmented control (Checklist / By Room / Routines / Zones) with spring underline; each view rendered from the same `activeLists` data.
+4. **Room filter rail** — horizontal scroll of pills (All Areas, Kitchen, Living Room, Bedrooms, Bathrooms, Laundry, Entryway, Dining, Office). Each pill: icon + task count + tiny progress ring. Completed pills glow sage.
+5. **Expandable room cards** — one glass card per checklist; collapsed shows icon, name, X/Y tasks, est. minutes, progress bar. Expanded shows task list (checkbox, drag handle, title, star, ⋯ menu) via existing `ChecklistTree`. Card gently scales down as tasks finish.
+6. **Smart suggestions strip** — floating sage-tinted cards per room, powered by existing AI menu + simple heuristics (overdue days, adjacent-task nudge, "trash day tomorrow" from settings).
+7. **Reset tips carousel** — auto-rotating pill row (open a window, light a candle, calming music, water, natural light).
+8. **Daily intention card** — affirmation from `src/lib/affirmations.ts` + "Generate new" button.
+9. **Celebration overlay** — modal that appears when a room hits 100%: growing plant SVG + floating leaves + "Continue to next room" button.
+10. **Floating quick-actions FAB** — `+` opens radial menu (Add task, Add room, Create routine, Start timer, Voice capture, Scan room). Voice/scan wired to existing hooks where available, stubbed with toast otherwise.
 
-- `fetch("https://ai.gateway.lovable.dev/v1/chat/completions", { headers: { "Lovable-API-Key": ... } })`
-- → `callOpenAI({ userId, ... })` from the shared helper.
+### Reused components / hooks (no changes)
 
-Model mapping (all default to `gpt-5-mini` unless a function explicitly needs stronger reasoning):
+- `useResetChecklists`, `ChecklistTree`, `ChecklistInline`, `AIGenerateMenu`
+- `ResetHistorySheet`, `ResetScheduleDialog`, `MoonResetTip`
+- `pomodoro`, `fireConfetti`, `playCompletionChime`, `logResetCompletion`, `processDueResets`
 
+### New components (`src/components/reset/redesign/`)
 
-| Current call site                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | New model                                                               |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Fast/summary/JSON functions (ai-notes, ai-inbox-triage, ai-subtasks, ai-task-assist, ai-grocery-assistant, ai-dinner-tonight, ai-capture-assistant, ai-cleaning-*, ai-cosmic-daily, ai-daily-*, ai-exhale, ai-mental-load, ai-memory-recap, ai-rhythm-insights, ai-habit-overview, ai-planner, ai-month-plan, ai-monthly-report, ai-projects-summary, ai-routine-*, ai-seasons-assistant, ai-today-guidance, ai-weekly-review, ai-library-meals, ai-meal-plan, ai-person-overview, ai-project-overview, ai-care-guide, ai-care-note, ai-caregiving-hub, ai-cosmic-*, ai-journal, ai-pdf-summary, ai-voice-capture, ai-home-assistant) | `gpt-5-mini`                                                            |
-| `carey-chat` (streaming assistant)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `gpt-5-mini` with streaming                                             |
-| Voice (`ai-voice-capture`) — still needs Whisper                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `whisper-1` via `/v1/audio/transcriptions` (also OpenAI, uses same key) |
+- `ResetHeroBand.tsx` — hero image + quote + CTAs
+- `ResetProgressRing.tsx` — animated SVG ring
+- `ResetViewSwitcher.tsx` — segmented control
+- `ResetRoomRail.tsx` — filterable pill rail
+- `ResetRoomCard.tsx` — expandable glass card
+- `ResetSmartSuggestions.tsx` — AI + heuristic nudges
+- `ResetTipsCarousel.tsx` — rotating tips
+- `ResetIntentionCard.tsx` — affirmation
+- `RoomCelebration.tsx` — completion overlay
+- `ResetQuickFab.tsx` — FAB + radial menu
 
+### File changes
 
-JSON-mode calls use `response_format: { type: "json_object" }` (already the shape most functions expect).
+- **Rewrite:** `src/pages/HomeReset.tsx` — new composition; `embedded` prop preserved for HomeHub tab use.
+- **New:** the 10 files above under `src/components/reset/redesign/`.
+- **Edit:** `src/index.css` — add sage/cream/gold tokens + `.reset-glass` utility (behind media query, dark-mode variants included).
+- **Asset:** one generated calming still-life illustration → `src/assets/reset-hero.jpg` (imported as ES module).
 
-## 3. Remove Lovable credit metering
+### Animation register
 
-- `_shared/ai-meter.ts` currently gates on Lovable credit weight. Two options; plan uses **B**:
-  - **A.** Delete the meter — every AI call is free from your app's perspective (you pay OpenAI directly).
-  - **B.** Keep the table but only record usage counts (no gating), so you still see per-user AI call volume in `ai_usage`. Recommended for cost visibility.
-- Update `meterRequest` to skip the quota check and just increment `ai_usage` with a per-model weight (1 for mini, 3 for gpt-5, etc.).
-- Client `useAIUsage` keeps working; the "upgrade" prompt in `aiInvoke` (`ai_quota_exceeded` 402) still fires only if you explicitly enforce a cap later.
+- Spring transitions on segmented control + FAB (framer-motion, already in project).
+- Checkbox ripple + confetti + card shrink on complete.
+- Ring stroke tweens from previous → new %.
+- Respects `prefers-reduced-motion` → drops springs to fades.
 
-## 4. Frontend touches
+- Carey floating AI assistant panel
+- Gamification scoring dashboard (XP, wellness score, badges)
+- Routine templates library UI (uses existing lists for now)
+- Voice/scan capture backends (stubbed with toast + hook points)
 
-- `src/pages/Settings*` → new "AI (ChatGPT)" section: paste-your-own-key field, test button, "using shared key" indicator.
-- Wording: replace user-facing "AI credits" copy with "AI usage" (Cosmic, Mental Load, etc.). No changes to component logic.
-- No changes to `aiInvoke` transport — same edge-function calls, same shape.
-
-## 5. Streaming (carey-chat)
-
-`carey-chat` currently streams from Lovable gateway. Switch to OpenAI SSE streaming:
-
-- POST `/v1/chat/completions` with `stream: true`.
-- Pipe SSE chunks straight through as `text/event-stream` (or reformat to the existing `useChat` UI stream shape — keep the client contract unchanged so no UI edits needed).
-
-## 6. Verification checklist
-
-- `OPENAI_API_KEY` present in secrets; a call from `ai-notes` returns a real completion.
-- User pastes a per-user key → subsequent call uses it (log the resolved-key source, not the value).
-- `carey-chat` streams token-by-token in the UI.
-- `ai-voice-capture` transcribes via Whisper.
-- `ai_usage` table increments; no credit-exhausted banner appears.
-- Grep for `ai.gateway.lovable.dev` → zero remaining hits in `supabase/functions/`.
-
-## Technical details
-
-- Migration: `user_ai_keys` (RLS: `auth.uid() = user_id` for select/insert/update/delete; GRANT select/insert/update/delete to `authenticated`, all to `service_role`).
-- Encryption at rest: pgcrypto `pgp_sym_encrypt` with a `USER_AI_KEY_SECRET` (generated via `generate_secret`, 64 chars). Decrypt only inside the `_shared/openai.ts` helper.
-- OpenAI errors surface via existing `aiInvoke` → toast; keep the 402 dispatcher for future paid tiers but no default trigger.
-- No changes to `src/integrations/supabase/client.ts`, `.env`, or `config.toml`.
-
-- Anthropic/Claude support.
-- Per-feature model overrides in Settings (e.g. "use gpt-5 for Rhythm Insights").
-- Streaming for functions other than `carey-chat`.
+Ready to build on approval.
