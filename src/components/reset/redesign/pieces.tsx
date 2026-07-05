@@ -205,7 +205,7 @@ export function TipsCarousel() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.28 }}
-            className="truncate text-sm font-medium text-[hsl(var(--reset-charcoal))]"
+            className="whitespace-normal break-words text-sm font-medium text-[hsl(var(--reset-charcoal))]"
           >
             {Tip.text}
           </motion.p>

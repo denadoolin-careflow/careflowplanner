@@ -53,7 +53,7 @@ export function RoomCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="truncate font-display text-base font-semibold text-[hsl(var(--reset-charcoal))]">
+            <h3 className="line-clamp-2 whitespace-normal break-words font-display text-base font-semibold text-[hsl(var(--reset-charcoal))]">
               {list.name}
             </h3>
             {complete && (
@@ -173,7 +173,7 @@ function TaskRow({
         )}
       </button>
       <span className={cn(
-        "min-w-0 flex-1 truncate text-sm text-[hsl(var(--reset-charcoal))]",
+        "min-w-0 flex-1 whitespace-normal break-words leading-snug text-sm text-[hsl(var(--reset-charcoal))]",
         item.done && "line-through decoration-[hsl(var(--reset-sage))]/60",
       )}>
         {item.title}
