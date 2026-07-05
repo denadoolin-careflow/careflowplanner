@@ -386,17 +386,37 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
               Refresh your space. Reset your mind.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <AIGenerateMenu onGenerated={reset.refresh} />
-            <button
-              onClick={() => setHistoryOpen(true)}
-              className="reset-chip inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
-            >
-              <History className="h-3.5 w-3.5" /> History
-            </button>
-          </div>
+          <div className="flex flex-wrap gap-2" />
         </header>
       )}
+
+      {/* ============ TOOLBAR (replaces FAB) ============ */}
+      {!embedded && (
+        <ResetToolbar
+          onAddTask={addTaskPrompt}
+          onCreateZone={createZone}
+          onHistory={() => setHistoryOpen(true)}
+          onResetAll={resetEntireHome}
+          onQuickTimer={quickTimer}
+          lowEnergy={lowEnergy}
+          aiSlot={<AIGenerateMenu onGenerated={reset.refresh} />}
+        />
+      )}
+
+      {/* ============ FOCUS + POMODORO STRIP ============ */}
+      <FocusTimerStrip
+        onStart={quickTimer}
+        onSkip={skipFocusItem}
+        onComplete={completeFocusItem}
+      />
+
+      {/* ============ TIPS + MOON (moved up) ============ */}
+      <section className="grid gap-3 sm:grid-cols-2">
+        <TipsCarousel />
+        <div className="reset-glass overflow-hidden p-1">
+          <MoonResetTip />
+        </div>
+      </section>
 
       {/* ============ HERO ============ */}
       <HeroBand
@@ -443,39 +463,63 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
         </div>
       </section>
 
+      {/* ============ TIME-OF-DAY BOARD ============ */}
+      <TimeBlockBoard
+        lists={activeLists}
+        activeBlock={currentTimeBlock()}
+        onToggle={(list, item, done) => {
+          if (done) void completeItem(list, item);
+          else void reset.updateItem(item.id, { done: false });
+          setCurrentId(list.id);
+        }}
+        onStart={(list, item) => {
+          setCurrentId(list.id);
+          resetFocus.focusItem(list, item);
+          startTimer(item);
+        }}
+        onGoToArea={(listId) => {
+          setCurrentId(listId);
+          const el = document.getElementById(`zone-${listId}`);
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        onSchedule={reset.updateItem}
+      />
+
       {/* ============ VIEW SWITCHER ============ */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ViewSwitcher value={view} onChange={setView} />
         <span className="text-[11px] text-[hsl(var(--reset-ink))]/55">
-          {visibleLists.length} {visibleLists.length === 1 ? "room" : "rooms"}
+          {visibleLists.length} {visibleLists.length === 1 ? "zone" : "zones"}
         </span>
       </div>
 
-      {/* ============ ROOM FILTER RAIL ============ */}
-      <div className="-mx-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex gap-2">
-          {ROOM_FILTERS.map(f => {
-            const matched = f.match
-              ? activeLists.filter(l => f.match!.test(l.name))
-              : activeLists;
-            const total = matched.reduce((s, l) => s + l.items.filter(i => !i.parent_id).length, 0);
-            const done  = matched.reduce((s, l) => s + l.items.filter(i => !i.parent_id && i.done).length, 0);
-            const complete = total > 0 && done === total;
-            return (
-              <RoomFilterPill
-                key={f.label}
-                label={f.label}
-                icon={f.icon}
-                active={roomFilter === f.label}
-                complete={complete}
-                done={done}
-                total={total}
-                onClick={() => { setRoomFilter(f.label); haptics.tap(); }}
-              />
-            );
-          })}
+      {/* ============ ROOM FILTER RAIL (byRoom only) ============ */}
+      {view === "byRoom" && (
+        <div className="-mx-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-2">
+            {ROOM_FILTERS.map(f => {
+              const matched = f.match
+                ? activeLists.filter(l => f.match!.test(l.name))
+                : activeLists;
+              const total = matched.reduce((s, l) => s + l.items.filter(i => !i.parent_id).length, 0);
+              const done  = matched.reduce((s, l) => s + l.items.filter(i => !i.parent_id && i.done).length, 0);
+              const complete = total > 0 && done === total;
+              return (
+                <RoomFilterPill
+                  key={f.label}
+                  label={f.label}
+                  icon={f.icon}
+                  active={roomFilter === f.label}
+                  complete={complete}
+                  done={done}
+                  total={total}
+                  onClick={() => { setRoomFilter(f.label); haptics.tap(); }}
+                />
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ============ ROOM CARDS ============ */}
       {activeLists.length === 0 ? (
@@ -486,39 +530,22 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
           }}
         />
       ) : (
-        <section className="grid gap-3">
-          {visibleLists.map((l, idx) => (
-            <RoomCard
-              key={l.id}
-              list={l}
-              icon={iconFor(l.name)}
-              tint={idx % 3 === 0 ? "sage" : idx % 3 === 1 ? "gold" : "cream"}
-              favorites={favorites}
-              onFavorite={(id) => setFavorites(f => ({ ...f, [id]: !f[id] }))}
-              onOpenAll={() => setSheetListId(l.id)}
-              suggestion={smartSuggestion(l)}
-              onToggle={(item, done) => {
-                if (done) void completeItem(l, item, { celebrate: true });
-                else void reset.updateItem(item.id, { done: false });
-                setCurrentId(l.id);
-              }}
-            />
-          ))}
-          {visibleLists.length === 0 && (
-            <p className="reset-chip rounded-2xl px-4 py-6 text-center text-sm text-[hsl(var(--reset-ink))]/60">
-              No rooms matching "{roomFilter}" yet.
-            </p>
-          )}
-        </section>
+        <ZoneViews
+          view={view}
+          activeLists={activeLists}
+          visibleLists={visibleLists}
+          iconFor={iconFor}
+          favorites={favorites}
+          setFavorites={setFavorites}
+          setCurrentId={setCurrentId}
+          setSheetListId={setSheetListId}
+          completeItem={completeItem}
+          reset={reset}
+          cycleZone={cycleZone}
+          resetZone={resetZone}
+          roomFilter={roomFilter}
+        />
       )}
-
-      {/* ============ TIPS + MOON ============ */}
-      <section className="grid gap-3 sm:grid-cols-2">
-        <TipsCarousel />
-        <div className="reset-glass overflow-hidden p-1">
-          <MoonResetTip />
-        </div>
-      </section>
 
       {/* ============ SMART SUGGESTIONS (footer strip) ============ */}
       {activeLists.length > 0 && (
@@ -575,10 +602,100 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
         }}
         onClose={() => setCelebrating(null)}
       />
-
-      {/* ============ FAB ============ */}
-      {!embedded && <QuickFab onAction={handleFabAction} />}
     </div>
+  );
+}
+
+/* ---------- Zone views: byRoom / routines / zones ---------- */
+function ZoneViews({
+  view, activeLists, visibleLists, iconFor, favorites, setFavorites,
+  setCurrentId, setSheetListId, completeItem, reset, cycleZone, resetZone, roomFilter,
+}: {
+  view: ResetView;
+  activeLists: ResetChecklist[];
+  visibleLists: ResetChecklist[];
+  iconFor: (name: string) => typeof HomeIcon;
+  favorites: Record<string, boolean>;
+  setFavorites: (fn: (f: Record<string, boolean>) => Record<string, boolean>) => void;
+  setCurrentId: (id: string) => void;
+  setSheetListId: (id: string) => void;
+  completeItem: (list: ResetChecklist, item: ResetItem, opts?: { celebrate?: boolean }) => Promise<void>;
+  reset: ReturnType<typeof useResetChecklists>;
+  cycleZone: (list: ResetChecklist) => void;
+  resetZone: (list: ResetChecklist) => void;
+  roomFilter: string;
+}) {
+  const renderCard = (l: ResetChecklist, idx: number) => (
+    <div id={`zone-${l.id}`} key={l.id}>
+      <RoomCard
+        list={l}
+        icon={iconFor(l.name)}
+        tint={idx % 3 === 0 ? "sage" : idx % 3 === 1 ? "gold" : "cream"}
+        favorites={favorites}
+        onFavorite={(id) => setFavorites(f => ({ ...f, [id]: !f[id] }))}
+        onOpenAll={() => setSheetListId(l.id)}
+        suggestion={smartSuggestion(l)}
+        onToggle={(item, done) => {
+          if (done) void completeItem(l, item, { celebrate: true });
+          else void reset.updateItem(item.id, { done: false });
+          setCurrentId(l.id);
+        }}
+        onCycleTimer={() => cycleZone(l)}
+        onResetZone={() => resetZone(l)}
+        onDeleteZone={() => { void reset.deleteList(l.id); toast.success(`Deleted "${l.name}"`); }}
+        onUpdateItem={reset.updateItem}
+      />
+    </div>
+  );
+
+  if (view === "byRoom") {
+    return (
+      <section className="grid gap-3">
+        {visibleLists.map(renderCard)}
+        {visibleLists.length === 0 && (
+          <p className="reset-chip rounded-2xl px-4 py-6 text-center text-sm text-[hsl(var(--reset-ink))]/60">
+            No rooms matching "{roomFilter}" yet.
+          </p>
+        )}
+      </section>
+    );
+  }
+
+  if (view === "routines") {
+    const groups: { kind: ResetKind; label: string }[] = [
+      { kind: "quick", label: "Quick reset" },
+      { kind: "weekly", label: "Weekly" },
+      { kind: "deep", label: "Deep clean" },
+      { kind: "low_energy", label: "Low energy" },
+      { kind: "custom", label: "Custom" },
+    ];
+    return (
+      <div className="space-y-6">
+        {groups.map(g => {
+          const items = activeLists.filter(l => l.kind === g.kind);
+          if (items.length === 0) return null;
+          return (
+            <section key={g.kind}>
+              <header className="mb-2 flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[hsl(var(--reset-ink))]/55">
+                  {g.label} · {items.length}
+                </p>
+              </header>
+              <div className="grid gap-3">
+                {items.map(renderCard)}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // zones — flat grid
+  return (
+    <section className="grid gap-3 sm:grid-cols-2">
+      {activeLists.map(renderCard)}
+    </section>
   );
 }
 
