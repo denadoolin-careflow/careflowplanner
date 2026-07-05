@@ -363,7 +363,7 @@ export function TaskRow({
             onClick={handleTitleClick}
             onDoubleClick={() => setEditing(true)}
             className={cn(
-              "block w-full cursor-pointer text-left text-[15px] font-medium leading-snug text-foreground transition-colors break-words whitespace-normal",
+              "block w-full cursor-pointer text-left text-[15px] font-medium leading-snug text-foreground transition-colors line-clamp-2",
               task.done && "text-muted-foreground line-through",
               celebrate && "text-primary",
             )}
