@@ -73,15 +73,14 @@ export function ElementBadge({ date = new Date(), variant = "chip", className }:
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-[11px]",
-        meta.accent.bg,
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card/95 px-2.5 py-1 text-[11px] font-medium text-card-foreground shadow-sm backdrop-blur-md",
         className,
       )}
       title={recommendation}
       aria-label={`Today's element: ${meta.label} — ${meta.verb}`}
     >
       <Icon className={cn("h-3.5 w-3.5", meta.accent.text)} />
-      <span className="font-medium">{meta.label}</span>
+      <span>{meta.label}</span>
       <span className="text-muted-foreground">· {meta.verb}</span>
     </span>
   );
