@@ -8,7 +8,7 @@ import { WIDGET_REGISTRY } from "./WidgetRegistry";
 import { WidgetFrame } from "./WidgetFrame";
 import { AddWidgetSheet } from "./AddWidgetSheet";
 import { Button } from "@/components/ui/button";
-import { Pencil, Check, Plus, RotateCcw, Palette, Layers, Trash2, Wand2 } from "lucide-react";
+import { Pencil, Check, Plus, RotateCcw, Palette, Layers, Trash2, Wand2, Undo2, Redo2, LayoutGrid, Columns3, ListOrdered, Sparkles } from "lucide-react";
 import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
 import { WidgetThemePicker } from "./WidgetThemePicker";
@@ -51,11 +51,23 @@ export function CustomizableGrid({ pageKey, hero, sectionTitle }: Props) {
     hideWidget, updateWidgetProps, resetToDefault,
     setPageTheme, setWidgetTheme, toggleCollapsed,
     preset, presets, switchPreset, createPreset, deletePreset,
+    undo, redo, canUndo, canRedo,
   } = useDashboardLayout(pageKey);
   const [editing, setEditing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const isMobile = useIsMobile();
   const [activeSection, setActiveSection] = useState(MOBILE_SECTIONS[0].id);
+
+  // Layout mode: freeform Grid (default), Kanban columns, or Timeline stack.
+  type LayoutMode = "grid" | "kanban" | "timeline";
+  const MODE_KEY = `careflow:layout-mode:${pageKey}`;
+  const [mode, setMode] = useState<LayoutMode>(() => {
+    if (typeof window === "undefined") return "grid";
+    return (window.localStorage.getItem(MODE_KEY) as LayoutMode) || "grid";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(MODE_KEY, mode);
+  }, [MODE_KEY, mode]);
 
   // Inject minimal CSS to taste the grid handles
   useEffect(() => {
@@ -68,6 +80,46 @@ export function CustomizableGrid({ pageKey, hero, sectionTitle }: Props) {
     `;
     document.head.appendChild(s);
   }, []);
+
+  // Global undo/redo shortcuts (only while in edit mode to avoid stealing focus).
+  useEffect(() => {
+    if (!editing) return;
+    const onKey = (e: KeyboardEvent) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (!meta) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement | null)?.isContentEditable) return;
+      if (e.key === "z" && !e.shiftKey) {
+        if (canUndo) { e.preventDefault(); undo(); haptics.tap(); toast("Undid last change."); }
+      } else if ((e.key === "z" && e.shiftKey) || e.key === "y") {
+        if (canRedo) { e.preventDefault(); redo(); haptics.tap(); toast("Redid change."); }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editing, canUndo, canRedo, undo, redo]);
+
+  /** Heuristic AI-style preset suggestion based on the current hour + day. */
+  const suggestPreset = () => {
+    const h = new Date().getHours();
+    const day = new Date().getDay();
+    let name = "Focus";
+    let blurb = "Deep-work widgets up top.";
+    if (h < 10)              { name = "Morning Routine";  blurb = "Rhythm, moon guidance, and today's focus."; }
+    else if (h < 14)         { name = "Focus";            blurb = "Pomodoro + top 3 for midday work."; }
+    else if (h < 18)         { name = "Afternoon Care";   blurb = "Care check-ins and family tasks."; }
+    else                     { name = "Evening Wind-down"; blurb = "Reflection, journal, moon."; }
+    if (day === 0 || day === 6) { name = "Weekly Planning"; blurb = "Weekly reset + upcoming events."; }
+
+    if (!presets.includes(name)) {
+      createPreset(name, true);
+      toast.success(`Suggested "${name}" — ${blurb}`);
+    } else {
+      switchPreset(name);
+      toast(`Switched to "${name}" — ${blurb}`);
+    }
+    haptics.snap();
+  };
 
   const visibleWidgets = useMemo(
     () => (data?.widgets ?? []).filter((w) => !w.hidden),
@@ -143,6 +195,32 @@ export function CustomizableGrid({ pageKey, hero, sectionTitle }: Props) {
       )}
 
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        {/* Layout mode toggle */}
+        <div className="inline-flex rounded-md border border-border/60 bg-card/60 p-0.5">
+          {([
+            { id: "grid", label: "Grid", icon: LayoutGrid },
+            { id: "kanban", label: "Kanban", icon: Columns3 },
+            { id: "timeline", label: "Timeline", icon: ListOrdered },
+          ] as const).map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => { setMode(m.id); haptics.tap(); }}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-[5px] px-2 py-1 text-xs font-medium transition-colors",
+                mode === m.id ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+              title={`${m.label} view`}
+            >
+              <m.icon className="h-3.5 w-3.5" /> {m.label}
+            </button>
+          ))}
+        </div>
+
+        <Button variant="outline" size="sm" onClick={suggestPreset} title="AI-suggest a layout for right now">
+          <Sparkles className="mr-1 h-4 w-4" /> Suggest
+        </Button>
+
         <Button variant="outline" size="sm" onClick={autoArrange} title="Snap widgets into a clean grid">
           <Wand2 className="mr-1 h-4 w-4" /> Auto-arrange
         </Button>
@@ -205,6 +283,24 @@ export function CustomizableGrid({ pageKey, hero, sectionTitle }: Props) {
 
         {editing && (
           <>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!canUndo}
+              onClick={() => { undo(); haptics.tap(); }}
+              title="Undo (⌘Z)"
+            >
+              <Undo2 className="mr-1 h-4 w-4" /> Undo
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!canRedo}
+              onClick={() => { redo(); haptics.tap(); }}
+              title="Redo (⌘⇧Z)"
+            >
+              <Redo2 className="mr-1 h-4 w-4" /> Redo
+            </Button>
             <Button variant="outline" size="sm" onClick={() => { setAddOpen(true); haptics.tap(); }}>
               <Plus className="mr-1 h-4 w-4" /> Add widget
             </Button>
