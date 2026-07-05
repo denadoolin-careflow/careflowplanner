@@ -89,10 +89,10 @@ export default function HomeHub() {
         }}
       />
       {/* ============ HEADER (Home Reset visual language) ============ */}
-      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-100/70 via-amber-50/60 to-emerald-100/50 p-5 ring-1 ring-rose-200/50 shadow-soft sm:p-6">
+      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-100/70 via-amber-50/60 to-emerald-100/50 p-5 ring-1 ring-rose-200/50 shadow-soft dark:from-rose-950/40 dark:via-amber-950/30 dark:to-emerald-950/30 dark:ring-rose-900/40 sm:p-6">
        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-rose-700 shadow-sm ring-1 ring-white/60">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-rose-700 shadow-sm ring-1 ring-white/60 dark:bg-white/10 dark:text-rose-300 dark:ring-white/10">
             <HomeIcon className="h-6 w-6" />
           </span>
           <div className="min-w-0">
