@@ -347,7 +347,7 @@ function PinnedTagsSection({
                   className={cn(
                     "relative grid h-12 w-12 place-items-center rounded-xl transition-colors duration-150",
                     "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    active && "bg-primary-soft text-foreground shadow-soft",
+                    active && "bg-primary-soft text-foreground shadow-soft ring-1 ring-inset ring-primary/30",
                   )}
                 >
                   {active && (
@@ -397,7 +397,7 @@ function PinnedTagsSection({
                   className={({ isActive }) => cn(
                     "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
                     "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    isActive && "bg-primary-soft text-foreground shadow-soft",
+                    isActive && "bg-primary-soft text-foreground shadow-soft ring-1 ring-inset ring-primary/30",
                   )}
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" style={{ color }} />
@@ -460,7 +460,7 @@ function PinnedNotesSection({
                   className={cn(
                     "relative grid h-12 w-12 place-items-center rounded-xl transition-colors duration-150",
                     "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    active && "bg-primary-soft text-foreground shadow-soft",
+                    active && "bg-primary-soft text-foreground shadow-soft ring-1 ring-inset ring-primary/30",
                   )}
                 >
                   {active && (
@@ -509,7 +509,7 @@ function PinnedNotesSection({
                   className={({ isActive }) => cn(
                     "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
                     "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    isActive && "bg-primary-soft text-foreground shadow-soft",
+                    isActive && "bg-primary-soft text-foreground shadow-soft ring-1 ring-inset ring-primary/30",
                   )}
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0 opacity-80" />
@@ -560,7 +560,7 @@ function QuickDateRows({
             className={cn(
               "group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
               "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              active && "bg-primary-soft text-foreground shadow-soft",
+              active && "bg-primary-soft text-foreground shadow-soft ring-1 ring-inset ring-primary/30",
             )}
           >
             {kind === "week" ? <CalendarRange className="h-3.5 w-3.5 shrink-0 opacity-70" /> : <CalendarDays className="h-3.5 w-3.5 shrink-0 opacity-70" />}
@@ -744,7 +744,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
           className={({ isActive }) => cn(
             "group relative grid h-12 w-12 shrink-0 place-items-center rounded-xl transition-colors duration-150",
             "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            isActive && "bg-primary-soft text-foreground shadow-soft",
+            isActive && "bg-primary-soft text-foreground shadow-soft ring-1 ring-inset ring-primary/30",
           )}
         >
           {({ isActive }) => (
@@ -877,7 +877,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             onClick={onNavigate}
             className={({ isActive }) => cn(
               "flex-1 truncate text-left rounded-md px-1 py-0.5 transition-colors",
-              isActive && "bg-primary-soft text-foreground shadow-soft",
+              isActive && "bg-primary-soft text-foreground shadow-soft ring-1 ring-inset ring-primary/30",
             )}
           >
             {p.name}
@@ -1100,7 +1100,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 className={({ isActive }) => cn(
                   "group relative flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-all",
                   "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  isActive && "bg-primary-soft text-foreground shadow-soft",
+                  isActive && "bg-primary-soft text-foreground shadow-soft ring-1 ring-inset ring-primary/30",
                 )}
               >
                 <span
@@ -1257,7 +1257,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                       onClick={onNavigate}
                       className={({ isActive }) => cn(
                         "flex-1 truncate text-left rounded-md px-1 py-0.5 transition-colors",
-                        isActive && "bg-primary-soft text-foreground shadow-soft",
+                        isActive && "bg-primary-soft text-foreground shadow-soft ring-1 ring-inset ring-primary/30",
                       )}
                     >
                       {fav.name}
@@ -1509,7 +1509,7 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                           cn(
                             "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
                             "text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                            isActive && "bg-primary-soft text-foreground shadow-soft",
+                            isActive && "bg-primary-soft text-foreground shadow-soft ring-1 ring-inset ring-primary/30",
                           )
                         }
                       >
