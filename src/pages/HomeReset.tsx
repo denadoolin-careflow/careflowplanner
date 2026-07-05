@@ -23,11 +23,15 @@ import { pomodoro } from "@/lib/pomodoro-store";
 import { useStore } from "@/lib/store";
 import {
   ProgressRing, ViewSwitcher, RoomFilterPill, TipsCarousel,
-  IntentionCard, QuickFab, SuggestionCard, type ResetView, type QuickAction,
+  IntentionCard, SuggestionCard, type ResetView,
 } from "@/components/reset/redesign/pieces";
 import { HeroBand } from "@/components/reset/redesign/HeroBand";
 import { RoomCard } from "@/components/reset/redesign/RoomCard";
 import { RoomCelebration } from "@/components/reset/redesign/RoomCelebration";
+import { ResetToolbar } from "@/components/reset/redesign/ResetToolbar";
+import { FocusTimerStrip } from "@/components/reset/redesign/FocusTimerStrip";
+import { TimeBlockBoard } from "@/components/reset/redesign/TimeBlockBoard";
+import { resetFocus, useResetFocus } from "@/lib/reset-focus";
 
 // ---------- helpers ----------
 function currentTimeBlock(): "morning" | "afternoon" | "evening" {
@@ -180,6 +184,7 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
   }, [activeLists]);
 
   const [view, setView] = useState<ResetView>("checklist");
+  const focus = useResetFocus();
   const [roomFilter, setRoomFilter] = useState<string>("All Areas");
   const [celebrating, setCelebrating] = useState<{ name: string } | null>(null);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
