@@ -2,14 +2,16 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown, Clock, MoreHorizontal, Star, GripVertical,
-  Check, Home as HomeIcon,
+  Check, Home as HomeIcon, Play, RotateCcw, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ResetChecklist, ResetItem } from "@/lib/reset-checklists";
 import { SuggestionCard } from "./pieces";
+import { ScheduleTaskPopover } from "./ScheduleTaskPopover";
 
 export function RoomCard({
   list, icon: Icon, tint, onToggle, onOpenAll, onFavorite, favorites, suggestion,
+  onCycleTimer, onResetZone, onDeleteZone, onUpdateItem,
 }: {
   list: ResetChecklist;
   icon: typeof HomeIcon;
@@ -19,6 +21,10 @@ export function RoomCard({
   onFavorite?: (id: string) => void;
   favorites?: Record<string, boolean>;
   suggestion?: string;
+  onCycleTimer?: () => void;
+  onResetZone?: () => void;
+  onDeleteZone?: () => void;
+  onUpdateItem?: (id: string, patch: Partial<ResetItem>) => Promise<void> | void;
 }) {
   const roots = list.items.filter(i => !i.parent_id).sort((a, b) => a.sort_order - b.sort_order);
   const done = roots.filter(i => i.done).length;
@@ -38,11 +44,13 @@ export function RoomCard({
         complete && "opacity-90",
       )}
     >
-      <button
-        onClick={() => setOpen(v => !v)}
-        aria-expanded={open}
-        className="flex w-full items-center gap-3 p-4 text-left"
-      >
+      <div className="flex w-full items-center gap-3 p-4">
+        <button
+          type="button"
+          onClick={() => setOpen(v => !v)}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
         <span className={cn(
           "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
           "bg-[hsl(var(--reset-sage-soft))] text-[hsl(var(--reset-sage-deep))]",
@@ -82,13 +90,54 @@ export function RoomCard({
             />
           </div>
         </div>
-        <span className={cn(
-          "ml-1 flex h-8 w-8 items-center justify-center rounded-full text-[hsl(var(--reset-ink))]/60 transition-transform",
-          open && "rotate-180",
-        )}>
-          <ChevronDown className="h-4 w-4" />
-        </span>
-      </button>
+        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          {onCycleTimer && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onCycleTimer(); }}
+              aria-label="Start zone timer"
+              title="Cycle through tasks"
+              className="grid h-8 w-8 place-items-center rounded-full bg-[hsl(var(--reset-sage))] text-white hover:-translate-y-0.5 transition-transform"
+            >
+              <Play className="h-4 w-4" />
+            </button>
+          )}
+          {onResetZone && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onResetZone(); }}
+              aria-label="Reset zone"
+              title="Clear all tasks"
+              className="grid h-8 w-8 place-items-center rounded-full text-[hsl(var(--reset-ink))]/60 hover:bg-[hsl(var(--reset-gold-soft))] hover:text-[hsl(var(--reset-gold))]"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onDeleteZone && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm(`Delete "${list.name}"?`)) onDeleteZone();
+              }}
+              aria-label="Delete zone"
+              title="Delete zone"
+              className="grid h-8 w-8 place-items-center rounded-full text-[hsl(var(--reset-ink))]/50 hover:bg-red-100 hover:text-red-500"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button
+            onClick={() => setOpen(v => !v)}
+            aria-expanded={open}
+            aria-label={open ? "Collapse" : "Expand"}
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-full text-[hsl(var(--reset-ink))]/60 transition-transform",
+              open && "rotate-180",
+            )}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
 
       <AnimatePresence initial={false}>
         {open && (
@@ -109,6 +158,7 @@ export function RoomCard({
                     onToggle={(d) => onToggle(item, d)}
                     onFavorite={onFavorite}
                     favorite={favorites?.[item.id]}
+                    onUpdate={onUpdateItem}
                   />
                 ))}
                 {roots.length === 0 && (
@@ -139,12 +189,13 @@ export function RoomCard({
 }
 
 function TaskRow({
-  item, onToggle, onFavorite, favorite,
+  item, onToggle, onFavorite, favorite, onUpdate,
 }: {
   item: ResetItem;
   onToggle: (done: boolean) => void;
   onFavorite?: (id: string) => void;
   favorite?: boolean;
+  onUpdate?: (id: string, patch: Partial<ResetItem>) => Promise<void> | void;
 }) {
   const [ripple, setRipple] = useState(false);
   return (
@@ -183,6 +234,11 @@ function TaskRow({
           {item.est_minutes}m
         </span>
       ) : null}
+      {onUpdate && (
+        <div className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <ScheduleTaskPopover item={item} onUpdate={onUpdate} />
+        </div>
+      )}
       <button
         onClick={() => onFavorite?.(item.id)}
         aria-label="Favorite"
