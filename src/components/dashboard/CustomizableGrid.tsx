@@ -330,7 +330,20 @@ export function CustomizableGrid({ pageKey, hero, sectionTitle }: Props) {
         </Button>
       </div>
 
-      {isMobile ? (
+      {/* Kanban & Timeline modes short-circuit the freeform grid. */}
+      {!isMobile && mode !== "grid" ? (
+        <AlternateLayout
+          mode={mode}
+          widgets={visibleWidgets}
+          pageTheme={data.pageTheme}
+          onHide={(id) => { hideWidget(id, true); haptics.tap(); }}
+          onRemove={(id) => { removeWidget(id); haptics.delete(); }}
+          onToggleCollapse={(id) => { toggleCollapsed(id); haptics.tap(); }}
+          onUpdateProps={updateWidgetProps}
+          onQuickAdd={broadcastQuickAdd}
+          editing={editing}
+        />
+      ) : isMobile ? (
         <div className="space-y-3">
           {/* Section pills */}
           <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
