@@ -17,14 +17,14 @@ type ZoneDef = {
 };
 
 const ZONES: ZoneDef[] = [
-  { label: "Bedroom",  icon: BedDouble,       gradient: "from-rose-100/80 to-rose-50/40 dark:from-rose-950/50 dark:to-rose-900/20",             ring: "ring-rose-200/60 dark:ring-rose-900/40",       bar: "bg-rose-400",    iconTone: "text-rose-700 dark:text-rose-300" },
-  { label: "Kitchen",  icon: UtensilsCrossed, gradient: "from-emerald-100/80 to-emerald-50/40 dark:from-emerald-950/50 dark:to-emerald-900/20", ring: "ring-emerald-200/60 dark:ring-emerald-900/40", bar: "bg-emerald-500", iconTone: "text-emerald-700 dark:text-emerald-300" },
-  { label: "Bathroom", icon: Bath,            gradient: "from-violet-100/80 to-violet-50/40 dark:from-violet-950/50 dark:to-violet-900/20",     ring: "ring-violet-200/60 dark:ring-violet-900/40",   bar: "bg-violet-500",  iconTone: "text-violet-700 dark:text-violet-300" },
-  { label: "Laundry",  icon: WashingMachine,  gradient: "from-sky-100/80 to-sky-50/40 dark:from-sky-950/50 dark:to-sky-900/20",                 ring: "ring-sky-200/60 dark:ring-sky-900/40",         bar: "bg-sky-500",     iconTone: "text-sky-700 dark:text-sky-300" },
-  { label: "Entryway", icon: DoorOpen,        gradient: "from-amber-100/80 to-amber-50/40 dark:from-amber-950/50 dark:to-amber-900/20",         ring: "ring-amber-200/60 dark:ring-amber-900/40",     bar: "bg-amber-500",   iconTone: "text-amber-700 dark:text-amber-300" },
-  { label: "Living",   icon: Sofa,            gradient: "from-stone-100/80 to-stone-50/40 dark:from-stone-900/60 dark:to-stone-800/30",         ring: "ring-stone-200/60 dark:ring-stone-700/40",     bar: "bg-stone-500",   iconTone: "text-stone-700 dark:text-stone-200" },
-  { label: "Outdoors", icon: Trees,           gradient: "from-lime-100/80 to-lime-50/40 dark:from-lime-950/50 dark:to-lime-900/20",             ring: "ring-lime-200/60 dark:ring-lime-900/40",       bar: "bg-lime-500",    iconTone: "text-lime-700 dark:text-lime-300" },
-  { label: "Whole home", icon: TreePine,      gradient: "from-teal-100/80 to-teal-50/40 dark:from-teal-950/50 dark:to-teal-900/20",             ring: "ring-teal-200/60 dark:ring-teal-900/40",       bar: "bg-teal-500",    iconTone: "text-teal-700 dark:text-teal-300" },
+  { label: "Bedroom",  icon: BedDouble,       gradient: "from-rose-100/80 to-rose-50/40 dark:from-rose-500/20 dark:via-rose-500/10 dark:to-transparent",             ring: "ring-rose-200/60 dark:ring-rose-400/25",       bar: "bg-rose-400",    iconTone: "text-rose-700 dark:text-rose-200" },
+  { label: "Kitchen",  icon: UtensilsCrossed, gradient: "from-emerald-100/80 to-emerald-50/40 dark:from-emerald-500/20 dark:via-emerald-500/10 dark:to-transparent", ring: "ring-emerald-200/60 dark:ring-emerald-400/25", bar: "bg-emerald-500", iconTone: "text-emerald-700 dark:text-emerald-200" },
+  { label: "Bathroom", icon: Bath,            gradient: "from-violet-100/80 to-violet-50/40 dark:from-violet-500/20 dark:via-violet-500/10 dark:to-transparent",     ring: "ring-violet-200/60 dark:ring-violet-400/25",   bar: "bg-violet-500",  iconTone: "text-violet-700 dark:text-violet-200" },
+  { label: "Laundry",  icon: WashingMachine,  gradient: "from-sky-100/80 to-sky-50/40 dark:from-sky-500/20 dark:via-sky-500/10 dark:to-transparent",                 ring: "ring-sky-200/60 dark:ring-sky-400/25",         bar: "bg-sky-500",     iconTone: "text-sky-700 dark:text-sky-200" },
+  { label: "Entryway", icon: DoorOpen,        gradient: "from-amber-100/80 to-amber-50/40 dark:from-amber-500/20 dark:via-amber-500/10 dark:to-transparent",         ring: "ring-amber-200/60 dark:ring-amber-400/25",     bar: "bg-amber-500",   iconTone: "text-amber-700 dark:text-amber-200" },
+  { label: "Living",   icon: Sofa,            gradient: "from-stone-100/80 to-stone-50/40 dark:from-stone-400/20 dark:via-stone-400/10 dark:to-transparent",         ring: "ring-stone-200/60 dark:ring-stone-400/25",     bar: "bg-stone-500",   iconTone: "text-stone-700 dark:text-stone-100" },
+  { label: "Outdoors", icon: Trees,           gradient: "from-lime-100/80 to-lime-50/40 dark:from-lime-500/20 dark:via-lime-500/10 dark:to-transparent",             ring: "ring-lime-200/60 dark:ring-lime-400/25",       bar: "bg-lime-500",    iconTone: "text-lime-700 dark:text-lime-200" },
+  { label: "Whole home", icon: TreePine,      gradient: "from-teal-100/80 to-teal-50/40 dark:from-teal-500/20 dark:via-teal-500/10 dark:to-transparent",             ring: "ring-teal-200/60 dark:ring-teal-400/25",       bar: "bg-teal-500",    iconTone: "text-teal-700 dark:text-teal-200" },
 ];
 
 const ZONE_PREFIX = "Zone: ";
@@ -62,7 +62,7 @@ export function ZoneTiles({ onOpenZonesTab }: { onOpenZonesTab?: () => void }) {
         const tile = (
           <div
             className={cn(
-              "group relative flex flex-col gap-2 overflow-hidden rounded-2xl bg-gradient-to-br p-3 ring-1 shadow-soft backdrop-blur-sm transition-all",
+              "group relative flex flex-col gap-2 overflow-hidden rounded-2xl bg-gradient-to-br p-3 ring-1 shadow-soft backdrop-blur-sm transition-all dark:bg-card",
               "hover:-translate-y-0.5 hover:shadow-lg",
               z.gradient, z.ring,
             )}
