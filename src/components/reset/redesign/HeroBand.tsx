@@ -28,12 +28,12 @@ export function HeroBand({
           height={896}
           className="h-full w-full object-cover opacity-70 dark:opacity-40"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--reset-cream))/0.92] via-[hsl(var(--reset-cream))/0.72] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-l from-[hsl(var(--reset-cream))/0.92] via-[hsl(var(--reset-cream))/0.72] to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--reset-cream))/0.55] to-transparent" />
       </div>
 
-      <div className="relative flex min-h-[220px] flex-col justify-between gap-5 p-5 sm:min-h-[260px] sm:p-8">
-        <div className="max-w-md">
+      <div className="relative flex min-h-[220px] flex-col items-end justify-between gap-5 p-5 sm:min-h-[260px] sm:p-8">
+        <div className="max-w-md text-right">
           <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[hsl(var(--reset-sage-deep))]/70">
             Home Reset
           </p>
@@ -45,7 +45,7 @@ export function HeroBand({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             onClick={onStart}
             className={cn(
