@@ -592,7 +592,7 @@ export default function Landing() {
             className="pointer-events-none absolute inset-x-0 top-0 h-[900px] -z-10"
             style={{
               background:
-                "radial-gradient(60% 50% at 80% 10%, hsl(350 65% 92% / 0.7), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(145 40% 88% / 0.7), transparent 60%), linear-gradient(180deg, hsl(36 55% 96%) 0%, hsl(36 42% 95%) 100%)",
+                "radial-gradient(60% 50% at 80% 10%, hsl(145 35% 82% / 0.55), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(145 30% 78% / 0.5), transparent 60%), linear-gradient(180deg, hsl(36 55% 96%) 0%, hsl(38 40% 92%) 100%)",
             }}
           />
           <img
