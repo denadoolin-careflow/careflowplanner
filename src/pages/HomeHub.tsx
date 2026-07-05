@@ -146,7 +146,7 @@ export default function HomeHub() {
                 className={cn(
                   "group flex shrink-0 items-center gap-1 rounded-2xl border px-1 pl-2 pr-1 py-1 text-xs font-medium transition-all",
                   active
-                    ? "border-rose-300/60 bg-gradient-to-br from-rose-100/80 to-amber-50/60 text-rose-700 shadow-[0_4px_18px_-6px_rgba(244,114,182,0.45)]"
+                    ? "border-rose-300/60 bg-gradient-to-br from-rose-100/80 to-amber-50/60 text-rose-700 shadow-[0_4px_18px_-6px_rgba(244,114,182,0.45)] dark:border-rose-800/60 dark:from-rose-950/50 dark:to-amber-950/40 dark:text-rose-200"
                     : "border-border/60 bg-card/70 text-muted-foreground hover:bg-card",
                 )}
               >
@@ -156,7 +156,7 @@ export default function HomeHub() {
                 >
                   <span className={cn(
                     "grid h-6 w-6 place-items-center rounded-lg",
-                    active ? "bg-white/70 text-rose-700 ring-1 ring-white/60" : "bg-muted/60 text-foreground/70",
+                    active ? "bg-white/70 text-rose-700 ring-1 ring-white/60 dark:bg-white/10 dark:text-rose-200 dark:ring-white/10" : "bg-muted/60 text-foreground/70",
                   )}>
                     <Icon className="h-3.5 w-3.5" />
                   </span>
@@ -182,40 +182,40 @@ export default function HomeHub() {
       {tab === "dashboard" && (
         <>
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <Link to="/home/groceries" className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-100/70 to-amber-50/50 p-4 ring-1 ring-emerald-200/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-md">
+            <Link to="/home/groceries" className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-100/70 to-amber-50/50 p-4 ring-1 ring-emerald-200/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-md dark:from-emerald-950/40 dark:to-amber-950/30 dark:ring-emerald-900/40">
               <div className="flex items-center gap-2">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/70 text-emerald-700 ring-1 ring-white/60">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/70 text-emerald-700 ring-1 ring-white/60 dark:bg-white/10 dark:text-emerald-300 dark:ring-white/10">
                   <ShoppingCart className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/60">Groceries</p>
                   <p className="font-display text-base font-semibold leading-tight">Shopping list</p>
                 </div>
-                <ArrowRight className="ml-auto h-4 w-4 text-emerald-700 transition group-hover:translate-x-0.5" />
+                <ArrowRight className="ml-auto h-4 w-4 text-emerald-700 transition group-hover:translate-x-0.5 dark:text-emerald-300" />
               </div>
             </Link>
-            <Link to="/pantry" className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-100/70 to-amber-50/50 p-4 ring-1 ring-rose-200/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-md">
+            <Link to="/pantry" className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-100/70 to-amber-50/50 p-4 ring-1 ring-rose-200/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-md dark:from-rose-950/40 dark:to-amber-950/30 dark:ring-rose-900/40">
               <div className="flex items-center gap-2">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/70 text-rose-700 ring-1 ring-white/60">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/70 text-rose-700 ring-1 ring-white/60 dark:bg-white/10 dark:text-rose-300 dark:ring-white/10">
                   <Package className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/60">Inventory</p>
                   <p className="font-display text-base font-semibold leading-tight">Home Inventory</p>
                 </div>
-                <ArrowRight className="ml-auto h-4 w-4 text-rose-700 transition group-hover:translate-x-0.5" />
+                <ArrowRight className="ml-auto h-4 w-4 text-rose-700 transition group-hover:translate-x-0.5 dark:text-rose-300" />
               </div>
             </Link>
-            <Link to="/meals" className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-100/70 to-rose-50/40 p-4 ring-1 ring-violet-200/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-md">
+            <Link to="/meals" className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-100/70 to-rose-50/40 p-4 ring-1 ring-violet-200/60 shadow-soft transition hover:-translate-y-0.5 hover:shadow-md dark:from-violet-950/40 dark:to-rose-950/30 dark:ring-violet-900/40">
               <div className="flex items-center gap-2">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/70 text-violet-700 ring-1 ring-white/60">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/70 text-violet-700 ring-1 ring-white/60 dark:bg-white/10 dark:text-violet-300 dark:ring-white/10">
                   <Sparkles className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/60">Meals</p>
                   <p className="font-display text-base font-semibold leading-tight">Meal planner</p>
                 </div>
-                <ArrowRight className="ml-auto h-4 w-4 text-violet-700 transition group-hover:translate-x-0.5" />
+                <ArrowRight className="ml-auto h-4 w-4 text-violet-700 transition group-hover:translate-x-0.5 dark:text-violet-300" />
               </div>
             </Link>
           </section>
@@ -278,13 +278,13 @@ function DashboardHero({ onOpenReset }: { onOpenReset: () => void }) {
   return (
     <article
       aria-label="Today at a glance"
-      className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-100/70 to-amber-50/40 p-5 ring-1 ring-emerald-200/60 shadow-soft sm:p-6"
+      className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-100/70 to-amber-50/40 p-5 ring-1 ring-emerald-200/60 shadow-soft dark:from-emerald-950/40 dark:to-amber-950/30 dark:ring-emerald-900/40 sm:p-6"
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/60">
         Today at a glance
       </p>
       <div className="mt-2 flex items-start gap-3">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-emerald-700 ring-1 ring-white/60 shadow-sm">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-emerald-700 ring-1 ring-white/60 shadow-sm dark:bg-white/10 dark:text-emerald-300 dark:ring-white/10">
           <LayoutDashboard className="h-6 w-6" />
         </span>
         <div className="min-w-0 flex-1">
@@ -308,7 +308,7 @@ function DashboardHero({ onOpenReset }: { onOpenReset: () => void }) {
         />
       </div>
 
-      <div className="mt-4 flex flex-col gap-2 rounded-2xl bg-white/70 p-3 ring-1 ring-white/60 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-4 flex flex-col gap-2 rounded-2xl bg-white/70 p-3 ring-1 ring-white/60 backdrop-blur-sm dark:bg-white/5 dark:ring-white/10 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-foreground/80">
           {inProgress > 0
             ? `${inProgress} reset${inProgress > 1 ? "s" : ""} in progress.`
@@ -329,11 +329,11 @@ function DashboardHero({ onOpenReset }: { onOpenReset: () => void }) {
 
 function HeroStat({ label, value, accent, small }: { label: string; value: React.ReactNode; accent: "emerald" | "rose" | "violet"; small?: boolean }) {
   const tone =
-    accent === "emerald" ? "bg-emerald-100/70 text-emerald-700" :
-    accent === "rose" ? "bg-rose-100/70 text-rose-700" :
-    "bg-violet-100/70 text-violet-700";
+    accent === "emerald" ? "bg-emerald-100/70 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200" :
+    accent === "rose" ? "bg-rose-100/70 text-rose-700 dark:bg-rose-950/50 dark:text-rose-200" :
+    "bg-violet-100/70 text-violet-700 dark:bg-violet-950/50 dark:text-violet-200";
   return (
-    <div className="rounded-2xl bg-white/55 p-3 ring-1 ring-white/60 backdrop-blur-sm">
+    <div className="rounded-2xl bg-white/55 p-3 ring-1 ring-white/60 backdrop-blur-sm dark:bg-white/5 dark:ring-white/10">
       <p className={cn("inline-block rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider", tone)}>{label}</p>
       <p className={cn("mt-1 font-display font-semibold tabular-nums leading-tight", small ? "text-sm" : "text-2xl")}>
         {value}
