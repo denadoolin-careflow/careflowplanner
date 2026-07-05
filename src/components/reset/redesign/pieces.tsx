@@ -76,12 +76,11 @@ export function ProgressRing({
 /* ------------------------------------------------------------------ */
 /*  Segmented view switcher with spring pill                           */
 /* ------------------------------------------------------------------ */
-export type ResetView = "checklist" | "byRoom" | "routines" | "zones";
+export type ResetView = "byRoom" | "routines" | "zones";
 const VIEW_OPTIONS: { id: ResetView; label: string; icon: typeof ListChecks }[] = [
-  { id: "checklist", label: "Checklist", icon: ListChecks },
-  { id: "byRoom",    label: "By Room",   icon: HomeIcon },
-  { id: "routines",  label: "Routines",  icon: Repeat },
-  { id: "zones",     label: "Zones",     icon: LayoutGrid },
+  { id: "byRoom",   label: "By Room",  icon: HomeIcon },
+  { id: "routines", label: "Routines", icon: Repeat },
+  { id: "zones",    label: "Zones",    icon: LayoutGrid },
 ];
 export function ViewSwitcher({
   value, onChange,

@@ -1,43 +1,85 @@
-# Match Home Reset to the active atmosphere
+# Home Reset — Redesign & New Capabilities
 
-Right now `/home-reset` renders in a fixed sage-cream palette (`--reset-cream`, `--reset-sage`, `--reset-ink`, …). It ignores the user's chosen atmosphere, so on dark/transparent atmospheres it looks like a bright cream card floating on a dark page.
+Scope: `src/pages/HomeReset.tsx` and `src/components/reset/redesign/*`. Backend fields already exist (`time_block`, `due_date`, `est_minutes`, `kind`) so no schema changes.
 
-Fix: rebind the `--reset-*` tokens to the app's semantic atmosphere tokens (`--background`, `--card`, `--foreground`, `--muted`, `--primary`, `--accent`, `--border`) so the whole Reset surface — glass cards, text, chips, progress bars, hero overlay, and CTAs — inherits the active atmosphere in both light and dark mode.
+## 1. Replace FAB with a sticky Toolbar
 
-## Changes
+- Remove `<QuickFab />` from bottom of `HomeReset.tsx`.
+- Add a horizontal toolbar directly under the page header, sticky on scroll (`sticky top-0 z-20`, glass background):
+  - Add task · Add zone · AI generate · History · Low‑energy toggle · Reset all.
+- Same `handleFabAction` handlers, wired to buttons instead of a floating menu.
 
-### 1. `src/index.css` — remap reset tokens to semantic tokens
-Replace the hardcoded HSL values in the `:root` and `.dark` reset blocks (around lines 2756–2780) so each `--reset-*` variable references an existing semantic token:
+## 2. Focus + Pomodoro strip (top of page)
 
-- `--reset-cream` → `var(--background)`
-- `--reset-cream-deep` → `var(--card)`
-- `--reset-sage` → `var(--primary)`
-- `--reset-sage-soft` → `var(--muted)`
-- `--reset-sage-deep` → `var(--primary)` (used for deep accents/text-on-soft)
-- `--reset-gold` → `var(--accent)`
-- `--reset-gold-soft` → `var(--accent) / low alpha` equivalent via `--muted`
-- `--reset-charcoal` → `var(--foreground)`
-- `--reset-ink` → `var(--foreground)`
-- `--reset-line` → `var(--border)`
+- New component `FocusTimerStrip.tsx` placed above `HeroBand`.
+- Shows the current focus task (from `smartNext` on `current` list), an inline 25/5 timer bound to `pomodoro` store, and Start / Pause / Skip / Complete buttons.
+- Completing from the strip calls existing `completeItem` and advances to next `smartNext`.
 
-Because the existing `.reset-glass*` utilities wrap these in `hsl(var(--reset-cream) / 0.85)` etc., store the tokens as raw HSL triplets (not `hsl(...)` wrappers). Simplest path: keep the variable names but set them to the same triplet the semantic token uses. Add a helper block at the top of each atmosphere override isn't needed — the semantic tokens already flip per atmosphere/theme.
+## 3. Move Tips + Moon guidance to the top
 
-Drop the separate `.dark` reset block since values now derive from tokens that already have light/dark variants.
+- Relocate the `TipsCarousel` + `MoonResetTip` section from bottom to just under the Focus strip (before HeroBand progress row).
+- Collapsible on mobile (chevron), remembers state in `localStorage`.
 
-### 2. `src/components/reset/redesign/HeroBand.tsx` — atmosphere-aware overlay + CTA
-- Replace the `from-[hsl(var(--reset-cream))/0.92]` gradient overlays with `from-background/90 via-background/70 to-transparent` and `from-background/60`.
-- Replace the CTA gradient `from-[hsl(var(--reset-sage))] to-[hsl(var(--reset-sage-deep))]` with `from-primary to-primary` (or `to-accent`) and `text-primary-foreground`.
-- Continue chip uses `reset-chip` which now inherits atmosphere via the token remap.
+## 4. Morning / Afternoon / Evening section
 
-### 3. Verify
-- Sanity-check `.reset-glass`, `.reset-glass-strong`, `.reset-chip` still render correctly since they consume the remapped tokens.
-- Confirm hero image opacity still reads well on dark atmospheres (keep existing `opacity-70 dark:opacity-40`).
+- New component `TimeBlockBoard.tsx` between Progress row and Room cards.
+- Three columns (stack on mobile) using existing `time_block` field on `reset_items`.
+- Inline tasks: checkbox, title, est time, hover state reveals actions:
+  - Schedule (opens new date/time popover — see §5)
+  - Start timer (loads task into Focus strip)
+  - "Go to area" link that scrolls/opens the matching room card via `iconFor` name match.
+- Highlights the current block based on `currentTimeBlock()`.
+
+## 5. Schedule checklist tasks
+
+- New `ScheduleTaskPopover.tsx` modeled on `src/components/tasks/QuickScheduleButton.tsx` (Today / Tomorrow / This week / Pick date, plus a Time‑block picker: morning/afternoon/evening).
+- Writes `due_date`, `time_block`, optional `start_time` via existing `reset.updateItem`.
+- Trigger: schedule icon on every task row in `RoomCard` `TaskRow` and in the TimeBlockBoard rows.
+
+## 6. Per‑zone reset button
+
+- On each `RoomCard` header (and each zone view header), add a "Reset zone" icon button.
+- Confirmation toast with Undo; calls `reset.updateItem(id, { done: false })` for all root items in that list.
+- Existing global `resetEntireHome` stays, moved into the new toolbar.
+
+## 7. Timer button on area header (cycles tasks)
+
+- On each `RoomCard` header, add a Play icon that starts a cycling timer:
+  - Loads the first incomplete root item into Focus strip.
+  - On complete, auto-advances to the next incomplete item in that room until done, then celebrates with existing `RoomCelebration`.
+- Implemented via a small `useZoneCycle(listId)` hook that reads from `reset.lists` and drives Focus strip state.
+
+## 8. Create / delete zones
+
+- Toolbar "Add zone" opens a small popover: name + kind (`quick | weekly | deep | low_energy | custom`) + optional icon key.
+- Uses existing `reset.createList` / `reset.deleteList` (delete already wired via room sheet's `onDeleteList`).
+- Add a delete affordance in the RoomCard "..." menu as well.
+
+## 9. Implement By Room / Routines / Zones views
+
+Existing `ViewSwitcher` currently only filters. Concrete behavior per tab:
+
+- **By Room**: current room-name grouping (unchanged) with `ROOM_FILTERS` rail.
+- **Routines**: groups by `kind` — Quick reset · Weekly · Deep clean · Low‑energy. Header per group with count + reset button.
+- **Zones**: flat grid of every custom zone (`kind === 'custom'` or user‑created lists), each with the new zone timer + reset controls.
+- Persist selected view in `localStorage`.
 
 ## Technical notes
-- No component logic changes; presentation only.
-- No new tokens introduced — reuse existing semantic tokens defined per `data-atmosphere`.
-- Progress bars and check states keep their current classes; they'll pick up the atmosphere primary automatically.
 
-## Out of scope
-- No changes to routing, data, or the Reset checklist behavior.
-- No changes to the sidebar badge (`9+`) shown in the selected element — user asked about the page/buttons color, not the sidebar chip.
+- Files to add:
+  - `src/components/reset/redesign/FocusTimerStrip.tsx`
+  - `src/components/reset/redesign/TimeBlockBoard.tsx`
+  - `src/components/reset/redesign/ResetToolbar.tsx`
+  - `src/components/reset/redesign/ScheduleTaskPopover.tsx`
+  - `src/components/reset/redesign/AddZonePopover.tsx`
+  - `src/hooks/useZoneCycle.ts`
+- Files to edit:
+  - `src/pages/HomeReset.tsx` — remove FAB, add toolbar, reorder sections, wire new tabs.
+  - `src/components/reset/redesign/RoomCard.tsx` — header timer + reset buttons; task row schedule button; hover-reveal actions.
+  - `src/components/reset/redesign/pieces.tsx` — export a slimmer `ViewSwitcher` labeled By Room / Routines / Zones.
+- Reuses existing `pomodoro` store, `reset.updateItem`, `smartNext`, `iconFor`, `MoonResetTip`, `TipsCarousel`, `RoomCelebration`.
+- No DB migrations, no changes to `HeroBand.tsx` colors (previously matched to atmosphere).
+
+- Drag-and-drop between time blocks (checkbox + schedule popover only).
+- Server-side recurring schedules (uses existing `reset_recurrence`).
+- New task fields beyond what `reset_items` already supports.
