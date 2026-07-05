@@ -49,8 +49,8 @@ function PrimaryCTA({ to = "/auth", children }: { to?: string; children: React.R
       to={to}
       className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium shadow-cozy transition-all duration-700 hover:scale-[1.02] hover:brightness-110"
       style={{
-        background: "var(--atmos-cta-bg, hsl(145 30% 28%))",
-        color: "var(--atmos-cta-fg, hsl(36 50% 96%))",
+        background: "hsl(145 28% 32%)",
+        color: "hsl(36 55% 96%)",
       }}
     >
       {children}
@@ -62,7 +62,12 @@ function SecondaryCTA({ to = "/quiz", children }: { to?: string; children: React
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-6 py-3 text-sm font-medium text-foreground/90 backdrop-blur transition-colors hover:bg-card"
+      className="inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium backdrop-blur transition-colors"
+      style={{
+        background: "hsl(36 55% 96%)",
+        color: "hsl(145 28% 24%)",
+        borderColor: "hsl(145 25% 55% / 0.45)",
+      }}
     >
       {children}
     </Link>
