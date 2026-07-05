@@ -248,6 +248,28 @@
   color: hsl(var(--sidebar-foreground));
 }
 
+/* Shared sidebar interactive states — improves visibility on hover/active/disabled
+   for both forced-light and forced-dark sidebar variants. */
+.sidebar-force-light [data-sidebar-nav]:hover,
+.sidebar-force-dark  [data-sidebar-nav]:hover {
+  background-color: hsl(var(--sidebar-accent));
+  color: hsl(var(--sidebar-accent-foreground));
+}
+.sidebar-force-light :is(button, a, [role="button"]):focus-visible,
+.sidebar-force-dark  :is(button, a, [role="button"]):focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.sidebar-force-light :is(button, a, [role="button"]):disabled,
+.sidebar-force-dark  :is(button, a, [role="button"]):disabled,
+.sidebar-force-light [aria-disabled="true"],
+.sidebar-force-dark  [aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: saturate(0.6);
+}
+
 @layer base {
   * { @apply border-border; }
   html { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
