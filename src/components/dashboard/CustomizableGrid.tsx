@@ -19,6 +19,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { compactLayout } from "@/lib/dashboard-pack";
+import { AlternateLayout } from "./AlternateLayout";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
