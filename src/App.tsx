@@ -190,7 +190,7 @@ const App = () => (
                 <Route path="/meals/library" element={<MealsLibrary />} />
                 <Route path="/pantry" element={<Pantry />} />
                 <Route path="/caregiving" element={<Caregiving />} />
-                <Route path="/home-reset" element={<HomeHub />} />
+                <Route path="/home-reset" element={<HomeReset />} />
                 <Route path="/home" element={<HomeHub />} />
                 <Route path="/home/groceries" element={<HomeGroceries />} />
                 <Route path="/health" element={<Health />} />

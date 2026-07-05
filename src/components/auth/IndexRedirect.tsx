@@ -3,7 +3,7 @@ import { useStore } from "@/lib/store";
 import { useCareProfile } from "@/lib/care-methodology";
 import Landing from "@/pages/Landing";
 
-const FALLBACK_ROUTE = "/today";
+const FALLBACK_ROUTE = "/home-reset";
 const ONBOARDING_DONE_KEY = "careflow.onboarding.completed";
 
 /**
