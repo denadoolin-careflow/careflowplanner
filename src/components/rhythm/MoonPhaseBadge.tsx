@@ -20,8 +20,8 @@ export function MoonPhaseBadge({ date = new Date(), className, iconOnly = false 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-moon-soft/60 px-2.5 py-1 text-[11px] text-moon-foreground shadow-sm",
-        "backdrop-blur-sm transition-colors",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card/95 px-2.5 py-1 text-[11px] font-medium text-card-foreground shadow-sm",
+        "backdrop-blur-md transition-colors",
         className,
       )}
       title={`${moon.label} · Moon in ${sign.name}`}
