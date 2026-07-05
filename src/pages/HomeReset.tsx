@@ -183,7 +183,13 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
     };
   }, [activeLists]);
 
-  const [view, setView] = useState<ResetView>("checklist");
+  const [view, setView] = useState<ResetView>(() => {
+    if (typeof window === "undefined") return "byRoom";
+    return (localStorage.getItem("careflow:reset:view") as ResetView) || "byRoom";
+  });
+  useEffect(() => {
+    try { localStorage.setItem("careflow:reset:view", view); } catch {}
+  }, [view]);
   const focus = useResetFocus();
   const [roomFilter, setRoomFilter] = useState<string>("All Areas");
   const [celebrating, setCelebrating] = useState<{ name: string } | null>(null);
@@ -270,37 +276,82 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
     });
   };
 
-  const handleFabAction = async (a: QuickAction) => {
-    switch (a) {
-      case "task": {
-        const list = current ?? activeLists[0];
-        if (!list) { toast.info("Create a room first."); break; }
-        const title = window.prompt("Add a small step to " + list.name);
-        if (title?.trim()) { await reset.addItem(list.id, { title: title.trim() }); toast.success("Added"); }
-        break;
-      }
-      case "room": {
-        const name = window.prompt("Name this room (e.g. Kitchen, Bedroom)");
-        if (name?.trim()) {
-          const id = await reset.createList({ name: name.trim(), kind: "custom" });
-          if (id) { setCurrentId(id); toast.success("Room added"); }
-        }
-        break;
-      }
-      case "routine": {
-        const id = await reset.createList({ name: "New routine", kind: "weekly" });
-        if (id) { setCurrentId(id); toast.success("Routine created"); }
-        break;
-      }
-      case "timer": {
-        if (!current) { toast.info("Pick a room first."); break; }
-        const { nextUp } = listStats(current, { lowEnergy });
-        if (nextUp) startTimer(nextUp); else toast.info("Nothing left to time — you're done here!");
-        break;
-      }
-      case "voice": toast.info("Voice capture coming soon."); break;
-      case "scan":  toast.info("Room scan coming soon."); break;
+  const addTaskPrompt = async () => {
+    const list = current ?? activeLists[0];
+    if (!list) { toast.info("Create a zone first."); return; }
+    const title = window.prompt("Add a small step to " + list.name);
+    if (title?.trim()) { await reset.addItem(list.id, { title: title.trim() }); toast.success("Added"); }
+  };
+
+  const createZone = async (name: string, kind: ResetKind) => {
+    const id = await reset.createList({ name, kind });
+    if (id) { setCurrentId(id); toast.success(`Zone "${name}" created`); }
+  };
+
+  const quickTimer = () => {
+    if (!current) { toast.info("Pick a zone first."); return; }
+    const { nextUp } = listStats(current, { lowEnergy });
+    if (nextUp) {
+      resetFocus.focusItem(current, nextUp);
+      startTimer(nextUp);
+    } else {
+      toast.info("Nothing left to time — you're done here!");
     }
+  };
+
+  /** Focus + complete = advance to next incomplete when cycling a zone. */
+  const completeFocusItem = async () => {
+    const listId = focus.listId;
+    const itemId = focus.itemId;
+    if (!listId || !itemId) return;
+    const list = activeLists.find(l => l.id === listId);
+    const item = list?.items.find(i => i.id === itemId);
+    if (!list || !item) return;
+    await completeItem(list, item);
+    if (focus.cycle) {
+      const next = list.items
+        .filter(i => !i.parent_id && !i.done && i.id !== itemId)
+        .sort((a, b) => a.sort_order - b.sort_order)[0];
+      if (next) {
+        resetFocus.focusItem(list, next, { cycle: true });
+        startTimer(next);
+      } else {
+        resetFocus.clear();
+        pomodoro.stop();
+      }
+    } else {
+      resetFocus.clear();
+      pomodoro.stop();
+    }
+  };
+
+  const skipFocusItem = () => {
+    const list = activeLists.find(l => l.id === focus.listId);
+    if (!list || !focus.cycle) { resetFocus.clear(); pomodoro.stop(); return; }
+    const remaining = list.items
+      .filter(i => !i.parent_id && !i.done && i.id !== focus.itemId)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const next = remaining[0];
+    if (next) { resetFocus.focusItem(list, next, { cycle: true }); startTimer(next); }
+    else { resetFocus.clear(); pomodoro.stop(); }
+  };
+
+  const cycleZone = (list: ResetChecklist) => {
+    const next = list.items
+      .filter(i => !i.parent_id && !i.done)
+      .sort((a, b) => a.sort_order - b.sort_order)[0];
+    if (!next) { toast.info("This zone is already done!"); return; }
+    setCurrentId(list.id);
+    resetFocus.focusItem(list, next, { cycle: true });
+    startTimer(next);
+  };
+
+  const resetZone = async (list: ResetChecklist) => {
+    let count = 0;
+    for (const item of list.items) {
+      if (item.done) { await reset.updateItem(item.id, { done: false }); count++; }
+    }
+    toast.success(`"${list.name}" reset — ${count} tasks cleared`);
   };
 
   const sheetList = sheetListId
