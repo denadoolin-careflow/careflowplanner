@@ -17,14 +17,14 @@ type ZoneDef = {
 };
 
 const ZONES: ZoneDef[] = [
-  { label: "Bedroom",  icon: BedDouble,       gradient: "from-rose-100/80 to-rose-50/40",         ring: "ring-rose-200/60",    bar: "bg-rose-400",    iconTone: "text-rose-700" },
-  { label: "Kitchen",  icon: UtensilsCrossed, gradient: "from-emerald-100/80 to-emerald-50/40",   ring: "ring-emerald-200/60", bar: "bg-emerald-500", iconTone: "text-emerald-700" },
-  { label: "Bathroom", icon: Bath,            gradient: "from-violet-100/80 to-violet-50/40",     ring: "ring-violet-200/60",  bar: "bg-violet-500",  iconTone: "text-violet-700" },
-  { label: "Laundry",  icon: WashingMachine,  gradient: "from-sky-100/80 to-sky-50/40",           ring: "ring-sky-200/60",     bar: "bg-sky-500",     iconTone: "text-sky-700" },
-  { label: "Entryway", icon: DoorOpen,        gradient: "from-amber-100/80 to-amber-50/40",       ring: "ring-amber-200/60",   bar: "bg-amber-500",   iconTone: "text-amber-700" },
-  { label: "Living",   icon: Sofa,            gradient: "from-stone-100/80 to-stone-50/40",       ring: "ring-stone-200/60",   bar: "bg-stone-500",   iconTone: "text-stone-700" },
-  { label: "Outdoors", icon: Trees,           gradient: "from-lime-100/80 to-lime-50/40",         ring: "ring-lime-200/60",    bar: "bg-lime-500",    iconTone: "text-lime-700" },
-  { label: "Whole home", icon: TreePine,      gradient: "from-teal-100/80 to-teal-50/40",         ring: "ring-teal-200/60",    bar: "bg-teal-500",    iconTone: "text-teal-700" },
+  { label: "Bedroom",  icon: BedDouble,       gradient: "from-rose-100/80 to-rose-50/40 dark:from-rose-950/50 dark:to-rose-900/20",             ring: "ring-rose-200/60 dark:ring-rose-900/40",       bar: "bg-rose-400",    iconTone: "text-rose-700 dark:text-rose-300" },
+  { label: "Kitchen",  icon: UtensilsCrossed, gradient: "from-emerald-100/80 to-emerald-50/40 dark:from-emerald-950/50 dark:to-emerald-900/20", ring: "ring-emerald-200/60 dark:ring-emerald-900/40", bar: "bg-emerald-500", iconTone: "text-emerald-700 dark:text-emerald-300" },
+  { label: "Bathroom", icon: Bath,            gradient: "from-violet-100/80 to-violet-50/40 dark:from-violet-950/50 dark:to-violet-900/20",     ring: "ring-violet-200/60 dark:ring-violet-900/40",   bar: "bg-violet-500",  iconTone: "text-violet-700 dark:text-violet-300" },
+  { label: "Laundry",  icon: WashingMachine,  gradient: "from-sky-100/80 to-sky-50/40 dark:from-sky-950/50 dark:to-sky-900/20",                 ring: "ring-sky-200/60 dark:ring-sky-900/40",         bar: "bg-sky-500",     iconTone: "text-sky-700 dark:text-sky-300" },
+  { label: "Entryway", icon: DoorOpen,        gradient: "from-amber-100/80 to-amber-50/40 dark:from-amber-950/50 dark:to-amber-900/20",         ring: "ring-amber-200/60 dark:ring-amber-900/40",     bar: "bg-amber-500",   iconTone: "text-amber-700 dark:text-amber-300" },
+  { label: "Living",   icon: Sofa,            gradient: "from-stone-100/80 to-stone-50/40 dark:from-stone-900/60 dark:to-stone-800/30",         ring: "ring-stone-200/60 dark:ring-stone-700/40",     bar: "bg-stone-500",   iconTone: "text-stone-700 dark:text-stone-200" },
+  { label: "Outdoors", icon: Trees,           gradient: "from-lime-100/80 to-lime-50/40 dark:from-lime-950/50 dark:to-lime-900/20",             ring: "ring-lime-200/60 dark:ring-lime-900/40",       bar: "bg-lime-500",    iconTone: "text-lime-700 dark:text-lime-300" },
+  { label: "Whole home", icon: TreePine,      gradient: "from-teal-100/80 to-teal-50/40 dark:from-teal-950/50 dark:to-teal-900/20",             ring: "ring-teal-200/60 dark:ring-teal-900/40",       bar: "bg-teal-500",    iconTone: "text-teal-700 dark:text-teal-300" },
 ];
 
 const ZONE_PREFIX = "Zone: ";
@@ -68,11 +68,11 @@ export function ZoneTiles({ onOpenZonesTab }: { onOpenZonesTab?: () => void }) {
             )}
           >
             <div className="flex items-start justify-between">
-              <span className={cn("flex h-11 w-11 items-center justify-center rounded-xl bg-white/70 ring-1 ring-white/60 shadow-sm", z.iconTone)}>
+              <span className={cn("flex h-11 w-11 items-center justify-center rounded-xl bg-white/70 ring-1 ring-white/60 shadow-sm dark:bg-white/10 dark:ring-white/10", z.iconTone)}>
                 <z.icon className="h-5 w-5" />
               </span>
               {prog && prog.total > 0 && (
-                <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-foreground/70 ring-1 ring-white/60">
+                <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-foreground/70 ring-1 ring-white/60 dark:bg-white/10 dark:ring-white/10">
                   {pct}%
                 </span>
               )}
@@ -81,7 +81,7 @@ export function ZoneTiles({ onOpenZonesTab }: { onOpenZonesTab?: () => void }) {
               <p className="truncate font-display text-sm font-semibold text-foreground/90">{z.label}</p>
               <p className="mt-0.5 text-[11px] text-foreground/60">{hint}</p>
             </div>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-white/50">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-white/50 dark:bg-white/10">
               <div className={cn("h-full rounded-full transition-all", z.bar)} style={{ width: `${pct}%` }} />
             </div>
           </div>
