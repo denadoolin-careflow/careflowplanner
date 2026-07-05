@@ -758,7 +758,11 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
                 style={{ background: accentColor ?? "hsl(var(--primary))" }}
               />
               <span className="grid h-6 w-6 place-items-center">
-                <Icon className="h-5 w-5" style={accentColor ? { color: accentColor } : undefined} />
+                <Icon
+                  className="h-5 w-5"
+                  strokeWidth={2.25}
+                  style={isActive && accentColor ? { color: accentColor } : undefined}
+                />
               </span>
             </>
           )}
