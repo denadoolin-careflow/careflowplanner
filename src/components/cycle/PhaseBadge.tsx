@@ -45,12 +45,12 @@ export function PhaseBadge({
             type="button"
             onClick={onClick}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-2.5 py-1 text-[11px] font-medium backdrop-blur transition-colors hover:bg-card",
+              "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card/95 px-2.5 py-1 text-[11px] font-medium text-card-foreground shadow-sm backdrop-blur-md transition-colors hover:bg-card",
               className,
             )}
             style={{
-              borderColor: `hsl(var(${info.tokenVar}) / 0.4)`,
-              color: `hsl(var(${info.tokenVar}))`,
+              borderColor: `hsl(var(${info.tokenVar}) / 0.55)`,
+              boxShadow: `inset 0 0 0 1px hsl(var(${info.tokenVar}) / 0.15)`,
             }}
           >
             <span aria-hidden>{info.glyph}</span>
