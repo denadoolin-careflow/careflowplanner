@@ -805,7 +805,6 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           }
         />
       )}
-      <UnitToggle />
       </div>
     </div>
   );
