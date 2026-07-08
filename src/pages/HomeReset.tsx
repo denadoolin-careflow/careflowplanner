@@ -416,6 +416,12 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
         onStart={quickTimer}
         onSkip={skipFocusItem}
         onComplete={completeFocusItem}
+        lists={activeLists}
+        onPickTask={(list, item) => {
+          setCurrentId(list.id);
+          resetFocus.focusItem(list, item);
+          startTimer(item);
+        }}
       />
 
       {/* ============ TIPS + MOON (moved up) ============ */}
