@@ -100,12 +100,12 @@ export function CombinedFab() {
 
   const actions: { key: string; label: string; icon: any; onClick: () => void; accent?: boolean }[] = [
     { key: "note", label: "Note", icon: FileText, onClick: () => openNewNote() },
-    { key: "voice", label: "Voice", icon: Mic, onClick: () => window.dispatchEvent(new Event("careflow:carey:open")) },
+    { key: "voice", label: "Voice", icon: Mic, onClick: () => { window.dispatchEvent(new Event("careflow:carey:open")); } },
     { key: "journal", label: "Journal", icon: BookHeart, onClick: () => navigate("/journal") },
     { key: "checklist", label: "Checklist", icon: ListChecks, onClick: () => openNewNote("- [ ] \n- [ ] \n- [ ] ") },
     { key: "pdf", label: "PDF", icon: FileUp, onClick: () => pdfInputRef.current?.click() },
     { key: "photo", label: "Photo", icon: Camera, onClick: () => photoInputRef.current?.click() },
-    { key: "quick", label: "Quick add", icon: Zap, onClick: () => window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } })), accent: true },
+    { key: "quick", label: "Quick add", icon: Zap, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } })); }, accent: true },
   ];
 
   return (
