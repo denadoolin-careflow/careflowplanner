@@ -1,85 +1,142 @@
-# Home Reset — Redesign & New Capabilities
+# One-pass plan: Inbox, Today header, quick-add wiring, Home Reset overhaul
 
-Scope: `src/pages/HomeReset.tsx` and `src/components/reset/redesign/*`. Backend fields already exist (`time_block`, `due_date`, `est_minutes`, `kind`) so no schema changes.
+Ships as a single milestone. Grouped by surface for review; implementation order at the bottom.
 
-## 1. Replace FAB with a sticky Toolbar
+---
 
-- Remove `<QuickFab />` from bottom of `HomeReset.tsx`.
-- Add a horizontal toolbar directly under the page header, sticky on scroll (`sticky top-0 z-20`, glass background):
-  - Add task · Add zone · AI generate · History · Low‑energy toggle · Reset all.
-- Same `handleFabAction` handlers, wired to buttons instead of a floating menu.
+## 1. Inbox (`/inbox`)
 
-## 2. Focus + Pomodoro strip (top of page)
+- **Wrap long titles** in Today and Upcoming sections. Add `break-words whitespace-normal` (and remove any `truncate`) on the title node in `TaskRow` when `variant="card"`, plus on the inbox row container.
+- **"Needs a date" / "Ready to plan" chips**: retint for dark theme. Replace hardcoded amber/emerald bg with semantic tokens (`bg-warning/15 text-warning-foreground`, `bg-primary/15 text-primary`) sourced from `index.css`, so contrast holds in both modes.
+- **Mobile Today dropdown in header**: on the Inbox page header, add a collapsible "Today" summary (count + first 3 titles) visible only `md:hidden`, using `Collapsible` from shadcn. Persist open/closed in `localStorage`.
 
-- New component `FocusTimerStrip.tsx` placed above `HeroBand`.
-- Shows the current focus task (from `smartNext` on `current` list), an inline 25/5 timer bound to `pomodoro` store, and Start / Pause / Skip / Complete buttons.
-- Completing from the strip calls existing `completeItem` and advances to next `smartNext`.
+## 2. Today page header quick-view
 
-## 3. Move Tips + Moon guidance to the top
+Extend the header quick-add popover (currently task-only) to accept:
+- **Meal** — reuses `addMeal` with slot picker (Breakfast/Lunch/Dinner/Snack), auto-linked to today.
+- **Home & Cleaning task** — writes to `cleaning_tasks` OR creates a `reset_items` row tagged `Home`; picker chooses.
 
-- Relocate the `TipsCarousel` + `MoonResetTip` section from bottom to just under the Focus strip (before HeroBand progress row).
-- Collapsible on mobile (chevron), remembers state in `localStorage`.
+Implemented as a segmented control inside the popover; the existing task path stays default.
 
-## 4. Morning / Afternoon / Evening section
+## 3. Weather widget
 
-- New component `TimeBlockBoard.tsx` between Progress row and Room cards.
-- Three columns (stack on mobile) using existing `time_block` field on `reset_items`.
-- Inline tasks: checkbox, title, est time, hover state reveals actions:
-  - Schedule (opens new date/time popover — see §5)
-  - Start timer (loads task into Focus strip)
-  - "Go to area" link that scrolls/opens the matching room card via `iconFor` name match.
-- Highlights the current block based on `currentTimeBlock()`.
+- Remove the standalone C/F toggle at the top of Today (delete the `<UnitToggle />` mount above the widget in `Today.tsx`).
+- Move `UnitToggle` inside the weather widget header (top-right of the widget card). Keep the same `useTempUnit` store — no data migration.
 
-## 5. Schedule checklist tasks
+## 4. Quick-add wiring (bottom sheet actions)
 
-- New `ScheduleTaskPopover.tsx` modeled on `src/components/tasks/QuickScheduleButton.tsx` (Today / Tomorrow / This week / Pick date, plus a Time‑block picker: morning/afternoon/evening).
-- Writes `due_date`, `time_block`, optional `start_time` via existing `reset.updateItem`.
-- Trigger: schedule icon on every task row in `RoomCard` `TaskRow` and in the TimeBlockBoard rows.
+Currently the bottom sheet has buttons that no-op or misroute.
 
-## 6. Per‑zone reset button
+- **Photo**: opens native camera picker (`<input type="file" accept="image/*" capture="environment">`), uploads to `attachments` bucket, creates a Task with the photo attached as a note-image.
+- **PDF**: file picker (`accept="application/pdf"`), uploads to `attachments`, creates a Task linked to the PDF; triggers existing `ai-pdf-summary` in background to prefill notes.
+- **Checklist**: opens a lightweight modal to enter title + newline-separated items; creates a Task with `subtasks[]` populated (or reset_item children if the user picks "Home").
+- **Note**: navigates to `/notes/new` (route-level page that pre-focuses the editor). If that route doesn't exist yet, add it as a thin wrapper around the existing `NotesFiles` editor.
+- **Voice**: replaces current Carey redirect. Opens a `VoiceCaptureSheet`:
+  1. Records via existing `use-audio-recorder` (WAV).
+  2. POSTs to a new edge function `ai-voice-quickadd` that calls Lovable AI STT (`openai/gpt-4o-mini-transcribe`) then reuses the same NLP that powers `InboxCapture` (chrono-node + `detectKind`) to auto-create the right item.
+  3. Shows preview toast with undo.
 
-- On each `RoomCard` header (and each zone view header), add a "Reset zone" icon button.
-- Confirmation toast with Undo; calls `reset.updateItem(id, { done: false })` for all root items in that list.
-- Existing global `resetEntireHome` stays, moved into the new toolbar.
+## 5. Home Reset page (`/home-reset`)
 
-## 7. Timer button on area header (cycles tasks)
+### Layout
+- **Move "Peaceful home starts with one small reset" hero blurb to the very top** of the page (above Focus timer strip). Rest of the sections shift down.
 
-- On each `RoomCard` header, add a Play icon that starts a cycling timer:
-  - Loads the first incomplete root item into Focus strip.
-  - On complete, auto-advances to the next incomplete item in that room until done, then celebrates with existing `RoomCelebration`.
-- Implemented via a small `useZoneCycle(listId)` hook that reads from `reset.lists` and drives Focus strip state.
+### Kanban mode
+- Add view switch `List | Kanban` next to existing `By Room / Routines / Zones` toggles. Kanban columns = **To do / Scheduled / In progress / Done**, populated from reset_items status/scheduled fields.
+- Uses `@dnd-kit/core` (already installed via meals DnD). Drag between columns updates `done`/`due_date`.
 
-## 8. Create / delete zones
+### Checklist items = draggable, schedulable tasks
+- Each checklist row gets a drag handle (HTML5 drag, like `InboxSortableRow`).
+- Drop targets: (a) Kanban columns, (b) TimeBlockBoard slots (Morning/Afternoon/Evening), (c) an "Add to calendar" chip that opens ScheduleTaskPopover.
+- **On schedule**, follow the confirmed model: promote the reset_item to a real `tasks` row via the existing `sync_reset_item_to_task` trigger (already writes `linked_task_id`), then set `due_date` + `time_block` on both records. Completion stays two-way synced by the existing triggers.
 
-- Toolbar "Add zone" opens a small popover: name + kind (`quick | weekly | deep | low_energy | custom`) + optional icon key.
-- Uses existing `reset.createList` / `reset.deleteList` (delete already wired via room sheet's `onDeleteList`).
-- Add a delete affordance in the RoomCard "..." menu as well.
+### Per-zone header controls
+- Add **Schedule** button (opens ScheduleTaskPopover applied to all incomplete items in the zone).
+- Add **Time-of-day** button (sets `time_block` for all incomplete items — Morning/Afternoon/Evening).
+- Existing Reset zone + timer buttons stay.
 
-## 9. Implement By Room / Routines / Zones views
+### Cleaning supplies checklist
+- New "Supplies" tab inside each zone card. Backed by a new column `reset_checklists.supplies jsonb` (array of `{name, have: boolean}`). Editable inline; "Add to grocery list" button pushes missing items into the active grocery list via `addGroceryItem`.
 
-Existing `ViewSwitcher` currently only filters. Concrete behavior per tab:
+### Weekly status / patterns
+- **Summary chip on Home Reset**: small card under the toolbar — "You reset Kitchen 3× this week · usually Sunday evenings" — computed client-side from `reset_history`.
+- **Full view on `/insights`**: new `ResetPatternsCard` — 7-day heatmap per zone, most-completed zones, common time-of-day. Link out from the chip.
 
-- **By Room**: current room-name grouping (unchanged) with `ROOM_FILTERS` rail.
-- **Routines**: groups by `kind` — Quick reset · Weekly · Deep clean · Low‑energy. Header per group with count + reset button.
-- **Zones**: flat grid of every custom zone (`kind === 'custom'` or user‑created lists), each with the new zone timer + reset controls.
-- Persist selected view in `localStorage`.
+### Focus timer improvements
+- **Next-up dropdown** on `FocusTimerStrip`: dropdown showing the next 5 incomplete items across the active zone; picking one sets it as the focus task.
+- **Create/pick/edit task from timer popup**: add a "+ New task" and "Edit" affordance inside the timer control. Reuses `openTaskEditor` for edit; create uses inline input that writes to `reset_items` (or `tasks` if not in a zone).
 
-## Technical notes
+### 3-dot menu → edit + reorder
+- Replace current 3-dot menu on checklist rows with an inline edit-title action, a "Move to zone…" submenu, and a drag handle for manual reorder (persists via `reset_items.sort_order`).
 
-- Files to add:
-  - `src/components/reset/redesign/FocusTimerStrip.tsx`
-  - `src/components/reset/redesign/TimeBlockBoard.tsx`
-  - `src/components/reset/redesign/ResetToolbar.tsx`
-  - `src/components/reset/redesign/ScheduleTaskPopover.tsx`
-  - `src/components/reset/redesign/AddZonePopover.tsx`
-  - `src/hooks/useZoneCycle.ts`
-- Files to edit:
-  - `src/pages/HomeReset.tsx` — remove FAB, add toolbar, reorder sections, wire new tabs.
-  - `src/components/reset/redesign/RoomCard.tsx` — header timer + reset buttons; task row schedule button; hover-reveal actions.
-  - `src/components/reset/redesign/pieces.tsx` — export a slimmer `ViewSwitcher` labeled By Room / Routines / Zones.
-- Reuses existing `pomodoro` store, `reset.updateItem`, `smartNext`, `iconFor`, `MoonResetTip`, `TipsCarousel`, `RoomCelebration`.
-- No DB migrations, no changes to `HeroBand.tsx` colors (previously matched to atmosphere).
+### Quick-add per time-of-day
+- Each block in `TimeBlockBoard` gets an inline `+ Add task` input. New tasks default to that time_block and today's date. Drag between blocks to reassign time_block.
 
-- Drag-and-drop between time blocks (checkbox + schedule popover only).
-- Server-side recurring schedules (uses existing `reset_recurrence`).
-- New task fields beyond what `reset_items` already supports.
+---
+
+## Technical details
+
+### Edge function
+- `supabase/functions/ai-voice-quickadd/index.ts` — multipart audio in, returns `{ transcript, parsed: { kind, title, date?, time? } }`. Client then calls the same store actions as InboxCapture. Uses `LOVABLE_API_KEY` + `openai/gpt-4o-mini-transcribe`. CORS + Zod validation as per edge-function rules.
+
+### Schema migrations (single migration)
+```sql
+ALTER TABLE public.reset_items
+  ADD COLUMN IF NOT EXISTS time_block text CHECK (time_block IN ('morning','afternoon','evening')),
+  ADD COLUMN IF NOT EXISTS sort_order integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'todo'
+    CHECK (status IN ('todo','scheduled','in_progress','done'));
+ALTER TABLE public.reset_checklists
+  ADD COLUMN IF NOT EXISTS supplies jsonb NOT NULL DEFAULT '[]'::jsonb;
+```
+No new tables, so no new GRANT block. Existing RLS on `reset_items`/`reset_checklists` covers new columns.
+
+### New / edited files
+
+Add:
+- `src/components/reset/redesign/KanbanBoard.tsx`
+- `src/components/reset/redesign/SuppliesChecklist.tsx`
+- `src/components/reset/redesign/ZonePatternChip.tsx`
+- `src/components/reset/redesign/FocusNextUp.tsx`
+- `src/components/insights/ResetPatternsCard.tsx`
+- `src/components/quickadd/PhotoCapture.tsx`
+- `src/components/quickadd/PdfCapture.tsx`
+- `src/components/quickadd/ChecklistCapture.tsx`
+- `src/components/quickadd/VoiceCaptureSheet.tsx`
+- `src/pages/NoteNew.tsx` (thin wrapper if not already routed)
+- `supabase/functions/ai-voice-quickadd/index.ts`
+
+Edit:
+- `src/pages/Inbox.tsx` (mobile header dropdown, chip retint, wrap classes)
+- `src/components/cards/TaskRow.tsx` (wrap title in card variant)
+- `src/pages/Today.tsx` (drop top UnitToggle, extend header quick-add)
+- Weather widget component (embed `UnitToggle`)
+- `src/pages/HomeReset.tsx` (hero blurb move, view toggle, kanban mount, supplies, patterns chip)
+- `src/components/reset/redesign/RoomCard.tsx` (schedule/time-of-day header buttons, inline edit, drag handles, supplies tab)
+- `src/components/reset/redesign/FocusTimerStrip.tsx` (next-up dropdown, create/edit)
+- `src/components/reset/redesign/TimeBlockBoard.tsx` (quick-add input, DnD drop targets)
+- `src/components/reset/redesign/ResetToolbar.tsx` (List/Kanban toggle)
+- `src/pages/Insights.tsx` (mount `ResetPatternsCard`)
+- Quick-add bottom sheet component (wire the five buttons)
+- `src/App.tsx` (register `/notes/new` if missing)
+
+### Testing
+- Verify inbox text wraps on 375-wide viewport via Playwright screenshot.
+- Voice quick-add: record 2s of silence → expect validation error surfaced, not empty task.
+- DnD from RoomCard row → Morning block updates `time_block` and creates linked task.
+- Kanban drop → Done column sets `reset_items.done = true` and syncs the linked task.
+
+---
+
+## Implementation order
+
+1. DB migration (adds columns needed by later steps).
+2. Voice edge function + client sheet.
+3. Quick-add wiring for photo/pdf/checklist/note.
+4. Inbox polish + Today header + weather unit relocation.
+5. Home Reset: hero move, header buttons, inline edit, quick-add per time block.
+6. Kanban view + DnD scheduling.
+7. Supplies checklist.
+8. Focus timer next-up + create/edit.
+9. Weekly pattern chip + Insights card.
+10. Manual + Playwright verification.
