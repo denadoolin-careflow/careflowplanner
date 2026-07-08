@@ -1,4 +1,5 @@
-import { Sunrise, Sun, Sunset, Play, ArrowRight, Check } from "lucide-react";
+import { useState } from "react";
+import { Sunrise, Sun, Sunset, Play, ArrowRight, Check, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ResetChecklist, ResetItem, TimeBlock } from "@/lib/reset-checklists";
 import { ScheduleTaskPopover } from "./ScheduleTaskPopover";
@@ -10,7 +11,7 @@ const BLOCKS: { id: TimeBlock; label: string; icon: typeof Sun; hint: string }[]
 ];
 
 export function TimeBlockBoard({
-  lists, activeBlock, onToggle, onStart, onGoToArea, onSchedule,
+  lists, activeBlock, onToggle, onStart, onGoToArea, onSchedule, onQuickAdd,
 }: {
   lists: ResetChecklist[];
   activeBlock: TimeBlock;
@@ -18,6 +19,7 @@ export function TimeBlockBoard({
   onStart: (list: ResetChecklist, item: ResetItem) => void;
   onGoToArea: (listId: string) => void;
   onSchedule: (id: string, patch: Partial<ResetItem>) => Promise<void> | void;
+  onQuickAdd?: (block: TimeBlock, title: string) => Promise<void> | void;
 }) {
   const grouped: Record<TimeBlock, { list: ResetChecklist; item: ResetItem }[]> = {
     morning: [], afternoon: [], evening: [],
@@ -126,10 +128,48 @@ export function TimeBlockBoard({
                   </li>
                 ))}
               </ul>
+              {onQuickAdd && (
+                <QuickAddRow block={b.id} onAdd={onQuickAdd} />
+              )}
             </div>
           );
         })}
       </div>
     </section>
+  );
+}
+
+function QuickAddRow({
+  block, onAdd,
+}: { block: TimeBlock; onAdd: (block: TimeBlock, title: string) => Promise<void> | void }) {
+  const [value, setValue] = useState("");
+  const submit = async () => {
+    const t = value.trim();
+    if (!t) return;
+    setValue("");
+    await onAdd(block, t);
+  };
+  return (
+    <form
+      onSubmit={(e) => { e.preventDefault(); void submit(); }}
+      className="mt-2 flex items-center gap-1.5 rounded-xl border border-dashed border-[hsl(var(--reset-line))] px-2 py-1.5"
+    >
+      <Plus className="h-3.5 w-3.5 text-[hsl(var(--reset-ink))]/50" />
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Add a task…"
+        aria-label={`Add task for ${block}`}
+        className="flex-1 bg-transparent text-xs text-[hsl(var(--reset-charcoal))] placeholder:text-[hsl(var(--reset-ink))]/40 focus:outline-none"
+      />
+      {value.trim() && (
+        <button
+          type="submit"
+          className="rounded-full bg-[hsl(var(--reset-sage))] px-2 py-0.5 text-[10px] font-semibold text-white"
+        >
+          Add
+        </button>
+      )}
+    </form>
   );
 }
