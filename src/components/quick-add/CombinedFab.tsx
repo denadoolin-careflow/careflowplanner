@@ -160,7 +160,7 @@ export function CombinedFab() {
         ))}
         <button
           type="button"
-          onClick={fire(() => window.dispatchEvent(new Event("careflow:carey:open")))}
+          onClick={fire(() => { window.dispatchEvent(new Event("careflow:carey:open")); })}
           aria-label="Ask Carey"
           title="Ask Carey"
           className={cn(
