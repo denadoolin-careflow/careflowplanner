@@ -483,6 +483,13 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
           if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
         }}
         onSchedule={reset.updateItem}
+        onQuickAdd={async (block, title) => {
+          const list = current ?? activeLists[0];
+          if (!list) { toast.info("Create a zone first."); return; }
+          const today = new Date().toISOString().slice(0, 10);
+          await reset.addItem(list.id, { title, time_block: block, due_date: today });
+          toast.success(`Added to ${block}`);
+        }}
       />
 
       {/* ============ VIEW SWITCHER ============ */}
