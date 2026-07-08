@@ -403,6 +403,14 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
         />
       )}
 
+      {/* ============ HERO (moved to top) ============ */}
+      <HeroBand
+        onStart={startFirstStep}
+        onContinue={continueNext}
+        onResetAll={resetEntireHome}
+        canContinue={!!current && listStats(current, { lowEnergy }).nextUp !== undefined}
+      />
+
       {/* ============ FOCUS + POMODORO STRIP ============ */}
       <FocusTimerStrip
         onStart={quickTimer}
@@ -417,14 +425,6 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
           <MoonResetTip />
         </div>
       </section>
-
-      {/* ============ HERO ============ */}
-      <HeroBand
-        onStart={startFirstStep}
-        onContinue={continueNext}
-        onResetAll={resetEntireHome}
-        canContinue={!!current && listStats(current, { lowEnergy }).nextUp !== undefined}
-      />
 
       {/* ============ PROGRESS + INTENTION ============ */}
       <section className="grid gap-4 sm:grid-cols-5">

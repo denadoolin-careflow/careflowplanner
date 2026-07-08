@@ -5490,6 +5490,7 @@ export type Database = {
           recurrence_time: string | null
           recurrence_type: string
           sort_order: number
+          supplies: Json
           updated_at: string
           user_id: string
           week_start: string | null
@@ -5507,6 +5508,7 @@ export type Database = {
           recurrence_time?: string | null
           recurrence_type?: string
           sort_order?: number
+          supplies?: Json
           updated_at?: string
           user_id: string
           week_start?: string | null
@@ -5524,6 +5526,7 @@ export type Database = {
           recurrence_time?: string | null
           recurrence_type?: string
           sort_order?: number
+          supplies?: Json
           updated_at?: string
           user_id?: string
           week_start?: string | null
@@ -5586,6 +5589,7 @@ export type Database = {
           recurrence_type: string
           sort_order: number
           start_time: string | null
+          status: string
           time_block: string | null
           title: string
           updated_at: string
@@ -5607,6 +5611,7 @@ export type Database = {
           recurrence_type?: string
           sort_order?: number
           start_time?: string | null
+          status?: string
           time_block?: string | null
           title: string
           updated_at?: string
@@ -5628,6 +5633,7 @@ export type Database = {
           recurrence_type?: string
           sort_order?: number
           start_time?: string | null
+          status?: string
           time_block?: string | null
           title?: string
           updated_at?: string

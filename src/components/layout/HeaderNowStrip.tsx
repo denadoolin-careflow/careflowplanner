@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
 import type { WeatherCondition } from "@/lib/weather";
-import { UnitToggle } from "@/components/weather/UnitToggle";
 import { WeatherDetailPopover } from "@/components/weather/WeatherDetailPopover";
 import { weatherTheme } from "@/lib/weather-theme";
 import { useStore } from "@/lib/store";
@@ -806,7 +805,6 @@ export function HeaderNowStrip({ className }: { className?: string }) {
           }
         />
       )}
-      <UnitToggle />
       </div>
     </div>
   );
