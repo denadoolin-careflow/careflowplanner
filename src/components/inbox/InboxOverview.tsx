@@ -148,7 +148,7 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
       <button
         type="button"
         onClick={() => openTaskEditor(t.id)}
-        className="min-w-0 flex-1 truncate text-left text-[13px] text-foreground"
+        className="min-w-0 flex-1 whitespace-normal break-words text-left text-[13px] leading-snug text-foreground"
       >
         {t.title}
       </button>
@@ -191,8 +191,8 @@ function EventRow({
     >
       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted/60 text-muted-foreground">{icon}</span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] text-foreground">{title}</span>
-        {subtitle && <span className="block truncate text-[11px] text-muted-foreground">{subtitle}</span>}
+        <span className="block whitespace-normal break-words text-[13px] leading-snug text-foreground">{title}</span>
+        {subtitle && <span className="block whitespace-normal break-words text-[11px] text-muted-foreground">{subtitle}</span>}
       </span>
       <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-medium ring-1", tone)}>{pill}</span>
     </button>
@@ -616,7 +616,7 @@ export function InboxOverview() {
                 </button>
               </div>
               <button type="button" onClick={() => openTaskEditor(suggestedTask.id)}
-                className="mt-1 block w-full truncate text-left text-[13.5px] font-medium text-foreground">
+                className="mt-1 block w-full whitespace-normal break-words text-left text-[13.5px] font-medium leading-snug text-foreground">
                 {suggestedTask.title}
               </button>
               <div className="mt-1 text-[12px] text-foreground/80">{suggestion.label}</div>
@@ -661,7 +661,7 @@ export function InboxOverview() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <button type="button" onClick={() => openTaskEditor(featured.id)}
-                    className="block w-full truncate text-left text-[13.5px] font-medium text-foreground">
+                    className="block w-full whitespace-normal break-words text-left text-[13.5px] font-medium leading-snug text-foreground">
                     {featured.title}
                   </button>
                   <span className="text-[11px] text-muted-foreground">{featured.area ?? "Personal"}</span>

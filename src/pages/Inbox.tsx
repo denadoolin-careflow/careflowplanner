@@ -1485,11 +1485,11 @@ function ChipSelect({
 type Bucket = "just" | "scheduledToday" | "needsDate" | "needsCategory" | "ready";
 
 const BUCKET_META: Record<Bucket, { label: string; hint: string; tint: string }> = {
-  just:          { label: "Just captured",   hint: "Added in the last hour",          tint: "bg-sky-50/70 text-sky-700 ring-sky-100" },
-  scheduledToday:{ label: "Scheduled for today", hint: "Held here until you process it", tint: "bg-primary/10 text-primary ring-primary/20" },
-  needsDate:     { label: "Needs a date",    hint: "Decide when this happens",         tint: "bg-amber-50/70 text-amber-800 ring-amber-100" },
-  needsCategory: { label: "Needs a category",hint: "Give it a home",                   tint: "bg-rose-50/70 text-rose-700 ring-rose-100" },
-  ready:         { label: "Ready to plan",   hint: "Has a date and a category",        tint: "bg-emerald-50/70 text-emerald-700 ring-emerald-100" },
+  just:          { label: "Just captured",       hint: "Added in the last hour",          tint: "bg-sky-500/15 text-sky-700 ring-sky-500/25 dark:text-sky-300" },
+  scheduledToday:{ label: "Scheduled for today", hint: "Held here until you process it",  tint: "bg-primary/15 text-primary ring-primary/25" },
+  needsDate:     { label: "Needs a date",        hint: "Decide when this happens",        tint: "bg-amber-500/15 text-amber-700 ring-amber-500/25 dark:text-amber-300" },
+  needsCategory: { label: "Needs a category",    hint: "Give it a home",                  tint: "bg-rose-500/15 text-rose-700 ring-rose-500/25 dark:text-rose-300" },
+  ready:         { label: "Ready to plan",       hint: "Has a date and a category",       tint: "bg-emerald-500/15 text-emerald-700 ring-emerald-500/25 dark:text-emerald-300" },
 };
 
 const BUCKET_ORDER: Bucket[] = ["just", "scheduledToday", "needsDate", "needsCategory", "ready"];
