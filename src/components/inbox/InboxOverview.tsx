@@ -245,6 +245,19 @@ export function InboxOverview() {
   const [focus, setFocus] = useState<Focus>(() => readFocus());
   const [dropActive, setDropActive] = useState(false);
   const [suggestion, setSuggestion] = useState<{ taskId: string; date: string; time: string; label: string } | null>(null);
+  const isMobile = useIsMobile();
+  const [todayOpen, setTodayOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const v = window.localStorage.getItem("careflow:inbox-today-open");
+    return v === null ? true : v === "1";
+  });
+  const toggleTodayOpen = () => {
+    setTodayOpen(prev => {
+      const next = !prev;
+      try { window.localStorage.setItem("careflow:inbox-today-open", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
 
   const setFocusPersist = (f: Focus) => {
     setFocus(f);
