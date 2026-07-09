@@ -532,6 +532,8 @@ export function InboxOverview() {
               View all <ArrowRight className="h-3 w-3" />
             </button>
           </footer>
+          </>
+          )}
         </CardShell>
         )}
 
