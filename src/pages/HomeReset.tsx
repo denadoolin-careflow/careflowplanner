@@ -32,6 +32,8 @@ import { ResetToolbar } from "@/components/reset/redesign/ResetToolbar";
 import { FocusTimerStrip } from "@/components/reset/redesign/FocusTimerStrip";
 import { TimeBlockBoard } from "@/components/reset/redesign/TimeBlockBoard";
 import { resetFocus, useResetFocus } from "@/lib/reset-focus";
+import { SuppliesChecklist } from "@/components/reset/SuppliesChecklist";
+import { WeeklyPatternChip } from "@/components/reset/WeeklyPatternChip";
 
 // ---------- helpers ----------
 function currentTimeBlock(): "morning" | "afternoon" | "evening" {
@@ -454,6 +456,7 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
               <span className="reset-chip inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px]">
                 {totals.inProgress} in progress
               </span>
+              <WeeklyPatternChip onClick={() => setHistoryOpen(true)} />
             </div>
             <p className="text-xs text-[hsl(var(--reset-ink))]/70">
               {overall.pct === 100 && overall.total > 0
