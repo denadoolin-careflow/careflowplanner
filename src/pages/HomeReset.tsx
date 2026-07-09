@@ -434,6 +434,9 @@ export default function HomeReset({ embedded = false }: { embedded?: boolean } =
         </div>
       </section>
 
+      {/* ============ SUPPLIES CHECKLIST ============ */}
+      <SuppliesChecklist />
+
       {/* ============ PROGRESS + INTENTION ============ */}
       <section className="grid gap-4 sm:grid-cols-5">
         <div className="reset-glass flex items-center gap-4 p-5 sm:col-span-3">
