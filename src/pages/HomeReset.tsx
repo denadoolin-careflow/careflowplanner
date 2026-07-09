@@ -711,6 +711,52 @@ function ZoneViews({
   }
 
   // zones — flat grid
+  if (view === "kanban") {
+    const columns: { kind: ResetKind; label: string }[] = [
+      { kind: "quick", label: "Quick" },
+      { kind: "weekly", label: "Weekly" },
+      { kind: "deep", label: "Deep" },
+      { kind: "low_energy", label: "Low energy" },
+      { kind: "custom", label: "Custom" },
+    ];
+    return (
+      <div className="-mx-1 overflow-x-auto px-1 pb-2">
+        <div className="flex gap-3 min-w-max">
+          {columns.map(col => {
+            const items = activeLists.filter(l => l.kind === col.kind);
+            const done = items.reduce((s, l) => s + l.items.filter(i => !i.parent_id && i.done).length, 0);
+            const total = items.reduce((s, l) => s + l.items.filter(i => !i.parent_id).length, 0);
+            return (
+              <div
+                key={col.kind}
+                className="reset-glass w-[260px] shrink-0 rounded-2xl p-3 sm:w-[300px]"
+              >
+                <header className="mb-2 flex items-center justify-between px-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[hsl(var(--reset-ink))]/60">
+                    {col.label}
+                  </p>
+                  <span className="rounded-full bg-black/[0.04] px-1.5 py-0.5 text-[10px] text-[hsl(var(--reset-ink))]/60 dark:bg-white/[0.06]">
+                    {done}/{total}
+                  </span>
+                </header>
+                {items.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-[hsl(var(--reset-ink))]/15 px-3 py-4 text-center text-[11px] text-[hsl(var(--reset-ink))]/50">
+                    No zones
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {items.map((l, i) => renderCard(l, i))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // zones — flat grid
   return (
     <section className="grid gap-3 sm:grid-cols-2">
       {activeLists.map(renderCard)}
