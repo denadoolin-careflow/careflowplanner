@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sparkles, Plus, ListChecks, Home as HomeIcon, LayoutGrid, Repeat,
   Wind, Flame, Music2, Droplet, Sun, Timer, Mic, ScanLine, ClipboardList,
-  Heart, X,
+  Heart, X, Columns3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { pickAffirmation } from "@/lib/affirmations";
@@ -76,11 +76,12 @@ export function ProgressRing({
 /* ------------------------------------------------------------------ */
 /*  Segmented view switcher with spring pill                           */
 /* ------------------------------------------------------------------ */
-export type ResetView = "byRoom" | "routines" | "zones";
+export type ResetView = "byRoom" | "routines" | "zones" | "kanban";
 const VIEW_OPTIONS: { id: ResetView; label: string; icon: typeof ListChecks }[] = [
   { id: "byRoom",   label: "By Room",  icon: HomeIcon },
   { id: "routines", label: "Routines", icon: Repeat },
   { id: "zones",    label: "Zones",    icon: LayoutGrid },
+  { id: "kanban",   label: "Kanban",   icon: Columns3 },
 ];
 export function ViewSwitcher({
   value, onChange,

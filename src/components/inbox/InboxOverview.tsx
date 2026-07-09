@@ -8,13 +8,14 @@ import { resolveTaskIcon } from "@/lib/task-icons";
 import {
   Sun, CalendarRange, Inbox as InboxIcon, Calendar as CalendarIcon,
   Cake, TreePine, Sparkles, Hourglass, Clock, FolderOpen, MoreHorizontal,
-  ArrowRight, CalendarPlus, Bell, ChevronRight, X,
+  ArrowRight, CalendarPlus, Bell, ChevronRight, ChevronDown, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { toast } from "sonner";
 import { haptics } from "@/lib/haptics";
 import { TaskHoverActions } from "@/components/tasks/TaskHoverActions";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const FOCUS_KEY = "careflow:inbox-overview-focus";
 type Focus = "all" | "today" | "upcoming" | "needs";
@@ -244,6 +245,19 @@ export function InboxOverview() {
   const [focus, setFocus] = useState<Focus>(() => readFocus());
   const [dropActive, setDropActive] = useState(false);
   const [suggestion, setSuggestion] = useState<{ taskId: string; date: string; time: string; label: string } | null>(null);
+  const isMobile = useIsMobile();
+  const [todayOpen, setTodayOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const v = window.localStorage.getItem("careflow:inbox-today-open");
+    return v === null ? true : v === "1";
+  });
+  const toggleTodayOpen = () => {
+    setTodayOpen(prev => {
+      const next = !prev;
+      try { window.localStorage.setItem("careflow:inbox-today-open", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
 
   const setFocusPersist = (f: Focus) => {
     setFocus(f);
@@ -436,7 +450,15 @@ export function InboxOverview() {
         {/* TODAY */}
         {showToday && (
         <CardShell accent="from-amber-200/30 via-amber-100/10 to-transparent dark:from-amber-500/15">
-          <header className="mb-3 flex items-start gap-3">
+          <header
+            className={cn(
+              "mb-3 flex items-start gap-3",
+              isMobile && "cursor-pointer select-none",
+            )}
+            onClick={isMobile ? toggleTodayOpen : undefined}
+            role={isMobile ? "button" : undefined}
+            aria-expanded={isMobile ? todayOpen : undefined}
+          >
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-100/70 ring-1 ring-amber-200/60 dark:bg-amber-500/15 dark:ring-amber-500/25">
               <Sun className="h-4.5 w-4.5 text-amber-600 dark:text-amber-300" />
             </span>
@@ -447,8 +469,18 @@ export function InboxOverview() {
               </p>
             </div>
             <CompletionRing pct={pct} />
+            {isMobile && (
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                  todayOpen ? "" : "-rotate-90",
+                )}
+              />
+            )}
           </header>
 
+          {(!isMobile || todayOpen) && (
+          <>
           <InsightBanner tone="emerald">{todayInsight}</InsightBanner>
 
           <div className="mt-3 space-y-3">
@@ -500,6 +532,8 @@ export function InboxOverview() {
               View all <ArrowRight className="h-3 w-3" />
             </button>
           </footer>
+          </>
+          )}
         </CardShell>
         )}
 
