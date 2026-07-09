@@ -8,13 +8,14 @@ import { resolveTaskIcon } from "@/lib/task-icons";
 import {
   Sun, CalendarRange, Inbox as InboxIcon, Calendar as CalendarIcon,
   Cake, TreePine, Sparkles, Hourglass, Clock, FolderOpen, MoreHorizontal,
-  ArrowRight, CalendarPlus, Bell, ChevronRight, X,
+  ArrowRight, CalendarPlus, Bell, ChevronRight, ChevronDown, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { toast } from "sonner";
 import { haptics } from "@/lib/haptics";
 import { TaskHoverActions } from "@/components/tasks/TaskHoverActions";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const FOCUS_KEY = "careflow:inbox-overview-focus";
 type Focus = "all" | "today" | "upcoming" | "needs";
