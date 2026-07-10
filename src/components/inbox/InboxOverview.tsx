@@ -126,7 +126,7 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
   })();
   return (
     <div
-      className="group flex items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-muted/40"
+      className="group flex items-start gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-muted/40"
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
@@ -139,13 +139,13 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
         onClick={(e) => { e.stopPropagation(); onToggle(); }}
         aria-label={t.done ? "Mark incomplete" : "Mark complete"}
         className={cn(
-          "grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] border transition-colors",
+          "mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] border transition-colors",
           t.done ? "border-primary bg-primary text-primary-foreground" : "border-border/70 hover:border-foreground/50",
         )}
       >
         {t.done && <svg viewBox="0 0 12 12" className="h-2.5 w-2.5"><path d="M2 6.5l2.5 2.5L10 3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </button>
-      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <Icon className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <button
         type="button"
         onClick={() => openTaskEditor(t.id)}
@@ -154,21 +154,23 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
         {t.title}
       </button>
       {t.priority && (
-        <span className="hidden items-center gap-1 rounded-full bg-background/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-border/50 sm:inline-flex">
+        <span className="mt-0.5 hidden items-center gap-1 rounded-full bg-background/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-border/50 sm:inline-flex">
           <span className={cn("h-1.5 w-1.5 rounded-full", priorityDot(t.priority))} />
           {priorityLabel(t.priority)}
         </span>
       )}
       {rightPill && (
-        <span className="shrink-0 rounded-full bg-background/70 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground ring-1 ring-border/50 group-hover:hidden">
+        <span className="mt-0.5 shrink-0 rounded-full bg-background/70 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground ring-1 ring-border/50 group-hover:hidden">
           {rightPill}
         </span>
       )}
-      <TaskHoverActions
-        task={t}
-        onEdit={() => openTaskEditor(t.id)}
-        onDetails={() => openTaskEditor(t.id)}
-      />
+      <div className="mt-0.5 shrink-0">
+        <TaskHoverActions
+          task={t}
+          onEdit={() => openTaskEditor(t.id)}
+          onDetails={() => openTaskEditor(t.id)}
+        />
+      </div>
     </div>
   );
 }
