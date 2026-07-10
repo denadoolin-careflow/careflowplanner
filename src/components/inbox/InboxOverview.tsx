@@ -149,7 +149,7 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
       <button
         type="button"
         onClick={() => openTaskEditor(t.id)}
-        className="min-w-0 flex-1 whitespace-normal break-words text-left text-[13px] leading-snug text-foreground"
+        className="min-w-0 flex-1 basis-0 whitespace-normal break-words [overflow-wrap:anywhere] text-left text-[13px] leading-snug text-foreground"
       >
         {t.title}
       </button>
