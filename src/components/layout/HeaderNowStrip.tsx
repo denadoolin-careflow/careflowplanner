@@ -549,6 +549,52 @@ function SlotQuickAdd({
 }
 
 function DueNextRow({ t, navigate }: { t: Task; navigate: ReturnType<typeof useNavigate> }) {
+  return DueNextRowImpl({ t, navigate });
+}
+
+function HomeCleaningPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType<typeof useNavigate> }) {
+  const iso = todayISO();
+  const items = useMemo(
+    () =>
+      tasks
+        .filter(
+          (t) =>
+            t.dueDate === iso &&
+            !t.parentTaskId &&
+            t.status !== "parked" &&
+            (t.area === "Home" ||
+              (t.tags ?? []).some((tag) => /clean|tidy|laundry|dish|home/i.test(tag))),
+        )
+        .slice(0, 6),
+    [tasks, iso],
+  );
+  return (
+    <div className="mt-2 border-t border-border/40 pt-2">
+      <div className="mb-1 flex items-center gap-1.5 px-1">
+        <HomeIcon className="h-3 w-3 text-primary" />
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Home &amp; cleaning
+        </span>
+        <span className="ml-auto text-[10px] tabular-nums text-muted-foreground/60">
+          {items.length}
+        </span>
+      </div>
+      {items.length === 0 ? (
+        <p className="px-1 py-1.5 text-[11px] italic text-muted-foreground/70">
+          No home tasks today.
+        </p>
+      ) : (
+        <div className="space-y-0.5">
+          {items.map((t) => (
+            <TaskMiniRow key={t.id} t={t} navigate={navigate} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DueNextRowImpl({ t, navigate }: { t: Task; navigate: ReturnType<typeof useNavigate> }) {
   const { toggleTask } = useStore();
   const [completing, setCompleting] = useState(false);
   const onToggle = async (e: React.MouseEvent) => {
