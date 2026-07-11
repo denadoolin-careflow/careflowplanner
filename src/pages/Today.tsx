@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
-import { isSameDay, format } from "date-fns";
+import { isSameDay, format, addDays } from "date-fns";
 import { TaskSelectionProvider } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -22,6 +22,7 @@ import { DayPlanBoard } from "@/components/today/DayPlanBoard";
 import { ScheduleBoard } from "@/components/today/ScheduleBoard";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { useTodayView, TODAY_VIEW_LABELS, type TodayView, useTodayPrefs } from "@/lib/today-view";
+import { ScopeHero } from "@/components/layout/ScopeHero";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Settings2 } from "lucide-react";
@@ -129,6 +130,19 @@ function TodayInner() {
         className="mx-auto w-full min-w-0 max-w-6xl space-y-6 overflow-x-clip px-2 pb-10 sm:px-4"
       >
         <DemoTasksBanner />
+        <ScopeHero
+          scope="today"
+          date={day}
+          title="Today"
+          subtitle={format(day, "EEEE, MMMM d, yyyy")}
+          eyebrow="Today"
+          pickerLabel={format(day, "MMM d")}
+          isCurrent={isReallyToday}
+          onPrev={() => setDayAndUrl(addDays(day, -1))}
+          onNext={() => setDayAndUrl(addDays(day, 1))}
+          onToday={() => setDayAndUrl(new Date())}
+          onDatePick={(d) => setDayAndUrl(d)}
+        />
         {(() => {
           const controls = (
             <div className="space-y-3">
