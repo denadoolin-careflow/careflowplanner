@@ -13,6 +13,7 @@ import { InlineTagPreviewLayer } from "@/components/tags/InlineTagPreviewLayer";
 import { MediaLightbox } from "@/components/media/MediaLightbox";
 import { IndexRedirect } from "@/components/auth/IndexRedirect";
 import Today from "./pages/Today";
+import TodayV2 from "./pages/TodayV2";
 import Week from "./pages/Week";
 import Month from "./pages/Month";
 import MonthOverview from "./pages/MonthOverview";
