@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { format } from "date-fns";
-import { CalendarClock, Wand2, Coffee } from "lucide-react";
+import { CalendarClock, Wand2, Coffee, Home as HomeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ interface Block {
   start: number;   // hours since midnight (float)
   end: number;
   color?: string;
+  fromReset?: boolean;
 }
 
 interface Props {
@@ -50,7 +51,7 @@ export function DayCanvas({ date, tasks, appointments, unscheduled }: Props) {
       const s = toHours(t.startTime);
       if (s == null) continue;
       const dur = (t.estMinutes ?? 30) / 60;
-      out.push({ id: `t-${t.id}`, kind: "task", title: t.title, start: s, end: s + dur });
+      out.push({ id: `t-${t.id}`, kind: "task", title: t.title, start: s, end: s + dur, fromReset: !!t.resetItemId });
     }
     return out.sort((a, b) => a.start - b.start);
   }, [tasks, appointments]);
@@ -169,8 +170,13 @@ export function DayCanvas({ date, tasks, appointments, unscheduled }: Props) {
                       )}
                     >
                       <p className="line-clamp-2 font-medium leading-snug">{b.title}</p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         {fmtHour(b.start)} – {fmtHour(b.end)}
+                        {b.fromReset && (
+                          <span title="From Home Reset" className="inline-flex items-center gap-0.5 rounded-full bg-primary/15 px-1 text-[9px] text-primary">
+                            <HomeIcon className="h-2.5 w-2.5" /> Reset
+                          </span>
+                        )}
                       </p>
                     </div>
                   );
