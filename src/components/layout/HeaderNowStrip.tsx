@@ -645,11 +645,6 @@ function HomeCleaningPreview({ tasks, navigate }: { tasks: Task[]; navigate: Ret
   );
 }
 
-function DueNextRowImpl({ t, navigate }: { t: Task; navigate: ReturnType<typeof useNavigate> }) {
-  void t; void navigate;
-  return null;
-}
-
 function DueNextPreview({ tasks, slotLabel }: { tasks: Task[]; slotLabel: string }) {
   const navigate = useNavigate();
   return (
