@@ -1,87 +1,61 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-const KEY = (id: string) => `careflow:today-section:${id}`;
-
+/**
+ * Persisted collapsible wrapper for planning-header sections.
+ * The `storageKey` is shared across Day/Week/Month so the user's
+ * minimize preference carries across those pages.
+ */
 export function CollapsibleSection({
-  id,
+  storageKey,
   title,
-  subtitle,
-  icon,
-  preview,
-  accent,
-  defaultOpen = true,
-  className,
+  eyebrow,
+  defaultCollapsed = true,
   children,
 }: {
-  id: string;
-  title: ReactNode;
-  subtitle?: ReactNode;
-  icon?: ReactNode;
-  preview?: ReactNode;
-  accent?: "warm" | "calm" | "sage" | "none";
-  defaultOpen?: boolean;
-  className?: string;
-  children: ReactNode;
+  storageKey: string;
+  title: string;
+  eyebrow?: string;
+  defaultCollapsed?: boolean;
+  children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState<boolean>(() => {
-    if (typeof window === "undefined") return defaultOpen;
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
-      const v = localStorage.getItem(KEY(id));
+      const v = localStorage.getItem(storageKey);
       if (v === "1") return true;
       if (v === "0") return false;
     } catch {}
-    return defaultOpen;
+    return defaultCollapsed;
   });
-
   useEffect(() => {
-    try { localStorage.setItem(KEY(id), open ? "1" : "0"); } catch {}
-  }, [id, open]);
+    try { localStorage.setItem(storageKey, collapsed ? "1" : "0"); } catch {}
+  }, [storageKey, collapsed]);
 
   return (
-    <section className={cn("cozy-card overflow-hidden", className)}>
-      {accent && accent !== "none" && (
-        <div
+    <section className="rounded-2xl border border-border/40 bg-card/40 backdrop-blur-sm">
+      <button
+        type="button"
+        onClick={() => setCollapsed(c => !c)}
+        aria-expanded={!collapsed}
+        className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-2.5 text-left transition hover:bg-muted/40"
+      >
+        <span className="min-w-0">
+          {eyebrow && (
+            <span className="block text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+              {eyebrow}
+            </span>
+          )}
+          <span className="block truncate text-sm font-medium text-foreground">{title}</span>
+        </span>
+        <ChevronDown
           className={cn(
-            "h-1 w-full",
-            accent === "warm" && "bg-accent",
-            accent === "calm" && "bg-primary",
-            accent === "sage" && "bg-secondary",
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            !collapsed && "rotate-180",
           )}
         />
-      )}
-      <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger asChild>
-          <button
-            type="button"
-            className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-muted/30"
-          >
-            {icon && <div className="shrink-0">{icon}</div>}
-            <div className="min-w-0 flex-1">
-              <div className="font-display text-base font-semibold leading-tight">{title}</div>
-              {subtitle && (
-                <div className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</div>
-              )}
-            </div>
-            {preview && !open && (
-              <div className="ml-2 hidden min-w-0 shrink-0 truncate text-xs text-muted-foreground sm:block">
-                {preview}
-              </div>
-            )}
-            <ChevronDown
-              className={cn(
-                "ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-                open && "rotate-180",
-              )}
-            />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="px-5 pb-5 pt-1">{children}</div>
-        </CollapsibleContent>
-      </Collapsible>
+      </button>
+      {!collapsed && <div className="px-1 pb-1 sm:px-2 sm:pb-2">{children}</div>}
     </section>
   );
 }
