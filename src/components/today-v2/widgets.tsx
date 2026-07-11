@@ -291,7 +291,7 @@ export function CycleSummaryWidget() {
       </Card>
     );
   return (
-    <Card title={`Cycle · ${cycle.phase}`} icon={<Heart className="h-4 w-4" />} tone="cream">
+    <Card title={`Cycle · ${cycle.label}`} icon={<Heart className="h-4 w-4" />} tone="cream">
       <div className="text-xs text-muted-foreground">Day {cycle.cycleDay}</div>
       <p className="mt-2 text-xs leading-relaxed text-foreground">{cycle.affirmation}</p>
       <div className="mt-2 text-[11px] text-muted-foreground">
