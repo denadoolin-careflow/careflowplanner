@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, Download, Pin, ChevronDown, Plus, Sparkles, Shield, FileCheck, BookOpen, Activity, DollarSign, File } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useResetChecklists } from "@/lib/reset-checklists";
 import { ChecklistTree } from "@/components/reset/ChecklistTree";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { AttachmentsField } from "@/components/attachments/AttachmentsField";
 import type { Attachment } from "@/lib/types";
 import { aiInvoke } from "@/lib/ai-invoke";
+import { SectionNav, HOME_AREAS_SECTIONS, type HomeAreasSectionId } from "@/components/home-areas/SectionNav";
+import { SummaryRail } from "@/components/home-areas/SummaryRail";
 
 const today = () => new Date().toISOString().slice(0, 10);
 function weekStart(d = new Date()) { const x = new Date(d); const day = (x.getDay() + 6) % 7; x.setDate(x.getDate() - day); return x.toISOString().slice(0, 10); }
@@ -532,19 +534,78 @@ function Section({ title, defaultOpen = true, badge, children }: { title: string
 
 export default function HomeAreas() {
   const uid = useUser();
+  const [params, setParams] = useSearchParams();
+  const [urgent, setUrgent] = useState(0);
+
+  const initial = (() => {
+    const fromUrl = params.get("section") as HomeAreasSectionId | null;
+    if (fromUrl && HOME_AREAS_SECTIONS.some(s => s.id === fromUrl)) return fromUrl;
+    if (typeof window !== "undefined") {
+      const stored = window.localStorage.getItem("careflow:home-areas:section") as HomeAreasSectionId | null;
+      if (stored && HOME_AREAS_SECTIONS.some(s => s.id === stored)) return stored;
+    }
+    return "reset" as HomeAreasSectionId;
+  })();
+  const [active, setActive] = useState<HomeAreasSectionId>(initial);
+
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    if (next.get("section") !== active) {
+      next.set("section", active);
+      setParams(next, { replace: true });
+    }
+    try { window.localStorage.setItem("careflow:home-areas:section", active); } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
+
   if (!uid) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+
+  const activeMeta = HOME_AREAS_SECTIONS.find(s => s.id === active)!;
+  const subtitleMap: Record<HomeAreasSectionId, string> = {
+    reset: "Quick reset checklists — tick items as you go.",
+    zones: "Cleaning tasks grouped by room or zone.",
+    maintenance: "Recurring upkeep, sorted by what's due next.",
+    documents: "Insurance, warranties, manuals — all in one place.",
+    notes: "Household notes, ideas, and reminders.",
+    chores: "Weekly chore chart for the whole household.",
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="cozy-card gradient-sage p-6">
-        <h2 className="font-display text-3xl font-semibold">Home</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Reset, zones, maintenance, documents, notes, and chores — all in one place.</p>
+    <div className="-mx-2 sm:-mx-4">
+      <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-7xl overflow-hidden rounded-2xl border border-border/60 bg-card/40 shadow-sm">
+        <SectionNav
+          active={active}
+          onChange={setActive}
+          badges={{ maintenance: urgent > 0 ? { value: urgent, tone: "danger" } : undefined }}
+        />
+        <main className="flex min-w-0 flex-1 flex-col bg-background/40">
+          <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-card/70 px-6 py-4 backdrop-blur-sm">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <h1 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                  {activeMeta.label}
+                </h1>
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+                {subtitleMap[active]}
+              </p>
+            </div>
+          </header>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            {active === "reset" && <ResetSection uid={uid} />}
+            {active === "zones" && <ZonesPanel uid={uid} />}
+            {active === "maintenance" && <MaintenancePanel uid={uid} />}
+            {active === "documents" && <DocumentsPanel uid={uid} />}
+            {active === "notes" && <NotesPanel uid={uid} />}
+            {active === "chores" && <ChoreChart uid={uid} />}
+          </div>
+        </main>
+        <SummaryRail
+          uid={uid}
+          onOpenSection={(id) => setActive(id)}
+          onUrgentCount={setUrgent}
+        />
       </div>
-      <Section title="Reset" badge="checklists" defaultOpen><ResetSection uid={uid} /></Section>
-      <Section title="Zones" badge="cleaning" defaultOpen><ZonesPanel uid={uid} /></Section>
-      <Section title="Maintenance" defaultOpen={false}><MaintenancePanel uid={uid} /></Section>
-      <Section title="Documents" defaultOpen={false}><DocumentsPanel uid={uid} /></Section>
-      <Section title="Notes" defaultOpen={false}><NotesPanel uid={uid} /></Section>
-      <Section title="Chores" defaultOpen={false}><ChoreChart uid={uid} /></Section>
     </div>
   );
 }
