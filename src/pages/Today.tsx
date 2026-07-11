@@ -26,7 +26,8 @@ import { useTodayView, TODAY_VIEW_LABELS, type TodayView, useTodayPrefs, useToda
 import { ScopeHero } from "@/components/layout/ScopeHero";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { Settings2 } from "lucide-react";
+import { Settings2, LayoutTemplate } from "lucide-react";
+import { TemplateGallery } from "@/components/today/TemplateGallery";
 import { cn } from "@/lib/utils";
 
 export default function Today() {
@@ -48,6 +49,8 @@ function TodayInner() {
   const [prefs, setPrefs] = useTodayPrefs();
   const [defaultView, setDefaultView] = useTodayDefaultView();
   const defaultRoute = state.settings.defaultRoute ?? "/";
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [gridKey, setGridKey] = useState(0);
 
   // When arriving with a #slot-morning|afternoon|evening hash, scroll to it.
   useEffect(() => {
@@ -245,6 +248,20 @@ function TodayInner() {
                   ))}
                 </div>
               </div>
+                <div className="space-y-1.5 border-t border-border/50 pt-3">
+                  <div className="text-sm font-medium text-foreground">Templates</div>
+                  <p className="text-[11px] leading-snug text-muted-foreground">
+                    Start from a curated Today layout — you can edit it after.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full rounded-full"
+                    onClick={() => setGalleryOpen(true)}
+                  >
+                    <LayoutTemplate className="mr-1.5 h-3.5 w-3.5" /> Browse templates
+                  </Button>
+                </div>
             </PopoverContent>
           </Popover>
               </div>
@@ -313,7 +330,7 @@ function TodayInner() {
         {view === "schedule" && <ScheduleBoard date={day} onTaskClick={setEditTaskId} onApptClick={setEditApptId} />}
         {view === "custom" && (
           <div className="space-y-6">
-            <CustomizableGrid pageKey="today" />
+            <CustomizableGrid key={gridKey} pageKey="today" />
           </div>
         )}
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/40 bg-card/55 p-4 shadow-soft backdrop-blur-xl">
@@ -331,6 +348,14 @@ function TodayInner() {
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <ExhaleFlow open={exhaleOpen} onOpenChange={setExhaleOpen} date={day} />
       <QuickPresetSwitcher pageKey="today" />
+      <TemplateGallery
+        open={galleryOpen}
+        onOpenChange={setGalleryOpen}
+        onApplied={() => {
+          setView("custom");
+          setGridKey((k) => k + 1);
+        }}
+      />
     </>
   );
 }
