@@ -20,6 +20,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useAtmosphere } from "@/lib/atmospheres";
 import { RoutinesMini } from "@/components/routines/RoutinesMini";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
+import { MoonPhaseBadge } from "@/components/rhythm/MoonPhaseBadge";
+import { PhaseBadge } from "@/components/cycle/PhaseBadge";
+import { WeatherWidget } from "@/components/widgets/WeatherWidget";
+import { MealsPlannedWidget } from "@/components/today/widgets/MealsPlannedWidget";
+import { Home as HomeIcon, Sparkles as CleaningIcon } from "lucide-react";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { Plus, BookHeart, FileText, StickyNote, Pencil } from "lucide-react";
 import { getOrCreateDailyNote, createNote } from "@/lib/notes";
@@ -368,6 +373,20 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
         <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Today</div>
         <span className="text-[10px] font-medium text-muted-foreground">{total} tasks</span>
       </div>
+      {/* Rhythm chips: cycle · moon · weather */}
+      <div className="mb-3 space-y-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <MoonPhaseBadge />
+          <PhaseBadge onClick={() => navigate("/today")} />
+        </div>
+        <div className="rounded-lg border border-border/40 bg-background/60 p-2">
+          <WeatherWidget compact showDayParts={false} />
+        </div>
+      </div>
+      {/* Meals: breakfast · lunch · dinner */}
+      <div className="mb-3">
+        <MealsPlannedWidget date={new Date()} />
+      </div>
       <div className="mb-3">
         <QuickAddBar date={new Date()} />
       </div>
@@ -437,6 +456,8 @@ function TodayPreview({ tasks, navigate }: { tasks: Task[]; navigate: ReturnType
           </div>
         ))}
       </div>
+      {/* Home & Cleaning tasks */}
+      <HomeCleaningPreview tasks={tasks} navigate={navigate} />
       <RoutinesMini />
       <div className="mt-2 border-t border-border/40 pt-2 space-y-1.5">
         <div className="flex items-center gap-1">
