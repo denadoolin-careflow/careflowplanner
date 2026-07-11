@@ -790,9 +790,10 @@
   height: 0;
   pointer-events: none;
 }
-.block-editor .ProseMirror > * { position: relative; padding: 2px 6px; margin-inline: -6px; border-radius: 10px; transition: background 140ms ease; }
+.block-editor .ProseMirror > * { position: relative; padding: 6px 14px; margin-inline: -14px; border-radius: 12px; transition: background 140ms ease; }
 .block-editor .ProseMirror > *:hover { background: hsl(var(--muted) / 0.22); }
-.block-editor .ProseMirror ::selection { background: hsl(var(--primary) / 0.18); border-radius: 4px; }
+/* Keep selected text legible — softer wash, no rounded pill that clips descenders */
+.block-editor .ProseMirror ::selection { background: hsl(var(--primary) / 0.28); color: hsl(var(--foreground)); border-radius: 2px; }
 /* ---------- Craft/Capacities-style writing polish ---------- */
 .block-editor .ProseMirror { line-height: 1.72; letter-spacing: 0.001em; }
 .block-editor .ProseMirror p { margin: 0.35em 0; }
@@ -890,9 +891,10 @@
 /* ---------- Editor density + font scale ---------- */
 .block-editor { --editor-font-scale: 1; }
 .block-editor .ProseMirror { font-size: calc(15px * var(--editor-font-scale)); line-height: 1.7; }
-.block-editor.editor-density-cozy .ProseMirror > * { padding: 1px 0; }
-.block-editor.editor-density-comfortable .ProseMirror > * { padding: 3px 0; }
-.block-editor.editor-density-airy .ProseMirror > * { padding: 6px 0; }
+/* Density presets — preserve horizontal breathing room so checkboxes/bullets never touch the outline */
+.block-editor.editor-density-cozy .ProseMirror > * { padding: 3px 14px; }
+.block-editor.editor-density-comfortable .ProseMirror > * { padding: 6px 14px; }
+.block-editor.editor-density-airy .ProseMirror > * { padding: 10px 16px; }
 .block-editor.editor-density-airy .ProseMirror { line-height: 1.85; }
 
 /* ---------- Editor themes ---------- */
