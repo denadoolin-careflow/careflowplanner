@@ -13,6 +13,7 @@ import { InlineTagPreviewLayer } from "@/components/tags/InlineTagPreviewLayer";
 import { MediaLightbox } from "@/components/media/MediaLightbox";
 import { IndexRedirect } from "@/components/auth/IndexRedirect";
 import Today from "./pages/Today";
+import TodayV2 from "./pages/TodayV2";
 import Week from "./pages/Week";
 import Month from "./pages/Month";
 import MonthOverview from "./pages/MonthOverview";
@@ -176,6 +177,7 @@ const App = () => (
                 <Route path="/areas/:name" element={<AreaPage />} />
                 <Route path="/areas" element={<AreasManager />} />
                 <Route path="/today" element={<Today />} />
+               <Route path="/today-v2" element={<TodayV2 />} />
                 <Route path="/rhythm" element={<RhythmOverview />} />
                 <Route path="/insights" element={<Insights />} />
                 <Route path="/plan" element={<PlanTimeline />} />

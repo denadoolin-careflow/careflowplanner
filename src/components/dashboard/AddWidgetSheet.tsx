@@ -18,6 +18,13 @@ const CATEGORY_OF: Record<WidgetType, Category> = {
   moon: "Cosmic", "moon-guidance-hero": "Cosmic", "rhythm-forecast": "Cosmic", "transits-today": "Cosmic", "lunar-planner": "Cosmic", "carey-snapshot": "Cosmic", "transit-remember": "Cosmic",
   goals: "Reflect", ideas: "Reflect", "journal-prompt": "Reflect", "soft-moment": "Reflect",
   note: "Utilities", "mini-tasks": "Utilities",
+  "hero-greeting": "Focus", "capacity-checkin": "Care & health", "moon-summary": "Cosmic",
+  "daily-debrief-v2": "Reflect", "cycle-summary": "Care & health", "todays-timeline": "Calendar",
+  "top-priorities": "Focus", "self-care-checkin": "Care & health", "tasks-today-v2": "Focus",
+  "todays-flow": "Reflect", "homeflow": "Home", "my-people-v2": "Care & health",
+  "care-reminders-v2": "Care & health", "whats-for-dinner-v2": "Meals & pantry",
+  "hydration": "Care & health", "movement": "Care & health", "gratitude-notes": "Reflect",
+  "affirmation-footer": "Reflect",
 };
 
 interface Props {

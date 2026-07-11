@@ -43,6 +43,14 @@ import { TransitsTodayWidget } from "./widgets/TransitsToday";
 import { LunarPlannerCard } from "./widgets/LunarPlannerCard";
 import { CareyDailySnapshot } from "./widgets/CareyDailySnapshot";
 import { TransitRememberWidget } from "@/components/today/widgets/TransitRememberWidget";
+import {
+  HeroGreetingWidget, CapacityCheckInWidget, MoonSummaryWidget, DailyDebriefWidget,
+  CycleSummaryWidget, TodaysTimelineWidget, TopPrioritiesWidget, SelfCareCheckInWidget,
+  TasksTodayV2Widget, TodaysFlowWidget as V2FlowWidget, HomeFlowWidget, MyPeopleWidget,
+  CareRemindersV2Widget, WhatsForDinnerV2Widget, HydrationWidget, MovementWidget,
+  GratitudeNotesWidget, AffirmationFooterWidget,
+} from "@/components/today-v2/widgets";
+import { Droplets, Footprints, Home as HomeIcon, Star } from "lucide-react";
 
 export interface WidgetSpec {
   type: WidgetType;
@@ -125,6 +133,24 @@ export const WIDGET_REGISTRY: Record<WidgetType, WidgetSpec> = {
   "lunar-planner": { type: "lunar-planner", title: "Lunar planner", icon: Moon, defaultSize: { w: 6, h: 6 }, Component: LunarPlannerCard, bare: true, pageHref: "/today" },
   "carey-snapshot": { type: "carey-snapshot", title: "Carey's daily snapshot", icon: Sparkles, defaultSize: { w: 6, h: 7 }, Component: CareyDailySnapshot, bare: true, pageHref: "/cosmic-flow" },
   "transit-remember": { type: "transit-remember", title: "Transits to remember", icon: Sparkles, defaultSize: { w: 4, h: 5 }, Component: TransitRememberWidget, pageHref: "/cosmic-flow" },
+  "hero-greeting": { type: "hero-greeting", title: "Greeting", icon: Sun, defaultSize: { w: 7, h: 5 }, Component: HeroGreetingWidget, bare: true },
+  "capacity-checkin": { type: "capacity-checkin", title: "Capacity check-in", icon: Heart, defaultSize: { w: 5, h: 5 }, Component: CapacityCheckInWidget, bare: true },
+  "moon-summary": { type: "moon-summary", title: "Moon", icon: Moon, defaultSize: { w: 4, h: 5 }, Component: MoonSummaryWidget, bare: true },
+  "daily-debrief-v2": { type: "daily-debrief-v2", title: "Daily debrief", icon: Sparkles, defaultSize: { w: 4, h: 5 }, Component: DailyDebriefWidget, bare: true },
+  "cycle-summary": { type: "cycle-summary", title: "Cycle", icon: Heart, defaultSize: { w: 4, h: 5 }, Component: CycleSummaryWidget, bare: true },
+  "todays-timeline": { type: "todays-timeline", title: "Timeline", icon: CalendarClock, defaultSize: { w: 4, h: 6 }, Component: TodaysTimelineWidget, bare: true },
+  "top-priorities": { type: "top-priorities", title: "Top priorities", icon: Star, defaultSize: { w: 4, h: 6 }, Component: TopPrioritiesWidget, bare: true },
+  "self-care-checkin": { type: "self-care-checkin", title: "Self-care", icon: HeartHandshake, defaultSize: { w: 4, h: 6 }, Component: SelfCareCheckInWidget, bare: true },
+  "tasks-today-v2": { type: "tasks-today-v2", title: "Tasks today", icon: CheckSquare, defaultSize: { w: 8, h: 6 }, Component: TasksTodayV2Widget, bare: true, pageHref: "/today", quickAddEvent: "task" },
+  "todays-flow": { type: "todays-flow", title: "Today's flow", icon: Sparkles, defaultSize: { w: 4, h: 6 }, Component: V2FlowWidget, bare: true },
+  "homeflow": { type: "homeflow", title: "Home & cleaning", icon: HomeIcon, defaultSize: { w: 12, h: 7 }, Component: HomeFlowWidget, bare: true, pageHref: "/home-reset" },
+  "my-people-v2": { type: "my-people-v2", title: "My people", icon: HeartHandshake, defaultSize: { w: 8, h: 5 }, Component: MyPeopleWidget, bare: true },
+  "care-reminders-v2": { type: "care-reminders-v2", title: "Care reminders", icon: HeartHandshake, defaultSize: { w: 4, h: 5 }, Component: CareRemindersV2Widget, bare: true },
+  "whats-for-dinner-v2": { type: "whats-for-dinner-v2", title: "Dinner", icon: Utensils, defaultSize: { w: 3, h: 4 }, Component: WhatsForDinnerV2Widget, bare: true, pageHref: "/meals" },
+  "hydration": { type: "hydration", title: "Hydration", icon: Droplets, defaultSize: { w: 3, h: 4 }, Component: HydrationWidget, bare: true },
+  "movement": { type: "movement", title: "Movement", icon: Footprints, defaultSize: { w: 3, h: 4 }, Component: MovementWidget, bare: true },
+  "gratitude-notes": { type: "gratitude-notes", title: "Gratitude", icon: NotebookPen, defaultSize: { w: 3, h: 4 }, Component: GratitudeNotesWidget, bare: true, pageHref: "/notes" },
+  "affirmation-footer": { type: "affirmation-footer", title: "Affirmation", icon: Sparkles, defaultSize: { w: 12, h: 3 }, Component: AffirmationFooterWidget, bare: true },
 };
 
 export const ALL_WIDGET_TYPES = Object.keys(WIDGET_REGISTRY) as WidgetType[];
