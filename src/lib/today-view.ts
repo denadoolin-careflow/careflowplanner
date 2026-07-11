@@ -14,13 +14,24 @@ const VIEW_KEY = "careflow:today-view:v1";
 const COLLAPSED_KEY = "careflow:today-sidebar-collapsed:v1";
 const HIDDEN_KEY = "careflow:today-sidebar-hidden:v1";
 const PREFS_KEY = "careflow:today-prefs:v1";
+const DEFAULT_VIEW_KEY = "careflow:today-default-view:v1";
 
 const viewListeners = new Set<(v: TodayView) => void>();
+
+function isTodayView(v: unknown): v is TodayView {
+  return v === "rhythm" || v === "timeofday" || v === "plan" || v === "schedule" || v === "custom";
+}
+
+function readDefaultView(): TodayView {
+  if (typeof localStorage === "undefined") return "rhythm";
+  const v = localStorage.getItem(DEFAULT_VIEW_KEY);
+  return isTodayView(v) ? v : "rhythm";
+}
 
 function readView(): TodayView {
   if (typeof localStorage === "undefined") return "rhythm";
   const v = localStorage.getItem(VIEW_KEY);
-  return v === "rhythm" || v === "timeofday" || v === "plan" || v === "schedule" || v === "custom" ? v : "rhythm";
+  return isTodayView(v) ? v : readDefaultView();
 }
 
 export function useTodayView(): [TodayView, (v: TodayView) => void] {
@@ -33,6 +44,22 @@ export function useTodayView(): [TodayView, (v: TodayView) => void] {
   const set = useCallback((next: TodayView) => {
     try { localStorage.setItem(VIEW_KEY, next); } catch { /* */ }
     viewListeners.forEach(l => l(next));
+  }, []);
+  return [v, set];
+}
+
+const defaultViewListeners = new Set<(v: TodayView) => void>();
+
+export function useTodayDefaultView(): [TodayView, (v: TodayView) => void] {
+  const [v, setV] = useState<TodayView>(readDefaultView);
+  useEffect(() => {
+    const fn = (next: TodayView) => setV(next);
+    defaultViewListeners.add(fn);
+    return () => { defaultViewListeners.delete(fn); };
+  }, []);
+  const set = useCallback((next: TodayView) => {
+    try { localStorage.setItem(DEFAULT_VIEW_KEY, next); } catch { /* */ }
+    defaultViewListeners.forEach(l => l(next));
   }, []);
   return [v, set];
 }
