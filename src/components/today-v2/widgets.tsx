@@ -132,7 +132,7 @@ export function HeroGreetingWidget() {
         </span>
         {wx && (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/70 px-2.5 py-1">
-            {wx.tempMaxC != null ? `${Math.round(wx.tempMaxC)}°` : "—"} · {wx.summary ?? ""}
+            {Math.round(wx.highC)}° · {wx.label}
           </span>
         )}
       </div>
@@ -204,20 +204,18 @@ export function MoonSummaryWidget() {
   return (
     <Card title="Moon" icon={<Moon className="h-4 w-4" />} tone="cream">
       <div className="flex items-start gap-3">
-        <div className="text-4xl leading-none">{info.emoji}</div>
+        <div className="text-4xl leading-none">{info.glyph}</div>
         <div className="min-w-0">
           <div className="font-display text-base font-semibold text-foreground">
-            {info.name}
+            {info.label}
           </div>
           <div className="text-xs text-muted-foreground">
             {Math.round(illum * 100)}% illuminated
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
-            {info.energy && (
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
-                {info.energy}
-              </span>
-            )}
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+              {info.invitation}
+            </span>
           </div>
         </div>
       </div>
@@ -296,18 +294,9 @@ export function CycleSummaryWidget() {
     <Card title={`Cycle · ${cycle.phase}`} icon={<Heart className="h-4 w-4" />} tone="cream">
       <div className="text-xs text-muted-foreground">Day {cycle.cycleDay}</div>
       <p className="mt-2 text-xs leading-relaxed text-foreground">{cycle.affirmation}</p>
-      {cycle.suggestedActivities && cycle.suggestedActivities.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {cycle.suggestedActivities.slice(0, 4).map((a, i) => (
-            <span
-              key={i}
-              className="rounded-full bg-secondary/50 px-2 py-0.5 text-[10px] text-foreground"
-            >
-              {a}
-            </span>
-          ))}
-        </div>
-      )}
+      <div className="mt-2 text-[11px] text-muted-foreground">
+        Energy: {cycle.energyFloor}
+      </div>
     </Card>
   );
 }
@@ -322,7 +311,7 @@ export function TodaysTimelineWidget() {
   const items = [
     ...state.appointments
       .filter((a) => a.date === today)
-      .map((a) => ({ time: a.startTime ?? "—", title: a.title, id: a.id })),
+      .map((a) => ({ time: a.time ?? "—", title: a.title, id: a.id })),
     ...state.tasks
       .filter((t) => t.dueDate === today && t.startTime)
       .map((t) => ({ time: t.startTime!, title: t.title, id: t.id })),
