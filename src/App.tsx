@@ -33,6 +33,7 @@ import Ideas from "./pages/Ideas";
 import Tags from "./pages/Tags";
 import TagDetail from "./pages/TagDetail";
 import CalendarPage from "./pages/CalendarPage";
+import CalendarV2 from "./pages/CalendarV2";
 import Settings from "./pages/Settings";
 import PomodoroPicker from "./pages/PomodoroPicker";
 import Health from "./pages/Health";
@@ -211,6 +212,7 @@ const App = () => (
                <Route path="/tags" element={<Tags />} />
                <Route path="/tags/:name" element={<TagDetail />} />
                 <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/calendar-v2" element={<CalendarV2 />} />
                 <Route path="/focus" element={<PomodoroPicker />} />
                 <Route path="/memories" element={<Memories />} />
                 <Route path="/settings" element={<Settings />} />
