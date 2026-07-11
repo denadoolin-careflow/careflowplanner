@@ -149,6 +149,13 @@ function TodayInner() {
               </button>
             ))}
           </div>
+          <a
+            href="/today-v2"
+            className="ml-1 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-1 text-[11px] text-primary hover:bg-primary/15"
+            title="Try the new v2 layout"
+          >
+            ✨ Try v2
+          </a>
           <Popover>
             <PopoverTrigger asChild>
               <button
