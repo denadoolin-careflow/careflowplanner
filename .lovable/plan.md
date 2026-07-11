@@ -1,142 +1,91 @@
-# One-pass plan: Inbox, Today header, quick-add wiring, Home Reset overhaul
 
-Ships as a single milestone. Grouped by surface for review; implementation order at the bottom.
+## Goal
 
----
+Ship a **/today-v2** prototype that renders the mockup you shared — hero, capacity check-in, moon/debrief/cycle row, timeline + priorities + self-care, tasks today, today's flow, HomeFlow, my people, care reminders, bottom quad, affirmation footer — as a fully draggable/resizable dashboard, running alongside the current /today.
 
-## 1. Inbox (`/inbox`)
+Every section is a widget in `CustomizableGrid` so the user can rearrange, resize, hide, save presets, undo/redo, kanban/timeline modes, and AI-suggest layouts — all reusing the existing engine.
 
-- **Wrap long titles** in Today and Upcoming sections. Add `break-words whitespace-normal` (and remove any `truncate`) on the title node in `TaskRow` when `variant="card"`, plus on the inbox row container.
-- **"Needs a date" / "Ready to plan" chips**: retint for dark theme. Replace hardcoded amber/emerald bg with semantic tokens (`bg-warning/15 text-warning-foreground`, `bg-primary/15 text-primary`) sourced from `index.css`, so contrast holds in both modes.
-- **Mobile Today dropdown in header**: on the Inbox page header, add a collapsible "Today" summary (count + first 3 titles) visible only `md:hidden`, using `Collapsible` from shadcn. Persist open/closed in `localStorage`.
+Copy will use **deterministic heuristics** (rhythm/cycle/moon helpers already in the app). Live AI wiring is deferred.
 
-## 2. Today page header quick-view
+## Route & shell
 
-Extend the header quick-add popover (currently task-only) to accept:
-- **Meal** — reuses `addMeal` with slot picker (Breakfast/Lunch/Dinner/Snack), auto-linked to today.
-- **Home & Cleaning task** — writes to `cleaning_tasks` OR creates a `reset_items` row tagged `Home`; picker chooses.
+- New route `/today-v2` inside the authed `AppLayout` block in `src/App.tsx`.
+- New page `src/pages/TodayV2.tsx` — mirrors `Today.tsx` scaffolding (task selection provider, day nav, weather ensure, exhale flow, task/appt editors) but drops the view switcher and renders `CustomizableGrid pageKey="today-v2"` with the new hero as its `hero` slot.
+- Add a small "New" pill on the current `/today` view switcher linking to `/today-v2` so it's discoverable without changing the default.
 
-Implemented as a segmented control inside the popover; the existing task path stays default.
+## New page key
 
-## 3. Weather widget
+- Extend `PAGE_KEYS` in `src/lib/dashboard-layouts.ts` with `"today-v2"` and add a `defaultLayout("today-v2")` block that packs the new widgets to match the mockup rows on a 12-col grid.
 
-- Remove the standalone C/F toggle at the top of Today (delete the `<UnitToggle />` mount above the widget in `Today.tsx`).
-- Move `UnitToggle` inside the weather widget header (top-right of the widget card). Keep the same `useTempUnit` store — no data migration.
+## New widgets (files under `src/components/today-v2/widgets/`)
 
-## 4. Quick-add wiring (bottom sheet actions)
+Each widget renders its own card chrome (`bare: true`) with sage/cream/gold tokens, 20–24px radius, subtle botanical accent, drag handle on hover.
 
-Currently the bottom sheet has buttons that no-op or misroute.
+1. `HeroGreetingWidget` — "Good Morning, {name}", big date, time, weather chip, prev/next day arrows, botanical illustration right.
+2. `CapacityCheckInWidget` — 4 capacity chips (Spacious / Steady / Tender / Depleted) + Minimum Viable Day toggle. Persists to a new `today_capacity` row keyed by date (localStorage-backed first pass; DB row optional).
+3. `MoonSummaryWidget` — moon phase, % illuminated, sign, element, tag chips. Wraps existing moon helpers.
+4. `DailyDebriefWidget` — heuristic paragraph blending capacity + cycle + moon + weather + today's task categories. Two sub-cards: "With the Rhythm" (categories that fit) and "Consider Reshaping" (rule-based suggestions: reschedule flagged, add break before longest appt, shed evening load).
+5. `CycleSummaryWidget` — day, phase, guidance verbs, suggested activity chips.
+6. `TodaysTimelineWidget` — vertical scrollable timeline of the day's blocks/appointments with time gutter, checkbox, "Add Time Block" button.
+7. `TopPrioritiesWidget` — 5-slot priority list with favorite + priority indicator.
+8. `SelfCareCheckInWidget` — 5 rows (Body/Mind/Heart/Energy/Mood) each with a 5-dot rating; persists per-day.
+9. `TasksTodayWidget` — auto-imports tasks due today, sort by time/priority/category/project, checkbox + inline add.
+10. `TodaysFlowWidget` — intentions checklist ("Be present", "Stay flexible" …) + add intention.
+11. `HomeFlowWidget` — "Home & Cleaning" card: left filter tabs (Today/Overdue/Weekly/Monthly/Seasonal), cleaning checklist rows (room tag, duration, recurring, priority), right-side circular home progress ring + per-room bars, Smart Suggestion strip, Quick Add panel.
+12. `MyPeopleWidget` — cards per care recipient (Isaac / Aerie / Nana) with quick note, med, appt, checklist buttons; pulls from existing care recipients if present, otherwise seeded static.
+13. `CareRemindersWidget` — checkbox list of today's caregiving reminders.
+14. `WhatsForDinnerV2Widget` — meal image + name + ingredients + View Meal Plan.
+15. `HydrationWidget` — glasses/goal + quick add water.
+16. `MovementWidget` — steps, active minutes, log button.
+17. `GratitudeNotesWidget` — gratitude + note field + Open Journal.
+18. `AffirmationFooterWidget` — full-width, centered "Breathe. You're doing better than you think."
 
-- **Photo**: opens native camera picker (`<input type="file" accept="image/*" capture="environment">`), uploads to `attachments` bucket, creates a Task with the photo attached as a note-image.
-- **PDF**: file picker (`accept="application/pdf"`), uploads to `attachments`, creates a Task linked to the PDF; triggers existing `ai-pdf-summary` in background to prefill notes.
-- **Checklist**: opens a lightweight modal to enter title + newline-separated items; creates a Task with `subtasks[]` populated (or reset_item children if the user picks "Home").
-- **Note**: navigates to `/notes/new` (route-level page that pre-focuses the editor). If that route doesn't exist yet, add it as a thin wrapper around the existing `NotesFiles` editor.
-- **Voice**: replaces current Carey redirect. Opens a `VoiceCaptureSheet`:
-  1. Records via existing `use-audio-recorder` (WAV).
-  2. POSTs to a new edge function `ai-voice-quickadd` that calls Lovable AI STT (`openai/gpt-4o-mini-transcribe`) then reuses the same NLP that powers `InboxCapture` (chrono-node + `detectKind`) to auto-create the right item.
-  3. Shows preview toast with undo.
+Where a good equivalent exists (weather, moon, cycle, task-progress, home-reset) the widget composes it with new chrome instead of duplicating logic.
 
-## 5. Home Reset page (`/home-reset`)
+## Widget registry
 
-### Layout
-- **Move "Peaceful home starts with one small reset" hero blurb to the very top** of the page (above Focus timer strip). Rest of the sections shift down.
+- Register all 18 in `src/components/dashboard/WidgetRegistry.tsx` with `bare: true`, proper icons, `pageHref` for deep-links, and `quickAddEvent` where relevant.
+- Extend the `WidgetType` union in `dashboard-layouts.ts` with the new ids: `hero-greeting`, `capacity-checkin`, `moon-summary`, `daily-debrief-v2`, `cycle-summary`, `todays-timeline`, `top-priorities`, `self-care-checkin`, `tasks-today-v2`, `todays-flow`, `homeflow`, `my-people-v2`, `care-reminders-v2`, `whats-for-dinner-v2`, `hydration`, `movement`, `gratitude-notes`, `affirmation-footer`.
 
-### Kanban mode
-- Add view switch `List | Kanban` next to existing `By Room / Routines / Zones` toggles. Kanban columns = **To do / Scheduled / In progress / Done**, populated from reset_items status/scheduled fields.
-- Uses `@dnd-kit/core` (already installed via meals DnD). Drag between columns updates `done`/`due_date`.
+## Default layout (12-col, matches mockup)
 
-### Checklist items = draggable, schedulable tasks
-- Each checklist row gets a drag handle (HTML5 drag, like `InboxSortableRow`).
-- Drop targets: (a) Kanban columns, (b) TimeBlockBoard slots (Morning/Afternoon/Evening), (c) an "Add to calendar" chip that opens ScheduleTaskPopover.
-- **On schedule**, follow the confirmed model: promote the reset_item to a real `tasks` row via the existing `sync_reset_item_to_task` trigger (already writes `linked_task_id`), then set `due_date` + `time_block` on both records. Completion stays two-way synced by the existing triggers.
-
-### Per-zone header controls
-- Add **Schedule** button (opens ScheduleTaskPopover applied to all incomplete items in the zone).
-- Add **Time-of-day** button (sets `time_block` for all incomplete items — Morning/Afternoon/Evening).
-- Existing Reset zone + timer buttons stay.
-
-### Cleaning supplies checklist
-- New "Supplies" tab inside each zone card. Backed by a new column `reset_checklists.supplies jsonb` (array of `{name, have: boolean}`). Editable inline; "Add to grocery list" button pushes missing items into the active grocery list via `addGroceryItem`.
-
-### Weekly status / patterns
-- **Summary chip on Home Reset**: small card under the toolbar — "You reset Kitchen 3× this week · usually Sunday evenings" — computed client-side from `reset_history`.
-- **Full view on `/insights`**: new `ResetPatternsCard` — 7-day heatmap per zone, most-completed zones, common time-of-day. Link out from the chip.
-
-### Focus timer improvements
-- **Next-up dropdown** on `FocusTimerStrip`: dropdown showing the next 5 incomplete items across the active zone; picking one sets it as the focus task.
-- **Create/pick/edit task from timer popup**: add a "+ New task" and "Edit" affordance inside the timer control. Reuses `openTaskEditor` for edit; create uses inline input that writes to `reset_items` (or `tasks` if not in a zone).
-
-### 3-dot menu → edit + reorder
-- Replace current 3-dot menu on checklist rows with an inline edit-title action, a "Move to zone…" submenu, and a drag handle for manual reorder (persists via `reset_items.sort_order`).
-
-### Quick-add per time-of-day
-- Each block in `TimeBlockBoard` gets an inline `+ Add task` input. New tasks default to that time_block and today's date. Drag between blocks to reassign time_block.
-
----
-
-## Technical details
-
-### Edge function
-- `supabase/functions/ai-voice-quickadd/index.ts` — multipart audio in, returns `{ transcript, parsed: { kind, title, date?, time? } }`. Client then calls the same store actions as InboxCapture. Uses `LOVABLE_API_KEY` + `openai/gpt-4o-mini-transcribe`. CORS + Zod validation as per edge-function rules.
-
-### Schema migrations (single migration)
-```sql
-ALTER TABLE public.reset_items
-  ADD COLUMN IF NOT EXISTS time_block text CHECK (time_block IN ('morning','afternoon','evening')),
-  ADD COLUMN IF NOT EXISTS sort_order integer NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'todo'
-    CHECK (status IN ('todo','scheduled','in_progress','done'));
-ALTER TABLE public.reset_checklists
-  ADD COLUMN IF NOT EXISTS supplies jsonb NOT NULL DEFAULT '[]'::jsonb;
+```text
+row 1:  hero-greeting (7) | capacity-checkin (5)
+row 2:  moon-summary (4)  | daily-debrief-v2 (4)  | cycle-summary (4)
+row 3:  todays-timeline (4) | top-priorities (4) | self-care-checkin (4)
+row 4:  tasks-today-v2 (8) | todays-flow (4)
+row 5:  homeflow (12)
+row 6:  my-people-v2 (8)  | care-reminders-v2 (4)
+row 7:  whats-for-dinner-v2 (3) | hydration (3) | movement (3) | gratitude-notes (3)
+row 8:  affirmation-footer (12)
 ```
-No new tables, so no new GRANT block. Existing RLS on `reset_items`/`reset_checklists` covers new columns.
 
-### New / edited files
+Because the layout runs on `CustomizableGrid`, every card is draggable, resizable, hideable, and reflows on tablet/mobile via the existing responsive breakpoints and the mobile section pills.
 
-Add:
-- `src/components/reset/redesign/KanbanBoard.tsx`
-- `src/components/reset/redesign/SuppliesChecklist.tsx`
-- `src/components/reset/redesign/ZonePatternChip.tsx`
-- `src/components/reset/redesign/FocusNextUp.tsx`
-- `src/components/insights/ResetPatternsCard.tsx`
-- `src/components/quickadd/PhotoCapture.tsx`
-- `src/components/quickadd/PdfCapture.tsx`
-- `src/components/quickadd/ChecklistCapture.tsx`
-- `src/components/quickadd/VoiceCaptureSheet.tsx`
-- `src/pages/NoteNew.tsx` (thin wrapper if not already routed)
-- `supabase/functions/ai-voice-quickadd/index.ts`
+## Design tokens
 
-Edit:
-- `src/pages/Inbox.tsx` (mobile header dropdown, chip retint, wrap classes)
-- `src/components/cards/TaskRow.tsx` (wrap title in card variant)
-- `src/pages/Today.tsx` (drop top UnitToggle, extend header quick-add)
-- Weather widget component (embed `UnitToggle`)
-- `src/pages/HomeReset.tsx` (hero blurb move, view toggle, kanban mount, supplies, patterns chip)
-- `src/components/reset/redesign/RoomCard.tsx` (schedule/time-of-day header buttons, inline edit, drag handles, supplies tab)
-- `src/components/reset/redesign/FocusTimerStrip.tsx` (next-up dropdown, create/edit)
-- `src/components/reset/redesign/TimeBlockBoard.tsx` (quick-add input, DnD drop targets)
-- `src/components/reset/redesign/ResetToolbar.tsx` (List/Kanban toggle)
-- `src/pages/Insights.tsx` (mount `ResetPatternsCard`)
-- Quick-add bottom sheet component (wire the five buttons)
-- `src/App.tsx` (register `/notes/new` if missing)
+Reuse the sage/cream/gold palette already added for Home Reset (`src/index.css`). Add a small `.today-v2-card` utility if needed for consistent 20–24px radius, botanical corner accent, and slightly warmer surface tone. No hardcoded hex values in components.
 
-### Testing
-- Verify inbox text wraps on 375-wide viewport via Playwright screenshot.
-- Voice quick-add: record 2s of silence → expect validation error surfaced, not empty task.
-- DnD from RoomCard row → Morning block updates `time_block` and creates linked task.
-- Kanban drop → Done column sets `reset_items.done = true` and syncs the linked task.
+## Deferred (explicit)
 
----
+- Live AI daily debrief / smart suggestion (heuristics only for now).
+- New capacity/self-care/intentions tables in the DB (localStorage first pass, migration in a follow-up).
+- Sharing/import/export of layouts.
 
-## Implementation order
+## Files touched
 
-1. DB migration (adds columns needed by later steps).
-2. Voice edge function + client sheet.
-3. Quick-add wiring for photo/pdf/checklist/note.
-4. Inbox polish + Today header + weather unit relocation.
-5. Home Reset: hero move, header buttons, inline edit, quick-add per time block.
-6. Kanban view + DnD scheduling.
-7. Supplies checklist.
-8. Focus timer next-up + create/edit.
-9. Weekly pattern chip + Insights card.
-10. Manual + Playwright verification.
+- `src/App.tsx` — add `/today-v2` route.
+- `src/lib/dashboard-layouts.ts` — extend page keys, widget types, add default layout.
+- `src/components/dashboard/WidgetRegistry.tsx` — register 18 widgets.
+- `src/components/today-v2/widgets/*.tsx` — new widget components.
+- `src/components/today-v2/HeroGreeting.tsx` — hero (rendered as widget content).
+- `src/pages/TodayV2.tsx` — new page.
+- `src/pages/Today.tsx` — small "Try new layout" link to `/today-v2`.
+- `src/index.css` — optional `.today-v2-card` utility.
+
+## Acceptance
+
+- Visiting `/today-v2` shows the mockup layout end-to-end with real data where wired.
+- Every card can be dragged, resized, hidden, and restored via Edit layout.
+- Presets, undo/redo, kanban/timeline, AI-suggest, page theme all work (inherited from `CustomizableGrid`).
+- Old `/today` is unchanged and remains the default route.
