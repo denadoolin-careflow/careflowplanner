@@ -280,6 +280,22 @@ async function upsertRow(page: PageKey, preset: string, data: DashboardLayoutDat
   }
 }
 
+/** Public helper: persist a full dashboard layout for a page/preset. */
+export async function saveDashboardLayout(
+  page: PageKey,
+  preset: string,
+  data: DashboardLayoutData,
+) {
+  return upsertRow(page, preset, data);
+}
+
+/** Public helper: pack a widget spec list into `{widgets, layout}` (12-col grid). */
+export function buildLayoutFromSpecs(
+  items: { type: WidgetType; w: number; h: number; props?: Record<string, any> }[],
+): DashboardLayoutData {
+  return packLayout(items);
+}
+
 /** Read the JSONB `layout` column (supports both legacy array form and the new {items,pageTheme} form). */
 function readLayoutCol(raw: any): { items: GridItem[]; pageTheme: WidgetTheme | null } {
   if (!raw) return { items: [], pageTheme: null };
