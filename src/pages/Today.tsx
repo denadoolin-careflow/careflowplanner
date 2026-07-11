@@ -198,6 +198,31 @@ function TodayInner() {
                 </span>
                 <Switch checked={prefs.showQuickAdd} onCheckedChange={(v) => setPrefs({ showQuickAdd: v })} />
               </label>
+              <div className="space-y-1.5 border-t border-border/50 pt-3">
+                <div className="text-sm font-medium text-foreground">Pin as default page</div>
+                <p className="text-[11px] leading-snug text-muted-foreground">Where the app opens after you sign in.</p>
+                <div className="inline-flex w-full items-center gap-1 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
+                  {([
+                    { route: "/today", label: "Today" },
+                    { route: "/week", label: "Week" },
+                    { route: "/month", label: "Month" },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.route}
+                      type="button"
+                      onClick={() => updateProfile({ default_route: opt.route })}
+                      className={cn(
+                        "flex-1 rounded-full px-2.5 py-1 transition-colors",
+                        defaultRoute === opt.route
+                          ? "bg-primary/15 text-primary"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {opt.label}{defaultRoute === opt.route ? " · pinned" : ""}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </PopoverContent>
           </Popover>
               </div>
@@ -215,8 +240,20 @@ function TodayInner() {
                 slot={controls}
                 debrief={
                   <div className="space-y-6">
-                    <BurnoutCheckIn date={day} />
-                    <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+                    <CollapsibleSection
+                      storageKey="planning.section.capacity.collapsed"
+                      eyebrow="Capacity check-in"
+                      title="How's your capacity today?"
+                    >
+                      <BurnoutCheckIn date={day} />
+                    </CollapsibleSection>
+                    <CollapsibleSection
+                      storageKey="planning.section.debrief.collapsed"
+                      eyebrow="Daily debrief"
+                      title="Reflect and reset"
+                    >
+                      <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+                    </CollapsibleSection>
                   </div>
                 }
               />
@@ -224,9 +261,27 @@ function TodayInner() {
           }
           return (
             <div className="space-y-6">
-              <SlotWeatherStrip />
-              <BurnoutCheckIn date={day} />
-              <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+              <CollapsibleSection
+                storageKey="planning.section.rhythm.collapsed"
+                eyebrow="Rhythm"
+                title="Moon · Energy · Cycle"
+              >
+                <SlotWeatherStrip />
+              </CollapsibleSection>
+              <CollapsibleSection
+                storageKey="planning.section.capacity.collapsed"
+                eyebrow="Capacity check-in"
+                title="How's your capacity today?"
+              >
+                <BurnoutCheckIn date={day} />
+              </CollapsibleSection>
+              <CollapsibleSection
+                storageKey="planning.section.debrief.collapsed"
+                eyebrow="Daily debrief"
+                title="Reflect and reset"
+              >
+                <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+              </CollapsibleSection>
               {controls}
             </div>
           );
