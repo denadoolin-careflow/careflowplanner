@@ -22,7 +22,7 @@ import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
 import { DayPlanBoard } from "@/components/today/DayPlanBoard";
 import { ScheduleBoard } from "@/components/today/ScheduleBoard";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
-import { useTodayView, TODAY_VIEW_LABELS, type TodayView, useTodayPrefs } from "@/lib/today-view";
+import { useTodayView, TODAY_VIEW_LABELS, type TodayView, useTodayPrefs, useTodayDefaultView } from "@/lib/today-view";
 import { ScopeHero } from "@/components/layout/ScopeHero";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
@@ -46,6 +46,7 @@ function TodayInner() {
   const [exhaleOpen, setExhaleOpen] = useState(false);
   const [view, setView] = useTodayView();
   const [prefs, setPrefs] = useTodayPrefs();
+  const [defaultView, setDefaultView] = useTodayDefaultView();
   const defaultRoute = state.settings.defaultRoute ?? "/";
 
   // When arriving with a #slot-morning|afternoon|evening hash, scroll to it.
@@ -219,6 +220,27 @@ function TodayInner() {
                       )}
                     >
                       {opt.label}{defaultRoute === opt.route ? " · pinned" : ""}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5 border-t border-border/50 pt-3">
+                <div className="text-sm font-medium text-foreground">Pin default Today view</div>
+                <p className="text-[11px] leading-snug text-muted-foreground">Which layout Today opens with by default.</p>
+                <div className="flex flex-wrap gap-1 rounded-2xl border border-border/60 bg-card/70 p-1 text-[11px]">
+                  {(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => { setDefaultView(k); setView(k); }}
+                      className={cn(
+                        "rounded-full px-2.5 py-1 transition-colors",
+                        defaultView === k
+                          ? "bg-primary/15 text-primary"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {TODAY_VIEW_LABELS[k]}{defaultView === k ? " · pinned" : ""}
                     </button>
                   ))}
                 </div>
