@@ -16,6 +16,7 @@ import { QuickPresetSwitcher } from "@/components/dashboard/QuickPresetSwitcher"
 import { DailyDebrief } from "@/components/today/DailyDebrief";
 import { BurnoutCheckIn } from "@/components/today/BurnoutCheckIn";
 import { SlotWeatherStrip } from "@/components/today/SlotWeatherStrip";
+import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
 import { DayPlanBoard } from "@/components/today/DayPlanBoard";
@@ -38,13 +39,14 @@ export default function Today() {
 }
 
 function TodayInner() {
-  const { state } = useStore();
+  const { state, updateProfile } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   useEnsureWeather();
   const [exhaleOpen, setExhaleOpen] = useState(false);
   const [view, setView] = useTodayView();
   const [prefs, setPrefs] = useTodayPrefs();
+  const defaultRoute = state.settings.defaultRoute ?? "/";
 
   // When arriving with a #slot-morning|afternoon|evening hash, scroll to it.
   useEffect(() => {
