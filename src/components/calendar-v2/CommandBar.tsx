@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { Sparkles, AlertTriangle, Zap, Heart, Brain, Clock } from "lucide-react";
 import type { Task, Appointment } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { greetingFor } from "@/lib/greeting";
+import { timeOfDayGreeting } from "@/lib/greeting";
 
 interface Props {
   date: Date;
@@ -18,9 +18,7 @@ interface Props {
  * window (9am–5pm). Shows a gentle overload warning above 100%.
  */
 export function CommandBar({ date, tasks, appointments, topThree }: Props) {
-  const greeting = useMemo(() => {
-    try { return greetingFor(date); } catch { return "Hello"; }
-  }, [date]);
+  const greeting = useMemo(() => timeOfDayGreeting(date), [date]);
 
   const { apptMin, taskMin, totalMin, cap, pct, overload } = useMemo(() => {
     const apptMin = appointments.reduce((sum, a) => {
