@@ -96,29 +96,6 @@ export function ScopeHero({
 
           <div className="flex flex-wrap items-center gap-2">
             <ScopeNavToggle active={scope} />
-            <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/60 p-0.5 backdrop-blur">
-              {onPrev && (
-                <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full"
-                  onClick={onPrev} aria-label="Previous">
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </Button>
-              )}
-              {onDatePick && (
-                <DayPickerButton date={date} onChange={onDatePick} label={pickerLabel} />
-              )}
-              {onNext && (
-                <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full"
-                  onClick={onNext} aria-label="Next">
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Button>
-              )}
-              {onToday && !isCurrent && (
-                <Button size="sm" variant="ghost" className="h-7 rounded-full px-2 text-xs"
-                  onClick={onToday}>
-                  {scope === "today" ? "Today" : scope === "week" ? "This week" : "This month"}
-                </Button>
-              )}
-            </div>
             {actions && (
               <div className={cn("ml-auto flex flex-wrap items-center gap-1.5")}>
                 {actions}
