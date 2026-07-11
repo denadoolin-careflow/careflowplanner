@@ -86,8 +86,14 @@ const DropdownMenuItem = React.forwardRef<
     )}
     {...props}
   >
-    {icon && <span className="mr-2 inline-flex items-center text-muted-foreground">{icon}</span>}
-    {children}
+    {icon ? (
+      <>
+        <span className="mr-2 inline-flex items-center text-muted-foreground">{icon}</span>
+        {children}
+      </>
+    ) : (
+      children
+    )}
   </DropdownMenuPrimitive.Item>
 ));
 DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName;
