@@ -7,6 +7,7 @@ import { resolveTaskIcon } from "@/lib/task-icons";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { haptics } from "@/lib/haptics";
+import { usePlannerPointerDrag } from "@/lib/planner-touch-drag";
 import { format, parseISO } from "date-fns";
 
 const AREA_TINTS: Record<string, string> = {
@@ -38,14 +39,19 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
 
   const due = task.dueDate ? format(parseISO(task.dueDate), "MMM d") : null;
 
+  const pointer = usePlannerPointerDrag(
+    () => ({ taskId: task.id, label: task.title }),
+    { onClick: () => openTaskEditor(task.id) },
+  );
+
   return (
     <div
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      onClick={() => openTaskEditor(task.id)}
+      onPointerDown={pointer.onPointerDown}
       className={cn(
-        "group flex cursor-pointer items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px] transition-colors hover:border-primary/40 hover:bg-card",
+        "group flex cursor-pointer touch-none select-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px] transition-colors hover:border-primary/40 hover:bg-card",
         task.done && "opacity-60",
       )}
     >
