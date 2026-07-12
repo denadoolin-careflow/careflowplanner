@@ -128,7 +128,9 @@ function FocusTimer() {
   const [focusTaskId, setFocusTaskId] = usePlannerFocusTaskId();
   const [completePromptId, setCompletePromptId] = useState<string | null>(null);
 
-  const focusTask = focusTaskId ? state.tasks.find(t => t.id === focusTaskId) : null;
+  const focusTask = focusTaskId
+    ? state.tasks.find(t => t.id === focusTaskId) ?? null
+    : state.tasks.find(t => !t.done && t.isTopThree) ?? null;
   const activeTask = session.taskId ? state.tasks.find(t => t.id === session.taskId) : null;
   const shown = activeTask ?? focusTask;
 
