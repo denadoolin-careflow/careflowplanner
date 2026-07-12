@@ -40,6 +40,31 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { TaskAIAssistPopover } from "@/components/tasks/TaskAIAssistPopover";
 import { PomodoroDialog } from "@/components/routines/PomodoroDialog";
 import { FollowUpPopover } from "@/components/tasks/FollowUpPopover";
+import { useTaskEditorStyle } from "@/lib/task-editor-style";
+
+/** Per-style DialogContent classes. All override the shadcn defaults so the
+ *  chosen style takes effect app-wide the moment the user selects it. */
+const STYLE_DIALOG_CLASSES: Record<string, string> = {
+  // Right-side sheet — Things/Craft feel.
+  "focused-sheet":
+    "flex h-[100dvh] max-h-[100dvh] w-screen max-w-[100vw] flex-col gap-0 overflow-hidden rounded-none p-0 " +
+    "sm:!left-auto sm:!top-4 sm:!right-4 sm:!bottom-4 sm:!translate-x-0 sm:!translate-y-0 " +
+    "sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[min(96vw,40rem)] sm:max-w-none sm:rounded-2xl sm:shadow-2xl",
+  // Wide two-column inspector — Notion/Linear feel (the pre-existing layout).
+  "split-inspector":
+    "flex h-[100dvh] max-h-[100dvh] w-screen max-w-[100vw] flex-col gap-0 overflow-hidden overflow-x-hidden rounded-none p-0 " +
+    "sm:h-auto sm:max-h-[88vh] sm:w-[min(96vw,60rem)] sm:max-w-none sm:rounded-2xl sm:shadow-2xl " +
+    "md:w-[min(94vw,68rem)] md:max-h-[88vh] lg:w-[min(94vw,76rem)] lg:max-h-[90vh]",
+  // Centered compact modal — Linear/Superhuman feel.
+  "compact-command":
+    "flex h-[100dvh] max-h-[100dvh] w-screen max-w-[100vw] flex-col gap-0 overflow-hidden rounded-none p-0 " +
+    "sm:h-auto sm:max-h-[82vh] sm:w-[min(94vw,44rem)] sm:max-w-none sm:rounded-xl sm:shadow-2xl",
+  // Immersive fullscreen canvas — Craft/iA Writer feel.
+  "fullscreen-focus":
+    "flex h-[100dvh] max-h-[100dvh] w-screen max-w-[100vw] flex-col gap-0 overflow-hidden rounded-none p-0 " +
+    "sm:!inset-0 sm:!left-0 sm:!top-0 sm:!translate-x-0 sm:!translate-y-0 " +
+    "sm:h-[100dvh] sm:max-h-[100dvh] sm:w-screen sm:max-w-[100vw] sm:rounded-none",
+};
 
 type Props = {
   open: boolean;
