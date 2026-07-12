@@ -64,6 +64,7 @@ import Routines from "./pages/Routines";
 import PlanTimeline from "./pages/PlanTimeline";
 import PlanDay from "./pages/PlanDay";
 import Planner from "./pages/Planner";
+import TaskEditorStyles from "./pages/TaskEditorStyles";
 import Whiteboards from "./pages/Whiteboards";
 import WhiteboardDetail from "./pages/WhiteboardDetail";
 import MentalLoad from "./pages/MentalLoad";
@@ -186,6 +187,7 @@ const App = () => (
                 <Route path="/plan/:date" element={<PlanDay />} />
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/planner/:date" element={<Planner />} />
+                <Route path="/task-editor-styles" element={<TaskEditorStyles />} />
                 <Route path="/week" element={<Week />} />
                 <Route path="/month" element={<Month />} />
                <Route path="/month/overview" element={<MonthOverview />} />
