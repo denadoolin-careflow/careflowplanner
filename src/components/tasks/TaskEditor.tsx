@@ -299,7 +299,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               onChange={e => set("title", e.target.value)}
               onBlur={() => { if (nlpOn && parsed && parsed.chips.length) applyNlp(); }}
               placeholder="Task title"
-              className="order-last h-11 w-full min-w-0 max-w-full flex-1 basis-full border-0 bg-transparent px-0 text-[17px] font-semibold text-foreground caret-primary placeholder:text-muted-foreground/60 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:order-none sm:h-10 sm:basis-auto sm:w-auto"
+              className="font-display order-last h-11 w-full min-w-0 max-w-full flex-1 basis-full border-0 bg-transparent px-0 text-[20px] font-semibold tracking-tight text-foreground caret-primary placeholder:text-muted-foreground/60 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:order-none sm:h-10 sm:basis-auto sm:w-auto sm:text-[22px]"
             />
             <div className="ml-auto flex items-center gap-1 sm:ml-0 sm:contents">
             <TaskAIAssistPopover
@@ -601,6 +601,50 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
           )}>
             {/* ─────────── Left column: work surface ─────────── */}
             <div className="min-w-0 space-y-4">
+              {/* Project & Area — surfaced up top per Focused Sheet direction */}
+              <Card>
+                <CardHeader icon={<FolderTree className="h-3.5 w-3.5" />} title="Project & Area">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field icon={Tag} label="Area">
+                      <Select
+                        value={draft.area ?? "none"}
+                        onValueChange={v => set("area", v === "none" ? undefined : (v as any))}
+                      >
+                        <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
+                          <SelectItem value="none" icon={<X className="h-4 w-4 text-muted-foreground" />}>No area</SelectItem>
+                          {AREAS.map(a => (
+                            <SelectItem key={a} value={a} icon={<Tag className="h-4 w-4 text-muted-foreground" />}>{a}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field icon={FolderKanban} label="Project">
+                      <Select
+                        value={draft.projectId ?? "none"}
+                        onValueChange={v => set("projectId", v === "none" ? undefined : v)}
+                      >
+                        <SelectTrigger className="w-full"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent className="z-[60] max-h-64" position="popper" sideOffset={6} collisionPadding={12}>
+                          <SelectItem value="none" icon={<X className="h-4 w-4 text-muted-foreground" />}>No project</SelectItem>
+                          {(state.projects ?? []).map(p => (
+                            <SelectItem key={p.id} value={p.id} icon={<FolderKanban className="h-4 w-4 text-muted-foreground" />}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={runAutoDetect}
+                    disabled={autoBusy || !draft.title.trim()}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/15 disabled:opacity-50"
+                  >
+                    <Sparkles className="h-3 w-3" /> {autoBusy ? "Detecting…" : "Auto-detect from title"}
+                  </button>
+                </CardHeader>
+              </Card>
+
               {/* Checklist */}
               <Card>
                 <CardHeader
