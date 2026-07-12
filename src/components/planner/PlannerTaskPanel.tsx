@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow } from "lucide-react";
+import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,6 +11,8 @@ import { format, parseISO, isAfter, startOfDay, isSameDay } from "date-fns";
 import type { Task } from "@/lib/types";
 import { AREAS } from "@/lib/types";
 import { usePlannerSort, usePlannerTagFilter, type PlannerSort } from "@/lib/planner-prefs";
+import { parseTaskInput } from "@/lib/nlp-task";
+import { toast } from "sonner";
 
 interface Section {
   id: string;
@@ -23,13 +25,36 @@ interface Section {
 const AREA_SET = new Set(["Family","Health","Home","Meals","Personal","Money","Caregiving","Kids","Appointments","Creative Projects","Holidays & Birthdays"]);
 
 export function PlannerTaskPanel({ selectedDate, onQuickAdd }: { selectedDate: Date; onQuickAdd: () => void }) {
-  const { state } = useStore();
+  const { state, addTask } = useStore();
   const [q, setQ] = useState("");
   const [sort, setSort] = usePlannerSort();
   const [tagFilter, setTagFilter] = usePlannerTagFilter();
   const [open, setOpen] = useState<Record<string, boolean>>({
     inbox: true, today: true, upcoming: false, someday: false,
   });
+  const [inlineText, setInlineText] = useState("");
+  const inlineParsed = inlineText ? parseTaskInput(inlineText) : null;
+
+  const submitInline = async () => {
+    const text = inlineText.trim();
+    if (!text) return;
+    const p = parseTaskInput(text);
+    const iso = format(selectedDate, "yyyy-MM-dd");
+    await addTask({
+      title: p.title || text,
+      area: p.area ?? "Personal",
+      priority: p.priority ?? "medium",
+      done: false,
+      dueDate: p.dueDate ?? iso,
+      startTime: p.time,
+      estMinutes: p.estMinutes,
+      tags: p.tags,
+      energy: p.energy,
+      inbox: false,
+    } as any);
+    toast.success("Added");
+    setInlineText("");
+  };
 
   const today = startOfDay(selectedDate);
   const todayISO = format(today, "yyyy-MM-dd");
@@ -75,9 +100,34 @@ export function PlannerTaskPanel({ selectedDate, onQuickAdd }: { selectedDate: D
       <header className="border-b border-border/60 p-3">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold tracking-wide">Tasks</h2>
-          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Quick add task">
-            <Plus className="h-4 w-4" />
+          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Open advanced capture">
+            <CommandIcon className="h-3.5 w-3.5" />
           </Button>
+        </div>
+        {/* Inline quick add */}
+        <div className="mb-2">
+          <div className="relative">
+            <Plus className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary" />
+            <Input
+              value={inlineText}
+              onChange={(e) => setInlineText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); void submitInline(); }
+                if (e.key === "Escape") setInlineText("");
+              }}
+              placeholder="Add a task…"
+              className="h-8 pl-7 text-xs"
+            />
+          </div>
+          {inlineParsed && inlineParsed.chips.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {inlineParsed.chips.map((c, i) => (
+                <span key={i} className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-primary">
+                  {c.label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <div className="relative">
           <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />

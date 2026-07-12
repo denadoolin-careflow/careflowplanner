@@ -12,6 +12,11 @@ import { usePlannerFocusTaskId } from "@/lib/planner-prefs";
 import { haptics } from "@/lib/haptics";
 import { BlockQuickActions } from "./BlockQuickActions";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { usePlannerDropListener } from "@/lib/planner-touch-drag";
+import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { parseTaskInput } from "@/lib/nlp-task";
 
 export const RHYTHM_BANDS = [
   { id: "morning", label: "Morning",   startH: 5,  endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
@@ -86,13 +91,16 @@ function assignLanes(items: ScheduledItem[]): (ScheduledItem & { lane: number; l
 }
 
 export function PlannerTimeline({ date, compact }: { date: Date; compact?: boolean }) {
-  const { state, updateTask } = useStore();
+  const { state, updateTask, addTask } = useStore();
   const pomo = usePomodoro();
   const [focusTaskId] = usePlannerFocusTaskId();
   const iso = format(date, "yyyy-MM-dd");
   const gridRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
   const [resizing, setResizing] = useState<{ id: string; startY: number; startDur: number } | null>(null);
+  const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string } | null>(null);
+  const suppressClickRef = useRef(false);
+  const { blocks, update: updateBlock } = useTimeBlocks(iso, iso);
 
   useEffect(() => {
     const tick = () => {
@@ -107,12 +115,23 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
 
   const items = useMemo(() => {
     const out: ScheduledItem[] = [];
+    const taskBlockMap = new Map<string, string>(); // taskId -> block start_time
+    for (const b of blocks) if (b.taskId) taskBlockMap.set(b.taskId, b.startTime);
     for (const t of state.tasks) {
       if (!t.dueDate || t.dueDate !== iso) continue;
-      const s = hmToMin(t.startTime); if (s === null) continue;
+      // Prefer time_block schedule if the task is placed via a block on this day.
+      const startFromBlock = taskBlockMap.get(t.id);
+      const s = hmToMin(startFromBlock ?? t.startTime); if (s === null) continue;
       const startRel = s - START_H * 60;
       if (startRel < 0 || startRel > (END_H - START_H) * 60) continue;
       out.push({ id: t.id, kind: "task", title: t.title, startMin: startRel, durMin: t.estMinutes ?? 30, area: t.area, done: t.done, task: t });
+    }
+    // Time blocks without a matching task (standalone events)
+    for (const b of blocks) {
+      if (b.taskId && state.tasks.some(t => t.id === b.taskId && t.dueDate === iso)) continue;
+      const s = hmToMin(b.startTime); if (s === null) continue;
+      const e = hmToMin(b.endTime) ?? s + 30;
+      out.push({ id: `blk-${b.id}`, kind: "appt", title: b.title, startMin: s - START_H * 60, durMin: Math.max(15, e - s), area: "Appointments" });
     }
     for (const a of state.appointments) {
       if (a.date !== iso) continue;
@@ -121,12 +140,27 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
       out.push({ id: a.id, kind: "appt", title: a.title, startMin: s - START_H * 60, durMin: Math.max(15, e - s), area: "Appointments" });
     }
     return assignLanes(out);
-  }, [state.tasks, state.appointments, iso]);
+  }, [state.tasks, state.appointments, blocks, iso]);
 
   const yToMin = (y: number): number => {
     const rel = Math.max(0, y);
     const raw = (rel / HOUR_PX) * 60;
     return Math.round(raw / SNAP_MIN) * SNAP_MIN;
+  };
+
+  const scheduleTaskAt = async (taskId: string, absMin: number) => {
+    const task = state.tasks.find(t => t.id === taskId);
+    const dur = task?.estMinutes ?? 30;
+    const startHM = minToHM(absMin);
+    // If a time_block exists for this task, keep them synchronized.
+    const existingBlock = blocks.find(b => b.taskId === taskId);
+    if (existingBlock) {
+      const endHM = minToHM(absMin + dur);
+      await updateBlock(existingBlock.id, { startTime: startHM, endTime: endHM, date: iso });
+    }
+    await updateTask(taskId, { dueDate: iso, startTime: startHM, inbox: false, estMinutes: dur });
+    haptics.drop();
+    toast.success("Scheduled");
   };
 
   const onDrop = async (e: React.DragEvent) => {
@@ -135,13 +169,19 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
     e.preventDefault();
     const rect = gridRef.current!.getBoundingClientRect();
     const y = e.clientY - rect.top;
-    const rel = yToMin(y);
-    const abs = rel + START_H * 60;
-    const task = state.tasks.find(t => t.id === id);
-    await updateTask(id, { dueDate: iso, startTime: minToHM(abs), inbox: false, estMinutes: task?.estMinutes ?? 30 });
-    haptics.drop();
-    toast.success("Scheduled");
+    const abs = yToMin(y) + START_H * 60;
+    await scheduleTaskAt(id, abs);
   };
+
+  // Touch/long-press drop from PlannerTaskRow (mobile + web).
+  usePlannerDropListener((d) => {
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    if (d.clientX < rect.left || d.clientX > rect.right || d.clientY < rect.top || d.clientY > rect.bottom) return;
+    const y = d.clientY - rect.top;
+    const abs = yToMin(y) + START_H * 60;
+    void scheduleTaskAt(d.taskId, abs);
+  });
 
   const onDragOver = (e: React.DragEvent) => {
     if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) {
@@ -164,6 +204,8 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
       const deltaMin = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
       const newDur = Math.max(SNAP_MIN, resizing.startDur + deltaMin);
       await updateTask(resizing.id, { estMinutes: newDur });
+      suppressClickRef.current = true;
+      setTimeout(() => { suppressClickRef.current = false; }, 200);
       setResizing(null);
     };
     window.addEventListener("pointermove", onMove);
@@ -172,6 +214,39 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
   }, [resizing, updateTask]);
 
   const totalMin = (END_H - START_H) * 60;
+
+  // Tap empty grid → open quick add popover at the clicked slot.
+  const onGridClick = (e: React.MouseEvent) => {
+    if (suppressClickRef.current) return;
+    const target = e.target as HTMLElement;
+    // Only trigger on the grid background, not on blocks or their children.
+    if (target.closest("[data-planner-block]")) return;
+    const rect = gridRef.current!.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const relMin = yToMin(y);
+    const abs = relMin + START_H * 60;
+    setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "" });
+  };
+
+  const submitQuickAdd = async () => {
+    if (!quickAdd || !quickAdd.text.trim()) { setQuickAdd(null); return; }
+    const p = parseTaskInput(quickAdd.text);
+    await addTask({
+      title: p.title || quickAdd.text,
+      area: p.area ?? "Personal",
+      priority: p.priority ?? "medium",
+      done: false,
+      dueDate: p.dueDate ?? iso,
+      startTime: p.time ?? minToHM(quickAdd.startAbsMin),
+      estMinutes: p.estMinutes ?? 30,
+      tags: p.tags,
+      energy: p.energy,
+      inbox: false,
+    } as any);
+    haptics.success();
+    toast.success("Task added");
+    setQuickAdd(null);
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
@@ -193,11 +268,13 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
           {/* Grid */}
           <div
             ref={gridRef}
-            className="relative flex-1"
+            data-planner-grid
+            className="relative flex-1 transition-colors data-[planner-drop-active]:bg-primary/5"
             style={{ height: totalMin * (HOUR_PX / 60) }}
             onDragOver={onDragOver}
             onDragEnter={() => haptics.magnet()}
             onDrop={onDrop}
+            onClick={onGridClick}
           >
             {/* Hour lines */}
             {Array.from({ length: END_H - START_H + 1 }, (_, i) => (
@@ -242,6 +319,7 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
                 <div
                   key={it.id}
                   id={`plnr-block-${it.id}`}
+                  data-planner-block
                   onClick={() => it.kind === "task" && openTaskEditor(it.id)}
                   className={cn(
                     "group absolute cursor-pointer overflow-hidden rounded-lg border p-1.5 text-[11px] shadow-sm transition-shadow hover:shadow-md",
@@ -282,6 +360,34 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
                 </ContextMenu>
               );
             })}
+
+            {/* Quick-add popover at tapped slot */}
+            {quickAdd && (
+              <Popover open onOpenChange={(o) => !o && setQuickAdd(null)}>
+                <PopoverAnchor asChild>
+                  <div
+                    className="pointer-events-none absolute"
+                    style={{ left: quickAdd.x, top: quickAdd.y, width: 1, height: 1 }}
+                  />
+                </PopoverAnchor>
+                <PopoverContent side="right" align="start" className="w-72 p-2">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    New task at {minTo12(quickAdd.startAbsMin)}
+                  </p>
+                  <Input
+                    autoFocus
+                    value={quickAdd.text}
+                    onChange={(e) => setQuickAdd(q => q ? { ...q, text: e.target.value } : q)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); void submitQuickAdd(); }
+                      if (e.key === "Escape") setQuickAdd(null);
+                    }}
+                    placeholder="Task title (try 'call mom #family 30m')"
+                    className="h-9 text-sm"
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         </div>
       </div>
