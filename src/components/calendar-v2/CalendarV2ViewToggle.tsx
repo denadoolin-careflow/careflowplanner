@@ -1,15 +1,15 @@
-import { CalendarDays, CalendarRange, LayoutGrid } from "lucide-react";
+import { CalendarDays, CalendarRange, LayoutGrid, ListChecks } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export type CV2View = "day" | "week" | "month";
+export type CV2View = "planner" | "day" | "week" | "month";
 const KEY = "careflow:cv2:view";
 const listeners = new Set<(v: CV2View) => void>();
 
 function read(): CV2View {
   if (typeof localStorage === "undefined") return "day";
   const v = localStorage.getItem(KEY);
-  return v === "week" || v === "month" ? v : "day";
+  return v === "week" || v === "month" || v === "planner" ? v : "day";
 }
 let current: CV2View = read();
 export function setCV2View(v: CV2View) {
@@ -25,6 +25,7 @@ export function useCV2View(): [CV2View, (v: CV2View) => void] {
 
 export function CalendarV2ViewToggle({ value, onChange }: { value: CV2View; onChange: (v: CV2View) => void }) {
   const opts: Array<{ id: CV2View; label: string; icon: typeof CalendarDays }> = [
+    { id: "planner", label: "Planner", icon: ListChecks },
     { id: "day", label: "Day", icon: CalendarDays },
     { id: "week", label: "Week", icon: CalendarRange },
     { id: "month", label: "Month", icon: LayoutGrid },
