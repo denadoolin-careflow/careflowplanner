@@ -7,6 +7,16 @@ import { openTaskEditor } from "@/lib/open-task-editor";
 import { resolveTaskIcon } from "@/lib/task-icons";
 import type { Task, Appointment } from "@/lib/types";
 import { toast } from "sonner";
+import { usePomodoro } from "@/lib/pomodoro-store";
+import { usePlannerFocusTaskId } from "@/lib/planner-prefs";
+import { BlockQuickActions } from "./BlockQuickActions";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+
+export const RHYTHM_BANDS = [
+  { id: "morning", label: "Morning",   startH: 5,  endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
+  { id: "afternoon", label: "Afternoon", startH: 12, endH: 17, className: "bg-sky-50/40 dark:bg-sky-950/20" },
+  { id: "evening", label: "Evening",   startH: 17, endH: 22, className: "bg-violet-50/40 dark:bg-violet-950/20" },
+];
 
 const START_H = 5;
 const END_H = 22;
@@ -66,8 +76,10 @@ function assignLanes(items: ScheduledItem[]): (ScheduledItem & { lane: number; l
   return clusters.flat();
 }
 
-export function PlannerTimeline({ date }: { date: Date }) {
+export function PlannerTimeline({ date, compact }: { date: Date; compact?: boolean }) {
   const { state, updateTask } = useStore();
+  const pomo = usePomodoro();
+  const [focusTaskId] = usePlannerFocusTaskId();
   const iso = format(date, "yyyy-MM-dd");
   const gridRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
@@ -173,6 +185,20 @@ export function PlannerTimeline({ date }: { date: Date }) {
             {Array.from({ length: END_H - START_H + 1 }, (_, i) => (
               <div key={i} className="absolute left-0 right-0 border-t border-border/40" style={{ top: i * HOUR_PX }} />
             ))}
+            {/* Rhythm bands */}
+            {RHYTHM_BANDS.map(b => {
+              const topMin = (b.startH - START_H) * 60;
+              const h = (b.endH - b.startH) * 60 * (HOUR_PX / 60);
+              return (
+                <div key={b.id}
+                  className={cn("pointer-events-none absolute left-0 right-0", b.className)}
+                  style={{ top: topMin * (HOUR_PX / 60), height: h }}>
+                  <span className="absolute left-1 top-1 text-[9px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70">
+                    {b.label}
+                  </span>
+                </div>
+              );
+            })}
             {/* Quarter lines */}
             {Array.from({ length: (END_H - START_H) * 4 }, (_, i) => (
               <div key={i} className="absolute left-0 right-0 border-t border-border/10" style={{ top: (i + 1) * (HOUR_PX / 4) }} />
@@ -191,7 +217,10 @@ export function PlannerTimeline({ date }: { date: Date }) {
               const ic = it.task ? resolveTaskIcon(it.task) : null;
               const widthPct = 100 / it.lanes;
               const leftPct = it.lane * widthPct;
+              const isFocusActive = it.kind === "task" && ((pomo.running && pomo.taskId === it.id) || focusTaskId === it.id);
               return (
+                <ContextMenu key={it.id}>
+                  <ContextMenuTrigger asChild>
                 <div
                   key={it.id}
                   id={`plnr-block-${it.id}`}
@@ -200,6 +229,7 @@ export function PlannerTimeline({ date }: { date: Date }) {
                     "group absolute cursor-pointer overflow-hidden rounded-lg border p-1.5 text-[11px] shadow-sm transition-shadow hover:shadow-md",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
                     it.done && "opacity-60",
+                    isFocusActive && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                   )}
                   style={{
                     top: it.startMin * (HOUR_PX / 60),
@@ -210,10 +240,11 @@ export function PlannerTimeline({ date }: { date: Date }) {
                 >
                   <div className="flex items-center gap-1 font-mono text-[9px] opacity-70">
                     {minToHM(it.startMin + START_H * 60)}–{minToHM(it.startMin + it.durMin + START_H * 60)}
+                    {isFocusActive && <span className="ml-1 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
                   </div>
                   <div className="flex items-start gap-1 font-medium leading-tight">
                     {ic && ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
-                    <span className="line-clamp-3 [overflow-wrap:anywhere]">{it.title}</span>
+                    <span className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere] line-clamp-3">{it.title}</span>
                   </div>
                   {it.kind === "task" && (
                     <div
@@ -222,6 +253,13 @@ export function PlannerTimeline({ date }: { date: Date }) {
                     />
                   )}
                 </div>
+                  </ContextMenuTrigger>
+                  {it.task && (
+                    <ContextMenuContent className="w-48">
+                      <BlockQuickActions task={it.task} asMenuItems />
+                    </ContextMenuContent>
+                  )}
+                </ContextMenu>
               );
             })}
           </div>

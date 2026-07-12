@@ -1,13 +1,19 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { addDays, format, isValid, parseISO } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Wand2 } from "lucide-react";
+import { addDays, format, isValid, parseISO, startOfWeek } from "date-fns";
+import { ChevronLeft, ChevronRight, Plus, Sparkles, Command as CommandIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { PlannerTaskPanel } from "@/components/planner/PlannerTaskPanel";
 import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerQuickCapture } from "@/components/planner/PlannerQuickCapture";
+import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
+import { PlannerMultiDayView } from "@/components/planner/PlannerMultiDayView";
+import { PlannerMonthView } from "@/components/planner/PlannerMonthView";
+import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
+import { PlannerCommandBar } from "@/components/planner/PlannerCommandBar";
+import { usePlannerView } from "@/lib/planner-prefs";
 
 export default function Planner() {
   const { date } = useParams<{ date: string }>();
@@ -20,19 +26,26 @@ export default function Planner() {
   }, [date]);
 
   const [captureOpen, setCaptureOpen] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [view, setView] = usePlannerView();
 
   const go = (d: Date) => navigate(`/planner/${format(d, "yyyy-MM-dd")}`);
 
-  // Global hotkey: press "c" to open Quick Capture
+  // Global hotkeys: "c" → capture · Cmd/Ctrl+K → command bar
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) { e.preventDefault(); setCmdOpen(o => !o); return; }
       if (e.key === "c" || e.key === "C") { e.preventDefault(); setCaptureOpen(true); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  const showSidePanels = view === "day" || view === "3day";
+  const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
 
   return (
     <div className="flex h-[calc(100vh-140px)] min-h-[600px] flex-col gap-3">
@@ -41,7 +54,8 @@ export default function Planner() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Planner</p>
           <h1 className="font-display text-2xl font-semibold sm:text-3xl">{format(day, "EEEE, MMMM d")}</h1>
         </div>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          <PlannerViewToggle value={view} onChange={setView} />
           <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => go(addDays(day, -1))} aria-label="Previous day">
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -50,19 +64,43 @@ export default function Planner() {
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Button size="sm" variant="outline" className="h-8 rounded-full text-xs" onClick={() => go(new Date())}>Today</Button>
+          <Button size="sm" variant="outline" className="h-8 rounded-full text-xs" onClick={() => setCmdOpen(true)} aria-label="Command bar">
+            <CommandIcon className="mr-1 h-3.5 w-3.5" />⌘K
+          </Button>
+          <Button size="sm" variant="secondary" className="h-8 rounded-full text-xs" onClick={() => setPlanOpen(true)}>
+            <Sparkles className="mr-1 h-3.5 w-3.5" />Plan my day
+          </Button>
           <Button size="sm" className="h-8 rounded-full text-xs" onClick={() => setCaptureOpen(true)}>
             <Plus className="mr-1 h-3.5 w-3.5" /> Capture <kbd className="ml-2 rounded bg-primary-foreground/20 px-1 text-[9px]">C</kbd>
           </Button>
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[280px_1fr_300px]">
-        <PlannerTaskPanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
-        <PlannerTimeline date={day} />
-        <PlannerContextPanel date={day} onChangeDate={go} />
+      <div className={`grid min-h-0 flex-1 gap-3 ${showSidePanels ? "lg:grid-cols-[280px_1fr_300px]" : ""}`}>
+        {showSidePanels && (
+          <PlannerTaskPanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
+        )}
+        <div className="min-h-0">
+          {view === "day" && <PlannerTimeline date={day} />}
+          {view === "3day" && <PlannerMultiDayView start={day} days={3} />}
+          {view === "week" && <PlannerMultiDayView start={weekStart} days={7} />}
+          {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
+        </div>
+        {showSidePanels && (
+          <PlannerContextPanel date={day} onChangeDate={go} />
+        )}
       </div>
 
       <PlannerQuickCapture open={captureOpen} onOpenChange={setCaptureOpen} defaultDate={day} />
+      <PlanMyDayDialog open={planOpen} onOpenChange={setPlanOpen} date={day} />
+      <PlannerCommandBar
+        open={cmdOpen}
+        onOpenChange={setCmdOpen}
+        onCapture={() => setCaptureOpen(true)}
+        onPlanMyDay={() => setPlanOpen(true)}
+        onSetView={setView}
+        onGoToday={() => go(new Date())}
+      />
     </div>
   );
 }
