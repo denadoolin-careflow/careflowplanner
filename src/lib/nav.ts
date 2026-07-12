@@ -136,6 +136,7 @@ export const NAV_GROUPS = [
       { to: "/inbox", label: "Inbox", icon: Inbox },
       { to: "/today", label: "Today", icon: Sun },
       { to: "/plan", label: "Daily Plan", icon: Sparkles },
+      { to: "/planner", label: "Planner", icon: CalendarCheck },
       { to: "/week", label: "Week", icon: CalendarRange },
       { to: "/month", label: "Month", icon: CalendarDays },
       { to: "/year", label: "Year", icon: Calendar },
