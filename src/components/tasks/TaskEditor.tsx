@@ -144,6 +144,7 @@ function ProjectGoalLinks({ draft, set }: { draft: Task; set: <K extends keyof T
 
 export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleLabel = "Unschedule" }: Props) {
   const { updateTask, deleteTask, addTask, toggleTask, state } = useStore();
+  const [editorStyle] = useTaskEditorStyle();
   const [draft, setDraft] = useState<Task | null>(task);
   const [subDraft, setSubDraft] = useState("");
   const [addingSub, setAddingSub] = useState(false);
