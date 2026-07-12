@@ -40,7 +40,7 @@ export function PlannerCommandBar({ open, onOpenChange, onCapture, onPlanMyDay, 
         <CommandGroup heading="Jump to">
           <CommandItem onSelect={() => run(() => navigate("/inbox"))}><Inbox className="mr-2 h-4 w-4" />Open Inbox</CommandItem>
           <CommandItem onSelect={() => run(() => navigate("/today"))}><Star className="mr-2 h-4 w-4" />View Top Priorities</CommandItem>
-          <CommandItem onSelect={() => run(() => navigate("/pomodoro"))}><Timer className="mr-2 h-4 w-4" />Start Focus Timer</CommandItem>
+          <CommandItem onSelect={() => run(() => navigate("/focus"))}><Timer className="mr-2 h-4 w-4" />Start Focus Timer</CommandItem>
           <CommandItem onSelect={() => run(() => navigate("/carey"))}><MessageCircle className="mr-2 h-4 w-4" />Ask Carey</CommandItem>
         </CommandGroup>
       </CommandList>
