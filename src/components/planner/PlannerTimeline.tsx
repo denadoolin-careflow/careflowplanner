@@ -84,7 +84,7 @@ export function PlannerTimeline({ date }: { date: Date }) {
     return () => clearInterval(id);
   }, [date]);
 
-  const items = useMemo<ScheduledItem[]>(() => {
+  const items = useMemo(() => {
     const out: ScheduledItem[] = [];
     for (const t of state.tasks) {
       if (!t.dueDate || t.dueDate !== iso) continue;
@@ -212,7 +212,7 @@ export function PlannerTimeline({ date }: { date: Date }) {
                     {minToHM(it.startMin + START_H * 60)}–{minToHM(it.startMin + it.durMin + START_H * 60)}
                   </div>
                   <div className="flex items-start gap-1 font-medium leading-tight">
-                    {ic && ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3 w-3 shrink-0" /> : ic && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
+                    {ic && ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
                     <span className="line-clamp-3 [overflow-wrap:anywhere]">{it.title}</span>
                   </div>
                   {it.kind === "task" && (
