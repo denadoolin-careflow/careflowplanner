@@ -1,6 +1,16 @@
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -24,6 +34,7 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
   const { state, addTask, updateTask } = useStore();
   const [step, setStep] = useState<Step>(0);
   const [captureText, setCaptureText] = useState("");
+  const [confirm, setConfirm] = useState<null | "lighten" | "move">(null);
   const iso = format(date, "yyyy-MM-dd");
 
   const dayTasks = useMemo(() => state.tasks.filter(t => t.dueDate === iso && !t.done), [state.tasks, iso]);
@@ -35,6 +46,20 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
   const totalMin = scheduled.reduce((s, t) => s + (t.estMinutes ?? 30), 0);
   const load = totalMin < 180 ? "Light" : totalMin < 360 ? "Balanced" : totalMin < 540 ? "Full" : "Overloaded";
   const loadTone = load === "Light" ? "text-emerald-600" : load === "Balanced" ? "text-sky-600" : load === "Full" ? "text-amber-600" : "text-rose-600";
+
+  const flexScheduled = useMemo(
+    () => scheduled.filter(t => !t.isTopThree),
+    [scheduled],
+  );
+  const lightenPreview = useMemo(() => {
+    const sorted = [...flexScheduled].sort(
+      (a, b) => (a.priority === "high" ? 0 : 1) - (b.priority === "high" ? 0 : 1),
+    );
+    return sorted.slice(-Math.max(1, Math.floor(sorted.length / 3)));
+  }, [flexScheduled]);
+  const lightenMin = lightenPreview.reduce((s, t) => s + (t.estMinutes ?? 30), 0);
+  const moveMin = flexScheduled.reduce((s, t) => s + (t.estMinutes ?? 30), 0);
+  const tomorrowLabel = format(new Date(date.getTime() + 86400000), "EEE, MMM d");
 
   const capture = async () => {
     const lines = captureText.split("\n").map(l => l.trim()).filter(Boolean);
@@ -60,17 +85,16 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
   };
 
   const lightenDay = async () => {
-    const flex = scheduled.filter(t => !t.isTopThree).sort((a, b) => (a.priority === "high" ? 0 : 1) - (b.priority === "high" ? 0 : 1));
-    const drop = flex.slice(-Math.max(1, Math.floor(flex.length / 3)));
-    for (const t of drop) await updateTask(t.id, { startTime: undefined });
-    toast.success(`Freed ${drop.length} task${drop.length === 1 ? "" : "s"}`);
+    for (const t of lightenPreview) await updateTask(t.id, { startTime: undefined });
+    toast.success(`Freed ${lightenPreview.length} task${lightenPreview.length === 1 ? "" : "s"} — they're still on today, just unscheduled.`);
+    setConfirm(null);
   };
 
   const moveFlexibleToTomorrow = async () => {
     const tomorrow = format(new Date(date.getTime() + 86400000), "yyyy-MM-dd");
-    const flex = scheduled.filter(t => !t.isTopThree);
-    for (const t of flex) await updateTask(t.id, { dueDate: tomorrow, startTime: undefined });
-    toast.success(`Moved ${flex.length} to tomorrow`);
+    for (const t of flexScheduled) await updateTask(t.id, { dueDate: tomorrow, startTime: undefined });
+    toast.success(`Moved ${flexScheduled.length} task${flexScheduled.length === 1 ? "" : "s"} to ${tomorrowLabel}.`);
+    setConfirm(null);
   };
 
   const S = STEPS[step];
@@ -155,8 +179,8 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
               </div>
               {(load === "Full" || load === "Overloaded") && (
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={lightenDay}>Lighten my day</Button>
-                  <Button size="sm" variant="outline" onClick={moveFlexibleToTomorrow}>Move flexible tasks</Button>
+                  <Button size="sm" variant="outline" disabled={lightenPreview.length === 0} onClick={() => setConfirm("lighten")}>Lighten my day</Button>
+                  <Button size="sm" variant="outline" disabled={flexScheduled.length === 0} onClick={() => setConfirm("move")}>Move flexible tasks</Button>
                 </div>
               )}
             </div>
@@ -171,6 +195,64 @@ export function PlanMyDayDialog({ open, onOpenChange, date }: { open: boolean; o
             <Button size="sm" onClick={() => onOpenChange(false)}>Looks good</Button>
           )}
         </div>
+
+        <AlertDialog open={confirm === "lighten"} onOpenChange={(o) => !o && setConfirm(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Lighten today, gently</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3 text-sm">
+                  <p className="text-muted-foreground">
+                    I'll unschedule {lightenPreview.length} lower-priority task{lightenPreview.length === 1 ? "" : "s"}
+                    {lightenMin > 0 ? ` (~${Math.round(lightenMin / 60 * 10) / 10}h)` : ""} from your timeline.
+                    They stay on today's list — just no fixed time — so nothing is lost or deleted.
+                    Your Top 3 and appointments won't move.
+                  </p>
+                  {lightenPreview.length > 0 && (
+                    <ul className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-2">
+                      {lightenPreview.map(t => (
+                        <li key={t.id} className="truncate text-xs">· {t.title}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Not yet</AlertDialogCancel>
+              <AlertDialogAction onClick={lightenDay}>Unschedule these</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={confirm === "move"} onOpenChange={(o) => !o && setConfirm(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Move flexible tasks to {tomorrowLabel}?</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3 text-sm">
+                  <p className="text-muted-foreground">
+                    I'll move {flexScheduled.length} flexible task{flexScheduled.length === 1 ? "" : "s"}
+                    {moveMin > 0 ? ` (~${Math.round(moveMin / 60 * 10) / 10}h)` : ""} to {tomorrowLabel} and clear their start times so you can re-place them.
+                    Your Top 3 priorities and any appointments stay right here on today.
+                    You can drag anything back if plans shift.
+                  </p>
+                  {flexScheduled.length > 0 && (
+                    <ul className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-2">
+                      {flexScheduled.map(t => (
+                        <li key={t.id} className="truncate text-xs">· {t.title}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep on today</AlertDialogCancel>
+              <AlertDialogAction onClick={moveFlexibleToTomorrow}>Move to {tomorrowLabel}</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
