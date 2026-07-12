@@ -63,6 +63,7 @@ import ResetDetail from "./pages/ResetDetail";
 import Routines from "./pages/Routines";
 import PlanTimeline from "./pages/PlanTimeline";
 import PlanDay from "./pages/PlanDay";
+import Planner from "./pages/Planner";
 import Whiteboards from "./pages/Whiteboards";
 import WhiteboardDetail from "./pages/WhiteboardDetail";
 import MentalLoad from "./pages/MentalLoad";
@@ -183,6 +184,8 @@ const App = () => (
                 <Route path="/insights" element={<Insights />} />
                 <Route path="/plan" element={<PlanTimeline />} />
                 <Route path="/plan/:date" element={<PlanDay />} />
+                <Route path="/planner" element={<Planner />} />
+                <Route path="/planner/:date" element={<Planner />} />
                 <Route path="/week" element={<Week />} />
                 <Route path="/month" element={<Month />} />
                <Route path="/month/overview" element={<MonthOverview />} />
