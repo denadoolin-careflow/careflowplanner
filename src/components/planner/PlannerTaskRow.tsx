@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import { resolveTaskIcon } from "@/lib/task-icons";
 import { openTaskEditor } from "@/lib/open-task-editor";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
+import { haptics } from "@/lib/haptics";
 import { format, parseISO } from "date-fns";
 
 const AREA_TINTS: Record<string, string> = {
@@ -29,6 +30,10 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
   const onDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData(TASK_DRAG_MIME, task.id);
     e.dataTransfer.effectAllowed = "copyMove";
+    haptics.pickup();
+  };
+  const onDragEnd = () => {
+    haptics.snap();
   };
 
   const due = task.dueDate ? format(parseISO(task.dueDate), "MMM d") : null;
@@ -37,6 +42,7 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
     <div
       draggable
       onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onClick={() => openTaskEditor(task.id)}
       className={cn(
         "group flex cursor-pointer items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px] transition-colors hover:border-primary/40 hover:bg-card",

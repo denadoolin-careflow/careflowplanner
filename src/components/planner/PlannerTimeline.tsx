@@ -9,6 +9,7 @@ import type { Task, Appointment } from "@/lib/types";
 import { toast } from "sonner";
 import { usePomodoro } from "@/lib/pomodoro-store";
 import { usePlannerFocusTaskId } from "@/lib/planner-prefs";
+import { haptics } from "@/lib/haptics";
 import { BlockQuickActions } from "./BlockQuickActions";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 
@@ -56,6 +57,14 @@ function hmToMin(hm?: string): number | null {
 function minToHM(min: number): string {
   const h = Math.floor(min / 60), m = min % 60;
   return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+// 12-hour compact label: "8:30a", "12p", "1:15p"
+function minTo12(min: number): string {
+  const h24 = Math.floor(min / 60) % 24;
+  const m = min % 60;
+  const suffix = h24 < 12 ? "a" : "p";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return m === 0 ? `${h12}${suffix}` : `${h12}:${String(m).padStart(2, "0")}${suffix}`;
 }
 
 // Assign side-by-side lanes for overlapping items.
@@ -130,7 +139,15 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
     const abs = rel + START_H * 60;
     const task = state.tasks.find(t => t.id === id);
     await updateTask(id, { dueDate: iso, startTime: minToHM(abs), inbox: false, estMinutes: task?.estMinutes ?? 30 });
+    haptics.drop();
     toast.success("Scheduled");
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    }
   };
 
   // Resize handler
@@ -178,7 +195,8 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
             ref={gridRef}
             className="relative flex-1"
             style={{ height: totalMin * (HOUR_PX / 60) }}
-            onDragOver={(e) => { if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) e.preventDefault(); }}
+            onDragOver={onDragOver}
+            onDragEnter={() => haptics.magnet()}
             onDrop={onDrop}
           >
             {/* Hour lines */}
@@ -238,11 +256,10 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
                     width: `calc(${widthPct}% - 8px)`,
                   }}
                 >
-                  <div className="flex h-full min-w-0 items-start gap-1.5">
-                    <div className="flex shrink-0 flex-col items-start pt-0.5 font-mono text-[9px] leading-tight opacity-70">
-                      <span>{minToHM(it.startMin + START_H * 60)}</span>
-                      <span>{minToHM(it.startMin + it.durMin + START_H * 60)}</span>
-                      {isFocusActive && <span className="mt-0.5 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
+                  <div className="flex h-full min-w-0 flex-col gap-0.5">
+                    <div className="flex min-w-0 items-center gap-1 text-[9px] font-mono leading-none opacity-75">
+                      <span className="truncate">{minTo12(it.startMin + START_H * 60)}–{minTo12(it.startMin + it.durMin + START_H * 60)}</span>
+                      {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
                     </div>
                     <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-tight">
                       {ic && ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
