@@ -8,6 +8,7 @@ export type TaskEditorStyle =
 
 const KEY = "careflow:task-editor-style";
 const DEFAULT: TaskEditorStyle = "focused-sheet";
+const EVT = "careflow:task-editor-style-change";
 
 export const TASK_EDITOR_STYLES: Array<{
   id: TaskEditorStyle;
@@ -50,12 +51,21 @@ export function useTaskEditorStyle() {
     const onStorage = (e: StorageEvent) => {
       if (e.key === KEY && e.newValue) setStyle(e.newValue as TaskEditorStyle);
     };
+    const onLocal = (e: Event) => {
+      const v = (e as CustomEvent<TaskEditorStyle>).detail;
+      if (v) setStyle(v);
+    };
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener(EVT, onLocal);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(EVT, onLocal);
+    };
   }, []);
   const update = (v: TaskEditorStyle) => {
     setStyle(v);
     localStorage.setItem(KEY, v);
+    window.dispatchEvent(new CustomEvent<TaskEditorStyle>(EVT, { detail: v }));
   };
   return [style, update] as const;
 }
