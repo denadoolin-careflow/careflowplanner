@@ -1,65 +1,58 @@
-## CareFlow Planner Upgrade — Cohesive Implementation Plan
+# Integrate Planner into Calendar (Today · Week · Month)
 
-Deepen the existing `/planner` route (Planner.tsx, PlannerTaskPanel, PlannerTimeline, PlannerContextPanel, PlannerQuickCapture) without rebuilding. Reuse `useStore`, `parseTaskInput`, `TASK_DRAG_MIME`, atmosphere tokens, existing Focus Timer, `openTaskEditor`, and lunar/weather libs.
+Make the Planner workspace the single, canonical calendar surface across all three time scopes and retire the older calendar routes.
 
-### Phase 1 — Views & Day Rhythm (foundation)
-- Add `src/components/planner/PlannerViewToggle.tsx` — segmented Day / 3 Days / Week / Month, persisted in `localStorage` (`careflow:planner:view`).
-- Extend `PlannerTimeline.tsx`:
-  - Overlay soft **Morning (5–12)**, **Afternoon (12–17)**, **Evening (17–22)** rhythm bands (background tints + left-edge labels). Not separate views — visual regions.
-  - Optional meal anchor blocks (Breakfast/Lunch/Dinner) rendered as translucent Meals-styled blocks; draggable + resizable using existing block logic; hooked into `MealsPlannedWidget` store.
-- New `src/components/planner/Planner3DayView.tsx`, `PlannerWeekView.tsx`, `PlannerMonthView.tsx`:
-  - 3-Day: 3 stacked timelines sharing hour rail, cross-day DnD.
-  - Week: compact 7-day grid reusing block logic.
-  - Month: grid with per-day dots for tasks/appts/meals/routines; click → Day view.
-- `Planner.tsx` renders the active view; TaskPanel + ContextPanel stay for Day/3Day, hide for Month.
+## 1. Routing consolidation
 
-### Phase 2 — Plan My Day flow
-- `src/components/planner/PlanMyDayDialog.tsx` — 4-step wizard: Capture → Anchor → Rhythm → Exhale.
-  - **Capture**: rapid input (reuses `parseTaskInput`), Enter to add, optional area + est minutes.
-  - **Anchor**: shows appointments/routines/meals for the day; user marks up to 3 Top Priorities (toggles `isTopThree`); tags fixed vs flexible.
-  - **Rhythm**: embedded `PlannerTimeline` (compact) + unscheduled list, drag or "Schedule" quick action.
-  - **Exhale**: computes planned focus min, caregiving blocks, open time. Load state: Light / Balanced / Full / Overloaded (thresholds by total scheduled minutes). Actions: Lighten My Day (unschedule lowest-priority flexible), Move Flexible Tasks (to tomorrow with confirm), Looks Good.
-- Prominent but calm "Plan My Day" button in Planner header.
+In `src/App.tsx`:
+- Point `/calendar`, `/calendar-v2`, `/week`, `/month` at the Planner page, forwarding the scope via URL.
+- Keep `/planner` and `/planner/:date` working.
+- New shape:
+  - `/planner`, `/planner/:date` → Planner (Day by default, respects saved view)
+  - `/calendar`, `/calendar/:date` → Planner (same component)
+  - `/week`, `/week/:date` → Planner locked to Week view
+  - `/month`, `/month/:date` → Planner locked to Month view
+- Old `CalendarPage` and `CalendarV2` imports removed. Files kept on disk but unlinked (safe to delete later).
 
-### Phase 3 — Command Bar
-- `src/components/planner/PlannerCommandBar.tsx` using existing shadcn `Command` primitive.
-- Global ⌘K / Ctrl+K listener in `Planner.tsx` (extend existing hotkey effect).
-- Actions: Create task, Schedule task, Plan My Day, Go to Today, Open Inbox, View Top Priorities, Start Focus Timer, switch views, Ask Carey. Fuzzy search built into `cmdk`.
+In `src/lib/nav.ts`:
+- Collapse duplicate PlanFlow entries: keep `Today`, `Planner`, `Week`, `Month`, `Year`. Remove the separate `Calendar` and `Daily Plan` items (now covered by Planner).
+- Mobile nav: replace `/calendar` with `/planner`.
 
-### Phase 4 — Task panel filtering / sorting
-- Extend `PlannerTaskPanel.tsx`:
-  - Multi-select **Tag filter** popover populated from `state.tasks[].tags` (dynamic; no hardcoded tags).
-  - Sort dropdown: Manual, Priority, Due, Duration, Category, Recently Added. Persisted (`careflow:planner:sort`).
-  - Manual preserves existing `sortOrder`.
+## 2. Planner scope awareness
 
-### Phase 5 — Hover / context actions
-- `src/components/planner/TaskQuickActions.tsx` — Complete, Schedule, Edit, Duplicate, Move, Delete. Show on hover (desktop) / long-press → popover (mobile).
-- `src/components/planner/BlockQuickActions.tsx` for calendar blocks — Complete, Edit, Duplicate, Unschedule (confirm), Move to Another Day (Tomorrow / Next Week / Choose Date via shadcn Calendar), Delete. Duplicate preserves duration; unschedule clears `startTime` but keeps task; move preserves duration.
+In `src/pages/Planner.tsx`:
+- Detect scope from the current route (`/week` → week, `/month` → month, else use stored view).
+- When mounted under `/week` or `/month`, force the corresponding `PlannerViewToggle` value and persist it as the user changes it, so navigating back to `/planner` remembers their pick.
+- Header title adapts: "Week of Nov 10" / "November 2026" / "Monday, Nov 10".
+- Prev/Next buttons step by day / week / month based on active scope.
 
-### Phase 6 — Mobile Planner
-- `src/components/planner/PlannerMobile.tsx` gated by `useIsMobile()`.
-- Bottom tabs: **Tasks | Day | Insights**.
-- Tasks tab reuses PlannerTaskPanel content; Day tab reuses PlannerTimeline; Insights tab reuses Exhale calculations as a static panel.
-- Floating rounded `+` FAB → PlannerQuickCapture.
-- Touch DnD via long-press (reuse `use-draggable-fab` patterns / `long-press-drag`), fallback tap → Schedule → date → time sheet.
+Auto-hide task panel behavior stays as-is (already collapses in 3-day/Week; extend to Month).
 
-### Phase 7 — Focus Timer link + polish
-- Add `activeFocusTaskId` to pomodoro store; when task selected in Planner, show "FOCUSING ON [task]" strip in `PlannerContextPanel`. Highlight linked timeline block with subtle "Focus in progress" ring.
-- On timer completion: sheet asking Complete Task / Add Another Session / Take a Break / Done for Now.
-- Persist active timer across navigation (already partially in pomodoro-store; verify).
+## 3. Bring Calendar V2 goodies into Planner
 
-### Phase 8 — Text wrapping + a11y sweep
-- Audit all planner blocks/task rows for `min-w-0`, `overflow-wrap: anywhere`, `white-space: normal`. Week blocks: `line-clamp-2`. Day blocks: `line-clamp-3`. No horizontal overflow.
-- Icon-only buttons get `aria-label`; hover actions duplicated on keyboard focus; respect `prefers-reduced-motion` on wizard transitions; 44px touch targets on mobile.
+Port the useful pieces from `CalendarV2` so nothing is lost when it's retired:
 
-### Design tokens
-Reuse existing atmosphere / sage / cream tokens. No new palettes. Rhythm bands = `bg-amber-50/40` (morning), `bg-sky-50/30` (afternoon), `bg-violet-50/30` (evening) with dark-mode variants via existing token conventions.
+- **Carey suggestions + Recovery strip** — render above the timeline in Day view only. Reuse `CareySuggestions.tsx` and `RecoveryStrip.tsx` unchanged.
+- **Plan My Day wizard** — already in Planner, keep.
+- **Quick Capture (C)** — already in Planner, keep.
+- **Command Bar (⌘K)** — already in Planner, keep. Add commands for jumping to Week/Month scopes.
+- **Universal Inbox** drag source — Planner's task panel already covers this; no port needed.
 
-### Rollout order (single cohesive PR, incremental commits per phase)
-1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Each phase leaves the Planner fully functional.
+Family lanes, Flow stages ribbon, and Time containers from Calendar V2 are **not** carried over (out of scope for this integration; can be revisited later).
 
-### Files (new)
-`PlannerViewToggle.tsx`, `Planner3DayView.tsx`, `PlannerWeekView.tsx`, `PlannerMonthView.tsx`, `PlanMyDayDialog.tsx`, `PlannerCommandBar.tsx`, `TaskQuickActions.tsx`, `BlockQuickActions.tsx`, `PlannerMobile.tsx`, `planner-prefs.ts` (view/sort/filter persistence).
+## 4. Shared date navigator
 
-### Files (modified)
-`Planner.tsx`, `PlannerTaskPanel.tsx`, `PlannerTimeline.tsx`, `PlannerContextPanel.tsx`, `pomodoro-store.ts`.
+Ensure the Planner header's Day/Week/Month toggle + date picker + Today button work identically across the three routes so the nav feels unified. The `PlannerViewToggle` becomes the single scope switcher.
+
+## 5. Files touched
+
+- `src/App.tsx` — route rewiring
+- `src/lib/nav.ts` — nav cleanup
+- `src/pages/Planner.tsx` — scope-from-route, header labels, prev/next stepper, mount Carey + Recovery in Day view
+- `src/components/planner/PlannerCommandBar.tsx` — add Week/Month scope commands
+
+## Out of scope
+
+- Deleting `CalendarPage.tsx`, `CalendarV2.tsx`, `Week.tsx`, `Month.tsx` source files (left in repo, unreferenced).
+- Family lanes, Flow stages, Time containers.
+- Any backend or data-model changes.
