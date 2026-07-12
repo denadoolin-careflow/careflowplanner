@@ -238,13 +238,16 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
                     width: `calc(${widthPct}% - 8px)`,
                   }}
                 >
-                  <div className="flex items-center gap-1 font-mono text-[9px] opacity-70">
-                    {minToHM(it.startMin + START_H * 60)}–{minToHM(it.startMin + it.durMin + START_H * 60)}
-                    {isFocusActive && <span className="ml-1 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
-                  </div>
-                  <div className="flex items-start gap-1 font-medium leading-tight">
-                    {ic && ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
-                    <span className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere] line-clamp-3">{it.title}</span>
+                  <div className="flex h-full min-w-0 items-start gap-1.5">
+                    <div className="flex shrink-0 flex-col items-start pt-0.5 font-mono text-[9px] leading-tight opacity-70">
+                      <span>{minToHM(it.startMin + START_H * 60)}</span>
+                      <span>{minToHM(it.startMin + it.durMin + START_H * 60)}</span>
+                      {isFocusActive && <span className="mt-0.5 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
+                    </div>
+                    <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-tight">
+                      {ic && ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
+                      <span className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere]">{it.title}</span>
+                    </div>
                   </div>
                   {it.kind === "task" && (
                     <div

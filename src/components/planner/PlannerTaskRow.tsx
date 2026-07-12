@@ -56,7 +56,7 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
       </button>
       <span className={cn("mt-0.5 h-2 w-2 shrink-0 rounded-full", tint)} aria-hidden />
       {ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden /> : <span className="mt-0.5 shrink-0 text-sm leading-none" aria-hidden>{ic.char}</span>}
-      <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere] whitespace-normal break-words", compact ? "line-clamp-1" : "line-clamp-2", task.done && "line-through")}>
+      <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere] whitespace-normal break-words", compact && "line-clamp-1", task.done && "line-through")}>
         {task.title}
       </span>
       <div className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">

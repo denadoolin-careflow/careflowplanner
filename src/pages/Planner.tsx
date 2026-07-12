@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { addDays, format, isValid, parseISO, startOfWeek } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus, Sparkles, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
@@ -36,6 +36,38 @@ export default function Planner() {
   useEffect(() => {
     try { window.localStorage.setItem("careflow.planner.taskPanelHidden", taskPanelHidden ? "1" : "0"); } catch {}
   }, [taskPanelHidden]);
+
+  const [taskPanelWidth, setTaskPanelWidth] = useState<number>(() => {
+    if (typeof window === "undefined") return 280;
+    const v = Number(window.localStorage.getItem("careflow.planner.taskPanelWidth"));
+    return Number.isFinite(v) && v >= 200 && v <= 560 ? v : 280;
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("careflow.planner.taskPanelWidth", String(taskPanelWidth)); } catch {}
+  }, [taskPanelWidth]);
+  const resizeRef = useRef<{ startX: number; startW: number } | null>(null);
+  const onResizeStart = (e: React.PointerEvent) => {
+    e.preventDefault();
+    resizeRef.current = { startX: e.clientX, startW: taskPanelWidth };
+    const onMove = (ev: PointerEvent) => {
+      const r = resizeRef.current; if (!r) return;
+      const next = Math.min(560, Math.max(220, r.startW + (ev.clientX - r.startX)));
+      setTaskPanelWidth(next);
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      resizeRef.current = null;
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  // Auto-hide task panel for multi-day views to give the timeline more room.
+  useEffect(() => {
+    if (view === "3day" || view === "week") setTaskPanelHidden(true);
+    if (view === "day") setTaskPanelHidden(false);
+  }, [view]);
 
   const go = (d: Date) => navigate(`/planner/${format(d, "yyyy-MM-dd")}`);
 
@@ -100,14 +132,26 @@ export default function Planner() {
         className="grid min-h-0 flex-1 gap-3"
         style={{
           gridTemplateColumns: [
-            showTaskPanel ? "280px" : null,
+            showTaskPanel ? `${taskPanelWidth}px 6px` : null,
             "minmax(0,1fr)",
             showContextPanel ? "300px" : null,
           ].filter(Boolean).join(" "),
         }}
       >
         {showTaskPanel && (
-          <PlannerTaskPanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
+          <>
+            <PlannerTaskPanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize task panel"
+              onPointerDown={onResizeStart}
+              onDoubleClick={() => setTaskPanelWidth(280)}
+              className="group relative -mx-1 cursor-col-resize"
+            >
+              <div className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-border/60 transition-colors group-hover:bg-primary/60" />
+            </div>
+          </>
         )}
         <div className="min-h-0">
           {view === "day" && <PlannerTimeline date={day} />}
