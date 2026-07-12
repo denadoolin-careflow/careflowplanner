@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { addDays, format, isValid, parseISO, startOfWeek } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Command as CommandIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Sparkles, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { PlannerTaskPanel } from "@/components/planner/PlannerTaskPanel";
@@ -29,6 +29,13 @@ export default function Planner() {
   const [planOpen, setPlanOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [view, setView] = usePlannerView();
+  const [taskPanelHidden, setTaskPanelHidden] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("careflow.planner.taskPanelHidden") === "1";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("careflow.planner.taskPanelHidden", taskPanelHidden ? "1" : "0"); } catch {}
+  }, [taskPanelHidden]);
 
   const go = (d: Date) => navigate(`/planner/${format(d, "yyyy-MM-dd")}`);
 
@@ -44,7 +51,8 @@ export default function Planner() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const showSidePanels = view === "day" || view === "3day";
+  const showContextPanel = view === "day" || view === "3day";
+  const showTaskPanel = !taskPanelHidden && (view === "day" || view === "3day" || view === "week");
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
 
   return (
@@ -56,6 +64,18 @@ export default function Planner() {
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <PlannerViewToggle value={view} onChange={setView} />
+          {(view === "day" || view === "3day" || view === "week") && (
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-8 w-8 rounded-full"
+              onClick={() => setTaskPanelHidden(v => !v)}
+              aria-label={taskPanelHidden ? "Show task sidebar" : "Hide task sidebar"}
+              title={taskPanelHidden ? "Show task sidebar" : "Hide task sidebar"}
+            >
+              {taskPanelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </Button>
+          )}
           <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => go(addDays(day, -1))} aria-label="Previous day">
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -76,8 +96,17 @@ export default function Planner() {
         </div>
       </header>
 
-      <div className={`grid min-h-0 flex-1 gap-3 ${showSidePanels ? "lg:grid-cols-[280px_1fr_300px]" : ""}`}>
-        {showSidePanels && (
+      <div
+        className="grid min-h-0 flex-1 gap-3"
+        style={{
+          gridTemplateColumns: [
+            showTaskPanel ? "280px" : null,
+            "minmax(0,1fr)",
+            showContextPanel ? "300px" : null,
+          ].filter(Boolean).join(" "),
+        }}
+      >
+        {showTaskPanel && (
           <PlannerTaskPanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
         )}
         <div className="min-h-0">
@@ -86,7 +115,7 @@ export default function Planner() {
           {view === "week" && <PlannerMultiDayView start={weekStart} days={7} />}
           {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
         </div>
-        {showSidePanels && (
+        {showContextPanel && (
           <PlannerContextPanel date={day} onChangeDate={go} />
         )}
       </div>
