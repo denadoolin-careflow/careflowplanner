@@ -489,21 +489,32 @@ function ResetSection({ uid }: { uid: string }) {
           No checklists yet. <Link to="/home-reset" className="text-primary hover:underline">Create one</Link>.
         </p>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           {lists.slice(0, 2).map(list => (
-            <div key={list.id} className="rounded-2xl border border-border/60 bg-card/60 p-3">
-              <ChecklistTree
-                list={list}
-                onAdd={(item) => reset.addItem(list.id, item)}
-                onUpdate={reset.updateItem}
-                onDelete={reset.deleteItem}
-                onDuplicate={reset.duplicateItem}
-                onReorder={(parentId, ordered) => reset.reorderItems(list.id, parentId, ordered)}
-                onRenameList={(name) => reset.renameList(list.id, name)}
-                onDeleteList={() => reset.deleteList(list.id)}
-                onSaveTemplate={() => { void reset.saveAsTemplate(list.id); toast.success("Saved as template"); }}
-              />
-            </div>
+            <article
+              key={list.id}
+              className="group/reset-card flex flex-col overflow-hidden rounded-[2rem] border border-border/40 bg-card shadow-xl shadow-black/[0.04] transition-shadow hover:shadow-2xl hover:shadow-black/[0.08]"
+            >
+              <div className="bg-gradient-to-b from-[hsl(var(--reset-sage))]/15 to-transparent px-6 pb-4 pt-6 sm:px-8 sm:pt-8">
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary/70">
+                  Reset Area
+                </div>
+              </div>
+              <div className="px-6 pb-8 sm:px-8">
+                <ChecklistTree
+                  list={list}
+                  onAdd={(item) => reset.addItem(list.id, item)}
+                  onUpdate={reset.updateItem}
+                  onDelete={reset.deleteItem}
+                  onDuplicate={reset.duplicateItem}
+                  onReorder={(parentId, ordered) => reset.reorderItems(list.id, parentId, ordered)}
+                  onRenameList={(name) => reset.renameList(list.id, name)}
+                  onDeleteList={() => reset.deleteList(list.id)}
+                  onSaveTemplate={() => { void reset.saveAsTemplate(list.id); toast.success("Saved as template"); }}
+                />
+              </div>
+              <div className="h-2 w-full bg-gradient-to-r from-transparent via-[hsl(var(--reset-sage))]/25 to-transparent" />
+            </article>
           ))}
         </div>
       )}

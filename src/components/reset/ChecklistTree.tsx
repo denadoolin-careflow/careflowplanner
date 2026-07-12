@@ -198,7 +198,10 @@ function SortableRow({
         ) : (
           <span
             onDoubleClick={() => setEditing(true)}
-            className={cn("flex-1 cursor-text text-sm", item.done && "text-muted-foreground line-through")}
+            className={cn(
+              "min-w-0 flex-1 cursor-text whitespace-normal break-words text-sm leading-snug [overflow-wrap:anywhere]",
+              item.done && "text-muted-foreground line-through",
+            )}
           >
             {item.title}
           </span>
