@@ -188,8 +188,12 @@ const App = () => (
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/planner/:date" element={<Planner />} />
                 <Route path="/task-editor-styles" element={<TaskEditorStyles />} />
-                <Route path="/week" element={<Week />} />
-                <Route path="/month" element={<Month />} />
+                <Route path="/week" element={<Planner />} />
+                <Route path="/week/:date" element={<Planner />} />
+                <Route path="/month" element={<Planner />} />
+                <Route path="/month/:date" element={<Planner />} />
+                <Route path="/week-classic" element={<Week />} />
+                <Route path="/month-classic" element={<Month />} />
                <Route path="/month/overview" element={<MonthOverview />} />
                 <Route path="/year" element={<Year />} />
                 <Route path="/goals" element={<Goals />} />
@@ -216,7 +220,9 @@ const App = () => (
                 <Route path="/ideas" element={<Ideas />} />
                <Route path="/tags" element={<Tags />} />
                <Route path="/tags/:name" element={<TagDetail />} />
-                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/calendar" element={<Planner />} />
+                <Route path="/calendar/:date" element={<Planner />} />
+                <Route path="/calendar-classic" element={<CalendarPage />} />
                 <Route path="/calendar-v2" element={<CalendarV2 />} />
                 <Route path="/focus" element={<PomodoroPicker />} />
                 <Route path="/memories" element={<Memories />} />

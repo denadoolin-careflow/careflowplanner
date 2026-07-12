@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { addDays, format, isValid, parseISO, startOfWeek } from "date-fns";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { addDays, addMonths, format, isValid, parseISO, startOfMonth, startOfWeek } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus, Sparkles, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
@@ -14,6 +14,9 @@ import { PlannerMonthView } from "@/components/planner/PlannerMonthView";
 import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
 import { PlannerCommandBar } from "@/components/planner/PlannerCommandBar";
 import { usePlannerView } from "@/lib/planner-prefs";
+import { useStore } from "@/lib/store";
+import { CareySuggestions } from "@/components/calendar-v2/CareySuggestions";
+import { RecoveryStrip } from "@/components/calendar-v2/RecoveryStrip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ListTodo } from "lucide-react";
@@ -21,6 +24,21 @@ import { ListTodo } from "lucide-react";
 export default function Planner() {
   const { date } = useParams<{ date: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Detect scope from route prefix so /week and /month lock the view.
+  const routeScope: "week" | "month" | null = location.pathname.startsWith("/week")
+    ? "week"
+    : location.pathname.startsWith("/month")
+      ? "month"
+      : null;
+  const routeBase = location.pathname.startsWith("/week")
+    ? "/week"
+    : location.pathname.startsWith("/month")
+      ? "/month"
+      : location.pathname.startsWith("/calendar")
+        ? "/calendar"
+        : "/planner";
 
   const day = useMemo(() => {
     if (!date) return new Date();
@@ -32,6 +50,10 @@ export default function Planner() {
   const [planOpen, setPlanOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [view, setView] = usePlannerView();
+  const effectiveView = routeScope ?? view;
+  useEffect(() => {
+    if (routeScope && view !== routeScope) setView(routeScope);
+  }, [routeScope, view, setView]);
   const isMobile = useIsMobile();
   const [mobileTasksOpen, setMobileTasksOpen] = useState(false);
   const [taskPanelHidden, setTaskPanelHidden] = useState<boolean>(() => {
@@ -70,11 +92,27 @@ export default function Planner() {
 
   // Auto-hide task panel for multi-day views to give the timeline more room.
   useEffect(() => {
-    if (view === "3day" || view === "week") setTaskPanelHidden(true);
-    if (view === "day") setTaskPanelHidden(false);
-  }, [view]);
+    if (effectiveView === "3day" || effectiveView === "week" || effectiveView === "month") setTaskPanelHidden(true);
+    if (effectiveView === "day") setTaskPanelHidden(false);
+  }, [effectiveView]);
 
-  const go = (d: Date) => navigate(`/planner/${format(d, "yyyy-MM-dd")}`);
+  const go = (d: Date) => navigate(`${routeBase}/${format(d, "yyyy-MM-dd")}`);
+  const stepDate = (dir: 1 | -1) => {
+    if (effectiveView === "month") return go(addMonths(day, dir));
+    if (effectiveView === "week" || effectiveView === "3day") return go(addDays(day, 7 * dir));
+    return go(addDays(day, dir));
+  };
+
+  // If user picks a new view from the toggle while on /week or /month,
+  // navigate to the matching route so the URL and scope stay in sync.
+  const handleSetView = (v: typeof view) => {
+    setView(v);
+    if (v === "week" && !location.pathname.startsWith("/week")) return navigate(`/week/${format(day, "yyyy-MM-dd")}`);
+    if (v === "month" && !location.pathname.startsWith("/month")) return navigate(`/month/${format(day, "yyyy-MM-dd")}`);
+    if ((v === "day" || v === "3day") && (location.pathname.startsWith("/week") || location.pathname.startsWith("/month"))) {
+      return navigate(`/planner/${format(day, "yyyy-MM-dd")}`);
+    }
+  };
 
   // Global hotkeys: "c" → capture · Cmd/Ctrl+K → command bar
   useEffect(() => {
@@ -88,18 +126,45 @@ export default function Planner() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const showContextPanel = !isMobile && (view === "day" || view === "3day");
-  const showTaskPanel = !isMobile && !taskPanelHidden && (view === "day" || view === "3day" || view === "week");
+  const showContextPanel = !isMobile && (effectiveView === "day" || effectiveView === "3day");
+  const showTaskPanel = !isMobile && !taskPanelHidden && (effectiveView === "day" || effectiveView === "3day" || effectiveView === "week");
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
+
+  // Data for Carey suggestions + Recovery strip (Day view only).
+  const { state } = useStore();
+  const iso = format(day, "yyyy-MM-dd");
+  const dayTasks = useMemo(
+    () => state.tasks.filter((t) => t.dueDate === iso && !t.parentTaskId && t.status !== "parked"),
+    [state.tasks, iso],
+  );
+  const unscheduled = useMemo(
+    () => state.tasks.filter((t) =>
+      !t.done && !t.parentTaskId && t.status !== "parked" &&
+      (t.inbox === true || (!t.dueDate && !t.startTime))
+    ),
+    [state.tasks],
+  );
+  const dayAppts = useMemo(
+    () => (state.appointments ?? []).filter((a) => a.date === iso),
+    [state.appointments, iso],
+  );
+
+  const scopeLabel =
+    effectiveView === "month" ? format(day, "MMMM yyyy") :
+    effectiveView === "week" ? `Week of ${format(weekStart, "MMM d")}` :
+    effectiveView === "3day" ? `${format(day, "MMM d")}–${format(addDays(day, 2), "MMM d")}` :
+    null;
 
   return (
     <div className="flex h-[calc(100vh-140px)] min-h-[500px] flex-col gap-3">
       <header className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Planner</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            {routeScope === "week" ? "Week" : routeScope === "month" ? "Month" : "Planner"}
+          </p>
           <h1 className="font-display text-lg font-semibold sm:text-2xl md:text-3xl">
-            <span className="sm:hidden">{format(day, "EEE, MMM d")}</span>
-            <span className="hidden sm:inline">{format(day, "EEEE, MMMM d")}</span>
+            <span className="sm:hidden">{scopeLabel ?? format(day, "EEE, MMM d")}</span>
+            <span className="hidden sm:inline">{scopeLabel ?? format(day, "EEEE, MMMM d")}</span>
           </h1>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-1 sm:gap-1.5">
@@ -117,8 +182,8 @@ export default function Planner() {
               </SheetContent>
             </Sheet>
           )}
-          <PlannerViewToggle value={view} onChange={setView} />
-          {!isMobile && (view === "day" || view === "3day" || view === "week") && (
+          <PlannerViewToggle value={effectiveView} onChange={handleSetView} />
+          {!isMobile && (effectiveView === "day" || effectiveView === "3day" || effectiveView === "week") && (
             <Button
               size="icon"
               variant="outline"
@@ -130,11 +195,11 @@ export default function Planner() {
               {taskPanelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             </Button>
           )}
-          <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => go(addDays(day, -1))} aria-label="Previous day">
+          <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => stepDate(-1)} aria-label="Previous">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <DayPickerButton date={day} onChange={go} />
-          <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => go(addDays(day, 1))} aria-label="Next day">
+          <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => stepDate(1)} aria-label="Next">
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Button size="sm" variant="outline" className="hidden h-8 rounded-full text-xs sm:inline-flex" onClick={() => go(new Date())}>Today</Button>
@@ -177,10 +242,18 @@ export default function Planner() {
           </>
         )}
         <div className="min-h-0">
-          {view === "day" && <PlannerTimeline date={day} />}
-          {view === "3day" && <PlannerMultiDayView start={day} days={3} />}
-          {view === "week" && <PlannerMultiDayView start={weekStart} days={7} />}
-          {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
+          {effectiveView === "day" && (
+            <div className="flex h-full min-h-0 flex-col gap-3">
+              <CareySuggestions date={day} tasks={dayTasks} unscheduled={unscheduled} appointments={dayAppts} />
+              <RecoveryStrip date={day} appointments={dayAppts} />
+              <div className="min-h-0 flex-1">
+                <PlannerTimeline date={day} />
+              </div>
+            </div>
+          )}
+          {effectiveView === "3day" && <PlannerMultiDayView start={day} days={3} />}
+          {effectiveView === "week" && <PlannerMultiDayView start={weekStart} days={7} />}
+          {effectiveView === "month" && <PlannerMonthView date={startOfMonth(day)} onSelectDay={(d) => { setView("day"); navigate(`/planner/${format(d, "yyyy-MM-dd")}`); }} />}
         </div>
         {showContextPanel && (
           <PlannerContextPanel date={day} onChangeDate={go} />
@@ -194,7 +267,7 @@ export default function Planner() {
         onOpenChange={setCmdOpen}
         onCapture={() => setCaptureOpen(true)}
         onPlanMyDay={() => setPlanOpen(true)}
-        onSetView={setView}
+        onSetView={handleSetView}
         onGoToday={() => go(new Date())}
       />
     </div>
