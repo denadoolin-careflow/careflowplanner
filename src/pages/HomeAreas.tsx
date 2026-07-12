@@ -492,7 +492,6 @@ function ResetSection({ uid }: { uid: string }) {
         <div className="grid gap-3 lg:grid-cols-2">
           {lists.slice(0, 2).map(list => (
             <div key={list.id} className="rounded-2xl border border-border/60 bg-card/60 p-3">
-              <div className="mb-1 text-sm font-semibold">{list.name}</div>
               <ChecklistTree
                 list={list}
                 onAdd={(item) => reset.addItem(list.id, item)}
