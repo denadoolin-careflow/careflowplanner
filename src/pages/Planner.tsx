@@ -1,18 +1,19 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { addDays, format, isValid, parseISO, startOfWeek } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DayPickerButton } from "@/components/calendar/DayPickerButton";
 import { PlannerTaskPanel } from "@/components/planner/PlannerTaskPanel";
 import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerQuickCapture } from "@/components/planner/PlannerQuickCapture";
-import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
 import { PlannerMultiDayView } from "@/components/planner/PlannerMultiDayView";
 import { PlannerMonthView } from "@/components/planner/PlannerMonthView";
 import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
 import { PlannerCommandBar } from "@/components/planner/PlannerCommandBar";
+import { PlannerRhythmHeader } from "@/components/planner/PlannerRhythmHeader";
+import { PlannerPeriodTabs, usePlannerPeriod } from "@/components/planner/PlannerPeriodTabs";
+import { PlannerPeriodList } from "@/components/planner/PlannerPeriodList";
 import { usePlannerView } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -32,6 +33,7 @@ export default function Planner() {
   const [planOpen, setPlanOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [view, setView] = usePlannerView();
+  const [period, setPeriod] = usePlannerPeriod();
   const isMobile = useIsMobile();
   const [mobileTasksOpen, setMobileTasksOpen] = useState(false);
   const [taskPanelHidden, setTaskPanelHidden] = useState<boolean>(() => {
@@ -93,63 +95,54 @@ export default function Planner() {
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
 
   return (
-    <div className="flex h-[calc(100vh-140px)] min-h-[500px] flex-col gap-3">
-      <header className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Planner</p>
-          <h1 className="font-display text-lg font-semibold sm:text-2xl md:text-3xl">
-            <span className="sm:hidden">{format(day, "EEE, MMM d")}</span>
-            <span className="hidden sm:inline">{format(day, "EEEE, MMMM d")}</span>
-          </h1>
+    <div className="planner-surface flex h-[calc(100vh-140px)] min-h-[500px] flex-col gap-3">
+      <div className="flex flex-wrap items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <PlannerRhythmHeader
+            date={day}
+            view={view}
+            onView={setView}
+            onPrev={() => go(addDays(day, -1))}
+            onNext={() => go(addDays(day, 1))}
+            onGoto={go}
+            onToday={() => go(new Date())}
+            onCapture={() => setCaptureOpen(true)}
+            onPlanMyDay={() => setPlanOpen(true)}
+            onCommand={() => setCmdOpen(true)}
+          />
         </div>
-        <div className="ml-auto flex flex-wrap items-center gap-1 sm:gap-1.5">
-          {isMobile && (
-            <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
-              <SheetTrigger asChild>
-                <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" aria-label="Show tasks">
-                  <ListTodo className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[86vw] max-w-[360px] p-0">
-                <div className="h-full overflow-hidden p-3">
-                  <PlannerTaskPanel selectedDate={day} onQuickAdd={() => { setMobileTasksOpen(false); setCaptureOpen(true); }} />
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
-          <PlannerViewToggle value={view} onChange={setView} />
-          {!isMobile && (view === "day" || view === "3day" || view === "week") && (
+        {isMobile && (
+          <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
+            <SheetTrigger asChild>
+              <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" aria-label="Show tasks">
+                <ListTodo className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[86vw] max-w-[360px] p-0">
+              <div className="h-full overflow-hidden p-3">
+                <PlannerTaskPanel selectedDate={day} onQuickAdd={() => { setMobileTasksOpen(false); setCaptureOpen(true); }} />
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
+      </div>
+
+      {view === "day" && (
+        <div className="flex items-center gap-2">
+          <PlannerPeriodTabs value={period} onChange={setPeriod} />
+          {!isMobile && (
             <Button
               size="icon"
               variant="outline"
-              className="h-8 w-8 rounded-full"
+              className="ml-auto h-8 w-8 rounded-full"
               onClick={() => setTaskPanelHidden(v => !v)}
               aria-label={taskPanelHidden ? "Show task sidebar" : "Hide task sidebar"}
-              title={taskPanelHidden ? "Show task sidebar" : "Hide task sidebar"}
             >
               {taskPanelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             </Button>
           )}
-          <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => go(addDays(day, -1))} aria-label="Previous day">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <DayPickerButton date={day} onChange={go} />
-          <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => go(addDays(day, 1))} aria-label="Next day">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button size="sm" variant="outline" className="hidden h-8 rounded-full text-xs sm:inline-flex" onClick={() => go(new Date())}>Today</Button>
-          <Button size="sm" variant="outline" className="hidden h-8 rounded-full text-xs md:inline-flex" onClick={() => setCmdOpen(true)} aria-label="Command bar">
-            <CommandIcon className="mr-1 h-3.5 w-3.5" />⌘K
-          </Button>
-          <Button size="sm" variant="secondary" className="h-8 rounded-full text-xs" onClick={() => setPlanOpen(true)}>
-            <Sparkles className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">Plan my day</span>
-          </Button>
-          <Button size="sm" className="h-8 rounded-full text-xs" onClick={() => setCaptureOpen(true)}>
-            <Plus className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">Capture</span>
-            <kbd className="ml-2 hidden rounded bg-primary-foreground/20 px-1 text-[9px] md:inline">C</kbd>
-          </Button>
         </div>
-      </header>
+      )}
 
       <div
         className="grid min-h-0 flex-1 gap-3"
@@ -177,9 +170,10 @@ export default function Planner() {
           </>
         )}
         <div className="min-h-0">
-          {view === "day" && <PlannerTimeline date={day} />}
-          {view === "3day" && <PlannerMultiDayView start={day} days={3} />}
-          {view === "week" && <PlannerMultiDayView start={weekStart} days={7} />}
+          {view === "day" && period === "grid" && <PlannerTimeline date={day} />}
+          {view === "day" && period !== "grid" && <PlannerPeriodList date={day} period={period} />}
+          {view === "3day" && <PlannerMultiDayView start={day} days={3} unified />}
+          {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}
           {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
         </div>
         {showContextPanel && (
