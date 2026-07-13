@@ -90,7 +90,7 @@ function assignLanes(items: ScheduledItem[]): (ScheduledItem & { lane: number; l
   return clusters.flat();
 }
 
-export function PlannerTimeline({ date, compact }: { date: Date; compact?: boolean }) {
+export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?: boolean; bare?: boolean }) {
   const { state, updateTask, addTask } = useStore();
   const pomo = usePomodoro();
   const [focusTaskId] = usePlannerFocusTaskId();
@@ -249,10 +249,13 @@ export function PlannerTimeline({ date, compact }: { date: Date; compact?: boole
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
-      <div className="border-b border-border/60 px-4 py-2 text-xs text-muted-foreground">
-        {format(date, "EEEE, MMMM d")}
-      </div>
+    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden",
+      !bare && "rounded-2xl border border-border/60 bg-card/40")}>
+      {!bare && (
+        <div className="border-b border-border/60 px-4 py-2 text-xs text-muted-foreground">
+          {format(date, "EEEE, MMMM d")}
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto">
         <div className="relative flex">
           {/* Hour rail */}
