@@ -8,7 +8,6 @@ import { MoonInsightCard } from "./MoonInsightCard";
 import { PlannerViewToggle } from "./PlannerViewToggle";
 import { CaptureMenu } from "./CaptureMenu";
 import { PlannerFocusButton } from "./PlannerFocusButton";
-import { useStore } from "@/lib/store";
 import type { PlannerView } from "@/lib/planner-prefs";
 
 interface Props {
@@ -27,8 +26,7 @@ interface Props {
 
 export function PlannerRhythmHeader(props: Props) {
   const { date, view, onView, onPrev, onNext, onGoto, onToday, onCapture, onPlanMyDay } = props;
-  const { state } = useStore();
-  const displayName = (state.user as any)?.displayName || (state.user as any)?.name || "";
+  const displayName = "";
 
   return (
     <div className="planner-surface space-y-3">
