@@ -64,7 +64,7 @@ export function useDailyCheckIn(dateISO: string = isoToday()): UseCheckInResult 
       const body = {
         date: dateISO,
         name: state.settings?.name ?? null,
-        weather: snap ? { location: snap.location, tempC: snap.tempC, condition: snap.conditionLabel } : null,
+        weather: snap ? { location: snap.locationLabel, tempC: snap.tempC, condition: snap.conditionLabel } : null,
         moon: moon ? { phase: moon.label, sign: moon.sign, illumination: moon.illumination } : null,
         cycle: cycle ? { phase: cycle.label, day: cycle.cycleDay } : null,
         taskLoad: {
@@ -73,7 +73,7 @@ export function useDailyCheckIn(dateISO: string = isoToday()): UseCheckInResult 
           topThree: today.slice(0, 3).map((t) => t.title),
         },
         goals: (state.goals ?? []).slice(0, 5).map((g: { title: string }) => g.title),
-        habits: (state.habits ?? []).slice(0, 6).map((h: { name: string }) => h.name),
+        habits: (state.habits ?? []).slice(0, 6).map((h) => h.title),
       };
 
       const { data, error: fnError } = await supabase.functions.invoke("ai-daily-checkin", { body });
