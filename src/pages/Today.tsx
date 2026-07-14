@@ -18,6 +18,7 @@ import { BurnoutCheckIn } from "@/components/today/BurnoutCheckIn";
 import { SlotWeatherStrip } from "@/components/today/SlotWeatherStrip";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
+import { MorningCheckInPrompt } from "@/components/checkin/MorningCheckInPrompt";
 import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
 import { DayPlanBoard } from "@/components/today/DayPlanBoard";
 import { ScheduleBoard } from "@/components/today/ScheduleBoard";
@@ -136,6 +137,7 @@ function TodayInner() {
         className="mx-auto w-full min-w-0 max-w-6xl space-y-6 overflow-x-clip px-2 pb-10 sm:px-4"
       >
         <DemoTasksBanner />
+        <MorningCheckInPrompt />
         <ScopeHero
           scope="today"
           date={day}
