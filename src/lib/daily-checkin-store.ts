@@ -76,7 +76,7 @@ export async function loadCheckIn(iso: string): Promise<CheckInRecord | null> {
     const rec: CheckInRecord = {
       id: data.id,
       iso_date: data.iso_date,
-      ai_payload: (data.ai_payload as CheckInAiPayload) ?? local?.ai_payload ?? null,
+      ai_payload: (data.ai_payload as unknown as CheckInAiPayload) ?? local?.ai_payload ?? null,
       mood: data.mood ?? null,
       gratitude: Array.isArray(data.gratitude) ? (data.gratitude as string[]) : [],
       capture_text: data.capture_text ?? null,
