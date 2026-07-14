@@ -1980,6 +1980,54 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_checkins: {
+        Row: {
+          ai_payload: Json | null
+          capture_media: Json | null
+          capture_text: string | null
+          chosen_intention: string | null
+          completed_at: string | null
+          created_at: string
+          gratitude: Json | null
+          id: string
+          iso_date: string
+          mood: string | null
+          saved_mantra: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_payload?: Json | null
+          capture_media?: Json | null
+          capture_text?: string | null
+          chosen_intention?: string | null
+          completed_at?: string | null
+          created_at?: string
+          gratitude?: Json | null
+          id?: string
+          iso_date: string
+          mood?: string | null
+          saved_mantra?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_payload?: Json | null
+          capture_media?: Json | null
+          capture_text?: string | null
+          chosen_intention?: string | null
+          completed_at?: string | null
+          created_at?: string
+          gratitude?: Json | null
+          id?: string
+          iso_date?: string
+          mood?: string | null
+          saved_mantra?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_intentions: {
         Row: {
           created_at: string
