@@ -1,84 +1,70 @@
+## CareFlow Brand Redesign — Implementation Plan
 
-# Daily Check-In — Morning Ritual
+Rebrand the entire app around the new CareFlow Planner logo (seasonal gradient drop + heart + checkmark on warm cream). The work is scoped as a **design-system refresh** — no business logic changes. Everything flows from tokens in `src/index.css` and `tailwind.config.ts`, so most screens update automatically.
 
-A calm, glassmorphic morning conversation that auto-opens once per day and becomes the emotional heartbeat of CareFlow, feeding directly into Plan My Day.
+### 1. Foundation — tokens & typography
+**`src/index.css`** (single source of truth)
+- Rewrite `:root` and `.dark` HSL tokens:
+  - `--background: 36 100% 97%` (warm cream `#FFF9F2`)
+  - `--card: 40 45% 96%` (soft ivory)
+  - `--muted: 90 20% 94%` (very light sage)
+  - `--foreground: 150 25% 18%` (warm charcoal-green)
+  - `--primary: 155 45% 32%` (forest green from wordmark)
+  - `--accent: 30 90% 60%` (autumn orange)
+- Add seasonal accent tokens: `--season-spring`, `--season-summer`, `--season-autumn`, `--season-winter`, `--season-forest`.
+- Add `--gradient-seasonal: linear-gradient(135deg, #E85D2C, #F4A72B, #6FBE44, #2FB3A5, #3B7DD8, #4A4FC4, #7B4FB8)` and semantic aliases (`--gradient-primary`, `--gradient-hero`, `--gradient-active-nav`).
+- Bump `--radius` to `1.5rem` (24px); add `--radius-lg: 2rem` (32px) for hero cards.
+- Soften shadows: `--shadow-soft`, `--shadow-cozy`, `--shadow-float` (multi-layer, low-opacity).
+- Dark mode: deep forest/plum base with the same seasonal gradient reserved for accents only.
 
-## Scope & flow
+**`tailwind.config.ts`**
+- Set default `sans` to Nunito Sans; keep `display` as Fraunces for editorial headings; add `brand: ['"Nunito Sans"', ...]`.
+- Register `season.*` colors and `bg-gradient-seasonal` utility via `backgroundImage`.
 
-`Daily Check-In → Plan My Day → Focus → Evening Reflection`
+**`index.html`**
+- Swap Google Fonts link to Nunito Sans (400/500/600/700/800) + keep Fraunces.
+- Update `<title>` and meta description to "CareFlow Planner — Plan · Care · Grow".
 
-Auto-open once per calendar day on first app load (before 2pm local); dismissible; re-openable from Today header and Command Bar. Persists per-day state so it never re-prompts after completion.
+### 2. Logo & brand mark
+- `src/components/widgets/CareFlowMark.tsx` — keep image-based mark, but add a new `variant="wordmark"` that renders the full lockup (mark + "CareFlow" + "— PLANNER —" + "Plan · Care · Grow") for splash/onboarding/login.
+- `src/components/widgets/CareFlowLogo.tsx` — update wordmark to Nunito Sans 800, tighter tracking, forest-green fill with optional seasonal-gradient text clip for hero placements.
+- Replace favicon/app icon references in `index.html` with the new `/icons/icon-512.png` (already in place) and ensure og:image points to the branded mark.
 
-## Route & entry points
+### 3. Buttons, cards, navigation
+- **`src/components/ui/button.tsx`** — add `variant="seasonal"` (gradient fill, white text, soft shadow), refine `default` to solid forest green, `secondary` to cream with sage border, `ghost` to transparent with forest text. Increase default radius to `rounded-2xl`.
+- **`src/components/ui/card.tsx`** — cream/ivory background, `rounded-3xl`, `shadow-soft`, subtle 1px sage border.
+- **`src/components/layout/Sidebar.tsx`** and mobile bottom nav — floating pill container with backdrop blur, active item uses seasonal gradient fill + white icon, inactive uses muted forest.
+- Update `.reset-glass` and `planner-surface` utilities in `index.css` to sit on the new cream base.
 
-- New route: `/check-in` (full-screen ritual) + modal variant that overlays Today.
-- Auto-launcher hook in `App.tsx` reads `careflow:checkin:<iso>` and opens the modal if `completedAt` is missing and it's morning.
-- Entry chips: Today header "Morning check-in" pill, Command Bar action, Planner rhythm header button.
+### 4. Icon language
+Rather than hand-authoring 40+ SVGs, standardize on **lucide-react** (already used everywhere) with a consistent wrapper:
+- New `src/components/ui/BrandIcon.tsx` — wraps any lucide icon with rounded stroke (`strokeLinecap="round"`, `strokeLinejoin="round"`, `strokeWidth={1.75}`) and optional `tone` prop (`forest | seasonal | sage | autumn`) that applies gradient stroke via `<defs>` when `tone="seasonal"`.
+- Update `src/lib/area-icons.ts`, `category-icons.ts`, `task-icons.ts`, `project-icon.tsx`, `nav.ts` icon assignments to the mapping in the brief (Planner→Calendar, Care→Heart, Wellness→Droplet, Money→Leaf, Insights→TrendingUp, Journal→Notebook, Meals→Salad, Pantry→Package, Family→Users, Astrology→Moon, Notes→FileText, Inventory→Basket, Medication→Pill, Emergency→Shield, Habits→Sprout, AI→Sparkles).
+- No component-by-component icon swap needed beyond these registries — screens read from them.
 
-## Layout (single scrollable ritual, 7 sections)
+### 5. Motion
+- `tailwind.config.ts` — soften existing keyframes: extend `fade-in` and `scale-in` durations to 500–600ms with `cubic-bezier(0.22, 1, 0.36, 1)` (natural spring-out).
+- Add `float`, `leaf-drift`, `liquid-in` keyframes for hero cards, empty states, and page transitions.
+- Audit removes any `animate-bounce`/fast pulses on primary surfaces.
 
-Reuses existing atmosphere tokens, `reset-glass`, `font-display`, sage/cream/plum palette. No new palette.
+### 6. Screen-level touch-ups
+Most screens inherit from tokens, but these get an explicit brand pass:
+- **Splash / Loading** (`src/pages/FlowLanding.tsx`, loading fallbacks) — full-bleed cream with centered wordmark lockup and gentle gradient shimmer.
+- **Onboarding** (`src/pages/Onboarding.tsx`) — cream background, seasonal-gradient progress, larger radius cards.
+- **Auth** (`src/pages/Auth.tsx`) — logo lockup, cream card, seasonal primary button.
+- **Dashboard / Today** (`src/pages/Today.tsx`, `HomeReset.tsx`) — cream base, ivory modular cards for Today's Plan, Care, Family, Meals, Weather, Moon, Cycle, Habits, Hydration, Notes, Events, Budget, Insights (widgets already exist; just re-skin).
+- **Empty states** (`src/components/empty/*` if present, else inline) — soft botanical accent using a `Leaf`/`Sprout` BrandIcon at 30% opacity.
+- **Settings** (`src/pages/*Settings*`) — swap section icons to the new BrandIcon family.
 
-1. **Hero header** — time-aware greeting ("Good morning, {name} ☀️"), date, live clock, weather chip, moon phase + sign, one-line transit summary. Reuses `RhythmHeader` primitives + `MoonCycleModule`.
-2. **Daily Energy card** — energy meter (Calm/Active/Intense), mood theme, focus theme, challenge, hidden opportunity. Powered by `ai-today-guidance` extended output.
-3. **Personal Moon Guidance** — moon sign, phase, activated Whole Sign house from stored natal chart, 6-line life-area impact (relationships, work, family, health, creativity, spiritual, financial). Collapsible "Learn more".
-4. **CareFlow Method — 4 cards** (Capture / Anchor / Rhythm / Exhale) rendered as a 2×2 glass grid:
-   - Capture: reflective question + text/voice/photo/tag entry → saves to journal.
-   - Anchor: one intention suggestion (accept or edit) → writes to `daily-intention`.
-   - Rhythm: top-3 priorities + timeline of suggested work/rest/meal/water/med/movement blocks → optional "Add to Planner".
-   - Exhale: release / boundary / self-care / breathing / evening preview.
-5. **AI Daily Insight** — one supportive paragraph weaving moon + transits + goals + habits + calendar + recent journal + season.
-6. **Today's Mantra** — one affirmation, "Save to favorites" heart.
-7. **Mood check-in + Gratitude + Yesterday's wins** — mood selector with personalized response, 3 gratitude inputs (text/voice), auto-populated wins list with celebration animation.
+### 7. Verification
+- Run `tsgo` on changed files.
+- Screenshot `/`, `/today`, `/planner`, `/auth`, `/onboarding` in light and dark via Playwright and confirm the cream/forest/seasonal palette lands consistently.
 
-Sticky footer: **Today's Planner Preview** (schedule/tasks/focus blocks/habits/meals condensed) + **End-of-day preview** with 4-step progress ring (morning ✓, planning, midday, evening).
+### Out of scope (explicit)
+- No changes to data models, hooks, edge functions, or Supabase.
+- No custom-drawn SVG icon set — we standardize on lucide + BrandIcon wrapper.
+- Marketing site (`Landing.tsx`) already uses sage/cream — will get tokens updated, not restructured.
+- Email templates and PDF exports untouched unless you want them in a follow-up.
 
-## Personalization engine
-
-New `src/lib/carey/checkin-context.ts` extends `buildCareySnapshot` with: profile, family, natal chart, whole-sign houses, active transits, moon, weather, location, calendar today, tasks, habits, recent journal, health goals, cycle phase, energy history, sleep, meals, caregiving load. Single builder consumed by all AI sections so nothing double-fetches.
-
-## New edge function
-
-`supabase/functions/ai-daily-checkin/index.ts` — one call returns a structured payload for all sections:
-
-```
-{ energy, moonGuidance, method: { capture, anchor, rhythm, exhale },
-  insight, mantra, moodResponses, recommendations }
-```
-
-Uses `google/gemini-3-flash-preview` via Lovable AI Gateway with `Output.object` schema. Cached per `user_id + iso` in a new `daily_checkins` table so reopening is instant and free.
-
-## Persistence
-
-New table `public.daily_checkins` (RLS: owner-only, with GRANT + policies per project rules):
-- `id, user_id, iso_date, ai_payload jsonb, mood, gratitude jsonb, capture_text, capture_media, chosen_intention, saved_mantra, completed_at, created_at, updated_at`
-- Unique `(user_id, iso_date)`.
-
-Local fallback via existing `daily-checkin.ts` for offline / anonymous.
-
-## Files to add
-
-- `src/pages/DailyCheckIn.tsx`
-- `src/components/checkin/CheckInModal.tsx`
-- `src/components/checkin/sections/{HeroHeader,EnergyCard,MoonGuidanceCard,MethodGrid,DailyInsight,MantraCard,MoodGratitude,YesterdayWins,PlannerPreview,EndOfDayRing}.tsx`
-- `src/components/checkin/method/{CaptureCard,AnchorCard,RhythmCard,ExhaleCard}.tsx`
-- `src/hooks/useDailyCheckIn.ts` (load, save, AI fetch, completion tracking)
-- `src/lib/carey/checkin-context.ts`
-- `src/lib/daily-checkin-store.ts` (Supabase + local mirror, event bus)
-- `supabase/functions/ai-daily-checkin/index.ts`
-- Migration for `daily_checkins` table with grants + RLS.
-
-## Files to touch
-
-- `src/App.tsx` — register route + auto-launcher.
-- `src/lib/nav.ts` — add nav entry (optional, under Today section).
-- `src/components/layout/HeaderNowStrip.tsx` — "Morning check-in" chip when not yet completed.
-- `src/components/planner/PlannerCommandBar.tsx` — command action.
-- `src/pages/Today.tsx` — small "Start check-in" prompt if incomplete.
-- Anchor & Rhythm outputs write through existing `daily-intention`, `time-blocks`, and `top-three` stores so Plan My Day picks them up automatically.
-
-## Non-goals
-
-- No new palette, fonts, or design tokens.
-- No changes to Planner/Focus/Evening Reflection surfaces beyond wiring the outputs.
-- No push notifications in this pass (auto-open is in-app only).
+### Technical summary
+Change surface: `src/index.css`, `tailwind.config.ts`, `index.html`, `src/components/ui/{button,card}.tsx`, `src/components/widgets/CareFlow{Logo,Mark}.tsx`, `src/components/layout/Sidebar.tsx`, `src/lib/{area-icons,category-icons,task-icons,nav}.ts`, `src/lib/project-icon.tsx`, new `src/components/ui/BrandIcon.tsx`, plus targeted polish on Splash/Onboarding/Auth/Dashboard/EmptyState files. Roughly 20–25 files.
