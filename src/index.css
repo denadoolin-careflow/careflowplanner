@@ -9,35 +9,35 @@
 
 @layer base {
   :root {
-    /* Surfaces — warm cream */
-    --background: 36 38% 96%;
-    --foreground: 260 18% 18%;
+    /* Surfaces — CareFlow warm cream (#FFF9F2) */
+    --background: 36 100% 97%;
+    --foreground: 150 25% 18%;
 
-    --card: 36 50% 98%;
-    --card-foreground: 260 18% 18%;
+    --card: 40 55% 96%;
+    --card-foreground: 150 25% 18%;
 
-    --popover: 36 50% 98%;
-    --popover-foreground: 260 18% 18%;
+    --popover: 40 55% 97%;
+    --popover-foreground: 150 25% 18%;
 
-    /* Primary — soft lavender */
-    --primary: 258 45% 62%;
-    --primary-foreground: 36 50% 98%;
-    --primary-soft: 258 60% 92%;
+    /* Primary — forest green (from wordmark) */
+    --primary: 155 45% 32%;
+    --primary-foreground: 40 60% 98%;
+    --primary-soft: 150 40% 92%;
 
     /* Carey — warm companion accent */
     --carey: 30 75% 62%;
     --carey-foreground: 30 40% 16%;
     --carey-soft: 30 80% 94%;
 
-    /* Secondary — sage */
-    --secondary: 145 22% 78%;
-    --secondary-foreground: 145 30% 20%;
-    --secondary-soft: 145 30% 92%;
+    /* Secondary — soft sage */
+    --secondary: 145 25% 82%;
+    --secondary-foreground: 150 30% 22%;
+    --secondary-soft: 145 30% 93%;
 
-    /* Accent — dusty rose */
-    --accent: 350 55% 82%;
-    --accent-foreground: 350 35% 25%;
-    --accent-soft: 350 60% 95%;
+    /* Accent — autumn orange (from gradient) */
+    --accent: 22 85% 60%;
+    --accent-foreground: 22 40% 18%;
+    --accent-soft: 30 85% 94%;
 
     /* Tertiary — moonlit blue */
     --moon: 215 55% 70%;
@@ -55,17 +55,36 @@
     --warm-foreground: 30 30% 22%;
     --warm-soft: 32 55% 94%;
 
-    --muted: 36 25% 92%;
-    --muted-foreground: 260 10% 45%;
+    --muted: 40 30% 93%;
+    --muted-foreground: 150 12% 40%;
 
     --destructive: 0 65% 60%;
     --destructive-foreground: 36 50% 98%;
 
-    --border: 36 25% 88%;
-    --input: 36 25% 88%;
-    --ring: 258 45% 62%;
+    --border: 40 25% 88%;
+    --input: 40 25% 88%;
+    --ring: 155 45% 32%;
 
-    --radius: 1rem;
+    --radius: 1.5rem;
+
+    /* Seasonal palette — from CareFlow logo gradient */
+    --season-spring: 105 55% 50%;
+    --season-summer: 40 90% 55%;
+    --season-autumn: 18 85% 55%;
+    --season-winter: 215 65% 55%;
+    --season-teal:   175 65% 45%;
+    --season-indigo: 245 45% 55%;
+    --season-purple: 280 45% 55%;
+    --season-forest: 155 45% 32%;
+
+    --gradient-seasonal: linear-gradient(135deg,
+      hsl(var(--season-autumn)) 0%,
+      hsl(var(--season-summer)) 22%,
+      hsl(var(--season-spring)) 44%,
+      hsl(var(--season-teal))   62%,
+      hsl(var(--season-winter)) 78%,
+      hsl(var(--season-indigo)) 90%,
+      hsl(var(--season-purple)) 100%);
 
     /* Sidebar — derived from active theme tokens so presets flow through */
     --sidebar-background: var(--card);
@@ -83,10 +102,11 @@
     --gradient-sage: linear-gradient(135deg, hsl(145 35% 92%), hsl(36 45% 94%));
     --gradient-dawn: linear-gradient(160deg, hsl(36 55% 96%) 0%, hsl(258 50% 94%) 50%, hsl(350 55% 94%) 100%);
 
-    /* Shadows */
-    --shadow-soft: 0 2px 12px -4px hsl(258 30% 50% / 0.08), 0 1px 3px hsl(258 20% 30% / 0.04);
-    --shadow-cozy: 0 8px 30px -12px hsl(258 30% 50% / 0.18);
-    --shadow-glow: 0 0 0 1px hsl(258 45% 62% / 0.15), 0 4px 20px -4px hsl(258 45% 62% / 0.25);
+    /* Shadows — layered, warm, low-opacity */
+    --shadow-soft: 0 2px 12px -4px hsl(150 30% 20% / 0.06), 0 1px 3px hsl(150 20% 15% / 0.04);
+    --shadow-cozy: 0 8px 30px -12px hsl(150 30% 20% / 0.14);
+    --shadow-float: 0 20px 60px -20px hsl(150 30% 20% / 0.18), 0 6px 18px -8px hsl(150 30% 20% / 0.08);
+    --shadow-glow: 0 0 0 1px hsl(155 45% 32% / 0.14), 0 4px 20px -4px hsl(155 45% 32% / 0.22);
 
     /* Studio palette (Project Hub) — theme-aware surfaces & text */
     --studio-cream: 40 50% 96%;
@@ -111,30 +131,30 @@
   }
 
   .dark {
-    --background: 260 22% 10%;
-    --foreground: 36 30% 92%;
+    --background: 150 20% 8%;
+    --foreground: 40 40% 94%;
 
-    --card: 260 22% 13%;
-    --card-foreground: 36 30% 92%;
+    --card: 150 18% 12%;
+    --card-foreground: 40 40% 94%;
 
-    --popover: 260 22% 13%;
-    --popover-foreground: 36 30% 92%;
+    --popover: 150 18% 12%;
+    --popover-foreground: 40 40% 94%;
 
-    --primary: 258 55% 72%;
-    --primary-foreground: 260 30% 12%;
-    --primary-soft: 258 30% 22%;
+    --primary: 150 50% 62%;
+    --primary-foreground: 150 30% 10%;
+    --primary-soft: 150 30% 22%;
 
     --carey: 30 70% 68%;
     --carey-foreground: 30 30% 96%;
     --carey-soft: 30 35% 22%;
 
-    --secondary: 145 22% 40%;
-    --secondary-foreground: 145 30% 92%;
+    --secondary: 145 25% 40%;
+    --secondary-foreground: 145 30% 94%;
     --secondary-soft: 145 20% 22%;
 
-    --accent: 350 40% 65%;
-    --accent-foreground: 350 30% 96%;
-    --accent-soft: 350 25% 25%;
+    --accent: 22 80% 65%;
+    --accent-foreground: 22 30% 12%;
+    --accent-soft: 22 30% 24%;
 
     --moon: 215 50% 65%;
     --moon-foreground: 215 30% 96%;
@@ -150,15 +170,15 @@
     --warm-foreground: 32 35% 95%;
     --warm-soft: 32 18% 20%;
 
-    --muted: 260 18% 18%;
-    --muted-foreground: 36 15% 65%;
+    --muted: 150 15% 18%;
+    --muted-foreground: 40 20% 72%;
 
     --destructive: 0 60% 55%;
     --destructive-foreground: 36 30% 96%;
 
-    --border: 260 18% 22%;
-    --input: 260 18% 22%;
-    --ring: 258 55% 72%;
+    --border: 150 15% 22%;
+    --input: 150 15% 22%;
+    --ring: 150 50% 62%;
 
     --sidebar-background: var(--card);
     --sidebar-foreground: var(--foreground);
@@ -272,7 +292,7 @@
 
 @layer base {
   * { @apply border-border; }
-  html { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+  html { font-family: 'Nunito Sans', 'Inter', ui-sans-serif, system-ui, sans-serif; }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "ss01", "cv11";
@@ -343,6 +363,19 @@
   .cf-row + .cf-row { border-top: 1px solid hsl(var(--border) / 0.6); }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+/* CareFlow brand utilities */
+@layer utilities {
+  .bg-gradient-seasonal { background: var(--gradient-seasonal); }
+  .text-gradient-seasonal {
+    background: var(--gradient-seasonal);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .shadow-float { box-shadow: var(--shadow-float); }
+  .ring-seasonal { box-shadow: 0 0 0 1px hsl(var(--season-forest) / 0.2), 0 8px 24px -12px hsl(var(--season-forest) / 0.25); }
 }
 
 /* ====== Theme presets — applied via data-theme on html.

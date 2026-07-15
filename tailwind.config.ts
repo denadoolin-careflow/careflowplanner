@@ -9,8 +9,8 @@ export default {
     extend: {
       fontFamily: {
         display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        brand: ['Syne', 'Fraunces', 'ui-serif', 'Georgia', 'serif'],
+        sans: ['"Nunito Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        brand: ['"Nunito Sans"', 'Fraunces', 'ui-serif', 'Georgia', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -74,6 +74,19 @@ export default {
           med: "hsl(var(--priority-med))",
           low: "hsl(var(--priority-low))",
         },
+        season: {
+          spring: "hsl(var(--season-spring))",
+          summer: "hsl(var(--season-summer))",
+          autumn: "hsl(var(--season-autumn))",
+          winter: "hsl(var(--season-winter))",
+          teal:   "hsl(var(--season-teal))",
+          indigo: "hsl(var(--season-indigo))",
+          purple: "hsl(var(--season-purple))",
+          forest: "hsl(var(--season-forest))",
+        },
+      },
+      backgroundImage: {
+        'gradient-seasonal': 'var(--gradient-seasonal)',
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -83,6 +96,7 @@ export default {
       boxShadow: {
         soft: "var(--shadow-soft)",
         cozy: "var(--shadow-cozy)",
+        float: "var(--shadow-float)",
         glow: "var(--shadow-glow)",
         "priority-high": "0 0 12px hsl(var(--priority-high) / 0.35)",
         "priority-med": "0 0 8px hsl(var(--priority-med) / 0.22)",
