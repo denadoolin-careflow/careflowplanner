@@ -32,12 +32,12 @@ export function CareFlowLogo({
       <CareFlowMark size={size} rounded={rounded} decorative={false} />
       <span className="min-w-0 leading-tight">
         {showWordmark && (
-          <span className="block font-display text-[15px] font-semibold text-foreground">
+          <span className="block font-brand text-[16px] font-extrabold tracking-tight text-primary">
             CareFlow
           </span>
         )}
         {showTagline && (
-          <span className="block text-[9.5px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="block text-[9.5px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
             Plan · Care · Grow
           </span>
         )}
