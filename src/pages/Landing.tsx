@@ -381,6 +381,8 @@ function FinalCTA() {
   return (
     <section className="relative overflow-hidden">
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-seasonal opacity-95" />
+      {/* Contrast scrim to guarantee AA on white text over the bright summer stop */}
+      <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(0,0,0,0.18),rgba(0,0,0,0.28))]" />
       <div className="mx-auto grid max-w-7xl gap-8 px-6 py-14 md:grid-cols-[1.2fr_1fr] md:items-center">
         <div className="text-white">
           <Sparkles className="mb-3 h-5 w-5 opacity-90" />
