@@ -150,7 +150,7 @@ function Hero() {
           {/* Moon card */}
           <div className="absolute -bottom-4 -left-2 hidden max-w-[220px] rounded-2xl border border-border/60 bg-card/95 p-4 shadow-[var(--shadow-cozy)] backdrop-blur sm:block md:-left-6 md:bottom-8">
             <div className="flex items-center gap-2">
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-[hsl(260_55%_92%)] text-[hsl(260_45%_45%)]">
+            <div className="grid h-8 w-8 place-items-center rounded-full bg-moon-soft text-moon-foreground">
                 <Moon className="h-4 w-4" />
               </div>
               <p className="text-sm font-bold text-foreground">Moon in Taurus<br />Today</p>
@@ -219,13 +219,13 @@ function QuizBand() {
         className="relative overflow-hidden rounded-[32px] border border-border/60 p-6 shadow-[var(--shadow-soft)] sm:p-10"
         style={{
           background:
-            "linear-gradient(135deg, hsl(260 55% 96%), hsl(30 60% 96%) 60%, hsl(155 35% 94%))",
+            "linear-gradient(135deg, hsl(var(--accent-soft)), hsl(var(--warm-soft)) 60%, hsl(var(--primary-soft)))",
         }}
       >
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1fr)] lg:items-center">
           {/* Left: quiz card */}
           <div className="relative rounded-3xl bg-card p-7 shadow-[var(--shadow-cozy)]">
-            <div className="absolute -top-5 left-1/2 grid h-11 w-11 -translate-x-1/2 place-items-center rounded-full bg-[hsl(0_65%_92%)] text-[hsl(0_65%_50%)] shadow-md">
+            <div className="absolute -top-5 left-1/2 grid h-11 w-11 -translate-x-1/2 place-items-center rounded-full bg-accent-soft text-accent shadow-md">
               <Heart className="h-5 w-5 fill-current" />
             </div>
             <p className="mt-4 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
@@ -272,12 +272,12 @@ function QuizBand() {
             </h4>
             <div className="mt-4 space-y-2">
               {[
-                { i: Heart, t: "Helping others", tint: "text-[hsl(0_65%_50%)]" },
-                { i: Check, t: "Checking things off your list", tint: "text-[hsl(155_45%_40%)]" },
-                { i: Leaf, t: "Creating calm & connection", tint: "text-[hsl(140_45%_38%)]" },
-                { i: Sparkles, t: "Planning for what's next", tint: "text-[hsl(35_85%_50%)]" },
+                { i: Heart, t: "Helping others", tint: "text-accent" },
+                { i: Check, t: "Checking things off your list", tint: "text-primary" },
+                { i: Leaf, t: "Creating calm & connection", tint: "text-[hsl(var(--season-forest))] dark:text-[hsl(var(--season-spring))]" },
+                { i: Sparkles, t: "Planning for what's next", tint: "text-[hsl(var(--season-summer))]" },
               ].map((o) => (
-                <div key={o.t} className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3 py-2">
+                <div key={o.t} className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 py-2">
                   <o.i className={cn("h-4 w-4", o.tint)} />
                   <span className="text-[13px] text-foreground">{o.t}</span>
                 </div>
@@ -292,18 +292,20 @@ function QuizBand() {
 
 /* ---------------- Archetype grid ---------------- */
 
+// Tints reference semantic season/atmosphere tokens so they recolor in dark mode.
+const seasonTint = (v: string) => `bg-[hsl(var(--season-${v})/0.14)] dark:bg-[hsl(var(--season-${v})/0.22)]`;
 const ARCHETYPES: { icon: string; title: string; quote: string; tint: string }[] = [
-  { icon: "🌿", title: "The Mental Load Carrier", quote: "If I don't remember it, nobody will.", tint: "bg-[hsl(140_35%_94%)]" },
-  { icon: "🔥", title: "The Burnt-Out Caregiver", quote: "I'm functioning… but barely.", tint: "bg-[hsl(15_75%_94%)]" },
-  { icon: "🧠", title: "The Neurodivergent Navigator", quote: "My brain needs flexibility, not pressure.", tint: "bg-[hsl(260_55%_95%)]" },
-  { icon: "🏡", title: "The Gentle Homemaker", quote: "Home is how I care for people.", tint: "bg-[hsl(155_30%_94%)]" },
-  { icon: "🌙", title: "The Moon-Guided Planner", quote: "I plan with energy, not just time.", tint: "bg-[hsl(280_55%_95%)]" },
-  { icon: "🌅", title: "The Rebuilding Dreamer", quote: "I care for everyone… but I still have dreams too.", tint: "bg-[hsl(30_75%_94%)]" },
-  { icon: "🤝", title: "The Quiet Provider", quote: "I carry the weight quietly.", tint: "bg-[hsl(210_45%_94%)]" },
-  { icon: "🌊", title: "The Reset Seeker", quote: "I'm ready for a fresh start.", tint: "bg-[hsl(200_55%_94%)]" },
-  { icon: "🛡️", title: "The Burnt-Out Protector", quote: "I'm exhausted, but I still show up.", tint: "bg-[hsl(0_60%_94%)]" },
-  { icon: "👨‍👧", title: "The Rebuilding Father", quote: "I'm trying to become someone healthier.", tint: "bg-[hsl(220_45%_94%)]" },
-  { icon: "🧩", title: "The Neurodivergent Dad", quote: "My brain works differently.", tint: "bg-[hsl(160_35%_94%)]" },
+  { icon: "🌿", title: "The Mental Load Carrier",       quote: "If I don't remember it, nobody will.",             tint: seasonTint("spring") },
+  { icon: "🔥", title: "The Burnt-Out Caregiver",       quote: "I'm functioning… but barely.",                     tint: seasonTint("autumn") },
+  { icon: "🧠", title: "The Neurodivergent Navigator",  quote: "My brain needs flexibility, not pressure.",        tint: seasonTint("indigo") },
+  { icon: "🏡", title: "The Gentle Homemaker",          quote: "Home is how I care for people.",                   tint: seasonTint("forest") },
+  { icon: "🌙", title: "The Moon-Guided Planner",       quote: "I plan with energy, not just time.",               tint: seasonTint("purple") },
+  { icon: "🌅", title: "The Rebuilding Dreamer",        quote: "I care for everyone… but I still have dreams too.", tint: seasonTint("summer") },
+  { icon: "🤝", title: "The Quiet Provider",            quote: "I carry the weight quietly.",                      tint: seasonTint("winter") },
+  { icon: "🌊", title: "The Reset Seeker",              quote: "I'm ready for a fresh start.",                     tint: seasonTint("teal") },
+  { icon: "🛡️", title: "The Burnt-Out Protector",       quote: "I'm exhausted, but I still show up.",              tint: seasonTint("autumn") },
+  { icon: "👨‍👧", title: "The Rebuilding Father",         quote: "I'm trying to become someone healthier.",           tint: seasonTint("indigo") },
+  { icon: "🧩", title: "The Neurodivergent Dad",        quote: "My brain works differently.",                      tint: seasonTint("spring") },
 ];
 
 function ArchetypeGrid() {
@@ -311,9 +313,9 @@ function ArchetypeGrid() {
     <section className="mx-auto max-w-7xl px-6 pb-20">
       <div className="mb-8 text-center">
         <h2 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
-          <Sparkles className="mr-2 inline h-6 w-6 text-[hsl(35_85%_55%)]" />
+          <Sparkles className="mr-2 inline h-6 w-6 text-[hsl(var(--season-summer))]" />
           Which kind of caregiver are you?
-          <Sparkles className="ml-2 inline h-6 w-6 text-[hsl(35_85%_55%)]" />
+          <Sparkles className="ml-2 inline h-6 w-6 text-[hsl(var(--season-summer))]" />
         </h2>
         <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
           A 90-second quiz to shape your planner around the way you actually give.
