@@ -10,7 +10,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { RefreshCw, ExternalLink, AlertTriangle, Copy, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
-import { CareFlowMark } from "@/components/widgets/CareFlowMark";
+import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
+import { SeasonalDropIcon } from "@/components/ui/SeasonalDropIcon";
 
 // Detect known in-app browsers that block Google OAuth (Instagram/Facebook/
 // TikTok/LinkedIn webviews). These don't let users complete sign-in and just
@@ -159,14 +160,13 @@ export default function Auth() {
       className="relative min-h-screen w-full overflow-hidden bg-background text-foreground"
       style={{
         backgroundImage:
-          "radial-gradient(60% 50% at 80% 10%, hsl(var(--accent) / 0.18), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(var(--primary) / 0.14), transparent 60%)",
+          "radial-gradient(60% 50% at 80% 10%, hsl(var(--season-summer) / 0.16), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(var(--season-forest) / 0.14), transparent 60%)",
       }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
-        <Link to="/" className="mb-6 flex flex-col items-center gap-2 text-center">
-          <CareFlowMark size={72} />
-          <span className="font-brand text-3xl font-semibold text-foreground">CareFlow</span>
-          <span className="text-sm uppercase tracking-[0.18em] text-muted-foreground">Plan · Care · Grow</span>
+        <Link to="/" className="mb-6 flex flex-col items-center gap-3 text-center">
+          <SeasonalDropIcon size={72} animated />
+          <CareFlowLogo size={36} showWordmark showTagline />
         </Link>
 
         <div className="w-full rounded-3xl border border-border/50 bg-card/85 p-6 shadow-cozy backdrop-blur-md sm:p-8">
