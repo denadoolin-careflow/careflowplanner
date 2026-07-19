@@ -4,9 +4,39 @@ import {
   Play, Sparkles, Star, Quote, Check, ChevronRight,
 } from "lucide-react";
 import heroPhone from "@/assets/landing-hero-phone.jpg";
-import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
+import { CareFlowMark } from "@/components/widgets/CareFlowMark";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+/* ---------------- Brand lockup ---------------- */
+
+function LogoLockup({ size = 40, compact = false }: { size?: number; compact?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-3">
+      <CareFlowMark size={size} rounded="xl" decorative={false} />
+      <span className="min-w-0 leading-tight">
+        <span className="block font-brand text-[17px] font-extrabold tracking-tight text-gradient-seasonal">
+          CareFlow
+        </span>
+        {!compact && (
+          <span className="mt-0.5 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.32em] text-muted-foreground">
+            <span className="h-px w-3 bg-border" />
+            Planner
+            <span className="h-px w-3 bg-border" />
+          </span>
+        )}
+        <span className="block text-[9.5px] font-semibold uppercase tracking-[0.22em] text-primary/80">
+          Plan · Care · Grow
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/* ---------------- Primary CTA (seasonal gradient) ---------------- */
+
+const SEASONAL_CTA =
+  "rounded-full bg-gradient-seasonal bg-[length:200%_200%] bg-[position:0%_50%] px-6 text-white shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.55)] transition-all duration-300 hover:scale-[1.02] hover:brightness-110 hover:bg-[position:100%_50%] focus-visible:ring-2 focus-visible:ring-primary/40";
 
 /* ---------------- Nav ---------------- */
 
@@ -16,7 +46,7 @@ function Nav() {
     <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2.5">
-          <CareFlowLogo size={40} showWordmark showTagline />
+          <LogoLockup size={40} />
         </Link>
         <nav className="hidden items-center gap-7 text-[15px] font-semibold text-foreground/75 lg:flex">
           {links.map((l) => (
@@ -33,7 +63,7 @@ function Nav() {
           <Link to="/auth" className="hidden text-[15px] font-semibold text-foreground/80 hover:text-primary sm:inline">
             Sign in
           </Link>
-          <Button asChild size="lg" className="rounded-full bg-primary px-6 text-primary-foreground hover:bg-primary/90">
+          <Button asChild size="lg" className={SEASONAL_CTA}>
             <Link to="/auth">Get Started</Link>
           </Button>
         </div>
