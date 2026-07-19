@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Check, ChevronRight, Heart, Leaf, Sparkles, Plus, X } from "lucide-react";
+import { Check, ChevronRight, Leaf, Sparkles, Plus, X } from "lucide-react";
+import { SeasonalDropIcon } from "@/components/ui/SeasonalDropIcon";
+import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
 import { cn } from "@/lib/utils";
 import {
   useCareProfile, SEASON_META, ALL_PILLARS, PILLAR_META,
@@ -51,7 +53,11 @@ export default function Onboarding() {
               key={i}
               className={cn(
                 "h-1.5 rounded-full transition-all",
-                i === step ? "w-8 bg-primary" : i < step ? "w-4 bg-primary/60" : "w-4 bg-muted",
+                i === step
+                  ? "w-8 bg-gradient-seasonal"
+                  : i < step
+                  ? "w-4 bg-primary/60"
+                  : "w-4 bg-muted",
               )}
             />
           ))}
@@ -60,10 +66,10 @@ export default function Onboarding() {
         <Card className="cozy-card flex-1 border-border/40 bg-card/70 p-7 backdrop-blur sm:p-10">
           {step === 0 && (
             <div className="space-y-5 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15">
-                <Heart className="h-7 w-7 text-primary" />
+              <div className="mx-auto flex flex-col items-center gap-3">
+                <SeasonalDropIcon size={72} animated />
+                <CareFlowLogo size={28} showWordmark showTagline />
               </div>
-              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Welcome to CareFlow</p>
               <h1 className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
                 CareFlow was built for real life.
               </h1>
