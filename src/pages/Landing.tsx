@@ -171,11 +171,11 @@ function Hero() {
 /* ---------------- Feature strip ---------------- */
 
 const FEATURES = [
-  { icon: Calendar, title: "Plan Your Days", body: "Organize tasks, routines, appointments and family schedules.", tint: "bg-[hsl(155_35%_88%)] text-[hsl(155_45%_32%)]" },
-  { icon: Heart, title: "Care for What Matters", body: "Track health, medications, therapies, and important care needs.", tint: "bg-[hsl(0_65%_92%)] text-[hsl(0_65%_50%)]" },
-  { icon: Leaf, title: "Nourish Your Family", body: "Plan meals, manage groceries, recipes and pantry inventory.", tint: "bg-[hsl(140_35%_88%)] text-[hsl(140_45%_35%)]" },
-  { icon: Moon, title: "Align with Nature", body: "Lunar guidance, astrology insights and cycle awareness.", tint: "bg-[hsl(260_55%_92%)] text-[hsl(260_45%_45%)]" },
-  { icon: DollarSign, title: "Manage Your Money", body: "Budget, track expenses and plan for your family's future.", tint: "bg-[hsl(210_65%_92%)] text-[hsl(210_65%_45%)]" },
+  { icon: Calendar, title: "Plan Your Days", body: "Organize tasks, routines, appointments and family schedules." },
+  { icon: Heart, title: "Care for What Matters", body: "Track health, medications, therapies, and important care needs." },
+  { icon: Leaf, title: "Nourish Your Family", body: "Plan meals, manage groceries, recipes and pantry inventory." },
+  { icon: Moon, title: "Align with Nature", body: "Lunar guidance, astrology insights and cycle awareness." },
+  { icon: DollarSign, title: "Manage Your Money", body: "Budget, track expenses and plan for your family's future." },
 ];
 
 function FeatureStrip() {
@@ -185,8 +185,12 @@ function FeatureStrip() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
           {FEATURES.map((f) => (
             <div key={f.title} className="text-center">
-              <div className={cn("mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full", f.tint)}>
-                <f.icon className="h-6 w-6" />
+              <div
+                className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-gradient-seasonal p-[2px] shadow-[0_8px_24px_-10px_hsl(var(--primary)/0.4)]"
+              >
+                <div className="grid h-full w-full place-items-center rounded-full bg-card text-primary">
+                  <f.icon className="h-6 w-6" strokeWidth={2.25} />
+                </div>
               </div>
               <h3 className="font-display text-lg text-foreground">{f.title}</h3>
               <p className="mx-auto mt-2 max-w-[200px] text-[13px] leading-relaxed text-muted-foreground">{f.body}</p>
@@ -233,7 +237,7 @@ function QuizBand() {
             <p className="mt-3 text-center text-sm text-muted-foreground">
               A 90-second quiz to shape your planner around the way you actually give.
             </p>
-            <Button asChild className="mt-5 w-full rounded-full text-primary-foreground shadow-md" style={{ background: "linear-gradient(90deg, hsl(260 55% 65%), hsl(280 55% 65%))" }}>
+            <Button asChild className={cn("mt-5 w-full", SEASONAL_CTA)}>
               <Link to="/quiz">Take the Quiz <ArrowRight className="ml-1 h-4 w-4" /></Link>
             </Button>
           </div>
@@ -421,7 +425,7 @@ function Footer() {
   return (
     <footer className="border-t border-border/40 bg-background">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 px-6 py-8 sm:flex-row">
-        <CareFlowLogo size={30} showWordmark showTagline />
+        <LogoLockup size={34} />
         <div className="flex flex-wrap items-center gap-5 text-sm text-muted-foreground">
           <Link to="/pricing" className="hover:text-primary">Pricing</Link>
           <Link to="/privacy" className="hover:text-primary">Privacy</Link>
