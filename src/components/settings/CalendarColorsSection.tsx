@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import {
   useKindColors, CALENDAR_PALETTE, KIND_LABEL, DEFAULT_KIND_HEX,
-  kindStyleFromHex, type KindKey,
+  kindStyleFromHex, CALENDAR_PALETTE_GROUPS, type KindKey,
 } from "@/lib/calendar-colors";
 import { KIND_META } from "@/components/calendar/CalendarItemCard";
 import { toast } from "sonner";
@@ -39,9 +39,11 @@ function KindRow({ kind }: { kind: KindKey }) {
   const current = colorOf(kind);
   const custom = overrides[kind];
   const [hex, setHex] = useState<string>(current);
+  const [groupId, setGroupId] = useState<string>("signature");
   const meta = KIND_META[kind];
   const Icon = meta.Icon;
   const preview = kindStyleFromHex(current);
+  const activeGroup = CALENDAR_PALETTE_GROUPS.find(g => g.id === groupId) ?? CALENDAR_PALETTE_GROUPS[0];
 
   const apply = (v: string) => {
     if (!isValidHex(v)) { toast.error("Enter a valid hex like #a855f7"); return; }
@@ -49,9 +51,9 @@ function KindRow({ kind }: { kind: KindKey }) {
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border/50 bg-card/60 p-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-3 rounded-xl border border-border/50 bg-card/60 p-3">
       {/* Label + live preview chip */}
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <div className="flex min-w-0 items-center gap-2.5">
         <span
           className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border"
           style={preview.card}
@@ -69,9 +71,24 @@ function KindRow({ kind }: { kind: KindKey }) {
         </div>
       </div>
 
-      {/* Palette + custom hex + reset */}
+      {/* Palette group selector */}
       <div className="flex flex-wrap items-center gap-1.5">
-        {CALENDAR_PALETTE.map(hex => (
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Palette</span>
+        <select
+          value={groupId}
+          onChange={(e) => setGroupId(e.target.value)}
+          className="h-7 rounded-md border border-border/60 bg-background px-2 text-xs"
+          aria-label="Palette group"
+        >
+          {CALENDAR_PALETTE_GROUPS.map(g => (
+            <option key={g.id} value={g.id}>{g.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Palette swatches + custom hex + reset */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {activeGroup.colors.map(hex => (
           <Swatch
             key={hex}
             hex={hex}
