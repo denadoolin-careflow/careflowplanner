@@ -401,6 +401,37 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
+          {/* Quick add */}
+          <Popover open={quickAddOpen} onOpenChange={setQuickAddOpen}>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="default" className="h-7 gap-1.5 rounded-full text-xs">
+                <Plus className="h-3.5 w-3.5" /> Quick add
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-56 p-2">
+              <div className="mb-1 px-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                New for {format(parseISO(defaultQuickAddDate), "MMM d")}
+              </div>
+              {(enabledKinds.has("task") || enabledKinds.size === 0) && (
+                <button onClick={() => createTaskThenEdit()} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorOf("task") }} />
+                  <CheckSquare className="h-3.5 w-3.5" /> Task
+                </button>
+              )}
+              {(enabledKinds.has("appt") || enabledKinds.size === 0) && (
+                <button onClick={createApptThenEdit} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorOf("appt") }} />
+                  <CalendarClock className="h-3.5 w-3.5" /> Appointment
+                </button>
+              )}
+              {(enabledKinds.has("care") || enabledKinds.size === 0) && (
+                <button onClick={() => createTaskThenEdit({ area: "Caregiving" })} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorOf("care") }} />
+                  <HeartPulse className="h-3.5 w-3.5" /> Caregiving note
+                </button>
+              )}
+            </PopoverContent>
+          </Popover>
           {/* Date range */}
           <div className="flex items-center gap-1.5 text-xs">
             <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
