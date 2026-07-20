@@ -677,7 +677,8 @@ export default function ProjectsHub() {
             </ToggleGroup>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border bg-card/60 p-2" style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
+            <span className="pl-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Stage</span>
             <div className="flex flex-wrap gap-1">
               {ALL_STAGES.map((s) => (
                 <button
@@ -686,14 +687,15 @@ export default function ProjectsHub() {
                   className={cn("rounded-full border px-2.5 py-1 text-[11px] capitalize transition",
                     stageFilter === s ? "shadow-sm" : "opacity-70 hover:opacity-100")}
                   style={stageFilter === s
-                    ? { background: `hsl(${STUDIO.plum})`, color: "white", borderColor: `hsl(${STUDIO.plum})` }
+                    ? { background: "var(--brand-plum)", color: "white", borderColor: "var(--brand-plum)" }
                     : { borderColor: `hsl(${STUDIO.sageDeep} / 0.2)`, background: "transparent" }}
                 >
                   {s === "all" ? "All stages" : STAGE_META[s].label}
                 </button>
               ))}
             </div>
-            <div className="mx-2 h-4 w-px bg-border" />
+            <div className="mx-3 h-6 w-px" style={{ background: "hsl(var(--border))" }} />
+            <span className="pl-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Health</span>
             <div className="flex flex-wrap gap-1">
               {ALL_HEALTH.map((h) => (
                 <button
@@ -702,14 +704,14 @@ export default function ProjectsHub() {
                   className={cn("rounded-full border px-2.5 py-1 text-[11px] capitalize transition",
                     healthFilter === h ? "shadow-sm" : "opacity-70 hover:opacity-100")}
                   style={healthFilter === h
-                    ? { background: `hsl(${STUDIO.sageDeep})`, color: "white", borderColor: `hsl(${STUDIO.sageDeep})` }
+                    ? { background: "var(--brand-sage-deep)", color: "white", borderColor: "var(--brand-sage-deep)" }
                     : { borderColor: `hsl(${STUDIO.sageDeep} / 0.2)`, background: "transparent" }}
                 >
                   {h === "all" ? "All health" : HEALTH_META[h].label}
                 </button>
               ))}
             </div>
-            <div className="mx-2 h-4 w-px bg-border" />
+            <div className="mx-3 h-6 w-px" style={{ background: "hsl(var(--border))" }} />
             <select
               value={areaFilter}
               onChange={(e) => setAreaFilter(e.target.value)}
@@ -719,24 +721,60 @@ export default function ProjectsHub() {
               <option value="all">All areas</option>
               {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
+            {(stageFilter !== "all" || healthFilter !== "all" || areaFilter !== "all") && (
+              <button
+                type="button"
+                onClick={() => { setStageFilter("all"); setHealthFilter("all"); setAreaFilter("all"); }}
+                className="ml-auto rounded-full px-3 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted/50"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
 
           {filtered.length === 0 ? (
-            <div className="rounded-3xl border border-dashed p-12 text-center"
-                 style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.25)`, background: `hsl(${STUDIO.cream})` }}>
-              <Leaf className="mx-auto h-8 w-8" style={{ color: `hsl(${STUDIO.sageDeep})` }} />
-              <h3 className="mt-3 font-display text-xl">Plant your first project</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Capture an idea above, or create one directly.</p>
-              <Button
-                className="mt-4 rounded-2xl"
-                style={{ background: `hsl(${STUDIO.plum})`, color: "white" }}
-                onClick={async () => {
-                  const created = await addProject({ name: "Untitled project", areaName: "Personal" });
-                  if (created) navigate(`/projects/${created.id}`);
-                }}
+            <div
+              className="flex flex-col items-center rounded-[22px] border border-dashed p-14 text-center"
+              style={{
+                borderColor: `hsl(${STUDIO.sageDeep} / 0.25)`,
+                background: "var(--brand-cream)",
+              }}
+            >
+              <div
+                className="grid h-14 w-14 place-items-center rounded-full"
+                style={{ background: TONE_SOFT.sage, color: "var(--brand-sage-deep)" }}
               >
-                <Plus className="mr-1 h-4 w-4" /> New Project
-              </Button>
+                <Leaf className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 font-display text-2xl" style={{ color: "var(--brand-ink)" }}>
+                Nothing here yet
+              </h3>
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                {projects.length === 0
+                  ? "You haven't started any projects. Capture an idea or spin up a new project to get moving."
+                  : "No projects match the filters you picked. Try adjusting stage, health, or area — or start something new."}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                {(stageFilter !== "all" || healthFilter !== "all" || areaFilter !== "all") && (
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => { setStageFilter("all"); setHealthFilter("all"); setAreaFilter("all"); }}
+                  >
+                    Clear filters
+                  </Button>
+                )}
+                <Button
+                  className="rounded-full text-white hover:-translate-y-0.5 transition"
+                  style={{ background: "var(--gradient-brand-plum)", boxShadow: "var(--shadow-brand-soft)" }}
+                  onClick={async () => {
+                    const created = await addProject({ name: "Untitled project", areaName: "Personal" });
+                    if (created) navigate(`/projects/${created.id}`);
+                  }}
+                >
+                  <Plus className="mr-1 h-4 w-4" /> Start a new project
+                </Button>
+              </div>
             </div>
           ) : view === "cards" ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -764,6 +802,23 @@ export default function ProjectsHub() {
           </div>
         </section>
       </div>
+
+      {/* Floating action button — plum→sage gradient, rotates on hover */}
+      <button
+        type="button"
+        aria-label="New project"
+        onClick={async () => {
+          const created = await addProject({ name: "Untitled project", areaName: "Personal" });
+          if (created) navigate(`/projects/${created.id}`);
+        }}
+        className="group fixed bottom-6 right-6 z-30 grid h-14 w-14 place-items-center rounded-full text-white transition-transform duration-300 hover:-translate-y-1 hover:rotate-90"
+        style={{
+          background: "var(--gradient-brand-plum-sage)",
+          boxShadow: "var(--shadow-brand-lift)",
+        }}
+      >
+        <Plus className="h-6 w-6" />
+      </button>
     </div>
   );
 }
