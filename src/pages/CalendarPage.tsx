@@ -43,6 +43,8 @@ import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
 import { AgendaRail } from "@/components/calendar/AgendaRail";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CalendarRange, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Settings2 } from "lucide-react";
+import { CalendarColorsSection } from "@/components/settings/CalendarColorsSection";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -366,6 +368,16 @@ export default function CalendarPage() {
                 </button>
               )}
             </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0 rounded-full"
+              onClick={() => setColorsOpen(true)}
+              aria-label="Calendar colors"
+              title="Calendar colors"
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
           </div>
         }
         accent="warm"
