@@ -308,14 +308,9 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         className={STYLE_DIALOG_CLASSES[editorStyle] ?? STYLE_DIALOG_CLASSES["split-inspector"]}
       >
         {/* Sticky header */}
-        <DialogHeader className="shrink-0 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
-          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-2.5">
-            <Checkbox
-              checked={draft.done}
-              onCheckedChange={() => toggleTask(draft.id)}
-              className="h-6 w-6 shrink-0 sm:h-5 sm:w-5"
-              aria-label="Mark complete"
-            />
+        <DialogHeader className="shrink-0 space-y-2 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
+          {/* Row 1: title only */}
+          <div className="flex w-full min-w-0 items-center gap-2 pr-10">
             <LucideIconPicker
               value={draft.icon?.startsWith("lc:") ? draft.icon : undefined}
               onChange={v => set("icon", v)}
@@ -326,9 +321,19 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               onChange={e => set("title", e.target.value)}
               onBlur={() => { if (nlpOn && parsed && parsed.chips.length) applyNlp(); }}
               placeholder="Task title"
-              className="font-display order-last h-11 w-full min-w-0 max-w-full flex-1 basis-full border-0 bg-transparent px-0 text-[20px] font-semibold tracking-tight text-foreground caret-primary placeholder:text-muted-foreground/60 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:order-none sm:h-10 sm:basis-auto sm:w-auto sm:text-[22px]"
+              className="font-display h-11 w-full min-w-0 flex-1 border-0 bg-transparent px-0 text-[20px] font-semibold tracking-tight text-foreground caret-primary placeholder:text-muted-foreground/60 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:h-10 sm:text-[22px]"
             />
-            <div className="ml-auto flex items-center gap-1 sm:ml-0 sm:contents">
+          </div>
+          <DialogTitle className="sr-only">Edit task</DialogTitle>
+
+          {/* Row 2: actions */}
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-1">
+            <Checkbox
+              checked={draft.done}
+              onCheckedChange={() => toggleTask(draft.id)}
+              className="mr-1 h-5 w-5 shrink-0"
+              aria-label="Mark complete"
+            />
             <TaskAIAssistPopover
               title={draft.title}
               notes={draft.notes}
@@ -358,7 +363,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               type="button"
               variant="ghost"
               size="icon"
-              className={cn("h-9 w-9 shrink-0 sm:h-8 sm:w-8", draft.isTopThree ? "text-amber-500" : "text-muted-foreground hover:text-foreground")}
+              className={cn("h-8 w-8 shrink-0", draft.isTopThree ? "text-amber-500" : "text-muted-foreground hover:text-foreground")}
               onClick={() => set("isTopThree", !draft.isTopThree)}
               aria-label="Favorite / Top three"
               title="Top three today"
@@ -369,21 +374,19 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               type="button"
               variant="ghost"
               size="icon"
-              className="h-9 w-9 shrink-0 text-muted-foreground hover:text-primary sm:h-8 sm:w-8"
+              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary"
               onClick={() => setTimerOpen(true)}
               aria-label="Start timer"
               title="Start focus timer"
             >
               <Timer className="h-4 w-4" />
             </Button>
-            </div>
-            <div className="mx-1 hidden h-5 w-px bg-border/60 sm:block" />
-            <DialogTitle className="sr-only">Edit task</DialogTitle>
+            <div className="mx-1 h-5 w-px bg-border/60" />
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="hidden gap-1.5 text-muted-foreground hover:text-foreground sm:inline-flex"
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
               onClick={async () => {
                 const proj = state.projects?.find(p => p.id === draft.projectId);
                 const subs = (state.tasks ?? []).filter(t => t.parentTaskId === draft.id);
@@ -402,7 +405,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               type="button"
               variant="ghost"
               size="sm"
-              className="hidden gap-1.5 text-muted-foreground hover:text-foreground sm:inline-flex"
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
               onClick={async () => {
                 await addTask({
                   title: draft.title,
@@ -424,7 +427,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               type="button"
               variant="ghost"
               size="sm"
-              className="hidden gap-1.5 text-muted-foreground hover:text-foreground lg:inline-flex"
+              className="ml-auto gap-1.5 text-muted-foreground hover:text-foreground"
               onClick={toggleSide}
               title={sideHidden ? "Show context panel" : "Focus mode — hide context panel"}
               aria-pressed={sideHidden}
