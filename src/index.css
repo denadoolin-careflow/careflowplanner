@@ -115,6 +115,29 @@
     --studio-plum-text: 330 30% 35%;
     --studio-sage-deep-text: 140 28% 30%;
 
+    /* Brand studio — direct hex tokens for the redesign spec (Dashboard + Projects) */
+    --brand-cream: #F7F2E8;
+    --brand-cream-2: #F0E9DA;
+    --brand-ink: #2A2138;
+    --brand-muted: #6E6379;
+    --brand-lavender: #B7A3DA;
+    --brand-lavender-deep: #9179C4;
+    --brand-sage: #8FBB9C;
+    --brand-sage-deep: #5D9873;
+    --brand-marigold: #E7B94C;
+    --brand-marigold-deep: #CE9B2A;
+    --brand-plum: #5B2A48;
+    --brand-plum-deep: #431E37;
+    --gradient-brand-trio: linear-gradient(180deg, #9179C4 0%, #5D9873 55%, #CE9B2A 100%);
+    --gradient-brand-trio-h: linear-gradient(90deg, #B7A3DA 0%, #8FBB9C 50%, #E7B94C 100%);
+    --gradient-brand-plum: linear-gradient(135deg, #5B2A48 0%, #431E37 100%);
+    --gradient-brand-plum-sage: linear-gradient(135deg, #5B2A48 0%, #5D9873 100%);
+    --gradient-brand-lavender: linear-gradient(135deg, #B7A3DA 0%, #9179C4 100%);
+    --gradient-brand-sage: linear-gradient(135deg, #8FBB9C 0%, #5D9873 100%);
+    --gradient-brand-marigold: linear-gradient(135deg, #E7B94C 0%, #CE9B2A 100%);
+    --shadow-brand-soft: 0 10px 30px -14px rgba(43, 31, 56, 0.25);
+    --shadow-brand-lift: 0 18px 40px -18px rgba(43, 31, 56, 0.35);
+
     /* Astrology — element + aspect tones */
     --element-fire: 12 75% 58%;
     --element-earth: 90 30% 42%;
