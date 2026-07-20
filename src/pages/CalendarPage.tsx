@@ -56,6 +56,7 @@ export default function CalendarPage() {
     } catch { return ""; }
   })();
   const { prefs, setView: persistView, setLayout: persistLayout, toggleFilter, resetFilters, ALL_KINDS } = useCalendarPrefs();
+  const { overrides: kindColorOverrides, colorOf: kindHexOf } = useKindColors();
   const view = prefs.view as View;
   const layout = prefs.layout;
   type Kind = typeof ALL_KINDS[number];
