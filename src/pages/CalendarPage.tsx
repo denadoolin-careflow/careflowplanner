@@ -21,6 +21,7 @@ import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calenda
 import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
 import { CalendarAllList } from "@/components/calendar/CalendarAllList";
 import { KIND_META } from "@/components/calendar/CalendarItemCard";
+import { useKindColors, kindStyleFromHex, type KindKey } from "@/lib/calendar-colors";
 import { useLongPressDrag, useLongDropListener, hourToDayPart, type LongDropDetail } from "@/lib/long-press-drag";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
@@ -55,6 +56,7 @@ export default function CalendarPage() {
     } catch { return ""; }
   })();
   const { prefs, setView: persistView, setLayout: persistLayout, toggleFilter, resetFilters, ALL_KINDS } = useCalendarPrefs();
+  const { overrides: kindColorOverrides, colorOf: kindHexOf } = useKindColors();
   const view = prefs.view as View;
   const layout = prefs.layout;
   type Kind = typeof ALL_KINDS[number];
@@ -393,16 +395,21 @@ export default function CalendarPage() {
             ] as const).map(({ k, label, Icon }) => {
               const on = kindFilter.has(k);
               const pillTone = KIND_META[k as keyof typeof KIND_META]?.pill ?? "";
+              const hasOverride = kindColorOverrides[k as KindKey] != null;
+              const overrideStyle = hasOverride && on
+                ? kindStyleFromHex(kindHexOf(k as KindKey)).pill
+                : undefined;
               return (
                 <button
                   key={k}
                   type="button"
                   onClick={() => toggleKind(k)}
                   aria-pressed={on}
+                  style={overrideStyle}
                   className={cn(
                     "flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
                     on
-                      ? cn(pillTone, "shadow-sm")
+                      ? cn(hasOverride ? "text-foreground shadow-sm" : cn(pillTone, "shadow-sm"))
                       : "border-border/50 bg-muted/40 text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -603,6 +610,10 @@ function MonthView({
   const [draggingItem, setDraggingItem] = useState<{ item: EventItem; sourceISO: string } | null>(null);
   const isMobile = useIsMobile();
   const [sheetISO, setSheetISO] = useState<string | null>(null);
+  const { overrides: kindOverrides, colorOf: kindHex } = useKindColors();
+  const mealOverride = kindOverrides.meal
+    ? kindStyleFromHex(kindHex("meal")).card
+    : undefined;
   const dotClass = (kind: EventItem["kind"]) =>
     kind === "task" ? "bg-warm-foreground/70"
     : kind === "appt" ? "bg-primary"
@@ -761,9 +772,10 @@ function MonthView({
                           type="button"
                           onClick={(ev2) => { ev2.stopPropagation(); setSheetISO(k); }}
                           title={mealItems.map(m => m.label).join(" · ")}
+                          style={mealOverride}
                           className={cn(
                             "inline-flex w-full items-center gap-1 rounded-md border px-1.5 py-1 text-[11px] leading-none",
-                            KIND_META.meal.color,
+                            mealOverride ? "text-foreground" : KIND_META.meal.color,
                           )}
                         >
                           <span aria-hidden>🍽</span>

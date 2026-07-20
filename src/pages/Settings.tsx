@@ -16,6 +16,7 @@ import { pomodoroPrefs, usePomodoroPrefs } from "@/lib/pomodoro-prefs";
 import { playPomodoroChime } from "@/lib/pomodoro-chime";
 import { PomodoroTemplatesEditor } from "@/components/tasks/PomodoroTemplatesEditor";
 import { GoogleCalendarSection } from "@/components/calendar/GoogleCalendarSection";
+import { CalendarColorsSection } from "@/components/settings/CalendarColorsSection";
 import { PantryColorPicker } from "@/components/settings/PantryColorPicker";
 import { GroceryPrefsSection } from "@/components/settings/GroceryPrefsSection";
 import { CycleSettingsSection } from "@/components/settings/CycleSettingsSection";
@@ -301,6 +302,14 @@ export default function Settings() {
         accent="calm"
       >
         <GoogleCalendarSection />
+      </SectionCard>
+
+      <SectionCard
+        title="Calendar colors"
+        subtitle="Pick a color for each event category. Preview updates live."
+        accent="sage"
+      >
+        <CalendarColorsSection />
       </SectionCard>
 
       <SectionCard

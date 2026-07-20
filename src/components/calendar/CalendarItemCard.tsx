@@ -1,6 +1,7 @@
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { formatTime12 } from "@/lib/routines";
+import { useKindColors, kindStyleFromHex, type KindKey } from "@/lib/calendar-colors";
 import {
   CheckSquare, CalendarClock, HeartPulse, UtensilsCrossed, Cake, Sparkles,
   Clock, Tag, Zap, Users,
@@ -68,6 +69,9 @@ export function CalendarItemCard({
   const { state } = useStore();
   const meta = KIND_META[kind] ?? KIND_META.gcal;
   const Icon = meta.Icon;
+  const { overrides, colorOf } = useKindColors();
+  const hasOverride = overrides[kind as KindKey] != null;
+  const overrideStyle = hasOverride ? kindStyleFromHex(colorOf(kind as KindKey)).card : null;
 
   // Pull rich data for the entity.
   const task = (kind === "task" || kind === "care") && id ? state.tasks.find(t => t.id === id) : undefined;
@@ -94,7 +98,9 @@ export function CalendarItemCard({
     .map(rid => state.recipients?.find(r => r.id === rid))
     .filter(Boolean) as { id: string; name: string }[];
 
-  const inlineColor = kind === "gcal" && color ? { borderLeftColor: color } : undefined;
+  // gcal event color (from Google) still wins for that single event.
+  const gcalInline = kind === "gcal" && color ? { borderLeftColor: color } : null;
+  const style = { ...(overrideStyle ?? {}), ...(gcalInline ?? {}) };
 
   return (
     <button
@@ -105,10 +111,10 @@ export function CalendarItemCard({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       title={titleText}
-      style={inlineColor}
+      style={Object.keys(style).length ? style : undefined}
       className={cn(
         "group relative w-full rounded-md border border-l-[3px] text-left transition-all",
-        meta.color,
+        hasOverride ? "text-foreground" : meta.color,
         variant === "compact" ? "px-1.5 py-1 text-[11px] leading-snug" : "px-2 py-1.5 text-[11.5px] leading-snug",
         !disabled && onClick && "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm",
         draggable && "active:cursor-grabbing",
