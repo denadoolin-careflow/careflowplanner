@@ -27,6 +27,7 @@ import HomeGroceries from "./pages/HomeGroceries";
 import Caregiving from "./pages/Caregiving";
 import HomeReset from "./pages/HomeReset";
 import HomeHub from "./pages/HomeHub";
+import Dashboard from "./pages/Dashboard";
 import Journal from "./pages/Journal";
 import JournalFlow from "./pages/JournalFlow";
 import Ideas from "./pages/Ideas";
@@ -157,7 +158,7 @@ const App = () => (
               <Route path="/roadmap" element={<Roadmap />} />
               <Route path="/" element={<IndexRedirect />} />
               <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
-                <Route path="/dashboard" element={<HomeHub />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/inbox" element={<Inbox />} />
                 <Route path="/tasks/:id" element={<TaskDetail />} />
                 <Route path="/upcoming" element={<Upcoming />} />
