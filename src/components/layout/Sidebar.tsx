@@ -466,7 +466,8 @@ function PinnedNotesSection({
                   {active && (
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
+                      className="pointer-events-none absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full"
+                      style={{ background: "var(--gradient-brand-trio)" }}
                     />
                   )}
                   <span className="grid h-6 w-6 place-items-center">
@@ -752,10 +753,10 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
               <span
                 aria-hidden
                 className={cn(
-                  "pointer-events-none absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full transition-opacity duration-150",
+                  "pointer-events-none absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full transition-opacity duration-150",
                   isActive ? "opacity-100" : "opacity-0",
                 )}
-                style={{ background: accentColor ?? "hsl(var(--primary))" }}
+                style={{ background: "var(--gradient-brand-trio)" }}
               />
               <span className="grid h-6 w-6 place-items-center">
                 <Icon
