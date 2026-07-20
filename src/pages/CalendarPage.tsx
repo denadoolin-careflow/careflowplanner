@@ -591,12 +591,14 @@ export default function CalendarPage() {
       </div>
       </div>
 
-      <SectionCard title="All tasks & appointments" accent="sage" id="calendar-all-list">
+      <div id="calendar-all-list" className="scroll-mt-20">
+      <SectionCard title="All tasks & appointments" accent="sage">
         <CalendarAllList
           onEditTask={(id) => setEditTaskId(id)}
           onEditAppointment={(id) => setEditApptId(id)}
         />
       </SectionCard>
+      </div>
       </div>
       {rightPanel === "hidden" ? (
         <button
