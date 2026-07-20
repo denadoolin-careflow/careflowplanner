@@ -679,6 +679,7 @@ function MonthView({
               onClick={
                 inMonth
                   ? () => {
+                      // Desktop: open quick-add on empty click; day-detail via day number / +more.
                       if (isMobile) setSheetISO(k);
                       else onDayClick?.(k);
                     }
@@ -714,12 +715,18 @@ function MonthView({
                       </span>
                     );
                   })()}
-                  <span className={cn(
-                    "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold sm:text-[11px]",
-                    today ? "bg-primary text-primary-foreground" : "text-foreground/80",
-                  )}>
+                  <button
+                    type="button"
+                    onClick={(ev2) => { ev2.stopPropagation(); if (inMonth) setSheetISO(k); }}
+                    disabled={!inMonth}
+                    className={cn(
+                      "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold sm:text-[11px]",
+                      today ? "bg-primary text-primary-foreground" : "text-foreground/80 hover:bg-muted",
+                    )}
+                    title="Open day details"
+                  >
                     {format(d, "d")}
-                  </span>
+                  </button>
                 </div>
               </div>
               {/* Mobile: dot indicators */}
@@ -734,35 +741,82 @@ function MonthView({
                 </div>
               )}
               {/* Desktop (md+): full event list */}
-              <div className="hidden flex-1 flex-col gap-1 md:flex">
-                {ev.map((e, i) => {
-                  const editable = (e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol") && !!e.id;
-                  const clickable = editable && !!onItemClick;
-                  const draggable = editable && !!onItemReschedule;
+              {/* Desktop (md+): capped list with cosmic strip + meal collapse */}
+              <div className="hidden flex-1 flex-col gap-1 overflow-hidden md:flex">
+                {(() => {
+                  const cosmicItems = ev.filter(e => e.kind === "cosmic");
+                  const mealItems = ev.filter(e => e.kind === "meal");
+                  const rest = ev.filter(e => e.kind !== "cosmic" && e.kind !== "meal");
+                  const CAP = 3;
+                  const visible: EventItem[] = rest.slice(0, CAP - (mealItems.length > 0 ? 1 : 0));
+                  const hiddenCount = rest.length - visible.length + (mealItems.length > 1 ? 0 : 0);
                   return (
-                    <div key={i} onClick={(ev2) => ev2.stopPropagation()}>
-                      <CalendarItemCard
-                        kind={e.kind}
-                        id={e.id}
-                        label={e.label}
-                        time={e.time}
-                        color={e.color}
-                        variant="compact"
-                        disabled={!clickable && !draggable}
-                        onClick={clickable ? () => onItemClick!(e) : undefined}
-                        draggable={draggable}
-                        onDragStart={(ev2) => {
-                          if (!draggable) return;
-                          ev2.dataTransfer.effectAllowed = "move";
-                          ev2.dataTransfer.setData(ITEM_DRAG_MIME, JSON.stringify({ sourceISO: k }));
-                          setDraggingItem({ item: e, sourceISO: k });
-                        }}
-                        onDragEnd={() => setDraggingItem(null)}
-                        className={cn(draggingItem?.item.id === e.id && "opacity-50")}
-                      />
-                    </div>
+                    <>
+                      {cosmicItems.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={(ev2) => { ev2.stopPropagation(); setSheetISO(k); }}
+                          title={cosmicItems.map(c => c.label).join(" · ")}
+                          className="inline-flex w-fit items-center gap-0.5 rounded-full border border-indigo-400/50 bg-indigo-100/70 px-1.5 py-px text-[10px] leading-none text-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-100"
+                        >
+                          <span aria-hidden>✦</span>
+                          <span className="tabular-nums">{cosmicItems.length}</span>
+                        </button>
+                      )}
+                      {mealItems.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={(ev2) => { ev2.stopPropagation(); setSheetISO(k); }}
+                          title={mealItems.map(m => m.label).join(" · ")}
+                          className={cn(
+                            "inline-flex w-full items-center gap-1 rounded-md border px-1.5 py-1 text-[11px] leading-none",
+                            KIND_META.meal.color,
+                          )}
+                        >
+                          <span aria-hidden>🍽</span>
+                          <span className="font-medium">{mealItems.length} meal{mealItems.length === 1 ? "" : "s"}</span>
+                        </button>
+                      )}
+                      {visible.map((e, i) => {
+                        const editable = (e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol") && !!e.id;
+                        const clickable = editable && !!onItemClick;
+                        const draggable = editable && !!onItemReschedule;
+                        return (
+                          <div key={i} onClick={(ev2) => ev2.stopPropagation()}>
+                            <CalendarItemCard
+                              kind={e.kind}
+                              id={e.id}
+                              label={e.label}
+                              time={e.time}
+                              color={e.color}
+                              variant="compact"
+                              disabled={!clickable && !draggable}
+                              onClick={clickable ? () => onItemClick!(e) : undefined}
+                              draggable={draggable}
+                              onDragStart={(ev2) => {
+                                if (!draggable) return;
+                                ev2.dataTransfer.effectAllowed = "move";
+                                ev2.dataTransfer.setData(ITEM_DRAG_MIME, JSON.stringify({ sourceISO: k }));
+                                setDraggingItem({ item: e, sourceISO: k });
+                              }}
+                              onDragEnd={() => setDraggingItem(null)}
+                              className={cn(draggingItem?.item.id === e.id && "opacity-50")}
+                            />
+                          </div>
+                        );
+                      })}
+                      {hiddenCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={(ev2) => { ev2.stopPropagation(); setSheetISO(k); }}
+                          className="mt-auto rounded-md px-1.5 py-0.5 text-left text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                        >
+                          + {hiddenCount} more
+                        </button>
+                      )}
+                    </>
                   );
-                })}
+                })()}
               </div>
             </div>
           );
