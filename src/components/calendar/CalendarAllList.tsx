@@ -204,14 +204,16 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   };
 
   const reschedule = async (row: Row, iso: string) => {
-    if (row.kind === "task") await updateTask((row.raw as Task).id, { dueDate: iso } as any);
-    else await updateAppointment((row.raw as Appointment).id, { date: iso } as any);
+    if (!row.editable || !row.raw) return;
+    if (row.kind === "appt") await updateAppointment((row.raw as Appointment).id, { date: iso } as any);
+    else await updateTask((row.raw as Task).id, { dueDate: iso } as any);
     toast.success(`Rescheduled to ${format(parseISO(iso), "MMM d")}`);
   };
 
   const doDelete = async (row: Row) => {
-    if (row.kind === "task") await deleteTask((row.raw as Task).id);
-    else await deleteAppointment((row.raw as Appointment).id);
+    if (!row.editable || !row.raw) return;
+    if (row.kind === "appt") await deleteAppointment((row.raw as Appointment).id);
+    else await deleteTask((row.raw as Task).id);
     setSelected(prev => { const n = new Set(prev); n.delete(row.id); return n; });
   };
 
@@ -223,17 +225,17 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   };
 
   const doBulkComplete = async () => {
-    const targets = rows.filter(r => selected.has(r.id) && r.kind === "task" && !r.done);
+    const targets = rows.filter(r => selected.has(r.id) && (r.kind === "task" || r.kind === "care") && !r.done && r.raw);
     for (const r of targets) await toggleTask((r.raw as Task).id);
     toast.success(`Completed ${targets.length}`);
     setSelected(new Set());
   };
 
   const doBulkReschedule = async (iso: string) => {
-    const targets = rows.filter(r => selected.has(r.id));
+    const targets = rows.filter(r => selected.has(r.id) && r.editable && r.raw);
     for (const r of targets) {
-      if (r.kind === "task") await updateTask((r.raw as Task).id, { dueDate: iso } as any);
-      else await updateAppointment((r.raw as Appointment).id, { date: iso } as any);
+      if (r.kind === "appt") await updateAppointment((r.raw as Appointment).id, { date: iso } as any);
+      else await updateTask((r.raw as Task).id, { dueDate: iso } as any);
     }
     toast.success(`Rescheduled ${targets.length} to ${format(parseISO(iso), "MMM d")}`);
     setBulkDateOpen(false);
@@ -241,8 +243,9 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   };
 
   const openEditor = (row: Row) => {
-    if (row.kind === "task") onEditTask((row.raw as Task).id);
-    else onEditAppointment((row.raw as Appointment).id);
+    if (!row.editable || !row.raw) return;
+    if (row.kind === "appt") onEditAppointment((row.raw as Appointment).id);
+    else onEditTask((row.raw as Task).id);
   };
 
   return (
