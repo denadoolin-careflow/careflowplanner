@@ -19,6 +19,7 @@ import { TodaysRhythmCard } from "@/components/calendar/TodaysRhythmCard";
 import { useCalendarPrefs } from "@/lib/calendar-prefs";
 import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
 import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
+import { KIND_META } from "@/components/calendar/CalendarItemCard";
 import { useLongPressDrag, useLongDropListener, hourToDayPart, type LongDropDetail } from "@/lib/long-press-drag";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
