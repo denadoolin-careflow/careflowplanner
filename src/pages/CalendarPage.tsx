@@ -19,6 +19,7 @@ import { TodaysRhythmCard } from "@/components/calendar/TodaysRhythmCard";
 import { useCalendarPrefs } from "@/lib/calendar-prefs";
 import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calendar/CalendarHeroChips";
 import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
+import { KIND_META } from "@/components/calendar/CalendarItemCard";
 import { useLongPressDrag, useLongDropListener, hourToDayPart, type LongDropDetail } from "@/lib/long-press-drag";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
@@ -257,7 +258,7 @@ export default function CalendarPage() {
         : format(cursor, "yyyy");
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row">
+    <div className="relative flex flex-col gap-6 lg:flex-row">
       <div className="min-w-0 flex-1 space-y-6">
       <div className="cozy-card gradient-calm p-6">
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">CareFlow</div>
@@ -390,6 +391,7 @@ export default function CalendarPage() {
               { k: "cosmic" as Kind, label: "Cosmic", Icon: Sparkles },
             ] as const).map(({ k, label, Icon }) => {
               const on = kindFilter.has(k);
+              const pillTone = KIND_META[k as keyof typeof KIND_META]?.pill ?? "";
               return (
                 <button
                   key={k}
@@ -399,7 +401,7 @@ export default function CalendarPage() {
                   className={cn(
                     "flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
                     on
-                      ? "border-primary/40 bg-primary-soft text-foreground shadow-sm"
+                      ? cn(pillTone, "shadow-sm")
                       : "border-border/50 bg-muted/40 text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -499,16 +501,14 @@ export default function CalendarPage() {
       </SectionCard>
       </div>
       {rightPanel === "hidden" ? (
-        <aside className="shrink-0">
-          <button
-            type="button"
-            onClick={() => switchRightPanel("widgets")}
-            className="flex items-center gap-1.5 rounded-full bg-muted/60 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-            title="Show side panel"
-          >
-            <PanelRightOpen className="h-3.5 w-3.5" /> Show panel
-          </button>
-        </aside>
+        <button
+          type="button"
+          onClick={() => switchRightPanel("widgets")}
+          className="fixed right-4 top-20 z-30 hidden items-center gap-1.5 rounded-full border border-border/60 bg-card/95 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur hover:text-foreground lg:inline-flex"
+          title="Show side panel"
+        >
+          <PanelRightOpen className="h-3.5 w-3.5" /> Show panel
+        </button>
       ) : (
       <aside className="w-full shrink-0 space-y-3 lg:w-[320px] xl:w-[360px]">
         <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 text-xs">
@@ -677,13 +677,14 @@ function MonthView({
               onClick={
                 inMonth
                   ? () => {
+                      // Desktop: open quick-add on empty click; day-detail via day number / +more.
                       if (isMobile) setSheetISO(k);
                       else onDayClick?.(k);
                     }
                   : undefined
               }
               className={cn(
-                "flex min-h-16 flex-col rounded-lg border p-1 text-xs transition-colors sm:min-h-32 sm:rounded-xl sm:p-2",
+                "flex h-20 flex-col overflow-hidden rounded-lg border p-1 text-xs transition-colors sm:h-40 sm:rounded-xl sm:p-2",
                 inMonth ? "border-border/60 bg-card" : "border-transparent bg-muted/20 text-muted-foreground/50",
                 today && "ring-2 ring-primary",
                 hoverISO === k && "ring-2 ring-primary bg-primary/10",
@@ -712,12 +713,18 @@ function MonthView({
                       </span>
                     );
                   })()}
-                  <span className={cn(
-                    "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold sm:text-[11px]",
-                    today ? "bg-primary text-primary-foreground" : "text-foreground/80",
-                  )}>
+                  <button
+                    type="button"
+                    onClick={(ev2) => { ev2.stopPropagation(); if (inMonth) setSheetISO(k); }}
+                    disabled={!inMonth}
+                    className={cn(
+                      "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold sm:text-[11px]",
+                      today ? "bg-primary text-primary-foreground" : "text-foreground/80 hover:bg-muted",
+                    )}
+                    title="Open day details"
+                  >
                     {format(d, "d")}
-                  </span>
+                  </button>
                 </div>
               </div>
               {/* Mobile: dot indicators */}
@@ -732,35 +739,82 @@ function MonthView({
                 </div>
               )}
               {/* Desktop (md+): full event list */}
-              <div className="hidden flex-1 flex-col gap-1 md:flex">
-                {ev.map((e, i) => {
-                  const editable = (e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol") && !!e.id;
-                  const clickable = editable && !!onItemClick;
-                  const draggable = editable && !!onItemReschedule;
+              {/* Desktop (md+): capped list with cosmic strip + meal collapse */}
+              <div className="hidden flex-1 flex-col gap-1 overflow-hidden md:flex">
+                {(() => {
+                  const cosmicItems = ev.filter(e => e.kind === "cosmic");
+                  const mealItems = ev.filter(e => e.kind === "meal");
+                  const rest = ev.filter(e => e.kind !== "cosmic" && e.kind !== "meal");
+                  const CAP = 3;
+                  const visible: EventItem[] = rest.slice(0, CAP - (mealItems.length > 0 ? 1 : 0));
+                  const hiddenCount = rest.length - visible.length + (mealItems.length > 1 ? 0 : 0);
                   return (
-                    <div key={i} onClick={(ev2) => ev2.stopPropagation()}>
-                      <CalendarItemCard
-                        kind={e.kind}
-                        id={e.id}
-                        label={e.label}
-                        time={e.time}
-                        color={e.color}
-                        variant="compact"
-                        disabled={!clickable && !draggable}
-                        onClick={clickable ? () => onItemClick!(e) : undefined}
-                        draggable={draggable}
-                        onDragStart={(ev2) => {
-                          if (!draggable) return;
-                          ev2.dataTransfer.effectAllowed = "move";
-                          ev2.dataTransfer.setData(ITEM_DRAG_MIME, JSON.stringify({ sourceISO: k }));
-                          setDraggingItem({ item: e, sourceISO: k });
-                        }}
-                        onDragEnd={() => setDraggingItem(null)}
-                        className={cn(draggingItem?.item.id === e.id && "opacity-50")}
-                      />
-                    </div>
+                    <>
+                      {cosmicItems.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={(ev2) => { ev2.stopPropagation(); setSheetISO(k); }}
+                          title={cosmicItems.map(c => c.label).join(" · ")}
+                          className="inline-flex w-fit items-center gap-0.5 rounded-full border border-indigo-400/50 bg-indigo-100/70 px-1.5 py-px text-[10px] leading-none text-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-100"
+                        >
+                          <span aria-hidden>✦</span>
+                          <span className="tabular-nums">{cosmicItems.length}</span>
+                        </button>
+                      )}
+                      {mealItems.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={(ev2) => { ev2.stopPropagation(); setSheetISO(k); }}
+                          title={mealItems.map(m => m.label).join(" · ")}
+                          className={cn(
+                            "inline-flex w-full items-center gap-1 rounded-md border px-1.5 py-1 text-[11px] leading-none",
+                            KIND_META.meal.color,
+                          )}
+                        >
+                          <span aria-hidden>🍽</span>
+                          <span className="font-medium">{mealItems.length} meal{mealItems.length === 1 ? "" : "s"}</span>
+                        </button>
+                      )}
+                      {visible.map((e, i) => {
+                        const editable = (e.kind === "appt" || e.kind === "task" || e.kind === "care" || e.kind === "bday" || e.kind === "hol") && !!e.id;
+                        const clickable = editable && !!onItemClick;
+                        const draggable = editable && !!onItemReschedule;
+                        return (
+                          <div key={i} onClick={(ev2) => ev2.stopPropagation()}>
+                            <CalendarItemCard
+                              kind={e.kind}
+                              id={e.id}
+                              label={e.label}
+                              time={e.time}
+                              color={e.color}
+                              variant="compact"
+                              disabled={!clickable && !draggable}
+                              onClick={clickable ? () => onItemClick!(e) : undefined}
+                              draggable={draggable}
+                              onDragStart={(ev2) => {
+                                if (!draggable) return;
+                                ev2.dataTransfer.effectAllowed = "move";
+                                ev2.dataTransfer.setData(ITEM_DRAG_MIME, JSON.stringify({ sourceISO: k }));
+                                setDraggingItem({ item: e, sourceISO: k });
+                              }}
+                              onDragEnd={() => setDraggingItem(null)}
+                              className={cn(draggingItem?.item.id === e.id && "opacity-50")}
+                            />
+                          </div>
+                        );
+                      })}
+                      {hiddenCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={(ev2) => { ev2.stopPropagation(); setSheetISO(k); }}
+                          className="mt-auto rounded-md px-1.5 py-0.5 text-left text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                        >
+                          + {hiddenCount} more
+                        </button>
+                      )}
+                    </>
                   );
-                })}
+                })()}
               </div>
             </div>
           );

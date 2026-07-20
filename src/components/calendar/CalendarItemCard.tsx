@@ -10,16 +10,20 @@ import type { Energy } from "@/lib/types";
 
 export type CardKind = "appt" | "bday" | "hol" | "gcal" | "task" | "care" | "meal" | "season" | "cosmic";
 
-const KIND_META: Record<CardKind, { Icon: LucideIcon; label: string; color: string }> = {
-  task: { Icon: CheckSquare,     label: "Task",      color: "bg-warm-soft text-warm-foreground border-warm-foreground/30" },
-  appt: { Icon: CalendarClock,   label: "Appt",      color: "bg-primary-soft text-foreground border-primary/30" },
-  care: { Icon: HeartPulse,      label: "Care",      color: "bg-rose-100/80 text-rose-900 border-rose-300/60 dark:bg-rose-900/30 dark:text-rose-100" },
-  meal: { Icon: UtensilsCrossed, label: "Meal",      color: "bg-amber-100/80 text-amber-900 border-amber-300/60 dark:bg-amber-900/30 dark:text-amber-100" },
-  bday: { Icon: Cake,            label: "Birthday",  color: "bg-accent-soft text-accent-foreground border-accent-foreground/20" },
-  hol:  { Icon: Sparkles,        label: "Holiday",   color: "bg-secondary-soft text-secondary-foreground border-secondary-foreground/20" },
-  gcal: { Icon: CalendarClock,   label: "Google",    color: "bg-muted text-foreground border-border/60" },
-  season: { Icon: Sparkles,       label: "Celebration", color: "bg-pink-100/80 text-pink-900 border-pink-300/60 dark:bg-pink-900/30 dark:text-pink-100" },
-  cosmic: { Icon: Sparkles,       label: "Cosmic",      color: "bg-indigo-100/80 text-indigo-900 border-indigo-300/60 dark:bg-indigo-900/30 dark:text-indigo-100" },
+/**
+ * Category palette — each event kind gets one distinct color used
+ * consistently across filter pills, cell blocks, and legend.
+ */
+export const KIND_META: Record<CardKind, { Icon: LucideIcon; label: string; color: string; dot: string; pill: string }> = {
+  task:   { Icon: CheckSquare,     label: "Task",        color: "bg-emerald-100/80 text-emerald-900 border-emerald-400/60 dark:bg-emerald-900/40 dark:text-emerald-100",   dot: "bg-emerald-500",  pill: "border-emerald-400/60 bg-emerald-100/70 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100" },
+  appt:   { Icon: CalendarClock,   label: "Appointment", color: "bg-sky-100/80 text-sky-900 border-sky-400/60 dark:bg-sky-900/40 dark:text-sky-100",                       dot: "bg-sky-500",      pill: "border-sky-400/60 bg-sky-100/70 text-sky-900 dark:bg-sky-900/40 dark:text-sky-100" },
+  care:   { Icon: HeartPulse,      label: "Caregiving",  color: "bg-rose-100/80 text-rose-900 border-rose-400/60 dark:bg-rose-900/40 dark:text-rose-100",                  dot: "bg-rose-500",     pill: "border-rose-400/60 bg-rose-100/70 text-rose-900 dark:bg-rose-900/40 dark:text-rose-100" },
+  meal:   { Icon: UtensilsCrossed, label: "Meal",        color: "bg-amber-100/80 text-amber-900 border-amber-400/60 dark:bg-amber-900/40 dark:text-amber-100",             dot: "bg-amber-500",    pill: "border-amber-400/60 bg-amber-100/70 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100" },
+  bday:   { Icon: Cake,            label: "Birthday",    color: "bg-fuchsia-100/80 text-fuchsia-900 border-fuchsia-400/60 dark:bg-fuchsia-900/40 dark:text-fuchsia-100",   dot: "bg-fuchsia-500",  pill: "border-fuchsia-400/60 bg-fuchsia-100/70 text-fuchsia-900 dark:bg-fuchsia-900/40 dark:text-fuchsia-100" },
+  hol:    { Icon: Sparkles,        label: "Holiday",     color: "bg-teal-100/80 text-teal-900 border-teal-400/60 dark:bg-teal-900/40 dark:text-teal-100",                  dot: "bg-teal-500",     pill: "border-teal-400/60 bg-teal-100/70 text-teal-900 dark:bg-teal-900/40 dark:text-teal-100" },
+  gcal:   { Icon: CalendarClock,   label: "Google",      color: "bg-slate-200/70 text-slate-900 border-slate-400/60 dark:bg-slate-800/60 dark:text-slate-100",             dot: "bg-slate-500",    pill: "border-slate-400/60 bg-slate-200/70 text-slate-900 dark:bg-slate-800/60 dark:text-slate-100" },
+  season: { Icon: Sparkles,        label: "Celebration", color: "bg-pink-100/80 text-pink-900 border-pink-400/60 dark:bg-pink-900/40 dark:text-pink-100",                  dot: "bg-pink-500",     pill: "border-pink-400/60 bg-pink-100/70 text-pink-900 dark:bg-pink-900/40 dark:text-pink-100" },
+  cosmic: { Icon: Sparkles,        label: "Cosmic",      color: "bg-indigo-100/80 text-indigo-900 border-indigo-400/60 dark:bg-indigo-900/40 dark:text-indigo-100",         dot: "bg-indigo-500",   pill: "border-indigo-400/60 bg-indigo-100/70 text-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-100" },
 };
 
 const ENERGY_STYLE: Record<Energy, { label: string; dot: string; chip: string }> = {
