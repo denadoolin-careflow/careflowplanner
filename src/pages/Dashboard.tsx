@@ -171,7 +171,7 @@ export default function Dashboard() {
               Daily Plan
             </button>
             <button
-              onClick={() => navigate("/pomodoro")}
+              onClick={() => navigate("/focus")}
               className="inline-flex items-center gap-2 rounded-full bg-white/12 px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur-sm transition hover:bg-white/20"
             >
               <Play className="h-4 w-4" />
