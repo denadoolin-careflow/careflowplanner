@@ -78,6 +78,7 @@ export default function CalendarPage() {
   };
   const toggleKind = (k: Kind) => toggleFilter(k);
   const [cursor, setCursor] = useState<Date>(new Date());
+  const [colorsOpen, setColorsOpen] = useState(false);
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   const [gLoading, setGLoading] = useState(false);
   const [editApptId, setEditApptId] = useState<string | null>(null);
