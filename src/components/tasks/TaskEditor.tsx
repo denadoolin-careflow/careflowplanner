@@ -310,24 +310,24 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         {/* Sticky header */}
         <DialogHeader className="shrink-0 space-y-2 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
           {/* Row 1: title only */}
-          <div className="flex w-full min-w-0 items-center gap-2 pr-10">
-            <LucideIconPicker
-              value={draft.icon?.startsWith("lc:") ? draft.icon : undefined}
-              onChange={v => set("icon", v)}
-              fallbackIcon={inferTaskIcon(draft.title, draft.notes)}
-            />
+          <div className="w-full min-w-0 pr-10">
             <Input
               value={draft.title}
               onChange={e => set("title", e.target.value)}
               onBlur={() => { if (nlpOn && parsed && parsed.chips.length) applyNlp(); }}
               placeholder="Task title"
-              className="font-display h-11 w-full min-w-0 flex-1 border-0 bg-transparent px-0 text-[20px] font-semibold tracking-tight text-foreground caret-primary placeholder:text-muted-foreground/60 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:h-10 sm:text-[22px]"
+              className="font-display h-12 w-full min-w-0 border-0 bg-transparent px-0 text-[22px] font-semibold tracking-tight text-foreground caret-primary placeholder:text-muted-foreground/60 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:h-14 sm:text-[26px]"
             />
           </div>
           <DialogTitle className="sr-only">Edit task</DialogTitle>
 
           {/* Row 2: actions */}
           <div className="flex w-full min-w-0 flex-wrap items-center gap-1">
+            <LucideIconPicker
+              value={draft.icon?.startsWith("lc:") ? draft.icon : undefined}
+              onChange={v => set("icon", v)}
+              fallbackIcon={inferTaskIcon(draft.title, draft.notes)}
+            />
             <Checkbox
               checked={draft.done}
               onCheckedChange={() => toggleTask(draft.id)}
