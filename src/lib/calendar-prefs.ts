@@ -11,12 +11,16 @@ export interface CalendarPrefs {
   view: CalendarView;
   layout: CalendarLayout;
   filters: CalendarKind[];
+  plannerOpen?: boolean;
+  plannerWidth?: number;
 }
 
 const DEFAULT_PREFS: CalendarPrefs = {
   view: "month",
   layout: "grid",
   filters: ALL_KINDS,
+  plannerOpen: false,
+  plannerWidth: 300,
 };
 
 function read(): CalendarPrefs {
@@ -31,6 +35,9 @@ function read(): CalendarPrefs {
       filters: Array.isArray(p.filters) && p.filters.length > 0
         ? (p.filters.filter(f => ALL_KINDS.includes(f as CalendarKind)) as CalendarKind[])
         : DEFAULT_PREFS.filters,
+      plannerOpen: !!p.plannerOpen,
+      plannerWidth: typeof p.plannerWidth === "number" && p.plannerWidth >= 220 && p.plannerWidth <= 560
+        ? p.plannerWidth : DEFAULT_PREFS.plannerWidth,
     };
   } catch {
     return DEFAULT_PREFS;
@@ -59,6 +66,8 @@ export function useCalendarPrefs() {
     });
   }, []);
   const resetFilters = useCallback(() => setPrefs(p => ({ ...p, filters: ALL_KINDS })), []);
+  const setPlannerOpen = useCallback((v: boolean) => setPrefs(p => ({ ...p, plannerOpen: v })), []);
+  const setPlannerWidth = useCallback((w: number) => setPrefs(p => ({ ...p, plannerWidth: Math.min(560, Math.max(220, Math.round(w))) })), []);
 
-  return { prefs, setView, setLayout, setFilters, toggleFilter, resetFilters, ALL_KINDS };
+  return { prefs, setView, setLayout, setFilters, toggleFilter, resetFilters, setPlannerOpen, setPlannerWidth, ALL_KINDS };
 }

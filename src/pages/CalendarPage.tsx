@@ -45,6 +45,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { CalendarRange, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { Settings2 } from "lucide-react";
 import { CalendarColorsSection } from "@/components/settings/CalendarColorsSection";
+import { PlannerTaskPanel } from "@/components/planner/PlannerTaskPanel";
+import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
+import { PlannerQuickCapture } from "@/components/planner/PlannerQuickCapture";
+import { ListTodo, PanelLeftClose, PanelLeftOpen, Wand2 } from "lucide-react";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -57,7 +61,13 @@ export default function CalendarPage() {
       return parts.find(p => p.type === "timeZoneName")?.value ?? "";
     } catch { return ""; }
   })();
-  const { prefs, setView: persistView, setLayout: persistLayout, toggleFilter, resetFilters, ALL_KINDS } = useCalendarPrefs();
+  const { prefs, setView: persistView, setLayout: persistLayout, toggleFilter, resetFilters, setPlannerOpen, setPlannerWidth, ALL_KINDS } = useCalendarPrefs();
+  const plannerOpen = !!prefs.plannerOpen;
+  const plannerWidth = prefs.plannerWidth ?? 300;
+  const isMobileTop = useIsMobile();
+  const [mobilePlannerOpen, setMobilePlannerOpen] = useState(false);
+  const [plannerCaptureOpen, setPlannerCaptureOpen] = useState(false);
+  const [planMyDayOpen, setPlanMyDayOpen] = useState(false);
   const { overrides: kindColorOverrides, colorOf: kindHexOf } = useKindColors();
   const view = prefs.view as View;
   const layout = prefs.layout;
@@ -300,6 +310,16 @@ export default function CalendarPage() {
         </Button>
       </div>
 
+      <div className={cn("flex gap-3", plannerOpen && !isMobileTop ? "flex-row" : "flex-col")}>
+      {plannerOpen && !isMobileTop && (
+        <aside
+          className="shrink-0 rounded-2xl border border-border/50 bg-card/40 p-2"
+          style={{ width: plannerWidth }}
+        >
+          <PlannerTaskPanel selectedDate={cursor} onQuickAdd={() => setPlannerCaptureOpen(true)} />
+        </aside>
+      )}
+      <div className="min-w-0 flex-1">
       <SectionCard
         title={
           <div className="flex flex-wrap items-center gap-2">
@@ -379,6 +399,32 @@ export default function CalendarPage() {
             >
               <Settings2 className="h-4 w-4" />
             </Button>
+            <Button
+              variant={plannerOpen ? "default" : "outline"}
+              size="sm"
+              className="h-8 shrink-0 gap-1.5 rounded-full text-xs"
+              onClick={() => {
+                if (isMobileTop) setMobilePlannerOpen(true);
+                else setPlannerOpen(!plannerOpen);
+              }}
+              aria-pressed={plannerOpen}
+              title="Toggle task planner"
+            >
+              {plannerOpen ? <PanelLeftClose className="h-3.5 w-3.5" /> : <PanelLeftOpen className="h-3.5 w-3.5" />}
+              <ListTodo className="h-3.5 w-3.5" />
+              Planner
+            </Button>
+            {plannerOpen && view === "day" && !isMobileTop && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0 gap-1.5 rounded-full text-xs"
+                onClick={() => setPlanMyDayOpen(true)}
+                title="Plan my day"
+              >
+                <Wand2 className="h-3.5 w-3.5" /> Plan my day
+              </Button>
+            )}
           </div>
         }
         accent="warm"
@@ -507,6 +553,8 @@ export default function CalendarPage() {
           </>
         )}
       </SectionCard>
+      </div>
+      </div>
 
       <SectionCard title="All tasks & appointments" accent="sage">
         <CalendarAllList
@@ -603,6 +651,16 @@ export default function CalendarPage() {
           <CalendarColorsSection />
         </DialogContent>
       </Dialog>
+      <Sheet open={mobilePlannerOpen} onOpenChange={setMobilePlannerOpen}>
+        <SheetContent side="left" className="w-[86vw] max-w-[360px] p-0">
+          <SheetHeader className="px-4 pt-4"><SheetTitle>Planner</SheetTitle></SheetHeader>
+          <div className="h-[calc(100dvh-3.5rem)] overflow-hidden p-3">
+            <PlannerTaskPanel selectedDate={cursor} onQuickAdd={() => { setMobilePlannerOpen(false); setPlannerCaptureOpen(true); }} />
+          </div>
+        </SheetContent>
+      </Sheet>
+      <PlannerQuickCapture open={plannerCaptureOpen} onOpenChange={setPlannerCaptureOpen} defaultDate={cursor} />
+      <PlanMyDayDialog open={planMyDayOpen} onOpenChange={setPlanMyDayOpen} date={cursor} />
     </div>
   );
 }
