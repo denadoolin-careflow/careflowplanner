@@ -43,6 +43,8 @@ import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
 import { AgendaRail } from "@/components/calendar/AgendaRail";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CalendarRange, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Settings2 } from "lucide-react";
+import { CalendarColorsSection } from "@/components/settings/CalendarColorsSection";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -76,6 +78,7 @@ export default function CalendarPage() {
   };
   const toggleKind = (k: Kind) => toggleFilter(k);
   const [cursor, setCursor] = useState<Date>(new Date());
+  const [colorsOpen, setColorsOpen] = useState(false);
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   const [gLoading, setGLoading] = useState(false);
   const [editApptId, setEditApptId] = useState<string | null>(null);
@@ -366,6 +369,16 @@ export default function CalendarPage() {
                 </button>
               )}
             </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 shrink-0 rounded-full"
+              onClick={() => setColorsOpen(true)}
+              aria-label="Calendar colors"
+              title="Calendar colors"
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
           </div>
         }
         accent="warm"
@@ -580,6 +593,14 @@ export default function CalendarPage() {
               defaultDate={parseISO(quickAddISO)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={colorsOpen} onOpenChange={setColorsOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Calendar colors</DialogTitle>
+          </DialogHeader>
+          <CalendarColorsSection />
         </DialogContent>
       </Dialog>
     </div>
