@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, CheckSquare, CalendarClock, Filter, X, ArrowUp, ArrowDown, ArrowUpDown, Check } from "lucide-react";
+import { addDays, endOfMonth, endOfWeek, format, parseISO, startOfMonth, startOfWeek } from "date-fns";
+import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, Filter, X, ArrowUp, ArrowDown, ArrowUpDown, Check, Layers } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Task, Appointment, Priority } from "@/lib/types";
 import { toast } from "sonner";
+import { KIND_META, type CardKind } from "@/components/calendar/CalendarItemCard";
+import { useKindColors, type KindKey } from "@/lib/calendar-colors";
+import { useCelebrations } from "@/lib/seasons/hooks";
+import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
 
-type Kind = "task" | "appt";
+type Kind = CardKind;
 type Row = {
   id: string;
   kind: Kind;
@@ -29,21 +33,52 @@ type Row = {
   done?: boolean;
   priority?: Priority;
   createdAt?: string;
-  raw: Task | Appointment;
+  editable: boolean;
+  raw?: Task | Appointment;
 };
 
 type GroupBy = "area" | "project" | "date" | "none";
 type SortBy = "date" | "created" | "priority" | "title";
 type SortDir = "asc" | "desc";
+type DateRangePreset = "all" | "today" | "tomorrow" | "thisWeek" | "nextWeek" | "thisMonth" | "custom";
 
 const GROUP_KEY = "calendar-all-groupby";
 const SORT_KEY = "calendar-all-sortby";
 const SORT_DIR_KEY = "calendar-all-sortdir";
+const DATE_KEY = "calendar-all-daterange";
+const KIND_KEY = "calendar-all-kinds";
 
 const PRIO_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
 const SORT_LABEL: Record<SortBy, string> = {
   date: "Due date", created: "Created", priority: "Priority", title: "Title",
 };
+const DATE_LABEL: Record<DateRangePreset, string> = {
+  all: "All dates", today: "Today", tomorrow: "Tomorrow",
+  thisWeek: "This week", nextWeek: "Next week", thisMonth: "This month",
+  custom: "Custom…",
+};
+
+const ALL_KINDS: Kind[] = ["task", "appt", "care", "meal", "bday", "hol", "season", "cosmic"];
+
+function toISO(d: Date): string { return format(d, "yyyy-MM-dd"); }
+
+function resolveDateRange(preset: DateRangePreset, custom?: { from?: string; to?: string }): { from?: string; to?: string } {
+  const today = new Date();
+  const t = toISO(today);
+  switch (preset) {
+    case "all": return {};
+    case "today": return { from: t, to: t };
+    case "tomorrow": { const d = toISO(addDays(today, 1)); return { from: d, to: d }; }
+    case "thisWeek": return { from: toISO(startOfWeek(today, { weekStartsOn: 0 })), to: toISO(endOfWeek(today, { weekStartsOn: 0 })) };
+    case "nextWeek": {
+      const s = startOfWeek(addDays(today, 7), { weekStartsOn: 0 });
+      const e = endOfWeek(addDays(today, 7), { weekStartsOn: 0 });
+      return { from: toISO(s), to: toISO(e) };
+    }
+    case "thisMonth": return { from: toISO(startOfMonth(today)), to: toISO(endOfMonth(today)) };
+    case "custom": return { from: custom?.from, to: custom?.to };
+  }
+}
 
 interface Props {
   onEditTask: (id: string) => void;
@@ -57,6 +92,8 @@ interface Props {
  */
 export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   const { state, deleteTask, deleteAppointment, updateTask, updateAppointment, toggleTask } = useStore();
+  const { colorOf } = useKindColors();
+  const { celebrations } = useCelebrations();
 
   const [groupBy, setGroupBy] = useState<GroupBy>(() => {
     if (typeof localStorage === "undefined") return "date";
@@ -83,6 +120,37 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [bulkDateOpen, setBulkDateOpen] = useState(false);
+  const [datePreset, setDatePreset] = useState<DateRangePreset>(() => {
+    if (typeof localStorage === "undefined") return "all";
+    return ((localStorage.getItem(DATE_KEY) as DateRangePreset) ?? "all");
+  });
+  const [customRange, setCustomRange] = useState<{ from?: string; to?: string }>({});
+  const [customOpen, setCustomOpen] = useState(false);
+  const changeDatePreset = (p: DateRangePreset) => {
+    setDatePreset(p);
+    try { localStorage.setItem(DATE_KEY, p); } catch {}
+    if (p === "custom") setCustomOpen(true);
+  };
+  const [enabledKinds, setEnabledKinds] = useState<Set<Kind>>(() => {
+    if (typeof localStorage === "undefined") return new Set(ALL_KINDS);
+    try {
+      const raw = localStorage.getItem(KIND_KEY);
+      if (!raw) return new Set(ALL_KINDS);
+      const arr = JSON.parse(raw) as Kind[];
+      return new Set(arr.length ? arr : ALL_KINDS);
+    } catch { return new Set(ALL_KINDS); }
+  });
+  const toggleKind = (k: Kind) => {
+    setEnabledKinds(prev => {
+      const next = new Set(prev);
+      next.has(k) ? next.delete(k) : next.add(k);
+      try { localStorage.setItem(KIND_KEY, JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+  };
+
+  const range = useMemo(() => resolveDateRange(datePreset, customRange), [datePreset, customRange]);
+  const cosmicIndex = useMemo(() => buildCosmicCalendarIndex(addDays(new Date(), -90), 365), []);
 
   const rows = useMemo<Row[]>(() => {
     const projById = new Map((state.projects ?? []).map(p => [p.id, p.name]));
@@ -90,7 +158,7 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       .filter(t => !t.parentTaskId)
       .map(t => ({
         id: `task:${t.id}`,
-        kind: "task",
+        kind: t.area === "Caregiving" ? "care" : "task",
         title: t.title,
         date: t.dueDate,
         time: t.startTime,
@@ -100,6 +168,7 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
         done: t.done,
         priority: t.priority,
         createdAt: (t as any).createdAt,
+        editable: true,
         raw: t,
       }));
     const appts: Row[] = (state.appointments ?? []).map(a => ({
@@ -108,14 +177,56 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       title: a.title,
       date: a.date,
       time: a.time,
-      area: a.areaName,
-      projectId: a.projectId,
-      projectName: a.projectId ? projById.get(a.projectId) : undefined,
+      area: (a as any).areaName,
+      projectId: (a as any).projectId,
+      projectName: (a as any).projectId ? projById.get((a as any).projectId) : undefined,
       createdAt: (a as any).createdAt,
+      editable: true,
       raw: a,
     }));
-    return [...tasks, ...appts];
-  }, [state.tasks, state.appointments, state.projects]);
+    const meals: Row[] = (state.meals ?? []).map((m: any) => ({
+      id: `meal:${m.id}`,
+      kind: "meal" as const,
+      title: `${m.slot ? m.slot + ": " : ""}${m.name}`,
+      date: m.date,
+      editable: false,
+    }));
+    const bdays: Row[] = (state.birthdays ?? []).map((b: any) => ({
+      id: `bday:${b.id}`,
+      kind: "bday" as const,
+      title: b.name,
+      date: b.date,
+      editable: false,
+    }));
+    const hols: Row[] = (state.holidays ?? []).map((h: any) => ({
+      id: `hol:${h.id}`,
+      kind: "hol" as const,
+      title: h.name,
+      date: h.date,
+      editable: false,
+    }));
+    const thisYear = new Date().getFullYear();
+    const seasons: Row[] = (celebrations ?? []).map((c: any) => ({
+      id: `season:${c.id}`,
+      kind: "season" as const,
+      title: c.title,
+      date: c.recursYearly ? `${thisYear}-${String(c.date).slice(5)}` : c.date,
+      editable: false,
+    }));
+    const cosmic: Row[] = [];
+    for (const [date, items] of cosmicIndex.entries()) {
+      for (const c of items) {
+        cosmic.push({
+          id: `cosmic:${date}:${c.id}`,
+          kind: "cosmic" as const,
+          title: c.label,
+          date,
+          editable: false,
+        });
+      }
+    }
+    return [...tasks, ...appts, ...meals, ...bdays, ...hols, ...seasons, ...cosmic];
+  }, [state.tasks, state.appointments, state.projects, state.meals, state.birthdays, state.holidays, celebrations, cosmicIndex]);
 
   const areaOptions = useMemo(() => {
     const s = new Set<string>();
@@ -129,10 +240,16 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   }, [rows]);
 
   const filteredRows = useMemo(() => rows.filter(r => {
+    if (!enabledKinds.has(r.kind)) return false;
     if (areaFilter !== "all" && (r.area ?? "") !== areaFilter) return false;
     if (projectFilter !== "all" && (r.projectId ?? "") !== projectFilter) return false;
+    if (range.from || range.to) {
+      if (!r.date) return false;
+      if (range.from && r.date < range.from) return false;
+      if (range.to && r.date > range.to) return false;
+    }
     return true;
-  }), [rows, areaFilter, projectFilter]);
+  }), [rows, enabledKinds, areaFilter, projectFilter, range]);
 
   const compareRows = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;
@@ -204,14 +321,16 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   };
 
   const reschedule = async (row: Row, iso: string) => {
-    if (row.kind === "task") await updateTask((row.raw as Task).id, { dueDate: iso } as any);
-    else await updateAppointment((row.raw as Appointment).id, { date: iso } as any);
+    if (!row.editable || !row.raw) return;
+    if (row.kind === "appt") await updateAppointment((row.raw as Appointment).id, { date: iso } as any);
+    else await updateTask((row.raw as Task).id, { dueDate: iso } as any);
     toast.success(`Rescheduled to ${format(parseISO(iso), "MMM d")}`);
   };
 
   const doDelete = async (row: Row) => {
-    if (row.kind === "task") await deleteTask((row.raw as Task).id);
-    else await deleteAppointment((row.raw as Appointment).id);
+    if (!row.editable || !row.raw) return;
+    if (row.kind === "appt") await deleteAppointment((row.raw as Appointment).id);
+    else await deleteTask((row.raw as Task).id);
     setSelected(prev => { const n = new Set(prev); n.delete(row.id); return n; });
   };
 
@@ -223,17 +342,17 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   };
 
   const doBulkComplete = async () => {
-    const targets = rows.filter(r => selected.has(r.id) && r.kind === "task" && !r.done);
+    const targets = rows.filter(r => selected.has(r.id) && (r.kind === "task" || r.kind === "care") && !r.done && r.raw);
     for (const r of targets) await toggleTask((r.raw as Task).id);
     toast.success(`Completed ${targets.length}`);
     setSelected(new Set());
   };
 
   const doBulkReschedule = async (iso: string) => {
-    const targets = rows.filter(r => selected.has(r.id));
+    const targets = rows.filter(r => selected.has(r.id) && r.editable && r.raw);
     for (const r of targets) {
-      if (r.kind === "task") await updateTask((r.raw as Task).id, { dueDate: iso } as any);
-      else await updateAppointment((r.raw as Appointment).id, { date: iso } as any);
+      if (r.kind === "appt") await updateAppointment((r.raw as Appointment).id, { date: iso } as any);
+      else await updateTask((r.raw as Task).id, { dueDate: iso } as any);
     }
     toast.success(`Rescheduled ${targets.length} to ${format(parseISO(iso), "MMM d")}`);
     setBulkDateOpen(false);
@@ -241,8 +360,9 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   };
 
   const openEditor = (row: Row) => {
-    if (row.kind === "task") onEditTask((row.raw as Task).id);
-    else onEditAppointment((row.raw as Appointment).id);
+    if (!row.editable || !row.raw) return;
+    if (row.kind === "appt") onEditAppointment((row.raw as Appointment).id);
+    else onEditTask((row.raw as Task).id);
   };
 
   return (
@@ -250,6 +370,70 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
+          {/* Date range */}
+          <div className="flex items-center gap-1.5 text-xs">
+            <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <Select value={datePreset} onValueChange={(v) => changeDatePreset(v as DateRangePreset)}>
+              <SelectTrigger className="h-7 w-[130px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(DATE_LABEL) as DateRangePreset[]).map(p => (
+                  <SelectItem key={p} value={p}>{DATE_LABEL[p]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {datePreset === "custom" && (
+              <Popover open={customOpen} onOpenChange={setCustomOpen}>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 text-xs">
+                    {customRange.from && customRange.to
+                      ? `${format(parseISO(customRange.from), "MMM d")} – ${format(parseISO(customRange.to), "MMM d")}`
+                      : "Pick range"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto p-0">
+                  <Calendar
+                    mode="range"
+                    selected={{
+                      from: customRange.from ? parseISO(customRange.from) : undefined,
+                      to: customRange.to ? parseISO(customRange.to) : undefined,
+                    }}
+                    onSelect={(r: any) => setCustomRange({
+                      from: r?.from ? format(r.from, "yyyy-MM-dd") : undefined,
+                      to: r?.to ? format(r.to, "yyyy-MM-dd") : undefined,
+                    })}
+                    numberOfMonths={2}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+          {/* Categories */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-xs">
+                <Layers className="h-3.5 w-3.5" />
+                Categories {enabledKinds.size < ALL_KINDS.length ? `(${enabledKinds.size})` : ""}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel>Show</DropdownMenuLabel>
+              {ALL_KINDS.map(k => (
+                <DropdownMenuCheckboxItem key={k} checked={enabledKinds.has(k)} onCheckedChange={() => toggleKind(k)}>
+                  <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colorOf(k as KindKey) }} />
+                  {KIND_META[k].label}
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator />
+              <button
+                onClick={() => { setEnabledKinds(new Set(ALL_KINDS)); try { localStorage.removeItem(KIND_KEY); } catch {} }}
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Reset
+              </button>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 text-xs">
             <span className="px-2 text-muted-foreground">Group by</span>
             {(["area", "project", "date", "none"] as GroupBy[]).map(g => (
@@ -429,7 +613,10 @@ function RowItem({
   onReschedule: (iso: string) => void;
 }) {
   const [dateOpen, setDateOpen] = useState(false);
-  const Icon = row.kind === "task" ? CheckSquare : CalendarClock;
+  const { colorOf } = useKindColors();
+  const meta = KIND_META[row.kind];
+  const Icon = meta.Icon;
+  const dotColor = colorOf(row.kind as KindKey);
   return (
     <li
       className={cn(
@@ -442,13 +629,17 @@ function RowItem({
         onCheckedChange={onToggleSelect}
         aria-label={`Select ${row.title}`}
         className="shrink-0"
+        disabled={!row.editable}
       />
-      <Icon className={cn("h-3.5 w-3.5 shrink-0", row.kind === "task" ? "text-emerald-600" : "text-sky-600")} />
+      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden />
+      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <button
         type="button"
         onClick={onEdit}
+        disabled={!row.editable}
         className={cn(
           "min-w-0 flex-1 truncate text-left",
+          !row.editable && "cursor-default",
           row.done && "text-muted-foreground line-through",
         )}
       >
@@ -459,7 +650,7 @@ function RowItem({
         {row.area && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px]">{row.area}</span>}
         {row.projectName && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px]">{row.projectName}</span>}
       </div>
-      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+      {row.editable && <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
         <Popover open={dateOpen} onOpenChange={setDateOpen}>
           <PopoverTrigger asChild>
             <Button size="icon" variant="ghost" className="h-7 w-7" title="Reschedule">
@@ -484,7 +675,7 @@ function RowItem({
         <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={onDelete} title="Delete">
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
-      </div>
+      </div>}
     </li>
   );
 }
