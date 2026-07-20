@@ -164,9 +164,13 @@ export default function Auth() {
       }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
-        <Link to="/" className="mb-6 flex flex-col items-center gap-3 text-center">
-          <CareFlowLogo size={72} />
-          <CareFlowLogo size={36} showWordmark showTagline />
+        <Link to="/" className="mb-6 flex flex-col items-center gap-1.5 text-center">
+          <span className="font-brand text-4xl font-extrabold tracking-tight bg-gradient-to-r from-[hsl(var(--season-forest))] via-[hsl(var(--season-summer))] to-[hsl(var(--season-autumn,var(--season-summer)))] bg-clip-text text-transparent sm:text-5xl">
+            CareFlow
+          </span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+            Plan · Care · Grow
+          </span>
         </Link>
 
         <div className="w-full rounded-3xl border border-border/50 bg-card/85 p-6 shadow-cozy backdrop-blur-md sm:p-8">
