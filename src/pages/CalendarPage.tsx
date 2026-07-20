@@ -389,6 +389,32 @@ export default function CalendarPage() {
             >
               <Settings2 className="h-4 w-4" />
             </Button>
+            <Button
+              variant={plannerOpen ? "default" : "outline"}
+              size="sm"
+              className="h-8 shrink-0 gap-1.5 rounded-full text-xs"
+              onClick={() => {
+                if (isMobileTop) setMobilePlannerOpen(true);
+                else setPlannerOpen(!plannerOpen);
+              }}
+              aria-pressed={plannerOpen}
+              title="Toggle task planner"
+            >
+              {plannerOpen ? <PanelLeftClose className="h-3.5 w-3.5" /> : <PanelLeftOpen className="h-3.5 w-3.5" />}
+              <ListTodo className="h-3.5 w-3.5" />
+              Planner
+            </Button>
+            {plannerOpen && view === "day" && !isMobileTop && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0 gap-1.5 rounded-full text-xs"
+                onClick={() => setPlanMyDayOpen(true)}
+                title="Plan my day"
+              >
+                <Wand2 className="h-3.5 w-3.5" /> Plan my day
+              </Button>
+            )}
           </div>
         }
         accent="warm"
