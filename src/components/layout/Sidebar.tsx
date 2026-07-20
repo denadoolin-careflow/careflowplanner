@@ -353,8 +353,8 @@ function PinnedTagsSection({
                   {active && (
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full"
-                      style={{ background: color }}
+                      className="pointer-events-none absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full"
+                      style={{ background: "var(--gradient-brand-trio)" }}
                     />
                   )}
                   <span className="grid h-6 w-6 place-items-center">
