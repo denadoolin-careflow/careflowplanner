@@ -61,11 +61,10 @@ export default function CalendarPage() {
       return parts.find(p => p.type === "timeZoneName")?.value ?? "";
     } catch { return ""; }
   })();
-  const { prefs, setView: persistView, setLayout: persistLayout, toggleFilter, resetFilters, ALL_KINDS } = useCalendarPrefs();
-  const { setPlannerOpen, setPlannerWidth } = useCalendarPrefs();
+  const { prefs, setView: persistView, setLayout: persistLayout, toggleFilter, resetFilters, setPlannerOpen, setPlannerWidth, ALL_KINDS } = useCalendarPrefs();
   const plannerOpen = !!prefs.plannerOpen;
   const plannerWidth = prefs.plannerWidth ?? 300;
-  const isMobile = useIsMobile();
+  const isMobileTop = useIsMobile();
   const [mobilePlannerOpen, setMobilePlannerOpen] = useState(false);
   const [plannerCaptureOpen, setPlannerCaptureOpen] = useState(false);
   const [planMyDayOpen, setPlanMyDayOpen] = useState(false);
