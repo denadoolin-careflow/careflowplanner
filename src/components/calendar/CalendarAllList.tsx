@@ -288,11 +288,54 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
               </Button>
             )}
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-xs">
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                Sort: {SORT_LABEL[sortBy]}
+                {sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+              {(Object.keys(SORT_LABEL) as SortBy[]).map(k => (
+                <DropdownMenuCheckboxItem key={k} checked={sortBy === k} onCheckedChange={() => changeSort(k)}>
+                  {SORT_LABEL[k]}
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Direction</DropdownMenuLabel>
+              <DropdownMenuCheckboxItem checked={sortDir === "asc"} onCheckedChange={() => changeSortDir("asc")}>
+                <ArrowUp className="mr-1 h-3 w-3" /> Ascending
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={sortDir === "desc"} onCheckedChange={() => changeSortDir("desc")}>
+                <ArrowDown className="mr-1 h-3 w-3" /> Descending
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         {selected.size > 0 && (
           <div className="flex items-center gap-2 text-xs">
             <span className="text-muted-foreground">{selected.size} selected</span>
             <Button size="sm" variant="outline" className="h-7" onClick={() => setSelected(new Set())}>Clear</Button>
+            <Button size="sm" variant="outline" className="h-7 gap-1.5" onClick={doBulkComplete}>
+              <Check className="h-3.5 w-3.5" /> Complete
+            </Button>
+            <Popover open={bulkDateOpen} onOpenChange={setBulkDateOpen}>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="outline" className="h-7 gap-1.5">
+                  <CalendarIcon className="h-3.5 w-3.5" /> Reschedule
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  onSelect={(d) => { if (d) doBulkReschedule(format(d, "yyyy-MM-dd")); }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
             <Button size="sm" variant="destructive" className="h-7 gap-1.5" onClick={() => setConfirm({ kind: "bulk" })}>
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </Button>
