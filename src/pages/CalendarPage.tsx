@@ -686,7 +686,7 @@ function MonthView({
                   : undefined
               }
               className={cn(
-                "flex min-h-16 flex-col rounded-lg border p-1 text-xs transition-colors sm:min-h-32 sm:rounded-xl sm:p-2",
+                "flex h-20 flex-col overflow-hidden rounded-lg border p-1 text-xs transition-colors sm:h-40 sm:rounded-xl sm:p-2",
                 inMonth ? "border-border/60 bg-card" : "border-transparent bg-muted/20 text-muted-foreground/50",
                 today && "ring-2 ring-primary",
                 hoverISO === k && "ring-2 ring-primary bg-primary/10",
