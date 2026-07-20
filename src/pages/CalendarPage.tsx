@@ -45,6 +45,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { CalendarRange, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { Settings2 } from "lucide-react";
 import { CalendarColorsSection } from "@/components/settings/CalendarColorsSection";
+import { PlannerTaskPanel } from "@/components/planner/PlannerTaskPanel";
+import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
+import { PlannerQuickCapture } from "@/components/planner/PlannerQuickCapture";
+import { ListTodo, PanelLeftClose, PanelLeftOpen, Wand2 } from "lucide-react";
 
 type View = "day" | "week" | "month" | "year";
 
@@ -58,6 +62,13 @@ export default function CalendarPage() {
     } catch { return ""; }
   })();
   const { prefs, setView: persistView, setLayout: persistLayout, toggleFilter, resetFilters, ALL_KINDS } = useCalendarPrefs();
+  const { setPlannerOpen, setPlannerWidth } = useCalendarPrefs();
+  const plannerOpen = !!prefs.plannerOpen;
+  const plannerWidth = prefs.plannerWidth ?? 300;
+  const isMobile = useIsMobile();
+  const [mobilePlannerOpen, setMobilePlannerOpen] = useState(false);
+  const [plannerCaptureOpen, setPlannerCaptureOpen] = useState(false);
+  const [planMyDayOpen, setPlanMyDayOpen] = useState(false);
   const { overrides: kindColorOverrides, colorOf: kindHexOf } = useKindColors();
   const view = prefs.view as View;
   const layout = prefs.layout;
