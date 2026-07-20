@@ -395,16 +395,21 @@ export default function CalendarPage() {
             ] as const).map(({ k, label, Icon }) => {
               const on = kindFilter.has(k);
               const pillTone = KIND_META[k as keyof typeof KIND_META]?.pill ?? "";
+              const hasOverride = kindColorOverrides[k as KindKey] != null;
+              const overrideStyle = hasOverride && on
+                ? kindStyleFromHex(kindHexOf(k as KindKey)).pill
+                : undefined;
               return (
                 <button
                   key={k}
                   type="button"
                   onClick={() => toggleKind(k)}
                   aria-pressed={on}
+                  style={overrideStyle}
                   className={cn(
                     "flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
                     on
-                      ? cn(pillTone, "shadow-sm")
+                      ? cn(hasOverride ? "text-foreground shadow-sm" : cn(pillTone, "shadow-sm"))
                       : "border-border/50 bg-muted/40 text-muted-foreground hover:text-foreground",
                   )}
                 >
