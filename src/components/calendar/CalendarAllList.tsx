@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, CheckSquare, CalendarClock } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, CheckSquare, CalendarClock, Filter, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -57,6 +58,8 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState<{ kind: "single" | "bulk"; row?: Row } | null>(null);
+  const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [projectFilter, setProjectFilter] = useState<string>("all");
 
   const rows = useMemo<Row[]>(() => {
     const projById = new Map((state.projects ?? []).map(p => [p.id, p.name]));
@@ -88,6 +91,23 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
     return [...tasks, ...appts];
   }, [state.tasks, state.appointments, state.projects]);
 
+  const areaOptions = useMemo(() => {
+    const s = new Set<string>();
+    rows.forEach(r => r.area && s.add(r.area));
+    return Array.from(s).sort();
+  }, [rows]);
+  const projectOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    rows.forEach(r => { if (r.projectId && r.projectName) m.set(r.projectId, r.projectName); });
+    return Array.from(m.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [rows]);
+
+  const filteredRows = useMemo(() => rows.filter(r => {
+    if (areaFilter !== "all" && (r.area ?? "") !== areaFilter) return false;
+    if (projectFilter !== "all" && (r.projectId ?? "") !== projectFilter) return false;
+    return true;
+  }), [rows, areaFilter, projectFilter]);
+
   const groups = useMemo(() => {
     const map = new Map<string, Row[]>();
     const keyFor = (r: Row): string => {
@@ -96,7 +116,7 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       if (groupBy === "date") return r.date ?? "No date";
       return "All";
     };
-    for (const r of rows) {
+    for (const r of filteredRows) {
       const k = keyFor(r);
       const arr = map.get(k) ?? [];
       arr.push(r);
@@ -114,7 +134,7 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       entries.sort(([a], [b]) => a.localeCompare(b));
     }
     return entries;
-  }, [rows, groupBy]);
+  }, [filteredRows, groupBy]);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -167,21 +187,45 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
     <div className="space-y-3">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 text-xs">
-          <span className="px-2 text-muted-foreground">Group by</span>
-          {(["area", "project", "date", "none"] as GroupBy[]).map(g => (
-            <button
-              key={g}
-              type="button"
-              onClick={() => changeGroup(g)}
-              className={cn(
-                "rounded-full px-2.5 py-1 font-medium capitalize transition-colors",
-                groupBy === g ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {g}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 text-xs">
+            <span className="px-2 text-muted-foreground">Group by</span>
+            {(["area", "project", "date", "none"] as GroupBy[]).map(g => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => changeGroup(g)}
+                className={cn(
+                  "rounded-full px-2.5 py-1 font-medium capitalize transition-colors",
+                  groupBy === g ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            <Select value={areaFilter} onValueChange={setAreaFilter}>
+              <SelectTrigger className="h-7 w-[130px] text-xs"><SelectValue placeholder="Area" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All areas</SelectItem>
+                {areaOptions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="h-7 w-[150px] text-xs"><SelectValue placeholder="Project" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All projects</SelectItem>
+                {projectOptions.map(([id, name]) => <SelectItem key={id} value={id}>{name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {(areaFilter !== "all" || projectFilter !== "all") && (
+              <Button size="sm" variant="ghost" className="h-7 gap-1 px-2 text-xs" onClick={() => { setAreaFilter("all"); setProjectFilter("all"); }}>
+                <X className="h-3 w-3" /> Clear
+              </Button>
+            )}
+          </div>
         </div>
         {selected.size > 0 && (
           <div className="flex items-center gap-2 text-xs">
