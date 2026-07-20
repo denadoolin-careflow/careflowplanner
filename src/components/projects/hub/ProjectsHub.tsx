@@ -18,6 +18,45 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getAreaIcon } from "@/components/areas/AreaIconColorPicker";
 import { formatRelativeDate } from "@/lib/date-format";
+import { DashboardTabs } from "@/components/shared/DashboardTabs";
+import { useEffect, useState as useReactState } from "react";
+
+/** Map an area name to one of the three brand tones for banners/progress fills. */
+type BrandTone = "lavender" | "sage" | "marigold";
+function areaBrandTone(area?: string | null): BrandTone {
+  const a = (area ?? "").toLowerCase();
+  if (!a) return "lavender";
+  if (a.includes("creative") || a.includes("idea")) return "lavender";
+  if (
+    a.includes("family") || a.includes("kid") || a.includes("caregiv") ||
+    a.includes("appoint") || a.includes("home") || a.includes("meal")
+  ) return "sage";
+  if (
+    a.includes("money") || a.includes("finance") || a.includes("personal") ||
+    a.includes("holiday") || a.includes("birthday")
+  ) return "marigold";
+  return "lavender";
+}
+const TONE_GRADIENT: Record<BrandTone, string> = {
+  lavender: "var(--gradient-brand-lavender)",
+  sage: "var(--gradient-brand-sage)",
+  marigold: "var(--gradient-brand-marigold)",
+};
+const TONE_SOFT: Record<BrandTone, string> = {
+  lavender: "color-mix(in srgb, var(--brand-lavender) 32%, var(--brand-cream))",
+  sage: "color-mix(in srgb, var(--brand-sage) 32%, var(--brand-cream))",
+  marigold: "color-mix(in srgb, var(--brand-marigold) 32%, var(--brand-cream))",
+};
+
+/** Animate a progress bar from 0 to `pct` on mount. */
+function useAnimatedPct(pct: number) {
+  const [v, setV] = useReactState(0);
+  useEffect(() => {
+    const r = requestAnimationFrame(() => setV(pct));
+    return () => cancelAnimationFrame(r);
+  }, [pct]);
+  return v;
+}
 
 type View = "cards" | "list" | "gallery";
 const VIEW_KEY = "projects.hub.view";
