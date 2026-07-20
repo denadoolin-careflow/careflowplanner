@@ -53,7 +53,7 @@ import { ListTodo, PanelLeftClose, PanelLeftOpen, Wand2 } from "lucide-react";
 type View = "day" | "week" | "month" | "year";
 
 export default function CalendarPage() {
-  const { state, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday } = useStore();
+  const { state, deleteAppointment, updateTask, updateAppointment, updateBirthday, updateHoliday, addTask, addAppointment, addBirthday, addHoliday } = useStore() as any;
   const tz = state.settings.timeZone || (typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC");
   const tzOffset = (() => {
     try {
@@ -291,6 +291,42 @@ export default function CalendarPage() {
         onOpenBirthday={(id) => setEditBdayId(id)}
         onOpenAppointment={(id) => setEditApptId(id)}
         onOpenHoliday={(id) => setEditHolId(id)}
+        onQuickAddUpcoming={async () => {
+          const today = format(new Date(), "yyyy-MM-dd");
+          const id = await addTask({ title: "New task", dueDate: today });
+          if (id) setEditTaskId(id);
+        }}
+        onQuickAddAppointment={async () => {
+          const today = format(new Date(), "yyyy-MM-dd");
+          const appt = await addAppointment({ title: "New appointment", date: today });
+          if (appt?.id) setEditApptId(appt.id);
+        }}
+        onQuickAddBirthday={async () => {
+          const today = format(new Date(), "yyyy-MM-dd");
+          const b = await addBirthday({ name: "New birthday", date: today });
+          if (b?.id) setEditBdayId(b.id);
+        }}
+        onQuickAddHoliday={async () => {
+          const today = format(new Date(), "yyyy-MM-dd");
+          const h = await addHoliday({ name: "New holiday", date: today });
+          if (h?.id) setEditHolId(h.id);
+        }}
+        onViewAllUpcoming={() => {
+          window.dispatchEvent(new CustomEvent("calendar-all-list:set-kinds", { detail: ["task", "appt", "care"] }));
+          document.getElementById("calendar-all-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        onViewAllBirthdays={() => {
+          window.dispatchEvent(new CustomEvent("calendar-all-list:set-kinds", { detail: ["bday"] }));
+          document.getElementById("calendar-all-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        onViewAllAppointments={() => {
+          window.dispatchEvent(new CustomEvent("calendar-all-list:set-kinds", { detail: ["appt"] }));
+          document.getElementById("calendar-all-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        onViewAllHolidays={() => {
+          window.dispatchEvent(new CustomEvent("calendar-all-list:set-kinds", { detail: ["hol"] }));
+          document.getElementById("calendar-all-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
       />
 
       <InboxCapture defaultDate={cursor} />
@@ -555,7 +591,7 @@ export default function CalendarPage() {
       </div>
       </div>
 
-      <SectionCard title="All tasks & appointments" accent="sage">
+      <SectionCard title="All tasks & appointments" accent="sage" id="calendar-all-list">
         <CalendarAllList
           onEditTask={(id) => setEditTaskId(id)}
           onEditAppointment={(id) => setEditApptId(id)}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { addDays, endOfMonth, endOfWeek, format, parseISO, startOfMonth, startOfWeek } from "date-fns";
 import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, Filter, X, ArrowUp, ArrowDown, ArrowUpDown, Check, Layers, Plus, CheckSquare, CalendarClock, HeartPulse } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -149,6 +149,24 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       return next;
     });
   };
+
+  // Listen for external "view all" requests (e.g. from the SummaryStrip cards)
+  // to focus this list on a specific set of kinds.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as Kind[] | undefined;
+      if (!detail || !Array.isArray(detail)) return;
+      const next = new Set<Kind>(detail);
+      setEnabledKinds(next);
+      try { localStorage.setItem(KIND_KEY, JSON.stringify(Array.from(next))); } catch {}
+      setDatePreset("all");
+      try { localStorage.setItem(DATE_KEY, "all"); } catch {}
+      setAreaFilter("all");
+      setProjectFilter("all");
+    };
+    window.addEventListener("calendar-all-list:set-kinds", handler);
+    return () => window.removeEventListener("calendar-all-list:set-kinds", handler);
+  }, []);
 
   const range = useMemo(() => resolveDateRange(datePreset, customRange), [datePreset, customRange]);
 
