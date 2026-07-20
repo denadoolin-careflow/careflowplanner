@@ -157,10 +157,10 @@ export default function Auth() {
 
   return (
     <div
-      className="relative min-h-screen w-full overflow-hidden bg-background text-foreground"
+      className="relative min-h-screen w-full overflow-hidden text-foreground"
       style={{
         backgroundImage:
-          "radial-gradient(60% 50% at 80% 10%, hsl(var(--season-summer) / 0.16), transparent 60%), radial-gradient(50% 40% at 10% 20%, hsl(var(--season-forest) / 0.14), transparent 60%)",
+          "linear-gradient(135deg,#8b5cf6,#3b82f6,#10b981,#facc15,#fb923c,#ef4444)",
       }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
