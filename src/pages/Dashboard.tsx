@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { format, parseISO } from "date-fns";
-import { useStore, todayISO } from "@/lib/store";
+import { format } from "date-fns";
+import { useStore } from "@/lib/store";
 import { useWeatherSnapshot, formatTemp } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
 import { cn } from "@/lib/utils";
