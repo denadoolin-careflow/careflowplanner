@@ -282,10 +282,10 @@ interface Ctx {
   deleteAppointment: (id: string) => Promise<void>;
   updateAppointment: (id: string, patch: Partial<Appointment>) => Promise<void>;
 
-  addBirthday: (b: Partial<Birthday> & { name: string; date: string }) => Promise<void>;
+  addBirthday: (b: Partial<Birthday> & { name: string; date: string }) => Promise<Birthday | null>;
   updateBirthday: (id: string, patch: Partial<Birthday>) => Promise<void>;
   deleteBirthday: (id: string) => Promise<void>;
-  addHoliday: (h: Partial<Holiday> & { name: string; date: string }) => Promise<void>;
+  addHoliday: (h: Partial<Holiday> & { name: string; date: string }) => Promise<Holiday | null>;
   updateHoliday: (id: string, patch: Partial<Holiday>) => Promise<void>;
   deleteHoliday: (id: string) => Promise<void>;
 
@@ -983,10 +983,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
 
     addBirthday: async (b) => {
-      if (!uid) return;
+      if (!uid) return null;
       const { updatedAt: _bu, ...bRest } = b as any;
       const { data } = await supabase.from("birthdays").insert({ user_id: uid, ...bRest }).select().single();
-      if (data) setState(s => ({ ...s, birthdays: [bdayFrom(data), ...s.birthdays] }));
+      if (data) {
+        const created = bdayFrom(data);
+        setState(s => ({ ...s, birthdays: [created, ...s.birthdays] }));
+        return created;
+      }
+      return null;
     },
     deleteBirthday: async (id) => {
       setState(s => ({ ...s, birthdays: s.birthdays.filter(b => b.id !== id) }));
@@ -1003,10 +1008,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await syncOp({ kind: "update", table: "birthdays", id, values: dbPatch, localTs });
     },
     addHoliday: async (h) => {
-      if (!uid) return;
+      if (!uid) return null;
       const { updatedAt: _hu, ...hRest } = h as any;
       const { data } = await supabase.from("holidays").insert({ user_id: uid, ...hRest }).select().single();
-      if (data) setState(s => ({ ...s, holidays: [holidayFrom(data), ...s.holidays] }));
+      if (data) {
+        const created = holidayFrom(data);
+        setState(s => ({ ...s, holidays: [created, ...s.holidays] }));
+        return created;
+      }
+      return null;
     },
     deleteHoliday: async (id) => {
       setState(s => ({ ...s, holidays: s.holidays.filter(h => h.id !== id) }));
