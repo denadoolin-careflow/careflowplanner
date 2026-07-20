@@ -1,22 +1,45 @@
-## Goal
-Fix the Calendar Colors settings row so the color picker controls sit beneath the category label (no more overlap with the sample chip on narrow widths), and offer curated palettes that mirror the app's Atmosphere presets.
+# Expand filters on the calendar's all-items list
 
-## Changes
+Enhance `src/components/calendar/CalendarAllList.tsx` (the unified list under the calendar grid) with a date-range filter and support for every calendar category — not just tasks & appointments.
 
-### 1. `src/components/settings/CalendarColorsSection.tsx` — restructure `KindRow`
-- Replace the current `flex … sm:flex-row sm:items-center` layout with a vertical stack: category header on top, controls below.
-- Top row: icon tile + label + live "Sample event" preview chip (unchanged content, just always on its own line).
-- Bottom row: palette swatches, Custom hex popover, Reset button — wraps freely without colliding with the label.
-- Add a compact palette selector above the swatches to switch between the existing "Signature" palette and new atmosphere-derived palettes (see #2). Selection is local UI state (which palette to show); the actual chosen hex still persists per-kind via `useKindColors`.
+## 1. Date-range filter
 
-### 2. `src/lib/calendar-colors.ts` — add atmosphere palettes
-- Keep `CALENDAR_PALETTE` as the default "Signature" palette (back-compat for other importers).
-- Add `CALENDAR_PALETTE_GROUPS`: an ordered list of `{ id, name, colors[] }` built from `ATMOSPHERES` (e.g. Sage Sanctuary, Moonlit Plum, Soft Linen, Coastal Calm, Golden Hearth, Peony Bloom, Meadow Dew, Harvest Ember, Evergreen Hearth, Frosted Plum). Each group's `colors` is that atmosphere's `palette` deduped and normalized to lowercase hex. Prepend the existing Signature palette as the first group.
+Add a "Date" filter control (pill group or `Select`) next to the existing Area / Project filters with presets:
 
-### 3. Wire the selector
-- In `KindRow`, render the swatches from the currently selected group. Default group = "Signature".
-- Group selector: small `Select` (or segmented pill row) labeled "Palette". Selection is per-row local state so users can browse without affecting others; no persistence needed.
+- All (default)
+- Today
+- Tomorrow
+- This week (current Sun–Sat / Mon–Sun, matching app's week start)
+- Next week
+- This month
+- Custom… → opens a shadcn `Calendar` in range mode via `Popover`
 
-## Out of scope
-- No changes to how colors are stored, resolved, or applied elsewhere (`kindStyleFromHex`, calendar rendering, filter pills, list view all keep working unchanged).
-- No changes to defaults or reset behavior.
+State persists to `localStorage` (key `calendar-all-daterange`). A row passes when its `date` (ISO `yyyy-MM-dd`) falls inside the resolved range; items without a date are hidden unless "All" is selected. Active non-default filter shows a clear (×) chip.
+
+## 2. Broader category support
+
+Today the list only builds rows from `state.tasks` and `state.appointments`. Extend it to also include the same kinds the calendar grid already surfaces via `KIND_META`:
+
+- **Birthdays** — from `state.people` / loved-ones with `birthday`, projected to current year
+- **Meals** — from `state.meals` / planned meals (breakfast/lunch/dinner) per date
+- **Cosmic** — moon phases + notable transits from `src/lib/moon-phase.ts` / cosmic sources already feeding the grid
+- **Holidays** — from `src/lib/us-holidays.ts` (+ any user list)
+- **Celebrations** — from `state.celebrations` (Seasons)
+- **Caregiving** — from `state.caregivingEvents` / care check-ins already shown on the calendar
+
+Reuse whichever selectors `CalendarPage` currently uses to render these on the month grid so the list stays in sync with the grid. Each row carries a `kind` matching `KIND_META` and renders its colored dot via `useKindColors`.
+
+Add a **Category filter** (multi-select dropdown, same pattern as sort menu) with all 8 kinds — Tasks, Appointments, Birthdays, Meals, Cosmic, Holidays, Celebrations, Caregiving — defaulting to all on. Persist selection to `localStorage`.
+
+For non-editable kinds (birthdays, holidays, cosmic), the row's Edit/Delete/Reschedule actions are hidden; selection checkbox is disabled so bulk ops still only apply to tasks/appointments.
+
+## 3. Grouping/sorting
+
+Existing group-by and sort controls keep working; new kinds slot into Area/Project groups as "No area / No project" when they lack those fields, and into Date groups normally.
+
+## Technical notes
+
+- New helpers in `CalendarAllList.tsx`: `resolveDateRange(preset, custom)` returning `{start, end}` ISO strings; `buildExtraRows(state)` producing `Row[]` for the six extra kinds.
+- Extend `Row.kind` union to the full `KIND_META` key set; add optional `editable: boolean`.
+- Row dot color pulled from `useKindColors()[row.kind]` (already imported elsewhere).
+- No schema/data changes — pure frontend read of existing store slices.
