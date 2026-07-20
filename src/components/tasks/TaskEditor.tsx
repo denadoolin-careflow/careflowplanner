@@ -309,8 +309,19 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
       >
         {/* Sticky header */}
         <DialogHeader className="shrink-0 space-y-2 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
-          {/* Row 1: title only */}
-          <div className="w-full min-w-0 pr-10">
+          {/* Row 1: checkbox + icon + title */}
+          <div className="flex w-full min-w-0 items-center gap-2 pr-10">
+            <Checkbox
+              checked={draft.done}
+              onCheckedChange={() => toggleTask(draft.id)}
+              className="h-5 w-5 shrink-0"
+              aria-label="Mark complete"
+            />
+            <LucideIconPicker
+              value={draft.icon?.startsWith("lc:") ? draft.icon : undefined}
+              onChange={v => set("icon", v)}
+              fallbackIcon={inferTaskIcon(draft.title, draft.notes)}
+            />
             <Input
               value={draft.title}
               onChange={e => set("title", e.target.value)}
@@ -323,17 +334,6 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
 
           {/* Row 2: actions */}
           <div className="flex w-full min-w-0 flex-wrap items-center gap-1">
-            <LucideIconPicker
-              value={draft.icon?.startsWith("lc:") ? draft.icon : undefined}
-              onChange={v => set("icon", v)}
-              fallbackIcon={inferTaskIcon(draft.title, draft.notes)}
-            />
-            <Checkbox
-              checked={draft.done}
-              onCheckedChange={() => toggleTask(draft.id)}
-              className="mr-1 h-5 w-5 shrink-0"
-              aria-label="Mark complete"
-            />
             <TaskAIAssistPopover
               title={draft.title}
               notes={draft.notes}
