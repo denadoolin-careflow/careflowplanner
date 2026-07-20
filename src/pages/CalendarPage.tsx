@@ -258,7 +258,7 @@ export default function CalendarPage() {
         : format(cursor, "yyyy");
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row">
+    <div className="relative flex flex-col gap-6 lg:flex-row">
       <div className="min-w-0 flex-1 space-y-6">
       <div className="cozy-card gradient-calm p-6">
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">CareFlow</div>
@@ -501,16 +501,14 @@ export default function CalendarPage() {
       </SectionCard>
       </div>
       {rightPanel === "hidden" ? (
-        <aside className="shrink-0">
-          <button
-            type="button"
-            onClick={() => switchRightPanel("widgets")}
-            className="flex items-center gap-1.5 rounded-full bg-muted/60 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-            title="Show side panel"
-          >
-            <PanelRightOpen className="h-3.5 w-3.5" /> Show panel
-          </button>
-        </aside>
+        <button
+          type="button"
+          onClick={() => switchRightPanel("widgets")}
+          className="fixed right-4 top-20 z-30 hidden items-center gap-1.5 rounded-full border border-border/60 bg-card/95 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur hover:text-foreground lg:inline-flex"
+          title="Show side panel"
+        >
+          <PanelRightOpen className="h-3.5 w-3.5" /> Show panel
+        </button>
       ) : (
       <aside className="w-full shrink-0 space-y-3 lg:w-[320px] xl:w-[360px]">
         <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 text-xs">
