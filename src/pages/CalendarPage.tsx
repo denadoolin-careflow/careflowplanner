@@ -610,6 +610,10 @@ function MonthView({
   const [draggingItem, setDraggingItem] = useState<{ item: EventItem; sourceISO: string } | null>(null);
   const isMobile = useIsMobile();
   const [sheetISO, setSheetISO] = useState<string | null>(null);
+  const { overrides: kindOverrides, colorOf: kindHex } = useKindColors();
+  const mealOverride = kindOverrides.meal
+    ? kindStyleFromHex(kindHex("meal")).card
+    : undefined;
   const dotClass = (kind: EventItem["kind"]) =>
     kind === "task" ? "bg-warm-foreground/70"
     : kind === "appt" ? "bg-primary"
