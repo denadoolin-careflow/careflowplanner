@@ -156,14 +156,17 @@ export default function Auth() {
   };
 
   return (
-    <div
-      className="relative min-h-screen w-full overflow-hidden text-foreground"
-      style={{
-        backgroundImage:
-          "linear-gradient(135deg,#8b5cf6,#3b82f6,#10b981,#facc15,#fb923c,#ef4444)",
-      }}
-    >
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#faf9f6] text-foreground dark:bg-background">
+      {/* Soft spectrum orbs — violet → blue → green → yellow → orange → red */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-[10%] -top-[10%] h-[50%] w-[50%] rounded-full bg-violet-200/40 blur-[100px] dark:bg-violet-500/10" />
+        <div className="absolute right-[10%] top-[10%] h-[40%] w-[40%] rounded-full bg-blue-200/40 blur-[100px] dark:bg-blue-500/10" />
+        <div className="absolute left-[20%] top-[40%] h-[35%] w-[35%] rounded-full bg-emerald-200/30 blur-[100px] dark:bg-emerald-500/10" />
+        <div className="absolute right-[-5%] top-[30%] h-[30%] w-[30%] rounded-full bg-yellow-200/40 blur-[100px] dark:bg-yellow-500/10" />
+        <div className="absolute -bottom-[10%] right-[20%] h-[45%] w-[45%] rounded-full bg-orange-200/40 blur-[100px] dark:bg-orange-500/10" />
+        <div className="absolute -left-[5%] bottom-[10%] h-[40%] w-[40%] rounded-full bg-rose-200/30 blur-[100px] dark:bg-rose-500/10" />
+      </div>
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
         <Link to="/" className="mb-6 flex flex-col items-center gap-1.5 text-center">
           <span className="font-brand text-4xl font-extrabold tracking-tight bg-gradient-to-r from-[hsl(var(--season-forest))] via-[hsl(var(--season-summer))] to-[hsl(var(--season-autumn,var(--season-summer)))] bg-clip-text text-transparent sm:text-5xl">
             CareFlow
