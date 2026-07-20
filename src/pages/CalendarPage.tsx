@@ -391,6 +391,7 @@ export default function CalendarPage() {
               { k: "cosmic" as Kind, label: "Cosmic", Icon: Sparkles },
             ] as const).map(({ k, label, Icon }) => {
               const on = kindFilter.has(k);
+              const pillTone = KIND_META[k as keyof typeof KIND_META]?.pill ?? "";
               return (
                 <button
                   key={k}
@@ -400,7 +401,7 @@ export default function CalendarPage() {
                   className={cn(
                     "flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
                     on
-                      ? "border-primary/40 bg-primary-soft text-foreground shadow-sm"
+                      ? cn(pillTone, "shadow-sm")
                       : "border-border/50 bg-muted/40 text-muted-foreground hover:text-foreground",
                   )}
                 >
