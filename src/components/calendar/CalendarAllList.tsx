@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, CheckSquare, CalendarClock, Filter, X, ArrowUp, ArrowDown, ArrowUpDown, Check } from "lucide-react";
+import { addDays, endOfMonth, endOfWeek, format, parseISO, startOfMonth, startOfWeek } from "date-fns";
+import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, Filter, X, ArrowUp, ArrowDown, ArrowUpDown, Check, Layers } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Task, Appointment, Priority } from "@/lib/types";
 import { toast } from "sonner";
+import { KIND_META, type CardKind } from "@/components/calendar/CalendarItemCard";
+import { useKindColors, type KindKey } from "@/lib/calendar-colors";
+import { useCelebrations } from "@/lib/seasons/hooks";
+import { buildCosmicCalendarIndex } from "@/lib/cosmic/calendar-feed";
 
-type Kind = "task" | "appt";
+type Kind = CardKind;
 type Row = {
   id: string;
   kind: Kind;
@@ -29,21 +33,52 @@ type Row = {
   done?: boolean;
   priority?: Priority;
   createdAt?: string;
-  raw: Task | Appointment;
+  editable: boolean;
+  raw?: Task | Appointment;
 };
 
 type GroupBy = "area" | "project" | "date" | "none";
 type SortBy = "date" | "created" | "priority" | "title";
 type SortDir = "asc" | "desc";
+type DateRangePreset = "all" | "today" | "tomorrow" | "thisWeek" | "nextWeek" | "thisMonth" | "custom";
 
 const GROUP_KEY = "calendar-all-groupby";
 const SORT_KEY = "calendar-all-sortby";
 const SORT_DIR_KEY = "calendar-all-sortdir";
+const DATE_KEY = "calendar-all-daterange";
+const KIND_KEY = "calendar-all-kinds";
 
 const PRIO_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
 const SORT_LABEL: Record<SortBy, string> = {
   date: "Due date", created: "Created", priority: "Priority", title: "Title",
 };
+const DATE_LABEL: Record<DateRangePreset, string> = {
+  all: "All dates", today: "Today", tomorrow: "Tomorrow",
+  thisWeek: "This week", nextWeek: "Next week", thisMonth: "This month",
+  custom: "Custom…",
+};
+
+const ALL_KINDS: Kind[] = ["task", "appt", "care", "meal", "bday", "hol", "season", "cosmic"];
+
+function toISO(d: Date): string { return format(d, "yyyy-MM-dd"); }
+
+function resolveDateRange(preset: DateRangePreset, custom?: { from?: string; to?: string }): { from?: string; to?: string } {
+  const today = new Date();
+  const t = toISO(today);
+  switch (preset) {
+    case "all": return {};
+    case "today": return { from: t, to: t };
+    case "tomorrow": { const d = toISO(addDays(today, 1)); return { from: d, to: d }; }
+    case "thisWeek": return { from: toISO(startOfWeek(today, { weekStartsOn: 0 })), to: toISO(endOfWeek(today, { weekStartsOn: 0 })) };
+    case "nextWeek": {
+      const s = startOfWeek(addDays(today, 7), { weekStartsOn: 0 });
+      const e = endOfWeek(addDays(today, 7), { weekStartsOn: 0 });
+      return { from: toISO(s), to: toISO(e) };
+    }
+    case "thisMonth": return { from: toISO(startOfMonth(today)), to: toISO(endOfMonth(today)) };
+    case "custom": return { from: custom?.from, to: custom?.to };
+  }
+}
 
 interface Props {
   onEditTask: (id: string) => void;
@@ -57,6 +92,8 @@ interface Props {
  */
 export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   const { state, deleteTask, deleteAppointment, updateTask, updateAppointment, toggleTask } = useStore();
+  const { colorOf } = useKindColors();
+  const { celebrations } = useCelebrations();
 
   const [groupBy, setGroupBy] = useState<GroupBy>(() => {
     if (typeof localStorage === "undefined") return "date";
@@ -83,6 +120,37 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [bulkDateOpen, setBulkDateOpen] = useState(false);
+  const [datePreset, setDatePreset] = useState<DateRangePreset>(() => {
+    if (typeof localStorage === "undefined") return "all";
+    return ((localStorage.getItem(DATE_KEY) as DateRangePreset) ?? "all");
+  });
+  const [customRange, setCustomRange] = useState<{ from?: string; to?: string }>({});
+  const [customOpen, setCustomOpen] = useState(false);
+  const changeDatePreset = (p: DateRangePreset) => {
+    setDatePreset(p);
+    try { localStorage.setItem(DATE_KEY, p); } catch {}
+    if (p === "custom") setCustomOpen(true);
+  };
+  const [enabledKinds, setEnabledKinds] = useState<Set<Kind>>(() => {
+    if (typeof localStorage === "undefined") return new Set(ALL_KINDS);
+    try {
+      const raw = localStorage.getItem(KIND_KEY);
+      if (!raw) return new Set(ALL_KINDS);
+      const arr = JSON.parse(raw) as Kind[];
+      return new Set(arr.length ? arr : ALL_KINDS);
+    } catch { return new Set(ALL_KINDS); }
+  });
+  const toggleKind = (k: Kind) => {
+    setEnabledKinds(prev => {
+      const next = new Set(prev);
+      next.has(k) ? next.delete(k) : next.add(k);
+      try { localStorage.setItem(KIND_KEY, JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+  };
+
+  const range = useMemo(() => resolveDateRange(datePreset, customRange), [datePreset, customRange]);
+  const cosmicIndex = useMemo(() => buildCosmicCalendarIndex(addDays(new Date(), -90), 365), []);
 
   const rows = useMemo<Row[]>(() => {
     const projById = new Map((state.projects ?? []).map(p => [p.id, p.name]));
@@ -90,7 +158,7 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       .filter(t => !t.parentTaskId)
       .map(t => ({
         id: `task:${t.id}`,
-        kind: "task",
+        kind: t.area === "Caregiving" ? "care" : "task",
         title: t.title,
         date: t.dueDate,
         time: t.startTime,
@@ -100,6 +168,7 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
         done: t.done,
         priority: t.priority,
         createdAt: (t as any).createdAt,
+        editable: true,
         raw: t,
       }));
     const appts: Row[] = (state.appointments ?? []).map(a => ({
@@ -108,14 +177,56 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       title: a.title,
       date: a.date,
       time: a.time,
-      area: a.areaName,
-      projectId: a.projectId,
-      projectName: a.projectId ? projById.get(a.projectId) : undefined,
+      area: (a as any).areaName,
+      projectId: (a as any).projectId,
+      projectName: (a as any).projectId ? projById.get((a as any).projectId) : undefined,
       createdAt: (a as any).createdAt,
+      editable: true,
       raw: a,
     }));
-    return [...tasks, ...appts];
-  }, [state.tasks, state.appointments, state.projects]);
+    const meals: Row[] = (state.meals ?? []).map((m: any) => ({
+      id: `meal:${m.id}`,
+      kind: "meal" as const,
+      title: `${m.slot ? m.slot + ": " : ""}${m.name}`,
+      date: m.date,
+      editable: false,
+    }));
+    const bdays: Row[] = (state.birthdays ?? []).map((b: any) => ({
+      id: `bday:${b.id}`,
+      kind: "bday" as const,
+      title: b.name,
+      date: b.date,
+      editable: false,
+    }));
+    const hols: Row[] = (state.holidays ?? []).map((h: any) => ({
+      id: `hol:${h.id}`,
+      kind: "hol" as const,
+      title: h.name,
+      date: h.date,
+      editable: false,
+    }));
+    const thisYear = new Date().getFullYear();
+    const seasons: Row[] = (celebrations ?? []).map((c: any) => ({
+      id: `season:${c.id}`,
+      kind: "season" as const,
+      title: c.title,
+      date: c.recursYearly ? `${thisYear}-${String(c.date).slice(5)}` : c.date,
+      editable: false,
+    }));
+    const cosmic: Row[] = [];
+    for (const [date, items] of cosmicIndex.entries()) {
+      for (const c of items) {
+        cosmic.push({
+          id: `cosmic:${date}:${c.id}`,
+          kind: "cosmic" as const,
+          title: c.label,
+          date,
+          editable: false,
+        });
+      }
+    }
+    return [...tasks, ...appts, ...meals, ...bdays, ...hols, ...seasons, ...cosmic];
+  }, [state.tasks, state.appointments, state.projects, state.meals, state.birthdays, state.holidays, celebrations, cosmicIndex]);
 
   const areaOptions = useMemo(() => {
     const s = new Set<string>();
@@ -129,10 +240,16 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   }, [rows]);
 
   const filteredRows = useMemo(() => rows.filter(r => {
+    if (!enabledKinds.has(r.kind)) return false;
     if (areaFilter !== "all" && (r.area ?? "") !== areaFilter) return false;
     if (projectFilter !== "all" && (r.projectId ?? "") !== projectFilter) return false;
+    if (range.from || range.to) {
+      if (!r.date) return false;
+      if (range.from && r.date < range.from) return false;
+      if (range.to && r.date > range.to) return false;
+    }
     return true;
-  }), [rows, areaFilter, projectFilter]);
+  }), [rows, enabledKinds, areaFilter, projectFilter, range]);
 
   const compareRows = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;
