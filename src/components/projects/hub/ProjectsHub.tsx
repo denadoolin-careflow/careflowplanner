@@ -346,14 +346,29 @@ function QuickCapture({ onCaptureIdea, defaultArea }: { onCaptureIdea: (title: s
 function ProjectCard({ p, metrics }: { p: Project; metrics: ReturnType<typeof useProjectMetrics> }) {
   const m = metrics(p);
   const Icon = getAreaIcon(p.icon);
+  const tone = areaBrandTone(p.areaName);
+  const animatedPct = useAnimatedPct(m.pct);
   return (
     <Link
       to={`/projects/${p.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-3xl border bg-card/70 transition hover:-translate-y-1 hover:shadow-lg"
-      style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.1)` }}
+      className="group relative flex flex-col overflow-hidden rounded-[22px] border bg-card/80 transition duration-300 hover:-translate-y-1"
+      style={{
+        borderColor: `hsl(${STUDIO.sageDeep} / 0.1)`,
+        boxShadow: "var(--shadow-brand-soft)",
+      }}
     >
-      <div className="relative h-32 w-full overflow-hidden">
-        <ProjectCoverArt seed={p.id} coverUrl={p.coverUrl} className="absolute inset-0" />
+      <div
+        className="relative h-28 w-full overflow-hidden"
+        style={{ background: TONE_GRADIENT[tone] }}
+      >
+        {p.coverUrl && (
+          <ProjectCoverArt seed={p.id} coverUrl={p.coverUrl} className="absolute inset-0 opacity-80 mix-blend-overlay" />
+        )}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full blur-2xl"
+          style={{ background: "rgba(255,255,255,0.35)" }}
+        />
         <div className="absolute right-3 top-3"><HealthPill health={healthOf(p.health)} /></div>
         <div
           className="absolute -bottom-4 left-4 grid h-10 w-10 place-items-center rounded-xl border bg-background shadow-sm"
@@ -368,7 +383,10 @@ function ProjectCard({ p, metrics }: { p: Project; metrics: ReturnType<typeof us
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{m.pct}%</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full" style={{ background: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
-          <div className="h-full rounded-full transition-all" style={{ width: `${m.pct}%`, background: `hsl(${STUDIO.sageDeep})` }} />
+          <div
+            className="h-full rounded-full transition-[width] duration-700 ease-out"
+            style={{ width: `${animatedPct}%`, background: TONE_GRADIENT[tone] }}
+          />
         </div>
         <div className="text-xs text-muted-foreground">
           {m.open > 0 ? `${m.open} task${m.open === 1 ? "" : "s"} remaining` : "All caught up"}
