@@ -651,6 +651,16 @@ export default function CalendarPage() {
           <CalendarColorsSection />
         </DialogContent>
       </Dialog>
+      <Sheet open={mobilePlannerOpen} onOpenChange={setMobilePlannerOpen}>
+        <SheetContent side="left" className="w-[86vw] max-w-[360px] p-0">
+          <SheetHeader className="px-4 pt-4"><SheetTitle>Planner</SheetTitle></SheetHeader>
+          <div className="h-[calc(100dvh-3.5rem)] overflow-hidden p-3">
+            <PlannerTaskPanel selectedDate={cursor} onQuickAdd={() => { setMobilePlannerOpen(false); setPlannerCaptureOpen(true); }} />
+          </div>
+        </SheetContent>
+      </Sheet>
+      <PlannerQuickCapture open={plannerCaptureOpen} onOpenChange={setPlannerCaptureOpen} defaultDate={cursor} />
+      <PlanMyDayDialog open={planMyDayOpen} onOpenChange={setPlanMyDayOpen} date={cursor} />
     </div>
   );
 }
