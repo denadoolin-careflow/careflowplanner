@@ -21,6 +21,7 @@ import { MoonPhaseChip, ElementChip, AtmosphereChip } from "@/components/calenda
 import { CalendarItemCard } from "@/components/calendar/CalendarItemCard";
 import { CalendarAllList } from "@/components/calendar/CalendarAllList";
 import { KIND_META } from "@/components/calendar/CalendarItemCard";
+import { useKindColors, kindStyleFromHex, type KindKey } from "@/lib/calendar-colors";
 import { useLongPressDrag, useLongDropListener, hourToDayPart, type LongDropDetail } from "@/lib/long-press-drag";
 import { hoursToHM } from "@/lib/time-blocks";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
