@@ -772,9 +772,10 @@ function MonthView({
                           type="button"
                           onClick={(ev2) => { ev2.stopPropagation(); setSheetISO(k); }}
                           title={mealItems.map(m => m.label).join(" · ")}
+                          style={mealOverride}
                           className={cn(
                             "inline-flex w-full items-center gap-1 rounded-md border px-1.5 py-1 text-[11px] leading-none",
-                            KIND_META.meal.color,
+                            mealOverride ? "text-foreground" : KIND_META.meal.color,
                           )}
                         >
                           <span aria-hidden>🍽</span>
