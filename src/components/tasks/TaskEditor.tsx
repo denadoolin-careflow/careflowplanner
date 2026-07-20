@@ -621,10 +621,8 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         {/* Scrollable body */}
         <div className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5">
           <div className={cn(
-            "grid min-w-0 gap-4 transition-all",
-            sideHidden
-              ? "md:mx-auto md:max-w-3xl md:grid-cols-1"
-              : "md:grid-cols-[1.5fr_1fr] lg:grid-cols-[1.55fr_1fr]",
+            "grid min-w-0 grid-cols-1 gap-4 transition-all",
+            "md:mx-auto md:max-w-3xl",
           )}>
             {/* ─────────── Left column: work surface ─────────── */}
             <div className="min-w-0 space-y-4">
@@ -820,9 +818,9 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               </Collapsible>
             </div>
 
-            {/* ─────────── Right column: context & assist ─────────── */}
-            <div className={cn("min-w-0 space-y-4", sideHidden && "md:hidden")}>
-              <FlowContextCard draft={draft} set={set} />
+            {/* ─────────── Stacked below: context & assist ─────────── */}
+            <div className="min-w-0 space-y-4">
+              <FlowContextFields draft={draft} set={set} />
 
               {/* AI Assistant card */}
               <Card>
@@ -1095,13 +1093,12 @@ function AIQuickAction({
   );
 }
 
-function FlowContextCard({
+function FlowContextFields({
   draft, set,
 }: {
   draft: Task;
   set: <K extends keyof Task>(k: K, v: Task[K]) => void;
 }) {
-  const { atmosphere } = useAtmosphere();
   const bestTime = (() => {
     if (draft.startTime) {
       const h = parseInt(draft.startTime.slice(0, 2), 10);
@@ -1114,46 +1111,25 @@ function FlowContextCard({
     if (draft.energy === "low") return "Evening";
     return "Afternoon";
   })();
-  const energyLabel = draft.energy
-    ? draft.energy.charAt(0).toUpperCase() + draft.energy.slice(1)
-    : "Moderate";
-  const swatch = atmosphere?.palette?.[0] ?? "hsl(var(--primary))";
 
   return (
-    <Card className="overflow-hidden">
-      <div
-        className="px-3.5 pt-3.5"
-        style={{
-          backgroundImage: `linear-gradient(135deg, ${swatch}33, transparent 65%)`,
-        }}
-      >
-        <header className="mb-2.5 flex items-center justify-between gap-2">
-          <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: swatch }} />
-            Flow Context
-          </h3>
-        </header>
-      </div>
-      <div className="space-y-2.5 px-3.5 pb-3.5">
-        <Row label="Atmosphere" value={atmosphere?.name ?? "Sage Sanctuary"} swatch={swatch} />
-        <Row
-          label="Energy level"
-          value={
-            <Select value={draft.energy ?? "medium"} onValueChange={v => set("energy", v as Energy)}>
-              <SelectTrigger className="h-7 w-[120px] border-0 bg-transparent px-1 text-[13px] font-medium hover:bg-muted/40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="z-[60]" position="popper" sideOffset={6}>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Moderate</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-              </SelectContent>
-            </Select>
-          }
-        />
-        <Row label="Best time" value={bestTime} />
-      </div>
-    </Card>
+    <div className="space-y-3">
+      <Field icon={Zap} label="Energy level">
+        <Select value={draft.energy ?? "medium"} onValueChange={v => set("energy", v as Energy)}>
+          <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+          <SelectContent className="z-[60]" position="popper" sideOffset={6}>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Moderate</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
+      <Field icon={Clock} label="Best time">
+        <div className="flex h-9 items-center rounded-md border border-border/50 bg-muted/20 px-3 text-sm text-foreground">
+          {bestTime}
+        </div>
+      </Field>
+    </div>
   );
 }
 
