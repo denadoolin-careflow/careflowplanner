@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
+import { ATMOSPHERES } from "@/lib/atmospheres";
 
 export type KindKey =
   | "task" | "appt" | "care" | "meal" | "bday"
@@ -44,6 +45,28 @@ export const CALENDAR_PALETTE: string[] = [
   "#d946ef", // fuchsia
   "#ec4899", // pink
   "#64748b", // slate
+];
+
+export type CalendarPaletteGroup = { id: string; name: string; colors: string[] };
+
+function dedupeHex(colors: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const c of colors) {
+    const v = c.toLowerCase();
+    if (!seen.has(v)) { seen.add(v); out.push(v); }
+  }
+  return out;
+}
+
+/** Signature palette + one palette per Atmosphere so calendar colors can match app moods. */
+export const CALENDAR_PALETTE_GROUPS: CalendarPaletteGroup[] = [
+  { id: "signature", name: "Signature", colors: CALENDAR_PALETTE.map(c => c.toLowerCase()) },
+  ...ATMOSPHERES.map(a => ({
+    id: a.id,
+    name: a.name,
+    colors: dedupeHex(a.palette),
+  })),
 ];
 
 export type KindColorMap = Partial<Record<KindKey, string>>;
