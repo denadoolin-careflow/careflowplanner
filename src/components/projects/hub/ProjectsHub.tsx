@@ -205,19 +205,26 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
   );
 }
 
-function HeroStatTile({ icon: Icon, value, label, tone }: { icon: any; value: number; label: string; tone: string }) {
+function HeroStatTile({
+  icon: Icon, value, label, chipBg, chipFg,
+}: { icon: any; value: number; label: string; chipBg: string; chipFg: string }) {
   return (
     <div
-      className="rounded-2xl border bg-card/70 p-4 transition hover:-translate-y-0.5 hover:shadow-sm"
-      style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.1)` }}
+      className="rounded-[14px] border bg-card/80 p-4 transition hover:-translate-y-0.5"
+      style={{
+        borderColor: `hsl(${STUDIO.sageDeep} / 0.1)`,
+        boxShadow: "var(--shadow-brand-soft)",
+      }}
     >
       <div
         className="grid h-10 w-10 place-items-center rounded-xl"
-        style={{ background: `hsl(${tone} / 0.18)`, color: `hsl(${tone})` }}
+        style={{ background: chipBg, color: chipFg }}
       >
         <Icon className="h-4 w-4" />
       </div>
-      <div className="mt-3 font-display text-3xl leading-none">{value}</div>
+      <div className="mt-3 font-display font-medium leading-none" style={{ fontSize: 30, color: "var(--brand-ink)" }}>
+        {value}
+      </div>
       <div className="mt-1 text-xs text-muted-foreground">{label}</div>
     </div>
   );
@@ -230,10 +237,26 @@ function HeroStatsGrid({ projects, metrics }: { projects: Project[]; metrics: Re
   const onHold = projects.filter((p) => p.status === "paused" || healthOf(p.health) === "waiting").length;
   return (
     <div className="grid grid-cols-2 gap-3">
-      <HeroStatTile icon={Folder} value={active} label="Active Projects" tone={STUDIO.sageDeep} />
-      <HeroStatTile icon={Leaf}   value={inProgress} label="In Progress"  tone={STUDIO.blushDeep} />
-      <HeroStatTile icon={Rocket} value={launching}  label="Ready to Launch" tone={STUDIO.plum} />
-      <HeroStatTile icon={Pause}  value={onHold}     label="On Hold" tone={STUDIO.gold} />
+      <HeroStatTile
+        icon={Folder} value={active} label="Active Projects"
+        chipBg="color-mix(in srgb, var(--brand-sage) 26%, transparent)"
+        chipFg="var(--brand-sage-deep)"
+      />
+      <HeroStatTile
+        icon={Leaf} value={inProgress} label="In Progress"
+        chipBg="color-mix(in srgb, var(--brand-marigold) 30%, transparent)"
+        chipFg="var(--brand-marigold-deep)"
+      />
+      <HeroStatTile
+        icon={Rocket} value={launching} label="Ready to Launch"
+        chipBg="color-mix(in srgb, var(--brand-lavender) 34%, transparent)"
+        chipFg="var(--brand-lavender-deep)"
+      />
+      <HeroStatTile
+        icon={Pause} value={onHold} label="On Hold"
+        chipBg="color-mix(in srgb, var(--brand-plum) 18%, transparent)"
+        chipFg="var(--brand-plum)"
+      />
     </div>
   );
 }
