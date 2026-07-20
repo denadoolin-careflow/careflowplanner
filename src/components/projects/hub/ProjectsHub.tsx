@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { useAtmosphere } from "@/lib/atmospheres";
@@ -19,7 +19,6 @@ import { cn } from "@/lib/utils";
 import { getAreaIcon } from "@/components/areas/AreaIconColorPicker";
 import { formatRelativeDate } from "@/lib/date-format";
 import { DashboardTabs } from "@/components/shared/DashboardTabs";
-import { useEffect, useState as useReactState } from "react";
 
 /** Map an area name to one of the three brand tones for banners/progress fills. */
 type BrandTone = "lavender" | "sage" | "marigold";
@@ -50,7 +49,7 @@ const TONE_SOFT: Record<BrandTone, string> = {
 
 /** Animate a progress bar from 0 to `pct` on mount. */
 function useAnimatedPct(pct: number) {
-  const [v, setV] = useReactState(0);
+  const [v, setV] = useState(0);
   useEffect(() => {
     const r = requestAnimationFrame(() => setV(pct));
     return () => cancelAnimationFrame(r);
