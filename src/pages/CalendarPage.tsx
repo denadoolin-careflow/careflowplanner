@@ -595,6 +595,14 @@ export default function CalendarPage() {
           )}
         </DialogContent>
       </Dialog>
+      <Dialog open={colorsOpen} onOpenChange={setColorsOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Calendar colors</DialogTitle>
+          </DialogHeader>
+          <CalendarColorsSection />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
