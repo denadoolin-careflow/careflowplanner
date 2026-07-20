@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { useAtmosphere } from "@/lib/atmospheres";
@@ -18,6 +18,44 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getAreaIcon } from "@/components/areas/AreaIconColorPicker";
 import { formatRelativeDate } from "@/lib/date-format";
+import { DashboardTabs } from "@/components/shared/DashboardTabs";
+
+/** Map an area name to one of the three brand tones for banners/progress fills. */
+type BrandTone = "lavender" | "sage" | "marigold";
+function areaBrandTone(area?: string | null): BrandTone {
+  const a = (area ?? "").toLowerCase();
+  if (!a) return "lavender";
+  if (a.includes("creative") || a.includes("idea")) return "lavender";
+  if (
+    a.includes("family") || a.includes("kid") || a.includes("caregiv") ||
+    a.includes("appoint") || a.includes("home") || a.includes("meal")
+  ) return "sage";
+  if (
+    a.includes("money") || a.includes("finance") || a.includes("personal") ||
+    a.includes("holiday") || a.includes("birthday")
+  ) return "marigold";
+  return "lavender";
+}
+const TONE_GRADIENT: Record<BrandTone, string> = {
+  lavender: "var(--gradient-brand-lavender)",
+  sage: "var(--gradient-brand-sage)",
+  marigold: "var(--gradient-brand-marigold)",
+};
+const TONE_SOFT: Record<BrandTone, string> = {
+  lavender: "color-mix(in srgb, var(--brand-lavender) 32%, var(--brand-cream))",
+  sage: "color-mix(in srgb, var(--brand-sage) 32%, var(--brand-cream))",
+  marigold: "color-mix(in srgb, var(--brand-marigold) 32%, var(--brand-cream))",
+};
+
+/** Animate a progress bar from 0 to `pct` on mount. */
+function useAnimatedPct(pct: number) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    const r = requestAnimationFrame(() => setV(pct));
+    return () => cancelAnimationFrame(r);
+  }, [pct]);
+  return v;
+}
 
 type View = "cards" | "list" | "gallery";
 const VIEW_KEY = "projects.hub.view";
@@ -112,10 +150,15 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
     );
   }
   const m = metrics(focus);
+  const animatedPct = useAnimatedPct(m.pct);
+  const tone = areaBrandTone(focus.areaName);
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border"
-      style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}
+      className="relative overflow-hidden rounded-[22px] border transition hover:-translate-y-0.5"
+      style={{
+        borderColor: `hsl(${STUDIO.sageDeep} / 0.12)`,
+        boxShadow: "var(--shadow-brand-soft)",
+      }}
     >
       <ProjectCoverArt seed={focus.id} coverUrl={focus.coverUrl} className="absolute inset-0" />
       <div
@@ -130,8 +173,11 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
           <span>{m.pct}% complete</span>
           <StageChip stage={stageOf(focus.stage)} size="sm" />
         </div>
-        <div className="mt-2 h-1.5 max-w-md overflow-hidden rounded-full" style={{ background: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
-          <div className="h-full rounded-full transition-all" style={{ width: `${m.pct}%`, background: `hsl(${STUDIO.sageDeep})` }} />
+        <div className="mt-2 h-2 max-w-md overflow-hidden rounded-full" style={{ background: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
+          <div
+            className="h-full rounded-full transition-[width] duration-700 ease-out"
+            style={{ width: `${animatedPct}%`, background: TONE_GRADIENT[tone] }}
+          />
         </div>
         {m.next && (
           <div className="mt-5 max-w-md">
@@ -145,8 +191,11 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
         <Link to={`/projects/${focus.id}`}>
           <Button
             size="lg"
-            className="mt-6 h-12 rounded-2xl px-6 text-sm shadow-md hover:opacity-95"
-            style={{ background: `hsl(${STUDIO.plum})`, color: "hsl(40 50% 98%)" }}
+            className="mt-6 h-12 rounded-full px-7 text-sm text-white transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_-14px_rgba(43,31,56,0.55)]"
+            style={{
+              background: "var(--gradient-brand-plum)",
+              boxShadow: "var(--shadow-brand-soft)",
+            }}
           >
             Continue Project <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
@@ -156,19 +205,26 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
   );
 }
 
-function HeroStatTile({ icon: Icon, value, label, tone }: { icon: any; value: number; label: string; tone: string }) {
+function HeroStatTile({
+  icon: Icon, value, label, chipBg, chipFg,
+}: { icon: any; value: number; label: string; chipBg: string; chipFg: string }) {
   return (
     <div
-      className="rounded-2xl border bg-card/70 p-4 transition hover:-translate-y-0.5 hover:shadow-sm"
-      style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.1)` }}
+      className="rounded-[14px] border bg-card/80 p-4 transition hover:-translate-y-0.5"
+      style={{
+        borderColor: `hsl(${STUDIO.sageDeep} / 0.1)`,
+        boxShadow: "var(--shadow-brand-soft)",
+      }}
     >
       <div
         className="grid h-10 w-10 place-items-center rounded-xl"
-        style={{ background: `hsl(${tone} / 0.18)`, color: `hsl(${tone})` }}
+        style={{ background: chipBg, color: chipFg }}
       >
         <Icon className="h-4 w-4" />
       </div>
-      <div className="mt-3 font-display text-3xl leading-none">{value}</div>
+      <div className="mt-3 font-display font-medium leading-none" style={{ fontSize: 30, color: "var(--brand-ink)" }}>
+        {value}
+      </div>
       <div className="mt-1 text-xs text-muted-foreground">{label}</div>
     </div>
   );
@@ -181,10 +237,26 @@ function HeroStatsGrid({ projects, metrics }: { projects: Project[]; metrics: Re
   const onHold = projects.filter((p) => p.status === "paused" || healthOf(p.health) === "waiting").length;
   return (
     <div className="grid grid-cols-2 gap-3">
-      <HeroStatTile icon={Folder} value={active} label="Active Projects" tone={STUDIO.sageDeep} />
-      <HeroStatTile icon={Leaf}   value={inProgress} label="In Progress"  tone={STUDIO.blushDeep} />
-      <HeroStatTile icon={Rocket} value={launching}  label="Ready to Launch" tone={STUDIO.plum} />
-      <HeroStatTile icon={Pause}  value={onHold}     label="On Hold" tone={STUDIO.gold} />
+      <HeroStatTile
+        icon={Folder} value={active} label="Active Projects"
+        chipBg="color-mix(in srgb, var(--brand-sage) 26%, transparent)"
+        chipFg="var(--brand-sage-deep)"
+      />
+      <HeroStatTile
+        icon={Leaf} value={inProgress} label="In Progress"
+        chipBg="color-mix(in srgb, var(--brand-marigold) 30%, transparent)"
+        chipFg="var(--brand-marigold-deep)"
+      />
+      <HeroStatTile
+        icon={Rocket} value={launching} label="Ready to Launch"
+        chipBg="color-mix(in srgb, var(--brand-lavender) 34%, transparent)"
+        chipFg="var(--brand-lavender-deep)"
+      />
+      <HeroStatTile
+        icon={Pause} value={onHold} label="On Hold"
+        chipBg="color-mix(in srgb, var(--brand-plum) 18%, transparent)"
+        chipFg="var(--brand-plum)"
+      />
     </div>
   );
 }
@@ -274,14 +346,29 @@ function QuickCapture({ onCaptureIdea, defaultArea }: { onCaptureIdea: (title: s
 function ProjectCard({ p, metrics }: { p: Project; metrics: ReturnType<typeof useProjectMetrics> }) {
   const m = metrics(p);
   const Icon = getAreaIcon(p.icon);
+  const tone = areaBrandTone(p.areaName);
+  const animatedPct = useAnimatedPct(m.pct);
   return (
     <Link
       to={`/projects/${p.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-3xl border bg-card/70 transition hover:-translate-y-1 hover:shadow-lg"
-      style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.1)` }}
+      className="group relative flex flex-col overflow-hidden rounded-[22px] border bg-card/80 transition duration-300 hover:-translate-y-1"
+      style={{
+        borderColor: `hsl(${STUDIO.sageDeep} / 0.1)`,
+        boxShadow: "var(--shadow-brand-soft)",
+      }}
     >
-      <div className="relative h-32 w-full overflow-hidden">
-        <ProjectCoverArt seed={p.id} coverUrl={p.coverUrl} className="absolute inset-0" />
+      <div
+        className="relative h-28 w-full overflow-hidden"
+        style={{ background: TONE_GRADIENT[tone] }}
+      >
+        {p.coverUrl && (
+          <ProjectCoverArt seed={p.id} coverUrl={p.coverUrl} className="absolute inset-0 opacity-80 mix-blend-overlay" />
+        )}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full blur-2xl"
+          style={{ background: "rgba(255,255,255,0.35)" }}
+        />
         <div className="absolute right-3 top-3"><HealthPill health={healthOf(p.health)} /></div>
         <div
           className="absolute -bottom-4 left-4 grid h-10 w-10 place-items-center rounded-xl border bg-background shadow-sm"
@@ -296,7 +383,10 @@ function ProjectCard({ p, metrics }: { p: Project; metrics: ReturnType<typeof us
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{m.pct}%</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full" style={{ background: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
-          <div className="h-full rounded-full transition-all" style={{ width: `${m.pct}%`, background: `hsl(${STUDIO.sageDeep})` }} />
+          <div
+            className="h-full rounded-full transition-[width] duration-700 ease-out"
+            style={{ width: `${animatedPct}%`, background: TONE_GRADIENT[tone] }}
+          />
         </div>
         <div className="text-xs text-muted-foreground">
           {m.open > 0 ? `${m.open} task${m.open === 1 ? "" : "s"} remaining` : "All caught up"}
@@ -515,6 +605,12 @@ export default function ProjectsHub() {
       }}
     >
       <div className="mx-auto w-full max-w-7xl space-y-8 p-4 md:p-8">
+        <div className="flex items-center justify-between">
+          <DashboardTabs />
+          <div className="hidden text-[11px] uppercase tracking-[0.25em] text-muted-foreground sm:block">
+            {greetingFor()} · CareFlow
+          </div>
+        </div>
         <header
           className="relative overflow-hidden rounded-3xl border px-6 py-7 md:px-10 md:py-10"
           style={{
@@ -522,13 +618,19 @@ export default function ProjectsHub() {
             background: `linear-gradient(115deg, ${atmosphere.palette[0] ?? `hsl(${STUDIO.sage})`}26 0%, hsl(${STUDIO.cream} / 0.85) 55%, ${atmosphere.palette[3] ?? `hsl(${STUDIO.blush})`}26 100%)`,
           }}
         >
-          <div className="text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plumText})` }}>
-            {greetingFor()} · CareFlow
+          {/* Decorative blurred sage blob behind the headline */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -left-10 -top-16 h-64 w-64 rounded-full blur-3xl"
+            style={{ background: "color-mix(in srgb, var(--brand-sage) 55%, transparent)", opacity: 0.55 }}
+          />
+          <div className="relative text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plumText})` }}>
+            Studio · Creative Work
           </div>
-          <h1 className="mt-2 font-display text-4xl tracking-tight md:text-5xl">
+          <h1 className="relative mt-2 font-display text-4xl tracking-tight md:text-5xl" style={{ color: "var(--brand-ink)" }}>
             Creative Projects <Sparkles className="inline h-5 w-5" style={{ color: `hsl(${STUDIO.gold})` }} />
           </h1>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+          <p className="relative mt-2 max-w-xl text-sm text-muted-foreground">
             A calm space for {projects.length} {projects.length === 1 ? "project" : "projects"} —
             turning ideas into impact, one small step at a time.
           </p>
@@ -575,7 +677,8 @@ export default function ProjectsHub() {
             </ToggleGroup>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border bg-card/60 p-2" style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
+            <span className="pl-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Stage</span>
             <div className="flex flex-wrap gap-1">
               {ALL_STAGES.map((s) => (
                 <button
@@ -584,14 +687,15 @@ export default function ProjectsHub() {
                   className={cn("rounded-full border px-2.5 py-1 text-[11px] capitalize transition",
                     stageFilter === s ? "shadow-sm" : "opacity-70 hover:opacity-100")}
                   style={stageFilter === s
-                    ? { background: `hsl(${STUDIO.plum})`, color: "white", borderColor: `hsl(${STUDIO.plum})` }
+                    ? { background: "var(--brand-plum)", color: "white", borderColor: "var(--brand-plum)" }
                     : { borderColor: `hsl(${STUDIO.sageDeep} / 0.2)`, background: "transparent" }}
                 >
                   {s === "all" ? "All stages" : STAGE_META[s].label}
                 </button>
               ))}
             </div>
-            <div className="mx-2 h-4 w-px bg-border" />
+            <div className="mx-3 h-6 w-px" style={{ background: "hsl(var(--border))" }} />
+            <span className="pl-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Health</span>
             <div className="flex flex-wrap gap-1">
               {ALL_HEALTH.map((h) => (
                 <button
@@ -600,14 +704,14 @@ export default function ProjectsHub() {
                   className={cn("rounded-full border px-2.5 py-1 text-[11px] capitalize transition",
                     healthFilter === h ? "shadow-sm" : "opacity-70 hover:opacity-100")}
                   style={healthFilter === h
-                    ? { background: `hsl(${STUDIO.sageDeep})`, color: "white", borderColor: `hsl(${STUDIO.sageDeep})` }
+                    ? { background: "var(--brand-sage-deep)", color: "white", borderColor: "var(--brand-sage-deep)" }
                     : { borderColor: `hsl(${STUDIO.sageDeep} / 0.2)`, background: "transparent" }}
                 >
                   {h === "all" ? "All health" : HEALTH_META[h].label}
                 </button>
               ))}
             </div>
-            <div className="mx-2 h-4 w-px bg-border" />
+            <div className="mx-3 h-6 w-px" style={{ background: "hsl(var(--border))" }} />
             <select
               value={areaFilter}
               onChange={(e) => setAreaFilter(e.target.value)}
@@ -617,24 +721,60 @@ export default function ProjectsHub() {
               <option value="all">All areas</option>
               {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
+            {(stageFilter !== "all" || healthFilter !== "all" || areaFilter !== "all") && (
+              <button
+                type="button"
+                onClick={() => { setStageFilter("all"); setHealthFilter("all"); setAreaFilter("all"); }}
+                className="ml-auto rounded-full px-3 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted/50"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
 
           {filtered.length === 0 ? (
-            <div className="rounded-3xl border border-dashed p-12 text-center"
-                 style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.25)`, background: `hsl(${STUDIO.cream})` }}>
-              <Leaf className="mx-auto h-8 w-8" style={{ color: `hsl(${STUDIO.sageDeep})` }} />
-              <h3 className="mt-3 font-display text-xl">Plant your first project</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Capture an idea above, or create one directly.</p>
-              <Button
-                className="mt-4 rounded-2xl"
-                style={{ background: `hsl(${STUDIO.plum})`, color: "white" }}
-                onClick={async () => {
-                  const created = await addProject({ name: "Untitled project", areaName: "Personal" });
-                  if (created) navigate(`/projects/${created.id}`);
-                }}
+            <div
+              className="flex flex-col items-center rounded-[22px] border border-dashed p-14 text-center"
+              style={{
+                borderColor: `hsl(${STUDIO.sageDeep} / 0.25)`,
+                background: "var(--brand-cream)",
+              }}
+            >
+              <div
+                className="grid h-14 w-14 place-items-center rounded-full"
+                style={{ background: TONE_SOFT.sage, color: "var(--brand-sage-deep)" }}
               >
-                <Plus className="mr-1 h-4 w-4" /> New Project
-              </Button>
+                <Leaf className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 font-display text-2xl" style={{ color: "var(--brand-ink)" }}>
+                Nothing here yet
+              </h3>
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                {projects.length === 0
+                  ? "You haven't started any projects. Capture an idea or spin up a new project to get moving."
+                  : "No projects match the filters you picked. Try adjusting stage, health, or area — or start something new."}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                {(stageFilter !== "all" || healthFilter !== "all" || areaFilter !== "all") && (
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => { setStageFilter("all"); setHealthFilter("all"); setAreaFilter("all"); }}
+                  >
+                    Clear filters
+                  </Button>
+                )}
+                <Button
+                  className="rounded-full text-white hover:-translate-y-0.5 transition"
+                  style={{ background: "var(--gradient-brand-plum)", boxShadow: "var(--shadow-brand-soft)" }}
+                  onClick={async () => {
+                    const created = await addProject({ name: "Untitled project", areaName: "Personal" });
+                    if (created) navigate(`/projects/${created.id}`);
+                  }}
+                >
+                  <Plus className="mr-1 h-4 w-4" /> Start a new project
+                </Button>
+              </div>
             </div>
           ) : view === "cards" ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -662,6 +802,23 @@ export default function ProjectsHub() {
           </div>
         </section>
       </div>
+
+      {/* Floating action button — plum→sage gradient, rotates on hover */}
+      <button
+        type="button"
+        aria-label="New project"
+        onClick={async () => {
+          const created = await addProject({ name: "Untitled project", areaName: "Personal" });
+          if (created) navigate(`/projects/${created.id}`);
+        }}
+        className="group fixed bottom-6 right-6 z-30 grid h-14 w-14 place-items-center rounded-full text-white transition-transform duration-300 hover:-translate-y-1 hover:rotate-90"
+        style={{
+          background: "var(--gradient-brand-plum-sage)",
+          boxShadow: "var(--shadow-brand-lift)",
+        }}
+      >
+        <Plus className="h-6 w-6" />
+      </button>
     </div>
   );
 }

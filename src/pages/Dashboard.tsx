@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { useWeatherSnapshot, formatTemp } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
 import { cn } from "@/lib/utils";
+import { DashboardTabs } from "@/components/shared/DashboardTabs";
 import {
   Inbox as InboxIcon, CalendarDays, CalendarRange, CalendarClock, Calendar,
   ListTodo, LayoutList, Clock, Moon, Archive, FolderKanban, BookMarked,
@@ -99,6 +100,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+      <DashboardTabs />
       {/* ============ HERO ============ */}
       <section
         aria-label="Today's agenda preview"
