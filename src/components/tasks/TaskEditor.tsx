@@ -818,9 +818,9 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               </Collapsible>
             </div>
 
-            {/* ─────────── Right column: context & assist ─────────── */}
-            <div className={cn("min-w-0 space-y-4", sideHidden && "md:hidden")}>
-              <FlowContextCard draft={draft} set={set} />
+            {/* ─────────── Stacked below: context & assist ─────────── */}
+            <div className="min-w-0 space-y-4">
+              <FlowContextFields draft={draft} set={set} />
 
               {/* AI Assistant card */}
               <Card>
