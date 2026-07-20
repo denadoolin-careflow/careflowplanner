@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, CheckSquare, CalendarClock, Filter, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, CheckSquare, CalendarClock, Filter, X, ArrowUp, ArrowDown, ArrowUpDown, Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Task, Appointment } from "@/lib/types";
+import type { Task, Appointment, Priority } from "@/lib/types";
 import { toast } from "sonner";
 
 type Kind = "task" | "appt";
@@ -26,12 +27,23 @@ type Row = {
   projectId?: string;
   projectName?: string;
   done?: boolean;
+  priority?: Priority;
+  createdAt?: string;
   raw: Task | Appointment;
 };
 
 type GroupBy = "area" | "project" | "date" | "none";
+type SortBy = "date" | "created" | "priority" | "title";
+type SortDir = "asc" | "desc";
 
 const GROUP_KEY = "calendar-all-groupby";
+const SORT_KEY = "calendar-all-sortby";
+const SORT_DIR_KEY = "calendar-all-sortdir";
+
+const PRIO_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+const SORT_LABEL: Record<SortBy, string> = {
+  date: "Due date", created: "Created", priority: "Priority", title: "Title",
+};
 
 interface Props {
   onEditTask: (id: string) => void;
@@ -44,7 +56,7 @@ interface Props {
  * collapsible grouping by Area / Project / Date.
  */
 export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
-  const { state, deleteTask, deleteAppointment, updateTask, updateAppointment } = useStore();
+  const { state, deleteTask, deleteAppointment, updateTask, updateAppointment, toggleTask } = useStore();
 
   const [groupBy, setGroupBy] = useState<GroupBy>(() => {
     if (typeof localStorage === "undefined") return "date";
@@ -54,12 +66,23 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
     setGroupBy(g);
     try { localStorage.setItem(GROUP_KEY, g); } catch {}
   };
+  const [sortBy, setSortBy] = useState<SortBy>(() => {
+    if (typeof localStorage === "undefined") return "date";
+    return ((localStorage.getItem(SORT_KEY) as SortBy) ?? "date");
+  });
+  const [sortDir, setSortDir] = useState<SortDir>(() => {
+    if (typeof localStorage === "undefined") return "asc";
+    return ((localStorage.getItem(SORT_DIR_KEY) as SortDir) ?? "asc");
+  });
+  const changeSort = (s: SortBy) => { setSortBy(s); try { localStorage.setItem(SORT_KEY, s); } catch {} };
+  const changeSortDir = (d: SortDir) => { setSortDir(d); try { localStorage.setItem(SORT_DIR_KEY, d); } catch {} };
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState<{ kind: "single" | "bulk"; row?: Row } | null>(null);
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [projectFilter, setProjectFilter] = useState<string>("all");
+  const [bulkDateOpen, setBulkDateOpen] = useState(false);
 
   const rows = useMemo<Row[]>(() => {
     const projById = new Map((state.projects ?? []).map(p => [p.id, p.name]));
@@ -75,6 +98,8 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
         projectId: t.projectId,
         projectName: t.projectId ? projById.get(t.projectId) : undefined,
         done: t.done,
+        priority: t.priority,
+        createdAt: (t as any).createdAt,
         raw: t,
       }));
     const appts: Row[] = (state.appointments ?? []).map(a => ({
@@ -86,6 +111,7 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       area: a.areaName,
       projectId: a.projectId,
       projectName: a.projectId ? projById.get(a.projectId) : undefined,
+      createdAt: (a as any).createdAt,
       raw: a,
     }));
     return [...tasks, ...appts];
@@ -108,6 +134,29 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
     return true;
   }), [rows, areaFilter, projectFilter]);
 
+  const compareRows = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return (a: Row, b: Row) => {
+      let cmp = 0;
+      switch (sortBy) {
+        case "date":
+          cmp = (a.date ?? "9999").localeCompare(b.date ?? "9999")
+            || (a.time ?? "").localeCompare(b.time ?? "");
+          break;
+        case "created":
+          cmp = (a.createdAt ?? "").localeCompare(b.createdAt ?? "");
+          break;
+        case "priority":
+          cmp = (PRIO_RANK[a.priority ?? ""] ?? 9) - (PRIO_RANK[b.priority ?? ""] ?? 9);
+          break;
+        case "title":
+          cmp = a.title.localeCompare(b.title);
+          break;
+      }
+      return cmp * dir;
+    };
+  }, [sortBy, sortDir]);
+
   const groups = useMemo(() => {
     const map = new Map<string, Row[]>();
     const keyFor = (r: Row): string => {
@@ -122,19 +171,14 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       arr.push(r);
       map.set(k, arr);
     }
-    // Sort rows within each group by date+time
-    for (const arr of map.values()) {
-      arr.sort((a, b) => (a.date ?? "9999").localeCompare(b.date ?? "9999") || (a.time ?? "").localeCompare(b.time ?? ""));
-    }
+    // Sort rows within each group by selected sort mode
+    for (const arr of map.values()) arr.sort(compareRows);
     // Sort groups
     const entries = Array.from(map.entries());
-    if (groupBy === "date") {
-      entries.sort(([a], [b]) => a.localeCompare(b));
-    } else {
-      entries.sort(([a], [b]) => a.localeCompare(b));
-    }
+    const gdir = sortDir === "asc" ? 1 : -1;
+    entries.sort(([a], [b]) => a.localeCompare(b) * (groupBy === "date" ? gdir : 1));
     return entries;
-  }, [filteredRows, groupBy]);
+  }, [filteredRows, groupBy, compareRows, sortDir]);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -175,6 +219,24 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
     const targets = rows.filter(r => selected.has(r.id));
     for (const r of targets) await doDelete(r);
     toast.success(`Deleted ${targets.length}`);
+    setSelected(new Set());
+  };
+
+  const doBulkComplete = async () => {
+    const targets = rows.filter(r => selected.has(r.id) && r.kind === "task" && !r.done);
+    for (const r of targets) await toggleTask((r.raw as Task).id);
+    toast.success(`Completed ${targets.length}`);
+    setSelected(new Set());
+  };
+
+  const doBulkReschedule = async (iso: string) => {
+    const targets = rows.filter(r => selected.has(r.id));
+    for (const r of targets) {
+      if (r.kind === "task") await updateTask((r.raw as Task).id, { dueDate: iso } as any);
+      else await updateAppointment((r.raw as Appointment).id, { date: iso } as any);
+    }
+    toast.success(`Rescheduled ${targets.length} to ${format(parseISO(iso), "MMM d")}`);
+    setBulkDateOpen(false);
     setSelected(new Set());
   };
 
