@@ -287,7 +287,6 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <TodaysRhythmCard date={cursor} />
       <SummaryStrip
         onOpenBirthday={(id) => setEditBdayId(id)}
         onOpenAppointment={(id) => setEditApptId(id)}
