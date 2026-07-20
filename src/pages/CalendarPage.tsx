@@ -310,6 +310,16 @@ export default function CalendarPage() {
         </Button>
       </div>
 
+      <div className={cn("flex gap-3", plannerOpen && !isMobileTop ? "flex-row" : "flex-col")}>
+      {plannerOpen && !isMobileTop && (
+        <aside
+          className="shrink-0 rounded-2xl border border-border/50 bg-card/40 p-2"
+          style={{ width: plannerWidth }}
+        >
+          <PlannerTaskPanel selectedDate={cursor} onQuickAdd={() => setPlannerCaptureOpen(true)} />
+        </aside>
+      )}
+      <div className="min-w-0 flex-1">
       <SectionCard
         title={
           <div className="flex flex-wrap items-center gap-2">
@@ -543,6 +553,8 @@ export default function CalendarPage() {
           </>
         )}
       </SectionCard>
+      </div>
+      </div>
 
       <SectionCard title="All tasks & appointments" accent="sage">
         <CalendarAllList
