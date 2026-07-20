@@ -150,10 +150,15 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
     );
   }
   const m = metrics(focus);
+  const animatedPct = useAnimatedPct(m.pct);
+  const tone = areaBrandTone(focus.areaName);
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border"
-      style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}
+      className="relative overflow-hidden rounded-[22px] border transition hover:-translate-y-0.5"
+      style={{
+        borderColor: `hsl(${STUDIO.sageDeep} / 0.12)`,
+        boxShadow: "var(--shadow-brand-soft)",
+      }}
     >
       <ProjectCoverArt seed={focus.id} coverUrl={focus.coverUrl} className="absolute inset-0" />
       <div
@@ -168,8 +173,11 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
           <span>{m.pct}% complete</span>
           <StageChip stage={stageOf(focus.stage)} size="sm" />
         </div>
-        <div className="mt-2 h-1.5 max-w-md overflow-hidden rounded-full" style={{ background: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
-          <div className="h-full rounded-full transition-all" style={{ width: `${m.pct}%`, background: `hsl(${STUDIO.sageDeep})` }} />
+        <div className="mt-2 h-2 max-w-md overflow-hidden rounded-full" style={{ background: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
+          <div
+            className="h-full rounded-full transition-[width] duration-700 ease-out"
+            style={{ width: `${animatedPct}%`, background: TONE_GRADIENT[tone] }}
+          />
         </div>
         {m.next && (
           <div className="mt-5 max-w-md">
@@ -183,8 +191,11 @@ function HeroFocusCard({ focus, metrics }: { focus?: Project; metrics: ReturnTyp
         <Link to={`/projects/${focus.id}`}>
           <Button
             size="lg"
-            className="mt-6 h-12 rounded-2xl px-6 text-sm shadow-md hover:opacity-95"
-            style={{ background: `hsl(${STUDIO.plum})`, color: "hsl(40 50% 98%)" }}
+            className="mt-6 h-12 rounded-full px-7 text-sm text-white transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_-14px_rgba(43,31,56,0.55)]"
+            style={{
+              background: "var(--gradient-brand-plum)",
+              boxShadow: "var(--shadow-brand-soft)",
+            }}
           >
             Continue Project <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
