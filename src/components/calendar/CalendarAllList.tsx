@@ -370,6 +370,70 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
+          {/* Date range */}
+          <div className="flex items-center gap-1.5 text-xs">
+            <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+            <Select value={datePreset} onValueChange={(v) => changeDatePreset(v as DateRangePreset)}>
+              <SelectTrigger className="h-7 w-[130px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(DATE_LABEL) as DateRangePreset[]).map(p => (
+                  <SelectItem key={p} value={p}>{DATE_LABEL[p]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {datePreset === "custom" && (
+              <Popover open={customOpen} onOpenChange={setCustomOpen}>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 text-xs">
+                    {customRange.from && customRange.to
+                      ? `${format(parseISO(customRange.from), "MMM d")} – ${format(parseISO(customRange.to), "MMM d")}`
+                      : "Pick range"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto p-0">
+                  <Calendar
+                    mode="range"
+                    selected={{
+                      from: customRange.from ? parseISO(customRange.from) : undefined,
+                      to: customRange.to ? parseISO(customRange.to) : undefined,
+                    }}
+                    onSelect={(r: any) => setCustomRange({
+                      from: r?.from ? format(r.from, "yyyy-MM-dd") : undefined,
+                      to: r?.to ? format(r.to, "yyyy-MM-dd") : undefined,
+                    })}
+                    numberOfMonths={2}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+          {/* Categories */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-xs">
+                <Layers className="h-3.5 w-3.5" />
+                Categories {enabledKinds.size < ALL_KINDS.length ? `(${enabledKinds.size})` : ""}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel>Show</DropdownMenuLabel>
+              {ALL_KINDS.map(k => (
+                <DropdownMenuCheckboxItem key={k} checked={enabledKinds.has(k)} onCheckedChange={() => toggleKind(k)}>
+                  <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colorOf(k as KindKey) }} />
+                  {KIND_META[k].label}
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator />
+              <button
+                onClick={() => { setEnabledKinds(new Set(ALL_KINDS)); try { localStorage.removeItem(KIND_KEY); } catch {} }}
+                className="flex w-full items-center gap-1.5 px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Reset
+              </button>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 text-xs">
             <span className="px-2 text-muted-foreground">Group by</span>
             {(["area", "project", "date", "none"] as GroupBy[]).map(g => (
@@ -549,7 +613,10 @@ function RowItem({
   onReschedule: (iso: string) => void;
 }) {
   const [dateOpen, setDateOpen] = useState(false);
-  const Icon = row.kind === "task" ? CheckSquare : CalendarClock;
+  const { colorOf } = useKindColors();
+  const meta = KIND_META[row.kind];
+  const Icon = meta.Icon;
+  const dotColor = colorOf(row.kind as KindKey);
   return (
     <li
       className={cn(
@@ -562,13 +629,17 @@ function RowItem({
         onCheckedChange={onToggleSelect}
         aria-label={`Select ${row.title}`}
         className="shrink-0"
+        disabled={!row.editable}
       />
-      <Icon className={cn("h-3.5 w-3.5 shrink-0", row.kind === "task" ? "text-emerald-600" : "text-sky-600")} />
+      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden />
+      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <button
         type="button"
         onClick={onEdit}
+        disabled={!row.editable}
         className={cn(
           "min-w-0 flex-1 truncate text-left",
+          !row.editable && "cursor-default",
           row.done && "text-muted-foreground line-through",
         )}
       >
@@ -579,7 +650,7 @@ function RowItem({
         {row.area && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px]">{row.area}</span>}
         {row.projectName && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px]">{row.projectName}</span>}
       </div>
-      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+      {row.editable && <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
         <Popover open={dateOpen} onOpenChange={setDateOpen}>
           <PopoverTrigger asChild>
             <Button size="icon" variant="ghost" className="h-7 w-7" title="Reschedule">
@@ -604,7 +675,7 @@ function RowItem({
         <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={onDelete} title="Delete">
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
-      </div>
+      </div>}
     </li>
   );
 }
