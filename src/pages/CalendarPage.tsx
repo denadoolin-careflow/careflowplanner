@@ -487,17 +487,11 @@ export default function CalendarPage() {
         )}
       </SectionCard>
 
-      <SectionCard title="All appointments" accent="sage">
-        <ul className="space-y-1.5">
-          {state.appointments.sort((a,b) => a.date.localeCompare(b.date)).map(a => (
-            <li key={a.id} className="group flex items-center gap-3 rounded-lg bg-muted/40 px-3 py-2 text-sm">
-              <span className="text-xs text-muted-foreground">{format(parseISO(a.date), "MMM d")} {a.time ?? ""}</span>
-              <span className="flex-1">{a.title}</span>
-              <span className="text-xs text-muted-foreground">{a.type}</span>
-              <button onClick={() => deleteAppointment(a.id)} className="opacity-0 group-hover:opacity-60"><Trash2 className="h-3.5 w-3.5" /></button>
-            </li>
-          ))}
-        </ul>
+      <SectionCard title="All tasks & appointments" accent="sage">
+        <CalendarAllList
+          onEditTask={(id) => setEditTaskId(id)}
+          onEditAppointment={(id) => setEditApptId(id)}
+        />
       </SectionCard>
       </div>
       {rightPanel === "hidden" ? (
