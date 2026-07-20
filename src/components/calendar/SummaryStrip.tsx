@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { addDays, differenceInCalendarDays, format, parseISO, setYear, isBefore } from "date-fns";
-import { ArrowRight, CalendarClock, Cake, Sparkles, CalendarRange } from "lucide-react";
+import { ArrowRight, CalendarClock, Cake, Sparkles, CalendarRange, Plus, List } from "lucide-react";
 import { useStore, todayISO } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -15,43 +15,66 @@ function nextBirthday(iso: string): Date {
 }
 
 function Card({
-  title, icon: Icon, accent, to, onClick, children,
+  title, icon: Icon, accent, to, onClick, onQuickAdd, onViewAll, children,
 }: {
   title: string;
   icon: typeof CalendarClock;
   accent: string;
   to?: string;
   onClick?: () => void;
+  onQuickAdd?: () => void;
+  onViewAll?: () => void;
   children: React.ReactNode;
 }) {
-  const cls = "group flex min-w-[220px] flex-col rounded-2xl border border-border/40 bg-card/70 p-4 text-left transition-colors hover:border-primary/30 hover:bg-card snap-start";
-  const inner = (
+  const containerCls = "group relative flex min-w-[220px] flex-col rounded-2xl border border-border/40 bg-card/70 p-4 text-left transition-colors hover:border-primary/30 hover:bg-card snap-start";
+  const bodyCls = "flex flex-1 flex-col rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
+  const body = (
     <>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="inline-flex min-w-0 items-center gap-2">
-          <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-lg", accent)}>
-            <Icon className="h-3.5 w-3.5" />
-          </span>
-          <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {title}
-          </span>
-        </div>
-        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5" />
+      <div className="mb-2 flex items-center gap-2">
+        <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-lg", accent)}>
+          <Icon className="h-3.5 w-3.5" />
+        </span>
+        <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </span>
+        <ArrowRight className="ml-auto h-3 w-3 shrink-0 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5" />
       </div>
       <div className="min-h-[44px] min-w-0">{children}</div>
     </>
   );
-  if (onClick) {
-    return (
-      <button type="button" onClick={onClick} className={cls}>
-        {inner}
-      </button>
-    );
-  }
+  const bodyEl = onClick ? (
+    <button type="button" onClick={onClick} className={bodyCls}>{body}</button>
+  ) : (
+    <Link to={to ?? "#"} className={bodyCls}>{body}</Link>
+  );
   return (
-    <Link to={to ?? "#"} className={cls}>
-      {inner}
-    </Link>
+    <div className={containerCls}>
+      {bodyEl}
+      {(onQuickAdd || onViewAll) && (
+        <div className="mt-3 flex items-center gap-1 border-t border-border/40 pt-2">
+          {onQuickAdd && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onQuickAdd(); }}
+              className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-lg text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+              aria-label={`Quick add ${title.toLowerCase()}`}
+            >
+              <Plus className="h-3 w-3" /> Quick add
+            </button>
+          )}
+          {onViewAll && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onViewAll(); }}
+              className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-lg text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+              aria-label={`View all ${title.toLowerCase()}`}
+            >
+              <List className="h-3 w-3" /> View all
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -61,10 +84,26 @@ export function SummaryStrip({
   onOpenBirthday,
   onOpenAppointment,
   onOpenHoliday,
+  onQuickAddUpcoming,
+  onQuickAddBirthday,
+  onQuickAddAppointment,
+  onQuickAddHoliday,
+  onViewAllUpcoming,
+  onViewAllBirthdays,
+  onViewAllAppointments,
+  onViewAllHolidays,
 }: {
   onOpenBirthday?: (id: string) => void;
   onOpenAppointment?: (id: string) => void;
   onOpenHoliday?: (id: string) => void;
+  onQuickAddUpcoming?: () => void;
+  onQuickAddBirthday?: () => void;
+  onQuickAddAppointment?: () => void;
+  onQuickAddHoliday?: () => void;
+  onViewAllUpcoming?: () => void;
+  onViewAllBirthdays?: () => void;
+  onViewAllAppointments?: () => void;
+  onViewAllHolidays?: () => void;
 } = {}) {
   const { state } = useStore();
   const today = todayISO();
@@ -112,6 +151,8 @@ export function SummaryStrip({
         icon={CalendarRange}
         accent="bg-primary/15 text-primary"
         to="/upcoming"
+        onQuickAdd={onQuickAddUpcoming}
+        onViewAll={onViewAllUpcoming}
       >
         <div className="text-lg font-display leading-tight">{upcomingCount}</div>
         <div className="text-[11px] text-muted-foreground">events in next 30 days</div>
@@ -123,6 +164,8 @@ export function SummaryStrip({
         accent="bg-rose-500/15 text-rose-600 dark:text-rose-300"
         to={!nextBday || !onOpenBirthday ? "/calendar" : undefined}
         onClick={nextBday && onOpenBirthday ? () => onOpenBirthday(nextBday.id) : undefined}
+        onQuickAdd={onQuickAddBirthday}
+        onViewAll={onViewAllBirthdays}
       >
         {nextBday ? (
           <>
@@ -142,6 +185,8 @@ export function SummaryStrip({
         accent="bg-sky-500/15 text-sky-600 dark:text-sky-300"
         to={!nextAppt || !onOpenAppointment ? "/calendar" : undefined}
         onClick={nextAppt && onOpenAppointment ? () => onOpenAppointment(nextAppt.id) : undefined}
+        onQuickAdd={onQuickAddAppointment}
+        onViewAll={onViewAllAppointments}
       >
         {nextAppt ? (
           <>
@@ -161,6 +206,8 @@ export function SummaryStrip({
         accent="bg-amber-500/15 text-amber-600 dark:text-amber-300"
         to={!nextHol || !onOpenHoliday ? "/calendar" : undefined}
         onClick={nextHol && onOpenHoliday ? () => onOpenHoliday(nextHol.id) : undefined}
+        onQuickAdd={onQuickAddHoliday}
+        onViewAll={onViewAllHolidays}
       >
         {nextHol ? (
           <>
