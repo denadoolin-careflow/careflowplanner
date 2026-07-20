@@ -605,6 +605,12 @@ export default function ProjectsHub() {
       }}
     >
       <div className="mx-auto w-full max-w-7xl space-y-8 p-4 md:p-8">
+        <div className="flex items-center justify-between">
+          <DashboardTabs />
+          <div className="hidden text-[11px] uppercase tracking-[0.25em] text-muted-foreground sm:block">
+            {greetingFor()} · CareFlow
+          </div>
+        </div>
         <header
           className="relative overflow-hidden rounded-3xl border px-6 py-7 md:px-10 md:py-10"
           style={{
@@ -612,13 +618,19 @@ export default function ProjectsHub() {
             background: `linear-gradient(115deg, ${atmosphere.palette[0] ?? `hsl(${STUDIO.sage})`}26 0%, hsl(${STUDIO.cream} / 0.85) 55%, ${atmosphere.palette[3] ?? `hsl(${STUDIO.blush})`}26 100%)`,
           }}
         >
-          <div className="text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plumText})` }}>
-            {greetingFor()} · CareFlow
+          {/* Decorative blurred sage blob behind the headline */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -left-10 -top-16 h-64 w-64 rounded-full blur-3xl"
+            style={{ background: "color-mix(in srgb, var(--brand-sage) 55%, transparent)", opacity: 0.55 }}
+          />
+          <div className="relative text-[11px] uppercase tracking-[0.25em]" style={{ color: `hsl(${STUDIO.plumText})` }}>
+            Studio · Creative Work
           </div>
-          <h1 className="mt-2 font-display text-4xl tracking-tight md:text-5xl">
+          <h1 className="relative mt-2 font-display text-4xl tracking-tight md:text-5xl" style={{ color: "var(--brand-ink)" }}>
             Creative Projects <Sparkles className="inline h-5 w-5" style={{ color: `hsl(${STUDIO.gold})` }} />
           </h1>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+          <p className="relative mt-2 max-w-xl text-sm text-muted-foreground">
             A calm space for {projects.length} {projects.length === 1 ? "project" : "projects"} —
             turning ideas into impact, one small step at a time.
           </p>
