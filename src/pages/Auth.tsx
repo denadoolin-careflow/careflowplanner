@@ -165,7 +165,7 @@ export default function Auth() {
     >
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-4 py-10">
         <Link to="/" className="mb-6 flex flex-col items-center gap-3 text-center">
-          <SeasonalDropIcon size={72} animated />
+          <CareFlowLogo size={72} />
           <CareFlowLogo size={36} showWordmark showTagline />
         </Link>
 
