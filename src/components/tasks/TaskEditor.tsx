@@ -621,10 +621,8 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
         {/* Scrollable body */}
         <div className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5">
           <div className={cn(
-            "grid min-w-0 gap-4 transition-all",
-            sideHidden
-              ? "md:mx-auto md:max-w-3xl md:grid-cols-1"
-              : "md:grid-cols-[1.5fr_1fr] lg:grid-cols-[1.55fr_1fr]",
+            "grid min-w-0 grid-cols-1 gap-4 transition-all",
+            "md:mx-auto md:max-w-3xl",
           )}>
             {/* ─────────── Left column: work surface ─────────── */}
             <div className="min-w-0 space-y-4">
