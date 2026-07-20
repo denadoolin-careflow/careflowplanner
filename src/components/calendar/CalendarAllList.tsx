@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { addDays, endOfMonth, endOfWeek, format, parseISO, startOfMonth, startOfWeek } from "date-fns";
-import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, Filter, X, ArrowUp, ArrowDown, ArrowUpDown, Check, Layers } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Trash2, CalendarIcon, Filter, X, ArrowUp, ArrowDown, ArrowUpDown, Check, Layers, Plus, CheckSquare, CalendarClock, HeartPulse } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -91,9 +91,10 @@ interface Props {
  * collapsible grouping by Area / Project / Date.
  */
 export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
-  const { state, deleteTask, deleteAppointment, updateTask, updateAppointment, toggleTask } = useStore();
+  const { state, deleteTask, deleteAppointment, updateTask, updateAppointment, toggleTask, addTask, addAppointment } = useStore() as any;
   const { colorOf } = useKindColors();
   const { celebrations } = useCelebrations();
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   const [groupBy, setGroupBy] = useState<GroupBy>(() => {
     if (typeof localStorage === "undefined") return "date";
@@ -150,6 +151,36 @@ export function CalendarAllList({ onEditTask, onEditAppointment }: Props) {
   };
 
   const range = useMemo(() => resolveDateRange(datePreset, customRange), [datePreset, customRange]);
+
+  /** Resolve the best default date for a new item based on the current date filter. */
+  const defaultQuickAddDate = useMemo(() => {
+    const todayISO = toISO(new Date());
+    if (!range.from && !range.to) return todayISO;
+    if (range.from && range.from >= todayISO) return range.from;
+    return todayISO;
+  }, [range]);
+
+  const createTaskThenEdit = async (opts: { area?: string } = {}) => {
+    const id = await addTask({
+      title: "New task",
+      dueDate: defaultQuickAddDate,
+      area: opts.area ?? (areaFilter !== "all" ? areaFilter : undefined),
+      projectId: projectFilter !== "all" ? projectFilter : undefined,
+    });
+    setQuickAddOpen(false);
+    if (id) onEditTask(id);
+  };
+  const createApptThenEdit = async () => {
+    const appt = await addAppointment({
+      title: "New appointment",
+      date: defaultQuickAddDate,
+      areaName: areaFilter !== "all" ? areaFilter : undefined,
+      projectId: projectFilter !== "all" ? projectFilter : undefined,
+    });
+    setQuickAddOpen(false);
+    if (appt?.id) onEditAppointment(appt.id);
+  };
+
   const cosmicIndex = useMemo(() => buildCosmicCalendarIndex(addDays(new Date(), -90), 365), []);
 
   const rows = useMemo<Row[]>(() => {
