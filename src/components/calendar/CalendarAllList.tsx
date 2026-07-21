@@ -700,7 +700,7 @@ function RowItem({
   return (
     <li
       className={cn(
-        "group flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted/40",
+        "group flex items-start gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted/40",
         selected && "bg-primary/5",
       )}
     >
@@ -708,29 +708,29 @@ function RowItem({
         checked={selected}
         onCheckedChange={onToggleSelect}
         aria-label={`Select ${row.title}`}
-        className="shrink-0"
+        className="mt-0.5 shrink-0"
         disabled={!row.editable}
       />
-      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden />
-      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <span className="mt-2 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden />
+      <Icon className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <button
         type="button"
         onClick={onEdit}
         disabled={!row.editable}
         className={cn(
-          "min-w-0 flex-1 truncate text-left",
+          "min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere] line-clamp-2 text-left",
           !row.editable && "cursor-default",
           row.done && "text-muted-foreground line-through",
         )}
       >
         {row.title}
       </button>
-      <div className="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground sm:flex">
+      <div className="mt-0.5 hidden shrink-0 items-center gap-2 text-xs text-muted-foreground sm:flex">
         {row.date && <span className="tabular-nums">{format(parseISO(row.date), "MMM d")}{row.time ? ` · ${row.time.slice(0, 5)}` : ""}</span>}
         {row.area && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px]">{row.area}</span>}
         {row.projectName && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px]">{row.projectName}</span>}
       </div>
-      {row.editable && <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+      {row.editable && <div className="mt-0.5 flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
         <Popover open={dateOpen} onOpenChange={setDateOpen}>
           <PopoverTrigger asChild>
             <Button size="icon" variant="ghost" className="h-7 w-7" title="Reschedule">
