@@ -124,30 +124,20 @@ export default function Auth() {
     }
     try {
       setBusy(true);
-      let handled = false;
-      try {
-        const result: any = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-        if (result?.redirected) { handled = true; return; }
-        if (!result?.error) { handled = true; return; }
-        // Surface the managed-flow error in console so we can debug from logs,
-        // then fall through to the Supabase OAuth fallback below.
-        console.warn("[auth] managed Google OAuth error, falling back:", result.error);
-      } catch (managedErr) {
-        console.warn("[auth] managed Google OAuth threw, falling back:", managedErr);
-      }
-      if (!handled) {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: { redirectTo: window.location.origin },
-        });
-        if (error) {
-          const msg = error.message || "Google sign-in failed.";
-          setOauthError(msg);
-          toast.error(msg, { duration: 8000 });
-        }
+      const result: any = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result?.redirected) return;
+      if (result?.error) {
+        const msg = String(result.error?.message ?? result.error ?? "");
+        // User closed the Google popup — don't treat as an error.
+        if (/cancel/i.test(msg)) return;
+        setOauthError(msg || "Google sign-in failed.");
+        toast.error(msg || "Google sign-in failed.", { duration: 8000 });
       }
     } catch (e: any) {
       const msg = e?.message ?? "Google sign-in failed. Try again or use email.";
+      if (/cancel/i.test(msg)) return;
       setOauthError(msg);
       toast.error(msg);
     } finally {
