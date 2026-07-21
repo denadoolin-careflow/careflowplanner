@@ -217,11 +217,13 @@ export function InboxCapture({ defaultDate }: { defaultDate?: Date }) {
 
       {/* Live preview */}
       {preview?.title && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border/50 bg-card/60 px-3 py-2 text-xs animate-fade-in">
-          <Detected className="h-3.5 w-3.5 text-primary" />
-          <span className="font-medium text-foreground">{preview.title}</span>
-          <span className="text-muted-foreground">·</span>
-          <span className="capitalize text-muted-foreground">{preview.detected}</span>
+        <div className="mt-3 flex flex-wrap items-start gap-2 rounded-xl border border-border/50 bg-card/60 px-3 py-2 text-xs animate-fade-in">
+          <Detected className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+          <span className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere] font-medium text-foreground">
+            {preview.title}
+          </span>
+          <span className="shrink-0 text-muted-foreground">·</span>
+          <span className="shrink-0 capitalize text-muted-foreground">{preview.detected}</span>
           {preview.date && (
             <>
               <span className="text-muted-foreground">·</span>
