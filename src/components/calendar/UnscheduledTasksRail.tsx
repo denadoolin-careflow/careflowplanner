@@ -403,7 +403,7 @@ function TaskRailItem({
         <Check className={cn("h-3 w-3", task.done ? "opacity-100" : "opacity-0")} />
       </button>
       <div className="min-w-0 flex-1">
-        <div className={cn("truncate font-medium leading-snug", task.done && "text-muted-foreground line-through")}>{task.title}</div>
+        <div className={cn("whitespace-normal break-words [overflow-wrap:anywhere] line-clamp-2 font-medium leading-snug", task.done && "text-muted-foreground line-through")}>{task.title}</div>
         <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
           {projectName && (
             <span className="truncate" style={projectColor ? { color: projectColor } : undefined}>
