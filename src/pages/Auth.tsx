@@ -124,20 +124,47 @@ export default function Auth() {
     }
     try {
       setBusy(true);
+      // Log the origin we're handing to the OAuth broker — the #1 cause of
+      // "popup closes, nothing happens" is this origin not being in the
+      // project's redirect allow-list (custom domains + preview URLs both
+      // need to be reachable). Surfacing it in the console makes that
+      // debuggable without guesswork.
+      // eslint-disable-next-line no-console
+      console.info("[auth] Google sign-in start", {
+        origin: window.location.origin,
+        href: window.location.href,
+        ua: navigator.userAgent,
+      });
       const result: any = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
+      // eslint-disable-next-line no-console
+      console.info("[auth] Google sign-in result", result);
       if (result?.redirected) return;
       if (result?.error) {
-        const msg = String(result.error?.message ?? result.error ?? "");
+        const raw = result.error;
+        const msg = String(raw?.message ?? raw ?? "");
         // User closed the Google popup — don't treat as an error.
-        if (/cancel/i.test(msg)) return;
-        setOauthError(msg || "Google sign-in failed.");
-        toast.error(msg || "Google sign-in failed.", { duration: 8000 });
+        if (/cancel|closed|abort/i.test(msg)) return;
+        // Map known failures to actionable copy.
+        let friendly = msg || "Google sign-in failed.";
+        if (/popup/i.test(msg)) {
+          friendly = "Your browser blocked the Google pop-up. Allow pop-ups for this site, or use the email magic link below.";
+        } else if (/redirect_uri|unauthorized|not allowed|allow.?list/i.test(msg)) {
+          friendly = `This origin (${window.location.origin}) isn't authorized for Google sign-in yet. Try the published URL, or contact support to add this domain.`;
+        } else if (/missing OAuth secret/i.test(msg)) {
+          friendly = "Google provider isn't configured for this environment. Please use the published URL to sign in.";
+        } else if (/network|fetch|Failed to fetch/i.test(msg)) {
+          friendly = "Network error reaching the sign-in service. Check your connection and try again.";
+        }
+        setOauthError(friendly);
+        toast.error(friendly, { duration: 9000 });
       }
     } catch (e: any) {
       const msg = e?.message ?? "Google sign-in failed. Try again or use email.";
-      if (/cancel/i.test(msg)) return;
+      // eslint-disable-next-line no-console
+      console.error("[auth] Google sign-in threw", e);
+      if (/cancel|closed|abort/i.test(msg)) return;
       setOauthError(msg);
       toast.error(msg);
     } finally {
