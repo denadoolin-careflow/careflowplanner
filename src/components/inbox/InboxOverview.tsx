@@ -525,7 +525,7 @@ export function InboxOverview() {
                     <span className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
                     <span className="rounded-full bg-muted/60 px-1.5 py-0 text-[10px] text-muted-foreground">{items.length}</span>
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="flex flex-col">
                     {items.map((it: any) =>
                       it.title && it.id && !it.priority && it.time !== undefined
                         ? <EventRow key={`a-${it.id}`} icon={<CalendarIcon className="h-3.5 w-3.5" />}
@@ -584,7 +584,7 @@ export function InboxOverview() {
 
           <InsightBanner tone="primary">{upcomingInsight}</InsightBanner>
 
-          <div className="mt-3 space-y-0.5">
+          <div className="mt-3 flex flex-col">
             {upcomingItems.map(it => {
               const rel = relativeDay(it.date, today);
               const abs = format(parseISO(it.date), "EEE MMM d");
