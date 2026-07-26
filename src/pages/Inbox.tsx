@@ -142,7 +142,7 @@ function InboxInner() {
   const [processOpen, setProcessOpen] = useState(false);
   const recorder = useAudioRecorder();
   const [transcribing, setTranscribing] = useState(false);
-  const captureInputRef = useRef<HTMLInputElement>(null);
+  const captureInputRef = useRef<HTMLTextAreaElement>(null);
   // Inline details / formatting field (markdown). Attached as `notes` on tasks,
   // appended to the body for notes/journal entries.
   const [details, setDetails] = useState("");
@@ -206,7 +206,7 @@ function InboxInner() {
 
   const showControls = captureFocused || controlsPinned || draft.trim().length > 0;
 
-  const handleCaptureBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleCaptureBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     if (!captureSectionRef.current?.contains(e.relatedTarget as Node)) {
       setCaptureFocused(false);
     }
