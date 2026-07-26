@@ -492,6 +492,21 @@ function InboxInner() {
     toast.success("Caught it ✨", { description: "Safely held in your inbox." });
   };
 
+  // Quick capture wrapper — soft confirmation haptic, subtle checkmark, and the
+  // caret returns to the field so the next thought can land immediately.
+  const [justSaved, setJustSaved] = useState(false);
+  const savedTimer = useRef<number | null>(null);
+  const quickCapture = async (explicitRaw?: string) => {
+    const had = (typeof explicitRaw === "string" ? explicitRaw : draft).trim();
+    await submitCapture(undefined, explicitRaw);
+    if (!had) return;
+    haptics.snap?.();
+    setJustSaved(true);
+    if (savedTimer.current) window.clearTimeout(savedTimer.current);
+    savedTimer.current = window.setTimeout(() => setJustSaved(false), 1100);
+    requestAnimationFrame(() => captureInputRef.current?.focus());
+  };
+
   const openReviewForDraft = () => {
     const raw = draft.trim();
     const p = raw ? parseTaskInput(raw) : null;
