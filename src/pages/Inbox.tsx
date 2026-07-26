@@ -778,7 +778,7 @@ function InboxInner() {
                     void quickCapture(v);
                   }
                 }}
-                onFocus={() => setCaptureFocused(true)}
+                onFocus={() => { if (!captureFocused) haptics.tap?.(); setCaptureFocused(true); }}
                 onBlur={handleCaptureBlur}
                 minHeight={56}
                 maxHeight={220}
