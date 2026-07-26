@@ -23,7 +23,7 @@ export function InlineNlpAdd({ label = "Add task", placeholder = "Add task… (t
   const { addTask } = useStore();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const snapTime = (t?: string): string | undefined => {
     if (!slotHours) return t;
@@ -83,14 +83,16 @@ export function InlineNlpAdd({ label = "Add task", placeholder = "Add task… (t
           value={text}
           onChange={setText}
           onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); void submit(); }
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); }
             if (e.key === "Escape") { setText(""); setOpen(false); }
           }}
           onBlur={() => { if (!text.trim()) setOpen(false); }}
           placeholder={placeholder}
           leftPad="pl-3"
           rightPad="pr-8"
-          className="!h-10"
+          minHeight={40}
+          maxHeight={120}
+          className="!py-2"
         />
         <button
           type="button"
