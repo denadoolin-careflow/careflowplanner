@@ -2,10 +2,11 @@ import { forwardRef, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Single-line input with a styled mirror layer that highlights Todoist-style
- * tokens (#tag, @area, +project, p1, dates, times, durations) inline as the
- * user types. The real <input> sits transparent on top so the native keyboard
- * and IME behavior stays intact.
+ * Auto-growing multi-line capture field with a styled mirror layer that
+ * highlights Todoist-style tokens (#tag, @area, +project, p1, dates, times,
+ * durations) inline as the user types. The real <textarea> sits transparent on
+ * top so the native keyboard and IME behavior stays intact. Text always wraps —
+ * nothing is ever clipped or hidden while typing.
  */
 
 
