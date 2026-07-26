@@ -2,11 +2,10 @@ import { forwardRef, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Auto-growing multi-line capture field with a styled mirror layer that
- * highlights Todoist-style tokens (#tag, @area, +project, p1, dates, times,
- * durations) inline as the user types. The real <textarea> sits transparent on
- * top so the native keyboard and IME behavior stays intact. Text always wraps —
- * nothing is ever clipped or hidden while typing.
+ * Single-line input with a styled mirror layer that highlights Todoist-style
+ * tokens (#tag, @area, +project, p1, dates, times, durations) inline as the
+ * user types. The real <input> sits transparent on top so the native keyboard
+ * and IME behavior stays intact.
  */
 
 
@@ -79,58 +78,37 @@ function highlightTokens(text: string): string {
 export interface NlpHighlightedInputProps {
   value: string;
   onChange: (v: string) => void;
-  onKeyDown?: React.KeyboardEventHandler<HTMLTextAreaElement>;
-  onFocus?: React.FocusEventHandler<HTMLTextAreaElement>;
-  onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+  onFocus?: React.FocusEventHandler<HTMLInputElement>;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
   /** Extra padding for left and right gutters (must match input padding). */
   leftPad?: string;
   rightPad?: string;
-  /** Vertical padding class applied to both the mirror and the textarea. */
-  padY?: string;
-  /** Collapsed height in px before the field grows. */
-  minHeight?: number;
-  /** Height in px at which the field stops growing and starts scrolling. */
-  maxHeight?: number;
 }
 
 
-export const NlpHighlightedInput = forwardRef<HTMLTextAreaElement, NlpHighlightedInputProps>(
+export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedInputProps>(
   function NlpHighlightedInput(
-    {
-      value, onChange, onKeyDown, onFocus, onBlur, placeholder, disabled, className,
-      leftPad = "pl-14", rightPad = "pr-28", padY = "py-4", minHeight = 56, maxHeight = 220,
-    },
+    { value, onChange, onKeyDown, onFocus, onBlur, placeholder, disabled, className, leftPad = "pl-14", rightPad = "pr-28" },
     ref,
   ) {
     const mirrorRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     // Forward ref
     useLayoutEffect(() => {
       if (!ref) return;
       if (typeof ref === "function") ref(inputRef.current);
-      else (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = inputRef.current;
+      else (ref as React.MutableRefObject<HTMLInputElement | null>).current = inputRef.current;
     }, [ref]);
 
-    // Grow with content up to maxHeight, then scroll — keeps the caret visible
-    // and never clips text.
-    useLayoutEffect(() => {
-      const el = inputRef.current;
-      if (!el) return;
-      el.style.height = "auto";
-      const next = Math.max(minHeight, Math.min(el.scrollHeight, maxHeight));
-      el.style.height = `${next}px`;
-      el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
-      if (mirrorRef.current) mirrorRef.current.style.height = `${next}px`;
-    }, [value, minHeight, maxHeight]);
-
-    // Sync vertical scroll between textarea and mirror
+    // Sync horizontal scroll between input and mirror
     const handleScroll = () => {
       const el = inputRef.current; const m = mirrorRef.current;
-      if (el && m) m.scrollTop = el.scrollTop;
+      if (el && m) m.scrollLeft = el.scrollLeft;
     };
 
     return (
@@ -149,18 +127,19 @@ export const NlpHighlightedInput = forwardRef<HTMLTextAreaElement, NlpHighlighte
           ref={mirrorRef}
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-x-0 top-0 z-10 overflow-hidden whitespace-pre-wrap break-words text-[15px] font-semibold leading-[1.45] [overflow-wrap:anywhere]",
-            leftPad, rightPad, padY,
+            "pointer-events-none absolute inset-0 z-10 overflow-hidden whitespace-pre text-[15px] font-semibold leading-[1.4]",
+            leftPad, rightPad,
+            "flex items-center",
           )}
         >
           <div
-            className="min-w-0 font-semibold text-foreground"
+            className="min-w-0 truncate font-semibold text-foreground"
             dangerouslySetInnerHTML={{ __html: highlightTokens(value) }}
           />
         </div>
-        <textarea
+        <input
           ref={inputRef}
-          rows={1}
+          type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
@@ -171,13 +150,12 @@ export const NlpHighlightedInput = forwardRef<HTMLTextAreaElement, NlpHighlighte
           disabled={disabled}
           spellCheck
           autoComplete="off"
-          style={{ minHeight, maxHeight }}
           className={cn(
-            "relative z-20 block w-full resize-none rounded-2xl border-0 bg-transparent text-[15px] font-semibold leading-[1.45] outline-none transition-[box-shadow,color] placeholder:text-[13px] placeholder:font-medium placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
+            "relative z-20 h-14 w-full rounded-2xl border-0 bg-transparent text-[15px] font-semibold leading-[1.4] outline-none transition placeholder:text-[13px] placeholder:font-medium placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
             "disabled:opacity-60",
             // The input's own text is transparent so the colored mirror renders, while the caret and selection remain visible.
             value ? "!text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "text-foreground",
-            leftPad, rightPad, padY,
+            leftPad, rightPad,
             className,
           )}
         />
