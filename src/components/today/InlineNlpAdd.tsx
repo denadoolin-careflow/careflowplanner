@@ -92,7 +92,7 @@ export function InlineNlpAdd({ label = "Add task", placeholder = "Add task… (t
           rightPad="pr-8"
           minHeight={40}
           maxHeight={120}
-          className="!py-2"
+          padY="py-2"
         />
         <button
           type="button"
