@@ -126,7 +126,7 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
   })();
   return (
     <div
-      className="group flex items-start gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-muted/40"
+      className="group flex items-start gap-3 border-b border-border/40 px-2 py-3 transition-colors last:border-0 hover:bg-muted/30"
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
@@ -139,38 +139,53 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
         onClick={(e) => { e.stopPropagation(); onToggle(); }}
         aria-label={t.done ? "Mark incomplete" : "Mark complete"}
         className={cn(
-          "mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] border transition-colors",
-          t.done ? "border-primary bg-primary text-primary-foreground" : "border-border/70 hover:border-foreground/50",
+          "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+          t.done ? "border-primary bg-primary text-primary-foreground" : "border-primary/45 hover:bg-primary/10",
         )}
       >
-        {t.done && <svg viewBox="0 0 12 12" className="h-2.5 w-2.5"><path d="M2 6.5l2.5 2.5L10 3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+        {t.done && <svg viewBox="0 0 12 12" className="h-2.5 w-2.5"><path d="M2 6.5l2.5 2.5L10 3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </button>
-      <Icon className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <button
-        type="button"
-        onClick={() => openTaskEditor(t.id)}
-        className="min-w-0 flex-1 basis-0 whitespace-normal break-words [overflow-wrap:anywhere] text-left text-[13px] leading-snug text-foreground"
-      >
-        {t.title}
-      </button>
-      {t.priority && (
-        <span className="mt-0.5 hidden items-center gap-1 rounded-full bg-background/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-border/50 sm:inline-flex">
-          <span className={cn("h-1.5 w-1.5 rounded-full", priorityDot(t.priority))} />
-          {priorityLabel(t.priority)}
-        </span>
-      )}
-      {rightPill && (
-        <span className="mt-0.5 shrink-0 rounded-full bg-background/70 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground ring-1 ring-border/50 group-hover:hidden">
-          {rightPill}
-        </span>
-      )}
-      <div className="mt-0.5 shrink-0">
+      <div className="min-w-0 flex-1 basis-0">
+        <button
+          type="button"
+          onClick={() => openTaskEditor(t.id)}
+          className={cn(
+            "block w-full whitespace-normal break-words [overflow-wrap:anywhere] text-left text-[15px] font-semibold leading-snug text-foreground",
+            t.done && "text-muted-foreground line-through",
+          )}
+        >
+          {t.title}
+        </button>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+            <Icon className="h-3 w-3" />
+            {t.area ?? "Personal"}
+          </span>
+          {rightPill && (
+            <span className="rounded-full bg-muted/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {rightPill}
+            </span>
+          )}
+          {t.priority && (
+            <span className="hidden items-center gap-1 rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-border/50 sm:inline-flex">
+              <span className={cn("h-1.5 w-1.5 rounded-full", priorityDot(t.priority))} />
+              {priorityLabel(t.priority)}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="mt-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-100">
         <TaskHoverActions
           task={t}
           onEdit={() => openTaskEditor(t.id)}
           onDetails={() => openTaskEditor(t.id)}
         />
       </div>
+      <span aria-hidden className="mt-2 flex shrink-0 cursor-grab flex-col gap-0.5 opacity-30 active:cursor-grabbing">
+        <span className="h-1 w-1 rounded-full bg-foreground" />
+        <span className="h-1 w-1 rounded-full bg-foreground" />
+        <span className="h-1 w-1 rounded-full bg-foreground" />
+      </span>
     </div>
   );
 }
@@ -190,14 +205,22 @@ function EventRow({
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-muted/40"
+      className="group flex w-full items-start gap-3 border-b border-border/40 px-2 py-3 text-left transition-colors last:border-0 hover:bg-muted/30"
     >
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted/60 text-muted-foreground">{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block whitespace-normal break-words text-[13px] leading-snug text-foreground">{title}</span>
-        {subtitle && <span className="block whitespace-normal break-words text-[11px] text-muted-foreground">{subtitle}</span>}
+      <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-primary/25 text-muted-foreground">
+        <span className="scale-[0.7]">{icon}</span>
       </span>
-      <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-medium ring-1", tone)}>{pill}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block whitespace-normal break-words [overflow-wrap:anywhere] text-[15px] font-semibold leading-snug text-foreground">{title}</span>
+        <span className="mt-2 flex flex-wrap items-center gap-1.5">
+          {subtitle && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+              {subtitle}
+            </span>
+          )}
+          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium ring-1", tone)}>{pill}</span>
+        </span>
+      </span>
     </button>
   );
 }
@@ -502,7 +525,7 @@ export function InboxOverview() {
                     <span className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
                     <span className="rounded-full bg-muted/60 px-1.5 py-0 text-[10px] text-muted-foreground">{items.length}</span>
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="flex flex-col">
                     {items.map((it: any) =>
                       it.title && it.id && !it.priority && it.time !== undefined
                         ? <EventRow key={`a-${it.id}`} icon={<CalendarIcon className="h-3.5 w-3.5" />}
@@ -561,7 +584,7 @@ export function InboxOverview() {
 
           <InsightBanner tone="primary">{upcomingInsight}</InsightBanner>
 
-          <div className="mt-3 space-y-0.5">
+          <div className="mt-3 flex flex-col">
             {upcomingItems.map(it => {
               const rel = relativeDay(it.date, today);
               const abs = format(parseISO(it.date), "EEE MMM d");
