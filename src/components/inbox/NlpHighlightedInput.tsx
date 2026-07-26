@@ -88,6 +88,8 @@ export interface NlpHighlightedInputProps {
   /** Extra padding for left and right gutters (must match input padding). */
   leftPad?: string;
   rightPad?: string;
+  /** Vertical padding class applied to both the mirror and the textarea. */
+  padY?: string;
   /** Collapsed height in px before the field grows. */
   minHeight?: number;
   /** Height in px at which the field stops growing and starts scrolling. */
@@ -99,7 +101,7 @@ export const NlpHighlightedInput = forwardRef<HTMLTextAreaElement, NlpHighlighte
   function NlpHighlightedInput(
     {
       value, onChange, onKeyDown, onFocus, onBlur, placeholder, disabled, className,
-      leftPad = "pl-14", rightPad = "pr-28", minHeight = 56, maxHeight = 220,
+      leftPad = "pl-14", rightPad = "pr-28", padY = "py-4", minHeight = 56, maxHeight = 220,
     },
     ref,
   ) {
@@ -147,8 +149,8 @@ export const NlpHighlightedInput = forwardRef<HTMLTextAreaElement, NlpHighlighte
           ref={mirrorRef}
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-x-0 top-0 z-10 overflow-hidden whitespace-pre-wrap break-words py-4 text-[15px] font-semibold leading-[1.45] [overflow-wrap:anywhere]",
-            leftPad, rightPad,
+            "pointer-events-none absolute inset-x-0 top-0 z-10 overflow-hidden whitespace-pre-wrap break-words text-[15px] font-semibold leading-[1.45] [overflow-wrap:anywhere]",
+            leftPad, rightPad, padY,
           )}
         >
           <div
@@ -171,11 +173,11 @@ export const NlpHighlightedInput = forwardRef<HTMLTextAreaElement, NlpHighlighte
           autoComplete="off"
           style={{ minHeight, maxHeight }}
           className={cn(
-            "relative z-20 block w-full resize-none rounded-2xl border-0 bg-transparent py-4 text-[15px] font-semibold leading-[1.45] outline-none transition-[box-shadow,color] placeholder:text-[13px] placeholder:font-medium placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
+            "relative z-20 block w-full resize-none rounded-2xl border-0 bg-transparent text-[15px] font-semibold leading-[1.45] outline-none transition-[box-shadow,color] placeholder:text-[13px] placeholder:font-medium placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
             "disabled:opacity-60",
             // The input's own text is transparent so the colored mirror renders, while the caret and selection remain visible.
             value ? "!text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "text-foreground",
-            leftPad, rightPad,
+            leftPad, rightPad, padY,
             className,
           )}
         />
