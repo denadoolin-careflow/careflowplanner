@@ -761,25 +761,29 @@ function InboxInner() {
             </div>
           ) : (
             <div className="relative">
-              <div className="absolute left-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-primary/10 text-primary">
-                <span className="text-base leading-none">＋</span>
+              <div className="absolute left-3 top-3.5 z-30 grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-primary transition-colors">
+                {justSaved ? <Check className="h-4 w-4 animate-scale-in" /> : <span className="text-base leading-none">＋</span>}
               </div>
               <NlpHighlightedInput
                 ref={captureInputRef}
                 value={draft}
                 onChange={setDraft}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     e.stopPropagation();
                     // Pass the input's current value directly so a pending
                     // state update can't swallow the submit.
-                    const v = (e.currentTarget as HTMLInputElement).value;
-                    void submitCapture(undefined, v);
+                    const v = e.currentTarget.value;
+                    void quickCapture(v);
                   }
                 }}
                 onFocus={() => setCaptureFocused(true)}
                 onBlur={handleCaptureBlur}
+                minHeight={56}
+                maxHeight={220}
+                leftPad="pl-14"
+                rightPad={draft.trim() ? "pr-4" : "pr-16"}
                 placeholder={
                   recorder.state === "recording"
                     ? (willCancel ? "Release to cancel…" : `Listening · ${fmtElapsed(recorder.elapsedMs)}`)
@@ -795,9 +799,11 @@ function InboxInner() {
                 disabled={recorder.state !== "idle"}
                 className={cn(recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40")}
               />
-              <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
+              {draft.trim() && recorder.state === "idle" && (
+                <div className="mt-2 flex items-center justify-end gap-1.5 animate-fade-in">
                 {draft.trim() && recorder.state === "idle" && (
                   <>
+                    <span className="mr-auto pl-1 text-[11px] text-muted-foreground">Shift + Enter for a new line</span>
                     <button
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
@@ -810,8 +816,8 @@ function InboxInner() {
                     </button>
                     <Button
                       onMouseDown={(e) => e.preventDefault()}
-                      onTouchStart={(e) => { e.preventDefault(); void submitCapture(); }}
-                      onClick={() => void submitCapture()}
+                      onTouchStart={(e) => { e.preventDefault(); void quickCapture(); }}
+                      onClick={() => void quickCapture()}
                       size="sm"
                       className="h-10 rounded-xl px-3 text-[13px]"
                     >
@@ -819,6 +825,9 @@ function InboxInner() {
                     </Button>
                   </>
                 )}
+                </div>
+              )}
+              <div className="absolute right-2 top-2.5 flex items-center gap-1.5">
                 {recorder.supported && !draft.trim() && (
                   <button
                     type="button"
