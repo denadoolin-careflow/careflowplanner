@@ -25,7 +25,7 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
-import { isToday, isFuture, parseISO, format } from "date-fns";
+import { isToday, isFuture, parseISO, format, startOfDay } from "date-fns";
 import { InboxIllustration } from "@/components/inbox/InboxIllustration";
 import { InboxOverview } from "@/components/inbox/InboxOverview";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
@@ -48,7 +48,6 @@ import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
 import { useInboxViewMode } from "@/lib/inbox-planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { List as ListIcon, CalendarClock } from "lucide-react";
-import { startOfDay } from "date-fns";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
   closestCenter, type DragEndEvent,
