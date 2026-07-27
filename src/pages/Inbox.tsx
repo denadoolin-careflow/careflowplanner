@@ -1282,8 +1282,55 @@ function InboxInner() {
         )}
         </section>
 
+        {/* ────────── Planner toolbar ────────── */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-card/70 p-1 backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors",
+                !scheduleOpen ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <ListIcon className="h-3.5 w-3.5" /> List
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("schedule")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors",
+                scheduleOpen ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <CalendarClock className="h-3.5 w-3.5" /> Schedule
+            </button>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            onClick={() => setPlanDayOpen(true)}
+          >
+            <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Plan my day
+          </Button>
+        </div>
+
         {/* ────────── Today / Upcoming / Needs scheduling ────────── */}
-        <InboxOverview />
+        {scheduleOpen && !isMobile ? (
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+            <div className="min-w-0">
+              <InboxOverview />
+            </div>
+            <InboxSchedulePane
+              date={plannerDate}
+              onDateChange={setPlannerDate}
+              className="max-h-[80vh] lg:sticky lg:top-6"
+            />
+          </div>
+        ) : (
+          <InboxOverview />
+        )}
 
         {/* ────────── Current Inbox Items (only when present) ────────── */}
         {items.length > 0 ? (
