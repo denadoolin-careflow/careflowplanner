@@ -535,23 +535,61 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   };
 
   return (
-    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden",
+    <div
+      onKeyDown={onRootKeyDown}
+      className={cn("flex h-full min-h-0 flex-col overflow-hidden",
+woops
       !bare && "rounded-2xl border border-border/60 bg-card/40")}>
+      <span aria-live="polite" className="sr-only">{announcement}</span>
       {!compact && (
         <div className={cn(
           "flex items-center justify-between gap-2 px-3 py-2 text-xs text-muted-foreground",
           !bare && "border-b border-border/60 px-4",
         )}>
           <span className="truncate">{bare ? "Timeline" : format(date, "EEEE, MMMM d")}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-[11.5px] font-medium text-primary hover:bg-primary/10"
-            onClick={() => void autoSchedule()}
-          >
-            <Wand2 className="h-3.5 w-3.5" />
-            Auto-schedule
-          </Button>
+          <div className="flex shrink-0 items-center gap-1">
+            {conflictCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={scrollToFirstConflict}
+                className="h-7 gap-1 rounded-full px-2 text-[11.5px] font-medium text-destructive hover:bg-destructive/10"
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {conflictCount} conflict{conflictCount === 1 ? "" : "s"}
+              </Button>
+            )}
+            <Button
+              variant="ghost" size="icon"
+              className="h-7 w-7 rounded-full"
+              disabled={!history.canUndo}
+              onClick={() => void runUndo()}
+              title={history.nextUndoLabel ? `Undo ${history.nextUndoLabel}` : "Undo"}
+              aria-label={history.nextUndoLabel ? `Undo ${history.nextUndoLabel}` : "Undo"}
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost" size="icon"
+              className="h-7 w-7 rounded-full"
+              disabled={!history.canRedo}
+              onClick={() => void runRedo()}
+              title={history.nextRedoLabel ? `Redo ${history.nextRedoLabel}` : "Redo"}
+              aria-label={history.nextRedoLabel ? `Redo ${history.nextRedoLabel}` : "Redo"}
+            >
+              <Redo2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-[11.5px] font-medium text-primary hover:bg-primary/10"
+              onClick={() => void autoSchedule()}
+            >
+              <Wand2 className="h-3.5 w-3.5" />
+              Auto-schedule
+            </Button>
+            <AutoScheduleSettings prefs={autoPrefs} update={updateAutoPrefs} reset={resetAutoPrefs} />
+          </div>
         </div>
       )}
       <div className="flex-1 overflow-y-auto">
