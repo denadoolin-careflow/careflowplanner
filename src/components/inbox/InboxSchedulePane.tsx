@@ -18,7 +18,7 @@ export function InboxSchedulePane({
 }) {
   const today = startOfDay(new Date());
   return (
-    <div className={cn("flex min-h-0 flex-col rounded-[24px] border border-border/50 bg-card/60 backdrop-blur-md", className)}>
+    <div className={cn("flex min-h-0 flex-col overflow-hidden rounded-[24px] border border-border/50 bg-card/60 backdrop-blur-md", className)}>
       <div className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5">
         <div className="inline-flex items-center gap-2 min-w-0">
           <CalendarDays className="h-4 w-4 shrink-0 text-primary" />
