@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameDay, parseISO } from "date-fns";
-import { AlertTriangle, Wand2 } from "lucide-react";
+import { AlertTriangle, Redo2, Undo2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -19,6 +19,11 @@ import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { usePlannerHistory, type HistoryEntry } from "@/lib/planner-history";
+import { useAutoSchedulePrefs } from "@/lib/auto-schedule-prefs";
+import { AutoScheduleSettings } from "./AutoScheduleSettings";
+import { ConflictPopover, type ConflictInfo } from "./ConflictPopover";
+import { DurationEditor } from "./DurationEditor";
 
 export const RHYTHM_BANDS = [
   { id: "morning", label: "Morning",   startH: 5,  endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
