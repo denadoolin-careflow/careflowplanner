@@ -145,12 +145,12 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
       >
         {t.done && <svg viewBox="0 0 12 12" className="h-2.5 w-2.5"><path d="M2 6.5l2.5 2.5L10 3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </button>
-      <div className="min-w-0 flex-1 basis-0">
+      <div className="min-w-[10rem] flex-1 basis-0">
         <button
           type="button"
           onClick={() => openTaskEditor(t.id)}
           className={cn(
-            "block w-full whitespace-normal break-words [overflow-wrap:anywhere] text-left text-[15px] font-semibold leading-snug text-foreground",
+            "block w-full whitespace-normal break-words [word-break:normal] [overflow-wrap:break-word] [hyphens:auto] text-left text-[15px] font-semibold leading-snug text-foreground",
             t.done && "text-muted-foreground line-through",
           )}
         >
@@ -210,8 +210,8 @@ function EventRow({
       <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-primary/25 text-muted-foreground">
         <span className="scale-[0.7]">{icon}</span>
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block whitespace-normal break-words [overflow-wrap:anywhere] text-[15px] font-semibold leading-snug text-foreground">{title}</span>
+      <span className="min-w-[10rem] flex-1">
+        <span className="block whitespace-normal break-words [word-break:normal] [overflow-wrap:break-word] [hyphens:auto] text-[15px] font-semibold leading-snug text-foreground">{title}</span>
         <span className="mt-2 flex flex-wrap items-center gap-1.5">
           {subtitle && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
