@@ -383,6 +383,8 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   };
 
   // Resize handler
+  const setDurationRef = useRef(setTaskDuration);
+  setDurationRef.current = setTaskDuration;
   useEffect(() => {
     if (!resizing) return;
     const onMove = (e: PointerEvent) => {
@@ -395,7 +397,7 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
       const dy = e.clientY - resizing.startY;
       const deltaMin = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
       const newDur = Math.max(SNAP_MIN, resizing.startDur + deltaMin);
-      await updateTask(resizing.id, { estMinutes: newDur });
+      await setDurationRef.current(resizing.id, newDur);
       suppressClickRef.current = true;
       setTimeout(() => { suppressClickRef.current = false; }, 200);
       setResizing(null);
@@ -403,9 +405,101 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp, { once: true });
     return () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
-  }, [resizing, updateTask]);
+  }, [resizing]);
 
   const totalMin = (END_H - START_H) * 60;
+
+  // ---- Conflicts ----
+  const conflictMap = useMemo(() => {
+    const map = new Map<string, ConflictInfo[]>();
+    for (const a of items) {
+      const overlaps = items.filter(b => b.id !== a.id
+        && a.startMin < b.startMin + b.durMin && a.startMin + a.durMin > b.startMin)
+        .map(b => ({
+          id: b.id,
+          title: b.title,
+          timeLabel: `${minTo12(b.startMin + START_H * 60)}–${minTo12(b.startMin + b.durMin + START_H * 60)}`,
+        }));
+      if (overlaps.length) map.set(a.id, overlaps);
+    }
+    return map;
+  }, [items]);
+
+  const conflictCount = useMemo(
+    () => Array.from(conflictMap.keys()).filter(id => !dismissedConflicts.includes(id)).length,
+    [conflictMap, dismissedConflicts],
+  );
+
+  const scrollToFirstConflict = () => {
+    const first = Array.from(conflictMap.keys()).find(id => !dismissedConflicts.includes(id));
+    if (!first) return;
+    document.getElementById(`plnr-block-${first}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  /** Next start (relative minutes) where `dur` fits without overlapping anything but `id`. */
+  const nextFreeSlot = (id: string, from: number, dur: number): number | null => {
+    const busy = items.filter(i => i.id !== id).map(i => [i.startMin, i.startMin + i.durMin] as [number, number]);
+    for (let s = Math.max(0, from); s + dur <= totalMin; s += SNAP_MIN) {
+      if (!busy.some(([bs, be]) => s < be && s + dur > bs)) return s;
+    }
+    return null;
+  };
+
+  const resolveMoveNextFree = async (it: { id: string; startMin: number; durMin: number }) => {
+    const slot = nextFreeSlot(it.id, it.startMin + SNAP_MIN, it.durMin);
+    if (slot === null) { toast.info("No free slot left today"); return; }
+    await scheduleTaskAt(it.id, slot + START_H * 60);
+  };
+
+  const resolveShorten = async (it: { id: string; startMin: number; durMin: number }) => {
+    const nextStart = items
+      .filter(o => o.id !== it.id && o.startMin > it.startMin)
+      .reduce<number | null>((min, o) => (min === null || o.startMin < min ? o.startMin : min), null);
+    if (nextStart === null || nextStart - it.startMin < SNAP_MIN) { toast.info("Not enough room to shorten"); return; }
+    await setTaskDuration(it.id, nextStart - it.startMin);
+    toast.success("Shortened to fit");
+  };
+
+  const resolvePushLater = async (it: { id: string; startMin: number; durMin: number }) => {
+    const later = items
+      .filter(o => o.id !== it.id && o.kind === "task" && o.startMin >= it.startMin
+        && o.startMin < it.startMin + it.durMin)
+      .sort((a, b) => a.startMin - b.startMin)[0];
+    if (!later) { toast.info("Nothing to push — the other item can't be moved"); return; }
+    await scheduleTaskAt(later.id, it.startMin + it.durMin + START_H * 60);
+    toast.success("Moved the later item down");
+  };
+
+  // ---- Keyboard controls on a focused block ----
+  const onBlockKeyDown = async (e: React.KeyboardEvent, it: { id: string; kind: string; startMin: number; durMin: number; title: string }) => {
+    if (it.kind !== "task") return;
+    const step = e.shiftKey ? 60 : SNAP_MIN;
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const dir = e.key === "ArrowDown" ? 1 : -1;
+      if (e.altKey) {
+        await setTaskDuration(it.id, Math.max(SNAP_MIN, it.durMin + dir * step));
+      } else {
+        const next = Math.min(Math.max(0, it.startMin + dir * step), totalMin - SNAP_MIN);
+        await scheduleTaskAt(it.id, next + START_H * 60);
+      }
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openTaskEditor(it.id);
+    } else if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      await updateTask(it.id, { startTime: null } as any);
+      setAnnouncement(`${it.title} unscheduled`);
+      toast.success("Unscheduled");
+    }
+  };
+
+  // Cmd/Ctrl+Z / Cmd/Ctrl+Shift+Z inside the timeline.
+  const onRootKeyDown = (e: React.KeyboardEvent) => {
+    if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+    e.preventDefault();
+    if (e.shiftKey) void runRedo(); else void runUndo();
+  };
 
   // Tap empty grid → open quick add popover at the clicked slot.
   const onGridClick = (e: React.MouseEvent) => {
