@@ -110,6 +110,37 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string } | null>(null);
   const suppressClickRef = useRef(false);
   const { blocks, update: updateBlock } = useTimeBlocks(iso, iso);
+  const { prefs: autoPrefs, update: updateAutoPrefs, reset: resetAutoPrefs } = useAutoSchedulePrefs();
+  const [announcement, setAnnouncement] = useState("");
+  const [dismissedConflicts, setDismissedConflicts] = useState<string[]>([]);
+
+  const applyHistory = useCallback(async (
+    tasks: { id: string; patch: Record<string, unknown> }[],
+    blks: { id: string; patch: Record<string, unknown> }[],
+  ) => {
+    for (const t of tasks) await updateTask(t.id, t.patch as any);
+    for (const b of blks) await updateBlock(b.id, b.patch as any);
+  }, [updateTask, updateBlock]);
+
+  const history = usePlannerHistory(applyHistory);
+  const historyReset = history.reset;
+  useEffect(() => { historyReset(); }, [iso, historyReset]);
+
+  const runUndo = useCallback(async () => {
+    const entry = await history.undo();
+    if (!entry) { toast.info("Nothing to undo"); return; }
+    haptics.success();
+    setAnnouncement(`Undid ${entry.label}`);
+    toast.success(`Undid ${entry.label}`);
+  }, [history]);
+
+  const runRedo = useCallback(async () => {
+    const entry = await history.redo();
+    if (!entry) { toast.info("Nothing to redo"); return; }
+    haptics.success();
+    setAnnouncement(`Redid ${entry.label}`);
+    toast.success(`Redid ${entry.label}`);
+  }, [history]);
 
   useEffect(() => {
     const tick = () => {
@@ -161,15 +192,58 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     const task = state.tasks.find(t => t.id === taskId);
     const dur = task?.estMinutes ?? 30;
     const startHM = minToHM(absMin);
+    const entry: HistoryEntry = {
+      label: "reschedule",
+      tasks: [{
+        taskId,
+        before: { dueDate: task?.dueDate, startTime: task?.startTime ?? null, estMinutes: task?.estMinutes ?? dur, inbox: task?.inbox ?? false },
+        after: { dueDate: iso, startTime: startHM, estMinutes: dur, inbox: false },
+      }],
+      blocks: [],
+    };
     // If a time_block exists for this task, keep them synchronized.
     const existingBlock = blocks.find(b => b.taskId === taskId);
     if (existingBlock) {
       const endHM = minToHM(absMin + dur);
+      entry.blocks!.push({
+        blockId: existingBlock.id,
+        before: { startTime: existingBlock.startTime, endTime: existingBlock.endTime, date: existingBlock.date },
+        after: { startTime: startHM, endTime: endHM, date: iso },
+      });
       await updateBlock(existingBlock.id, { startTime: startHM, endTime: endHM, date: iso });
     }
     await updateTask(taskId, { dueDate: iso, startTime: startHM, inbox: false, estMinutes: dur });
+    history.push(entry);
     haptics.drop();
+    setAnnouncement(`${task?.title ?? "Task"} scheduled at ${minTo12(absMin)}`);
     toast.success("Scheduled");
+  };
+
+  /** Change a task's duration (and its paired time block), recorded in history. */
+  const setTaskDuration = async (taskId: string, nextDur: number) => {
+    const task = state.tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const prevDur = task.estMinutes ?? 30;
+    if (nextDur === prevDur) return;
+    const entry: HistoryEntry = {
+      label: "duration change",
+      tasks: [{ taskId, before: { estMinutes: prevDur }, after: { estMinutes: nextDur } }],
+      blocks: [],
+    };
+    const blk = blocks.find(b => b.taskId === taskId);
+    const startAbs = hmToMin(blk?.startTime ?? task.startTime);
+    if (blk && startAbs !== null) {
+      entry.blocks!.push({
+        blockId: blk.id,
+        before: { endTime: blk.endTime },
+        after: { endTime: minToHM(startAbs + nextDur) },
+      });
+      await updateBlock(blk.id, { endTime: minToHM(startAbs + nextDur) });
+    }
+    await updateTask(taskId, { estMinutes: nextDur });
+    history.push(entry);
+    haptics.snap();
+    setAnnouncement(`${task.title} set to ${nextDur} minutes`);
   };
 
   // ---- Move (reschedule) an existing block by dragging it ----
