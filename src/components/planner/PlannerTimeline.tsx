@@ -201,7 +201,7 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     if (it.kind !== "task") return;
     if (e.button !== undefined && e.button !== 0) return;
     const begin = () => {
-      haptics.pickup?.();
+      haptics.longPress();
       setMoving({ id: it.id, startY: e.clientY, startMin: it.startMin, durMin: it.durMin, offsetMin: 0 });
     };
     if (e.pointerType === "touch") {
