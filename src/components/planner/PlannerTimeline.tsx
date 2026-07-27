@@ -426,7 +426,8 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
               const titleLines = tiny ? 1 : short ? 1 : heightPx < 90 ? 2 : 4;
               const hasConflict = it.lanes > 1;
               const isMoving = moving?.id === it.id;
-              const timeLabel = `${minTo12(it.startMin + START_H * 60)}–${minTo12(it.startMin + it.durMin + START_H * 60)}`;
+              const shownStart = isMoving && movePreview !== null ? movePreview : it.startMin;
+              const timeLabel = `${minTo12(shownStart + START_H * 60)}–${minTo12(shownStart + it.durMin + START_H * 60)}`;
               return (
                 <ContextMenu key={it.id}>
                   <ContextMenuTrigger asChild>
