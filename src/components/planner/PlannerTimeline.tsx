@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameDay, parseISO } from "date-fns";
-import { AlertTriangle, Wand2 } from "lucide-react";
+import { AlertTriangle, Redo2, Undo2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -19,6 +19,11 @@ import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { usePlannerHistory, type HistoryEntry } from "@/lib/planner-history";
+import { useAutoSchedulePrefs } from "@/lib/auto-schedule-prefs";
+import { AutoScheduleSettings } from "./AutoScheduleSettings";
+import { ConflictPopover, type ConflictInfo } from "./ConflictPopover";
+import { DurationEditor } from "./DurationEditor";
 
 export const RHYTHM_BANDS = [
   { id: "morning", label: "Morning",   startH: 5,  endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
@@ -105,6 +110,37 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string } | null>(null);
   const suppressClickRef = useRef(false);
   const { blocks, update: updateBlock } = useTimeBlocks(iso, iso);
+  const { prefs: autoPrefs, update: updateAutoPrefs, reset: resetAutoPrefs } = useAutoSchedulePrefs();
+  const [announcement, setAnnouncement] = useState("");
+  const [dismissedConflicts, setDismissedConflicts] = useState<string[]>([]);
+
+  const applyHistory = useCallback(async (
+    tasks: { id: string; patch: Record<string, unknown> }[],
+    blks: { id: string; patch: Record<string, unknown> }[],
+  ) => {
+    for (const t of tasks) await updateTask(t.id, t.patch as any);
+    for (const b of blks) await updateBlock(b.id, b.patch as any);
+  }, [updateTask, updateBlock]);
+
+  const history = usePlannerHistory(applyHistory);
+  const historyReset = history.reset;
+  useEffect(() => { historyReset(); }, [iso, historyReset]);
+
+  const runUndo = useCallback(async () => {
+    const entry = await history.undo();
+    if (!entry) { toast.info("Nothing to undo"); return; }
+    haptics.success();
+    setAnnouncement(`Undid ${entry.label}`);
+    toast.success(`Undid ${entry.label}`);
+  }, [history]);
+
+  const runRedo = useCallback(async () => {
+    const entry = await history.redo();
+    if (!entry) { toast.info("Nothing to redo"); return; }
+    haptics.success();
+    setAnnouncement(`Redid ${entry.label}`);
+    toast.success(`Redid ${entry.label}`);
+  }, [history]);
 
   useEffect(() => {
     const tick = () => {
@@ -156,15 +192,58 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     const task = state.tasks.find(t => t.id === taskId);
     const dur = task?.estMinutes ?? 30;
     const startHM = minToHM(absMin);
+    const entry: HistoryEntry = {
+      label: "reschedule",
+      tasks: [{
+        taskId,
+        before: { dueDate: task?.dueDate, startTime: task?.startTime ?? null, estMinutes: task?.estMinutes ?? dur, inbox: task?.inbox ?? false },
+        after: { dueDate: iso, startTime: startHM, estMinutes: dur, inbox: false },
+      }],
+      blocks: [],
+    };
     // If a time_block exists for this task, keep them synchronized.
     const existingBlock = blocks.find(b => b.taskId === taskId);
     if (existingBlock) {
       const endHM = minToHM(absMin + dur);
+      entry.blocks!.push({
+        blockId: existingBlock.id,
+        before: { startTime: existingBlock.startTime, endTime: existingBlock.endTime, date: existingBlock.date },
+        after: { startTime: startHM, endTime: endHM, date: iso },
+      });
       await updateBlock(existingBlock.id, { startTime: startHM, endTime: endHM, date: iso });
     }
     await updateTask(taskId, { dueDate: iso, startTime: startHM, inbox: false, estMinutes: dur });
+    history.push(entry);
     haptics.drop();
+    setAnnouncement(`${task?.title ?? "Task"} scheduled at ${minTo12(absMin)}`);
     toast.success("Scheduled");
+  };
+
+  /** Change a task's duration (and its paired time block), recorded in history. */
+  const setTaskDuration = async (taskId: string, nextDur: number) => {
+    const task = state.tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const prevDur = task.estMinutes ?? 30;
+    if (nextDur === prevDur) return;
+    const entry: HistoryEntry = {
+      label: "duration change",
+      tasks: [{ taskId, before: { estMinutes: prevDur }, after: { estMinutes: nextDur } }],
+      blocks: [],
+    };
+    const blk = blocks.find(b => b.taskId === taskId);
+    const startAbs = hmToMin(blk?.startTime ?? task.startTime);
+    if (blk && startAbs !== null) {
+      entry.blocks!.push({
+        blockId: blk.id,
+        before: { endTime: blk.endTime },
+        after: { endTime: minToHM(startAbs + nextDur) },
+      });
+      await updateBlock(blk.id, { endTime: minToHM(startAbs + nextDur) });
+    }
+    await updateTask(taskId, { estMinutes: nextDur });
+    history.push(entry);
+    haptics.snap();
+    setAnnouncement(`${task.title} set to ${nextDur} minutes`);
   };
 
   // ---- Move (reschedule) an existing block by dragging it ----
@@ -223,36 +302,57 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
       t.dueDate === iso && !t.done && hmToMin(t.startTime) === null && !blocks.some(b => b.taskId === t.id));
     if (!pending.length) { toast.info("Nothing left to auto-schedule for this day"); return; }
 
-    const busy: [number, number][] = items.map(i => [i.startMin, i.startMin + i.durMin]);
-    const dayEnd = (END_H - START_H) * 60;
+    const buffer = autoPrefs.bufferMin;
+    const busy: [number, number][] = autoPrefs.respectAppointments
+      ? items.map(i => [i.startMin, i.startMin + i.durMin])
+      : items.filter(i => i.kind === "task").map(i => [i.startMin, i.startMin + i.durMin]);
+    const dayStart = Math.max(0, (autoPrefs.dayStartH - START_H) * 60);
+    const dayEnd = Math.min((END_H - START_H) * 60, (autoPrefs.dayEndH - START_H) * 60);
     const now = new Date();
-    const floor = isSameDay(now, date)
+    const floor = autoPrefs.skipPastTimes && isSameDay(now, date)
       ? Math.max(0, Math.ceil((now.getHours() * 60 + now.getMinutes() - START_H * 60) / SNAP_MIN) * SNAP_MIN)
-      : 0;
+      : dayStart;
+    const lowerBound = Math.max(dayStart, floor);
 
-    const sorted = pending.slice().sort((a, b) =>
-      (prio[a.priority] ?? 1) - (prio[b.priority] ?? 1) ||
-      (b.estMinutes ?? 30) - (a.estMinutes ?? 30));
+    const dur0 = (t: Task) => Math.max(SNAP_MIN, t.estMinutes ?? autoPrefs.defaultDuration);
+    const sorted = pending.slice().sort((a, b) => autoPrefs.order === "duration"
+      ? dur0(b) - dur0(a) || (prio[a.priority] ?? 1) - (prio[b.priority] ?? 1)
+      : (prio[a.priority] ?? 1) - (prio[b.priority] ?? 1) || dur0(b) - dur0(a));
 
     const fits = (s: number, dur: number) =>
-      s >= 0 && s + dur <= dayEnd && !busy.some(([bs, be]) => s < be && s + dur > bs);
+      s >= dayStart && s + dur <= dayEnd &&
+      !busy.some(([bs, be]) => s < be + buffer && s + dur + buffer > bs);
 
-    let placed = 0;
+    const entry: HistoryEntry = { label: "auto-schedule", tasks: [], blocks: [] };
     for (const t of sorted) {
-      const dur = Math.max(SNAP_MIN, t.estMinutes ?? 30);
+      const dur = dur0(t);
       // Energy-aware preferred window: high → morning, low → late afternoon.
-      const preferred = t.energy === "high" ? 9 * 60 : t.energy === "low" ? 15 * 60 : 10 * 60;
-      const first = Math.max(floor, preferred - START_H * 60);
+      const preferredH = t.energy === "high" ? autoPrefs.highEnergyH
+        : t.energy === "low" ? autoPrefs.lowEnergyH : autoPrefs.mediumEnergyH;
+      const first = Math.max(lowerBound, (preferredH - START_H) * 60);
       let slot: number | null = null;
       for (let s = first; s + dur <= dayEnd; s += SNAP_MIN) if (fits(s, dur)) { slot = s; break; }
-      if (slot === null) for (let s = floor; s + dur <= dayEnd; s += SNAP_MIN) if (fits(s, dur)) { slot = s; break; }
+      if (slot === null) for (let s = lowerBound; s + dur <= dayEnd; s += SNAP_MIN) if (fits(s, dur)) { slot = s; break; }
       if (slot === null) continue;
       busy.push([slot, slot + dur]);
+      entry.tasks.push({
+        taskId: t.id,
+        before: { dueDate: t.dueDate, startTime: t.startTime ?? null, estMinutes: t.estMinutes ?? dur, inbox: t.inbox ?? false },
+        after: { dueDate: iso, startTime: minToHM(slot + START_H * 60), estMinutes: dur, inbox: false },
+      });
       await updateTask(t.id, { dueDate: iso, startTime: minToHM(slot + START_H * 60), estMinutes: dur, inbox: false });
-      placed++;
     }
+    const placed = entry.tasks.length;
+    if (placed) history.push(entry);
     haptics.success();
-    toast.success(placed ? `Auto-scheduled ${placed} task${placed === 1 ? "" : "s"}` : "No free time left today");
+    setAnnouncement(placed ? `Auto-scheduled ${placed} tasks` : "No free time left today");
+    if (placed) {
+      toast.success(`Auto-scheduled ${placed} task${placed === 1 ? "" : "s"}`, {
+        action: { label: "Undo", onClick: () => { void runUndo(); } },
+      });
+    } else {
+      toast.info("No free time left in your day window");
+    }
   };
 
   const onDrop = async (e: React.DragEvent) => {
@@ -283,6 +383,8 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   };
 
   // Resize handler
+  const setDurationRef = useRef(setTaskDuration);
+  setDurationRef.current = setTaskDuration;
   useEffect(() => {
     if (!resizing) return;
     const onMove = (e: PointerEvent) => {
@@ -295,7 +397,7 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
       const dy = e.clientY - resizing.startY;
       const deltaMin = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
       const newDur = Math.max(SNAP_MIN, resizing.startDur + deltaMin);
-      await updateTask(resizing.id, { estMinutes: newDur });
+      await setDurationRef.current(resizing.id, newDur);
       suppressClickRef.current = true;
       setTimeout(() => { suppressClickRef.current = false; }, 200);
       setResizing(null);
@@ -303,9 +405,101 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp, { once: true });
     return () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
-  }, [resizing, updateTask]);
+  }, [resizing]);
 
   const totalMin = (END_H - START_H) * 60;
+
+  // ---- Conflicts ----
+  const conflictMap = useMemo(() => {
+    const map = new Map<string, ConflictInfo[]>();
+    for (const a of items) {
+      const overlaps = items.filter(b => b.id !== a.id
+        && a.startMin < b.startMin + b.durMin && a.startMin + a.durMin > b.startMin)
+        .map(b => ({
+          id: b.id,
+          title: b.title,
+          timeLabel: `${minTo12(b.startMin + START_H * 60)}–${minTo12(b.startMin + b.durMin + START_H * 60)}`,
+        }));
+      if (overlaps.length) map.set(a.id, overlaps);
+    }
+    return map;
+  }, [items]);
+
+  const conflictCount = useMemo(
+    () => Array.from(conflictMap.keys()).filter(id => !dismissedConflicts.includes(id)).length,
+    [conflictMap, dismissedConflicts],
+  );
+
+  const scrollToFirstConflict = () => {
+    const first = Array.from(conflictMap.keys()).find(id => !dismissedConflicts.includes(id));
+    if (!first) return;
+    document.getElementById(`plnr-block-${first}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  /** Next start (relative minutes) where `dur` fits without overlapping anything but `id`. */
+  const nextFreeSlot = (id: string, from: number, dur: number): number | null => {
+    const busy = items.filter(i => i.id !== id).map(i => [i.startMin, i.startMin + i.durMin] as [number, number]);
+    for (let s = Math.max(0, from); s + dur <= totalMin; s += SNAP_MIN) {
+      if (!busy.some(([bs, be]) => s < be && s + dur > bs)) return s;
+    }
+    return null;
+  };
+
+  const resolveMoveNextFree = async (it: { id: string; startMin: number; durMin: number }) => {
+    const slot = nextFreeSlot(it.id, it.startMin + SNAP_MIN, it.durMin);
+    if (slot === null) { toast.info("No free slot left today"); return; }
+    await scheduleTaskAt(it.id, slot + START_H * 60);
+  };
+
+  const resolveShorten = async (it: { id: string; startMin: number; durMin: number }) => {
+    const nextStart = items
+      .filter(o => o.id !== it.id && o.startMin > it.startMin)
+      .reduce<number | null>((min, o) => (min === null || o.startMin < min ? o.startMin : min), null);
+    if (nextStart === null || nextStart - it.startMin < SNAP_MIN) { toast.info("Not enough room to shorten"); return; }
+    await setTaskDuration(it.id, nextStart - it.startMin);
+    toast.success("Shortened to fit");
+  };
+
+  const resolvePushLater = async (it: { id: string; startMin: number; durMin: number }) => {
+    const later = items
+      .filter(o => o.id !== it.id && o.kind === "task" && o.startMin >= it.startMin
+        && o.startMin < it.startMin + it.durMin)
+      .sort((a, b) => a.startMin - b.startMin)[0];
+    if (!later) { toast.info("Nothing to push — the other item can't be moved"); return; }
+    await scheduleTaskAt(later.id, it.startMin + it.durMin + START_H * 60);
+    toast.success("Moved the later item down");
+  };
+
+  // ---- Keyboard controls on a focused block ----
+  const onBlockKeyDown = async (e: React.KeyboardEvent, it: { id: string; kind: string; startMin: number; durMin: number; title: string }) => {
+    if (it.kind !== "task") return;
+    const step = e.shiftKey ? 60 : SNAP_MIN;
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const dir = e.key === "ArrowDown" ? 1 : -1;
+      if (e.altKey) {
+        await setTaskDuration(it.id, Math.max(SNAP_MIN, it.durMin + dir * step));
+      } else {
+        const next = Math.min(Math.max(0, it.startMin + dir * step), totalMin - SNAP_MIN);
+        await scheduleTaskAt(it.id, next + START_H * 60);
+      }
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openTaskEditor(it.id);
+    } else if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      await updateTask(it.id, { startTime: null } as any);
+      setAnnouncement(`${it.title} unscheduled`);
+      toast.success("Unscheduled");
+    }
+  };
+
+  // Cmd/Ctrl+Z / Cmd/Ctrl+Shift+Z inside the timeline.
+  const onRootKeyDown = (e: React.KeyboardEvent) => {
+    if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+    e.preventDefault();
+    if (e.shiftKey) void runRedo(); else void runUndo();
+  };
 
   // Tap empty grid → open quick add popover at the clicked slot.
   const onGridClick = (e: React.MouseEvent) => {
@@ -341,23 +535,60 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   };
 
   return (
-    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden",
+    <div
+      onKeyDown={onRootKeyDown}
+      className={cn("flex h-full min-h-0 flex-col overflow-hidden",
       !bare && "rounded-2xl border border-border/60 bg-card/40")}>
+      <span aria-live="polite" className="sr-only">{announcement}</span>
       {!compact && (
         <div className={cn(
           "flex items-center justify-between gap-2 px-3 py-2 text-xs text-muted-foreground",
           !bare && "border-b border-border/60 px-4",
         )}>
           <span className="truncate">{bare ? "Timeline" : format(date, "EEEE, MMMM d")}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-[11.5px] font-medium text-primary hover:bg-primary/10"
-            onClick={() => void autoSchedule()}
-          >
-            <Wand2 className="h-3.5 w-3.5" />
-            Auto-schedule
-          </Button>
+          <div className="flex shrink-0 items-center gap-1">
+            {conflictCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={scrollToFirstConflict}
+                className="h-7 gap-1 rounded-full px-2 text-[11.5px] font-medium text-destructive hover:bg-destructive/10"
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {conflictCount} conflict{conflictCount === 1 ? "" : "s"}
+              </Button>
+            )}
+            <Button
+              variant="ghost" size="icon"
+              className="h-7 w-7 rounded-full"
+              disabled={!history.canUndo}
+              onClick={() => void runUndo()}
+              title={history.nextUndoLabel ? `Undo ${history.nextUndoLabel}` : "Undo"}
+              aria-label={history.nextUndoLabel ? `Undo ${history.nextUndoLabel}` : "Undo"}
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost" size="icon"
+              className="h-7 w-7 rounded-full"
+              disabled={!history.canRedo}
+              onClick={() => void runRedo()}
+              title={history.nextRedoLabel ? `Redo ${history.nextRedoLabel}` : "Redo"}
+              aria-label={history.nextRedoLabel ? `Redo ${history.nextRedoLabel}` : "Redo"}
+            >
+              <Redo2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-[11.5px] font-medium text-primary hover:bg-primary/10"
+              onClick={() => void autoSchedule()}
+            >
+              <Wand2 className="h-3.5 w-3.5" />
+              Auto-schedule
+            </Button>
+            <AutoScheduleSettings prefs={autoPrefs} update={updateAutoPrefs} reset={resetAutoPrefs} />
+          </div>
         </div>
       )}
       <div className="flex-1 overflow-y-auto">
@@ -424,10 +655,22 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
               const tiny = heightPx < 34;      // single-line layout
               const short = heightPx < 56;     // no room for 2+ title lines
               const titleLines = tiny ? 1 : short ? 1 : heightPx < 90 ? 2 : 4;
-              const hasConflict = it.lanes > 1;
+              const conflicts = conflictMap.get(it.id) ?? [];
+              const hasConflict = conflicts.length > 0 && !dismissedConflicts.includes(it.id);
               const isMoving = moving?.id === it.id;
               const shownStart = isMoving && movePreview !== null ? movePreview : it.startMin;
               const timeLabel = `${minTo12(shownStart + START_H * 60)}–${minTo12(shownStart + it.durMin + START_H * 60)}`;
+              const conflictNode = hasConflict ? (
+                <ConflictPopover
+                  title={it.title}
+                  conflicts={conflicts}
+                  canEdit={it.kind === "task"}
+                  onMoveNextFree={() => void resolveMoveNextFree(it)}
+                  onShorten={() => void resolveShorten(it)}
+                  onPushLater={() => void resolvePushLater(it)}
+                  onDismiss={() => setDismissedConflicts(d => [...d, it.id])}
+                />
+              ) : null;
               return (
                 <ContextMenu key={it.id}>
                   <ContextMenuTrigger asChild>
@@ -435,11 +678,15 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                   key={it.id}
                   id={`plnr-block-${it.id}`}
                   data-planner-block
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${it.title}, ${timeLabel}, ${it.durMin} minutes${hasConflict ? ", overlaps another item" : ""}${it.kind === "task" ? ". Arrow keys move, Alt plus arrows change duration, Enter opens" : ""}`}
+                  onKeyDown={(e) => void onBlockKeyDown(e, it)}
                   title={`${it.title} · ${timeLabel}${hasConflict ? " · overlaps another item" : ""}`}
                   onPointerDown={(e) => startMoveGesture(e, it)}
                   onClick={() => it.kind === "task" && openTaskEditor(it.id)}
                   className={cn(
-                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm transition-shadow hover:shadow-md",
+                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
                     it.done && "opacity-60",
@@ -459,13 +706,22 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                       {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
                       <span className="min-w-0 flex-1 truncate font-medium">{it.title}</span>
                       <span className="shrink-0 font-mono text-[9px] opacity-70">{minTo12(it.startMin + START_H * 60)}</span>
-                      {hasConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
+                      {conflictNode}
                     </div>
                   ) : (
                     <div className="flex h-full min-w-0 flex-col gap-0.5">
                       <div className="flex min-w-0 items-center gap-1 font-mono text-[9px] leading-none opacity-75">
-                        <span className="truncate">{timeLabel}</span>
-                        {hasConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
+                        {it.kind === "task" ? (
+                          <DurationEditor
+                            durMin={it.durMin}
+                            label={timeLabel}
+                            title={it.title}
+                            onCommit={(next) => void setTaskDuration(it.id, next)}
+                          />
+                        ) : (
+                          <span className="truncate">{timeLabel}</span>
+                        )}
+                        {conflictNode}
                         {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
                       </div>
                       <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-[1.25]">
