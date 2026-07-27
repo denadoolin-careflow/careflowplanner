@@ -42,6 +42,13 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { INBOX_ROW_STYLES, useInboxRowStyle, type InboxRowStyle } from "@/lib/inbox-row-style";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LayoutGrid } from "lucide-react";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { InboxSchedulePane } from "@/components/inbox/InboxSchedulePane";
+import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
+import { useInboxViewMode } from "@/lib/inbox-planner-prefs";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { List as ListIcon, CalendarClock } from "lucide-react";
+import { startOfDay } from "date-fns";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
   closestCenter, type DragEndEvent,
