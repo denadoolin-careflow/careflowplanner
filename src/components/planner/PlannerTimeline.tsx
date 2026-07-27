@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameDay, parseISO } from "date-fns";
+import { AlertTriangle, Wand2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
