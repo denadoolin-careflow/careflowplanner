@@ -420,6 +420,13 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
               const widthPct = 100 / it.lanes;
               const leftPct = it.lane * widthPct;
               const isFocusActive = it.kind === "task" && ((pomo.running && pomo.taskId === it.id) || focusTaskId === it.id);
+              const heightPx = Math.max(SNAP_MIN, it.durMin) * (HOUR_PX / 60) - 2;
+              const tiny = heightPx < 34;      // single-line layout
+              const short = heightPx < 56;     // no room for 2+ title lines
+              const titleLines = tiny ? 1 : short ? 1 : heightPx < 90 ? 2 : 4;
+              const hasConflict = it.lanes > 1;
+              const isMoving = moving?.id === it.id;
+              const timeLabel = `${minTo12(it.startMin + START_H * 60)}–${minTo12(it.startMin + it.durMin + START_H * 60)}`;
               return (
                 <ContextMenu key={it.id}>
                   <ContextMenuTrigger asChild>
@@ -427,34 +434,54 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                   key={it.id}
                   id={`plnr-block-${it.id}`}
                   data-planner-block
+                  title={`${it.title} · ${timeLabel}${hasConflict ? " · overlaps another item" : ""}`}
+                  onPointerDown={(e) => startMoveGesture(e, it)}
                   onClick={() => it.kind === "task" && openTaskEditor(it.id)}
                   className={cn(
-                    "group absolute cursor-pointer overflow-hidden rounded-lg border p-1.5 text-[11px] shadow-sm transition-shadow hover:shadow-md",
+                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm transition-shadow hover:shadow-md",
+                    it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
                     it.done && "opacity-60",
+                    hasConflict && "ring-1 ring-destructive/60",
+                    isMoving && "z-30 scale-[1.02] shadow-xl ring-2 ring-primary",
                     isFocusActive && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                   )}
                   style={{
                     top: it.startMin * (HOUR_PX / 60),
-                    height: Math.max(SNAP_MIN, it.durMin) * (HOUR_PX / 60) - 2,
+                    height: heightPx,
                     left: `calc(${leftPct}% + 4px)`,
                     width: `calc(${widthPct}% - 8px)`,
                   }}
                 >
-                  <div className="flex h-full min-w-0 flex-col gap-0.5">
-                    <div className="flex min-w-0 items-center gap-1 text-[9px] font-mono leading-none opacity-75">
-                      <span className="truncate">{minTo12(it.startMin + START_H * 60)}–{minTo12(it.startMin + it.durMin + START_H * 60)}</span>
-                      {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
+                  {tiny ? (
+                    <div className="flex h-full min-w-0 items-center gap-1 leading-none">
+                      {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
+                      <span className="min-w-0 flex-1 truncate font-medium">{it.title}</span>
+                      <span className="shrink-0 font-mono text-[9px] opacity-70">{minTo12(it.startMin + START_H * 60)}</span>
+                      {hasConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
                     </div>
-                    <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-tight">
-                      {ic && ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
-                      <span className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere]">{it.title}</span>
+                  ) : (
+                    <div className="flex h-full min-w-0 flex-col gap-0.5">
+                      <div className="flex min-w-0 items-center gap-1 font-mono text-[9px] leading-none opacity-75">
+                        <span className="truncate">{timeLabel}</span>
+                        {hasConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
+                        {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
+                      </div>
+                      <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-[1.25]">
+                        {ic && ic.kind === "lucide" ? <ic.Icon className="mt-[1px] h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
+                        <span
+                          className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:break-word] [word-break:normal]"
+                          style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: titleLines, overflow: "hidden" }}
+                        >
+                          {it.title}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {it.kind === "task" && (
                     <div
-                      onPointerDown={(e) => { e.stopPropagation(); setResizing({ id: it.id, startY: e.clientY, startDur: it.durMin }); }}
-                      className="absolute bottom-0 left-0 right-0 h-1.5 cursor-ns-resize opacity-0 transition-opacity hover:bg-primary/30 group-hover:opacity-100"
+                      onPointerDown={(e) => { e.stopPropagation(); haptics.snap(); setResizing({ id: it.id, startY: e.clientY, startDur: it.durMin }); }}
+                      className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize touch-none opacity-0 transition-opacity hover:bg-primary/30 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 [@media(pointer:coarse)]:bg-foreground/10"
                     />
                   )}
                 </div>
