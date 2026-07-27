@@ -1,50 +1,31 @@
-# Mobile Planner & Task Editor Fluidity Pass
+## Goal
+Make the Inbox a place where you can not just capture, but *schedule* — using the planner pieces that already exist (`PlannerTimeline`, `PlannerTaskPanel`, `PlanMyDayDialog`, `PlannerQuickCapture`, touch drag).
 
-Four related fixes to make CareFlow's planner feel as fluid as Akiflow / Google Calendar on mobile.
+## Recommendations (what I'd do, and what I'd skip)
 
-## 1. Inbox entries wrap text
-**File:** `src/components/calendar/InboxCapture.tsx`
+**Recommended — "Schedule mode" in the Inbox**
+Add a view toggle in the Inbox toolbar: **List** (today's default overview) and **Schedule**. In Schedule mode the page splits: inbox items on the left, the planner day timeline on the right. Drag an inbox item onto an hour to schedule it; it leaves the inbox and lands on the day. This reuses `PlannerTimeline` and the existing `TASK_DRAG_MIME` drop plumbing, so no new scheduling logic.
 
-Inbox rows currently truncate/overflow. Apply the same wrap pattern already used elsewhere:
-- Title span: `min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere] line-clamp-2`
-- Parent flex row: add `min-w-0` and `items-start` so meta badges don't push text into a single-char column.
+**Recommended — per-row "Schedule" quick action**
+On each inbox row, next to the existing when/date control, a small clock button opens a compact time picker (Morning / Afternoon / Evening / pick a time) so scheduling works with one tap on mobile. This matters because your current viewport is phone-sized — drag-and-drop alone isn't enough.
 
-Verify same treatment on `PlannerTaskRow.tsx` inbox-mode rows if they share the surface.
+**Recommended — "Plan my day" from the Inbox**
+Reuse `PlanMyDayDialog` behind a button in the Inbox header so a full inbox can be triaged into the day in one guided flow, instead of item-by-item.
 
-## 2. Wrap text in "All tasks under the calendar"
-**File:** `src/components/calendar/CalendarAllList.tsx`
+**Recommended — mobile behaviour**
+On phones, don't split the screen. Keep the list, and open the timeline as a bottom sheet ("Drop into day") when you tap Schedule on a row or the Schedule toggle. Same components, sheet container.
 
-Row title spans lose wrapping when project/meta chips are present. Fix:
-- Title element → `min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere] line-clamp-2`
-- Row container → `items-start` (not `items-center`) and `min-w-0` on the text column
-- Meta/chips column → `shrink-0`
+**Skip for now (my advice)**
+- Don't embed the full 3-column planner (task panel + timeline + context rail) in the Inbox — it duplicates `/planner` and makes the Inbox heavy. The Inbox's job is capture-and-clear; only the timeline half earns its place.
+- Don't add multi-day / week views here. If you want to schedule across days, jump to `/planner` with the item preselected.
 
-## 3. Mobile drag-and-drop: Planner task panel → hourly grid
-**Files:** `src/components/planner/PlannerTaskPanel.tsx`, `src/components/planner/PlannerTaskRow.tsx`, `src/components/planner/PlannerTimeline.tsx`
+## Implementation
 
-Current drag uses HTML5 `draggable` + `dataTransfer`, which does not fire on iOS/Android touch. Fix by adopting the pointer-based long-press-drag helper already in the repo (`src/lib/long-press-drag.ts` / `src/lib/planner-touch-drag.ts`).
+1. **Inbox view preference** — add a small persisted toggle (`list` | `schedule`), same localStorage pattern as `planner-prefs` / `calendar-prefs`.
+2. **`src/pages/Inbox.tsx`** — toolbar gains the List/Schedule toggle plus a "Plan my day" button. In Schedule mode, wrap the overview and a new right pane in a flex layout (desktop) or Sheet (mobile).
+3. **New `src/components/inbox/InboxSchedulePane.tsx`** — thin wrapper around `PlannerTimeline` for the selected date, with a day stepper header.
+4. **`src/components/inbox/InboxOverview.tsx`** — make rows drag sources using the existing `TASK_DRAG_MIME` payload and the `planner-touch-drag` hook for touch, and add the per-row clock/schedule button. Scheduling sets `dueDate` + `startTime` and clears `inbox`.
+5. **`PlanMyDayDialog`** — mounted from Inbox, seeded with the selected date; no changes to the dialog itself.
 
-Approach:
-- `PlannerTaskRow`: on `pointerdown` start a 300ms long-press timer with haptic; on activation, attach a floating ghost element positioned at pointer, set a global "dragging task" context, prevent scroll (`touch-action: none` while active).
-- `PlannerTimeline`: expose hour-slot DOM refs; on `pointermove` while a task drag is active, highlight the hovered slot; on `pointerup` compute the snapped time (15-min steps like desktop) and call the existing `scheduleTaskAt(taskId, iso, hh:mm)` handler.
-- Reuse the exact scheduling code path used by desktop `onDrop` so behavior stays identical.
-- Cancel on scroll-before-longpress or pointercancel.
-
-Add subtle haptics: `haptics.pickup()` on activation, `haptics.tap()` on slot change, `haptics.success()` on drop.
-
-## 4. Simplify mobile task editor
-**Files:** `src/components/tasks/TaskEditor.tsx` (or a new `MobileTaskSheet` variant), `src/components/tasks/mobile/MobileTaskSheet.tsx` (already exists — extend it), `src/components/tasks/GlobalTaskEditor.tsx`
-
-Today, mobile opens the full `/tasks/:id` page. Replace with a lightweight bottom sheet mirroring Akiflow / Google Calendar Quick Event:
-- Fields shown by default: **Title**, **Date + time**, **Duration**, **Priority**, **Project/Area**, **Notes** (collapsed).
-- Everything else (recurrence, energy, best time, tags, reminders, subtasks, links, atmosphere) hidden behind a single "More options" disclosure → expands the existing full editor inline.
-- Sheet chrome: drag-handle at top, sticky Save on bottom, single-column stacked layout, 16px padding, large tap targets (min 44px).
-- Route `MobileTaskCard` long-press and `GlobalTaskEditor` mobile path to open this sheet instead of navigating to `/tasks/:id`. Keep the full page reachable via a "Open full editor" link inside the sheet for power users.
-
-## Verification
-- Playwright at 384px viewport: open Planner, long-press an inbox task, drag to 2 PM slot, confirm the task appears on the grid and store reflects `startTime`.
-- Visual check: Inbox row with a long title wraps to 2 lines with ellipsis; CalendarAllList row with a long title wraps similarly.
-- Tap a task on mobile Today → bottom sheet slides up with simplified fields; "More options" expands the rest.
-
-## Out of scope
-No changes to desktop planner interactions, no data-model changes, no new backend calls.
+### Technical notes
+No data model changes: scheduling an inbox item just writes `dueDate`, `startTime`, `estMinutes` and flips `inbox` to false, which is exactly what the planner already does. All existing drag/drop and haptics code is reused, so behaviour stays consistent between `/inbox`, `/planner`, and `/calendar`.
