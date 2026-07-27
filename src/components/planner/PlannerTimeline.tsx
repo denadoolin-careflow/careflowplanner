@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameDay, parseISO } from "date-fns";
+import { AlertTriangle, Wand2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
@@ -98,6 +100,8 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   const gridRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
   const [resizing, setResizing] = useState<{ id: string; startY: number; startDur: number } | null>(null);
+  const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
+  const [movePreview, setMovePreview] = useState<number | null>(null);
   const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string } | null>(null);
   const suppressClickRef = useRef(false);
   const { blocks, update: updateBlock } = useTimeBlocks(iso, iso);
@@ -161,6 +165,94 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     await updateTask(taskId, { dueDate: iso, startTime: startHM, inbox: false, estMinutes: dur });
     haptics.drop();
     toast.success("Scheduled");
+  };
+
+  // ---- Move (reschedule) an existing block by dragging it ----
+  useEffect(() => {
+    if (!moving) return;
+    const clamp = (m: number) => Math.min(Math.max(0, m), (END_H - START_H) * 60 - SNAP_MIN);
+    const calc = (clientY: number) => {
+      const dy = clientY - moving.startY;
+      const delta = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
+      return clamp(moving.startMin + delta);
+    };
+    const onMove = (e: PointerEvent) => {
+      e.preventDefault();
+      const next = calc(e.clientY);
+      setMovePreview(next);
+      const el = document.getElementById(`plnr-block-${moving.id}`);
+      if (el) el.style.top = `${next * (HOUR_PX / 60)}px`;
+    };
+    const onUp = async (e: PointerEvent) => {
+      const next = calc(e.clientY);
+      setMoving(null);
+      setMovePreview(null);
+      suppressClickRef.current = true;
+      setTimeout(() => { suppressClickRef.current = false; }, 250);
+      if (next !== moving.startMin) await scheduleTaskAt(moving.id, next + START_H * 60);
+    };
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp, { once: true });
+    window.addEventListener("pointercancel", () => { setMoving(null); setMovePreview(null); }, { once: true });
+    return () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp as any); };
+  }, [moving]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startMoveGesture = (e: React.PointerEvent, it: { id: string; startMin: number; durMin: number; kind: string }) => {
+    if (it.kind !== "task") return;
+    if (e.button !== undefined && e.button !== 0) return;
+    const begin = () => {
+      haptics.longPress();
+      setMoving({ id: it.id, startY: e.clientY, startMin: it.startMin, durMin: it.durMin, offsetMin: 0 });
+    };
+    if (e.pointerType === "touch") {
+      // Long-press to lift on touch so vertical scrolling still works.
+      const timer = window.setTimeout(begin, 260);
+      const cancel = () => { window.clearTimeout(timer); window.removeEventListener("pointerup", cancel); window.removeEventListener("pointermove", onEarlyMove); };
+      const onEarlyMove = (ev: PointerEvent) => { if (Math.abs(ev.clientY - e.clientY) > 8) cancel(); };
+      window.addEventListener("pointerup", cancel, { once: true });
+      window.addEventListener("pointermove", onEarlyMove);
+    } else {
+      begin();
+    }
+  };
+
+  // ---- Auto-schedule: fill the day using priority, energy and estimated duration ----
+  const autoSchedule = async () => {
+    const prio: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    const pending = state.tasks.filter(t =>
+      t.dueDate === iso && !t.done && hmToMin(t.startTime) === null && !blocks.some(b => b.taskId === t.id));
+    if (!pending.length) { toast.info("Nothing left to auto-schedule for this day"); return; }
+
+    const busy: [number, number][] = items.map(i => [i.startMin, i.startMin + i.durMin]);
+    const dayEnd = (END_H - START_H) * 60;
+    const now = new Date();
+    const floor = isSameDay(now, date)
+      ? Math.max(0, Math.ceil((now.getHours() * 60 + now.getMinutes() - START_H * 60) / SNAP_MIN) * SNAP_MIN)
+      : 0;
+
+    const sorted = pending.slice().sort((a, b) =>
+      (prio[a.priority] ?? 1) - (prio[b.priority] ?? 1) ||
+      (b.estMinutes ?? 30) - (a.estMinutes ?? 30));
+
+    const fits = (s: number, dur: number) =>
+      s >= 0 && s + dur <= dayEnd && !busy.some(([bs, be]) => s < be && s + dur > bs);
+
+    let placed = 0;
+    for (const t of sorted) {
+      const dur = Math.max(SNAP_MIN, t.estMinutes ?? 30);
+      // Energy-aware preferred window: high → morning, low → late afternoon.
+      const preferred = t.energy === "high" ? 9 * 60 : t.energy === "low" ? 15 * 60 : 10 * 60;
+      const first = Math.max(floor, preferred - START_H * 60);
+      let slot: number | null = null;
+      for (let s = first; s + dur <= dayEnd; s += SNAP_MIN) if (fits(s, dur)) { slot = s; break; }
+      if (slot === null) for (let s = floor; s + dur <= dayEnd; s += SNAP_MIN) if (fits(s, dur)) { slot = s; break; }
+      if (slot === null) continue;
+      busy.push([slot, slot + dur]);
+      await updateTask(t.id, { dueDate: iso, startTime: minToHM(slot + START_H * 60), estMinutes: dur, inbox: false });
+      placed++;
+    }
+    haptics.success();
+    toast.success(placed ? `Auto-scheduled ${placed} task${placed === 1 ? "" : "s"}` : "No free time left today");
   };
 
   const onDrop = async (e: React.DragEvent) => {
@@ -251,9 +343,21 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   return (
     <div className={cn("flex h-full min-h-0 flex-col overflow-hidden",
       !bare && "rounded-2xl border border-border/60 bg-card/40")}>
-      {!bare && (
-        <div className="border-b border-border/60 px-4 py-2 text-xs text-muted-foreground">
-          {format(date, "EEEE, MMMM d")}
+      {!compact && (
+        <div className={cn(
+          "flex items-center justify-between gap-2 px-3 py-2 text-xs text-muted-foreground",
+          !bare && "border-b border-border/60 px-4",
+        )}>
+          <span className="truncate">{bare ? "Timeline" : format(date, "EEEE, MMMM d")}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-[11.5px] font-medium text-primary hover:bg-primary/10"
+            onClick={() => void autoSchedule()}
+          >
+            <Wand2 className="h-3.5 w-3.5" />
+            Auto-schedule
+          </Button>
         </div>
       )}
       <div className="flex-1 overflow-y-auto">
@@ -316,6 +420,14 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
               const widthPct = 100 / it.lanes;
               const leftPct = it.lane * widthPct;
               const isFocusActive = it.kind === "task" && ((pomo.running && pomo.taskId === it.id) || focusTaskId === it.id);
+              const heightPx = Math.max(SNAP_MIN, it.durMin) * (HOUR_PX / 60) - 2;
+              const tiny = heightPx < 34;      // single-line layout
+              const short = heightPx < 56;     // no room for 2+ title lines
+              const titleLines = tiny ? 1 : short ? 1 : heightPx < 90 ? 2 : 4;
+              const hasConflict = it.lanes > 1;
+              const isMoving = moving?.id === it.id;
+              const shownStart = isMoving && movePreview !== null ? movePreview : it.startMin;
+              const timeLabel = `${minTo12(shownStart + START_H * 60)}–${minTo12(shownStart + it.durMin + START_H * 60)}`;
               return (
                 <ContextMenu key={it.id}>
                   <ContextMenuTrigger asChild>
@@ -323,34 +435,54 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                   key={it.id}
                   id={`plnr-block-${it.id}`}
                   data-planner-block
+                  title={`${it.title} · ${timeLabel}${hasConflict ? " · overlaps another item" : ""}`}
+                  onPointerDown={(e) => startMoveGesture(e, it)}
                   onClick={() => it.kind === "task" && openTaskEditor(it.id)}
                   className={cn(
-                    "group absolute cursor-pointer overflow-hidden rounded-lg border p-1.5 text-[11px] shadow-sm transition-shadow hover:shadow-md",
+                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm transition-shadow hover:shadow-md",
+                    it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
                     it.done && "opacity-60",
+                    hasConflict && "ring-1 ring-destructive/60",
+                    isMoving && "z-30 scale-[1.02] shadow-xl ring-2 ring-primary",
                     isFocusActive && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                   )}
                   style={{
                     top: it.startMin * (HOUR_PX / 60),
-                    height: Math.max(SNAP_MIN, it.durMin) * (HOUR_PX / 60) - 2,
+                    height: heightPx,
                     left: `calc(${leftPct}% + 4px)`,
                     width: `calc(${widthPct}% - 8px)`,
                   }}
                 >
-                  <div className="flex h-full min-w-0 flex-col gap-0.5">
-                    <div className="flex min-w-0 items-center gap-1 text-[9px] font-mono leading-none opacity-75">
-                      <span className="truncate">{minTo12(it.startMin + START_H * 60)}–{minTo12(it.startMin + it.durMin + START_H * 60)}</span>
-                      {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
+                  {tiny ? (
+                    <div className="flex h-full min-w-0 items-center gap-1 leading-none">
+                      {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
+                      <span className="min-w-0 flex-1 truncate font-medium">{it.title}</span>
+                      <span className="shrink-0 font-mono text-[9px] opacity-70">{minTo12(it.startMin + START_H * 60)}</span>
+                      {hasConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
                     </div>
-                    <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-tight">
-                      {ic && ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
-                      <span className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:anywhere]">{it.title}</span>
+                  ) : (
+                    <div className="flex h-full min-w-0 flex-col gap-0.5">
+                      <div className="flex min-w-0 items-center gap-1 font-mono text-[9px] leading-none opacity-75">
+                        <span className="truncate">{timeLabel}</span>
+                        {hasConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
+                        {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
+                      </div>
+                      <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-[1.25]">
+                        {ic && ic.kind === "lucide" ? <ic.Icon className="mt-[1px] h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
+                        <span
+                          className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:break-word] [word-break:normal]"
+                          style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: titleLines, overflow: "hidden" }}
+                        >
+                          {it.title}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {it.kind === "task" && (
                     <div
-                      onPointerDown={(e) => { e.stopPropagation(); setResizing({ id: it.id, startY: e.clientY, startDur: it.durMin }); }}
-                      className="absolute bottom-0 left-0 right-0 h-1.5 cursor-ns-resize opacity-0 transition-opacity hover:bg-primary/30 group-hover:opacity-100"
+                      onPointerDown={(e) => { e.stopPropagation(); haptics.snap(); setResizing({ id: it.id, startY: e.clientY, startDur: it.durMin }); }}
+                      className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize touch-none opacity-0 transition-opacity hover:bg-primary/30 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 [@media(pointer:coarse)]:bg-foreground/10"
                     />
                   )}
                 </div>
