@@ -100,6 +100,8 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   const gridRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
   const [resizing, setResizing] = useState<{ id: string; startY: number; startDur: number } | null>(null);
+  const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
+  const [movePreview, setMovePreview] = useState<number | null>(null);
   const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string } | null>(null);
   const suppressClickRef = useRef(false);
   const { blocks, update: updateBlock } = useTimeBlocks(iso, iso);
