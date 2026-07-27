@@ -302,36 +302,57 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
       t.dueDate === iso && !t.done && hmToMin(t.startTime) === null && !blocks.some(b => b.taskId === t.id));
     if (!pending.length) { toast.info("Nothing left to auto-schedule for this day"); return; }
 
-    const busy: [number, number][] = items.map(i => [i.startMin, i.startMin + i.durMin]);
-    const dayEnd = (END_H - START_H) * 60;
+    const buffer = autoPrefs.bufferMin;
+    const busy: [number, number][] = autoPrefs.respectAppointments
+      ? items.map(i => [i.startMin, i.startMin + i.durMin])
+      : items.filter(i => i.kind === "task").map(i => [i.startMin, i.startMin + i.durMin]);
+    const dayStart = Math.max(0, (autoPrefs.dayStartH - START_H) * 60);
+    const dayEnd = Math.min((END_H - START_H) * 60, (autoPrefs.dayEndH - START_H) * 60);
     const now = new Date();
-    const floor = isSameDay(now, date)
+    const floor = autoPrefs.skipPastTimes && isSameDay(now, date)
       ? Math.max(0, Math.ceil((now.getHours() * 60 + now.getMinutes() - START_H * 60) / SNAP_MIN) * SNAP_MIN)
-      : 0;
+      : dayStart;
+    const lowerBound = Math.max(dayStart, floor);
 
-    const sorted = pending.slice().sort((a, b) =>
-      (prio[a.priority] ?? 1) - (prio[b.priority] ?? 1) ||
-      (b.estMinutes ?? 30) - (a.estMinutes ?? 30));
+    const dur0 = (t: Task) => Math.max(SNAP_MIN, t.estMinutes ?? autoPrefs.defaultDuration);
+    const sorted = pending.slice().sort((a, b) => autoPrefs.order === "duration"
+      ? dur0(b) - dur0(a) || (prio[a.priority] ?? 1) - (prio[b.priority] ?? 1)
+      : (prio[a.priority] ?? 1) - (prio[b.priority] ?? 1) || dur0(b) - dur0(a));
 
     const fits = (s: number, dur: number) =>
-      s >= 0 && s + dur <= dayEnd && !busy.some(([bs, be]) => s < be && s + dur > bs);
+      s >= dayStart && s + dur <= dayEnd &&
+      !busy.some(([bs, be]) => s < be + buffer && s + dur + buffer > bs);
 
-    let placed = 0;
+    const entry: HistoryEntry = { label: "auto-schedule", tasks: [], blocks: [] };
     for (const t of sorted) {
-      const dur = Math.max(SNAP_MIN, t.estMinutes ?? 30);
+      const dur = dur0(t);
       // Energy-aware preferred window: high → morning, low → late afternoon.
-      const preferred = t.energy === "high" ? 9 * 60 : t.energy === "low" ? 15 * 60 : 10 * 60;
-      const first = Math.max(floor, preferred - START_H * 60);
+      const preferredH = t.energy === "high" ? autoPrefs.highEnergyH
+        : t.energy === "low" ? autoPrefs.lowEnergyH : autoPrefs.mediumEnergyH;
+      const first = Math.max(lowerBound, (preferredH - START_H) * 60);
       let slot: number | null = null;
       for (let s = first; s + dur <= dayEnd; s += SNAP_MIN) if (fits(s, dur)) { slot = s; break; }
-      if (slot === null) for (let s = floor; s + dur <= dayEnd; s += SNAP_MIN) if (fits(s, dur)) { slot = s; break; }
+      if (slot === null) for (let s = lowerBound; s + dur <= dayEnd; s += SNAP_MIN) if (fits(s, dur)) { slot = s; break; }
       if (slot === null) continue;
       busy.push([slot, slot + dur]);
+      entry.tasks.push({
+        taskId: t.id,
+        before: { dueDate: t.dueDate, startTime: t.startTime ?? null, estMinutes: t.estMinutes ?? dur, inbox: t.inbox ?? false },
+        after: { dueDate: iso, startTime: minToHM(slot + START_H * 60), estMinutes: dur, inbox: false },
+      });
       await updateTask(t.id, { dueDate: iso, startTime: minToHM(slot + START_H * 60), estMinutes: dur, inbox: false });
-      placed++;
     }
+    const placed = entry.tasks.length;
+    if (placed) history.push(entry);
     haptics.success();
-    toast.success(placed ? `Auto-scheduled ${placed} task${placed === 1 ? "" : "s"}` : "No free time left today");
+    setAnnouncement(placed ? `Auto-scheduled ${placed} tasks` : "No free time left today");
+    if (placed) {
+      toast.success(`Auto-scheduled ${placed} task${placed === 1 ? "" : "s"}`, {
+        action: { label: "Undo", onClick: () => { void runUndo(); } },
+      });
+    } else {
+      toast.info("No free time left in your day window");
+    }
   };
 
   const onDrop = async (e: React.DragEvent) => {
