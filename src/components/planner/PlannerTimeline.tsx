@@ -538,7 +538,6 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     <div
       onKeyDown={onRootKeyDown}
       className={cn("flex h-full min-h-0 flex-col overflow-hidden",
-woops
       !bare && "rounded-2xl border border-border/60 bg-card/40")}>
       <span aria-live="polite" className="sr-only">{announcement}</span>
       {!compact && (
