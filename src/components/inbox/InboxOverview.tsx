@@ -177,7 +177,7 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
           )}
         </div>
       </div>
-      <div className="mt-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-100">
+      <div className="mt-0.5 flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-100">
         <ScheduleQuickButton task={t} />
         <TaskHoverActions
           task={t}
