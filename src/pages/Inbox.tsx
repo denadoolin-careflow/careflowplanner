@@ -25,7 +25,7 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
-import { isToday, isFuture, parseISO, format } from "date-fns";
+import { isToday, isFuture, parseISO, format, startOfDay } from "date-fns";
 import { InboxIllustration } from "@/components/inbox/InboxIllustration";
 import { InboxOverview } from "@/components/inbox/InboxOverview";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
@@ -42,6 +42,12 @@ import { BlockEditor } from "@/components/notes/BlockEditor";
 import { INBOX_ROW_STYLES, useInboxRowStyle, type InboxRowStyle } from "@/lib/inbox-row-style";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LayoutGrid } from "lucide-react";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { InboxSchedulePane } from "@/components/inbox/InboxSchedulePane";
+import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
+import { useInboxViewMode } from "@/lib/inbox-planner-prefs";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { List as ListIcon, CalendarClock } from "lucide-react";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
   closestCenter, type DragEndEvent,
@@ -194,6 +200,13 @@ function InboxInner() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewDrafts, setReviewDrafts] = useState<DraftTask[]>([]);
   const [reviewTranscript, setReviewTranscript] = useState<string | undefined>(undefined);
+
+  // ── Planner integration ──
+  const isMobile = useIsMobile();
+  const [viewMode, setViewMode] = useInboxViewMode();
+  const [plannerDate, setPlannerDate] = useState<Date>(() => startOfDay(new Date()));
+  const [planDayOpen, setPlanDayOpen] = useState(false);
+  const scheduleOpen = viewMode === "schedule";
 
   // Hold-to-record state
   const [holdActive, setHoldActive] = useState(false);
@@ -1269,8 +1282,55 @@ function InboxInner() {
         )}
         </section>
 
+        {/* ────────── Planner toolbar ────────── */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-card/70 p-1 backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors",
+                !scheduleOpen ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <ListIcon className="h-3.5 w-3.5" /> List
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("schedule")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors",
+                scheduleOpen ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <CalendarClock className="h-3.5 w-3.5" /> Schedule
+            </button>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            onClick={() => setPlanDayOpen(true)}
+          >
+            <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Plan my day
+          </Button>
+        </div>
+
         {/* ────────── Today / Upcoming / Needs scheduling ────────── */}
-        <InboxOverview />
+        {scheduleOpen && !isMobile ? (
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+            <div className="min-w-0">
+              <InboxOverview />
+            </div>
+            <InboxSchedulePane
+              date={plannerDate}
+              onDateChange={setPlannerDate}
+              className="max-h-[80vh] lg:sticky lg:top-6"
+            />
+          </div>
+        ) : (
+          <InboxOverview />
+        )}
 
         {/* ────────── Current Inbox Items (only when present) ────────── */}
         {items.length > 0 ? (
@@ -1414,6 +1474,20 @@ function InboxInner() {
         onSave={saveReviewDrafts}
         onSaveAndProcess={async (d) => { await saveReviewDrafts(d); setProcessOpen(true); }}
       />
+
+      {/* Mobile: timeline as a bottom sheet */}
+      <Sheet open={scheduleOpen && isMobile} onOpenChange={(o) => { if (!o) setViewMode("list"); }}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-[24px] p-3">
+          <SheetTitle className="sr-only">Drop into day</SheetTitle>
+          <InboxSchedulePane
+            date={plannerDate}
+            onDateChange={setPlannerDate}
+            className="h-full border-0 bg-transparent backdrop-blur-none"
+          />
+        </SheetContent>
+      </Sheet>
+
+      <PlanMyDayDialog open={planDayOpen} onOpenChange={setPlanDayOpen} date={plannerDate} />
     </div>
   );
 }
