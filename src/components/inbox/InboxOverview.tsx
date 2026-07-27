@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { haptics } from "@/lib/haptics";
 import { TaskHoverActions } from "@/components/tasks/TaskHoverActions";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ScheduleQuickButton } from "@/components/inbox/ScheduleQuickButton";
+import { usePlannerPointerDrag } from "@/lib/planner-touch-drag";
 
 const FOCUS_KEY = "careflow:inbox-overview-focus";
 type Focus = "all" | "today" | "upcoming" | "needs";
@@ -124,6 +126,7 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
     const r = resolveTaskIcon(t);
     return r.kind === "lucide" ? { Icon: r.Icon } : { Icon: InboxIcon };
   })();
+  const drag = usePlannerPointerDrag(() => ({ taskId: t.id, label: t.title }));
   return (
     <div
       className="group flex items-start gap-3 border-b border-border/40 px-2 py-3 transition-colors last:border-0 hover:bg-muted/30"
@@ -175,13 +178,18 @@ function TaskRow({ t, onToggle, rightPill }: { t: Task; onToggle: () => void; ri
         </div>
       </div>
       <div className="mt-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-100">
+        <ScheduleQuickButton task={t} />
         <TaskHoverActions
           task={t}
           onEdit={() => openTaskEditor(t.id)}
           onDetails={() => openTaskEditor(t.id)}
         />
       </div>
-      <span aria-hidden className="mt-2 flex shrink-0 cursor-grab flex-col gap-0.5 opacity-30 active:cursor-grabbing">
+      <span
+        aria-label="Drag to schedule"
+        {...drag}
+        className="mt-2 flex shrink-0 cursor-grab touch-none flex-col gap-0.5 opacity-30 active:cursor-grabbing"
+      >
         <span className="h-1 w-1 rounded-full bg-foreground" />
         <span className="h-1 w-1 rounded-full bg-foreground" />
         <span className="h-1 w-1 rounded-full bg-foreground" />
