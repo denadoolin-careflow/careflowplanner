@@ -343,9 +343,21 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   return (
     <div className={cn("flex h-full min-h-0 flex-col overflow-hidden",
       !bare && "rounded-2xl border border-border/60 bg-card/40")}>
-      {!bare && (
-        <div className="border-b border-border/60 px-4 py-2 text-xs text-muted-foreground">
-          {format(date, "EEEE, MMMM d")}
+      {!compact && (
+        <div className={cn(
+          "flex items-center justify-between gap-2 px-3 py-2 text-xs text-muted-foreground",
+          !bare && "border-b border-border/60 px-4",
+        )}>
+          <span className="truncate">{bare ? "Timeline" : format(date, "EEEE, MMMM d")}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-[11.5px] font-medium text-primary hover:bg-primary/10"
+            onClick={() => void autoSchedule()}
+          >
+            <Wand2 className="h-3.5 w-3.5" />
+            Auto-schedule
+          </Button>
         </div>
       )}
       <div className="flex-1 overflow-y-auto">
