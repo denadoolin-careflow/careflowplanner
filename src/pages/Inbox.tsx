@@ -201,6 +201,13 @@ function InboxInner() {
   const [reviewDrafts, setReviewDrafts] = useState<DraftTask[]>([]);
   const [reviewTranscript, setReviewTranscript] = useState<string | undefined>(undefined);
 
+  // ── Planner integration ──
+  const isMobile = useIsMobile();
+  const [viewMode, setViewMode] = useInboxViewMode();
+  const [plannerDate, setPlannerDate] = useState<Date>(() => startOfDay(new Date()));
+  const [planDayOpen, setPlanDayOpen] = useState(false);
+  const scheduleOpen = viewMode === "schedule";
+
   // Hold-to-record state
   const [holdActive, setHoldActive] = useState(false);
   const [willCancel, setWillCancel] = useState(false);
