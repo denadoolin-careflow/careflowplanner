@@ -1474,6 +1474,20 @@ function InboxInner() {
         onSave={saveReviewDrafts}
         onSaveAndProcess={async (d) => { await saveReviewDrafts(d); setProcessOpen(true); }}
       />
+
+      {/* Mobile: timeline as a bottom sheet */}
+      <Sheet open={scheduleOpen && isMobile} onOpenChange={(o) => { if (!o) setViewMode("list"); }}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-[24px] p-3">
+          <SheetTitle className="sr-only">Drop into day</SheetTitle>
+          <InboxSchedulePane
+            date={plannerDate}
+            onDateChange={setPlannerDate}
+            className="h-full border-0 bg-transparent backdrop-blur-none"
+          />
+        </SheetContent>
+      </Sheet>
+
+      <PlanMyDayDialog open={planDayOpen} onOpenChange={setPlanDayOpen} date={plannerDate} />
     </div>
   );
 }
