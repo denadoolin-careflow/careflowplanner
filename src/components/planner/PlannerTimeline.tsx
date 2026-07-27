@@ -167,6 +167,94 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     toast.success("Scheduled");
   };
 
+  // ---- Move (reschedule) an existing block by dragging it ----
+  useEffect(() => {
+    if (!moving) return;
+    const clamp = (m: number) => Math.min(Math.max(0, m), (END_H - START_H) * 60 - SNAP_MIN);
+    const calc = (clientY: number) => {
+      const dy = clientY - moving.startY;
+      const delta = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
+      return clamp(moving.startMin + delta);
+    };
+    const onMove = (e: PointerEvent) => {
+      e.preventDefault();
+      const next = calc(e.clientY);
+      setMovePreview(next);
+      const el = document.getElementById(`plnr-block-${moving.id}`);
+      if (el) el.style.top = `${next * (HOUR_PX / 60)}px`;
+    };
+    const onUp = async (e: PointerEvent) => {
+      const next = calc(e.clientY);
+      setMoving(null);
+      setMovePreview(null);
+      suppressClickRef.current = true;
+      setTimeout(() => { suppressClickRef.current = false; }, 250);
+      if (next !== moving.startMin) await scheduleTaskAt(moving.id, next + START_H * 60);
+    };
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp, { once: true });
+    window.addEventListener("pointercancel", () => { setMoving(null); setMovePreview(null); }, { once: true });
+    return () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp as any); };
+  }, [moving]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startMoveGesture = (e: React.PointerEvent, it: { id: string; startMin: number; durMin: number; kind: string }) => {
+    if (it.kind !== "task") return;
+    if (e.button !== undefined && e.button !== 0) return;
+    const begin = () => {
+      haptics.pickup?.();
+      setMoving({ id: it.id, startY: e.clientY, startMin: it.startMin, durMin: it.durMin, offsetMin: 0 });
+    };
+    if (e.pointerType === "touch") {
+      // Long-press to lift on touch so vertical scrolling still works.
+      const timer = window.setTimeout(begin, 260);
+      const cancel = () => { window.clearTimeout(timer); window.removeEventListener("pointerup", cancel); window.removeEventListener("pointermove", onEarlyMove); };
+      const onEarlyMove = (ev: PointerEvent) => { if (Math.abs(ev.clientY - e.clientY) > 8) cancel(); };
+      window.addEventListener("pointerup", cancel, { once: true });
+      window.addEventListener("pointermove", onEarlyMove);
+    } else {
+      begin();
+    }
+  };
+
+  // ---- Auto-schedule: fill the day using priority, energy and estimated duration ----
+  const autoSchedule = async () => {
+    const prio: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    const pending = state.tasks.filter(t =>
+      t.dueDate === iso && !t.done && hmToMin(t.startTime) === null && !blocks.some(b => b.taskId === t.id));
+    if (!pending.length) { toast.info("Nothing left to auto-schedule for this day"); return; }
+
+    const busy: [number, number][] = items.map(i => [i.startMin, i.startMin + i.durMin]);
+    const dayEnd = (END_H - START_H) * 60;
+    const now = new Date();
+    const floor = isSameDay(now, date)
+      ? Math.max(0, Math.ceil((now.getHours() * 60 + now.getMinutes() - START_H * 60) / SNAP_MIN) * SNAP_MIN)
+      : 0;
+
+    const sorted = pending.slice().sort((a, b) =>
+      (prio[a.priority] ?? 1) - (prio[b.priority] ?? 1) ||
+      (b.estMinutes ?? 30) - (a.estMinutes ?? 30));
+
+    const fits = (s: number, dur: number) =>
+      s >= 0 && s + dur <= dayEnd && !busy.some(([bs, be]) => s < be && s + dur > bs);
+
+    let placed = 0;
+    for (const t of sorted) {
+      const dur = Math.max(SNAP_MIN, t.estMinutes ?? 30);
+      // Energy-aware preferred window: high → morning, low → late afternoon.
+      const preferred = t.energy === "high" ? 9 * 60 : t.energy === "low" ? 15 * 60 : 10 * 60;
+      const first = Math.max(floor, preferred - START_H * 60);
+      let slot: number | null = null;
+      for (let s = first; s + dur <= dayEnd; s += SNAP_MIN) if (fits(s, dur)) { slot = s; break; }
+      if (slot === null) for (let s = floor; s + dur <= dayEnd; s += SNAP_MIN) if (fits(s, dur)) { slot = s; break; }
+      if (slot === null) continue;
+      busy.push([slot, slot + dur]);
+      await updateTask(t.id, { dueDate: iso, startTime: minToHM(slot + START_H * 60), estMinutes: dur, inbox: false });
+      placed++;
+    }
+    haptics.success();
+    toast.success(placed ? `Auto-scheduled ${placed} task${placed === 1 ? "" : "s"}` : "No free time left today");
+  };
+
   const onDrop = async (e: React.DragEvent) => {
     const id = e.dataTransfer.getData(TASK_DRAG_MIME);
     if (!id) return;
