@@ -655,10 +655,22 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
               const tiny = heightPx < 34;      // single-line layout
               const short = heightPx < 56;     // no room for 2+ title lines
               const titleLines = tiny ? 1 : short ? 1 : heightPx < 90 ? 2 : 4;
-              const hasConflict = it.lanes > 1;
+              const conflicts = conflictMap.get(it.id) ?? [];
+              const hasConflict = conflicts.length > 0 && !dismissedConflicts.includes(it.id);
               const isMoving = moving?.id === it.id;
               const shownStart = isMoving && movePreview !== null ? movePreview : it.startMin;
               const timeLabel = `${minTo12(shownStart + START_H * 60)}–${minTo12(shownStart + it.durMin + START_H * 60)}`;
+              const conflictNode = hasConflict ? (
+                <ConflictPopover
+                  title={it.title}
+                  conflicts={conflicts}
+                  canEdit={it.kind === "task"}
+                  onMoveNextFree={() => void resolveMoveNextFree(it)}
+                  onShorten={() => void resolveShorten(it)}
+                  onPushLater={() => void resolvePushLater(it)}
+                  onDismiss={() => setDismissedConflicts(d => [...d, it.id])}
+                />
+              ) : null;
               return (
                 <ContextMenu key={it.id}>
                   <ContextMenuTrigger asChild>
@@ -666,11 +678,15 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                   key={it.id}
                   id={`plnr-block-${it.id}`}
                   data-planner-block
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${it.title}, ${timeLabel}, ${it.durMin} minutes${hasConflict ? ", overlaps another item" : ""}${it.kind === "task" ? ". Arrow keys move, Alt plus arrows change duration, Enter opens" : ""}`}
+                  onKeyDown={(e) => void onBlockKeyDown(e, it)}
                   title={`${it.title} · ${timeLabel}${hasConflict ? " · overlaps another item" : ""}`}
                   onPointerDown={(e) => startMoveGesture(e, it)}
                   onClick={() => it.kind === "task" && openTaskEditor(it.id)}
                   className={cn(
-                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm transition-shadow hover:shadow-md",
+                    "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
                     it.done && "opacity-60",
@@ -690,13 +706,22 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                       {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
                       <span className="min-w-0 flex-1 truncate font-medium">{it.title}</span>
                       <span className="shrink-0 font-mono text-[9px] opacity-70">{minTo12(it.startMin + START_H * 60)}</span>
-                      {hasConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
+                      {conflictNode}
                     </div>
                   ) : (
                     <div className="flex h-full min-w-0 flex-col gap-0.5">
                       <div className="flex min-w-0 items-center gap-1 font-mono text-[9px] leading-none opacity-75">
-                        <span className="truncate">{timeLabel}</span>
-                        {hasConflict && <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />}
+                        {it.kind === "task" ? (
+                          <DurationEditor
+                            durMin={it.durMin}
+                            label={timeLabel}
+                            title={it.title}
+                            onCommit={(next) => void setTaskDuration(it.id, next)}
+                          />
+                        ) : (
+                          <span className="truncate">{timeLabel}</span>
+                        )}
+                        {conflictNode}
                         {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
                       </div>
                       <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-[1.25]">
