@@ -24,12 +24,22 @@ import { useAutoSchedulePrefs } from "@/lib/auto-schedule-prefs";
 import { AutoScheduleSettings } from "./AutoScheduleSettings";
 import { ConflictPopover, type ConflictInfo } from "./ConflictPopover";
 import { DurationEditor } from "./DurationEditor";
+import { PlannerTemplatesMenu } from "./PlannerTemplatesMenu";
+import { PlannerMealLane } from "./PlannerMealLane";
+import { PlannerMobileInboxRail } from "./PlannerMobileInboxRail";
+import { PlannerAtmosphereStrip } from "./PlannerAtmosphereStrip";
+import { useBandColors, bandClass, type BandId } from "@/lib/planner-band-colors";
+import type { PlannerTemplate, TemplateItem } from "@/lib/planner-templates";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const RHYTHM_BANDS = [
-  { id: "morning", label: "Morning",   startH: 5,  endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
-  { id: "afternoon", label: "Afternoon", startH: 12, endH: 17, className: "bg-sky-50/40 dark:bg-sky-950/20" },
-  { id: "evening", label: "Evening",   startH: 17, endH: 22, className: "bg-violet-50/40 dark:bg-violet-950/20" },
+  { id: "morning" as BandId, label: "Morning", startH: 5, endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
+  { id: "afternoon" as BandId, label: "Afternoon", startH: 12, endH: 17, className: "bg-sky-50/40 dark:bg-sky-950/20" },
+  { id: "evening" as BandId, label: "Evening", startH: 17, endH: 22, className: "bg-violet-50/40 dark:bg-violet-950/20" },
 ];
+
+/** Default landing time for a task that only has a day part. */
+const DAY_PART_START_H: Record<string, number> = { Morning: 9, Afternoon: 13, Evening: 18, "Late Night": 21 };
 
 const START_H = 5;
 const END_H = 22;
@@ -113,6 +123,8 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   const { prefs: autoPrefs, update: updateAutoPrefs, reset: resetAutoPrefs } = useAutoSchedulePrefs();
   const [announcement, setAnnouncement] = useState("");
   const [dismissedConflicts, setDismissedConflicts] = useState<string[]>([]);
+  const [bandColors] = useBandColors();
+  const isMobile = useIsMobile();
 
   const applyHistory = useCallback(async (
     tasks: { id: string; patch: Record<string, unknown> }[],
@@ -122,9 +134,10 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     for (const b of blks) await updateBlock(b.id, b.patch as any);
   }, [updateTask, updateBlock]);
 
-  const history = usePlannerHistory(applyHistory);
-  const historyReset = history.reset;
-  useEffect(() => { historyReset(); }, [iso, historyReset]);
+  const history = usePlannerHistory(applyHistory, iso, {
+    task: (id) => state.tasks.some(t => t.id === id),
+    block: (id) => blocks.some(b => b.id === id),
+  });
 
   const runUndo = useCallback(async () => {
     const entry = await history.undo();
@@ -181,6 +194,20 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     }
     return assignLanes(out);
   }, [state.tasks, state.appointments, blocks, iso]);
+
+  /** Tasks due today that have a day part but no clock time — surfaced in the band header. */
+  const dayPartTasks = useMemo(() => {
+    const map: Record<string, Task[]> = { morning: [], afternoon: [], evening: [] };
+    for (const t of state.tasks) {
+      if (t.dueDate !== iso || t.done || !t.dayPart) continue;
+      if (hmToMin(t.startTime) !== null) continue;
+      if (blocks.some(b => b.taskId === t.id)) continue;
+      const key = t.dayPart.toLowerCase();
+      if (key === "late night") map.evening.push(t);
+      else if (map[key]) map[key].push(t);
+    }
+    return map;
+  }, [state.tasks, iso, blocks]);
 
   const yToMin = (y: number): number => {
     const rel = Math.max(0, y);
@@ -354,6 +381,49 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
       toast.info("No free time left in your day window");
     }
   };
+
+  /** Apply a schedule template: create any missing tasks at their template times. */
+  const applyTemplate = async (tpl: PlannerTemplate) => {
+    const existing = new Set(state.tasks.filter(t => t.dueDate === iso).map(t => t.title.toLowerCase()));
+    let added = 0;
+    for (const item of tpl.items) {
+      if (existing.has(item.title.toLowerCase())) continue;
+      const fallbackH = DAY_PART_START_H[item.dayPart ? item.dayPart[0].toUpperCase() + item.dayPart.slice(1) : "Morning"] ?? 9;
+      const startHM = item.startTime ?? minToHM(fallbackH * 60);
+      await addTask({
+        title: item.title,
+        area: (item.area as any) ?? "Personal",
+        priority: "medium",
+        done: false,
+        dueDate: iso,
+        startTime: startHM,
+        estMinutes: item.durMin,
+        energy: item.energy,
+        dayPart: item.dayPart ? ((item.dayPart[0].toUpperCase() + item.dayPart.slice(1)) as any) : undefined,
+        inbox: false,
+      } as any);
+      existing.add(item.title.toLowerCase());
+      added++;
+    }
+    haptics.success();
+    setAnnouncement(added ? `Applied ${tpl.name}, added ${added} tasks` : `${tpl.name} already on this day`);
+    if (added) toast.success(`${tpl.name}: added ${added} task${added === 1 ? "" : "s"}`);
+    else toast.info("Everything from this template is already here");
+  };
+
+  /** Snapshot the day's scheduled tasks so it can be saved as a template. */
+  const buildCurrentItems = (): TemplateItem[] =>
+    items
+      .filter(i => i.kind === "task")
+      .sort((a, b) => a.startMin - b.startMin)
+      .map(i => ({
+        title: i.title,
+        startTime: minToHM(i.startMin + START_H * 60),
+        dayPart: (i.startMin + START_H * 60 < 12 * 60 ? "morning" : i.startMin + START_H * 60 < 17 * 60 ? "afternoon" : "evening") as TemplateItem["dayPart"],
+        durMin: i.durMin,
+        area: i.area,
+        energy: i.task?.energy as TemplateItem["energy"],
+      }));
 
   const onDrop = async (e: React.DragEvent) => {
     const id = e.dataTransfer.getData(TASK_DRAG_MIME);
@@ -587,8 +657,15 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
               <Wand2 className="h-3.5 w-3.5" />
               Auto-schedule
             </Button>
+            <PlannerTemplatesMenu onApply={applyTemplate} buildCurrentItems={buildCurrentItems} />
             <AutoScheduleSettings prefs={autoPrefs} update={updateAutoPrefs} reset={resetAutoPrefs} />
           </div>
+        </div>
+      )}
+      {!compact && (
+        <div className="space-y-2 px-3 pb-2 sm:px-4">
+          <PlannerAtmosphereStrip date={date} />
+          {isMobile && <PlannerMobileInboxRail />}
         </div>
       )}
       <div className="flex-1 overflow-y-auto">
@@ -622,13 +699,30 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
             {RHYTHM_BANDS.map(b => {
               const topMin = (b.startH - START_H) * 60;
               const h = (b.endH - b.startH) * 60 * (HOUR_PX / 60);
+              const parked = dayPartTasks[b.id] ?? [];
               return (
                 <div key={b.id}
-                  className={cn("pointer-events-none absolute left-0 right-0", b.className)}
+                  className={cn("pointer-events-none absolute left-0 right-0", bandClass(b.id, bandColors))}
                   style={{ top: topMin * (HOUR_PX / 60), height: h }}>
                   <span className="absolute left-1 top-1 text-[9px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70">
                     {b.label}
                   </span>
+                  {parked.length > 0 && (
+                    <div className="pointer-events-auto absolute left-14 right-2 top-0.5 flex flex-wrap gap-1">
+                      {parked.map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); void scheduleTaskAt(t.id, (DAY_PART_START_H[t.dayPart ?? "Morning"] ?? b.startH) * 60); }}
+                          title={`${t.title} — ${b.label}. Tap to place on the grid.`}
+                          aria-label={`${t.title}, planned for the ${b.label.toLowerCase()}. Tap to place it on the grid.`}
+                          className="max-w-[45%] truncate rounded-full border border-dashed border-border/70 bg-card/80 px-2 py-0.5 text-[10px] text-muted-foreground shadow-sm hover:border-primary/60 hover:text-foreground"
+                        >
+                          {t.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -636,6 +730,16 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
             {Array.from({ length: (END_H - START_H) * 4 }, (_, i) => (
               <div key={i} className="absolute left-0 right-0 border-t border-border/10" style={{ top: (i + 1) * (HOUR_PX / 4) }} />
             ))}
+
+            {/* Meals: breakfast · lunch · dinner */}
+            <PlannerMealLane
+              iso={iso}
+              topFor={(absMin) => {
+                const rel = absMin - START_H * 60;
+                if (rel < 0 || rel > totalMin) return null;
+                return rel * (HOUR_PX / 60);
+              }}
+            />
 
             {/* Current time */}
             {nowMin !== null && nowMin >= 0 && nowMin <= totalMin && (

@@ -14,6 +14,7 @@ import { PlannerCommandBar } from "@/components/planner/PlannerCommandBar";
 import { PlannerRhythmHeader } from "@/components/planner/PlannerRhythmHeader";
 import { PlannerPeriodTabs, usePlannerPeriod } from "@/components/planner/PlannerPeriodTabs";
 import { PlannerPeriodList } from "@/components/planner/PlannerPeriodList";
+import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { usePlannerView } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -171,7 +172,17 @@ export default function Planner() {
         )}
         <div className="min-h-0">
           {view === "day" && period === "grid" && <PlannerTimeline date={day} />}
-          {view === "day" && period !== "grid" && <PlannerPeriodList date={day} period={period} />}
+          {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
+          {view === "day" && period === "timeofday" && (
+            <div className="grid h-full min-h-0 gap-3 overflow-y-auto lg:grid-cols-3">
+              <PlannerPeriodList date={day} period="morning" />
+              <PlannerPeriodList date={day} period="afternoon" />
+              <PlannerPeriodList date={day} period="evening" />
+            </div>
+          )}
+          {view === "day" && (period === "morning" || period === "afternoon" || period === "evening") && (
+            <PlannerPeriodList date={day} period={period} />
+          )}
           {view === "3day" && <PlannerMultiDayView start={day} days={3} unified />}
           {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}
           {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}

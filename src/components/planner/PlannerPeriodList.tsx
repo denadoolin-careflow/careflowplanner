@@ -6,7 +6,9 @@ import { PlannerTaskRow } from "./PlannerTaskRow";
 import { Sunrise, Sun, Moon } from "lucide-react";
 import type { PlannerPeriod } from "./PlannerPeriodTabs";
 
-const RANGES: Record<Exclude<PlannerPeriod, "grid">, { start: number; end: number; label: string; Icon: React.ComponentType<{ className?: string }>; tint: string }> = {
+export type DayPartPeriod = "morning" | "afternoon" | "evening";
+
+const RANGES: Record<DayPartPeriod, { start: number; end: number; label: string; Icon: React.ComponentType<{ className?: string }>; tint: string }> = {
   morning:   { start: 5,  end: 12, label: "Morning",   Icon: Sunrise, tint: "from-amber-500/10 to-transparent" },
   afternoon: { start: 12, end: 17, label: "Afternoon", Icon: Sun,     tint: "from-sky-500/10 to-transparent" },
   evening:   { start: 17, end: 22, label: "Evening",   Icon: Moon,    tint: "from-violet-500/10 to-transparent" },
@@ -18,7 +20,7 @@ function hmToMin(hm?: string | null): number | null {
   return h * 60 + m;
 }
 
-export function PlannerPeriodList({ date, period }: { date: Date; period: Exclude<PlannerPeriod, "grid"> }) {
+export function PlannerPeriodList({ date, period }: { date: Date; period: DayPartPeriod }) {
   const { state } = useStore();
   const iso = format(date, "yyyy-MM-dd");
   const { blocks } = useTimeBlocks(iso, iso);
