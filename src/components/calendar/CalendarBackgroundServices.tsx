@@ -16,11 +16,12 @@ export function CalendarBackgroundServices() {
 
   useEffect(() => { initReminders(); }, []);
   useEffect(() => {
-    scheduleReminders(state.appointments ?? []);
-    // Reschedule every 15 min to pick up appointments crossing the 24h horizon.
-    const iv = setInterval(() => scheduleReminders(state.appointments ?? []), 15 * 60 * 1000);
+    const run = () => scheduleReminders(state.appointments ?? [], state.tasks ?? []);
+    run();
+    // Reschedule every 15 min to pick up items crossing the 24h horizon.
+    const iv = setInterval(run, 15 * 60 * 1000);
     return () => clearInterval(iv);
-  }, [state.appointments]);
+  }, [state.appointments, state.tasks]);
 
   return <ShortcutsPopover open={helpOpen} onOpenChange={setHelpOpen} />;
 }

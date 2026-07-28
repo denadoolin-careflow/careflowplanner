@@ -100,6 +100,39 @@ const taskTo = (t: Partial<Task>) => ({
   follow_up_note: t.followUpNote === undefined ? undefined : (t.followUpNote ?? null),
 });
 const goalFrom = (r: any): Goal => ({ id: r.id, title: r.title, description: r.description ?? undefined, category: r.category, timeline: r.timeline, progress: r.progress, status: r.status });
+
+/**
+ * Column map used for PARTIAL task updates.
+ * `taskTo` above is insert-shaped: it coerces every missing field to a default
+ * (e.g. `due_date: null`, `inbox: false`), which silently wipes columns when it
+ * is used for a one-field patch. Patches must only ever touch the keys present
+ * in the patch object.
+ */
+const TASK_COLUMNS: Record<string, string> = {
+  title: "title", notes: "notes", icon: "icon", coverUrl: "cover_url", done: "done",
+  dueDate: "due_date", priority: "priority", area: "area",
+  startDate: "start_date", startTime: "start_time", endDate: "end_date", endTime: "end_time",
+  tags: "tags", energy: "energy", estMinutes: "est_minutes",
+  goalId: "goal_id", recipientId: "recipient_id", dayPart: "day_part",
+  isTopThree: "is_top_three", status: "status", sortOrder: "sort_order",
+  recurrenceType: "recurrence_type", recurrenceInterval: "recurrence_interval",
+  recurrenceDays: "recurrence_days", nextDueDate: "next_due_date",
+  lastCompletedAt: "last_completed_at", autoReset: "auto_reset",
+  projectId: "project_id", parentTaskId: "parent_task_id", inbox: "inbox",
+  resetItemId: "reset_item_id", sectionId: "section_id", snoozedUntil: "snoozed_until",
+  attachments: "attachments", anchorKey: "anchor_key",
+  followUpAt: "follow_up_at", followUpNote: "follow_up_note",
+};
+
+export const taskPatchTo = (patch: Partial<Task>): Record<string, unknown> => {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(patch)) {
+    const col = TASK_COLUMNS[key];
+    if (!col || value === undefined) continue;
+    out[col] = value === undefined ? null : (value ?? null);
+  }
+  return out;
+};
 const habitFrom = (r: any): Habit => {
   const meta = (r.meta && typeof r.meta === "object") ? r.meta : {};
   return {
@@ -585,9 +618,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const prev = state.tasks.find(t => t.id === id);
       const localTs = nowIso();
       setState(s => ({ ...s, tasks: s.tasks.map(t => t.id === id ? { ...t, ...patch, updatedAt: localTs } : t) }));
-      const values = taskTo(patch);
-      // Drop undefined keys so we don't blow away unrelated cols.
-      for (const k of Object.keys(values)) if ((values as any)[k] === undefined) delete (values as any)[k];
+      // Patch-only mapping: never send columns the caller didn't ask to change.
+      const values = taskPatchTo(patch);
+      if (Object.keys(values).length === 0) return;
       await syncOp({ kind: "update", table: "tasks", id, values, localTs });
       if (patch.dueDate !== undefined && patch.dueDate && patch.dueDate !== prev?.dueDate) {
         const merged = { ...(prev ?? {}), ...patch } as Task;
