@@ -656,8 +656,15 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
               <Wand2 className="h-3.5 w-3.5" />
               Auto-schedule
             </Button>
+            <PlannerTemplatesMenu onApply={applyTemplate} buildCurrentItems={buildCurrentItems} />
             <AutoScheduleSettings prefs={autoPrefs} update={updateAutoPrefs} reset={resetAutoPrefs} />
           </div>
+        </div>
+      )}
+      {!compact && (
+        <div className="space-y-2 px-3 pb-2 sm:px-4">
+          <PlannerAtmosphereStrip date={date} />
+          {isMobile && <PlannerMobileInboxRail />}
         </div>
       )}
       <div className="flex-1 overflow-y-auto">
@@ -691,13 +698,30 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
             {RHYTHM_BANDS.map(b => {
               const topMin = (b.startH - START_H) * 60;
               const h = (b.endH - b.startH) * 60 * (HOUR_PX / 60);
+              const parked = dayPartTasks[b.id] ?? [];
               return (
                 <div key={b.id}
-                  className={cn("pointer-events-none absolute left-0 right-0", b.className)}
+                  className={cn("pointer-events-none absolute left-0 right-0", bandClass(b.id, bandColors))}
                   style={{ top: topMin * (HOUR_PX / 60), height: h }}>
                   <span className="absolute left-1 top-1 text-[9px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70">
                     {b.label}
                   </span>
+                  {parked.length > 0 && (
+                    <div className="pointer-events-auto absolute left-14 right-2 top-0.5 flex flex-wrap gap-1">
+                      {parked.map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); void scheduleTaskAt(t.id, (DAY_PART_START_H[t.dayPart ?? "Morning"] ?? b.startH) * 60); }}
+                          title={`${t.title} — ${b.label}. Tap to place on the grid.`}
+                          aria-label={`${t.title}, planned for the ${b.label.toLowerCase()}. Tap to place it on the grid.`}
+                          className="max-w-[45%] truncate rounded-full border border-dashed border-border/70 bg-card/80 px-2 py-0.5 text-[10px] text-muted-foreground shadow-sm hover:border-primary/60 hover:text-foreground"
+                        >
+                          {t.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -705,6 +729,16 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
             {Array.from({ length: (END_H - START_H) * 4 }, (_, i) => (
               <div key={i} className="absolute left-0 right-0 border-t border-border/10" style={{ top: (i + 1) * (HOUR_PX / 4) }} />
             ))}
+
+            {/* Meals: breakfast · lunch · dinner */}
+            <PlannerMealLane
+              iso={iso}
+              topFor={(absMin) => {
+                const rel = absMin - START_H * 60;
+                if (rel < 0 || rel > totalMin) return null;
+                return rel * (HOUR_PX / 60);
+              }}
+            />
 
             {/* Current time */}
             {nowMin !== null && nowMin >= 0 && nowMin <= totalMin && (
