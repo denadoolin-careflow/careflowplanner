@@ -38,7 +38,7 @@ export function PlannerPeriodTabs({ value, onChange, className }: {
               active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <o.Icon className="h-3 w-3" /><span className="hidden xs:inline sm:inline">{o.label}</span>
+            <o.Icon className="h-3 w-3" />{o.label}
           </button>
         );
       })}
