@@ -6,6 +6,45 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { AutoSchedulePrefs } from "@/lib/auto-schedule-prefs";
+import {
+  BAND_COLOR_PRESETS, swatchClass, useBandColors,
+  type BandColorId, type BandId,
+} from "@/lib/planner-band-colors";
+import { useReminderPrefs, requestNotificationPermission } from "@/lib/reminders";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const BANDS: { id: BandId; label: string }[] = [
+  { id: "morning", label: "Morning" },
+  { id: "afternoon", label: "Afternoon" },
+  { id: "evening", label: "Evening" },
+];
+
+function BandColorRow({ id, label, value, onPick }: {
+  id: BandId; label: string; value: BandColorId; onPick: (c: BandColorId) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-16 shrink-0 text-[11px] text-muted-foreground">{label}</span>
+      <div className="flex flex-wrap gap-1">
+        {BAND_COLOR_PRESETS.map(p => (
+          <button
+            key={p.id}
+            type="button"
+            aria-label={`${label} band ${p.label}`}
+            aria-pressed={value === p.id}
+            onClick={() => onPick(p.id)}
+            className={cn(
+              "h-4 w-4 rounded-full ring-offset-1 ring-offset-background transition",
+              swatchClass(p.id),
+              value === p.id ? "ring-2 ring-primary" : "hover:ring-1 hover:ring-border",
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function hourLabel(h: number) {
   const d = new Date(2000, 0, 1, h);
@@ -32,6 +71,17 @@ export function AutoScheduleSettings({ prefs, update, reset }: {
   update: (patch: Partial<AutoSchedulePrefs>) => void;
   reset: () => void;
 }) {
+  const [bandColors, setBandColors, resetBands] = useBandColors();
+  const [reminders, setReminders] = useReminderPrefs();
+
+  const toggleTaskReminders = async (on: boolean) => {
+    setReminders({ tasksEnabled: on });
+    if (!on) return;
+    const p = await requestNotificationPermission();
+    if (p === "denied") toast.info("Reminders will show in-app — notifications are blocked in your browser.");
+    else if (p === "unsupported") toast.info("This browser can't show system notifications — reminders will appear in-app.");
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -44,7 +94,7 @@ export function AutoScheduleSettings({ prefs, update, reset }: {
           <Settings2 className="h-3.5 w-3.5" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 space-y-3 p-3">
+      <PopoverContent align="end" className="max-h-[70vh] w-80 space-y-3 overflow-y-auto p-3">
         <div className="flex items-center justify-between">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Auto-schedule preferences
@@ -115,6 +165,35 @@ export function AutoScheduleSettings({ prefs, update, reset }: {
           <Label htmlFor="as-skip-past" className="text-xs font-normal">Skip times already passed</Label>
           <Switch id="as-skip-past" checked={prefs.skipPastTimes}
             onCheckedChange={(v) => update({ skipPastTimes: !!v })} />
+        </div>
+
+        <div className="space-y-2 border-t border-border/60 pt-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Day part colours</p>
+            <Button variant="ghost" size="sm" className="h-6 gap-1 px-1.5 text-[11px]" onClick={resetBands}>
+              <RotateCcw className="h-3 w-3" /> Reset
+            </Button>
+          </div>
+          {BANDS.map(b => (
+            <BandColorRow key={b.id} id={b.id} label={b.label} value={bandColors[b.id]}
+              onPick={(c) => setBandColors({ [b.id]: c })} />
+          ))}
+        </div>
+
+        <div className="space-y-2 border-t border-border/60 pt-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Reminders</p>
+          <div className="flex items-center justify-between rounded-lg px-1 py-1">
+            <Label htmlFor="as-task-reminders" className="text-xs font-normal">Remind me about scheduled tasks</Label>
+            <Switch id="as-task-reminders" checked={reminders.tasksEnabled}
+              onCheckedChange={(v) => void toggleTaskReminders(!!v)} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="as-lead" className="text-[11px] text-muted-foreground">Minutes before start</Label>
+            <Input id="as-lead" type="number" min={0} max={120} step={5} className="h-8 text-xs"
+              value={reminders.taskLeadMinutes}
+              disabled={!reminders.tasksEnabled}
+              onChange={(e) => setReminders({ taskLeadMinutes: Math.max(0, Math.min(120, Number(e.target.value) || 0)) })} />
+          </div>
         </div>
       </PopoverContent>
     </Popover>
