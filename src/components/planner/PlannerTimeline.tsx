@@ -134,9 +134,10 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     for (const b of blks) await updateBlock(b.id, b.patch as any);
   }, [updateTask, updateBlock]);
 
-  const history = usePlannerHistory(applyHistory);
-  const historyReset = history.reset;
-  useEffect(() => { historyReset(); }, [iso, historyReset]);
+  const history = usePlannerHistory(applyHistory, iso, {
+    task: (id) => state.tasks.some(t => t.id === id),
+    block: (id) => blocks.some(b => b.id === id),
+  });
 
   const runUndo = useCallback(async () => {
     const entry = await history.undo();
