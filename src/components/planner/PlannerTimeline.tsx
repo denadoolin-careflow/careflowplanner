@@ -123,6 +123,8 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   const { prefs: autoPrefs, update: updateAutoPrefs, reset: resetAutoPrefs } = useAutoSchedulePrefs();
   const [announcement, setAnnouncement] = useState("");
   const [dismissedConflicts, setDismissedConflicts] = useState<string[]>([]);
+  const [bandColors] = useBandColors();
+  const isMobile = useIsMobile();
 
   const applyHistory = useCallback(async (
     tasks: { id: string; patch: Record<string, unknown> }[],
@@ -191,6 +193,20 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     }
     return assignLanes(out);
   }, [state.tasks, state.appointments, blocks, iso]);
+
+  /** Tasks due today that have a day part but no clock time — surfaced in the band header. */
+  const dayPartTasks = useMemo(() => {
+    const map: Record<string, Task[]> = { morning: [], afternoon: [], evening: [] };
+    for (const t of state.tasks) {
+      if (t.dueDate !== iso || t.done || !t.dayPart) continue;
+      if (hmToMin(t.startTime) !== null) continue;
+      if (blocks.some(b => b.taskId === t.id)) continue;
+      const key = t.dayPart.toLowerCase();
+      if (key === "late night") map.evening.push(t);
+      else if (map[key]) map[key].push(t);
+    }
+    return map;
+  }, [state.tasks, iso, blocks]);
 
   const yToMin = (y: number): number => {
     const rel = Math.max(0, y);
