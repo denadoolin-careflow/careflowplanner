@@ -24,12 +24,22 @@ import { useAutoSchedulePrefs } from "@/lib/auto-schedule-prefs";
 import { AutoScheduleSettings } from "./AutoScheduleSettings";
 import { ConflictPopover, type ConflictInfo } from "./ConflictPopover";
 import { DurationEditor } from "./DurationEditor";
+import { PlannerTemplatesMenu } from "./PlannerTemplatesMenu";
+import { PlannerMealLane } from "./PlannerMealLane";
+import { PlannerMobileInboxRail } from "./PlannerMobileInboxRail";
+import { PlannerAtmosphereStrip } from "./PlannerAtmosphereStrip";
+import { useBandColors, bandClass, type BandId } from "@/lib/planner-band-colors";
+import type { PlannerTemplate, TemplateItem } from "@/lib/planner-templates";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const RHYTHM_BANDS = [
-  { id: "morning", label: "Morning",   startH: 5,  endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
-  { id: "afternoon", label: "Afternoon", startH: 12, endH: 17, className: "bg-sky-50/40 dark:bg-sky-950/20" },
-  { id: "evening", label: "Evening",   startH: 17, endH: 22, className: "bg-violet-50/40 dark:bg-violet-950/20" },
+  { id: "morning" as BandId, label: "Morning", startH: 5, endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
+  { id: "afternoon" as BandId, label: "Afternoon", startH: 12, endH: 17, className: "bg-sky-50/40 dark:bg-sky-950/20" },
+  { id: "evening" as BandId, label: "Evening", startH: 17, endH: 22, className: "bg-violet-50/40 dark:bg-violet-950/20" },
 ];
+
+/** Default landing time for a task that only has a day part. */
+const DAY_PART_START_H: Record<string, number> = { Morning: 9, Afternoon: 13, Evening: 18, "Late Night": 21 };
 
 const START_H = 5;
 const END_H = 22;
