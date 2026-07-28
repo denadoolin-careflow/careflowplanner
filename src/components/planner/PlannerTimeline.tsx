@@ -381,6 +381,49 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
     }
   };
 
+  /** Apply a schedule template: create any missing tasks at their template times. */
+  const applyTemplate = async (tpl: PlannerTemplate) => {
+    const existing = new Set(state.tasks.filter(t => t.dueDate === iso).map(t => t.title.toLowerCase()));
+    let added = 0;
+    for (const item of tpl.items) {
+      if (existing.has(item.title.toLowerCase())) continue;
+      const fallbackH = DAY_PART_START_H[item.dayPart ? item.dayPart[0].toUpperCase() + item.dayPart.slice(1) : "Morning"] ?? 9;
+      const startHM = item.startTime ?? minToHM(fallbackH * 60);
+      await addTask({
+        title: item.title,
+        area: (item.area as any) ?? "Personal",
+        priority: "medium",
+        done: false,
+        dueDate: iso,
+        startTime: startHM,
+        estMinutes: item.durMin,
+        energy: item.energy,
+        dayPart: item.dayPart ? ((item.dayPart[0].toUpperCase() + item.dayPart.slice(1)) as any) : undefined,
+        inbox: false,
+      } as any);
+      existing.add(item.title.toLowerCase());
+      added++;
+    }
+    haptics.success();
+    setAnnouncement(added ? `Applied ${tpl.name}, added ${added} tasks` : `${tpl.name} already on this day`);
+    if (added) toast.success(`${tpl.name}: added ${added} task${added === 1 ? "" : "s"}`);
+    else toast.info("Everything from this template is already here");
+  };
+
+  /** Snapshot the day's scheduled tasks so it can be saved as a template. */
+  const buildCurrentItems = (): TemplateItem[] =>
+    items
+      .filter(i => i.kind === "task")
+      .sort((a, b) => a.startMin - b.startMin)
+      .map(i => ({
+        title: i.title,
+        startTime: minToHM(i.startMin + START_H * 60),
+        dayPart: (i.startMin + START_H * 60 < 12 * 60 ? "morning" : i.startMin + START_H * 60 < 17 * 60 ? "afternoon" : "evening") as TemplateItem["dayPart"],
+        durMin: i.durMin,
+        area: i.area,
+        energy: i.task?.energy as TemplateItem["energy"],
+      }));
+
   const onDrop = async (e: React.DragEvent) => {
     const id = e.dataTransfer.getData(TASK_DRAG_MIME);
     if (!id) return;
