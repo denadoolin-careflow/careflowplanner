@@ -323,6 +323,8 @@ export interface Settings {
   planningStyle?: string;
   timeZone?: string;
   defaultRoute?: string;
+  /** Free-text user preference for how Carey speaks to them (tone/focus). */
+  careyStyle?: string;
 }
 
 export interface AppState {
