@@ -41,7 +41,7 @@ export function GreetingBlock({ date }: { date: Date }) {
             <span aria-hidden>·</span>
             <span className="inline-flex items-center gap-1">
               <CloudSun className="h-3.5 w-3.5" aria-hidden />
-              {formatTemp(snap.tempC)} {snap.description}
+              {formatTemp(snap.tempC)} {snap.conditionLabel}
             </span>
           </>
         )}
