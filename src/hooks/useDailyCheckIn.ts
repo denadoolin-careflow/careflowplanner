@@ -13,13 +13,19 @@ import { getPhaseInfo } from "@/lib/cycle";
 import { getMoonData } from "@/lib/moon-providers";
 import { useWeatherSnapshot } from "@/lib/weather-store";
 
+export interface GenerateOptions {
+  force?: boolean;
+  mood?: string | null;
+  captureText?: string | null;
+}
+
 interface UseCheckInResult {
   iso: string;
   record: CheckInRecord | null;
   loading: boolean;
   generating: boolean;
   error: string | null;
-  generate: (force?: boolean) => Promise<void>;
+  generate: (opts?: GenerateOptions) => Promise<void>;
   update: (patch: Partial<CheckInRecord>) => Promise<void>;
   complete: () => Promise<void>;
 }
@@ -45,12 +51,15 @@ export function useDailyCheckIn(dateISO: string = isoToday()): UseCheckInResult 
     return () => { cancelled = true; };
   }, [dateISO]);
 
-  const generate = useCallback(async (force = false) => {
+  const generate = useCallback(async (opts: GenerateOptions = {}) => {
+    const { force = false } = opts;
     if (generating) return;
     if (!force && record?.ai_payload) return;
     setGenerating(true);
     setError(null);
     try {
+      const mood = opts.mood !== undefined ? opts.mood : record?.mood ?? null;
+      const captureText = opts.captureText !== undefined ? opts.captureText : record?.capture_text ?? null;
       const moon = getMoonData(new Date(dateISO));
       const cycle = cycleSettings.enabled
         ? getPhaseInfo(new Date(dateISO), periods, cycleSettings)
@@ -74,6 +83,8 @@ export function useDailyCheckIn(dateISO: string = isoToday()): UseCheckInResult 
         },
         goals: (state.goals ?? []).slice(0, 5).map((g: { title: string }) => g.title),
         habits: (state.habits ?? []).slice(0, 6).map((h) => h.title),
+        mood,
+        journal: captureText,
       };
 
       const { data, error: fnError } = await supabase.functions.invoke("ai-daily-checkin", { body });
@@ -83,6 +94,8 @@ export function useDailyCheckIn(dateISO: string = isoToday()): UseCheckInResult 
 
       const saved = await saveCheckIn(dateISO, {
         ai_payload: payload,
+        mood,
+        capture_text: captureText,
         chosen_intention: record?.chosen_intention ?? payload.method.anchor.intention,
       });
       setRecord(saved);
