@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
   ].filter(Boolean).join("\n");
 
   try {
-    const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
+    const callUpstream = () => fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -68,7 +68,24 @@ Deno.serve(async (req) => {
         response_format: { type: "json_object" },
       }),
     });
-    if (upstream.status === 429) return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    // Retry transient rate limits with exponential backoff before giving up.
+    let upstream = await callUpstream();
+    for (let attempt = 0; attempt < 3 && (upstream.status === 429 || upstream.status === 503); attempt++) {
+      const retryAfter = Number(upstream.headers.get("retry-after"));
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? Math.min(retryAfter * 1000, 8000)
+        : 800 * Math.pow(2, attempt);
+      await new Promise((r) => setTimeout(r, waitMs));
+      upstream = await callUpstream();
+    }
+
+    if (upstream.status === 429) {
+      return new Response(JSON.stringify({
+        error: "rate_limited",
+        message: "Cosmic guidance is busy right now. Try again in a moment.",
+      }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "30" } });
+    }
     if (upstream.status === 402) return new Response(JSON.stringify({ error: "ai_quota_exceeded" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!upstream.ok) {
       const text = await upstream.text();

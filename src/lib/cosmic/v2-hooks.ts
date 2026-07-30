@@ -74,7 +74,16 @@ export function useDailyGuidance(chart: NatalChartV2 | null, date: Date = new Da
         profection: profection ? { house: profection.house, sign: profection.profectedSign, timeLord: profection.timeLord, topics: houseTopics(profection.house) } : undefined,
       };
       const { data: ai, error: err } = await aiInvoke("ai-cosmic-daily", { body: payload });
-      if (err || !ai) { setError("Couldn't generate guidance right now."); setLoading(false); return; }
+      if (err || !ai) {
+        const code = (err as any)?.error;
+        setError(
+          code === "rate_limited"
+            ? "Cosmic guidance is busy right now — try again in a moment."
+            : "Couldn't generate guidance right now."
+        );
+        setLoading(false);
+        return;
+      }
       const row = {
         user_id: u.user.id,
         guidance_date: iso,
