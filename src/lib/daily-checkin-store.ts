@@ -5,6 +5,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface CheckInAiPayload {
+  /** Optional: absent on payloads generated before the mood-first flow. */
+  reflection?: string;
   energy: {
     meter: "calm" | "active" | "intense";
     overall: string;
