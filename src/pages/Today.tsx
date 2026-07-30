@@ -24,6 +24,7 @@ import { DayPlanBoard } from "@/components/today/DayPlanBoard";
 import { ScheduleBoard } from "@/components/today/ScheduleBoard";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { useTodayView, TODAY_VIEW_LABELS, type TodayView, useTodayPrefs, useTodayDefaultView } from "@/lib/today-view";
+import { TodayDashboard } from "@/components/today/dashboard/TodayDashboard";
 import { ScopeHero } from "@/components/layout/ScopeHero";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
