@@ -1,5 +1,6 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { userStyleBlock } from "../_shared/user-style.ts";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -19,6 +20,8 @@ interface Body {
   mood?: string | null;
   journal?: string | null;
   caregivingLoad?: "light" | "normal" | "heavy" | null;
+  /** Free-text user preference for tone/focus. Treated as data, never instructions. */
+  careyStyle?: string | null;
 }
 
 const SCHEMA = {
@@ -141,7 +144,7 @@ Deno.serve(async (req) => {
       "Rhythm.blocks: 4-6 items like {time:'8:30a', label:'Morning walk', kind:'movement'} covering work/rest/meal/water/med/movement.",
       "Mantra: one short affirmation, first-person, present-tense.",
       "Recommendations: 4-6 short actionable suggestions adapted to the day.",
-    ].join(" ");
+    ].join(" ") + userStyleBlock(body.careyStyle);
 
     const resp = await fetch(GATEWAY, {
       method: "POST",

@@ -5095,6 +5095,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          carey_style: string | null
           created_at: string
           current_household_id: string | null
           default_route: string
@@ -5113,6 +5114,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          carey_style?: string | null
           created_at?: string
           current_household_id?: string | null
           default_route?: string
@@ -5131,6 +5133,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          carey_style?: string | null
           created_at?: string
           current_household_id?: string | null
           default_route?: string
