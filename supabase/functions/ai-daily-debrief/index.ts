@@ -1,6 +1,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 import { COSMIC_SYSTEM_PROMPT, COSMIC_TONE_REMINDER } from "../_shared/cosmic-tone.ts";
+import { fetchUserStyleBlock } from "../_shared/user-style.ts";
 
 const LOVABLE_GATEWAY = "https://api.openai.com/v1/chat/completions";
 
@@ -83,7 +84,8 @@ Deno.serve(async (req) => {
       "No markdown, no preamble, JSON only.",
       toneLine[tone],
       COSMIC_TONE_REMINDER,
-    ].join("\n");
+      await fetchUserStyleBlock(req),
+    ].filter(Boolean).join("\n");
 
     const resp = await fetch(LOVABLE_GATEWAY, {
       method: "POST",

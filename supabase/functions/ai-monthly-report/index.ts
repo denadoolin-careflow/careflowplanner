@@ -1,5 +1,6 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { fetchUserStyleBlock } from "../_shared/user-style.ts";
 
 const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
 
@@ -93,7 +94,7 @@ Ground every recommendation in the supplied data. Never diagnose. If a domain (m
       body: JSON.stringify({
         model: "gpt-5-mini",
         messages: [
-          { role: "system", content: system },
+          { role: "system", content: system + (await fetchUserStyleBlock(req)) },
           { role: "user", content: userMsg },
         ],
         response_format: { type: "json_object" },

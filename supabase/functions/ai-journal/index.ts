@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { fetchUserStyleBlock } from "../_shared/user-style.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,7 +40,8 @@ Deno.serve(async (req) => {
     const apiKey = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!apiKey) return new Response(JSON.stringify({ error: "AI not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const system = "You generate gentle, caregiver-aware journaling prompts. Return exactly 4 short, open-ended prompts as a JSON array of strings. No markdown, no preamble, no numbering — just the JSON array.";
+    const system = "You generate gentle, caregiver-aware journaling prompts. Return exactly 4 short, open-ended prompts as a JSON array of strings. No markdown, no preamble, no numbering — just the JSON array."
+      + (await fetchUserStyleBlock(req));
     const userMsg = `Template: ${hint}\nMood: ${mood || "(unspecified)"}\nEnergy: ${energy || "(unspecified)"}\nContext: ${context || "(none)"}\n\nReturn ONLY a JSON array like [\"prompt one\", \"prompt two\", \"prompt three\", \"prompt four\"].`;
 
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {

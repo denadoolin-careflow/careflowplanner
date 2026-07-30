@@ -1,5 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { fetchUserStyleBlock } from "../_shared/user-style.ts";
 
 const LOVABLE_GATEWAY = "https://api.openai.com/v1/chat/completions";
 
@@ -50,7 +51,8 @@ Deno.serve(async (req) => {
       `  "tomorrow_kind_step": string,  // 1 small, kind, concrete invitation for tomorrow`,
       `  "closing_blessing": string     // 1 soft closing line, like a goodnight`,
       `}`,
-    ].join("\n");
+      await fetchUserStyleBlock(req),
+    ].filter(Boolean).join("\n");
 
     const userPrompt = `Today's context (JSON):\n${JSON.stringify(ctx, null, 2)}\n\nReturn the JSON now.`;
 
