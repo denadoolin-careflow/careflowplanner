@@ -3,7 +3,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 import { COSMIC_SYSTEM_PROMPT, COSMIC_TONE_REMINDER } from "../_shared/cosmic-tone.ts";
 
-const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 interface Body {
   date?: string;
@@ -56,11 +56,11 @@ Deno.serve(async (req) => {
   ].filter(Boolean).join("\n");
 
   try {
-    const callUpstream = () => fetch("https://api.openai.com/v1/chat/completions", {
+    const callUpstream = () => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { "Authorization": `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      headers: { "Lovable-API-Key": LOVABLE_API_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-5-mini",
+        model: "google/gemini-3.6-flash",
         messages: [
           { role: "system", content: COSMIC_SYSTEM_PROMPT },
           { role: "user", content: user },
@@ -69,15 +69,24 @@ Deno.serve(async (req) => {
       }),
     });
 
-    // Retry transient rate limits with exponential backoff before giving up.
-    let upstream = await callUpstream();
-    for (let attempt = 0; attempt < 3 && (upstream.status === 429 || upstream.status === 503); attempt++) {
-      const retryAfter = Number(upstream.headers.get("retry-after"));
-      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
-        ? Math.min(retryAfter * 1000, 8000)
-        : 800 * Math.pow(2, attempt);
-      await new Promise((r) => setTimeout(r, waitMs));
-      upstream = await callUpstream();
+    // Retry transient failures (rate limits, upstream resets) with backoff.
+    let upstream: Response | null = null;
+    let netErr: unknown = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 700 * Math.pow(2, attempt - 1)));
+      try {
+        netErr = null;
+        upstream = await callUpstream();
+      } catch (e) {
+        netErr = e; upstream = null; continue; // connection reset -> retry
+      }
+      if (upstream.status !== 429 && upstream.status !== 503) break;
+    }
+    if (!upstream) {
+      return new Response(JSON.stringify({
+        error: "upstream_unavailable",
+        message: "Couldn't reach the guidance service. Try again in a moment.",
+      }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (upstream.status === 429) {
