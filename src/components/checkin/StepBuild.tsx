@@ -60,11 +60,15 @@ export function StepBuild({ payload, iso, intention, onIntention, onPayload, onB
   };
 
   async function pickPriorityTask(i: number, taskId: string) {
+    const prev = slotTask(i);
+    if (prev && prev.id !== taskId) await updateTask(prev.id, { isTopThree: false });
     await updateTask(taskId, { isTopThree: true, dueDate: iso });
     setPriority(i, taskId, null);
   }
 
   async function createPriority(i: number, title: string) {
+    const prev = slotTask(i);
+    if (prev) await updateTask(prev.id, { isTopThree: false });
     const id = await addTask({
       title, area: "Personal", priority: "high", done: false,
       isTopThree: true, dueDate: iso,
