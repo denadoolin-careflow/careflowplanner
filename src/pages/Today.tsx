@@ -138,19 +138,21 @@ function TodayInner() {
       >
         <DemoTasksBanner />
         <MorningCheckInPrompt />
-        <ScopeHero
-          scope="today"
-          date={day}
-          title="Today"
-          subtitle={format(day, "EEEE, MMMM d, yyyy")}
-          eyebrow="Today"
-          pickerLabel={format(day, "MMM d")}
-          isCurrent={isReallyToday}
-          onPrev={() => setDayAndUrl(addDays(day, -1))}
-          onNext={() => setDayAndUrl(addDays(day, 1))}
-          onToday={() => setDayAndUrl(new Date())}
-          onDatePick={(d) => setDayAndUrl(d)}
-        />
+        {view !== "dashboard" && (
+          <ScopeHero
+            scope="today"
+            date={day}
+            title="Today"
+            subtitle={format(day, "EEEE, MMMM d, yyyy")}
+            eyebrow="Today"
+            pickerLabel={format(day, "MMM d")}
+            isCurrent={isReallyToday}
+            onPrev={() => setDayAndUrl(addDays(day, -1))}
+            onNext={() => setDayAndUrl(addDays(day, 1))}
+            onToday={() => setDayAndUrl(new Date())}
+            onDatePick={(d) => setDayAndUrl(d)}
+          />
+        )}
         {(() => {
           const controls = (
             <div className="space-y-3">
@@ -270,6 +272,16 @@ function TodayInner() {
               {prefs.showQuickAdd && <QuickAddBar date={day} />}
             </div>
           );
+          if (view === "dashboard") {
+            return (
+              <TodayDashboard
+                date={day}
+                onTaskClick={setEditTaskId}
+                onExhale={() => setExhaleOpen(true)}
+                controls={controls}
+              />
+            );
+          }
           if (view === "rhythm") {
             return (
               <RhythmDashboard
