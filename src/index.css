@@ -199,6 +199,16 @@
     --phase-ovulatory: 42 88% 65%;
     --phase-luteal: 28 70% 65%;
 
+    /* CARE loop accents — dark theme */
+    --care-capture: 268 50% 74%;
+    --care-capture-soft: 268 25% 24%;
+    --care-anchor: 38 80% 66%;
+    --care-anchor-soft: 38 28% 24%;
+    --care-rhythm: 150 45% 62%;
+    --care-rhythm-soft: 150 22% 22%;
+    --care-exhale: 205 60% 68%;
+    --care-exhale-soft: 205 28% 24%;
+
     --warm: 32 25% 40%;
     --warm-foreground: 32 35% 95%;
     --warm-soft: 32 18% 20%;
