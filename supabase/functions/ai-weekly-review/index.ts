@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { fetchUserStyleBlock } from "../_shared/user-style.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -104,7 +105,7 @@ ${JSON.stringify(ctx)}`;
       body: JSON.stringify({
         model: "gpt-5-mini",
         messages: [
-          { role: "system", content: SYSTEM },
+          { role: "system", content: SYSTEM + (await fetchUserStyleBlock(req)) },
           { role: "user", content: userPrompt },
         ],
         response_format: { type: "json_object" },
