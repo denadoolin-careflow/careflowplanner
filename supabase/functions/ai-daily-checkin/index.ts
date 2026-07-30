@@ -17,12 +17,14 @@ interface Body {
   season?: string | null;
   energy?: "low" | "medium" | "high" | null;
   mood?: string | null;
+  journal?: string | null;
   caregivingLoad?: "light" | "normal" | "heavy" | null;
 }
 
 const SCHEMA = {
   type: "object",
   properties: {
+    reflection: { type: "string" },
     energy: {
       type: "object",
       properties: {
@@ -92,7 +94,7 @@ const SCHEMA = {
     mantra: { type: "string" },
     recommendations: { type: "array", items: { type: "string" } },
   },
-  required: ["energy", "moonGuidance", "method", "insight", "mantra", "recommendations"],
+  required: ["reflection", "energy", "moonGuidance", "method", "insight", "mantra", "recommendations"],
   additionalProperties: false,
 };
 
@@ -124,12 +126,14 @@ Deno.serve(async (req) => {
       body.recentJournal?.length && `Recent journal snippets: ${body.recentJournal.join(" | ")}`,
       body.energy && `Reported energy: ${body.energy}.`,
       body.mood && `Reported mood: ${body.mood}.`,
+      body.journal && `What's on their mind this morning: "${body.journal}"`,
       body.caregivingLoad && `Caregiving load: ${body.caregivingLoad}.`,
     ].filter(Boolean).join("\n");
 
     const system = [
       "You are Carey, CareFlow's calm, thoughtful morning planner.",
       "Return a personalized Daily Check-In as structured JSON matching the provided schema.",
+      "reflection: 1-2 sentences spoken directly to the person that acknowledge their reported mood and what's on their mind, naming the feeling in your own words rather than quoting them back. If no mood or note was given, warmly acknowledge the start of the day instead.",
       "Tone: warm, grounded, supportive, never mystical or preachy. Plain, gentle language.",
       "Weave moon, transits, weather, and life context lightly and practically.",
       "Keep every string 1-2 sentences (max ~30 words). Priorities: 3 short verbs+object phrases.",

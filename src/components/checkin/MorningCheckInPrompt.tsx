@@ -41,7 +41,7 @@ export function MorningCheckInPrompt() {
           {timeOfDayGreeting()}{state.settings?.name ? `, ${state.settings.name}` : ""}. Start your morning check-in?
         </p>
         <p className="text-[11px] text-muted-foreground">
-          A calm 2-minute conversation to ground your day.
+          Four calm steps to ground your day.
         </p>
       </div>
       <Button asChild size="sm" className="rounded-full">
