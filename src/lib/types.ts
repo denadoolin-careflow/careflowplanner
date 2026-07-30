@@ -325,6 +325,8 @@ export interface Settings {
   defaultRoute?: string;
   /** Free-text user preference for how Carey speaks to them (tone/focus). */
   careyStyle?: string;
+  /** Optional override used only by the Morning Check-In. Falls back to careyStyle. */
+  checkinStyle?: string;
 }
 
 export interface AppState {
