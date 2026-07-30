@@ -1,63 +1,45 @@
-## Goal
+## Yes — this fits the existing design system
 
-Make the Planner timeline reliable and personal: nothing disappears, everything schedulable shows up, and the day can be pre-filled from templates.
+Everything proposed (reset-glass cards, font-display headings, Badge/Input/Textarea/Collapsible, sonner toasts) is already in use on this page. No new dependencies, no new tables. The step shell is a local `step` state plus a small progress dots component.
 
-## 1. Fix: task disappears after saving a dragged duration
+## What gets built
 
-Unverified root cause — first step is to reproduce and diagnose. Known facts from the code: the resize gesture mutates the block's inline `height` directly on the DOM node, and `setTaskDuration` writes `estMinutes` on the task plus `end_time` on any paired time block. The timeline only renders a task if it has a `due_date` matching the day *and* a start time (from a time block or `start_time`).
+**Step 1 — "How are you arriving today?"**
+Mood pills (same 5) + optional "What's on your mind?" textarea. Continue writes `mood` + `capture_text` locally, then calls generate with those values and advances to Step 2 with a "Carey is reflecting…" loader.
 
-Diagnosis order: confirm whether the update drops `start_time`/`due_date`, whether the paired time-block write fails, or whether the block is rendered but collapsed/off-grid. Then fix the actual cause and make duration writes patch-only (never touch date/time), clamp duration to the visible grid, and clear the temporary inline height after commit.
+**Step 2 — "Here's what I noticed"**
+One narrative card: new `reflection` line at top (acknowledges mood/capture), then energy prose (overall + mood/focus themes + challenge/opportunity woven into sentences), moon summary, and insight. "Learn more" collapsible holds the 7 life areas.
 
-## 2. Persist undo history
+**Step 3 — "Build your day"**
+Intention input (defaults to AI suggestion, with the "why" beneath), Top 3 priorities, rhythm timeline — vertical, single card, dividers instead of nested boxes.
 
-Move the session-only undo/redo stack to localStorage, keyed per date, with a version tag and a cap (30 entries). Entries expire after a day so a stale stack can never replay onto changed data; each entry re-validates that the target task/block still exists before applying.
+**Step 4 — "Close the loop"**
+Mantra + save-to-favorites, gratitude as one input with "+ Add another", exhale as a 4-item checklist, recommendations list, then "Complete check-in".
 
-## 3. Schedule templates
+Type scale: body 15px, secondary 13px, section titles 18px `font-display`, eyebrow labels stay small-caps but used sparingly. Chrome reduced to one card per step with `divide-y` internals.
 
-New "Templates" menu in the planner header with starters: School day, Appointment day, Low-energy day, plus user-created ones.
+Regenerate lives in the Step 2 header and re-runs with the same mood/capture, keeping you on Step 2.
 
-- A template is a named list of items: title, day part or start time, duration, area, optional energy.
-- "Apply to this day" creates/schedules the tasks on the timeline in one action, recorded as a single undo entry.
-- "Save today as template" captures the current day's scheduled items.
-- Stored in the backend per user so templates follow the account, with row-level access limited to the owner.
+## Data-model risks worth knowing before we start
 
-## 4. One-tap conflict resolve
+1. **The auto-generate-on-mount effect must go.** `DailyCheckIn.tsx:61-63` fires `generate()` as soon as the page loads with no payload. That's exactly the behavior mood-first removes — it has to become "generate only on Step 1 continue". Low risk, but it's the change that actually delivers the personalization.
 
-Add a single "Resolve all" button next to the header conflict count that applies the best fix per conflict (move to next free slot, else shorten to fit), as one undoable batch. Individual blocks keep the existing popover, with the top suggestion promoted to a one-tap primary button.
+2. **`generate()` takes no inputs today.** It builds its body from `state`/`record` and guards with `if (!force && record?.ai_payload) return`, with `record` in its dependency array. Passing mood/capture requires changing the signature to `generate({ force, mood, captureText })` rather than relying on `record` having been saved first — saving then generating would race, because `update()` and `generate()` both write through `saveCheckIn` and the state update isn't awaited into the closure. This is the single riskiest part and I'd fix it by passing values explicitly.
 
-## 5. Reminder notifications
+3. **`saveCheckIn` merges from localStorage, not from React state.** Two overlapping saves (e.g. step-1 `update()` still in flight when generate's save lands) both read the same local snapshot, so the later write wins on shared keys. Mitigation: one save per step transition, and generate carries `mood`/`capture_text` through in its own save rather than assuming they're already persisted.
 
-Extend the existing in-browser reminder scheduler to cover scheduled tasks (not just appointments): a per-task reminder lead time, a global default in planner settings, permission prompt handled once, and rescheduling whenever the day's items change.
+4. **`reflection` is a new schema field, and the schema is `strict: true`.** Adding it to `required` is correct for new generations, but **payloads already stored today (and any cached local record) won't have it** — so the TS type must mark it optional and Step 2 must render it conditionally. Same applies if a user reloads mid-day on an old payload.
 
-## 6. Day-part tasks appear on the grid
+5. **`capture_text` is currently the answer to the AI's `capture.question`** — a question that doesn't exist yet at Step 1. Reusing the field for "What's on your mind?" is the right call (it's what feeds the AI), but it means the AI-generated capture question no longer has a home. Proposal: show it as a gentle placeholder/prompt-nudge on the Step 4 or drop `capture.question` from the UI entirely and keep it in the schema. Tell me which you prefer; I'll default to dropping it from the UI.
 
-Tasks that have a day part but no clock time currently never render. They will be placed in a slim "unscheduled in this band" row pinned at the top of each Morning / Afternoon / Evening band, draggable down onto a real time. Same treatment on the mobile grid.
+6. **No step state is persisted.** If someone reloads mid-flow they'd restart. Plan: derive the entry step — `completed_at` or an existing `ai_payload` opens at Step 2, otherwise Step 1. Cheap and avoids re-asking mood.
 
-## 7. Meals on the grid
+7. **Gratitude is `string[]`** so 1-to-N inputs need no migration; existing 3-entry records just render 3 rows.
 
-Breakfast / Lunch / Dinner appear as dedicated lightweight lanes anchored to their band, populated from the day's planned meals. Tapping opens the meal; empty slots offer "Plan breakfast/lunch/dinner". Meal lanes are visually distinct from tasks and never counted as conflicts.
+## Technical changes
 
-## 8. Mobile: inbox rail above the grid
-
-On mobile, replace the left drawer with a horizontally scrollable inbox rail docked directly above the timeline, collapsible, with long-press drag from a chip onto the grid (reusing the existing touch-drag drop listener). Auto-scrolls the grid while dragging near its edges.
-
-## 9. More planner views
-
-Add to the existing Day / 3-day / Week / Month toggle:
-- **Schedule** — a compact agenda list of everything on the day in time order.
-- **Time of day** — three stacked band columns (morning/afternoon/evening) with drag between bands.
-
-## 10. Day-part colors in planner settings
-
-Add color pickers for the morning, afternoon and evening bands in the planner settings popover, alongside the existing auto-schedule prefs. Colors are stored as theme-safe tokens (a preset palette rather than raw hex) so light/dark both stay legible, and they drive the band backgrounds and the day-part views.
-
-## 11. Weather, moon and cycle on the planner
-
-Reuse the existing slot-weather strip and moon/cycle modules: a compact single-row header under the planner date bar showing morning/afternoon/evening weather, the moon phase, and the cycle phase, collapsible and remembered.
-
-## Technical notes
-
-- Timeline coordinate system stays `START_H = 5` → `END_H = 22`, 60px/hour, 15-min snap.
-- New persistence: templates in the database (owner-scoped); undo stack, band colors, view mode and reminder defaults in localStorage alongside existing planner prefs.
-- All new mutations (template apply, resolve-all, band moves) push a single history entry so one undo reverts the whole action.
-- Work is split so the bug fix (section 1) lands and is verified in the preview before the larger features.
+- `supabase/functions/ai-daily-checkin/index.ts`: add `reflection: { type: "string" }` to `SCHEMA.properties` + `required`; accept `journal` (string) in `Body`; add both to the context prompt and a system-prompt line instructing the reflection to name the stated mood/journal directly without repeating it verbatim.
+- `src/lib/daily-checkin-store.ts`: add `reflection?: string` to `CheckInAiPayload`.
+- `src/hooks/useDailyCheckIn.ts`: change `generate` to accept `{ force?, mood?, captureText? }`, send `mood` + `journal` in the body, and persist `mood`/`capture_text` alongside `ai_payload` in the same `saveCheckIn` call.
+- `src/pages/DailyCheckIn.tsx`: rewritten as a step shell; extract `StepArrive`, `StepNoticed`, `StepBuild`, `StepClose` into `src/components/checkin/` to keep files small, plus a `CheckInProgress` dots component.
+- `MorningCheckInPrompt.tsx`: copy tweak only, after the flow is built and timed.
