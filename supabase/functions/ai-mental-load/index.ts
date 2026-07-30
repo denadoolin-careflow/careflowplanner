@@ -79,7 +79,7 @@ Items:
 ${items.map((it, i) => `${i + 1}. [${it.id}] ${it.content}`).join("\n")}`;
 
   const resp = await callAI(apiKey, [
-    { role: "system", content: SYSTEM_TONE },
+    { role: "system", content: SYSTEM_TONE + style },
     { role: "user", content: user },
   ], {
     name: "sort_dumps",
@@ -158,7 +158,7 @@ Heavy caregiving day, low energy, or high emotional weight = SMALLER most_import
 Use the task IDs exactly as given.`;
 
   const resp = await callAI(apiKey, [
-    { role: "system", content: SYSTEM_TONE },
+    { role: "system", content: SYSTEM_TONE + style },
     { role: "user", content: user },
   ], {
     name: "prioritize_day",
@@ -213,7 +213,7 @@ Answer in 3-5 short, kind sentences. Offer permission, not pressure. Name 1-3 co
       model: "gpt-5-mini",
       max_completion_tokens: 600,
       messages: [
-        { role: "system", content: SYSTEM_TONE },
+        { role: "system", content: SYSTEM_TONE + style },
         { role: "user", content: user },
       ],
     }),
@@ -238,7 +238,7 @@ Suggest a *gentle, simplified* version of today.
 Use task IDs from the list above when referring to tasks.`;
 
   const resp = await callAI(apiKey, [
-    { role: "system", content: SYSTEM_TONE },
+    { role: "system", content: SYSTEM_TONE + style },
     { role: "user", content: user },
   ], {
     name: "simplify_day",
