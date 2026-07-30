@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
+import { fetchCapacity, pushCapacity } from "./capacity-sync";
 
 export type BurnoutLevel = "spacious" | "steady" | "tender" | "depleted";
 
@@ -46,10 +47,15 @@ function readEntry(date: Date): BurnoutEntry {
   }
 }
 
-function writeEntry(date: Date, entry: BurnoutEntry) {
+function writeEntry(date: Date, entry: BurnoutEntry, sync = true) {
   try { localStorage.setItem(dayKey(date), JSON.stringify(entry)); } catch { /* ignore */ }
   const iso = format(date, "yyyy-MM-dd");
   listeners.forEach(l => l(iso, entry));
+  if (sync) {
+    void pushCapacity(iso, {
+      level: entry.level, mvd: entry.mvd, mvdTaskId: entry.mvdTaskId, updatedAt: entry.updatedAt,
+    });
+  }
 }
 
 export function useBurnoutCheckIn(date: Date) {
@@ -57,6 +63,33 @@ export function useBurnoutCheckIn(date: Date) {
   const [entry, setEntry] = useState<BurnoutEntry>(() => readEntry(date));
 
   useEffect(() => { setEntry(readEntry(date)); }, [iso]);
+
+  // Hydrate from the cloud once per day-key. The remote row wins when it is
+  // newer than the local one; otherwise the local value is pushed up.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const remote = await fetchCapacity(iso);
+      if (cancelled) return;
+      const local = readEntry(date);
+      if (!remote) {
+        if (local.level || local.mvd || local.mvdTaskId) {
+          void pushCapacity(iso, { ...local });
+        }
+        return;
+      }
+      const remoteNewer = (remote.updatedAt || "") > (local.updatedAt || "");
+      if (remoteNewer && (remote.level || remote.mvd || remote.mvdTaskId)) {
+        writeEntry(date, {
+          level: remote.level, mvd: remote.mvd, mvdTaskId: remote.mvdTaskId, updatedAt: remote.updatedAt,
+        }, false);
+      } else if (!remoteNewer && (local.level || local.mvd || local.mvdTaskId)) {
+        void pushCapacity(iso, { ...local });
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [iso]);
 
   useEffect(() => {
     const fn = (k: string, e: BurnoutEntry) => { if (k === iso) setEntry(e); };
