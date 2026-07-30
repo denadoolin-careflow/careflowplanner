@@ -43,6 +43,16 @@ export default {
           foreground: "hsl(var(--warm-foreground))",
           soft: "hsl(var(--warm-soft))",
         },
+        care: {
+          capture: "hsl(var(--care-capture))",
+          "capture-soft": "hsl(var(--care-capture-soft))",
+          anchor: "hsl(var(--care-anchor))",
+          "anchor-soft": "hsl(var(--care-anchor-soft))",
+          rhythm: "hsl(var(--care-rhythm))",
+          "rhythm-soft": "hsl(var(--care-rhythm-soft))",
+          exhale: "hsl(var(--care-exhale))",
+          "exhale-soft": "hsl(var(--care-exhale-soft))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",

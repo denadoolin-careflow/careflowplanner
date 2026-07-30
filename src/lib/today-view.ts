@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
-export type TodayView = "rhythm" | "timeofday" | "plan" | "schedule" | "custom";
+export type TodayView = "dashboard" | "rhythm" | "timeofday" | "plan" | "schedule" | "custom";
 
 export const TODAY_VIEW_LABELS: Record<TodayView, string> = {
+  dashboard: "Dashboard",
   rhythm: "Rhythm",
   timeofday: "Time of day",
   plan: "Day plan",
@@ -19,17 +20,18 @@ const DEFAULT_VIEW_KEY = "careflow:today-default-view:v1";
 const viewListeners = new Set<(v: TodayView) => void>();
 
 function isTodayView(v: unknown): v is TodayView {
-  return v === "rhythm" || v === "timeofday" || v === "plan" || v === "schedule" || v === "custom";
+  return v === "dashboard" || v === "rhythm" || v === "timeofday" || v === "plan"
+    || v === "schedule" || v === "custom";
 }
 
 function readDefaultView(): TodayView {
-  if (typeof localStorage === "undefined") return "rhythm";
+  if (typeof localStorage === "undefined") return "dashboard";
   const v = localStorage.getItem(DEFAULT_VIEW_KEY);
-  return isTodayView(v) ? v : "rhythm";
+  return isTodayView(v) ? v : "dashboard";
 }
 
 function readView(): TodayView {
-  if (typeof localStorage === "undefined") return "rhythm";
+  if (typeof localStorage === "undefined") return "dashboard";
   const v = localStorage.getItem(VIEW_KEY);
   return isTodayView(v) ? v : readDefaultView();
 }

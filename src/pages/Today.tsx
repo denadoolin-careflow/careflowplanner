@@ -24,6 +24,7 @@ import { DayPlanBoard } from "@/components/today/DayPlanBoard";
 import { ScheduleBoard } from "@/components/today/ScheduleBoard";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { useTodayView, TODAY_VIEW_LABELS, type TodayView, useTodayPrefs, useTodayDefaultView } from "@/lib/today-view";
+import { TodayDashboard } from "@/components/today/dashboard/TodayDashboard";
 import { ScopeHero } from "@/components/layout/ScopeHero";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
@@ -138,19 +139,21 @@ function TodayInner() {
       >
         <DemoTasksBanner />
         <MorningCheckInPrompt />
-        <ScopeHero
-          scope="today"
-          date={day}
-          title="Today"
-          subtitle={format(day, "EEEE, MMMM d, yyyy")}
-          eyebrow="Today"
-          pickerLabel={format(day, "MMM d")}
-          isCurrent={isReallyToday}
-          onPrev={() => setDayAndUrl(addDays(day, -1))}
-          onNext={() => setDayAndUrl(addDays(day, 1))}
-          onToday={() => setDayAndUrl(new Date())}
-          onDatePick={(d) => setDayAndUrl(d)}
-        />
+        {view !== "dashboard" && (
+          <ScopeHero
+            scope="today"
+            date={day}
+            title="Today"
+            subtitle={format(day, "EEEE, MMMM d, yyyy")}
+            eyebrow="Today"
+            pickerLabel={format(day, "MMM d")}
+            isCurrent={isReallyToday}
+            onPrev={() => setDayAndUrl(addDays(day, -1))}
+            onNext={() => setDayAndUrl(addDays(day, 1))}
+            onToday={() => setDayAndUrl(new Date())}
+            onDatePick={(d) => setDayAndUrl(d)}
+          />
+        )}
         {(() => {
           const controls = (
             <div className="space-y-3">
@@ -270,6 +273,16 @@ function TodayInner() {
               {prefs.showQuickAdd && <QuickAddBar date={day} />}
             </div>
           );
+          if (view === "dashboard") {
+            return (
+              <TodayDashboard
+                date={day}
+                onTaskClick={setEditTaskId}
+                onExhale={() => setExhaleOpen(true)}
+                controls={controls}
+              />
+            );
+          }
           if (view === "rhythm") {
             return (
               <RhythmDashboard
