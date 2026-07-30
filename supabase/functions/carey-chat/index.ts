@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { fetchUserStyleBlock } from "../_shared/user-style.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -115,13 +116,15 @@ Deno.serve(async (req) => {
     const apiKey = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!apiKey) return json({ error: "AI not configured" }, 500);
 
+    const styleBlock = await fetchUserStyleBlock(req);
+
     const aiResp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "gpt-5-mini",
         messages: [
-          { role: "system", content: CAREY_SYSTEM + memoryBlock + contextBlock },
+          { role: "system", content: CAREY_SYSTEM + memoryBlock + contextBlock + styleBlock },
           ...prior,
           { role: "user", content: message },
         ],
