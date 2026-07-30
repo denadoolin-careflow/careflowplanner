@@ -60,11 +60,15 @@ export function StepBuild({ payload, iso, intention, onIntention, onPayload, onB
   };
 
   async function pickPriorityTask(i: number, taskId: string) {
+    const prev = slotTask(i);
+    if (prev && prev.id !== taskId) await updateTask(prev.id, { isTopThree: false });
     await updateTask(taskId, { isTopThree: true, dueDate: iso });
     setPriority(i, taskId, null);
   }
 
   async function createPriority(i: number, title: string) {
+    const prev = slotTask(i);
+    if (prev) await updateTask(prev.id, { isTopThree: false });
     const id = await addTask({
       title, area: "Personal", priority: "high", done: false,
       isTopThree: true, dueDate: iso,
@@ -141,9 +145,14 @@ export function StepBuild({ payload, iso, intention, onIntention, onPayload, onB
                       onCheckedChange={(v) => void updateTask(task.id, { done: !!v })}
                       aria-label={`Complete ${task.title}`}
                     />
-                    <span className={task.done ? "flex-1 text-[15px] line-through opacity-60" : "flex-1 text-[15px]"}>
-                      {task.title}
-                    </span>
+                    <TaskPicker
+                      tasks={tasks}
+                      className={task.done ? "flex-1 line-through opacity-60" : "flex-1"}
+                      label={task.title}
+                      selectedId={task.id}
+                      onSelectTask={(id) => void pickPriorityTask(i, id)}
+                      onCreate={(title) => void createPriority(i, title)}
+                    />
                     <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Clear priority"
                       onClick={() => void clearPriority(i)}>
                       <X className="h-3.5 w-3.5" />

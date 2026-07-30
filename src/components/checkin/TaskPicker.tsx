@@ -19,21 +19,23 @@ export interface TaskPickerProps {
   label: string;
   muted?: boolean;
   className?: string;
+  /** Currently linked task id, shown with a check in the list. */
+  selectedId?: string | null;
   onSelectTask: (taskId: string) => void;
   onCreate: (title: string) => void;
 }
 
 /** Type-or-select control: search existing tasks, or create one from free text. */
-export function TaskPicker({ tasks, label, muted, className, onSelectTask, onCreate }: TaskPickerProps) {
+export function TaskPicker({ tasks, label, muted, className, selectedId, onSelectTask, onCreate }: TaskPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   const options = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const pool = tasks.filter((t) => !t.done && !t.parentTaskId && t.status !== "parked");
+    const pool = tasks.filter((t) => (!t.done || t.id === selectedId) && !t.parentTaskId && t.status !== "parked");
     const filtered = q ? pool.filter((t) => t.title.toLowerCase().includes(q)) : pool;
     return filtered.slice(0, 40);
-  }, [tasks, query]);
+  }, [tasks, query, selectedId]);
 
   const typed = query.trim();
 
@@ -82,7 +84,7 @@ export function TaskPicker({ tasks, label, muted, className, onSelectTask, onCre
                     value={t.id}
                     onSelect={() => { onSelectTask(t.id); setOpen(false); setQuery(""); }}
                   >
-                    <Check className="mr-2 h-3.5 w-3.5 opacity-0" />
+                    <Check className={cn("mr-2 h-3.5 w-3.5", t.id === selectedId ? "opacity-100" : "opacity-0")} />
                     <span className="min-w-0 flex-1 truncate">{t.title}</span>
                   </CommandItem>
                 ))}
