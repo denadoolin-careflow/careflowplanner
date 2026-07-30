@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { fetchUserStyleBlock } from "../_shared/user-style.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,18 +39,19 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const action = String(body?.action ?? "");
+    const style = await fetchUserStyleBlock(req);
 
     if (action === "categorize_dump") {
-      return await categorizeDump(body, apiKey);
+      return await categorizeDump(body, apiKey, style);
     }
     if (action === "prioritize") {
-      return await prioritize(supabase, uid, apiKey);
+      return await prioritize(supabase, uid, apiKey, style);
     }
     if (action === "decision_support") {
-      return await decisionSupport(supabase, uid, apiKey, String(body?.prompt ?? ""));
+      return await decisionSupport(supabase, uid, apiKey, String(body?.prompt ?? ""), style);
     }
     if (action === "simplify") {
-      return await simplifyDay(supabase, uid, apiKey);
+      return await simplifyDay(supabase, uid, apiKey, style);
     }
     return json({ error: "unknown action" }, 400);
   } catch (e: any) {
@@ -58,7 +60,7 @@ Deno.serve(async (req) => {
   }
 });
 
-async function categorizeDump(body: any, apiKey: string) {
+async function categorizeDump(body: any, apiKey: string, style = "") {
   const items: { id: string; content: string }[] = Array.isArray(body?.items) ? body.items.slice(0, 30) : [];
   if (items.length === 0) return json({ items: [] });
 
@@ -134,7 +136,7 @@ Open tasks (${ctx.tasks.length}):
 ${ctx.tasks.map((t: any, i: number) => `${i + 1}. [${t.id}] ${t.title} — area:${t.area} prio:${t.priority} energy:${t.energy ?? "?"} due:${t.due_date ?? "—"}`).join("\n") || "(none)"}`;
 }
 
-async function prioritize(supabase: any, uid: string, apiKey: string) {
+async function prioritize(supabase: any, uid: string, apiKey: string, style = "") {
   const ctx = await loadContext(supabase, uid);
   if (ctx.tasks.length === 0) {
     return json({
@@ -195,7 +197,7 @@ function bucketItem() {
   };
 }
 
-async function decisionSupport(supabase: any, uid: string, apiKey: string, prompt: string) {
+async function decisionSupport(supabase: any, uid: string, apiKey: string, prompt: string, style = "") {
   if (!prompt.trim()) return json({ error: "prompt required" }, 400);
   const ctx = await loadContext(supabase, uid);
   const user = `${contextBlurb(ctx)}
@@ -224,7 +226,7 @@ Answer in 3-5 short, kind sentences. Offer permission, not pressure. Name 1-3 co
   return json({ text });
 }
 
-async function simplifyDay(supabase: any, uid: string, apiKey: string) {
+async function simplifyDay(supabase: any, uid: string, apiKey: string, style = "") {
   const ctx = await loadContext(supabase, uid);
   const user = `${contextBlurb(ctx)}
 
