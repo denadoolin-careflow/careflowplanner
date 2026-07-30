@@ -418,6 +418,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         timeZone: profile.time_zone,
         defaultRoute: profile.default_route ?? "/",
         careyStyle: (profile as { carey_style?: string | null }).carey_style ?? "",
+        checkinStyle: (profile as { checkin_style?: string | null }).checkin_style ?? "",
       },
       energyToday: profile.energy_today ?? undefined,
       energyDate: profile.energy_date ?? undefined,
