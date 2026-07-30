@@ -1,5 +1,6 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
+import { fetchUserStyleBlock } from "../_shared/user-style.ts";
 
 const LOVABLE_GATEWAY = "https://api.openai.com/v1/chat/completions";
 
@@ -44,13 +45,15 @@ Deno.serve(async (req) => {
       body.caregivingLoad ? `Caregiving load: ${body.caregivingLoad}.` : null,
     ].filter(Boolean).join("\n");
 
+    const styleBlock = await fetchUserStyleBlock(req);
+
     const system = [
       "You are a calm, caregiver-friendly daily planner for the CareFlow app.",
       "Write ONE short paragraph (2-3 sentences, max ~55 words) of practical guidance.",
       "Tone: warm, grounded, never mystical or pushy. Plain language, not horoscope-speak.",
       "Reference the weather and moon energy lightly, and suggest a planning style for the day (e.g. indoor organizing, gentle errands, reflection, connection).",
       "Do not use bullet points, headings, emojis, or hashtags. Just one short paragraph.",
-    ].join(" ");
+    ].join(" ") + styleBlock;
 
     const resp = await fetch(LOVABLE_GATEWAY, {
       method: "POST",
