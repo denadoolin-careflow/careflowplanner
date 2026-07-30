@@ -43,7 +43,7 @@ export function CareyStyleSection() {
   return (
     <SectionCard
       title="How Carey talks to you"
-      subtitle="Your own instructions for Carey's morning check-in — tone, focus areas, things to always or never mention."
+      subtitle="Your own instructions for Carey — tone, focus areas, things to always or never mention."
       accent="calm"
     >
       <Textarea
@@ -74,7 +74,9 @@ export function CareyStyleSection() {
         ))}
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
-        Carey treats this as a style preference — it won't change the check-in's structure or accuracy.
+        Applies to the morning check-in, Carey chat, cosmic and today guidance, exhale, journal prompts,
+        mental-load support, and weekly / monthly reviews. Carey treats this as a style preference only —
+        it won't change structure or accuracy.
       </p>
     </SectionCard>
   );
