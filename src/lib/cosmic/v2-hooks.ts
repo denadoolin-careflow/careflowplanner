@@ -77,7 +77,7 @@ export function useDailyGuidance(chart: NatalChartV2 | null, date: Date = new Da
       if (err || !ai) {
         const code = (err as any)?.error;
         setError(
-          code === "rate_limited"
+          code === "rate_limited" || code === "upstream_unavailable"
             ? "Cosmic guidance is busy right now — try again in a moment."
             : "Couldn't generate guidance right now."
         );
