@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const gate = await meterRequest(req, WEIGHTS.light ?? 1, corsHeaders);
+    const gate = await meterRequest(req, WEIGHTS.light, corsHeaders);
     if ("response" in gate) return gate.response;
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
