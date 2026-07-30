@@ -27,6 +27,8 @@ Deno.serve(async (req) => {
   let body: Body = {};
   try { body = await req.json(); } catch { /* ignore */ }
 
+  const styleBlock = await fetchUserStyleBlock(req);
+
   const date = String(body.date || new Date().toISOString().slice(0, 10));
   const active = (body.active ?? []).slice(0, 12);
   const activeLine = active.length
@@ -62,7 +64,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3.6-flash",
         messages: [
-          { role: "system", content: COSMIC_SYSTEM_PROMPT },
+          { role: "system", content: COSMIC_SYSTEM_PROMPT + styleBlock },
           { role: "user", content: user },
         ],
         response_format: { type: "json_object" },
