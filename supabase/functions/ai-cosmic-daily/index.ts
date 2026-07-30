@@ -2,6 +2,7 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 import { COSMIC_SYSTEM_PROMPT, COSMIC_TONE_REMINDER } from "../_shared/cosmic-tone.ts";
+import { fetchUserStyleBlock } from "../_shared/user-style.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
