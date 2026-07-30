@@ -85,7 +85,8 @@ export function useDailyCheckIn(dateISO: string = isoToday()): UseCheckInResult 
         habits: (state.habits ?? []).slice(0, 6).map((h) => h.title),
         mood,
         journal: captureText,
-        careyStyle: state.settings?.careyStyle ?? null,
+        careyStyle:
+          (state.settings?.checkinStyle?.trim() || state.settings?.careyStyle) ?? null,
       };
 
       const { data, error: fnError } = await supabase.functions.invoke("ai-daily-checkin", { body });

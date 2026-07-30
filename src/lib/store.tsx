@@ -418,6 +418,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         timeZone: profile.time_zone,
         defaultRoute: profile.default_route ?? "/",
         careyStyle: (profile as { carey_style?: string | null }).carey_style ?? "",
+        checkinStyle: (profile as { checkin_style?: string | null }).checkin_style ?? "",
       },
       energyToday: profile.energy_today ?? undefined,
       energyDate: profile.energy_date ?? undefined,
@@ -1212,7 +1213,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     updateProfile: async (patch) => {
       if (!uid) return;
-      setState(s => ({ ...s, settings: { ...s.settings, name: patch.name ?? s.settings.name, planningStyle: patch.planning_style ?? s.settings.planningStyle, timeZone: patch.time_zone ?? s.settings.timeZone, theme: (patch.theme as any) ?? s.settings.theme, defaultRoute: patch.default_route ?? s.settings.defaultRoute, careyStyle: (patch as { carey_style?: string | null }).carey_style ?? s.settings.careyStyle } }));
+      setState(s => ({ ...s, settings: { ...s.settings, name: patch.name ?? s.settings.name, planningStyle: patch.planning_style ?? s.settings.planningStyle, timeZone: patch.time_zone ?? s.settings.timeZone, theme: (patch.theme as any) ?? s.settings.theme, defaultRoute: patch.default_route ?? s.settings.defaultRoute, careyStyle: (patch as { carey_style?: string | null }).carey_style ?? s.settings.careyStyle, checkinStyle: (patch as { checkin_style?: string | null }).checkin_style ?? s.settings.checkinStyle } }));
       if (patch.default_route !== undefined) {
         try { window.localStorage.setItem("careflow.defaultRoute", patch.default_route ?? "/"); } catch {}
       }
