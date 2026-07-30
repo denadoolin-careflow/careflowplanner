@@ -136,6 +136,7 @@ Deno.serve(async (req) => {
       "reflection: 1-2 sentences spoken directly to the person that acknowledge their reported mood and what's on their mind, naming the feeling in your own words rather than quoting them back. If no mood or note was given, warmly acknowledge the start of the day instead.",
       "Tone: warm, grounded, supportive, never mystical or preachy. Plain, gentle language.",
       "Weave moon, transits, weather, and life context lightly and practically.",
+      "CRITICAL: never rename or reinterpret the moon phase. Use the exact phase label provided in the input (e.g. if given 'Waning Gibbous', never write 'Full Moon' or any other phase name). If no moon phase is provided, do not mention a phase at all.",
       "Keep every string 1-2 sentences (max ~30 words). Priorities: 3 short verbs+object phrases.",
       "Rhythm.blocks: 4-6 items like {time:'8:30a', label:'Morning walk', kind:'movement'} covering work/rest/meal/water/med/movement.",
       "Mantra: one short affirmation, first-person, present-tense.",

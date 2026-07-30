@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import { timeOfDayGreeting } from "@/lib/greeting";
+import { timeOfDayGreeting, resolveDisplayName } from "@/lib/greeting";
 import { useDailyCheckIn } from "@/hooks/useDailyCheckIn";
 import { isoToday, type CheckInAiPayload } from "@/lib/daily-checkin-store";
 import { getMoonData } from "@/lib/moon-providers";
@@ -112,8 +112,9 @@ export default function DailyCheckIn() {
             <Sparkles className="h-3 w-3 text-primary" /> Morning check-in
           </p>
           <h1 className="mt-1 font-display text-3xl font-semibold sm:text-4xl">
-            {timeOfDayGreeting(now)}
-            {state.settings?.name ? `, ${state.settings.name}` : ""} {greetingEmoji(now)}
+            {timeOfDayGreeting(now)},{" "}
+            {resolveDisplayName(state.settings?.name, state.settings?.email) ?? "friend"}{" "}
+            {greetingEmoji(now)}
           </h1>
           <p className="mt-1 text-[15px] text-muted-foreground">
             {format(now, "EEEE, MMMM d")} · {format(now, "h:mm a")}
@@ -175,8 +176,10 @@ export default function DailyCheckIn() {
             ) : step === 2 ? (
               <StepBuild
                 payload={payload}
+                iso={iso}
                 intention={intention}
                 onIntention={setLocalIntention}
+                onPayload={(next) => { void update({ ai_payload: next }); }}
                 onBack={() => goTo(1)}
                 onContinue={() => goTo(3)}
               />

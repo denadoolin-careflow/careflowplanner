@@ -26,7 +26,14 @@ export interface CheckInAiPayload {
   method: {
     capture: { question: string; tags: string[] };
     anchor: { intention: string; why: string };
-    rhythm: { priorities: string[]; blocks: { time: string; label: string; kind: string }[] };
+    rhythm: {
+      priorities: string[];
+      /** Optional user-chosen task links per priority slot (index-aligned, length 3). */
+      priorityTaskIds?: (string | null)[];
+      /** Optional user-typed overrides per priority slot (index-aligned, length 3). */
+      priorityTexts?: (string | null)[];
+      blocks: { time: string; label: string; kind: string; taskId?: string | null }[];
+    };
     exhale: { release: string; boundary: string; selfCare: string; breathing: string };
   };
   insight: string;
