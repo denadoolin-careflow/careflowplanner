@@ -4,6 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ThemeToggle } from "./ThemeToggle";
+import { ThemePicker } from "./ThemePicker";
 import { AtmospherePicker } from "@/components/atmospheres/AtmospherePicker";
 import { PanelPicker } from "@/components/workspace/PanelPicker";
 import { useStore } from "@/lib/store";
@@ -59,6 +60,11 @@ export function HeaderQuickSettings() {
           <div className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-muted/50">
             <span className="text-sm">Atmosphere</span>
             <AtmospherePicker />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-muted/50">
+            <span className="text-sm">Color palette</span>
+            <ThemePicker />
           </div>
 
           <div className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-muted/50">
