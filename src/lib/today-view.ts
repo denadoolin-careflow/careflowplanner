@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
-export type TodayView = "dashboard" | "rhythm" | "timeofday" | "plan" | "schedule" | "custom";
+export type TodayView = "plan" | "board";
 
 export const TODAY_VIEW_LABELS: Record<TodayView, string> = {
-  dashboard: "Dashboard",
-  rhythm: "Rhythm",
-  timeofday: "Time of day",
-  plan: "Day plan",
-  schedule: "Schedule",
-  custom: "Custom board",
+  plan: "Plan",
+  board: "Board",
 };
 
 const VIEW_KEY = "careflow:today-view:v1";
@@ -20,20 +16,26 @@ const DEFAULT_VIEW_KEY = "careflow:today-default-view:v1";
 const viewListeners = new Set<(v: TodayView) => void>();
 
 function isTodayView(v: unknown): v is TodayView {
-  return v === "dashboard" || v === "rhythm" || v === "timeofday" || v === "plan"
-    || v === "schedule" || v === "custom";
+  return v === "plan" || v === "board";
+}
+
+/** Map the six legacy Today layouts onto the two current ones. */
+function migrateView(v: unknown): TodayView | null {
+  if (isTodayView(v)) return v;
+  if (v === "schedule" || v === "timeofday" || v === "rhythm") return "plan";
+  if (v === "dashboard" || v === "custom") return "board";
+  return null;
 }
 
 function readDefaultView(): TodayView {
-  if (typeof localStorage === "undefined") return "dashboard";
-  const v = localStorage.getItem(DEFAULT_VIEW_KEY);
-  return isTodayView(v) ? v : "dashboard";
+  if (typeof localStorage === "undefined") return "plan";
+  return migrateView(localStorage.getItem(DEFAULT_VIEW_KEY)) ?? "plan";
 }
 
 function readView(): TodayView {
-  if (typeof localStorage === "undefined") return "dashboard";
-  const v = localStorage.getItem(VIEW_KEY);
-  return isTodayView(v) ? v : readDefaultView();
+  if (typeof localStorage === "undefined") return "plan";
+  const v = migrateView(localStorage.getItem(VIEW_KEY));
+  return v ?? readDefaultView();
 }
 
 export function useTodayView(): [TodayView, (v: TodayView) => void] {
