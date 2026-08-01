@@ -714,7 +714,17 @@ type ShellHandlers = {
 
 function RowShell({
   task, dense, draggable, celebrate, selected, variant = "row", children, ...handlers
-}: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; selected?: boolean; variant?: "row" | "card"; children: React.ReactNode } & ShellHandlers) {
+}: { task: Task; dense: boolean; draggable: boolean; celebrate?: boolean; selected?: boolean; variant?: "row" | "card" | "ticktick"; children: React.ReactNode } & ShellHandlers) {
+  if (variant === "ticktick") {
+    const cls = cn(
+      "group relative flex items-start gap-2.5 border-b border-row-divider px-2 py-2 transition-colors",
+      "hover:bg-row-hover",
+      selected && "bg-row-selected",
+      celebrate && "bg-primary/5",
+    );
+    if (!draggable) return <div className={cls} data-no-swipe {...handlers}>{children}</div>;
+    return <DraggableShell task={task} className={cls} handlers={handlers}>{children}</DraggableShell>;
+  }
   if (variant === "card") {
     const cls = cn(
       "group relative flex items-start gap-2.5 px-0 py-0",
