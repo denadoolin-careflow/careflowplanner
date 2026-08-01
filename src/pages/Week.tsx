@@ -38,7 +38,6 @@ import { DayContextStrip } from "@/components/calendar/DayContextStrip";
 import { WeekHabitsStrip } from "@/components/week/WeekHabitsStrip";
 import { ScopeHero } from "@/components/layout/ScopeHero";
 import { PlanningHeader } from "@/components/today/PlanningHeader";
-import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { addWeeks, subWeeks, isSameWeek } from "date-fns";
 import { useSidebarHidden } from "@/lib/today-view";
@@ -121,7 +120,6 @@ export default function Week() {
           date={selectedDate}
           title={`Week of ${format(start, "MMM d")}`}
           subtitle="Your greeting, weather, and cosmic rhythm — carried across each planning view."
-          slot={<QuickAddBar date={selectedDate} />}
           onTaskClick={setEditTaskId}
         />
         <ScopeHero
