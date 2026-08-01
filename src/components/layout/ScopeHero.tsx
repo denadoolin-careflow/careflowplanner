@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { ChevronLeft, ChevronRight, Sparkles, Clock } from "lucide-react";
+import { Sparkles, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { personalGreeting } from "@/lib/greeting";
 import { DayPickerButton } from "@/components/calendar/DayPickerButton";
-import { ScopeNavToggle, type Scope } from "@/components/calendar/ScopeNavToggle";
-import { QuickAddBar } from "@/components/today/QuickAddBar";
+export type Scope = "today" | "week" | "month";
 import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { cn } from "@/lib/utils";
 
@@ -29,8 +28,6 @@ interface Props {
   isCurrent?: boolean;
   /** Right-side actions row (view toggles, links). */
   actions?: React.ReactNode;
-  /** Show the inline QuickAddBar at the bottom of the hero. */
-  showQuickAdd?: boolean;
   /** Optional content rendered after the nav row (e.g. forecast, transit strip). */
   children?: React.ReactNode;
 }
@@ -42,7 +39,7 @@ interface Props {
 export function ScopeHero({
   scope, date, title, subtitle, eyebrow, pickerLabel,
   onPrev, onNext, onToday, onDatePick, isCurrent,
-  actions, showQuickAdd, children,
+  actions, children,
 }: Props) {
   const { state } = useStore();
   const [now, setNow] = useState(() => new Date());
@@ -94,18 +91,15 @@ export function ScopeHero({
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <ScopeNavToggle active={scope} />
-            {actions && (
+          {actions && (
+            <div className="flex flex-wrap items-center gap-2">
               <div className={cn("ml-auto flex flex-wrap items-center gap-1.5")}>
                 {actions}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {children}
-
-          {showQuickAdd && <QuickAddBar date={date} />}
         </div>
       </div>
     </div>
