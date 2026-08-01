@@ -7,7 +7,7 @@ import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
   PanelLeft, PanelRight, Palette, Pin, CalendarDays, SlidersHorizontal, StickyNote,
-  Settings as SettingsIcon,
+  Settings as SettingsIcon, ChevronsDownUp, ChevronsUpDown,
 } from "lucide-react";
 import { Search as SearchIcon, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
