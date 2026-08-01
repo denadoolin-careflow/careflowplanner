@@ -28,7 +28,10 @@ export function TaskSelectionProvider({ children, storageKey }: { children: Reac
   const [selectionMode, setSelectionModeState] = useState(false);
   const [paneOpen, setPaneOpenState] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return storageKey ? localStorage.getItem(`pane:${storageKey}`) === "1" : false;
+    const stored = storageKey ? localStorage.getItem(`pane:${storageKey}`) : null;
+    if (stored !== null) return stored === "1";
+    // Default: open on desktop (TickTick-style third column), closed on small screens.
+    return window.matchMedia("(min-width: 1024px)").matches;
   });
   const orderedRef = useRef<string[]>([]);
   const lastIdRef = useRef<string | null>(null);
