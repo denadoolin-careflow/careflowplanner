@@ -988,6 +988,22 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
             </div>
           </div>
         )}
+        {!collapsed && (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setAllHeadings(!anyHeadingOpen)}
+                aria-label={anyHeadingOpen ? "Collapse all sections" : "Expand all sections"}
+                aria-pressed={!anyHeadingOpen}
+                className="grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                {anyHeadingOpen ? <ChevronsDownUp className="h-4 w-4" /> : <ChevronsUpDown className="h-4 w-4" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{anyHeadingOpen ? "Collapse all sections" : "Expand all sections"}</TooltipContent>
+          </Tooltip>
+        )}
         {!forceExpanded && !collapsed && !compact && (
           <>
             <Tooltip delayDuration={150}>
