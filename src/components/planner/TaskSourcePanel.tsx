@@ -33,7 +33,7 @@ const AREA_SET = new Set(["Family","Health","Home","Meals","Personal","Money","C
  * Areas, Projects — plus Home upkeep and the day's meals, all draggable
  * onto the time grid.
  */
-export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Date; onQuickAdd: () => void }) {
+export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Date; onQuickAdd?: () => void }) {
   const { state, addTask, addMeal, updateMeal } = useStore();
   const { items: maintenance } = useHomeMaintenance();
   const [q, setQ] = useState("");
@@ -134,9 +134,11 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Da
       <header className="border-b border-border/60 p-3">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold tracking-wide">Tasks</h2>
-          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Open advanced capture">
-            <CommandIcon className="h-3.5 w-3.5" />
-          </Button>
+          {onQuickAdd && (
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Open advanced capture">
+              <CommandIcon className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
         {/* Inline quick add */}
         <div className="mb-2">
