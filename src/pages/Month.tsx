@@ -48,7 +48,6 @@ import { getTransitsForDate } from "@/lib/transits";
 import { useTransitsEnabled } from "@/lib/astrology-prefs";
 import { ScopeHero } from "@/components/layout/ScopeHero";
 import { PlanningHeader } from "@/components/today/PlanningHeader";
-import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { isSameMonth as isSameMonthFn } from "date-fns";
 import { useSidebarHidden } from "@/lib/today-view";
@@ -189,7 +188,6 @@ export default function Month() {
           date={cursor}
           title={format(cursor, "MMMM yyyy")}
           subtitle="Your greeting, weather, and cosmic rhythm — carried across each planning view."
-          slot={<QuickAddBar date={cursor} />}
           onTaskClick={(id) => {
             const t = state.tasks.find(x => x.id === id);
             if (t) setEditingTask(t);
