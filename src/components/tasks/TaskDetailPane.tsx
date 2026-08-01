@@ -4,7 +4,7 @@ import { useTaskSelection } from "@/lib/task-selection";
 import { Button } from "@/components/ui/button";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { BlockEditor } from "@/components/notes/BlockEditor";
-import { CalendarDays, Check, Settings2, Trash2, X, FolderKanban, Flag, Plus } from "lucide-react";
+import { CalendarDays, Settings2, Trash2, X, FolderKanban, Flag, Plus } from "lucide-react";
 import { formatRelativeDate } from "@/lib/date-format";
 import { cn } from "@/lib/utils";
 import { ProjectQuickJump } from "@/components/tasks/ProjectQuickJump";
