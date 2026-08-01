@@ -84,6 +84,11 @@ export default {
           med: "hsl(var(--priority-med))",
           low: "hsl(var(--priority-low))",
         },
+        row: {
+          divider: "hsl(var(--row-divider))",
+          hover: "hsl(var(--row-hover))",
+          selected: "hsl(var(--row-selected))",
+        },
         season: {
           spring: "hsl(var(--season-spring))",
           summer: "hsl(var(--season-summer))",
