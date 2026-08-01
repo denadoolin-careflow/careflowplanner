@@ -2,9 +2,8 @@ import { useMemo } from "react";
 import { addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, startOfWeek } from "date-fns";
 import { useStore, todayISO } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
-import { LayoutGrid, LayoutList, CalendarDays, PanelRightOpen, PanelRightClose, type LucideIcon } from "lucide-react";
+import { LayoutGrid, LayoutList, CalendarDays, ChevronRight, PanelRightOpen, PanelRightClose, type LucideIcon } from "lucide-react";
 import type { Task } from "@/lib/types";
-import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { QuickEntryBar } from "@/components/tasks/QuickEntryBar";
 import { TodayFocusCard } from "@/components/tasks/TodayFocusCard";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
@@ -92,6 +91,16 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem(`careflow:view:${variant}`) as ViewMode) || "list");
   const [timeframe, setTimeframe] = useState<Timeframe>(() => (localStorage.getItem(`careflow:tf:${variant}`) as Timeframe) || "all");
   const [kanbanGroup, setKanbanGroup] = useState<KanbanGroupBy>(() => (localStorage.getItem(`careflow:kanban-group:${variant}`) as KanbanGroupBy) || "status");
+  const [collapsed, setCollapsed] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`careflow:collapsed:${variant}`) ?? "[]"); } catch { return []; }
+  });
+  const toggleGroup = (key: string) => {
+    setCollapsed(prev => {
+      const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];
+      try { localStorage.setItem(`careflow:collapsed:${variant}`, JSON.stringify(next)); } catch { /* noop */ }
+      return next;
+    });
+  };
   useEffect(() => { localStorage.setItem(`careflow:view:${variant}`, view); }, [view, variant]);
   useEffect(() => { localStorage.setItem(`careflow:tf:${variant}`, timeframe); }, [timeframe, variant]);
   useEffect(() => { localStorage.setItem(`careflow:kanban-group:${variant}`, kanbanGroup); }, [kanbanGroup, variant]);
@@ -129,14 +138,12 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
-      <header className="flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary">
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{meta.title}</h1>
-          <p className="text-sm text-muted-foreground">{meta.subtitle} {total} {total === 1 ? "item" : "items"}.</p>
-        </div>
+      <header className="flex items-center gap-2">
+        <Icon className="h-5 w-5 text-muted-foreground" />
+        <h1 className="flex-1 truncate text-xl font-semibold tracking-tight">
+          {meta.title}
+          <span className="ml-2 text-sm font-normal text-muted-foreground">{total}</span>
+        </h1>
         <ViewToggle value={view} onChange={setView} />
         <Button
           variant="ghost"
@@ -171,17 +178,7 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
       {variant === "upcoming" && <TodayFocusCard />}
 
       {variant !== "logbook" && (
-        <div className="space-y-2">
-          <QuickEntryBar defaults={composerDefaults} placeholder={`Add to ${meta.title.toLowerCase()} — try natural language…`} />
-          <details className="group">
-            <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
-              More options
-            </summary>
-            <div className="mt-2">
-              <InlineTaskComposer defaults={composerDefaults} placeholder={`Add to ${meta.title.toLowerCase()}…`} />
-            </div>
-          </details>
-        </div>
+        <QuickEntryBar defaults={composerDefaults} placeholder={`Add task to "${meta.title}"`} />
       )}
 
       {view === "kanban" ? (
@@ -202,21 +199,36 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
           <KanbanBoard tasks={filteredFlat} groupBy={kanbanGroup} />
         </>
       ) : (
-      <div className="rounded-2xl border border-border/60 bg-card/60 p-2">
+      <div>
         {total === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Nothing here yet ✨</div>
         ) : (
-          <div className="space-y-3">
-            {groups.map(g => (
-              <div key={g.key} className="space-y-1">
-                {(view === "agenda" || prefs.group !== "none") && (
-                  <div className="px-2 pt-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {g.label} <span className="opacity-60">· {g.tasks.length}</span>
-                  </div>
-                )}
-                {g.tasks.map(t => <TaskRow key={t.id} task={t} />)}
-              </div>
-            ))}
+          <div className="space-y-4">
+            {groups.map(g => {
+              const showHeader = view === "agenda" || prefs.group !== "none";
+              const isCollapsed = showHeader && collapsed.includes(g.key);
+              return (
+                <div key={g.key}>
+                  {showHeader && (
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(g.key)}
+                      aria-expanded={!isCollapsed}
+                      className="flex w-full items-center gap-1.5 px-1 py-1 text-left text-[13px] font-semibold text-foreground/90 hover:text-foreground"
+                    >
+                      <ChevronRight className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", !isCollapsed && "rotate-90")} />
+                      <span className="truncate">{g.label}</span>
+                      <span className="text-xs font-normal text-muted-foreground">{g.tasks.length}</span>
+                    </button>
+                  )}
+                  {!isCollapsed && (
+                    <div className={cn(showHeader && "border-l-2 border-primary/25 pl-1")}>
+                      {g.tasks.map(t => <TaskRow key={t.id} task={t} variant="ticktick" />)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
