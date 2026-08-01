@@ -20,7 +20,7 @@ import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
 import { MoonCycleModule } from "@/components/today/rhythm/MoonCycleModule";
 import { DailyEnergyGuidance } from "@/components/today/rhythm/DailyEnergyGuidance";
-import { ScopeNavToggle } from "@/components/calendar/ScopeNavToggle";
+import { ScopeSegmented } from "@/components/today/dashboard/ScopeSegmented";
 
 interface Props {
   date: Date;
@@ -93,7 +93,7 @@ export function RhythmHeader({ date, onDateChange, isReallyToday }: Props) {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <ScopeNavToggle active="today" />
+            <ScopeSegmented active="today" />
             <AtmosphereChip />
             <div className="inline-flex items-center gap-1">
               <Button
