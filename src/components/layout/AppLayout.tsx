@@ -67,9 +67,7 @@ export function AppLayout() {
               <div className="hidden md:block">
                 <WhatsNewPopover />
               </div>
-              <div className="hidden md:block">
-                <HeaderQuickSettings />
-              </div>
+              <HeaderQuickSettings />
               <Link to="/" aria-label="CareFlow home" className="ml-1 hidden sm:inline-flex">
                 <CareFlowLogo size={32} />
               </Link>
