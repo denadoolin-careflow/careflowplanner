@@ -161,11 +161,20 @@
     --priority-high: 8 62% 62%;     /* warm coral, never alarming red */
     --priority-med: 36 65% 58%;    /* honeyed amber */
     --priority-low: 200 20% 55%;   /* soft slate-blue */
+
+    /* Flat task-list rows (TickTick-style task surfaces) */
+    --row-divider: 150 12% 88%;
+    --row-hover: 150 14% 96%;
+    --row-selected: 150 16% 93%;
   }
 
   .dark {
     --background: 150 20% 8%;
     --foreground: 40 40% 94%;
+
+    --row-divider: 150 12% 20%;
+    --row-hover: 150 14% 16%;
+    --row-selected: 150 16% 19%;
 
     --card: 150 18% 12%;
     --card-foreground: 40 40% 94%;
