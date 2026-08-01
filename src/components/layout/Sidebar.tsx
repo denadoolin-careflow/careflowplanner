@@ -7,7 +7,7 @@ import {
   Heart, ChevronDown, ChevronRight, Inbox as InboxIcon, Sun, CalendarRange,
   Layers, Moon, Archive, FolderOpen, Folder, PanelLeftClose, PanelLeftOpen, Plus, Star,
   PanelLeft, PanelRight, Palette, Pin, CalendarDays, SlidersHorizontal, StickyNote,
-  Settings as SettingsIcon,
+  Settings as SettingsIcon, ChevronsDownUp, ChevronsUpDown,
 } from "lucide-react";
 import { Search as SearchIcon, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -704,6 +704,21 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const flowSignals = useFlowSignals();
   const [sidebarDotsEnabled] = useSidebarDotsEnabled();
 
+  // Collapse / expand every heading in the sidebar for a quiet, scannable rail.
+  const FIXED_SECTIONS = ["pinned-notes", "pinned-tags", "quick-weeks", "quick-months", "astrology"];
+  const anyHeadingOpen =
+    NAV_GROUPS.some(g => !!openMap[g.id]) ||
+    FIXED_SECTIONS.some(k => openMap[k] !== false) ||
+    areas.some(a => !!openMap[`area:${a.name}`]);
+  const setAllHeadings = (open: boolean) => setOpenMap(prev => {
+    const next = { ...prev };
+    for (const g of NAV_GROUPS) next[g.id] = open;
+    for (const k of FIXED_SECTIONS) next[k] = open;
+    for (const a of areas) next[`area:${a.name}`] = open;
+    for (const p of projects) next[`proj:${p.id}`] = open;
+    return next;
+  });
+
   const handleNavClick = (to: string) => (e: MouseEvent<HTMLAnchorElement>) => {
     const panelId = PANEL_BY_ROUTE[to];
     if (!panelId) { onNavigate?.(); return; }
@@ -972,6 +987,22 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
               Plan · Care · Grow
             </div>
           </div>
+        )}
+        {!collapsed && (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setAllHeadings(!anyHeadingOpen)}
+                aria-label={anyHeadingOpen ? "Collapse all sections" : "Expand all sections"}
+                aria-pressed={!anyHeadingOpen}
+                className="grid h-7 w-7 place-items-center rounded-lg text-sidebar-foreground/95 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                {anyHeadingOpen ? <ChevronsDownUp className="h-4 w-4" /> : <ChevronsUpDown className="h-4 w-4" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{anyHeadingOpen ? "Collapse all sections" : "Expand all sections"}</TooltipContent>
+          </Tooltip>
         )}
         {!forceExpanded && !collapsed && !compact && (
           <>
