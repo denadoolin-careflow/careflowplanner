@@ -2,9 +2,12 @@ import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { PlannerPeriodList } from "@/components/planner/PlannerPeriodList";
 import { PlannerPeriodTabs, usePlannerPeriod } from "@/components/planner/PlannerPeriodTabs";
+import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { useCapacity } from "@/components/today/dashboard/capacity-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Leaf, Sparkles } from "lucide-react";
+import { Leaf, Sparkles, ListTodo } from "lucide-react";
 
 /**
  * Today's planning surface — the same timeline engine the /planner page uses,
@@ -19,6 +22,21 @@ export function TodayPlanView({ date }: { date: Date }) {
     <section aria-label="Day plan" className="flex min-h-0 flex-col gap-2">
       <div className="flex items-center gap-2 overflow-x-auto">
         <PlannerPeriodTabs value={period} onChange={setPeriod} />
+        {isMobile && (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button size="sm" variant="outline" className="ml-auto h-8 shrink-0 rounded-full text-xs">
+                <ListTodo className="mr-1.5 h-3.5 w-3.5" /> Tasks
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[78vh] p-3">
+              <SheetTitle className="sr-only">Task sources</SheetTitle>
+              <div className="h-full overflow-hidden pt-2">
+                <TaskSourcePanel selectedDate={date} />
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
       </div>
 
       {capacity.isLow && (
