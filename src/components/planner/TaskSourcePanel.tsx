@@ -107,7 +107,7 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Da
 
   // Projects with open work (tasks not already claimed by a section above).
   const projectGroups = (state.projects ?? [])
-    .filter(p => p.status !== "archived" && !p.archivedAt)
+    .filter(p => !p.archivedAt)
     .map(p => ({
       id: `project:${p.id}`,
       label: p.name,
@@ -300,8 +300,6 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Da
   );
 }
 
-/** @deprecated Use `TaskSourcePanel`. */
-export const PlannerTaskPanel = TaskSourcePanel;
 
 function SectionBlock({ id, label, Icon, count, open, onToggle, children }: {
   id: string; label: string; Icon?: React.ComponentType<{ className?: string }>;
