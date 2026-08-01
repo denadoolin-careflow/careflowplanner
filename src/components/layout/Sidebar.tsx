@@ -704,6 +704,21 @@ function SidebarBody({ forceExpanded = false, onNavigate }: { forceExpanded?: bo
   const flowSignals = useFlowSignals();
   const [sidebarDotsEnabled] = useSidebarDotsEnabled();
 
+  // Collapse / expand every heading in the sidebar for a quiet, scannable rail.
+  const FIXED_SECTIONS = ["pinned-notes", "pinned-tags", "quick-weeks", "quick-months", "astrology"];
+  const anyHeadingOpen =
+    NAV_GROUPS.some(g => !!openMap[g.id]) ||
+    FIXED_SECTIONS.some(k => openMap[k] !== false) ||
+    areas.some(a => !!openMap[`area:${a.name}`]);
+  const setAllHeadings = (open: boolean) => setOpenMap(prev => {
+    const next = { ...prev };
+    for (const g of NAV_GROUPS) next[g.id] = open;
+    for (const k of FIXED_SECTIONS) next[k] = open;
+    for (const a of areas) next[`area:${a.name}`] = open;
+    for (const p of projects) next[`proj:${p.id}`] = open;
+    return next;
+  });
+
   const handleNavClick = (to: string) => (e: MouseEvent<HTMLAnchorElement>) => {
     const panelId = PANEL_BY_ROUTE[to];
     if (!panelId) { onNavigate?.(); return; }
