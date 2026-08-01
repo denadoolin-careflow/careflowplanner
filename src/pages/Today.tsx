@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { isSameDay, format, addDays } from "date-fns";
 import { TaskSelectionProvider } from "@/lib/task-selection";
@@ -10,26 +10,24 @@ import { useEnsureWeather } from "@/lib/use-ensure-weather";
 import { Wind } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExhaleFlow } from "@/components/today/ExhaleFlow";
-import { RhythmDashboard } from "@/components/today/RhythmDashboard";
-import { CustomizableGrid } from "@/components/dashboard/CustomizableGrid";
-import { QuickPresetSwitcher } from "@/components/dashboard/QuickPresetSwitcher";
 import { DailyDebrief } from "@/components/today/DailyDebrief";
-import { BurnoutCheckIn } from "@/components/today/BurnoutCheckIn";
-import { SlotWeatherStrip } from "@/components/today/SlotWeatherStrip";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { DemoTasksBanner } from "@/components/demo/DemoTasksBanner";
 import { MorningCheckInPrompt } from "@/components/checkin/MorningCheckInPrompt";
-import { TimeOfDayBoard } from "@/components/today/TimeOfDayBoard";
-import { DayPlanBoard } from "@/components/today/DayPlanBoard";
-import { ScheduleBoard } from "@/components/today/ScheduleBoard";
 import { QuickAddBar } from "@/components/today/QuickAddBar";
-import { useTodayView, TODAY_VIEW_LABELS, type TodayView, useTodayPrefs, useTodayDefaultView } from "@/lib/today-view";
+import { useTodayView, useTodayPrefs, useTodayDefaultView } from "@/lib/today-view";
 import { TodayDashboard } from "@/components/today/dashboard/TodayDashboard";
-import { ScopeHero } from "@/components/layout/ScopeHero";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
-import { Settings2, LayoutTemplate } from "lucide-react";
+import { TodayHeader } from "@/components/today/TodayHeader";
+import { TodayPlanView } from "@/components/today/TodayPlanView";
+import { TodayFocusRail } from "@/components/today/TodayFocusRail";
+import { NowNextCard } from "@/components/today/NowNextCard";
+import { CareColumn } from "@/components/today/dashboard/CareColumn";
+import { GrowColumn } from "@/components/today/dashboard/GrowColumn";
+import { RoutinesHabitsRow } from "@/components/today/dashboard/RoutinesHabitsRow";
+import { CapacityProvider } from "@/components/today/dashboard/capacity-context";
+import { burnoutMultiplier, useBurnoutCheckIn } from "@/lib/burnout-checkin";
 import { TemplateGallery } from "@/components/today/TemplateGallery";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 export default function Today() {
@@ -52,7 +50,8 @@ function TodayInner() {
   const [defaultView, setDefaultView] = useTodayDefaultView();
   const defaultRoute = state.settings.defaultRoute ?? "/";
   const [galleryOpen, setGalleryOpen] = useState(false);
-  const [gridKey, setGridKey] = useState(0);
+  const isMobile = useIsMobile();
+  const [mobileTab, setMobileTab] = useState<"plan" | "care" | "grow">("plan");
 
   // When arriving with a #slot-morning|afternoon|evening hash, scroll to it.
   useEffect(() => {
@@ -110,7 +109,15 @@ function TodayInner() {
   const editingAppt = editApptId ? state.appointments.find(a => a.id === editApptId) ?? null : null;
   const editingTask = editTaskId ? state.tasks.find(t => t.id === editTaskId) ?? null : null;
 
-  // Swipe between Today / Week / Month on touch devices.
+  const { entry } = useBurnoutCheckIn(day);
+  const capacity = useMemo(() => ({
+    level: entry.level,
+    multiplier: burnoutMultiplier(entry.level),
+    isLow: entry.level === "tender" || entry.level === "depleted",
+    isSpacious: entry.level === "spacious",
+  }), [entry.level]);
+
+  // Swipe between days / scopes on touch devices.
   const navigate = useNavigate();
   const touchRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const onTouchStart = (e: React.TouchEvent) => {
@@ -127,243 +134,108 @@ function TodayInner() {
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     if (Date.now() - start.t > 600) return;
     if (dx < 0) navigate("/week");
-    else navigate("/today");
+    else setDayAndUrl(addDays(day, -1));
   };
 
+  const secondary = (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <CareColumn date={day} />
+        <GrowColumn date={day} />
+      </div>
+      <RoutinesHabitsRow date={day} />
+      <CollapsibleSection
+        storageKey="planning.section.debrief.collapsed"
+        eyebrow="Daily debrief"
+        title="Reflect and reset"
+      >
+        <DailyDebrief date={day} onTaskClick={setEditTaskId} />
+      </CollapsibleSection>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/40 bg-card/55 p-4 shadow-soft backdrop-blur-xl">
+        <div className="min-w-0">
+          <div className="font-display text-sm font-semibold text-foreground">End-of-day exhale</div>
+          <p className="text-xs text-muted-foreground">A few quiet prompts to close the day.</p>
+        </div>
+        <Button size="sm" onClick={() => setExhaleOpen(true)} className="rounded-full">
+          <Wind className="mr-1.5 h-3.5 w-3.5" /> Begin exhale
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
-    <>
+    <CapacityProvider value={capacity}>
       <div
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="mx-auto w-full min-w-0 max-w-6xl space-y-6 overflow-x-clip px-2 pb-10 sm:px-4"
+        className="mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip px-2 pb-12 sm:px-4"
       >
+        <TodayHeader
+          date={day}
+          onDate={setDayAndUrl}
+          view={view}
+          onView={setView}
+          defaultView={defaultView}
+          onDefaultView={setDefaultView}
+          prefs={prefs}
+          onPrefs={setPrefs}
+          defaultRoute={defaultRoute}
+          onDefaultRoute={(route) => updateProfile({ default_route: route })}
+          onTemplates={() => setGalleryOpen(true)}
+        />
         <DemoTasksBanner />
         <MorningCheckInPrompt />
-        {view !== "dashboard" && (
-          <ScopeHero
-            scope="today"
+        {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+        {prefs.showQuickAdd && <QuickAddBar date={day} />}
+
+        {view === "board" ? (
+          <TodayDashboard
             date={day}
-            title="Today"
-            subtitle={format(day, "EEEE, MMMM d, yyyy")}
-            eyebrow="Today"
-            pickerLabel={format(day, "MMM d")}
-            isCurrent={isReallyToday}
-            onPrev={() => setDayAndUrl(addDays(day, -1))}
-            onNext={() => setDayAndUrl(addDays(day, 1))}
-            onToday={() => setDayAndUrl(new Date())}
-            onDatePick={(d) => setDayAndUrl(d)}
+            onTaskClick={setEditTaskId}
+            onExhale={() => setExhaleOpen(true)}
           />
-        )}
-        {(() => {
-          const controls = (
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-center gap-1.5 px-1">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Plan with</span>
-          <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
-            {(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setView(k)}
-                className={cn(
-                  "rounded-full px-2.5 py-1 transition-colors",
-                  view === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {TODAY_VIEW_LABELS[k]}
-              </button>
-            ))}
+        ) : isMobile ? (
+          <div className="animate-fade-in space-y-3">
+            <div role="tablist" aria-label="Today sections" className="grid grid-cols-3 gap-1 rounded-full border border-border/60 bg-card/70 p-1 text-xs">
+              {(["plan", "care", "grow"] as const).map((t) => (
+                <button
+                  key={t}
+                  role="tab"
+                  aria-selected={mobileTab === t}
+                  type="button"
+                  onClick={() => setMobileTab(t)}
+                  className={cn(
+                    "min-h-[36px] rounded-full capitalize transition-colors",
+                    mobileTab === t ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground",
+                  )}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            {mobileTab === "plan" && <TodayPlanView date={day} />}
+            {mobileTab === "care" && <TodayFocusRail date={day} onTaskClick={setEditTaskId} />}
+            {mobileTab === "grow" && secondary}
           </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="ml-1 inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/70 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
-                title="Today preferences"
-              >
-                <Settings2 className="h-3 w-3" /> Preferences
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-72 space-y-3 p-3">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Today preferences</div>
-              <label className="flex items-start justify-between gap-3">
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-foreground">Try this now from Carey</span>
-                  <span className="block text-[11px] leading-snug text-muted-foreground">Show Carey's actionable suggestions at the top of Today.</span>
-                </span>
-                <Switch checked={prefs.showCareyNudges} onCheckedChange={(v) => setPrefs({ showCareyNudges: v })} />
-              </label>
-              <label className="flex items-start justify-between gap-3">
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-foreground">Quick add bar</span>
-                  <span className="block text-[11px] leading-snug text-muted-foreground">Inline input to drop tasks or meals into the right time slot.</span>
-                </span>
-                <Switch checked={prefs.showQuickAdd} onCheckedChange={(v) => setPrefs({ showQuickAdd: v })} />
-              </label>
-              <div className="space-y-1.5 border-t border-border/50 pt-3">
-                <div className="text-sm font-medium text-foreground">Pin as default page</div>
-                <p className="text-[11px] leading-snug text-muted-foreground">Where the app opens after you sign in.</p>
-                <div className="inline-flex w-full items-center gap-1 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
-                  {([
-                    { route: "/today", label: "Today" },
-                    { route: "/week", label: "Week" },
-                    { route: "/month", label: "Month" },
-                  ] as const).map((opt) => (
-                    <button
-                      key={opt.route}
-                      type="button"
-                      onClick={() => updateProfile({ default_route: opt.route })}
-                      className={cn(
-                        "flex-1 rounded-full px-2.5 py-1 transition-colors",
-                        defaultRoute === opt.route
-                          ? "bg-primary/15 text-primary"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {opt.label}{defaultRoute === opt.route ? " · pinned" : ""}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-1.5 border-t border-border/50 pt-3">
-                <div className="text-sm font-medium text-foreground">Pin default Today view</div>
-                <p className="text-[11px] leading-snug text-muted-foreground">Which layout Today opens with by default.</p>
-                <div className="flex flex-wrap gap-1 rounded-2xl border border-border/60 bg-card/70 p-1 text-[11px]">
-                  {(Object.keys(TODAY_VIEW_LABELS) as TodayView[]).map((k) => (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => { setDefaultView(k); setView(k); }}
-                      className={cn(
-                        "rounded-full px-2.5 py-1 transition-colors",
-                        defaultView === k
-                          ? "bg-primary/15 text-primary"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {TODAY_VIEW_LABELS[k]}{defaultView === k ? " · pinned" : ""}
-                    </button>
-                  ))}
-                </div>
-              </div>
-                <div className="space-y-1.5 border-t border-border/50 pt-3">
-                  <div className="text-sm font-medium text-foreground">Templates</div>
-                  <p className="text-[11px] leading-snug text-muted-foreground">
-                    Start from a curated Today layout — you can edit it after.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full rounded-full"
-                    onClick={() => setGalleryOpen(true)}
-                  >
-                    <LayoutTemplate className="mr-1.5 h-3.5 w-3.5" /> Browse templates
-                  </Button>
-                </div>
-            </PopoverContent>
-          </Popover>
-              </div>
-              {prefs.showQuickAdd && <QuickAddBar date={day} />}
+        ) : (
+          <div className="animate-fade-in space-y-4">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+              <TodayFocusRail date={day} onTaskClick={setEditTaskId} />
+              <TodayPlanView date={day} />
             </div>
-          );
-          if (view === "dashboard") {
-            return (
-              <TodayDashboard
-                date={day}
-                onTaskClick={setEditTaskId}
-                onExhale={() => setExhaleOpen(true)}
-                controls={controls}
-              />
-            );
-          }
-          if (view === "rhythm") {
-            return (
-              <RhythmDashboard
-                date={day}
-                onDateChange={setDayAndUrl}
-                isReallyToday={isReallyToday}
-                onTaskClick={setEditTaskId}
-                onApptClick={setEditApptId}
-                slot={controls}
-                debrief={
-                  <div className="space-y-6">
-                    <CollapsibleSection
-                      storageKey="planning.section.capacity.collapsed"
-                      eyebrow="Capacity check-in"
-                      title="How's your capacity today?"
-                    >
-                      <BurnoutCheckIn date={day} />
-                    </CollapsibleSection>
-                    <CollapsibleSection
-                      storageKey="planning.section.debrief.collapsed"
-                      eyebrow="Daily debrief"
-                      title="Reflect and reset"
-                    >
-                      <DailyDebrief date={day} onTaskClick={setEditTaskId} />
-                    </CollapsibleSection>
-                  </div>
-                }
-              />
-            );
-          }
-          return (
-            <div className="space-y-6">
-              <CollapsibleSection
-                storageKey="planning.section.rhythm.collapsed"
-                eyebrow="Rhythm"
-                title="Moon · Energy · Cycle"
-              >
-                <SlotWeatherStrip />
-              </CollapsibleSection>
-              <CollapsibleSection
-                storageKey="planning.section.capacity.collapsed"
-                eyebrow="Capacity check-in"
-                title="How's your capacity today?"
-              >
-                <BurnoutCheckIn date={day} />
-              </CollapsibleSection>
-              <CollapsibleSection
-                storageKey="planning.section.debrief.collapsed"
-                eyebrow="Daily debrief"
-                title="Reflect and reset"
-              >
-                <DailyDebrief date={day} onTaskClick={setEditTaskId} />
-              </CollapsibleSection>
-              {controls}
-            </div>
-          );
-        })()}
-        {view === "timeofday" && <TimeOfDayBoard date={day} onTaskClick={setEditTaskId} />}
-        {view === "plan" && <DayPlanBoard date={day} onTaskClick={setEditTaskId} />}
-        {view === "schedule" && <ScheduleBoard date={day} onTaskClick={setEditTaskId} onApptClick={setEditApptId} />}
-        {view === "custom" && (
-          <div className="space-y-6">
-            <CustomizableGrid key={gridKey} pageKey="today" />
+            {secondary}
           </div>
         )}
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/40 bg-card/55 p-4 shadow-soft backdrop-blur-xl">
-          <div className="min-w-0">
-            <div className="font-display text-sm font-semibold text-foreground">End-of-day exhale</div>
-            <p className="text-xs text-muted-foreground">A few quiet prompts to close the day.</p>
-          </div>
-          <Button size="sm" onClick={() => setExhaleOpen(true)} className="rounded-full">
-            <Wind className="mr-1.5 h-3.5 w-3.5" /> Begin exhale
-          </Button>
-        </div>
       </div>
 
       <AppointmentEditor appointment={editingAppt} open={!!editingAppt} onOpenChange={(o) => !o && setEditApptId(null)} />
       <TaskEditor task={editingTask} open={!!editingTask} onOpenChange={(o) => !o && setEditTaskId(null)} />
       <ExhaleFlow open={exhaleOpen} onOpenChange={setExhaleOpen} date={day} />
-      <QuickPresetSwitcher pageKey="today" />
       <TemplateGallery
         open={galleryOpen}
         onOpenChange={setGalleryOpen}
-        onApplied={() => {
-          setView("custom");
-          setGridKey((k) => k + 1);
-        }}
+        onApplied={() => setView("board")}
       />
-    </>
+    </CapacityProvider>
   );
 }
