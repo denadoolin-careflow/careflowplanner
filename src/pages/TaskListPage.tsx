@@ -2,9 +2,8 @@ import { useMemo } from "react";
 import { addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, startOfWeek } from "date-fns";
 import { useStore, todayISO } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
-import { LayoutGrid, LayoutList, CalendarDays, PanelRightOpen, PanelRightClose, type LucideIcon } from "lucide-react";
+import { LayoutGrid, LayoutList, CalendarDays, ChevronRight, PanelRightOpen, PanelRightClose, type LucideIcon } from "lucide-react";
 import type { Task } from "@/lib/types";
-import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { QuickEntryBar } from "@/components/tasks/QuickEntryBar";
 import { TodayFocusCard } from "@/components/tasks/TodayFocusCard";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
@@ -92,6 +91,16 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem(`careflow:view:${variant}`) as ViewMode) || "list");
   const [timeframe, setTimeframe] = useState<Timeframe>(() => (localStorage.getItem(`careflow:tf:${variant}`) as Timeframe) || "all");
   const [kanbanGroup, setKanbanGroup] = useState<KanbanGroupBy>(() => (localStorage.getItem(`careflow:kanban-group:${variant}`) as KanbanGroupBy) || "status");
+  const [collapsed, setCollapsed] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`careflow:collapsed:${variant}`) ?? "[]"); } catch { return []; }
+  });
+  const toggleGroup = (key: string) => {
+    setCollapsed(prev => {
+      const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];
+      try { localStorage.setItem(`careflow:collapsed:${variant}`, JSON.stringify(next)); } catch { /* noop */ }
+      return next;
+    });
+  };
   useEffect(() => { localStorage.setItem(`careflow:view:${variant}`, view); }, [view, variant]);
   useEffect(() => { localStorage.setItem(`careflow:tf:${variant}`, timeframe); }, [timeframe, variant]);
   useEffect(() => { localStorage.setItem(`careflow:kanban-group:${variant}`, kanbanGroup); }, [kanbanGroup, variant]);
