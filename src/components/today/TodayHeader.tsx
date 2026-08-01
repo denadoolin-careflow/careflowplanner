@@ -1,10 +1,8 @@
-import { format, isSameDay } from "date-fns";
-import { ChevronLeft, ChevronRight, Settings2, LayoutTemplate, CalendarDays } from "lucide-react";
+import { isSameDay } from "date-fns";
+import { LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { Calendar } from "@/components/ui/calendar";
-import { ScopeSegmented } from "@/components/today/dashboard/ScopeSegmented";
+import { PlanHeader } from "@/components/layout/PlanHeader";
 import { TODAY_VIEW_LABELS, type TodayView, type TodayPrefs } from "@/lib/today-view";
 import { cn } from "@/lib/utils";
 
@@ -27,50 +25,16 @@ export function TodayHeader({
 }) {
   const isToday = isSameDay(date, new Date());
   return (
-    <header className="sticky top-0 z-30 -mx-2 mb-1 border-b border-border/40 bg-background/85 px-2 py-2 backdrop-blur-xl sm:-mx-4 sm:px-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1">
-          <Button
-            size="icon" variant="ghost" className="h-9 w-9 rounded-full"
-            aria-label="Previous day"
-            onClick={() => onDate(new Date(date.getTime() - 86400000))}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                aria-label="Pick a date"
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full px-2 text-left"
-              >
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                <span className="font-display text-base font-semibold leading-none">
-                  {isToday ? "Today" : format(date, "EEE, MMM d")}
-                </span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-auto p-0">
-              <Calendar mode="single" selected={date} onSelect={(d) => d && onDate(d)} />
-            </PopoverContent>
-          </Popover>
-          <Button
-            size="icon" variant="ghost" className="h-9 w-9 rounded-full"
-            aria-label="Next day"
-            onClick={() => onDate(new Date(date.getTime() + 86400000))}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          {!isToday && (
-            <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs" onClick={() => onDate(new Date())}>
-              Today
-            </Button>
-          )}
-        </div>
-
-        <div className="ml-auto flex items-center gap-2">
-          <div className="hidden sm:block"><ScopeSegmented active="today" /></div>
-          <div
+    <PlanHeader
+      scope="today"
+      date={date}
+      isCurrent={isToday}
+      onPrev={() => onDate(new Date(date.getTime() - 86400000))}
+      onNext={() => onDate(new Date(date.getTime() + 86400000))}
+      onToday={() => onDate(new Date())}
+      onDatePick={onDate}
+      views={
+        <div
             role="tablist"
             aria-label="Today layout"
             className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]"
@@ -90,16 +54,11 @@ export function TodayHeader({
                 {TODAY_VIEW_LABELS[k]}
               </button>
             ))}
-          </div>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full" aria-label="Today preferences">
-                <Settings2 className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-72 space-y-3 p-3">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Today preferences</div>
+        </div>
+      }
+      prefs={
+        <>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Today preferences</div>
               <label className="flex items-start justify-between gap-3">
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-foreground">Try this now from Carey</span>
@@ -162,11 +121,8 @@ export function TodayHeader({
                   <LayoutTemplate className="mr-1.5 h-3.5 w-3.5" /> Browse templates
                 </Button>
               </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-      <div className="mt-2 flex justify-center sm:hidden"><ScopeSegmented active="today" /></div>
-    </header>
+        </>
+      }
+    />
   );
 }
