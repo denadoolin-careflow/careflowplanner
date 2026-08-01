@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { useTaskSelection } from "@/lib/task-selection";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
 import { BlockEditor } from "@/components/notes/BlockEditor";
 import { CalendarDays, Check, Settings2, Trash2, X, FolderKanban, Flag, Plus } from "lucide-react";
