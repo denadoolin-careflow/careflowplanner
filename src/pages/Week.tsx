@@ -37,6 +37,7 @@ import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 import { DayContextStrip } from "@/components/calendar/DayContextStrip";
 import { WeekHabitsStrip } from "@/components/week/WeekHabitsStrip";
 import { ScopeHero } from "@/components/layout/ScopeHero";
+import { PlanHeader } from "@/components/layout/PlanHeader";
 import { PlanningHeader } from "@/components/today/PlanningHeader";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { addWeeks, subWeeks, isSameWeek } from "date-fns";
