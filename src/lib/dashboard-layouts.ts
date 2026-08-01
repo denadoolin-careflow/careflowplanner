@@ -98,7 +98,7 @@ const uid = () =>
   (crypto as any)?.randomUUID?.() ??
   Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-export const PAGE_KEYS = ["home", "today", "week", "home-hub", "wealth-hub", "today-v2"] as const;
+export const PAGE_KEYS = ["home", "today", "week", "home-hub", "wealth-hub"] as const;
 export type PageKey = (typeof PAGE_KEYS)[number];
 
 /* Presets: stored as separate dashboard_layouts rows with name `${page}::${preset}` */
@@ -188,28 +188,6 @@ export function defaultLayout(page: PageKey): DashboardLayoutData {
       { type: "pomodoro", w: 6, h: 4 },
       { type: "habits-today", w: 6, h: 5 },
       { type: "appointments-today", w: 6, h: 5 },
-    ]);
-  }
-  if (page === "today-v2") {
-    return packLayout([
-      { type: "hero-greeting", w: 7, h: 5 },
-      { type: "capacity-checkin", w: 5, h: 5 },
-      { type: "moon-summary", w: 4, h: 5 },
-      { type: "daily-debrief-v2", w: 4, h: 5 },
-      { type: "cycle-summary", w: 4, h: 5 },
-      { type: "todays-timeline", w: 4, h: 6 },
-      { type: "top-priorities", w: 4, h: 6 },
-      { type: "self-care-checkin", w: 4, h: 6 },
-      { type: "tasks-today-v2", w: 8, h: 6 },
-      { type: "todays-flow", w: 4, h: 6 },
-      { type: "homeflow", w: 12, h: 7 },
-      { type: "my-people-v2", w: 8, h: 5 },
-      { type: "care-reminders-v2", w: 4, h: 5 },
-      { type: "whats-for-dinner-v2", w: 3, h: 4 },
-      { type: "hydration", w: 3, h: 4 },
-      { type: "movement", w: 3, h: 4 },
-      { type: "gratitude-notes", w: 3, h: 4 },
-      { type: "affirmation-footer", w: 12, h: 3 },
     ]);
   }
   // week
