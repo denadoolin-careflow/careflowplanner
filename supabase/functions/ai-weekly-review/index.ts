@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
   try {
     const __gate = await meterRequest(req, WEIGHTS.heavy, corsHeaders);
     if ("response" in __gate) return __gate.response;
-    const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
     if (!LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
@@ -99,18 +99,40 @@ Return JSON with keys:
 Context:
 ${JSON.stringify(ctx)}`;
 
-    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    const styleBlock = await fetchUserStyleBlock(req);
+    const callUpstream = () => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      headers: { "Lovable-API-Key": LOVABLE_API_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-5-mini",
+        model: "google/gemini-3.6-flash",
         messages: [
-          { role: "system", content: SYSTEM + (await fetchUserStyleBlock(req)) },
+          { role: "system", content: SYSTEM + styleBlock },
           { role: "user", content: userPrompt },
         ],
         response_format: { type: "json_object" },
       }),
     });
+
+    // Retry transient failures (rate limits, upstream resets) with backoff.
+    let aiRes: Response | null = null;
+    let netErr: unknown = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 700 * Math.pow(2, attempt - 1)));
+      try {
+        netErr = null;
+        aiRes = await callUpstream();
+      } catch (err) {
+        netErr = err;
+        aiRes = null;
+        continue;
+      }
+      if (aiRes.status === 429 || aiRes.status === 503) continue;
+      break;
+    }
+    if (!aiRes) {
+      return new Response(JSON.stringify({ error: "AI is busy right now — please try again in a moment.", detail: String(netErr ?? "network error") }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     if (aiRes.status === 429) {
       return new Response(JSON.stringify({ error: "Rate limited — please try again shortly." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
