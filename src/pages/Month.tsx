@@ -47,6 +47,7 @@ import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { getTransitsForDate } from "@/lib/transits";
 import { useTransitsEnabled } from "@/lib/astrology-prefs";
 import { ScopeHero } from "@/components/layout/ScopeHero";
+import { PlanHeader } from "@/components/layout/PlanHeader";
 import { PlanningHeader } from "@/components/today/PlanningHeader";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { isSameMonth as isSameMonthFn } from "date-fns";
@@ -184,6 +185,18 @@ export default function Month() {
         : "lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)]",
     )}>
       <div className="min-w-0 space-y-6">
+        <PlanHeader
+          scope="month"
+          date={cursor}
+          label={format(cursor, "MMMM yyyy")}
+          isCurrent={isSameMonthFn(cursor, new Date())}
+          onPrev={() => setCursor(subMonths(cursor, 1))}
+          onNext={() => setCursor(addMonths(cursor, 1))}
+          onToday={() => setCursor(new Date())}
+          onDatePick={setCursor}
+          views={<div className="hidden md:inline-flex"><CalendarViewToggle value={view} onChange={setView} /></div>}
+          actions={<QuickAddCalendarPopover days={[cursor]} />}
+        />
         <PlanningHeader
           date={cursor}
           title={format(cursor, "MMMM yyyy")}
@@ -200,11 +213,6 @@ export default function Month() {
           eyebrow="Month of"
           pickerLabel={format(cursor, "MMM yyyy")}
           isCurrent={isSameMonthFn(cursor, new Date())}
-          onPrev={() => setCursor(subMonths(cursor, 1))}
-          onNext={() => setCursor(addMonths(cursor, 1))}
-          onToday={() => setCursor(new Date())}
-          onDatePick={setCursor}
-          showQuickAdd
           actions={
             <>
               <Link
@@ -225,7 +233,6 @@ export default function Month() {
 
         <SectionCard title="Calendar" accent="calm" action={
           <div className="flex items-center gap-2">
-            <QuickAddCalendarPopover days={[cursor]} />
             <button
               onClick={() => setShowMoon(v => !v)}
               aria-pressed={showMoon}
@@ -239,13 +246,10 @@ export default function Month() {
             >
               <Moon className="h-3.5 w-3.5" /> Moon
             </button>
-            <div className="hidden sm:inline-flex">
-              <CalendarViewToggle value={view} onChange={setView} />
-            </div>
           </div>
         }>
-          {/* Mobile: full-width view toggle under Quick Add */}
-          <div className="-mx-1 mb-3 flex justify-center overflow-x-auto sm:hidden">
+          {/* Mobile: full-width view toggle */}
+          <div className="-mx-1 mb-3 flex justify-center overflow-x-auto md:hidden">
             <CalendarViewToggle value={view} onChange={setView} />
           </div>
           {view === "agenda" ? (
