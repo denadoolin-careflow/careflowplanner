@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon } from "lucide-react";
+import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -12,6 +12,9 @@ import type { Task } from "@/lib/types";
 import { AREAS } from "@/lib/types";
 import { usePlannerSort, usePlannerTagFilter, type PlannerSort } from "@/lib/planner-prefs";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { useHomeMaintenance, bucketOf } from "@/lib/home-maintenance";
+import { MealPickerPopover } from "@/components/meals/MealPickerPopover";
+import { MEAL_SLOTS } from "@/components/planner/PlannerMealLane";
 import { toast } from "sonner";
 
 interface Section {
@@ -24,8 +27,15 @@ interface Section {
 
 const AREA_SET = new Set(["Family","Health","Home","Meals","Personal","Money","Caregiving","Kids","Appointments","Creative Projects","Holidays & Birthdays"]);
 
-export function PlannerTaskPanel({ selectedDate, onQuickAdd }: { selectedDate: Date; onQuickAdd: () => void }) {
-  const { state, addTask } = useStore();
+/**
+ * Shared task-source panel used by the Planner, Today and the Inbox planner.
+ * Groups every place work can come from — Inbox, Today, Upcoming, Someday,
+ * Areas, Projects — plus Home upkeep and the day's meals, all draggable
+ * onto the time grid.
+ */
+export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Date; onQuickAdd?: () => void }) {
+  const { state, addTask, addMeal, updateMeal } = useStore();
+  const { items: maintenance } = useHomeMaintenance();
   const [q, setQ] = useState("");
   const [sort, setSort] = usePlannerSort();
   const [tagFilter, setTagFilter] = usePlannerTagFilter();
@@ -95,14 +105,40 @@ export function PlannerTaskPanel({ selectedDate, onQuickAdd }: { selectedDate: D
 
   const toggle = (id: string) => setOpen(o => ({ ...o, [id]: !o[id] }));
 
+  // Projects with open work (tasks not already claimed by a section above).
+  const projectGroups = (state.projects ?? [])
+    .filter(p => !p.archivedAt)
+    .map(p => ({
+      id: `project:${p.id}`,
+      label: p.name,
+      rows: remaining.filter(t => t.projectId === p.id),
+    }))
+    .filter(g => g.rows.length > 0);
+
+  // Home upkeep: maintenance items that are overdue or due soon.
+  const homeItems = maintenance.filter(m => {
+    const b = bucketOf(m, today);
+    return b === "overdue" || b === "due_soon";
+  });
+
+  const scheduleHomeItem = async (title: string) => {
+    await addTask({
+      title, area: "Home", priority: "medium", done: false,
+      dueDate: todayISO, inbox: false,
+    } as any);
+    toast.success("Added to the day");
+  };
+
   return (
     <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
       <header className="border-b border-border/60 p-3">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold tracking-wide">Tasks</h2>
-          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Open advanced capture">
-            <CommandIcon className="h-3.5 w-3.5" />
-          </Button>
+          {onQuickAdd && (
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Open advanced capture">
+              <CommandIcon className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
         {/* Inline quick add */}
         <div className="mb-2">
@@ -200,10 +236,72 @@ export function PlannerTaskPanel({ selectedDate, onQuickAdd }: { selectedDate: D
             ))}
           </div>
         )}
+
+        {projectGroups.length > 0 && (
+          <div className="mt-3 border-t border-border/50 pt-2">
+            <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Projects</p>
+            {projectGroups.map(g => (
+              <SectionBlock key={g.id} id={g.id} label={g.label} Icon={FolderKanban} count={g.rows.length}
+                open={open[g.id] ?? false} onToggle={toggle}>
+                {g.rows.map(t => <PlannerTaskRow key={t.id} task={t} />)}
+              </SectionBlock>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-3 border-t border-border/50 pt-2">
+          <SectionBlock id="home" label="Home upkeep" Icon={HomeIcon} count={homeItems.length}
+            open={open.home ?? false} onToggle={toggle}>
+            {homeItems.length === 0 ? (
+              <p className="px-2 py-2 text-[11px] text-muted-foreground">Nothing due right now.</p>
+            ) : homeItems.map(m => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => void scheduleHomeItem(m.title)}
+                className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[13px] hover:border-primary/40"
+              >
+                <HomeIcon className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{m.title}</span>
+                <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              </button>
+            ))}
+          </SectionBlock>
+
+          <SectionBlock id="meals" label="Meals" Icon={UtensilsCrossed} count={MEAL_SLOTS.length}
+            open={open.meals ?? false} onToggle={toggle}>
+            {MEAL_SLOTS.map(slot => {
+              const meal = state.meals.find(m => m.date === todayISO && m.slot === slot.slot);
+              return (
+                <MealPickerPopover
+                  key={slot.slot}
+                  onPick={(picked) => {
+                    if (meal) void updateMeal(meal.id, { name: picked.name, prepMinutes: picked.prep_minutes ?? undefined, ingredients: picked.ingredients, steps: picked.steps, tags: picked.tags });
+                    else void addMeal({ name: picked.name, date: todayISO, slot: slot.slot, prepMinutes: picked.prep_minutes ?? undefined, ingredients: picked.ingredients, steps: picked.steps, tags: picked.tags });
+                  }}
+                  trigger={
+                    <button
+                      type="button"
+                      aria-label={meal ? `Change ${slot.label}` : `Plan ${slot.label}`}
+                      className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[13px] hover:border-primary/40"
+                    >
+                      <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-yellow-500" aria-hidden />
+                      <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground">{slot.label}</span>
+                      <span className={cn("min-w-0 flex-1 truncate", !meal && "text-muted-foreground")}>
+                        {meal ? meal.name : "Nothing planned"}
+                      </span>
+                    </button>
+                  }
+                />
+              );
+            })}
+          </SectionBlock>
+        </div>
       </div>
     </aside>
   );
 }
+
 
 function SectionBlock({ id, label, Icon, count, open, onToggle, children }: {
   id: string; label: string; Icon?: React.ComponentType<{ className?: string }>;

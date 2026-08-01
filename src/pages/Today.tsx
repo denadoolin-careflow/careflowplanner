@@ -220,7 +220,7 @@ function TodayInner() {
         ) : (
           <div className="animate-fade-in space-y-4">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-              <TodayFocusRail date={day} onTaskClick={setEditTaskId} />
+              <TodayFocusRail date={day} onTaskClick={setEditTaskId} showSources />
               <TodayPlanView date={day} />
             </div>
             {secondary}

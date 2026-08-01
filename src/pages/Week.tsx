@@ -37,6 +37,7 @@ import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 import { DayContextStrip } from "@/components/calendar/DayContextStrip";
 import { WeekHabitsStrip } from "@/components/week/WeekHabitsStrip";
 import { ScopeHero } from "@/components/layout/ScopeHero";
+import { PlanHeader } from "@/components/layout/PlanHeader";
 import { PlanningHeader } from "@/components/today/PlanningHeader";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { addWeeks, subWeeks, isSameWeek } from "date-fns";
@@ -116,6 +117,44 @@ export default function Week() {
         : "lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)]",
     )}>
       <div className="min-w-0 space-y-6">
+        <PlanHeader
+          scope="week"
+          date={start}
+          label={`${format(start, "MMM d")} – ${format(addDays(start, 6), "MMM d")}`}
+          isCurrent={isSameWeek(start, new Date(), { weekStartsOn: 1 })}
+          onPrev={() => setStart(subWeeks(start, 1))}
+          onNext={() => setStart(addWeeks(start, 1))}
+          onToday={() => setStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+          onDatePick={(d) => setStart(startOfWeek(d, { weekStartsOn: 1 }))}
+          views={
+            <>
+              <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setLayout("grid")}
+                  aria-pressed={layout === "grid"}
+                  className={cn("min-h-[32px] rounded-full px-3 transition-colors",
+                    layout === "grid" ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground hover:text-foreground")}
+                >
+                  Schedule
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLayout("plan")}
+                  aria-pressed={layout === "plan"}
+                  className={cn("min-h-[32px] rounded-full px-3 transition-colors",
+                    layout === "plan" ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground hover:text-foreground")}
+                >
+                  Plan
+                </button>
+              </div>
+              {layout === "grid" && (
+                <div className="hidden md:inline-flex"><CalendarViewToggle value={view} onChange={setView} /></div>
+              )}
+            </>
+          }
+          actions={<QuickAddCalendarPopover days={days} />}
+        />
         <PlanningHeader
           date={selectedDate}
           title={`Week of ${format(start, "MMM d")}`}
@@ -129,12 +168,6 @@ export default function Week() {
           subtitle={layout === "plan" ? "Set your intention, top three, and review the week." : undefined}
           eyebrow="Week of"
           pickerLabel={format(start, "MMM d")}
-          isCurrent={isSameWeek(start, new Date(), { weekStartsOn: 1 })}
-          onPrev={() => setStart(subWeeks(start, 1))}
-          onNext={() => setStart(addWeeks(start, 1))}
-          onToday={() => setStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
-          onDatePick={(d) => setStart(startOfWeek(d, { weekStartsOn: 1 }))}
-          showQuickAdd
           actions={
             <>
               <Link
@@ -143,18 +176,6 @@ export default function Week() {
               >
                 <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
               </Link>
-              <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 bg-background/60 p-1">
-                <Button size="sm" variant="ghost"
-                  className={cn("h-7 rounded-full px-3 text-xs", layout === "grid" && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
-                  onClick={() => setLayout("grid")}>
-                  <LayoutGrid className="mr-1 h-3.5 w-3.5" /> Schedule
-                </Button>
-                <Button size="sm" variant="ghost"
-                  className={cn("h-7 rounded-full px-3 text-xs", layout === "plan" && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}
-                  onClick={() => setLayout("plan")}>
-                  <Sparkles className="mr-1 h-3.5 w-3.5" /> Plan
-                </Button>
-              </div>
             </>
           }
         >
@@ -170,7 +191,6 @@ export default function Week() {
           <>
             <SectionCard title="This week" accent="warm" action={
               <div className="flex items-center gap-2">
-                <QuickAddCalendarPopover days={days} />
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-8 gap-1.5 rounded-full">
@@ -180,13 +200,10 @@ export default function Week() {
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-64 p-2"><MyCalendarsPanel /></PopoverContent>
                 </Popover>
-                <div className="hidden sm:inline-flex">
-                  <CalendarViewToggle value={view} onChange={setView} />
-                </div>
               </div>
             }>
-              {/* Mobile: full-width view toggle right under Quick Add */}
-              <div className="-mx-1 mb-3 overflow-x-auto sm:hidden">
+              {/* Mobile: full-width view toggle */}
+              <div className="-mx-1 mb-3 overflow-x-auto md:hidden">
                 <div className="flex justify-center">
                   <CalendarViewToggle value={view} onChange={setView} />
                 </div>

@@ -4,9 +4,10 @@ import { AnchorTodayCard } from "@/components/today/dashboard/AnchorTodayCard";
 import { TopThreeStrip } from "@/components/today/TopThreeStrip";
 import { PlannerAtmosphereStrip } from "@/components/planner/PlannerAtmosphereStrip";
 import { DashCard } from "@/components/today/dashboard/DashCard";
+import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
 
 /** Left-hand focus column: who you are today, how much you have, what holds the day. */
-export function TodayFocusRail({ date, onTaskClick }: { date: Date; onTaskClick?: (id: string) => void }) {
+export function TodayFocusRail({ date, onTaskClick, showSources }: { date: Date; onTaskClick?: (id: string) => void; showSources?: boolean }) {
   return (
     <aside aria-label="Today focus" className="space-y-3">
       <GreetingBlock date={date} />
@@ -16,6 +17,11 @@ export function TodayFocusRail({ date, onTaskClick }: { date: Date; onTaskClick?
         <TopThreeStrip date={date} onTaskClick={onTaskClick} />
       </DashCard>
       <PlannerAtmosphereStrip date={date} />
+      {showSources && (
+        <div className="h-[480px]">
+          <TaskSourcePanel selectedDate={date} />
+        </div>
+      )}
     </aside>
   );
 }

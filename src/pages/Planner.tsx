@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { addDays, format, isValid, parseISO, startOfWeek } from "date-fns";
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PlannerTaskPanel } from "@/components/planner/PlannerTaskPanel";
+import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
 import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerQuickCapture } from "@/components/planner/PlannerQuickCapture";
@@ -121,7 +121,7 @@ export default function Planner() {
             </SheetTrigger>
             <SheetContent side="left" className="w-[86vw] max-w-[360px] p-0">
               <div className="h-full overflow-hidden p-3">
-                <PlannerTaskPanel selectedDate={day} onQuickAdd={() => { setMobileTasksOpen(false); setCaptureOpen(true); }} />
+                <TaskSourcePanel selectedDate={day} onQuickAdd={() => { setMobileTasksOpen(false); setCaptureOpen(true); }} />
               </div>
             </SheetContent>
           </Sheet>
@@ -157,7 +157,7 @@ export default function Planner() {
       >
         {showTaskPanel && (
           <>
-            <PlannerTaskPanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
+            <TaskSourcePanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
             <div
               role="separator"
               aria-orientation="vertical"

@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { Plus, UtensilsCrossed } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MealPickerPopover } from "@/components/meals/MealPickerPopover";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { Meal } from "@/lib/types";
@@ -15,20 +13,21 @@ export const MEAL_SLOTS: { slot: Meal["slot"]; label: string; atMin: number; ban
 function MealChip({ iso, slot, label, style }: { iso: string; slot: Meal["slot"]; label: string; style: React.CSSProperties }) {
   const { state, addMeal, updateMeal } = useStore();
   const meal = state.meals.find(m => m.date === iso && m.slot === slot);
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-
-  const save = async () => {
-    const name = text.trim();
-    if (!name) { setOpen(false); return; }
-    if (meal) await updateMeal(meal.id, { name });
-    else await addMeal({ name, date: iso, slot });
-    setText(""); setOpen(false);
-  };
 
   return (
-    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setText(meal?.name ?? ""); }}>
-      <PopoverTrigger asChild>
+    <MealPickerPopover
+      onPick={(picked) => {
+        const patch = {
+          name: picked.name,
+          prepMinutes: picked.prep_minutes ?? undefined,
+          ingredients: picked.ingredients,
+          steps: picked.steps,
+          tags: picked.tags,
+        };
+        if (meal) void updateMeal(meal.id, patch);
+        else void addMeal({ ...patch, date: iso, slot });
+      }}
+      trigger={
         <button
           type="button"
           style={style}
@@ -43,16 +42,8 @@ function MealChip({ iso, slot, label, style }: { iso: string; slot: Meal["slot"]
           {meal ? <UtensilsCrossed className="h-3 w-3 shrink-0" /> : <Plus className="h-3 w-3 shrink-0" />}
           <span className="truncate">{meal ? meal.name : label}</span>
         </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-56 p-2">
-        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-        <Input
-          autoFocus value={text} onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void save(); } if (e.key === "Escape") setOpen(false); }}
-          placeholder="What's on the menu?" className="h-8 text-sm"
-        />
-      </PopoverContent>
-    </Popover>
+      }
+    />
   );
 }
 
