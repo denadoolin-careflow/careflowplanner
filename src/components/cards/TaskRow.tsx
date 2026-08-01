@@ -84,10 +84,11 @@ const PRIORITY_STYLES: Record<Task["priority"], PriorityStyle> = {
 
 export function TaskRow({
   task, dense = false, showArea = true, draggable = false, variant = "row",
-}: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean; variant?: "row" | "card" }) {
+}: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean; variant?: "row" | "card" | "ticktick" }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
   const selection = useTaskSelection();
   const isSelected = selection.isSelected(task.id);
+  const tt = variant === "ticktick";
 
   const [open, setOpen] = useState(false);
   const [pomOpen, setPomOpen] = useState(false);
@@ -303,7 +304,7 @@ export function TaskRow({
       onContextMenu={(e) => { e.preventDefault(); setQuickEditOpen(true); }}
     >
       {/* Left accent bar — priority color when prioritized, otherwise area color */}
-      <span
+      {!tt && <span
         className={cn(
           "mt-[3px] hidden shrink-0 rounded-full sm:inline-block",
           isSubtask ? "h-5 w-1" : "h-8 w-1.5",
@@ -317,8 +318,19 @@ export function TaskRow({
         }
         aria-hidden
         title={task.priority !== "low" ? `Priority: ${task.priority}` : undefined}
+      />}
+      <Checkbox
+        checked={task.done}
+        onCheckedChange={handleToggle}
+        className={cn(
+          "mt-[3px]",
+          tt && "rounded-full",
+          tt && task.priority === "high" && "border-priority-high data-[state=checked]:bg-priority-high data-[state=checked]:border-priority-high",
+          tt && task.priority === "medium" && "border-priority-med data-[state=checked]:bg-priority-med data-[state=checked]:border-priority-med",
+          tt && task.priority === "low" && "border-muted-foreground/50",
+        )}
+        aria-label={`Mark complete: ${task.title}`}
       />
-      <Checkbox checked={task.done} onCheckedChange={handleToggle} className="mt-[3px]" aria-label={`Mark complete: ${task.title}`} />
 
       {(hasSubs || addingSub) && (
         <button
@@ -332,11 +344,11 @@ export function TaskRow({
       )}
 
       {/* Contextual icon — desktop only; on mobile the area chip in the meta line carries the same signal */}
-      <div className="mt-[1px] hidden h-5 w-5 shrink-0 place-items-center rounded-md bg-muted/50 text-muted-foreground sm:grid">
+      {!tt && <div className="mt-[1px] hidden h-5 w-5 shrink-0 place-items-center rounded-md bg-muted/50 text-muted-foreground sm:grid">
         {resolvedIcon.kind === "lucide"
           ? <resolvedIcon.Icon className="h-3.5 w-3.5" aria-hidden />
           : <span className="text-sm leading-none" aria-hidden>{resolvedIcon.char}</span>}
-      </div>
+      </div>}
 
       <div className="min-w-0 flex-1">
         {editing ? (
@@ -364,12 +376,20 @@ export function TaskRow({
             onDoubleClick={() => setEditing(true)}
             className={cn(
               "block w-full min-w-0 cursor-pointer whitespace-normal break-words [overflow-wrap:anywhere] text-left text-[15px] font-medium leading-snug text-current transition-colors",
+              tt && "truncate whitespace-nowrap text-[13.5px] font-normal",
               task.done && "text-muted-foreground line-through",
               celebrate && "text-primary",
             )}
           >
             {task.title}
           </button>
+        )}
+
+        {/* TickTick-style single-line notes preview */}
+        {tt && !editing && hasNotes && (
+          <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
+            {(task.notes ?? "").replace(/[#*_`>\-]/g, " ").replace(/\s+/g, " ").trim()}
+          </p>
         )}
 
         {/* Metadata row: area · smart due · priority dots · tags */}
@@ -385,6 +405,7 @@ export function TaskRow({
               <SmartDueChip date={task.dueDate} done={task.done} />
             </>)}
             {task.dayPart && <span className="opacity-70">{task.dayPart}</span>}
+            {tt && hasSubs && <span className="tabular-nums opacity-70">{doneSubs}/{subtasks.length}</span>}
             {task.resetItemId && (
               <a href="/home-reset" className="inline-flex items-center gap-1 text-secondary-foreground/80 hover:text-secondary-foreground">
                 <Sparkle className="h-2.5 w-2.5" /> Reset
@@ -397,7 +418,7 @@ export function TaskRow({
         )}
 
         {/* Subtask progress bar */}
-        {!editing && hasSubs && (
+        {!editing && !tt && hasSubs && (
           <div className="mt-1.5 flex items-center gap-2">
             <Progress
               value={pct}
@@ -413,7 +434,7 @@ export function TaskRow({
         )}
 
         {/* Inline notes preview / inline editor */}
-        {!editing && !dense && (hasNotes || notesEditing) && (
+        {!editing && !dense && !tt && (hasNotes || notesEditing) && (
           <div className="mt-1.5">
             {notesEditing ? (
               <div
@@ -482,7 +503,7 @@ export function TaskRow({
         )}
 
         {/* Inline "+ Add subtask" — hover-revealed on parent rows */}
-        {!editing && !isSubtask && (
+        {!editing && !isSubtask && !tt && (
           <div className="mt-1 hidden flex-wrap items-center gap-1 group-hover:flex focus-within:flex">
             <button
               type="button"
@@ -523,7 +544,7 @@ export function TaskRow({
       </div>
 
       {/* Right-side priority badge — hidden on hover so action cluster has room */}
-      {!isSubtask && task.priority !== "low" && !editing && (
+      {!isSubtask && !tt && task.priority !== "low" && !editing && (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); handleCyclePriority(); }}
