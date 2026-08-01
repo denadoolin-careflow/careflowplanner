@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { addDays, endOfWeek, format, isWithinInterval, parseISO, startOfWeek } from "date-fns";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles, Star, Target, Compass, Cake, PartyPopper, Receipt, Briefcase,
-  NotebookPen, Plus, X, Activity, Repeat, Utensils, ShoppingCart, Sparkle,
-  HeartHandshake, Sun, Sunset, Moon, ArrowRight, Heart,
+  Sparkles, Star, Compass, NotebookPen, Activity, Sun, Sunset, Moon,
+  ArrowRight, Sparkle, ChevronRight,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { useWeeklyPlan } from "@/hooks/useWeeklyPlan";
 import { useCheckins } from "@/lib/checkins";
@@ -18,75 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-type Accent = "calm" | "warm" | "sage" | "rose";
-
-function PlanCard({
-  title, icon: Icon, accent = "calm", action, children, className,
-}: {
-  title: string; icon: any; accent?: Accent;
-  action?: React.ReactNode; children: React.ReactNode; className?: string;
-}) {
-  const stripe =
-    accent === "calm" ? "from-primary/30 to-primary/0"
-    : accent === "warm" ? "from-accent/40 to-accent/0"
-    : accent === "sage" ? "from-secondary/40 to-secondary/0"
-    : "from-rose-300/40 to-rose-200/0";
-  const iconBg =
-    accent === "calm" ? "bg-primary/10 text-primary"
-    : accent === "warm" ? "bg-accent/30 text-accent-foreground"
-    : accent === "sage" ? "bg-secondary/30 text-secondary-foreground"
-    : "bg-rose-100 text-rose-700";
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
-      className={cn("cozy-card cozy-card-hover relative overflow-hidden", className)}
-    >
-      <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b", stripe)} />
-      <header className="relative flex items-center justify-between gap-3 px-5 pt-5">
-        <div className="flex items-center gap-2.5">
-          <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-xl", iconBg)}>
-            <Icon className="h-4 w-4" />
-          </span>
-          <h3 className="font-display text-base font-semibold leading-tight">{title}</h3>
-        </div>
-        {action}
-      </header>
-      <div className="relative px-5 pb-5 pt-3 text-sm">{children}</div>
-    </motion.section>
-  );
-}
-
-function ChipList({ items, onRemove }: { items: string[]; onRemove?: (i: number) => void }) {
-  if (!items.length) return <p className="text-xs text-muted-foreground">None yet.</p>;
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      <AnimatePresence>
-        {items.map((s, i) => (
-          <motion.span key={`${s}-${i}`}
-            initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }}
-            className="group inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-medium text-foreground"
-          >
-            {s}
-            {onRemove && (
-              <button onClick={() => onRemove(i)} className="opacity-50 hover:opacity-100"><X className="h-3 w-3" /></button>
-            )}
-          </motion.span>
-        ))}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function AddInline({ onAdd, placeholder }: { onAdd: (v: string) => void; placeholder: string }) {
-  const [v, setV] = useState("");
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); const t = v.trim(); if (!t) return; onAdd(t); setV(""); }} className="mt-2 flex gap-1.5">
-      <Input value={v} onChange={(e) => setV(e.target.value)} placeholder={placeholder} className="h-8 text-xs" />
-      <Button type="submit" size="sm" variant="ghost" className="h-8 px-2"><Plus className="h-3.5 w-3.5" /></Button>
-    </form>
-  );
-}
+import { PlanCard, ChipList, AddInline, Stat, ReviewField, RatingStars } from "@/components/planning";
 
 function recurringFallsThisWeek(dateISO: string | null, weekStart: Date, weekEnd: Date): boolean {
   if (!dateISO) return false;
@@ -96,10 +26,30 @@ function recurringFallsThisWeek(dateISO: string | null, weekStart: Date, weekEnd
   return candidates.some(c => c >= weekStart && c <= weekEnd);
 }
 
+/** One count pill in the "This week elsewhere" row. */
+function ElsewherePill({ to, label, value }: { to: string; label: string; value: string }) {
+  return (
+    <Link
+      to={to}
+      className="group flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-background/40 px-3 py-2 transition-colors hover:border-primary/40 hover:bg-primary-soft/30"
+    >
+      <span className="min-w-0">
+        <span className="block text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="font-display text-base font-semibold leading-tight">{value}</span>
+      </span>
+      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+    </Link>
+  );
+}
+
+/**
+ * Week = plan. Intention, Top 3, priorities, the day-by-day grid, progress,
+ * a compact "elsewhere" summary, and the one full review level in the app.
+ */
 export function WeekPlanningDashboard({
   weekStart, onJumpToDay,
 }: { weekStart: Date; onJumpToDay?: (d: Date) => void }) {
-  const { state, updateTask, toggleHabit } = useStore();
+  const { state, updateTask } = useStore();
   const monday = startOfWeek(weekStart, { weekStartsOn: 1 });
   const sunday = endOfWeek(weekStart, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
@@ -137,6 +87,8 @@ export function WeekPlanningDashboard({
     ),
     [state.appointments, checkinEvents, monday, sunday],
   );
+
+  // Counts for the "elsewhere" row
   const weekBirthdays = state.birthdays.filter(b => recurringFallsThisWeek(b.date, monday, sunday));
   const weekHolidays = state.holidays.filter(h => recurringFallsThisWeek(h.date, monday, sunday));
   const weekMeals = state.meals.filter(m => isWithinInterval(parseISO(m.date), { start: monday, end: sunday }));
@@ -145,6 +97,13 @@ export function WeekPlanningDashboard({
   const cleaningThisWeek = (state.cleaning ?? []).filter(c => c.cadence === "weekly" || c.cadence === "daily");
   const cleaningDone = cleaningThisWeek.filter(c => c.done).length;
   const dailyHabits = (state.habits ?? []).filter(h => h.cadence === "daily");
+  const habitHits = dailyHabits.reduce(
+    (n, h) => n + days.filter(d => h.log[format(d, "yyyy-MM-dd")]).length, 0,
+  );
+  const habitTarget = dailyHabits.length * 7;
+  const groceryItems = state.grocery ?? [];
+  const groceryLeft = groceryItems.filter(i => !i.bought).length;
+  const activeGoals = state.goals.filter(g => g.status === "active");
 
   // Bills due this week
   const [bills, setBills] = useState<{ id: string; name: string; amount: number; next_due_date: string | null }[]>([]);
@@ -177,8 +136,7 @@ export function WeekPlanningDashboard({
   };
 
   const planMyWeek = async () => {
-    // Pulls top three from active goals + weekly priorities
-    const goalTitles = state.goals.filter(g => g.status === "active").slice(0, 3).map(g => g.title);
+    const goalTitles = activeGoals.slice(0, 3).map(g => g.title);
     const next = [
       ...intention.top_three,
       ...goalTitles.filter(t => !intention.top_three.includes(t)),
@@ -187,20 +145,11 @@ export function WeekPlanningDashboard({
     toast("Pulled top 3 from your active goals");
   };
 
-  // Intention helpers
   const addPriority = (p: string) => saveIntention({ priorities: [...intention.priorities, p].slice(0, 7) });
   const removePriority = (i: number) => saveIntention({ priorities: intention.priorities.filter((_, idx) => idx !== i) });
   const addTop3 = (p: string) => saveIntention({ top_three: [...intention.top_three, p].slice(0, 3) });
   const removeTop3 = (i: number) => saveIntention({ top_three: intention.top_three.filter((_, idx) => idx !== i) });
 
-  const reflectionPrompts = [
-    "Where did you spend your best energy?",
-    "What support do you need this week?",
-    "What's one thing you can soften this week?",
-    "Who deserves a small kindness?",
-  ];
-
-  // Day part helpers
   const partFor = (d: Date, part: "Morning" | "Afternoon" | "Evening") =>
     weekTasks.filter(t => t.dueDate === format(d, "yyyy-MM-dd") && t.dayPart === part);
 
@@ -349,202 +298,20 @@ export function WeekPlanningDashboard({
         </div>
       </PlanCard>
 
-      {/* GRID OF DOMAIN CARDS */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <PlanCard title="Weekly goals" icon={Target} accent="calm">
-          {state.goals.filter(g => g.status === "active").length === 0 ? (
-            <p className="text-xs text-muted-foreground">No active goals.</p>
-          ) : (
-            <ul className="space-y-2">
-              {state.goals.filter(g => g.status === "active").slice(0, 5).map(g => (
-                <li key={g.id} className="space-y-1">
-                  <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate">{g.title}</span>
-                    <span className="text-xs font-medium text-muted-foreground">{g.progress}%</span>
-                  </div>
-                  <Progress value={g.progress} className="h-1.5" />
-                </li>
-              ))}
-            </ul>
-          )}
-        </PlanCard>
-
-        <PlanCard title="Project tasks" icon={Briefcase} accent="warm">
-          {projectTasks.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No project tasks scheduled.</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {projectTasks.slice(0, 6).map(t => {
-                const proj = (state.projects ?? []).find(p => p.id === (t as any).projectId);
-                return (
-                  <li key={t.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="flex min-w-0 items-center gap-1.5">
-                      <span className={cn("h-1.5 w-1.5 rounded-full", t.done ? "bg-secondary" : "bg-primary")} />
-                      <span className="truncate">{t.title}</span>
-                    </span>
-                    {proj && <span className="text-xs text-muted-foreground">{proj.icon ?? ""} {proj.name}</span>}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </PlanCard>
-
-        <PlanCard title="Habits" icon={Repeat} accent="sage">
-          {dailyHabits.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No daily habits yet.</p>
-          ) : (
-            <ul className="space-y-1">
-              {dailyHabits.slice(0, 6).map(h => {
-                const doneCount = days.filter(d => h.log[format(d, "yyyy-MM-dd")]).length;
-                return (
-                  <li key={h.id}>
-                    <div className="mb-1 flex items-center justify-between gap-2 text-sm">
-                      <span className="truncate">{h.title}</span>
-                      <span className="text-xs text-muted-foreground tabular-nums">{doneCount}/7</span>
-                    </div>
-                    <div className="flex gap-1">
-                      {days.map(d => {
-                        const iso = format(d, "yyyy-MM-dd");
-                        const done = !!h.log[iso];
-                        return (
-                          <button
-                            key={iso}
-                            onClick={() => toggleHabit(h.id, iso)}
-                            className={cn(
-                              "h-5 flex-1 rounded-full transition-colors",
-                              done ? "bg-secondary" : "bg-muted hover:bg-muted/80",
-                            )}
-                            aria-label={`Toggle ${h.title} on ${format(d, "EEE")}`}
-                          />
-                        );
-                      })}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </PlanCard>
-
-        <PlanCard title="Meal plan" icon={Utensils} accent="warm">
-          {weekMeals.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No meals planned. Visit the Meals page to plan.</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {days.map(d => {
-                const iso = format(d, "yyyy-MM-dd");
-                const meals = weekMeals.filter(m => m.date === iso);
-                if (!meals.length) return null;
-                return (
-                  <li key={iso} className="flex items-baseline gap-2 text-sm">
-                    <span className="w-12 shrink-0 text-xs font-medium text-muted-foreground">{format(d, "EEE")}</span>
-                    <span className="truncate">{meals.map(m => m.name).join(" · ")}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </PlanCard>
-
-        <PlanCard title="Grocery" icon={ShoppingCart} accent="sage">
-          <GroceryMini />
-        </PlanCard>
-
-        <PlanCard title="Cleaning" icon={Sparkle} accent="calm">
-          {cleaningThisWeek.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No cleaning tasks set.</p>
-          ) : (
-            <div className="space-y-2">
-              <div>
-                <div className="mb-1 flex items-baseline justify-between text-xs">
-                  <span className="text-muted-foreground">Done</span>
-                  <span className="font-display text-lg font-semibold">
-                    {cleaningDone}<span className="text-xs text-muted-foreground"> / {cleaningThisWeek.length}</span>
-                  </span>
-                </div>
-                <Progress value={cleaningThisWeek.length ? Math.round((cleaningDone / cleaningThisWeek.length) * 100) : 0} className="h-2" />
-              </div>
-              <ul className="space-y-1">
-                {cleaningThisWeek.slice(0, 5).map(c => (
-                  <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className={cn("truncate", c.done && "text-muted-foreground line-through")}>{c.title}</span>
-                    <span className="text-xs text-muted-foreground">{c.zone}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </PlanCard>
-
-        <PlanCard title="Caregiving" icon={HeartHandshake} accent="rose">
-          {caregivingTasks.length === 0 && weekAppointments.filter(a => a.recipientId).length === 0 ? (
-            <p className="text-xs text-muted-foreground">Nothing flagged for caregiving this week.</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {caregivingTasks.slice(0, 4).map(t => (
-                <li key={t.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate">{t.title}</span>
-                  {t.dueDate && <span className="text-xs text-muted-foreground">{format(parseISO(t.dueDate), "EEE")}</span>}
-                </li>
-              ))}
-              {weekAppointments.filter(a => a.recipientId).slice(0, 3).map(a => (
-                <li key={a.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate">📍 {a.title}</span>
-                  <span className="text-xs text-muted-foreground">{format(parseISO(a.date), "EEE")} {a.time ?? ""}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </PlanCard>
-
-        <PlanCard title="Bills due" icon={Receipt} accent="calm">
-          {bills.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No bills due this week.</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {bills.map(b => (
-                <li key={b.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate">{b.name}</span>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">{b.next_due_date ? format(parseISO(b.next_due_date), "EEE MMM d") : ""}</span>
-                    <span className="font-medium">${b.amount.toFixed(0)}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </PlanCard>
-
-        <PlanCard title="Birthdays & holidays" icon={Cake} accent="rose">
-          {weekBirthdays.length === 0 && weekHolidays.length === 0 ? (
-            <p className="text-xs text-muted-foreground">None this week.</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {weekBirthdays.map(b => (
-                <li key={b.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate">🎂 {b.name}</span>
-                  <span className="text-xs text-muted-foreground">{format(parseISO(b.date), "MMM d")}</span>
-                </li>
-              ))}
-              {weekHolidays.map(h => (
-                <li key={h.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate"><PartyPopper className="mr-1 inline h-3 w-3" />{h.name}</span>
-                  <span className="text-xs text-muted-foreground">{format(parseISO(h.date), "MMM d")}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </PlanCard>
-
-        <PlanCard title="Reflection prompts" icon={Heart} accent="rose">
-          <ul className="space-y-1.5 text-sm">
-            {reflectionPrompts.map(p => (
-              <li key={p} className="rounded-md bg-muted/40 px-2.5 py-2 text-muted-foreground">{p}</li>
-            ))}
-          </ul>
-        </PlanCard>
-      </div>
+      {/* THIS WEEK ELSEWHERE */}
+      <PlanCard title="This week elsewhere" icon={ChevronRight} accent="sage">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+          <ElsewherePill to="/meals" label="Meals" value={`${weekMeals.length} planned`} />
+          <ElsewherePill to="/home/groceries" label="Grocery" value={`${groceryLeft} to buy`} />
+          <ElsewherePill to="/home-reset" label="Cleaning" value={`${cleaningDone}/${cleaningThisWeek.length}`} />
+          <ElsewherePill to="/wealth" label="Bills" value={`${bills.length} due`} />
+          <ElsewherePill to="/caregiving" label="Caregiving" value={`${caregivingTasks.length} items`} />
+          <ElsewherePill to="/projects" label="Projects" value={`${projectTasks.length} tasks`} />
+          <ElsewherePill to="/habits" label="Habits" value={habitTarget ? `${habitHits}/${habitTarget}` : "None yet"} />
+          <ElsewherePill to="/goals" label="Goals" value={`${activeGoals.length} active`} />
+          <ElsewherePill to="/calendar" label="Dates" value={`${weekBirthdays.length + weekHolidays.length} this week`} />
+        </div>
+      </PlanCard>
 
       {/* WEEKLY REVIEW */}
       <PlanCard title="Weekly review" icon={NotebookPen} accent="calm">
@@ -555,48 +322,10 @@ export function WeekPlanningDashboard({
           <ReviewField label="Lessons" value={review.lessons} onSave={(v) => saveReview({ lessons: v })} />
           <ReviewField label="Next week focus" value={review.next_week_focus} onSave={(v) => saveReview({ next_week_focus: v })} className="md:col-span-2" />
         </div>
-        <div className="mt-3 flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">How did the week feel?</span>
-          {[1,2,3,4,5].map(n => (
-            <button
-              key={n}
-              onClick={() => saveReview({ rating: n })}
-              className={cn(
-                "h-7 w-7 rounded-full text-sm transition-all",
-                (review.rating ?? 0) >= n ? "bg-accent text-accent-foreground shadow-sm" : "bg-muted/50 text-muted-foreground hover:bg-muted",
-              )}
-              aria-label={`Rate ${n}`}
-            >★</button>
-          ))}
+        <div className="mt-3">
+          <RatingStars label="How did the week feel?" value={review.rating} onChange={(n) => saveReview({ rating: n })} />
         </div>
       </PlanCard>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl bg-muted/40 px-2 py-2">
-      <div className="font-display text-lg font-semibold">{value}</div>
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-    </div>
-  );
-}
-
-function ReviewField({ label, value, onSave, className }: { label: string; value: string | null; onSave: (v: string) => void; className?: string }) {
-  const [v, setV] = useState(value ?? "");
-  useEffect(() => { setV(value ?? ""); }, [value]);
-  return (
-    <div className={className}>
-      <label className="block text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</label>
-      <Textarea
-        value={v}
-        onChange={(e) => setV(e.target.value)}
-        onBlur={() => { if (v !== (value ?? "")) onSave(v); }}
-        placeholder="…"
-        rows={2}
-        className="mt-1"
-      />
     </div>
   );
 }
@@ -613,34 +342,6 @@ function DayPartRow({ icon: Icon, label, items, extras }: { icon: any; label: st
       <Icon className="mt-0.5 h-3 w-3 text-muted-foreground" />
       <span className="w-7 text-muted-foreground">{label}</span>
       <span className="line-clamp-2 text-foreground/90">{all.join(" · ")}</span>
-    </div>
-  );
-}
-
-function GroceryMini() {
-  const { state } = useStore();
-  const items = state.grocery ?? [];
-  const remaining = items.filter(i => !i.bought);
-  if (!items.length) return <p className="text-xs text-muted-foreground">Grocery list is empty.</p>;
-  return (
-    <div className="space-y-2">
-      <div>
-        <div className="mb-1 flex items-baseline justify-between text-xs">
-          <span className="text-muted-foreground">To buy</span>
-          <span className="font-display text-lg font-semibold">
-            {remaining.length}<span className="text-xs text-muted-foreground"> / {items.length}</span>
-          </span>
-        </div>
-        <Progress value={items.length ? Math.round(((items.length - remaining.length) / items.length) * 100) : 0} className="h-2" />
-      </div>
-      <ul className="space-y-1">
-        {remaining.slice(0, 5).map(i => (
-          <li key={i.id} className="flex items-center justify-between gap-2 text-sm">
-            <span className="truncate">{i.name}</span>
-            {i.qty && <span className="text-xs text-muted-foreground">{i.qty}</span>}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
