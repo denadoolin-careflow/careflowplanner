@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Inbox } from "lucide-react";
+import { ChevronDown, ChevronUp, Inbox, Rows3, Columns3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { haptics } from "@/lib/haptics";
@@ -39,6 +39,7 @@ function RailChip({ task }: { task: Task }) {
 export function PlannerMobileInboxRail({ className }: { className?: string }) {
   const { state } = useStore();
   const [collapsed, setCollapsed] = useState(false);
+  const [stacked, setStacked] = useState(false);
 
   const unscheduled = useMemo(
     () => state.tasks.filter(t =>
@@ -59,16 +60,32 @@ export function PlannerMobileInboxRail({ className }: { className?: string }) {
         </span>
         <button
           type="button"
+          onClick={() => setStacked(s => !s)}
+          aria-pressed={stacked}
+          aria-label={stacked ? "Show inbox as a row" : "Show inbox as a list"}
+          className="ml-auto rounded-full p-1 text-muted-foreground"
+        >
+          {stacked ? <Columns3 className="h-3.5 w-3.5" /> : <Rows3 className="h-3.5 w-3.5" />}
+        </button>
+        <button
+          type="button"
           onClick={() => setCollapsed(c => !c)}
           aria-expanded={!collapsed}
           aria-label={collapsed ? "Show inbox tasks" : "Hide inbox tasks"}
-          className="ml-auto rounded-full p-1 text-muted-foreground"
+          className="rounded-full p-1 text-muted-foreground"
         >
           {collapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
         </button>
       </div>
       {!collapsed && (
-        <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+        <div
+          className={cn(
+            "mt-1.5 gap-1.5 overscroll-contain pb-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            stacked
+              ? "flex max-h-40 flex-col overflow-y-auto"
+              : "flex snap-x snap-mandatory overflow-x-auto",
+          )}
+        >
           {unscheduled.map(t => <RailChip key={t.id} task={t} />)}
         </div>
       )}
