@@ -474,9 +474,14 @@ function InboxInner() {
     }
     const p = parseTaskInput(raw);
     const mergedTags = Array.from(new Set([...(p.tags ?? []), ...combinedTags]));
+    const destDue =
+      dest === "today" ? format(new Date(), "yyyy-MM-dd")
+      : dest === "upcoming" ? format(addDays(new Date(), 1), "yyyy-MM-dd")
+      : dest === "scheduled" ? (overrideDue || format(addDays(new Date(), 1), "yyyy-MM-dd"))
+      : "";
     await addTask({
       title: p.title || raw,
-      dueDate: overrideDue || p.dueDate,
+      dueDate: destDue || overrideDue || p.dueDate,
       area: (overrideArea || (p.area as Area) || (activeCategories[0] as Area | undefined)) as Area | undefined,
       priority: (overridePriority || undefined) as Priority | undefined,
       projectId: overrideProjectId || undefined,
@@ -485,7 +490,7 @@ function InboxInner() {
       tags: mergedTags.length ? mergedTags : undefined,
       estMinutes: p.estMinutes,
       notes: details.trim() || undefined,
-      inbox: true,
+      inbox: dest === "inbox",
     });
     setDraft("");
     setExtraTags([]);
@@ -493,7 +498,13 @@ function InboxInner() {
     setDetails("");
     setDetailsOpen(false);
     setControlsPinned(false);
-    toast.success("Caught it ✨", { description: "Safely held in your inbox." });
+    toast.success("Caught it ✨", {
+      description:
+        dest === "today" ? "Added to Today."
+        : dest === "upcoming" ? "Added to Upcoming."
+        : dest === "scheduled" ? `Scheduled for ${destDue}.`
+        : "Safely held in your inbox.",
+    });
   };
 
   const openReviewForDraft = () => {
