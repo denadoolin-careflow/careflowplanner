@@ -20,7 +20,7 @@ Today dashboard cards (Anchor, Capacity, Plan, Care, Grow, Routines) get inline 
 - Editable card titles, reusing the existing EditableText pattern.
 - Consistent hover and press affordances across all cards.
 
-## 3. Header image on Today
+## 3. Header image on Today, Week, Month pages
 
 - A header banner above the greeting: pick from curated Unsplash imagery, search Unsplash, or upload your own photo.
 - Uploads go to a Cloud storage bucket; the choice is saved per user so it persists.
