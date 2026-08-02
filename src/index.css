@@ -2972,3 +2972,11 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 @media (prefers-reduced-motion: reduce) {
   .reset-leaf, .reset-plant-grow { animation: none !important; }
 }
+
+/* Fade floating chrome while a planner task is being dragged. */
+body.planner-dragging [data-quick-add-fab],
+body.planner-dragging [aria-label="Pomodoro timer"] {
+  opacity: 0.15;
+  pointer-events: none;
+  transition: opacity 150ms ease-out;
+}
