@@ -193,12 +193,6 @@ export default function Week() {
                 </Popover>
               </div>
             }>
-              {/* Mobile: full-width view toggle */}
-              <div className="-mx-1 mb-3 overflow-x-auto md:hidden">
-                <div className="flex justify-center">
-                  <CalendarViewToggle value={view} onChange={setView} />
-                </div>
-              </div>
               <WeekRhythmRow
                 weekStart={start}
                 selectedDate={selectedDate}
@@ -235,9 +229,6 @@ export default function Week() {
               )}
               {view === "agenda" && (
                 <AgendaView days={isMobile ? [selectedDate] : days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} onLunarOpen={setLunarDate} />
-              )}
-              {view === "month" && (
-                <MonthGridView cursor={start} onCursorChange={(d) => setStart(startOfWeek(d, { weekStartsOn: 1 }))} />
               )}
             </SectionCard>
 
