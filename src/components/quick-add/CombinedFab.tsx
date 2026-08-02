@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2 } from "lucide-react";
+import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
@@ -9,6 +9,7 @@ import { createNote, updateNote } from "@/lib/notes";
 import { supabase } from "@/integrations/supabase/client";
 import type { Attachment } from "@/lib/types";
 import { toast } from "sonner";
+import { tray } from "@/lib/tray-store";
 
 const ATTACH_BUCKET = "attachments";
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -103,6 +104,8 @@ export function CombinedFab() {
     { key: "voice", label: "Voice", icon: Mic, onClick: () => { window.dispatchEvent(new Event("careflow:carey:open")); } },
     { key: "journal", label: "Journal", icon: BookHeart, onClick: () => navigate("/journal") },
     { key: "checklist", label: "Checklist", icon: ListChecks, onClick: () => openNewNote("- [ ] \n- [ ] \n- [ ] ") },
+    { key: "notepad", label: "Notepad", icon: NotebookPen, onClick: () => { tray.setTab("notepad"); tray.setOpen(true); } },
+    { key: "tray", label: "Task tray", icon: Inbox, onClick: () => { tray.setTab("tray"); tray.setOpen(true); } },
     { key: "pdf", label: "PDF", icon: FileUp, onClick: () => pdfInputRef.current?.click() },
     { key: "photo", label: "Photo", icon: Camera, onClick: () => photoInputRef.current?.click() },
     { key: "quick", label: "Quick add", icon: Zap, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } })); }, accent: true },
