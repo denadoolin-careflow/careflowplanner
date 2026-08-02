@@ -14,22 +14,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
 function TrayRow({
-  id, title, onRemove, onPark,
-}: { id: string; title: string; onRemove?: () => void; onPark?: () => void }) {
+  id, title, onRemove, onPark, onDragActive,
+}: { id: string; title: string; onRemove?: () => void; onPark?: () => void; onDragActive?: (v: boolean) => void }) {
   const pointer = usePlannerPointerDrag(
     () => ({ taskId: id, label: title }),
-    { onClick: () => openTaskQuickEdit(id) },
+    {
+      onClick: () => openTaskQuickEdit(id),
+      onDragStart: () => onDragActive?.(true),
+      onDragEnd: () => onDragActive?.(false),
+    },
   );
   return (
     <li
       draggable
-      onDragStart={(e) => { e.dataTransfer.setData(TASK_DRAG_MIME, id); e.dataTransfer.effectAllowed = "copyMove"; haptics.pickup(); }}
+      onDragStart={(e) => { e.dataTransfer.setData(TASK_DRAG_MIME, id); e.dataTransfer.effectAllowed = "copyMove"; haptics.pickup(); onDragActive?.(true); }}
+      onDragEnd={() => onDragActive?.(false)}
       onPointerDown={pointer.onPointerDown}
       style={{ minHeight: ROW_PX }}
-      className="group flex touch-none items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[12.5px]"
+      className="group flex touch-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[12.5px]"
     >
-      <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
-      <span className="min-w-0 flex-1 truncate">{title}</span>
+      <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
+      <span className="min-w-0 flex-1 [overflow-wrap:anywhere] whitespace-normal break-words">{title}</span>
       {onPark && (
         <button
           type="button"

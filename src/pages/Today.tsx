@@ -147,11 +147,7 @@ function TodayInner() {
 
   return (
     <CapacityProvider value={capacity}>
-      <div
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        className="mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip px-2 pb-12 sm:px-4"
-      >
+      <div className="mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip px-2 pb-12 sm:px-4">
         <TodayHeader
           date={day}
           onDate={setDayAndUrl}
