@@ -608,8 +608,7 @@ export default function Month() {
             );
           })()}
 
-          {sheetISO && <DayTasksPanel iso={sheetISO} />}
-          {sheetISO && <DayDetailExtras iso={sheetISO} />}
+          {/* Schedule first, then tasks / extras / rhythm (rendered below). */}
 
           {sheetISO && (() => {
             const items = eventsOn(sheetISO);
