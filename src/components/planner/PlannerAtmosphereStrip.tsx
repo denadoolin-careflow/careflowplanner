@@ -7,6 +7,7 @@ import type { WeatherCondition } from "@/lib/weather";
 import { getMoonPhase, MOON_INFO, getIllumination } from "@/lib/moon";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const SLOTS = [
   { key: "morning", part: "Morning" },
@@ -28,8 +29,8 @@ function ConditionIcon({ condition, isNight, className }: { condition: WeatherCo
 }
 
 /**
- * Compact planner header strip: per-day-part weather plus moon and cycle phase,
- * so the grid always shows the day's conditions at a glance.
+ * One calm line for the day's atmosphere: current conditions, the moon glyph
+ * and a cycle dot. Tap for the full per-day-part breakdown.
  */
 export function PlannerAtmosphereStrip({ date, className }: { date: Date; className?: string }) {
   useEnsureWeather();
@@ -45,38 +46,60 @@ export function PlannerAtmosphereStrip({ date, className }: { date: Date; classN
     try { return getPhaseInfo(date, periods, settings); } catch { return null; }
   }, [date, periods, settings]);
 
-  const chip = "flex min-w-0 items-center gap-1.5 rounded-full border border-border/40 bg-card/70 px-2.5 py-1 text-[11px]";
+  const temp = (c: number) => `${unit === "F" ? cToF(c) : Math.round(c)}°`;
+  const now = snap && snap.conditionLabel !== "—" ? snap : null;
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
-      {SLOTS.map(({ key, part }) => {
-        const dp = snap?.dayParts.find(p => p.part === part);
-        const has = !!dp && dp.conditionLabel !== "—";
-        return (
-          <div key={key} className={chip} title={has ? `${part}: ${dp!.conditionLabel}` : `${part}: weather unavailable`}>
-            {has ? <ConditionIcon condition={dp!.condition} isNight={dp!.isNight} /> : <Cloud className="h-3.5 w-3.5 opacity-40" />}
-            <span className="text-muted-foreground">{part.slice(0, 3)}</span>
-            {has && (
-              <span className="font-medium tabular-nums">
-                {unit === "F" ? cToF(dp!.avgTempC) : Math.round(dp!.avgTempC)}°
-              </span>
-            )}
-          </div>
-        );
-      })}
-
-      <div className={chip} title={`${moon.label} · ${illum}% illuminated`}>
-        <span aria-hidden>{moon.glyph}</span>
-        <span className="truncate text-muted-foreground">{moon.label}</span>
-      </div>
-
-      {cycle && (
-        <div className={chip} title={`Cycle day ${cycle.cycleDay} · ${PHASE_META[cycle.phase].label ?? cycle.label}`}>
-          <span aria-hidden>{cycle.glyph}</span>
-          <span className="truncate text-muted-foreground">{cycle.label}</span>
-          <span className="tabular-nums text-muted-foreground/70">d{cycle.cycleDay}</span>
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Day conditions — weather, moon and cycle"
+          className={cn(
+            "inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border border-border/40 bg-card/60 px-3 py-1 text-[11.5px] text-muted-foreground transition-colors hover:bg-card",
+            className,
+          )}
+        >
+          {now ? <ConditionIcon condition={now.condition} /> : <Cloud className="h-3.5 w-3.5 opacity-40" />}
+          <span className="font-medium tabular-nums text-foreground">{now ? temp(now.tempC) : "—"}</span>
+          <span className="truncate">{now ? now.conditionLabel : "Weather unavailable"}</span>
+          <span aria-hidden className="opacity-40">·</span>
+          <span aria-hidden className="text-sm leading-none">{moon.glyph}</span>
+          {cycle && (
+            <span
+              aria-hidden
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ background: `hsl(var(${cycle.tokenVar}))` }}
+            />
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 space-y-2 p-3 text-[12px]">
+        <div className="space-y-1">
+          {SLOTS.map(({ key, part }) => {
+            const dp = snap?.dayParts.find(p => p.part === part);
+            const has = !!dp && dp.conditionLabel !== "—";
+            return (
+              <div key={key} className="flex items-center gap-2">
+                {has ? <ConditionIcon condition={dp!.condition} isNight={dp!.isNight} /> : <Cloud className="h-3.5 w-3.5 opacity-40" />}
+                <span className="w-20 text-muted-foreground">{part}</span>
+                <span className="font-medium tabular-nums">{has ? temp(dp!.avgTempC) : "—"}</span>
+                <span className="min-w-0 truncate text-muted-foreground">{has ? dp!.conditionLabel : ""}</span>
+              </div>
+            );
+          })}
         </div>
-      )}
-    </div>
+        <div className="border-t border-border/40 pt-2 text-muted-foreground">
+          <span aria-hidden className="mr-1.5">{moon.glyph}</span>
+          {moon.label} · {illum}% illuminated
+        </div>
+        {cycle && (
+          <div className="text-muted-foreground">
+            <span aria-hidden className="mr-1.5">{cycle.glyph}</span>
+            {PHASE_META[cycle.phase]?.label ?? cycle.label} · day {cycle.cycleDay}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
