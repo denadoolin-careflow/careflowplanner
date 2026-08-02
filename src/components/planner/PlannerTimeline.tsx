@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { openTaskQuickEdit } from "@/lib/open-task-quick-edit";
 import { resolveTaskIcon } from "@/lib/task-icons";
 import type { Task, Appointment } from "@/lib/types";
 import { toast } from "sonner";
@@ -746,6 +747,20 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
               }}
             />
 
+            {/* Snap guide while dragging — lines up with the unscheduled row baseline */}
+            {moving && movePreview !== null && (
+              <div
+                className="pointer-events-none absolute left-0 right-0 z-30 flex items-center"
+                style={{ top: movePreview * (HOUR_PX / 60), height: SLOT_PX }}
+                aria-hidden
+              >
+                <span className="h-px flex-1 bg-primary/70" />
+                <span className="ml-1 rounded bg-primary/90 px-1 font-mono text-[9px] text-primary-foreground">
+                  {minTo12(movePreview + START_H * 60)}
+                </span>
+              </div>
+            )}
+
             {/* Current time */}
             {nowMin !== null && nowMin >= 0 && nowMin <= totalMin && (
               <div className="pointer-events-none absolute left-0 right-0 z-20 flex items-center" style={{ top: nowMin * (HOUR_PX / 60) }}>
@@ -793,7 +808,7 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                   onKeyDown={(e) => void onBlockKeyDown(e, it)}
                   title={`${it.title} · ${timeLabel}${hasConflict ? " · overlaps another item" : ""}`}
                   onPointerDown={(e) => startMoveGesture(e, it)}
-                  onClick={() => it.kind === "task" && openTaskEditor(it.id)}
+                  onClick={() => it.kind === "task" && openTaskQuickEdit(it.id)}
                   className={cn(
                     "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
