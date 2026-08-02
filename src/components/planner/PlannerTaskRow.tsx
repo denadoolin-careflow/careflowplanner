@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { resolveTaskIcon } from "@/lib/task-icons";
-import { openTaskEditor } from "@/lib/open-task-editor";
+import { openTaskQuickEdit } from "@/lib/open-task-quick-edit";
+import { ROW_PX } from "@/lib/planner-metrics";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { haptics } from "@/lib/haptics";
 import { usePlannerPointerDrag } from "@/lib/planner-touch-drag";
@@ -41,7 +42,7 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
 
   const pointer = usePlannerPointerDrag(
     () => ({ taskId: task.id, label: task.title }),
-    { onClick: () => openTaskEditor(task.id) },
+    { onClick: () => openTaskQuickEdit(task.id) },
   );
 
   return (
@@ -50,6 +51,7 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onPointerDown={pointer.onPointerDown}
+      style={{ minHeight: ROW_PX }}
       className={cn(
         "group flex cursor-pointer touch-none select-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px] transition-colors hover:border-primary/40 hover:bg-card",
         task.done && "opacity-60",
