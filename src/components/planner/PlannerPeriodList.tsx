@@ -103,8 +103,8 @@ export function PlannerPeriodList({ date, period }: { date: Date; period: DayPar
         ) : (
           <div className="space-y-1.5">
             {items.map(({ t, m }) => (
-              <div key={t.id} className="flex items-start gap-3">
-                <span className="mt-1 shrink-0 rounded-md bg-muted/80 px-1.5 py-0.5 font-mono text-[10px] tabular-nums">
+              <div key={t.id} className="flex items-start gap-2">
+                <span className="mt-1.5 shrink-0 rounded-md bg-muted/80 px-1 py-0.5 font-mono text-[10px] tabular-nums">
                   {formatTime(m!)}
                 </span>
                 <div className="min-w-0 flex-1">
