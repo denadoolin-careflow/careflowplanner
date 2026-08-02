@@ -43,7 +43,7 @@ const DAY_PART_START_H: Record<string, number> = { Morning: 9, Afternoon: 13, Ev
 
 const START_H = 5;
 const END_H = 22;
-const HOUR_PX = 60; // 60px per hour → 15px per 15-min
+const HOUR_PX = 80; // 80px per hour → 20px per 15-min
 const SNAP_MIN = 15;
 
 interface ScheduledItem {
@@ -108,7 +108,7 @@ function assignLanes(items: ScheduledItem[]): (ScheduledItem & { lane: number; l
 }
 
 export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?: boolean; bare?: boolean }) {
-  const { state, updateTask, addTask } = useStore();
+  const { state, updateTask, addTask, toggleTask } = useStore();
   const pomo = usePomodoro();
   const [focusTaskId] = usePlannerFocusTaskId();
   const iso = format(date, "yyyy-MM-dd");
