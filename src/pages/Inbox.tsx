@@ -123,6 +123,8 @@ function InboxInner() {
   const [overridePriority, setOverridePriority] = useState<Priority | "">("");
   const [overrideProjectId, setOverrideProjectId] = useState<string>("");
   const [overrideDue, setOverrideDue] = useState<string>("");
+  // Where a captured task lands: inbox (default), today, upcoming (tomorrow), or a picked date.
+  const [dest, setDest] = useState<"inbox" | "today" | "upcoming" | "scheduled">("inbox");
   const [careRecipientIds, setCareRecipientIds] = useState<string[]>([]);
   const careRecipientId = careRecipientIds[0] ?? "auto";
   const setCareRecipientSingle = (v: string) => {
