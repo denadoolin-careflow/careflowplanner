@@ -133,8 +133,9 @@ function TodayInner() {
     const dy = t.clientY - start.y;
     if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     if (Date.now() - start.t > 600) return;
-    if (dx < 0) navigate("/week");
-    else setDayAndUrl(addDays(day, -1));
+    // Symmetric: left = next day, right = previous day. Scope switching lives
+    // in the header's day/week/month segmented control.
+    setDayAndUrl(addDays(day, dx < 0 ? 1 : -1));
   };
 
   const secondary = (

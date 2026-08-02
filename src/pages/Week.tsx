@@ -13,15 +13,13 @@ import { AgendaView } from "@/components/calendar/AgendaView";
 import { DayPartsView } from "@/components/calendar/DayPartsView";
 import { format as fmtDate, isSameDay } from "date-fns";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
-import { CalendarViewToggle, useCalView } from "@/components/calendar/CalendarViewToggle";
+import { CAL_VIEW_ITEMS, useCalView, type CalView } from "@/components/calendar/CalendarViewToggle";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
-import { MonthGridView } from "@/components/calendar/MonthGridView";
 import { MyCalendarsPanel } from "@/components/calendar/MyCalendarsPanel";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Layers } from "lucide-react";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
-import { WeekNavigator } from "@/components/week/WeekNavigator";
 import { hoursToHM } from "@/lib/time-blocks";
 import { gcalFetchEvents, type GCalEvent } from "@/lib/google-calendar";
 import { useLongDropListener, hourToDayPart, partDropHour } from "@/lib/long-press-drag";
@@ -36,10 +34,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { DayLunarSheet } from "@/components/lunar/DayLunarSheet";
 import { DayContextStrip } from "@/components/calendar/DayContextStrip";
 import { WeekHabitsStrip } from "@/components/week/WeekHabitsStrip";
-import { ScopeHero } from "@/components/layout/ScopeHero";
 import { PlanHeader } from "@/components/layout/PlanHeader";
+import { PlanContextStrip } from "@/components/layout/PlanContextStrip";
+import { ViewPills } from "@/components/layout/ViewPills";
+import { CollapsibleSection } from "@/components/today/CollapsibleSection";
+import { Triptych } from "@/components/today/RhythmDashboard";
 import { PageHeaderImage } from "@/components/common/PageHeaderImage";
-import { PlanningHeader } from "@/components/today/PlanningHeader";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { addWeeks, subWeeks, isSameWeek } from "date-fns";
 import { useSidebarHidden } from "@/lib/today-view";
@@ -62,6 +62,8 @@ export default function Week() {
   }, [searchParams]);
   const [view, setView] = useCalView();
   const [layout, setLayout] = useState<"grid" | "plan">("grid");
+  const weekViewItems = [...CAL_VIEW_ITEMS, { value: "review" as const, label: "Review", icon: LayoutGrid }];
+  const weekView: CalView | "review" = layout === "plan" ? "review" : view;
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
@@ -138,66 +140,46 @@ export default function Week() {
           onToday={() => setStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
           onDatePick={(d) => setStart(startOfWeek(d, { weekStartsOn: 1 }))}
           views={
-            <>
-              <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => setLayout("grid")}
-                  aria-pressed={layout === "grid"}
-                  className={cn("min-h-[32px] rounded-full px-3 transition-colors",
-                    layout === "grid" ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Schedule
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLayout("plan")}
-                  aria-pressed={layout === "plan"}
-                  className={cn("min-h-[32px] rounded-full px-3 transition-colors",
-                    layout === "plan" ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Plan
-                </button>
-              </div>
-              {layout === "grid" && (
-                <div className="hidden md:inline-flex"><CalendarViewToggle value={view} onChange={setView} /></div>
-              )}
-            </>
+            <ViewPills
+              ariaLabel="Week view"
+              items={weekViewItems}
+              value={weekView}
+              onChange={(v) => {
+                if (v === "review") { setLayout("plan"); return; }
+                setLayout("grid");
+                setView(v as CalView);
+              }}
+            />
           }
           actions={<QuickAddCalendarPopover days={days} />}
         />
-        <PlanningHeader
-          date={selectedDate}
-          title={`Week of ${format(start, "MMM d")}`}
-          subtitle="Your greeting, weather, and cosmic rhythm — carried across each planning view."
-          onTaskClick={setEditTaskId}
-        />
-        <ScopeHero
-          scope="week"
+        <PlanContextStrip
           date={start}
-          title={`${format(start, "MMM d")} – ${format(addDays(start, 6), "MMM d")}`}
-          subtitle={layout === "plan" ? "Set your intention, top three, and review the week." : undefined}
-          eyebrow="Week of"
-          pickerLabel={format(start, "MMM d")}
+          showRhythm
           actions={
-            <>
-              <Link
-                to="/reset/week"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
-              >
-                <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
-              </Link>
-            </>
+            <Link
+              to="/reset/week"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1 text-[12px] font-medium text-foreground/85 hover:bg-secondary-soft"
+            >
+              <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
+            </Link>
           }
-        >
-          <WeekNavigator weekStart={start} onChange={setStart} />
-        </ScopeHero>
+        />
 
         <RhythmJournalPrompt date={start} scope="weekly" />
         <WeekTransitStrip weekStart={start} />
 
         {layout === "plan" ? (
-          <WeekPlanningDashboard weekStart={start} onJumpToDay={(d) => { setStart(startOfWeek(d, { weekStartsOn: 1 })); setLayout("grid"); }} />
+          <>
+            <CollapsibleSection
+              storageKey="planning.section.rhythm.collapsed"
+              eyebrow="Rhythm"
+              title="Moon · Energy · Cycle"
+            >
+              <Triptych date={selectedDate} />
+            </CollapsibleSection>
+            <WeekPlanningDashboard weekStart={start} onJumpToDay={(d) => { setStart(startOfWeek(d, { weekStartsOn: 1 })); setLayout("grid"); }} />
+          </>
         ) : (
           <>
             <SectionCard title="This week" accent="warm" action={
@@ -213,12 +195,6 @@ export default function Week() {
                 </Popover>
               </div>
             }>
-              {/* Mobile: full-width view toggle */}
-              <div className="-mx-1 mb-3 overflow-x-auto md:hidden">
-                <div className="flex justify-center">
-                  <CalendarViewToggle value={view} onChange={setView} />
-                </div>
-              </div>
               <WeekRhythmRow
                 weekStart={start}
                 selectedDate={selectedDate}
@@ -255,9 +231,6 @@ export default function Week() {
               )}
               {view === "agenda" && (
                 <AgendaView days={isMobile ? [selectedDate] : days} appointmentsOn={eventsOn} onTaskDropAt={handleTimeDrop} onApptClick={setEditApptId} onLunarOpen={setLunarDate} />
-              )}
-              {view === "month" && (
-                <MonthGridView cursor={start} onCursorChange={(d) => setStart(startOfWeek(d, { weekStartsOn: 1 }))} />
               )}
             </SectionCard>
 
