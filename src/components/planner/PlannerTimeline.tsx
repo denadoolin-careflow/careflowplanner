@@ -807,8 +807,15 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                 >
                   {tiny ? (
                     <div className="flex h-full min-w-0 items-center gap-1 leading-none">
+                      {it.kind === "task" && (
+                        <BlockCheckbox
+                          done={!!it.done}
+                          title={it.title}
+                          onToggle={() => void toggleTask(it.id)}
+                        />
+                      )}
                       {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
-                      <span className="min-w-0 flex-1 truncate font-medium">{it.title}</span>
+                      <span className={cn("min-w-0 flex-1 truncate font-medium", it.done && "line-through")}>{it.title}</span>
                       <span className="shrink-0 font-mono text-[9px] opacity-70">{minTo12(it.startMin + START_H * 60)}</span>
                       {conflictNode}
                     </div>
@@ -829,9 +836,17 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                         {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
                       </div>
                       <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-[1.25]">
+                        {it.kind === "task" && (
+                          <BlockCheckbox
+                            done={!!it.done}
+                            title={it.title}
+                            className="mt-[1px]"
+                            onToggle={() => void toggleTask(it.id)}
+                          />
+                        )}
                         {ic && ic.kind === "lucide" ? <ic.Icon className="mt-[1px] h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
                         <span
-                          className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:break-word] [word-break:normal]"
+                          className={cn("min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:break-word] [word-break:normal]", it.done && "line-through")}
                           style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: titleLines, overflow: "hidden" }}
                         >
                           {it.title}
