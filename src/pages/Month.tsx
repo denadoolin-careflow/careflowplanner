@@ -215,7 +215,7 @@ export default function Month() {
                 { value: "agenda" as const, label: "Agenda", icon: ListChecks },
               ]}
               value={view}
-              onChange={setView}
+              onChange={(v: "grid" | "agenda") => setView(v)}
             />
           }
           actions={<QuickAddCalendarPopover days={[cursor]} />}
