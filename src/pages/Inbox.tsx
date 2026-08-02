@@ -791,6 +791,8 @@ function InboxInner() {
                     : "Add a note…"
                 }
                 disabled={recorder.state !== "idle"}
+                leftPad="pl-11 sm:pl-14"
+                rightPad={draft.trim() ? "pr-[7.5rem] sm:pr-32" : "pr-12 sm:pr-14"}
                 className={cn(recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40")}
               />
               <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5">

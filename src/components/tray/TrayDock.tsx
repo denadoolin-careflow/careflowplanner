@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { NotebookPen, Inbox, X, Plus, Trash2, ListPlus, GripVertical } from "lucide-react";
+import { NotebookPen, Inbox, X, Plus, Trash2, ListPlus, GripVertical, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tray, useTray } from "@/lib/tray-store";
 import { useStore } from "@/lib/store";
@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
-function TrayRow({ id, title, onRemove }: { id: string; title: string; onRemove: () => void }) {
+function TrayRow({
+  id, title, onRemove, onPark,
+}: { id: string; title: string; onRemove?: () => void; onPark?: () => void }) {
   const pointer = usePlannerPointerDrag(
     () => ({ taskId: id, label: title }),
     { onClick: () => openTaskQuickEdit(id) },
@@ -28,14 +30,26 @@ function TrayRow({ id, title, onRemove }: { id: string; title: string; onRemove:
     >
       <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
       <span className="min-w-0 flex-1 truncate">{title}</span>
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        aria-label={`Remove ${title} from tray`}
-        className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
-      >
-        <X className="h-3.5 w-3.5" />
-      </button>
+      {onPark && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onPark(); }}
+          aria-label={`Park ${title} in the tray`}
+          className="shrink-0 rounded p-1 text-muted-foreground hover:text-primary"
+        >
+          <Pin className="h-3.5 w-3.5" />
+        </button>
+      )}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
+          aria-label={`Remove ${title} from tray`}
+          className="shrink-0 rounded p-1 text-muted-foreground hover:text-destructive"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
     </li>
   );
 }
@@ -53,6 +67,17 @@ export function TrayDock() {
   const trayTasks = useMemo(
     () => taskIds.map(id => state.tasks.find(t => t.id === id)).filter(Boolean),
     [taskIds, state.tasks],
+  );
+
+  // Live inbox: open, unscheduled capture items, mirrored (never duplicated) so
+  // they can be dragged straight onto the planner grid from the tray.
+  const inboxTasks = useMemo(
+    () => state.tasks.filter((t: any) =>
+      !t.done && !t.parentTaskId && t.status !== "parked" &&
+      !t.startTime && (t.inbox === true || !t.dueDate) &&
+      !taskIds.includes(t.id)
+    ).slice(0, 50),
+    [state.tasks, taskIds],
   );
 
   // Prune ids for tasks that no longer exist.
@@ -103,8 +128,8 @@ export function TrayDock() {
             >
               {t === "notepad" ? <NotebookPen className="h-3.5 w-3.5" /> : <Inbox className="h-3.5 w-3.5" />}
               {t}
-              {t === "tray" && taskIds.length > 0 && (
-                <span className="rounded-full bg-primary/15 px-1.5 text-[10px]">{taskIds.length}</span>
+              {t === "tray" && (taskIds.length + inboxTasks.length) > 0 && (
+                <span className="rounded-full bg-primary/15 px-1.5 text-[10px]">{taskIds.length + inboxTasks.length}</span>
               )}
             </button>
           ))}
@@ -179,21 +204,37 @@ export function TrayDock() {
             <Button size="sm" className="h-8 shrink-0 rounded-lg" onClick={() => void quickAddToTray()}>Add</Button>
           </div>
           {trayTasks.length === 0 ? (
-            <p className="px-1 py-4 text-center text-[12px] text-muted-foreground">
+            <p className="px-1 py-3 text-center text-[12px] text-muted-foreground">
               Drag tasks here to park them, then drag them onto the planner grid.
             </p>
           ) : (
-            <ul className="space-y-1.5">
-              {trayTasks.map((t: any) => (
-                <TrayRow key={t.id} id={t.id} title={t.title} onRemove={() => tray.removeTask(t.id)} />
-              ))}
-            </ul>
+            <>
+              <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Parked · {trayTasks.length}
+              </p>
+              <ul className="space-y-1.5">
+                {trayTasks.map((t: any) => (
+                  <TrayRow key={t.id} id={t.id} title={t.title} onRemove={() => tray.removeTask(t.id)} />
+                ))}
+              </ul>
+              <Button size="sm" variant="ghost" className="w-full text-[11px] text-muted-foreground"
+                onClick={() => tray.clearTasks()}>
+                Clear parked
+              </Button>
+            </>
           )}
-          {trayTasks.length > 0 && (
-            <Button size="sm" variant="ghost" className="w-full text-[11px] text-muted-foreground"
-              onClick={() => tray.clearTasks()}>
-              Clear tray
-            </Button>
+
+          {inboxTasks.length > 0 && (
+            <>
+              <p className="px-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Inbox · {inboxTasks.length}
+              </p>
+              <ul className="space-y-1.5">
+                {inboxTasks.map((t: any) => (
+                  <TrayRow key={t.id} id={t.id} title={t.title} onPark={() => tray.addTask(t.id)} />
+                ))}
+              </ul>
+            </>
           )}
         </div>
       )}

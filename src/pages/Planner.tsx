@@ -18,7 +18,27 @@ import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { usePlannerView } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ListTodo } from "lucide-react";
+import { ListTodo, Inbox } from "lucide-react";
+import { tray, useTray } from "@/lib/tray-store";
+
+function TrayToggle({ className }: { className?: string }) {
+  const { taskIds, open } = useTray();
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => { tray.setTab("tray"); tray.setOpen(!open); }}
+      aria-pressed={open}
+      aria-label="Toggle the task tray"
+      className={`h-8 shrink-0 rounded-full text-xs ${className ?? ""}`}
+    >
+      <Inbox className="mr-1.5 h-3.5 w-3.5" /> Tray
+      {taskIds.length > 0 && (
+        <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 text-[10px]">{taskIds.length}</span>
+      )}
+    </Button>
+  );
+}
 
 export default function Planner() {
   const { date } = useParams<{ date: string }>();
@@ -131,11 +151,12 @@ export default function Planner() {
       {view === "day" && (
         <div className="flex items-center gap-2">
           <PlannerPeriodTabs value={period} onChange={setPeriod} />
+          <TrayToggle className="ml-auto" />
           {!isMobile && (
             <Button
               size="icon"
               variant="outline"
-              className="ml-auto h-8 w-8 rounded-full"
+              className="h-8 w-8 rounded-full"
               onClick={() => setTaskPanelHidden(v => !v)}
               aria-label={taskPanelHidden ? "Show task sidebar" : "Hide task sidebar"}
             >
