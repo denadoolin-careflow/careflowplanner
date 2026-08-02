@@ -676,6 +676,43 @@ function InboxInner() {
             </button>
           </div>
 
+          {/* Where it lands */}
+          {captureKind === "task" && (
+            <div className="mb-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span className="text-muted-foreground/80">Add to</span>
+              <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5">
+                {([
+                  { k: "inbox", label: "Inbox" },
+                  { k: "today", label: "Today" },
+                  { k: "upcoming", label: "Upcoming" },
+                  { k: "scheduled", label: "Scheduled" },
+                ] as const).map(({ k, label }) => (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={dest === k}
+                    onClick={() => setDest(k)}
+                    className={cn(
+                      "rounded-full px-2 py-0.5 transition-colors",
+                      dest === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {dest === "scheduled" && (
+                <input
+                  type="date"
+                  aria-label="Scheduled date"
+                  value={overrideDue || format(addDays(new Date(), 1), "yyyy-MM-dd")}
+                  onChange={(e) => setOverrideDue(e.target.value)}
+                  className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[11px] text-foreground"
+                />
+              )}
+            </div>
+          )}
+
           {transcribing ? (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4 shadow-inner">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
