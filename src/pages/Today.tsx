@@ -164,11 +164,14 @@ function TodayInner() {
         {prefs.showQuickAdd && <QuickAddBar date={day} />}
 
         {view === "board" ? (
-          <TodayDashboard
+          <>
+            {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+            <TodayDashboard
             date={day}
             onTaskClick={setEditTaskId}
             onExhale={() => setExhaleOpen(true)}
-          />
+            />
+          </>
         ) : isMobile ? (
           <div className="animate-fade-in space-y-3">
             <div role="tablist" aria-label="Today sections" className="grid grid-cols-3 gap-1 rounded-full border border-border/60 bg-card/70 p-1 text-xs">
