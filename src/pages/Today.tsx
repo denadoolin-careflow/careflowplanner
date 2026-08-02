@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
-import { isSameDay, format, addDays } from "date-fns";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { useSearchParams, useLocation } from "react-router-dom";
+import { isSameDay, format } from "date-fns";
 import { TaskSelectionProvider } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -116,8 +116,6 @@ function TodayInner() {
     isLow: entry.level === "tender" || entry.level === "depleted",
     isSpacious: entry.level === "spacious",
   }), [entry.level]);
-
-  const navigate = useNavigate();
 
   const secondary = (
     <div className="space-y-3">
