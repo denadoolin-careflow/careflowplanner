@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { format, isSameDay, isSameMonth, addMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays } from "date-fns";
-import { ChevronLeft, ChevronRight, Play, Pause, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Play, Pause, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -17,14 +17,33 @@ interface Props {
 }
 
 export function PlannerContextPanel({ date, onChangeDate }: Props) {
+  const [moreOpen, setMoreOpen] = useState<boolean>(() => {
+    try { return localStorage.getItem("careflow:planner:context-more") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("careflow:planner:context-more", moreOpen ? "1" : "0"); } catch { /* noop */ }
+  }, [moreOpen]);
   return (
     <aside className="flex h-full min-h-0 w-full flex-col gap-3 overflow-y-auto pr-1">
       <DayPulseCard date={date} />
-      <MiniCalendar date={date} onChange={onChangeDate} />
-      <MoonEnergyCard date={date} />
       <TodayIntentionCard date={date} />
       <TopPrioritiesCard date={date} />
       <ActiveFocusMini />
+      <button
+        type="button"
+        onClick={() => setMoreOpen(o => !o)}
+        aria-expanded={moreOpen}
+        className="flex items-center gap-1.5 self-start rounded-full px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+      >
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", !moreOpen && "-rotate-90")} />
+        More context
+      </button>
+      {moreOpen && (
+        <>
+          <MiniCalendar date={date} onChange={onChangeDate} />
+          <MoonEnergyCard date={date} />
+        </>
+      )}
     </aside>
   );
 }
