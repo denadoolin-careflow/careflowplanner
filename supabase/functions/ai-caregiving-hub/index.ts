@@ -1,7 +1,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { meterRequest, WEIGHTS } from "../_shared/ai-meter.ts";
 
-const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -42,21 +42,26 @@ ${recentJournal.slice(0, 10).map((j: any) => `- ${j.title ?? "Entry"}: ${j.snipp
 Active routines: ${routines.slice(0, 12).join("; ") || "(none)"}
 Active chores: ${chores.slice(0, 12).join("; ") || "(none)"}`;
 
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-5-mini",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: userMsg },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
+    let res!: Response;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Lovable-API-Key": LOVABLE_API_KEY,
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3.6-flash",
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: userMsg },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      });
+      if (res.status !== 429 && res.status < 500) break;
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 600 * Math.pow(2, attempt)));
+    }
 
     if (!res.ok) {
       const t = await res.text();
