@@ -32,6 +32,13 @@ import { PlannerAtmosphereStrip } from "./PlannerAtmosphereStrip";
 import { useBandColors, bandClass, type BandId } from "@/lib/planner-band-colors";
 import type { PlannerTemplate, TemplateItem } from "@/lib/planner-templates";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  PLANNER_START_H as START_H,
+  PLANNER_END_H as END_H,
+  HOUR_PX,
+  SNAP_MIN,
+  SLOT_PX,
+} from "@/lib/planner-metrics";
 
 export const RHYTHM_BANDS = [
   { id: "morning" as BandId, label: "Morning", startH: 5, endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
@@ -42,13 +49,7 @@ export const RHYTHM_BANDS = [
 /** Default landing time for a task that only has a day part. */
 const DAY_PART_START_H: Record<string, number> = { Morning: 9, Afternoon: 13, Evening: 18, "Late Night": 21 };
 
-import {
-  PLANNER_START_H as START_H,
-  PLANNER_END_H as END_H,
-  HOUR_PX,
-  SNAP_MIN,
-  SLOT_PX,
-} from "@/lib/planner-metrics";
+// Grid metrics come from @/lib/planner-metrics so unscheduled rows share the same baseline.
 
 interface ScheduledItem {
   id: string;
