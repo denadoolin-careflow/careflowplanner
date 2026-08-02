@@ -77,22 +77,8 @@ export function TrayDock() {
     haptics.success();
   };
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => { tray.setOpen(true); haptics.tap(); }}
-        aria-label="Open notepad and task tray"
-        className="fixed bottom-24 left-3 z-40 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/90 px-3 py-2 text-[12px] font-medium shadow-lg backdrop-blur lg:bottom-6"
-      >
-        <NotebookPen className="h-4 w-4 text-primary" aria-hidden />
-        Notepad
-        {taskIds.length > 0 && (
-          <span className="rounded-full bg-primary/15 px-1.5 text-[10px] text-primary">{taskIds.length}</span>
-        )}
-      </button>
-    );
-  }
+  // The launcher lives in the quick-add FAB menu — nothing is rendered when closed.
+  if (!open) return null;
 
   return (
     <section
