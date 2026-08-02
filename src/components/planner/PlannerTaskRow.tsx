@@ -73,7 +73,7 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
       <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere] whitespace-normal break-words", compact && "line-clamp-1", task.done && "line-through")}>
         {task.title}
       </span>
-      <div className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 text-[10px] text-muted-foreground">
         {task.recurrenceType && task.recurrenceType !== "none" && <Repeat className="h-3 w-3" aria-hidden />}
         {task.estMinutes && (
           <span className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 font-mono">
