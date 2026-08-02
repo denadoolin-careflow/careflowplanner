@@ -67,6 +67,15 @@ export default function Week() {
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
   const [lunarDate, setLunarDate] = useState<Date | null>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  // Keep the selected day inside the visible week when paging between weeks.
+  useEffect(() => {
+    setSelectedDate(prev => {
+      if (days.some(d => isSameDay(d, prev))) return prev;
+      const dow = (prev.getDay() + 6) % 7; // 0 = Monday
+      return addDays(start, dow);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [start]);
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
 
@@ -100,7 +109,7 @@ export default function Week() {
 
   useLongDropListener((d) => {
     if (d.payload.type !== "task" || !d.part) return;
-    const iso = d.iso ?? days[0].toISOString().slice(0, 10);
+    const iso = d.iso ?? format(days[0], "yyyy-MM-dd");
     void handleTimeDrop(d.payload.id, iso, partDropHour(d.part));
   });
 

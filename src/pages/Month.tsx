@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useStore } from "@/lib/store";
 import { SectionCard } from "@/components/cards/SectionCard";
 import {
@@ -77,7 +77,15 @@ export default function Month() {
   const isMobile = useIsMobile();
   const transitsOn = useTransitsEnabled();
   const { settings: cycleSettings, periods: cyclePeriods } = useCycle();
-  const [cursor, setCursor] = useState(new Date());
+  const [searchParams] = useSearchParams();
+  const [cursor, setCursor] = useState(() => {
+    const d = searchParams.get("date");
+    if (d) {
+      const parsed = new Date(d + "T00:00:00");
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    return new Date();
+  });
   const [sidebarHidden] = useSidebarHidden();
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   const [hoverISO, setHoverISO] = useState<string | null>(null);
@@ -92,11 +100,11 @@ export default function Month() {
   useEffect(() => { void prefetchMoonMonth(cursor, { neighbors: true }); }, [cursor]);
 
   const monthStart = startOfMonth(cursor);
-  const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: gridStart, end: addDays(gridStart, 41) });
   const monthDays = days.filter(d => isSameMonth(d, cursor));
-  const fromISO = days[0].toISOString().slice(0, 10);
-  const toISO = days[days.length - 1].toISOString().slice(0, 10);
+  const fromISO = format(days[0], "yyyy-MM-dd");
+  const toISO = format(days[days.length - 1], "yyyy-MM-dd");
   const { blocks, update: updateBlock } = useTimeBlocks(fromISO, toISO);
   const { days: wxDays } = useWeekForecast();
   const [tempUnit] = useTempUnit();
@@ -280,7 +288,7 @@ export default function Month() {
             </span>
           </div>
           <div className="grid grid-cols-7 gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground sm:text-xs">
-            {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
+            {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
               <div key={d} className="px-1 py-1 text-center sm:px-2">
                 <span className="sm:hidden">{d[0]}</span>
                 <span className="hidden sm:inline">{d}</span>
@@ -289,10 +297,10 @@ export default function Month() {
           </div>
           <div className="mt-1.5 grid grid-cols-7 gap-1.5">
             {days.map(d => {
-              const k = d.toISOString().slice(0,10);
+              const k = format(d, "yyyy-MM-dd");
               const inMonth = isSameMonth(d, cursor);
               const today = isSameDay(d, new Date());
-              const inCurrentWeek = isSameWeek(d, new Date(), { weekStartsOn: 0 });
+              const inCurrentWeek = isSameWeek(d, new Date(), { weekStartsOn: 1 });
               const dow = d.getDay(); // 0..6 for week-edge rounding
               const ev = eventsOn(k);
               const phase = cycleSettings.enabled ? phaseForDate(d, cyclePeriods, cycleSettings) : null;
