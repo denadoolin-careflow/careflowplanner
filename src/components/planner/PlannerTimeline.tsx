@@ -119,6 +119,7 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   const [focusTaskId] = usePlannerFocusTaskId();
   const iso = format(date, "yyyy-MM-dd");
   const gridRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
   const [resizing, setResizing] = useState<{ id: string; startY: number; startDur: number } | null>(null);
   const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
@@ -131,6 +132,19 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   const [dismissedConflicts, setDismissedConflicts] = useState<string[]>([]);
   const [bandColors] = useBandColors();
   const isMobile = useIsMobile();
+
+  // Anchor the timeline on the current hour so the day opens where you are.
+  const scrollToNow = useCallback((behavior: ScrollBehavior = "auto") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const mins = (new Date().getHours() - START_H) * 60 + new Date().getMinutes();
+    const top = Math.max(0, mins * (HOUR_PX / 60) - el.clientHeight / 3);
+    el.scrollTo({ top, behavior });
+  }, []);
+  useEffect(() => {
+    const t = window.setTimeout(() => scrollToNow("auto"), 80);
+    return () => window.clearTimeout(t);
+  }, [iso, scrollToNow]);
 
   const applyHistory = useCallback(async (
     tasks: { id: string; patch: Record<string, unknown> }[],
