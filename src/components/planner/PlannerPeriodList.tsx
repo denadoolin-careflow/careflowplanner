@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { useStore } from "@/lib/store";
 import { useTimeBlocks } from "@/lib/time-blocks";
@@ -34,6 +34,7 @@ export function PlannerPeriodList({ date, period }: { date: Date; period: DayPar
   const range = RANGES[period];
   const [dragOver, setDragOver] = useState(false);
   const [draft, setDraft] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const dropAt = (taskId: string) => {
     const h = DROP_HOUR[period];
@@ -42,7 +43,9 @@ export function PlannerPeriodList({ date, period }: { date: Date; period: DayPar
   };
 
   usePlannerDropListener((d) => {
-    if (!dragOver || !d.taskId) return;
+    if (!d.taskId) return;
+    const el = document.elementFromPoint(d.clientX, d.clientY);
+    if (!el || !rootRef.current?.contains(el)) return;
     dropAt(d.taskId);
     setDragOver(false);
   });
@@ -74,6 +77,7 @@ export function PlannerPeriodList({ date, period }: { date: Date; period: DayPar
 
   return (
     <div
+      ref={rootRef}
       data-droppart={period}
       data-dropdate={iso}
       onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (!dragOver) setDragOver(true); }}
