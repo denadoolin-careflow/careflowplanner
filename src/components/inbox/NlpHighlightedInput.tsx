@@ -151,7 +151,7 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           spellCheck
           autoComplete="off"
           className={cn(
-            "relative z-20 h-11 sm:h-13 w-full rounded-2xl border-0 bg-transparent py-0 text-[14px] sm:text-[15px] font-semibold leading-[1.25] outline-none transition placeholder:text-[12px] sm:placeholder:text-[13px] placeholder:font-medium placeholder:leading-[1.25] placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
+            "relative z-20 h-11 sm:h-14 w-full rounded-2xl border-0 bg-transparent py-0 text-[14px] sm:text-[15px] font-semibold leading-[1.25] outline-none transition placeholder:text-[12px] sm:placeholder:text-[13px] placeholder:font-medium placeholder:leading-[1.25] placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
             "disabled:opacity-60",
             // The input's own text is transparent so the colored mirror renders, while the caret and selection remain visible.
             value ? "!text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "text-foreground",
