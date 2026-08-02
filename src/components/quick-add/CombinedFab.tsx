@@ -114,6 +114,7 @@ export function CombinedFab() {
   return (
     <div
       ref={wrapRef}
+      data-quick-add-fab
       className={cn("pointer-events-none fixed z-40 flex flex-col items-end gap-2")}
       style={drag.style}
     >
