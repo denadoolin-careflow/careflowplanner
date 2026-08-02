@@ -25,7 +25,8 @@ import { formatTime12 } from "@/lib/routines";
 import { getMoonPhase } from "@/lib/moon";
 import { getKeyPhaseInfo, isKeyPhaseDay } from "@/lib/lunar-phases";
 import { CalendarTasksPanel } from "@/components/calendar/CalendarTasksPanel";
-import { CalendarViewToggle, type CalView } from "@/components/calendar/CalendarViewToggle";
+import { Grid3x3, ListChecks } from "lucide-react";
+import { ViewPills } from "@/components/layout/ViewPills";
 import { QuickAddCalendarPopover } from "@/components/calendar/QuickAddCalendarPopover";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { useCycle } from "@/lib/cycle-store";
@@ -46,10 +47,9 @@ import { DayTasksPanel } from "@/components/calendar/DayTasksPanel";
 import { apptOccursOn, apptRangeMeta } from "@/lib/appointment-range";
 import { getTransitsForDate } from "@/lib/transits";
 import { useTransitsEnabled } from "@/lib/astrology-prefs";
-import { ScopeHero } from "@/components/layout/ScopeHero";
 import { PlanHeader } from "@/components/layout/PlanHeader";
+import { PlanContextStrip } from "@/components/layout/PlanContextStrip";
 import { PageHeaderImage } from "@/components/common/PageHeaderImage";
-import { PlanningHeader } from "@/components/today/PlanningHeader";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { isSameMonth as isSameMonthFn } from "date-fns";
 import { useSidebarHidden } from "@/lib/today-view";
@@ -92,7 +92,7 @@ export default function Month() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
-  const [view, setView] = useState<CalView>("schedule");
+  const [view, setView] = useState<"grid" | "agenda">("grid");
   const [showMoon, setShowMoon] = useState(true);
   const [sheetISO, setSheetISO] = useState<string | null>(null);
   const [lunarDate, setLunarDate] = useState<Date | null>(null);
@@ -183,7 +183,10 @@ export default function Month() {
              pill: "bg-orange-500/15 border-orange-500/25",   pillText: "text-orange-700 dark:text-orange-300" },
   };
 
-  const todayForecast = getRhythmForecast(new Date());
+  // Anchor the rhythm strip to the month being viewed, not always to today.
+  const viewingCurrentMonth = isSameMonthFn(cursor, new Date());
+  const rhythmAnchor = viewingCurrentMonth ? new Date() : startOfMonth(cursor);
+  const todayForecast = getRhythmForecast(rhythmAnchor);
   const todayEl = ELEMENT_STYLE[todayForecast.element];
 
   return (
@@ -204,36 +207,32 @@ export default function Month() {
           onNext={() => setCursor(addMonths(cursor, 1))}
           onToday={() => setCursor(new Date())}
           onDatePick={setCursor}
-          views={<div className="hidden md:inline-flex"><CalendarViewToggle value={view} onChange={setView} /></div>}
+          views={
+            <ViewPills
+              ariaLabel="Month view"
+              items={[
+                { value: "grid" as const, label: "Grid", icon: Grid3x3 },
+                { value: "agenda" as const, label: "Agenda", icon: ListChecks },
+              ]}
+              value={view}
+              onChange={setView}
+            />
+          }
           actions={<QuickAddCalendarPopover days={[cursor]} />}
         />
-        <PlanningHeader
-          date={cursor}
-          title={format(cursor, "MMMM yyyy")}
-          subtitle="Your greeting, weather, and cosmic rhythm — carried across each planning view."
-          onTaskClick={(id) => {
-            const t = state.tasks.find(x => x.id === id);
-            if (t) setEditingTask(t);
-          }}
-        />
-        <ScopeHero
-          scope="month"
-          date={cursor}
-          title={format(cursor, "MMMM yyyy")}
-          eyebrow="Month of"
-          pickerLabel={format(cursor, "MMM yyyy")}
-          isCurrent={isSameMonthFn(cursor, new Date())}
+        <PlanContextStrip
+          date={rhythmAnchor}
           actions={
             <>
               <Link
                 to="/reset/month"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1 text-[12px] font-medium text-foreground/85 hover:bg-secondary-soft"
               >
                 <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
               </Link>
               <Link
                 to="/month/overview"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-primary/15"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-primary/10 px-3 py-1 text-[12px] font-medium text-foreground/85 hover:bg-primary/15"
               >
                 <Moon className="h-3.5 w-3.5" /> Monthly overview
               </Link>
@@ -258,10 +257,6 @@ export default function Month() {
             </button>
           </div>
         }>
-          {/* Mobile: full-width view toggle */}
-          <div className="-mx-1 mb-3 flex justify-center overflow-x-auto md:hidden">
-            <CalendarViewToggle value={view} onChange={setView} />
-          </div>
           {view === "agenda" ? (
             <AgendaView
               days={monthDays}
@@ -276,7 +271,9 @@ export default function Month() {
             "mb-3 flex flex-wrap items-center gap-2 rounded-2xl border px-3 py-2 text-[11px] backdrop-blur-sm transition-colors",
             todayEl.pill,
           )}>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">This week</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {viewingCurrentMonth ? "This week" : format(cursor, "MMMM")}
+            </span>
             <span className="inline-flex items-center gap-1.5 text-sm" aria-hidden>
               <span className="text-base leading-none">{todayForecast.glyph}</span>
               <span className={cn("font-medium", todayEl.pillText)}>
