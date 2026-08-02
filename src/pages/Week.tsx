@@ -38,6 +38,7 @@ import { DayContextStrip } from "@/components/calendar/DayContextStrip";
 import { WeekHabitsStrip } from "@/components/week/WeekHabitsStrip";
 import { ScopeHero } from "@/components/layout/ScopeHero";
 import { PlanHeader } from "@/components/layout/PlanHeader";
+import { PageHeaderImage } from "@/components/common/PageHeaderImage";
 import { PlanningHeader } from "@/components/today/PlanningHeader";
 import { ScopeSidebar } from "@/components/layout/ScopeSidebar";
 import { addWeeks, subWeeks, isSameWeek } from "date-fns";
@@ -117,6 +118,7 @@ export default function Week() {
         : "lg:grid-cols-[minmax(0,1fr)_clamp(240px,28vw,340px)]",
     )}>
       <div className="min-w-0 space-y-6">
+        <PageHeaderImage pageKey="week" />
         <PlanHeader
           scope="week"
           date={start}

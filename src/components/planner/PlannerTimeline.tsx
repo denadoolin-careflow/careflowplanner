@@ -13,6 +13,7 @@ import { usePomodoro } from "@/lib/pomodoro-store";
 import { usePlannerFocusTaskId } from "@/lib/planner-prefs";
 import { haptics } from "@/lib/haptics";
 import { BlockQuickActions } from "./BlockQuickActions";
+import { BlockCheckbox } from "./BlockCheckbox";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { usePlannerDropListener } from "@/lib/planner-touch-drag";
 import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
@@ -43,7 +44,7 @@ const DAY_PART_START_H: Record<string, number> = { Morning: 9, Afternoon: 13, Ev
 
 const START_H = 5;
 const END_H = 22;
-const HOUR_PX = 60; // 60px per hour → 15px per 15-min
+const HOUR_PX = 80; // 80px per hour → 20px per 15-min
 const SNAP_MIN = 15;
 
 interface ScheduledItem {
@@ -108,7 +109,7 @@ function assignLanes(items: ScheduledItem[]): (ScheduledItem & { lane: number; l
 }
 
 export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?: boolean; bare?: boolean }) {
-  const { state, updateTask, addTask } = useStore();
+  const { state, updateTask, addTask, toggleTask } = useStore();
   const pomo = usePomodoro();
   const [focusTaskId] = usePlannerFocusTaskId();
   const iso = format(date, "yyyy-MM-dd");
@@ -807,8 +808,15 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                 >
                   {tiny ? (
                     <div className="flex h-full min-w-0 items-center gap-1 leading-none">
+                      {it.kind === "task" && (
+                        <BlockCheckbox
+                          done={!!it.done}
+                          title={it.title}
+                          onToggle={() => void toggleTask(it.id)}
+                        />
+                      )}
                       {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
-                      <span className="min-w-0 flex-1 truncate font-medium">{it.title}</span>
+                      <span className={cn("min-w-0 flex-1 truncate font-medium", it.done && "line-through")}>{it.title}</span>
                       <span className="shrink-0 font-mono text-[9px] opacity-70">{minTo12(it.startMin + START_H * 60)}</span>
                       {conflictNode}
                     </div>
@@ -829,9 +837,17 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
                         {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
                       </div>
                       <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-[1.25]">
+                        {it.kind === "task" && (
+                          <BlockCheckbox
+                            done={!!it.done}
+                            title={it.title}
+                            className="mt-[1px]"
+                            onToggle={() => void toggleTask(it.id)}
+                          />
+                        )}
                         {ic && ic.kind === "lucide" ? <ic.Icon className="mt-[1px] h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
                         <span
-                          className="min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:break-word] [word-break:normal]"
+                          className={cn("min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:break-word] [word-break:normal]", it.done && "line-through")}
                           style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: titleLines, overflow: "hidden" }}
                         >
                           {it.title}
