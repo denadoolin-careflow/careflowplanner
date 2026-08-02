@@ -13,34 +13,46 @@ Based on a live pass of `/planner` and `/inbox` at mobile (707px) and desktop (1
 ## Recommended changes
 
 ### 1. Collapse planner chrome to one row on mobile
+
 Merge the view pills, date nav, and period pills into a single sticky row: `‹ date ›` + a single "View" menu (Grid, Schedule, Time of day, Morning, Afternoon, Evening) + overflow menu for Focus / Plan my day / Templates / Auto-schedule. Capture stays in the FAB. Desktop keeps the current two rows.
 
 ### 2. Merge the two scope concepts
+
 "Time of day" and the separate Morning/Afternoon/Evening pills are the same idea at two depths. Keep one control: Grid · Schedule · Time of day, and let Time of day show three focusable columns with a segment picker inside it.
 
 ### 3. Open the grid where the user is
+
 Auto-scroll the timeline to the current hour (or the day's first block) on mount, with a persistent "now" line and a "Jump to now" chip when scrolled away.
 
 ### 4. Hide failed states instead of announcing them
+
 Drop the "Weather unavailable" chip entirely when there's no data; keep the moon/cycle dots. Same for any empty atmosphere metric.
 
 ### 5. Mobile inbox rail above the grid
+
 Restore a compact horizontal rail of unscheduled inbox tasks pinned directly above the grid so tasks can be dragged down into it without opening the tray. Tray toggle moves into the overflow menu.
 
 ### 6. Fix overlap collisions
+
 Offset the Pomodoro mini-widget below the header chip row on desktop; on mobile shift the FAB up above the bottom nav and fade it while dragging, matching the tray's existing drag-fade behaviour.
 
 ### 7. Quieter empty groups in the Tasks panel
+
 Collapse zero-count groups by default and show the count inline instead of a "Nothing here." line per group. Only Inbox and Today stay expanded.
 
 ### 8. Prioritise the desktop context column
+
 Day Pulse and the intention line stay pinned; calendar and Moon & Energy move into a collapsible "More context" section so the column doesn't scroll past the grid.
 
 ### 9. Inbox: capture first
+
 Reorder to: compact one-line header → Quick Capture (auto-focused on desktop) → List/Schedule toggle → items. The illustration/empty-state card renders only when the list is empty *and* moves below the capture box. Cut the duplicated subtitle lines down to one.
 
 ### 10. Inbox action bar
+
 Move "Plan my day" out from under the FAB into the List/Schedule row as a right-aligned button, and keep the row sticky while scrolling long inbox lists.
+
+11. Implement scrolling on planner page to view the whole page 
 
 ## Technical notes
 
