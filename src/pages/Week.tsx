@@ -70,13 +70,11 @@ export default function Week() {
   // Keep the selected day inside the visible week when paging between weeks.
   useEffect(() => {
     setSelectedDate(prev => {
-      const weekEnd = addDays(start, 6);
-      if (prev >= start && prev <= addDays(weekEnd, 1)) {
-        if (prev >= start && prev < addDays(weekEnd, 1)) return prev;
-      }
+      if (days.some(d => isSameDay(d, prev))) return prev;
       const dow = (prev.getDay() + 6) % 7; // 0 = Monday
       return addDays(start, dow);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [start]);
   const [gEvents, setGEvents] = useState<GCalEvent[]>([]);
   useEffect(() => { gcalFetchEvents().then(r => setGEvents(r.events ?? [])).catch(() => {}); }, []);
