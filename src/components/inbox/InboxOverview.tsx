@@ -18,6 +18,7 @@ import { TaskHoverActions } from "@/components/tasks/TaskHoverActions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScheduleQuickButton } from "@/components/inbox/ScheduleQuickButton";
 import { usePlannerPointerDrag } from "@/lib/planner-touch-drag";
+import { InboxCalmLine } from "@/components/inbox/InboxCalmLine";
 
 const FOCUS_KEY = "careflow:inbox-overview-focus";
 type Focus = "all" | "today" | "upcoming" | "needs";
@@ -470,6 +471,7 @@ export function InboxOverview() {
 
   return (
     <section className="space-y-3">
+      <InboxCalmLine />
       <FocusToggle
         value={focus}
         onChange={setFocusPersist}

@@ -6,6 +6,8 @@ import { ImagePlus, Trash2, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { HEADER_IMAGE_PRESETS, uploadHeaderImage } from "@/lib/header-image";
+import { ImageCropDialog } from "@/components/common/ImageCropDialog";
+import { Crop } from "lucide-react";
 
 /**
  * Picks a page header image: curated Unsplash imagery, an uploaded photo,
@@ -23,6 +25,7 @@ export function HeaderImagePicker({
   const [open, setOpen] = useState(false);
   const [customUrl, setCustomUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const pick = async (v: string | null) => {
@@ -33,6 +36,11 @@ export function HeaderImagePicker({
   const onFile = async (file?: File | null) => {
     if (!file) return;
     if (file.size > 8 * 1024 * 1024) { toast.error("Please pick an image under 8MB"); return; }
+    setCropSrc(URL.createObjectURL(file));
+  };
+
+  /** Upload the cropped result and store it. */
+  const onCropped = async (file: File) => {
     setUploading(true);
     try {
       const token = await uploadHeaderImage(file);
@@ -75,6 +83,17 @@ export function HeaderImagePicker({
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/85 to-transparent px-1.5 py-1 text-left text-[10px] font-medium">
                 {p.label}
               </span>
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label={`Crop ${p.label}`}
+                title="Crop"
+                onClick={(e) => { e.stopPropagation(); setCropSrc(p.url); }}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setCropSrc(p.url); } }}
+                className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-background/85 text-foreground opacity-0 transition-opacity group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100"
+              >
+                <Crop className="h-3 w-3" />
+              </span>
             </button>
           ))}
         </div>
@@ -98,6 +117,14 @@ export function HeaderImagePicker({
             className="min-w-[180px] flex-1"
           />
           <Button variant="outline" disabled={!customUrl.trim()} onClick={() => void pick(customUrl.trim())}>Use</Button>
+          <Button
+            variant="outline"
+            className="gap-1.5"
+            disabled={!(customUrl.trim() || value)}
+            onClick={() => setCropSrc(customUrl.trim() || value || null)}
+          >
+            <Crop className="h-3.5 w-3.5" /> Crop
+          </Button>
         </div>
 
         <DialogFooter className="sm:justify-between">
@@ -106,6 +133,13 @@ export function HeaderImagePicker({
           </Button>
           <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
         </DialogFooter>
+
+        <ImageCropDialog
+          src={cropSrc}
+          open={!!cropSrc}
+          onOpenChange={(o) => { if (!o) setCropSrc(null); }}
+          onCropped={onCropped}
+        />
       </DialogContent>
     </Dialog>
   );

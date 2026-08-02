@@ -7,7 +7,8 @@ import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { usePlannerPointerDrag } from "@/lib/planner-touch-drag";
-import { openTaskEditor } from "@/lib/open-task-editor";
+import { openTaskQuickEdit } from "@/lib/open-task-quick-edit";
+import { ROW_PX } from "@/lib/planner-metrics";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -15,13 +16,14 @@ import { Input } from "@/components/ui/input";
 function TrayRow({ id, title, onRemove }: { id: string; title: string; onRemove: () => void }) {
   const pointer = usePlannerPointerDrag(
     () => ({ taskId: id, label: title }),
-    { onClick: () => openTaskEditor(id) },
+    { onClick: () => openTaskQuickEdit(id) },
   );
   return (
     <li
       draggable
       onDragStart={(e) => { e.dataTransfer.setData(TASK_DRAG_MIME, id); e.dataTransfer.effectAllowed = "copyMove"; haptics.pickup(); }}
       onPointerDown={pointer.onPointerDown}
+      style={{ minHeight: ROW_PX }}
       className="group flex touch-none items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[12.5px]"
     >
       <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
@@ -77,22 +79,8 @@ export function TrayDock() {
     haptics.success();
   };
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => { tray.setOpen(true); haptics.tap(); }}
-        aria-label="Open notepad and task tray"
-        className="fixed bottom-24 left-3 z-40 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/90 px-3 py-2 text-[12px] font-medium shadow-lg backdrop-blur lg:bottom-6"
-      >
-        <NotebookPen className="h-4 w-4 text-primary" aria-hidden />
-        Notepad
-        {taskIds.length > 0 && (
-          <span className="rounded-full bg-primary/15 px-1.5 text-[10px] text-primary">{taskIds.length}</span>
-        )}
-      </button>
-    );
-  }
+  // The launcher lives in the quick-add FAB menu — nothing is rendered when closed.
+  if (!open) return null;
 
   return (
     <section

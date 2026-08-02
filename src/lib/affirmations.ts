@@ -20,6 +20,27 @@ export function pickAffirmation() {
   return AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)];
 }
 
+/**
+ * Calming lines for the Inbox — about clearing mental clutter rather than
+ * celebrating a completion, so the inbox feels like a soft landing place.
+ */
+export const INBOX_CALM_LINES = [
+  "Everything here is just waiting. Nothing is chasing you.",
+  "You don't have to decide it all right now.",
+  "One thing at a time is the whole method.",
+  "This is a landing place, not a scoreboard.",
+  "Your mind can put it down — the list is holding it.",
+  "Pick one. The rest will keep.",
+  "A full inbox isn't a failure. It's a brain that's been busy.",
+  "Breathe first. Sort second.",
+  "Nothing here is urgent until you say it is.",
+  "You're allowed to move slowly through this.",
+];
+
+export function pickInboxCalmLine() {
+  return INBOX_CALM_LINES[Math.floor(Math.random() * INBOX_CALM_LINES.length)];
+}
+
 // ───────── Context-aware affirmations ─────────
 // Lightweight, dependency-free pools keyed by atmosphere mood and archetype.
 
