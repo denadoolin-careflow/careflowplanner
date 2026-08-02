@@ -670,11 +670,23 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
       )}
       {!compact && (
         <div className="space-y-2 px-3 pb-2 sm:px-4">
-          <PlannerAtmosphereStrip date={date} />
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1"><PlannerAtmosphereStrip date={date} /></div>
+            {nowMin !== null && (
+              <button
+                type="button"
+                onClick={() => scrollToNow("smooth")}
+                className="shrink-0 rounded-full border border-border/60 bg-background/70 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                aria-label="Scroll the timeline to the current time"
+              >
+                Jump to now
+              </button>
+            )}
+          </div>
           {isMobile && <PlannerMobileInboxRail />}
         </div>
       )}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="relative flex">
           {/* Hour rail */}
           <div className="w-14 shrink-0 border-r border-border/50 text-[10px] text-muted-foreground">
