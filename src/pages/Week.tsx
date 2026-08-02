@@ -62,6 +62,8 @@ export default function Week() {
   }, [searchParams]);
   const [view, setView] = useCalView();
   const [layout, setLayout] = useState<"grid" | "plan">("grid");
+  const weekViewItems = [...CAL_VIEW_ITEMS, { value: "review" as const, label: "Review", icon: LayoutGrid }];
+  const weekView: CalView | "review" = layout === "plan" ? "review" : view;
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [editApptId, setEditApptId] = useState<string | null>(null);
   const [editTaskId, setEditTaskId] = useState<string | null>(null);
