@@ -60,11 +60,16 @@ export function PlannerAtmosphereStrip({ date, className }: { date: Date; classN
             className,
           )}
         >
-          {now ? <ConditionIcon condition={now.condition} /> : <Cloud className="h-3.5 w-3.5 opacity-40" />}
-          <span className="font-medium tabular-nums text-foreground">{now ? temp(now.tempC) : "—"}</span>
-          <span className="truncate">{now ? now.conditionLabel : "Weather unavailable"}</span>
-          <span aria-hidden className="opacity-40">·</span>
+          {now && (
+            <>
+              <ConditionIcon condition={now.condition} />
+              <span className="font-medium tabular-nums text-foreground">{temp(now.tempC)}</span>
+              <span className="truncate">{now.conditionLabel}</span>
+              <span aria-hidden className="opacity-40">·</span>
+            </>
+          )}
           <span aria-hidden className="text-sm leading-none">{moon.glyph}</span>
+          <span className="truncate">{moon.label}</span>
           {cycle && (
             <span
               aria-hidden

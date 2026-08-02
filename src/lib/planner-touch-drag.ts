@@ -32,6 +32,7 @@ export function usePlannerPointerDrag(
     if (s.timer) { window.clearTimeout(s.timer); s.timer = 0; }
     if (s.ghost) { s.ghost.remove(); s.ghost = null; }
     if (s.active) opts?.onDragEnd?.();
+    document.body.classList.remove("planner-dragging");
     s.active = false;
     s.pointerId = -1;
     document.querySelectorAll("[data-planner-drop-active]").forEach(n => n.removeAttribute("data-planner-drop-active"));
@@ -103,6 +104,7 @@ export function usePlannerPointerDrag(
       s.active = true;
       haptics.pickup();
       opts?.onDragStart?.();
+      document.body.classList.add("planner-dragging");
       const ghost = document.createElement("div");
       ghost.textContent = p.label;
       ghost.style.cssText = [

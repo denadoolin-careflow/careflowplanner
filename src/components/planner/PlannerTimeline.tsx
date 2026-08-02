@@ -119,6 +119,7 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   const [focusTaskId] = usePlannerFocusTaskId();
   const iso = format(date, "yyyy-MM-dd");
   const gridRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
   const [resizing, setResizing] = useState<{ id: string; startY: number; startDur: number } | null>(null);
   const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
@@ -131,6 +132,19 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
   const [dismissedConflicts, setDismissedConflicts] = useState<string[]>([]);
   const [bandColors] = useBandColors();
   const isMobile = useIsMobile();
+
+  // Anchor the timeline on the current hour so the day opens where you are.
+  const scrollToNow = useCallback((behavior: ScrollBehavior = "auto") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const mins = (new Date().getHours() - START_H) * 60 + new Date().getMinutes();
+    const top = Math.max(0, mins * (HOUR_PX / 60) - el.clientHeight / 3);
+    el.scrollTo({ top, behavior });
+  }, []);
+  useEffect(() => {
+    const t = window.setTimeout(() => scrollToNow("auto"), 80);
+    return () => window.clearTimeout(t);
+  }, [iso, scrollToNow]);
 
   const applyHistory = useCallback(async (
     tasks: { id: string; patch: Record<string, unknown> }[],
@@ -670,11 +684,23 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
       )}
       {!compact && (
         <div className="space-y-2 px-3 pb-2 sm:px-4">
-          <PlannerAtmosphereStrip date={date} />
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1"><PlannerAtmosphereStrip date={date} /></div>
+            {nowMin !== null && (
+              <button
+                type="button"
+                onClick={() => scrollToNow("smooth")}
+                className="shrink-0 rounded-full border border-border/60 bg-background/70 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                aria-label="Scroll the timeline to the current time"
+              >
+                Jump to now
+              </button>
+            )}
+          </div>
           {isMobile && <PlannerMobileInboxRail />}
         </div>
       )}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="relative flex">
           {/* Hour rail */}
           <div className="w-14 shrink-0 border-r border-border/50 text-[10px] text-muted-foreground">

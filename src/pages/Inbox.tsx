@@ -547,48 +547,15 @@ function InboxInner() {
   return (
     <div className="relative min-h-screen bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,hsl(var(--primary)/0.06),transparent_70%)]">
       <div className="mx-auto w-full max-w-6xl space-y-6 px-2 py-6 sm:px-4 md:px-8 md:py-10">
-        {/* ────────── Header + Hero ────────── */}
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-8 animate-fade-in">
-          <div className="flex flex-col justify-center gap-3">
-            <h1 className="font-display text-4xl tracking-tight text-foreground md:text-5xl">Inbox</h1>
-            <p className="text-base font-medium text-primary/80">Your mental unloading zone.</p>
-            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground md:text-[15px]">
-              Capture anything so you can focus on what matters now.
-            </p>
-          </div>
-
-          <div className="relative overflow-hidden rounded-[28px] border border-border/40 bg-[radial-gradient(ellipse_140%_140%_at_10%_30%,hsl(150_35%_92%/0.85),hsl(36_50%_97%/0.6)_45%,hsl(var(--card))_85%)] p-6 shadow-[0_20px_60px_-30px_hsl(var(--primary)/0.35)] md:p-8 dark:bg-[radial-gradient(ellipse_140%_140%_at_10%_30%,hsl(150_25%_22%/0.5),hsl(var(--card))_70%)]">
-            <div className="pointer-events-none absolute -inset-20 rounded-full bg-[hsl(150_40%_85%)]/30 blur-[80px]" />
-            <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-[hsl(36_60%_90%)]/25 blur-[90px]" />
-
-            <div className="relative grid gap-5 sm:grid-cols-[160px_minmax(0,1fr)] sm:items-center md:grid-cols-[200px_minmax(0,1fr)] md:gap-7">
-              <div className="mx-auto sm:mx-0">
-                <InboxIllustration isEmpty={items.length === 0} count={items.length} />
-              </div>
-              <div className="space-y-3 text-center sm:text-left">
-                <div className="inline-flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <h2 className="font-display text-2xl tracking-tight md:text-[28px]">
-                    {items.length === 0 ? "Your mind is clear" : `${items.length} ${items.length === 1 ? "thing" : "things"} held gently`}
-                  </h2>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {items.length === 0
-                    ? "Nothing is waiting in your inbox."
-                    : "Capture more, or let me organize what's here."}
-                </p>
-                <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground sm:justify-start">
-                  {["Tasks", "Ideas", "Appointments", "Reminders", "Notes"].map(l => (
-                    <li key={l} className="inline-flex items-center gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-emerald-600/80" /> {l}
-                    </li>
-                  ))}
-                </ul>
-                <p className="pt-1 text-xs italic text-muted-foreground/80">Everything starts here.</p>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* ────────── Compact header ────────── */}
+        <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 animate-fade-in">
+          <h1 className="font-display text-2xl tracking-tight text-foreground md:text-3xl">Inbox</h1>
+          <p className="text-sm text-muted-foreground">
+            {items.length === 0
+              ? "Your mental unloading zone."
+              : `${items.length} ${items.length === 1 ? "thing" : "things"} held gently.`}
+          </p>
+        </header>
 
         {/* ────────── Quick Capture ────────── */}
         <section ref={captureSectionRef} className="rounded-[24px] border border-border/50 bg-card/70 p-4 shadow-[0_10px_40px_-25px_hsl(var(--primary)/0.4)] backdrop-blur-md sm:p-5 md:p-6">
@@ -1232,7 +1199,31 @@ function InboxInner() {
         </section>
 
         {/* ────────── Planner toolbar ────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        {items.length === 0 && (
+          <section className="relative overflow-hidden rounded-[28px] border border-border/40 bg-[radial-gradient(ellipse_140%_140%_at_10%_30%,hsl(150_35%_92%/0.85),hsl(36_50%_97%/0.6)_45%,hsl(var(--card))_85%)] p-5 shadow-[0_20px_60px_-30px_hsl(var(--primary)/0.35)] md:p-7 dark:bg-[radial-gradient(ellipse_140%_140%_at_10%_30%,hsl(150_25%_22%/0.5),hsl(var(--card))_70%)]">
+            <div className="pointer-events-none absolute -inset-20 rounded-full bg-[hsl(150_40%_85%)]/30 blur-[80px]" />
+            <div className="relative grid gap-5 sm:grid-cols-[150px_minmax(0,1fr)] sm:items-center md:gap-7">
+              <div className="mx-auto sm:mx-0">
+                <InboxIllustration isEmpty count={0} />
+              </div>
+              <div className="space-y-2 text-center sm:text-left">
+                <div className="inline-flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h2 className="font-display text-xl tracking-tight md:text-2xl">Your mind is clear</h2>
+                </div>
+                <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground sm:justify-start">
+                  {["Tasks", "Ideas", "Appointments", "Reminders", "Notes"].map(l => (
+                    <li key={l} className="inline-flex items-center gap-1.5">
+                      <Check className="h-3.5 w-3.5 text-emerald-600/80" /> {l}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <div className="sticky top-2 z-20 flex flex-wrap items-center justify-between gap-2 rounded-full bg-background/80 py-1 backdrop-blur-md">
           <div className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-card/70 p-1 backdrop-blur-md">
             <button
               type="button"

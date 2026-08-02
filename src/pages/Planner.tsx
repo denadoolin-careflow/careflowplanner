@@ -18,8 +18,15 @@ import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { usePlannerView } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ListTodo, Inbox } from "lucide-react";
+import { ListTodo, Inbox, MoreHorizontal, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { tray, useTray } from "@/lib/tray-store";
+
+const SEGMENTS = ["all", "morning", "afternoon", "evening"] as const;
+type Segment = (typeof SEGMENTS)[number];
 
 function TrayToggle({ className }: { className?: string }) {
   const { taskIds, open } = useTray();
@@ -56,6 +63,15 @@ export default function Planner() {
   const [view, setView] = usePlannerView();
   const [period, setPeriod] = usePlannerPeriod();
   const isMobile = useIsMobile();
+  const [segment, setSegment] = useState<Segment>("all");
+
+  // Legacy persisted values (morning/afternoon/evening) now live inside "Time of day".
+  useEffect(() => {
+    if (period === "morning" || period === "afternoon" || period === "evening") {
+      setSegment(period as Segment);
+      setPeriod("timeofday");
+    }
+  }, [period, setPeriod]);
   const [mobileTasksOpen, setMobileTasksOpen] = useState(false);
   const [taskPanelHidden, setTaskPanelHidden] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -116,26 +132,12 @@ export default function Planner() {
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
 
   return (
-    <div className="planner-surface flex h-[calc(100vh-140px)] min-h-[500px] flex-col gap-3">
-      <div className="flex flex-wrap items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <PlannerRhythmHeader
-            date={day}
-            view={view}
-            onView={setView}
-            onPrev={() => go(addDays(day, -1))}
-            onNext={() => go(addDays(day, 1))}
-            onGoto={go}
-            onToday={() => go(new Date())}
-            onCapture={() => setCaptureOpen(true)}
-            onPlanMyDay={() => setPlanOpen(true)}
-            onCommand={() => setCmdOpen(true)}
-          />
-        </div>
-        {isMobile && (
+    <div className={`planner-surface flex flex-col gap-3 ${isMobile ? "min-h-[70vh] pb-24" : "h-[calc(100vh-140px)] min-h-[500px]"}`}>
+      {isMobile ? (
+        <div className="sticky top-0 z-30 -mx-2 flex items-center gap-1 bg-background/90 px-2 py-1.5 backdrop-blur-md">
           <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
             <SheetTrigger asChild>
-              <Button size="icon" variant="outline" className="h-8 w-8 rounded-full" aria-label="Show tasks">
+              <Button size="icon" variant="outline" className="h-8 w-8 shrink-0 rounded-full" aria-label="Show tasks">
                 <ListTodo className="h-4 w-4" />
               </Button>
             </SheetTrigger>
@@ -145,24 +147,102 @@ export default function Planner() {
               </div>
             </SheetContent>
           </Sheet>
-        )}
-      </div>
+          <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 rounded-full" onClick={() => go(addDays(day, -1))} aria-label="Previous day">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <button
+            type="button"
+            onClick={() => go(new Date())}
+            className="min-w-0 flex-1 truncate text-center font-display text-[15px] font-semibold"
+            aria-label={`${format(day, "EEEE, MMMM d")} — tap for today`}
+          >
+            {format(day, "EEE, MMM d")}
+          </button>
+          <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 rounded-full" onClick={() => go(addDays(day, 1))} aria-label="Next day">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="outline" className="h-8 w-8 shrink-0 rounded-full" aria-label="Planner views and actions">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Range</DropdownMenuLabel>
+              {([["day", "Day"], ["3day", "3 days"], ["week", "Week"], ["month", "Month"]] as const).map(([id, label]) => (
+                <DropdownMenuItem key={id} onSelect={() => setView(id)}>
+                  {label}{view === id ? " ·" : ""}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">View</DropdownMenuLabel>
+              {([["grid", "Grid"], ["schedule", "Schedule"], ["timeofday", "Time of day"]] as const).map(([id, label]) => (
+                <DropdownMenuItem key={id} onSelect={() => { setView("day"); setPeriod(id); }}>
+                  {label}{view === "day" && period === id ? " ·" : ""}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setPlanOpen(true)}>
+                <Sparkles className="mr-2 h-3.5 w-3.5" /> Plan my day
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => { tray.setTab("tray"); tray.setOpen(true); }}>
+                <Inbox className="mr-2 h-3.5 w-3.5" /> Task tray
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <PlannerRhythmHeader
+                date={day}
+                view={view}
+                onView={setView}
+                onPrev={() => go(addDays(day, -1))}
+                onNext={() => go(addDays(day, 1))}
+                onGoto={go}
+                onToday={() => go(new Date())}
+                onCapture={() => setCaptureOpen(true)}
+                onPlanMyDay={() => setPlanOpen(true)}
+                onCommand={() => setCmdOpen(true)}
+              />
+            </div>
+          </div>
 
-      {view === "day" && (
-        <div className="flex items-center gap-2">
-          <PlannerPeriodTabs value={period} onChange={setPeriod} />
-          <TrayToggle className="ml-auto" />
-          {!isMobile && (
-            <Button
-              size="icon"
-              variant="outline"
-              className="h-8 w-8 rounded-full"
-              onClick={() => setTaskPanelHidden(v => !v)}
-              aria-label={taskPanelHidden ? "Show task sidebar" : "Hide task sidebar"}
-            >
-              {taskPanelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-            </Button>
+          {view === "day" && (
+            <div className="flex items-center gap-2">
+              <PlannerPeriodTabs value={period} onChange={setPeriod} />
+              <TrayToggle className="ml-auto" />
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-8 w-8 rounded-full"
+                onClick={() => setTaskPanelHidden(v => !v)}
+                aria-label={taskPanelHidden ? "Show task sidebar" : "Hide task sidebar"}
+              >
+                {taskPanelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              </Button>
+            </div>
           )}
+        </>
+      )}
+
+      {view === "day" && period === "timeofday" && (
+        <div className="inline-flex max-w-full items-center gap-0.5 self-start overflow-x-auto rounded-full border border-border/60 bg-background/60 p-0.5">
+          {SEGMENTS.map(s => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSegment(s)}
+              aria-pressed={segment === s}
+              className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium capitalize transition-colors ${
+                segment === s ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {s === "all" ? "All day" : s}
+            </button>
+          ))}
         </div>
       )}
 
@@ -194,15 +274,15 @@ export default function Planner() {
         <div className="min-h-0">
           {view === "day" && period === "grid" && <PlannerTimeline date={day} />}
           {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
-          {view === "day" && period === "timeofday" && (
+          {view === "day" && period === "timeofday" && segment === "all" && (
             <div className="grid h-full min-h-0 gap-3 overflow-y-auto lg:grid-cols-3">
               <PlannerPeriodList date={day} period="morning" />
               <PlannerPeriodList date={day} period="afternoon" />
               <PlannerPeriodList date={day} period="evening" />
             </div>
           )}
-          {view === "day" && (period === "morning" || period === "afternoon" || period === "evening") && (
-            <PlannerPeriodList date={day} period={period} />
+          {view === "day" && period === "timeofday" && segment !== "all" && (
+            <PlannerPeriodList date={day} period={segment} />
           )}
           {view === "3day" && <PlannerMultiDayView start={day} days={3} unified />}
           {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}

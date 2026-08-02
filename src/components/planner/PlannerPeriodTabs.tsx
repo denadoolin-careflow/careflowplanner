@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Sunrise, Sun, Moon, LayoutGrid, CalendarClock, Clock4 } from "lucide-react";
+import { LayoutGrid, CalendarClock, Clock4 } from "lucide-react";
 
 export type PlannerPeriod = "grid" | "schedule" | "timeofday" | "morning" | "afternoon" | "evening";
 
@@ -18,9 +18,6 @@ const OPTIONS: { id: PlannerPeriod; label: string; Icon: React.ComponentType<{ c
   { id: "grid", label: "Grid", Icon: LayoutGrid },
   { id: "schedule", label: "Schedule", Icon: CalendarClock },
   { id: "timeofday", label: "Time of day", Icon: Clock4 },
-  { id: "morning", label: "Morning", Icon: Sunrise },
-  { id: "afternoon", label: "Afternoon", Icon: Sun },
-  { id: "evening", label: "Evening", Icon: Moon },
 ];
 
 export function PlannerPeriodTabs({ value, onChange, className }: {
