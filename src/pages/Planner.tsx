@@ -18,8 +18,15 @@ import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { usePlannerView } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ListTodo, Inbox } from "lucide-react";
+import { ListTodo, Inbox, MoreHorizontal, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { tray, useTray } from "@/lib/tray-store";
+
+const SEGMENTS = ["all", "morning", "afternoon", "evening"] as const;
+type Segment = (typeof SEGMENTS)[number];
 
 function TrayToggle({ className }: { className?: string }) {
   const { taskIds, open } = useTray();
@@ -56,6 +63,15 @@ export default function Planner() {
   const [view, setView] = usePlannerView();
   const [period, setPeriod] = usePlannerPeriod();
   const isMobile = useIsMobile();
+  const [segment, setSegment] = useState<Segment>("all");
+
+  // Legacy persisted values (morning/afternoon/evening) now live inside "Time of day".
+  useEffect(() => {
+    if (period === "morning" || period === "afternoon" || period === "evening") {
+      setSegment(period as Segment);
+      setPeriod("timeofday");
+    }
+  }, [period, setPeriod]);
   const [mobileTasksOpen, setMobileTasksOpen] = useState(false);
   const [taskPanelHidden, setTaskPanelHidden] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
