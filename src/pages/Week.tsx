@@ -138,66 +138,46 @@ export default function Week() {
           onToday={() => setStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
           onDatePick={(d) => setStart(startOfWeek(d, { weekStartsOn: 1 }))}
           views={
-            <>
-              <div className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border/60 bg-card/70 p-0.5 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => setLayout("grid")}
-                  aria-pressed={layout === "grid"}
-                  className={cn("min-h-[32px] rounded-full px-3 transition-colors",
-                    layout === "grid" ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Schedule
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLayout("plan")}
-                  aria-pressed={layout === "plan"}
-                  className={cn("min-h-[32px] rounded-full px-3 transition-colors",
-                    layout === "plan" ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground hover:text-foreground")}
-                >
-                  Plan
-                </button>
-              </div>
-              {layout === "grid" && (
-                <div className="hidden md:inline-flex"><CalendarViewToggle value={view} onChange={setView} /></div>
-              )}
-            </>
+            <ViewPills
+              ariaLabel="Week view"
+              items={weekViewItems}
+              value={weekView}
+              onChange={(v) => {
+                if (v === "review") { setLayout("plan"); return; }
+                setLayout("grid");
+                setView(v as CalView);
+              }}
+            />
           }
           actions={<QuickAddCalendarPopover days={days} />}
         />
-        <PlanningHeader
-          date={selectedDate}
-          title={`Week of ${format(start, "MMM d")}`}
-          subtitle="Your greeting, weather, and cosmic rhythm — carried across each planning view."
-          onTaskClick={setEditTaskId}
-        />
-        <ScopeHero
-          scope="week"
+        <PlanContextStrip
           date={start}
-          title={`${format(start, "MMM d")} – ${format(addDays(start, 6), "MMM d")}`}
-          subtitle={layout === "plan" ? "Set your intention, top three, and review the week." : undefined}
-          eyebrow="Week of"
-          pickerLabel={format(start, "MMM d")}
+          showRhythm
           actions={
-            <>
-              <Link
-                to="/reset/week"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1.5 text-xs font-medium text-foreground/85 hover:bg-secondary-soft"
-              >
-                <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
-              </Link>
-            </>
+            <Link
+              to="/reset/week"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-secondary-soft/60 px-3 py-1 text-[12px] font-medium text-foreground/85 hover:bg-secondary-soft"
+            >
+              <Flower2 className="h-3.5 w-3.5" /> Reset & reflect
+            </Link>
           }
-        >
-          <WeekNavigator weekStart={start} onChange={setStart} />
-        </ScopeHero>
+        />
 
         <RhythmJournalPrompt date={start} scope="weekly" />
         <WeekTransitStrip weekStart={start} />
 
         {layout === "plan" ? (
-          <WeekPlanningDashboard weekStart={start} onJumpToDay={(d) => { setStart(startOfWeek(d, { weekStartsOn: 1 })); setLayout("grid"); }} />
+          <>
+            <CollapsibleSection
+              storageKey="planning.section.rhythm.collapsed"
+              eyebrow="Rhythm"
+              title="Moon · Energy · Cycle"
+            >
+              <Triptych date={selectedDate} />
+            </CollapsibleSection>
+            <WeekPlanningDashboard weekStart={start} onJumpToDay={(d) => { setStart(startOfWeek(d, { weekStartsOn: 1 })); setLayout("grid"); }} />
+          </>
         ) : (
           <>
             <SectionCard title="This week" accent="warm" action={
