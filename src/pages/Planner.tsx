@@ -132,7 +132,7 @@ export default function Planner() {
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
 
   return (
-    <div className={`planner-surface flex flex-col gap-3 ${isMobile ? "min-h-[70vh] pb-24" : "h-[calc(100vh-140px)] min-h-[500px]"}`}>
+    <div className={`planner-surface flex flex-col gap-3 ${isMobile ? "pb-24" : "h-[calc(100vh-140px)] min-h-[500px]"}`}>
       {isMobile ? (
         <div className="sticky top-0 z-30 -mx-2 flex items-center gap-1 bg-background/90 px-2 py-1.5 backdrop-blur-md">
           <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
@@ -247,7 +247,7 @@ export default function Planner() {
       )}
 
       <div
-        className="grid min-h-0 flex-1 gap-3"
+        className={`grid gap-3 ${isMobile ? "" : "min-h-0 flex-1"}`}
         style={{
           gridTemplateColumns: [
             showTaskPanel ? `${taskPanelWidth}px 6px` : null,
@@ -271,11 +271,17 @@ export default function Planner() {
             </div>
           </>
         )}
-        <div className="min-h-0">
-          {view === "day" && period === "grid" && <PlannerTimeline date={day} />}
+        <div className={isMobile ? "min-w-0" : "min-h-0"}>
+          {view === "day" && period === "grid" && (
+            isMobile ? (
+              <div className="h-[70vh] min-h-[420px]"><PlannerTimeline date={day} /></div>
+            ) : (
+              <PlannerTimeline date={day} />
+            )
+          )}
           {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
           {view === "day" && period === "timeofday" && segment === "all" && (
-            <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-y-auto">
+            <div className={`grid grid-cols-1 gap-3 ${isMobile ? "" : "h-full min-h-0 overflow-y-auto"}`}>
               <PlannerPeriodList date={day} period="morning" />
               <PlannerPeriodList date={day} period="afternoon" />
               <PlannerPeriodList date={day} period="evening" />

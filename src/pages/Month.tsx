@@ -557,78 +557,58 @@ export default function Month() {
         <SheetContent side={isMobile ? "bottom" : "right"} className={cn("overflow-y-auto", isMobile ? "max-h-[85vh] rounded-t-2xl" : "w-full sm:max-w-md")}>
           {sheetISO && (() => {
             const d = new Date(sheetISO + "T00:00:00");
-            const moon = getRhythmForecast(d);
-            const dayPhaseRaw = getMoonPhase(d);
-            const keyPhase = isKeyPhaseDay(dayPhaseRaw) ? getKeyPhaseInfo(dayPhaseRaw) : null;
-            const cyclePhase = cycleSettings.enabled ? phaseForDate(d, cyclePeriods, cycleSettings) : null;
-            const cycleMeta = cyclePhase ? PHASE_META[cyclePhase] : null;
+            const items = eventsOn(sheetISO);
+            const taskCount = items.filter(i => i.kind === "task").length;
+            const eventCount = items.filter(i => i.kind === "appt" || i.kind === "gcal" || i.kind === "block").length;
+            const noteCount = items.filter(i => i.kind === "bday" || i.kind === "hol").length;
             return (
               <>
                 <SheetHeader className="text-left">
-                  <SheetTitle className="flex items-center gap-3">
-                    <MoonGlyph date={d} size={36} />
-                    <span className="flex flex-col">
+                  <SheetTitle className="flex items-center justify-between gap-3">
+                    <span className="flex min-w-0 flex-col">
                       <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                        {format(d, "EEEE, MMM d")}
+                        {format(d, "EEEE")}
                       </span>
-                      <span className="font-display text-lg">{moon.phaseLabel}</span>
+                      <span className="font-display text-lg">{format(d, "MMMM d")}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <Button
+                        size="sm"
+                        className="h-8 rounded-full px-3 text-xs"
+                        onClick={() => { setSheetISO(null); navigate(`/planner/${sheetISO}`); }}
+                      >
+                        Open day
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-full px-3 text-xs"
+                        onClick={() => { setSheetISO(null); openBlockInWeek(sheetISO); }}
+                      >
+                        Week
+                      </Button>
                     </span>
                   </SheetTitle>
                 </SheetHeader>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-xl border border-border/50 bg-card/60 p-2.5">
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Moon in</div>
-                    <div className="mt-0.5 flex items-center gap-1.5">
-                      <span aria-hidden>{moon.sign.glyph}</span>
-                      <span className="font-medium">{moon.sign.sign}</span>
-                    </div>
-                  </div>
-                  {cycleMeta ? (
-                    <div
-                      className="rounded-xl border border-border/50 p-2.5"
-                      style={{ background: `hsl(var(${cycleMeta.tokenVar}) / 0.12)` }}
-                    >
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Cycle</div>
-                      <div className="mt-0.5 flex items-center gap-1.5">
-                        <span
-                          className="h-2 w-2 rounded-full"
-                          style={{ background: `hsl(var(${cycleMeta.tokenVar}))` }}
-                        />
-                        <span className="font-medium">{cycleMeta.label}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-border/50 bg-card/60 p-2.5">
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Key phase</div>
-                      <div className="mt-0.5 flex items-center gap-1.5">
-                        {keyPhase ? (
-                          <>
-                            <span aria-hidden>{keyPhase.glyph}</span>
-                            <span className="font-medium">{keyPhase.verb}</span>
-                          </>
-                        ) : (
-                          <span className="text-muted-foreground">{moon.phaseLabel}</span>
-                        )}
-                      </div>
-                    </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <span className="rounded-full border border-border/50 bg-card/60 px-2 py-0.5">
+                    {taskCount} {taskCount === 1 ? "task" : "tasks"}
+                  </span>
+                  <span className="rounded-full border border-border/50 bg-card/60 px-2 py-0.5">
+                    {eventCount} {eventCount === 1 ? "event" : "events"}
+                  </span>
+                  {noteCount > 0 && (
+                    <span className="rounded-full border border-border/50 bg-card/60 px-2 py-0.5">
+                      {noteCount} {noteCount === 1 ? "occasion" : "occasions"}
+                    </span>
                   )}
                 </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-3 w-full"
-                  onClick={() => { setSheetISO(null); setLunarDate(d); }}
-                >
-                  <Moon className="mr-1.5 h-3.5 w-3.5" /> Lunar guidance for this day
-                </Button>
               </>
             );
           })()}
 
-          {sheetISO && <DayDetailExtras iso={sheetISO} />}
-          {sheetISO && <DayTasksPanel iso={sheetISO} />}
+          {/* Schedule first, then tasks / extras / rhythm (rendered below). */}
 
           {sheetISO && (() => {
             const items = eventsOn(sheetISO);
@@ -746,6 +726,56 @@ export default function Month() {
                   </section>
                 )}
               </div>
+            );
+          })()}
+
+          {sheetISO && <DayTasksPanel iso={sheetISO} />}
+          {sheetISO && <DayDetailExtras iso={sheetISO} />}
+
+          {sheetISO && (() => {
+            const d = new Date(sheetISO + "T00:00:00");
+            const moon = getRhythmForecast(d);
+            const dayPhaseRaw = getMoonPhase(d);
+            const keyPhase = isKeyPhaseDay(dayPhaseRaw) ? getKeyPhaseInfo(dayPhaseRaw) : null;
+            const cyclePhase = cycleSettings.enabled ? phaseForDate(d, cyclePeriods, cycleSettings) : null;
+            const cycleMeta = cyclePhase ? PHASE_META[cyclePhase] : null;
+            return (
+              <details className="group mt-4 rounded-2xl border border-border/60 bg-card/50 p-3">
+                <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium">
+                  <MoonGlyph date={d} size={22} />
+                  <span className="min-w-0 flex-1 truncate">{moon.phaseLabel}</span>
+                  {cycleMeta && (
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px]"
+                      style={{ background: `hsl(var(${cycleMeta.tokenVar}) / 0.15)` }}
+                    >
+                      {cycleMeta.label}
+                    </span>
+                  )}
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground group-open:hidden">Rhythm</span>
+                </summary>
+                <div className="mt-3 space-y-2 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span aria-hidden>{moon.sign.glyph}</span>
+                    <span className="text-muted-foreground">Moon in</span>
+                    <span className="font-medium">{moon.sign.sign}</span>
+                  </div>
+                  {keyPhase && (
+                    <div className="flex items-center gap-1.5">
+                      <span aria-hidden>{keyPhase.glyph}</span>
+                      <span className="font-medium">{keyPhase.verb}</span>
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => { setSheetISO(null); setLunarDate(d); }}
+                  >
+                    <Moon className="mr-1.5 h-3.5 w-3.5" /> Lunar guidance for this day
+                  </Button>
+                </div>
+              </details>
             );
           })()}
         </SheetContent>

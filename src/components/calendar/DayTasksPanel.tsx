@@ -5,6 +5,7 @@ import { InlineTaskComposer } from "@/components/tasks/InlineTaskComposer";
 import { TASK_DRAG_MIME } from "./UnscheduledTasksRail";
 import { useLongPressDrag } from "@/lib/long-press-drag";
 import { GripVertical, CheckCircle2, CircleDashed, ListTodo } from "lucide-react";
+import { TaskQuickActions } from "@/components/tasks/TaskQuickActions";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -104,6 +105,7 @@ function DraggableTaskRow({ task }: { task: Task }) {
       </div>
       <div className="min-w-0 flex-1">
         <TaskRow task={task} dense />
+        {!task.done && <TaskQuickActions task={task} className="mt-1 pl-1" />}
       </div>
     </div>
   );
