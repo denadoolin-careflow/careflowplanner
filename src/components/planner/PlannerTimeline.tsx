@@ -42,10 +42,13 @@ export const RHYTHM_BANDS = [
 /** Default landing time for a task that only has a day part. */
 const DAY_PART_START_H: Record<string, number> = { Morning: 9, Afternoon: 13, Evening: 18, "Late Night": 21 };
 
-const START_H = 5;
-const END_H = 22;
-const HOUR_PX = 80; // 80px per hour → 20px per 15-min
-const SNAP_MIN = 15;
+import {
+  PLANNER_START_H as START_H,
+  PLANNER_END_H as END_H,
+  HOUR_PX,
+  SNAP_MIN,
+  SLOT_PX,
+} from "@/lib/planner-metrics";
 
 interface ScheduledItem {
   id: string;
