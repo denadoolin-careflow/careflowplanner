@@ -118,7 +118,7 @@ export function FloatingPomodoro() {
       )}
       style={
         pos
-          ? { left: pos.x, top: pos.y, touchAction: "none" }
+          ? { left: pos.x, top: Math.max(72, pos.y), touchAction: "none" }
           : { right: 16, bottom: 16, touchAction: "none", visibility: "hidden" }
       }
       role="region"
