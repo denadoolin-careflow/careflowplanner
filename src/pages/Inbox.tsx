@@ -1199,7 +1199,31 @@ function InboxInner() {
         </section>
 
         {/* ────────── Planner toolbar ────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        {items.length === 0 && (
+          <section className="relative overflow-hidden rounded-[28px] border border-border/40 bg-[radial-gradient(ellipse_140%_140%_at_10%_30%,hsl(150_35%_92%/0.85),hsl(36_50%_97%/0.6)_45%,hsl(var(--card))_85%)] p-5 shadow-[0_20px_60px_-30px_hsl(var(--primary)/0.35)] md:p-7 dark:bg-[radial-gradient(ellipse_140%_140%_at_10%_30%,hsl(150_25%_22%/0.5),hsl(var(--card))_70%)]">
+            <div className="pointer-events-none absolute -inset-20 rounded-full bg-[hsl(150_40%_85%)]/30 blur-[80px]" />
+            <div className="relative grid gap-5 sm:grid-cols-[150px_minmax(0,1fr)] sm:items-center md:gap-7">
+              <div className="mx-auto sm:mx-0">
+                <InboxIllustration isEmpty count={0} />
+              </div>
+              <div className="space-y-2 text-center sm:text-left">
+                <div className="inline-flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h2 className="font-display text-xl tracking-tight md:text-2xl">Your mind is clear</h2>
+                </div>
+                <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground sm:justify-start">
+                  {["Tasks", "Ideas", "Appointments", "Reminders", "Notes"].map(l => (
+                    <li key={l} className="inline-flex items-center gap-1.5">
+                      <Check className="h-3.5 w-3.5 text-emerald-600/80" /> {l}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <div className="sticky top-2 z-20 flex flex-wrap items-center justify-between gap-2 rounded-full bg-background/80 py-1 backdrop-blur-md">
           <div className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-card/70 p-1 backdrop-blur-md">
             <button
               type="button"
