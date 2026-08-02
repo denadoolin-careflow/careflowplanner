@@ -56,15 +56,6 @@ import {
   SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
-interface Suggestion {
-  task_id: string;
-  area?: string;
-  project_id?: string | null;
-  status?: TaskStatus;
-  priority?: Priority;
-  suggested_due_date?: string | null;
-}
-
 export default function Inbox() {
   return (
     <TaskSelectionProvider storageKey="inbox">
@@ -114,8 +105,6 @@ function InboxInner() {
   const { state, addTask, addMeal, updateTask, deleteTask, addJournal } = useStore() as any;
   const navigate = useNavigate();
   const { paneOpen, clear } = useTaskSelection();
-  const [triaging, setTriaging] = useState(false);
-  const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
   const [draft, setDraft] = useState("");
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [extraTags, setExtraTags] = useState<string[]>([]);
@@ -547,51 +536,10 @@ function InboxInner() {
     toast.success(`Saved ${drafts.length} ${drafts.length === 1 ? "item" : "items"} ✨`, { description: "Held gently in your inbox." });
   };
 
-  const triage = async () => {
-    if (items.length === 0) {
-      toast.info("Nothing to organize yet — capture something first.");
-      return;
-    }
-    setTriaging(true);
-    try {
-      const { data, error } = await aiInvoke("ai-inbox-triage", { body: {} });
-      if (error) throw error;
-      const map: Record<string, Suggestion> = {};
-      for (const s of (data as any)?.suggestions ?? []) {
-        if (s?.task_id) map[s.task_id] = s as Suggestion;
-      }
-      setSuggestions(map);
-      toast.success(`Organized ${Object.keys(map).length} item${Object.keys(map).length === 1 ? "" : "s"}`);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Organize failed");
-    } finally {
-      setTriaging(false);
-    }
-  };
-
-  const acceptAllSuggestions = async () => {
-    for (const [taskId, s] of Object.entries(suggestions)) {
-      await updateTask(taskId, {
-        area: (s.area as Area) ?? undefined,
-        projectId: s.project_id ?? undefined,
-        status: s.status ?? "active",
-        priority: s.priority ?? "medium",
-        dueDate: s.suggested_due_date ?? undefined,
-        inbox: false,
-      });
-    }
-    setSuggestions({});
-    toast.success("All set — your inbox is lighter.");
-  };
-
   const stats = useMemo(() => {
     const total = items.length;
     const quickWins = items.filter((t: any) => (t.estMinutes ?? 99) <= 10).length;
-    const needScheduling = items.filter((t: any) => {
-      if (!t.dueDate) return false;
-      const d = parseISO(t.dueDate);
-      return isToday(d) || isFuture(d);
-    }).length;
+    const needScheduling = items.filter((t: any) => !t.dueDate).length;
     const needCategory = items.filter((t: any) => !t.area).length;
     return { total, quickWins, needScheduling, needCategory };
   }, [items]);
@@ -658,10 +606,9 @@ function InboxInner() {
                 }
                 setProcessOpen(true);
               }}
-              disabled={triaging}
               className="h-9 gap-2 rounded-full bg-primary px-4 text-[13px] font-medium shadow-sm hover:shadow-md"
             >
-              {triaging ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              <Sparkles className="h-3.5 w-3.5" />
               Organize for Me
               </Button>
             </div>
@@ -1337,7 +1284,7 @@ function InboxInner() {
         {/* ────────── Current Inbox Items (only when present) ────────── */}
         {items.length > 0 ? (
           <section id="inbox-held" className="scroll-mt-24 rounded-[24px] border border-border/50 bg-card/60 p-4 backdrop-blur-md md:p-5">
-            <InboxHeldHeader hasSuggestions={Object.keys(suggestions).length > 0} onApplyAll={acceptAllSuggestions} />
+            <InboxHeldHeader />
             {inlineAdd !== null && (
               <div className="mb-3 flex items-center gap-2 rounded-2xl border border-primary/30 bg-background/80 px-3 py-2 shadow-[0_0_0_4px_hsl(var(--primary)/0.08)]">
                 <Plus className="h-4 w-4 text-primary/70" />
@@ -1410,7 +1357,7 @@ function InboxInner() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <GlanceCard icon={<InboxIcon className="h-4 w-4" />} tint="bg-stone-50 text-stone-600" value={stats.total} label="Inbox Items" hint="waiting" />
             <GlanceCard icon={<Zap className="h-4 w-4" />} tint="bg-amber-50 text-amber-700" value={stats.quickWins} label="Quick Wins" hint="easy to clear" />
-            <GlanceCard icon={<CalendarIcon className="h-4 w-4" />} tint="bg-emerald-50 text-emerald-700" value={stats.needScheduling} label="Need Scheduling" hint="time to plan" />
+            <GlanceCard icon={<CalendarIcon className="h-4 w-4" />} tint="bg-emerald-50 text-emerald-700" value={stats.needScheduling} label="Need Scheduling" hint="no date yet" />
             <GlanceCard icon={<TagIcon className="h-4 w-4" />} tint="bg-rose-50 text-rose-600" value={stats.needCategory} label="Need Categories" hint="needs a home" />
             <button
               type="button"
@@ -1589,7 +1536,7 @@ function bucketFor(t: any): Bucket {
   return "ready";
 }
 
-function InboxHeldHeader({ hasSuggestions, onApplyAll }: { hasSuggestions: boolean; onApplyAll: () => void }) {
+function InboxHeldHeader() {
   const { selectionMode, toggleSelectionMode, count, clear, selectAll } = useTaskSelection();
   const [rowStyle, setRowStyle] = useInboxRowStyle();
   return (
@@ -1654,11 +1601,6 @@ function InboxHeldHeader({ hasSuggestions, onApplyAll }: { hasSuggestions: boole
         ) : (
           <Button size="sm" variant="outline" onClick={toggleSelectionMode} className="h-8 gap-1.5 rounded-full text-[12px]">
             <CheckSquare className="h-3 w-3" /> Select
-          </Button>
-        )}
-        {hasSuggestions && (
-          <Button size="sm" variant="outline" onClick={onApplyAll} className="h-8 gap-1.5 rounded-full text-[12px]">
-            <Check className="h-3 w-3" /> Apply all suggestions
           </Button>
         )}
       </div>
