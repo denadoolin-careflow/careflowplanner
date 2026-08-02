@@ -92,7 +92,7 @@ export interface NlpHighlightedInputProps {
 
 export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedInputProps>(
   function NlpHighlightedInput(
-    { value, onChange, onKeyDown, onFocus, onBlur, placeholder, disabled, className, leftPad = "pl-14", rightPad = "pr-28" },
+    { value, onChange, onKeyDown, onFocus, onBlur, placeholder, disabled, className, leftPad = "pl-12 sm:pl-14", rightPad = "pr-24 sm:pr-28" },
     ref,
   ) {
     const mirrorRef = useRef<HTMLDivElement>(null);
@@ -127,7 +127,7 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           ref={mirrorRef}
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-0 z-10 overflow-hidden whitespace-pre text-[15px] font-semibold leading-[1.4]",
+            "pointer-events-none absolute inset-0 z-10 overflow-hidden whitespace-pre text-[14px] sm:text-[15px] font-semibold leading-[1.25]",
             leftPad, rightPad,
             "flex items-center",
           )}
@@ -151,7 +151,7 @@ export const NlpHighlightedInput = forwardRef<HTMLInputElement, NlpHighlightedIn
           spellCheck
           autoComplete="off"
           className={cn(
-            "relative z-20 h-14 w-full rounded-2xl border-0 bg-transparent text-[15px] font-semibold leading-[1.4] outline-none transition placeholder:text-[13px] placeholder:font-medium placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
+            "relative z-20 h-11 sm:h-14 w-full rounded-2xl border-0 bg-transparent py-0 text-[14px] sm:text-[15px] font-semibold leading-[1.25] outline-none transition placeholder:text-[12px] sm:placeholder:text-[13px] placeholder:font-medium placeholder:leading-[1.25] placeholder:text-foreground/75 dark:placeholder:text-foreground/70",
             "disabled:opacity-60",
             // The input's own text is transparent so the colored mirror renders, while the caret and selection remain visible.
             value ? "!text-transparent caret-foreground selection:bg-primary/25 selection:text-foreground" : "text-foreground",
