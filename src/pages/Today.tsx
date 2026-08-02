@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
-import { isSameDay, format, addDays } from "date-fns";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { useSearchParams, useLocation } from "react-router-dom";
+import { isSameDay, format } from "date-fns";
 import { TaskSelectionProvider } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
 import { TaskEditor } from "@/components/tasks/TaskEditor";
@@ -117,27 +117,6 @@ function TodayInner() {
     isSpacious: entry.level === "spacious",
   }), [entry.level]);
 
-  // Swipe between days / scopes on touch devices.
-  const navigate = useNavigate();
-  const touchRef = useRef<{ x: number; y: number; t: number } | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    touchRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const start = touchRef.current;
-    touchRef.current = null;
-    if (!start) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    if (Date.now() - start.t > 600) return;
-    // Symmetric: left = next day, right = previous day. Scope switching lives
-    // in the header's day/week/month segmented control.
-    setDayAndUrl(addDays(day, dx < 0 ? 1 : -1));
-  };
-
   const secondary = (
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -166,11 +145,7 @@ function TodayInner() {
 
   return (
     <CapacityProvider value={capacity}>
-      <div
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        className="mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip px-2 pb-12 sm:px-4"
-      >
+      <div className="mx-auto w-full min-w-0 max-w-7xl space-y-3 overflow-x-clip px-2 pb-12 sm:px-4">
         <TodayHeader
           date={day}
           onDate={setDayAndUrl}

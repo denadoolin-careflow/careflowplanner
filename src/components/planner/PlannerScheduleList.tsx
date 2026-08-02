@@ -4,6 +4,7 @@ import { CalendarClock, Inbox } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useTimeBlocks } from "@/lib/time-blocks";
 import { PlannerTaskRow } from "./PlannerTaskRow";
+import { ROW_PX } from "@/lib/planner-metrics";
 
 function hmToMin(hm?: string | null): number | null {
   if (!hm || !/^\d{2}:\d{2}/.test(hm)) return null;
@@ -67,7 +68,10 @@ export function PlannerScheduleList({ date }: { date: Date }) {
                   {row.kind === "task" ? (
                     <PlannerTaskRow task={row.task} />
                   ) : (
-                    <div className="rounded-lg border border-violet-300/50 bg-violet-100/50 px-2.5 py-1.5 text-sm dark:bg-violet-900/25">
+                    <div
+                      style={{ minHeight: ROW_PX }}
+                      className="flex items-center rounded-lg border border-violet-300/50 bg-violet-100/50 px-2.5 py-1.5 text-[13px] [overflow-wrap:anywhere] whitespace-normal break-words dark:bg-violet-900/25"
+                    >
                       {row.appt.title}
                     </div>
                   )}

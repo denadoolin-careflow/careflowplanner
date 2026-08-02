@@ -14,22 +14,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
 function TrayRow({
-  id, title, onRemove, onPark,
-}: { id: string; title: string; onRemove?: () => void; onPark?: () => void }) {
+  id, title, onRemove, onPark, onDragActive,
+}: { id: string; title: string; onRemove?: () => void; onPark?: () => void; onDragActive?: (v: boolean) => void }) {
   const pointer = usePlannerPointerDrag(
     () => ({ taskId: id, label: title }),
-    { onClick: () => openTaskQuickEdit(id) },
+    {
+      onClick: () => openTaskQuickEdit(id),
+      onDragStart: () => onDragActive?.(true),
+      onDragEnd: () => onDragActive?.(false),
+    },
   );
   return (
     <li
       draggable
-      onDragStart={(e) => { e.dataTransfer.setData(TASK_DRAG_MIME, id); e.dataTransfer.effectAllowed = "copyMove"; haptics.pickup(); }}
+      onDragStart={(e) => { e.dataTransfer.setData(TASK_DRAG_MIME, id); e.dataTransfer.effectAllowed = "copyMove"; haptics.pickup(); onDragActive?.(true); }}
+      onDragEnd={() => onDragActive?.(false)}
       onPointerDown={pointer.onPointerDown}
       style={{ minHeight: ROW_PX }}
-      className="group flex touch-none items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[12.5px]"
+      className="group flex touch-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[12.5px]"
     >
-      <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
-      <span className="min-w-0 flex-1 truncate">{title}</span>
+      <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
+      <span className="min-w-0 flex-1 [overflow-wrap:anywhere] whitespace-normal break-words">{title}</span>
       {onPark && (
         <button
           type="button"
@@ -63,6 +68,9 @@ export function TrayDock() {
   const { state, addTask } = useStore();
   const [quick, setQuick] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  // While a task is being dragged out of the tray, fade the panel back so the
+  // planner grid underneath stays visible and droppable.
+  const [dragging, setDragging] = useState(false);
 
   const trayTasks = useMemo(
     () => taskIds.map(id => state.tasks.find(t => t.id === id)).filter(Boolean),
@@ -110,7 +118,10 @@ export function TrayDock() {
   return (
     <section
       aria-label="Notepad and task tray"
-      className="fixed bottom-20 left-2 right-2 z-40 flex max-h-[62vh] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/95 shadow-2xl backdrop-blur-xl sm:left-auto sm:right-4 sm:w-[360px] lg:bottom-6"
+      className={cn(
+        "fixed bottom-20 left-2 right-2 z-40 flex max-h-[42vh] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/95 shadow-2xl backdrop-blur-xl transition-all duration-200 sm:left-auto sm:right-4 sm:max-h-[62vh] sm:w-[360px] lg:bottom-6",
+        dragging && "pointer-events-none max-h-[22vh] opacity-25",
+      )}
     >
       <header className="flex items-center gap-1 border-b border-border/50 p-2">
         <div role="tablist" aria-label="Tray sections" className="flex gap-1">
@@ -214,7 +225,7 @@ export function TrayDock() {
               </p>
               <ul className="space-y-1.5">
                 {trayTasks.map((t: any) => (
-                  <TrayRow key={t.id} id={t.id} title={t.title} onRemove={() => tray.removeTask(t.id)} />
+                  <TrayRow key={t.id} id={t.id} title={t.title} onRemove={() => tray.removeTask(t.id)} onDragActive={setDragging} />
                 ))}
               </ul>
               <Button size="sm" variant="ghost" className="w-full text-[11px] text-muted-foreground"
@@ -231,7 +242,7 @@ export function TrayDock() {
               </p>
               <ul className="space-y-1.5">
                 {inboxTasks.map((t: any) => (
-                  <TrayRow key={t.id} id={t.id} title={t.title} onPark={() => tray.addTask(t.id)} />
+                  <TrayRow key={t.id} id={t.id} title={t.title} onPark={() => tray.addTask(t.id)} onDragActive={setDragging} />
                 ))}
               </ul>
             </>
