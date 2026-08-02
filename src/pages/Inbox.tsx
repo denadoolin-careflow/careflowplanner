@@ -25,7 +25,7 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
-import { parseISO, format, startOfDay } from "date-fns";
+import { parseISO, format, startOfDay, addDays } from "date-fns";
 import { InboxIllustration } from "@/components/inbox/InboxIllustration";
 import { InboxOverview } from "@/components/inbox/InboxOverview";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
@@ -123,6 +123,8 @@ function InboxInner() {
   const [overridePriority, setOverridePriority] = useState<Priority | "">("");
   const [overrideProjectId, setOverrideProjectId] = useState<string>("");
   const [overrideDue, setOverrideDue] = useState<string>("");
+  // Where a captured task lands: inbox (default), today, upcoming (tomorrow), or a picked date.
+  const [dest, setDest] = useState<"inbox" | "today" | "upcoming" | "scheduled">("inbox");
   const [careRecipientIds, setCareRecipientIds] = useState<string[]>([]);
   const careRecipientId = careRecipientIds[0] ?? "auto";
   const setCareRecipientSingle = (v: string) => {
@@ -472,9 +474,14 @@ function InboxInner() {
     }
     const p = parseTaskInput(raw);
     const mergedTags = Array.from(new Set([...(p.tags ?? []), ...combinedTags]));
+    const destDue =
+      dest === "today" ? format(new Date(), "yyyy-MM-dd")
+      : dest === "upcoming" ? format(addDays(new Date(), 1), "yyyy-MM-dd")
+      : dest === "scheduled" ? (overrideDue || format(addDays(new Date(), 1), "yyyy-MM-dd"))
+      : "";
     await addTask({
       title: p.title || raw,
-      dueDate: overrideDue || p.dueDate,
+      dueDate: destDue || overrideDue || p.dueDate,
       area: (overrideArea || (p.area as Area) || (activeCategories[0] as Area | undefined)) as Area | undefined,
       priority: (overridePriority || undefined) as Priority | undefined,
       projectId: overrideProjectId || undefined,
@@ -483,7 +490,7 @@ function InboxInner() {
       tags: mergedTags.length ? mergedTags : undefined,
       estMinutes: p.estMinutes,
       notes: details.trim() || undefined,
-      inbox: true,
+      inbox: dest === "inbox",
     });
     setDraft("");
     setExtraTags([]);
@@ -491,7 +498,13 @@ function InboxInner() {
     setDetails("");
     setDetailsOpen(false);
     setControlsPinned(false);
-    toast.success("Caught it ✨", { description: "Safely held in your inbox." });
+    toast.success("Caught it ✨", {
+      description:
+        dest === "today" ? "Added to Today."
+        : dest === "upcoming" ? "Added to Upcoming."
+        : dest === "scheduled" ? `Scheduled for ${destDue}.`
+        : "Safely held in your inbox.",
+    });
   };
 
   const openReviewForDraft = () => {
@@ -517,17 +530,22 @@ function InboxInner() {
   };
 
   const saveReviewDrafts = async (drafts: DraftTask[]) => {
+    const destDue =
+      dest === "today" ? format(new Date(), "yyyy-MM-dd")
+      : dest === "upcoming" ? format(addDays(new Date(), 1), "yyyy-MM-dd")
+      : dest === "scheduled" ? (overrideDue || format(addDays(new Date(), 1), "yyyy-MM-dd"))
+      : "";
     for (const d of drafts) {
       await addTask({
         title: d.title,
         area: d.area,
         priority: d.priority ?? "medium",
-        dueDate: d.dueDate,
+        dueDate: d.dueDate || destDue || undefined,
         energy: d.energy,
         estMinutes: d.estMinutes,
         tags: d.tags?.length ? d.tags : undefined,
         notes: d.notes,
-        inbox: true,
+        inbox: dest === "inbox",
       });
     }
     setDraft("");
@@ -662,6 +680,43 @@ function InboxInner() {
               Today's note
             </button>
           </div>
+
+          {/* Where it lands */}
+          {captureKind === "task" && (
+            <div className="mb-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span className="text-muted-foreground/80">Add to</span>
+              <div className="inline-flex flex-wrap items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5">
+                {([
+                  { k: "inbox", label: "Inbox" },
+                  { k: "today", label: "Today" },
+                  { k: "upcoming", label: "Upcoming" },
+                  { k: "scheduled", label: "Scheduled" },
+                ] as const).map(({ k, label }) => (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={dest === k}
+                    onClick={() => setDest(k)}
+                    className={cn(
+                      "rounded-full px-2 py-0.5 transition-colors",
+                      dest === k ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {dest === "scheduled" && (
+                <input
+                  type="date"
+                  aria-label="Scheduled date"
+                  value={overrideDue || format(addDays(new Date(), 1), "yyyy-MM-dd")}
+                  onChange={(e) => setOverrideDue(e.target.value)}
+                  className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[11px] text-foreground"
+                />
+              )}
+            </div>
+          )}
 
           {transcribing ? (
             <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4 shadow-inner">
