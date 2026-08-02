@@ -307,18 +307,24 @@ function SectionBlock({ id, label, Icon, count, open, onToggle, children }: {
   id: string; label: string; Icon?: React.ComponentType<{ className?: string }>;
   count: number; open: boolean; onToggle: (id: string) => void; children: React.ReactNode;
 }) {
+  const empty = count === 0;
   return (
     <div>
       <button
-        onClick={() => onToggle(id)}
-        className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs font-semibold text-foreground/90 hover:bg-muted/60"
+        onClick={() => { if (!empty) onToggle(id); }}
+        aria-expanded={empty ? undefined : open}
+        aria-disabled={empty || undefined}
+        className={cn(
+          "flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs font-semibold hover:bg-muted/60",
+          empty ? "cursor-default text-muted-foreground/60 hover:bg-transparent" : "text-foreground/90",
+        )}
       >
-        <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
+        <ChevronRight className={cn("h-3 w-3 transition-transform", open && !empty && "rotate-90", empty && "opacity-30")} />
         {Icon && <Icon className="h-3.5 w-3.5 opacity-70" />}
         <span className="flex-1 truncate">{label}</span>
-        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">{count}</span>
+        <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground", !empty && "bg-muted")}>{count}</span>
       </button>
-      {open && <div className="ml-1 space-y-1 py-1">{children}</div>}
+      {open && !empty && <div className="ml-1 space-y-1 py-1">{children}</div>}
     </div>
   );
 }
