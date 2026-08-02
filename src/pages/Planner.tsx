@@ -275,7 +275,7 @@ export default function Planner() {
           {view === "day" && period === "grid" && <PlannerTimeline date={day} />}
           {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
           {view === "day" && period === "timeofday" && segment === "all" && (
-            <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-3">
+            <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-y-auto">
               <PlannerPeriodList date={day} period="morning" />
               <PlannerPeriodList date={day} period="afternoon" />
               <PlannerPeriodList date={day} period="evening" />

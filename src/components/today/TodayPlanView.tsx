@@ -76,7 +76,7 @@ export function TodayPlanView({ date }: { date: Date }) {
         {period === "grid" && <PlannerTimeline date={date} />}
         {period === "schedule" && <PlannerScheduleList date={date} />}
         {period === "timeofday" && (
-          <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-3">
+          <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-y-auto">
             <PlannerPeriodList date={date} period="morning" />
             <PlannerPeriodList date={date} period="afternoon" />
             <PlannerPeriodList date={date} period="evening" />
