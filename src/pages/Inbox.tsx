@@ -25,7 +25,7 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
-import { parseISO, format, startOfDay } from "date-fns";
+import { parseISO, format, startOfDay, addDays } from "date-fns";
 import { InboxIllustration } from "@/components/inbox/InboxIllustration";
 import { InboxOverview } from "@/components/inbox/InboxOverview";
 import { ProcessInboxDialog } from "@/components/inbox/ProcessInboxDialog";
