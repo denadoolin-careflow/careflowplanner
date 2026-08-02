@@ -791,10 +791,7 @@ function InboxInner() {
                     : "Add a note…"
                 }
                 disabled={recorder.state !== "idle"}
-                className={cn(
-                  "text-sm placeholder:text-xs",
-                  recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40",
-                )}
+                className={cn(recorder.state === "recording" && "border-rose-300/70 bg-rose-50/40")}
               />
               <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
                 {draft.trim() && recorder.state === "idle" && (
