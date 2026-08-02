@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import type { Task } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { useInboxRowStyle } from "@/lib/inbox-row-style";
+import { TaskQuickActions } from "@/components/tasks/TaskQuickActions";
 
 interface Props {
   task: Task;
@@ -143,7 +144,7 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
             )}
           </div>
         )}
-        <div className="ml-auto shrink-0">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
           <WhenPopover
             value={{ date: task.dueDate, dayPart: (task.dayPart as DayPart) ?? autoDayPart }}
             autoDayPart={autoDayPart}
@@ -159,6 +160,7 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
               toast(v.date ? `Scheduled · ${v.dayPart}` : `Set time of day · ${v.dayPart}`, { description: task.title });
             }}
           />
+          <TaskQuickActions task={task} />
         </div>
       </div>
     </div>
