@@ -161,7 +161,6 @@ function TodayInner() {
         />
         <DemoTasksBanner />
         <MorningCheckInPrompt />
-        {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
         {prefs.showQuickAdd && <QuickAddBar date={day} />}
 
         {view === "board" ? (
@@ -189,15 +188,23 @@ function TodayInner() {
                 </button>
               ))}
             </div>
-            {mobileTab === "plan" && <TodayPlanView date={day} />}
+            {mobileTab === "plan" && (
+              <div className="space-y-3">
+                {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+                <TodayPlanView date={day} />
+              </div>
+            )}
             {mobileTab === "care" && <TodayFocusRail date={day} onTaskClick={setEditTaskId} />}
             {mobileTab === "grow" && secondary}
           </div>
         ) : (
           <div className="animate-fade-in space-y-4">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
               <TodayFocusRail date={day} onTaskClick={setEditTaskId} showSources />
-              <TodayPlanView date={day} />
+              <div className="min-w-0 space-y-3">
+                {isReallyToday && <NowNextCard date={day} onTaskClick={setEditTaskId} />}
+                <TodayPlanView date={day} />
+              </div>
             </div>
             {secondary}
           </div>
