@@ -71,8 +71,8 @@ export function TrayDock() {
   const quickAddToTray = async () => {
     const title = quick.trim();
     if (!title) return;
-    const created: any = await addTask({ title, area: "Personal", priority: "medium", done: false, inbox: true } as any);
-    if (created?.id) tray.addTask(created.id);
+    const createdId = await addTask({ title, area: "Personal", priority: "medium", done: false, inbox: true } as any);
+    if (createdId) tray.addTask(createdId);
     setQuick("");
     haptics.success();
   };
