@@ -530,17 +530,22 @@ function InboxInner() {
   };
 
   const saveReviewDrafts = async (drafts: DraftTask[]) => {
+    const destDue =
+      dest === "today" ? format(new Date(), "yyyy-MM-dd")
+      : dest === "upcoming" ? format(addDays(new Date(), 1), "yyyy-MM-dd")
+      : dest === "scheduled" ? (overrideDue || format(addDays(new Date(), 1), "yyyy-MM-dd"))
+      : "";
     for (const d of drafts) {
       await addTask({
         title: d.title,
         area: d.area,
         priority: d.priority ?? "medium",
-        dueDate: d.dueDate,
+        dueDate: d.dueDate || destDue || undefined,
         energy: d.energy,
         estMinutes: d.estMinutes,
         tags: d.tags?.length ? d.tags : undefined,
         notes: d.notes,
-        inbox: true,
+        inbox: dest === "inbox",
       });
     }
     setDraft("");
