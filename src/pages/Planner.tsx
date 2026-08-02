@@ -18,7 +18,8 @@ import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { usePlannerView } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ListTodo } from "lucide-react";
+import { ListTodo, Inbox } from "lucide-react";
+import { tray, useTray } from "@/lib/tray-store";
 
 export default function Planner() {
   const { date } = useParams<{ date: string }>();
@@ -131,11 +132,12 @@ export default function Planner() {
       {view === "day" && (
         <div className="flex items-center gap-2">
           <PlannerPeriodTabs value={period} onChange={setPeriod} />
+          <TrayToggle className="ml-auto" />
           {!isMobile && (
             <Button
               size="icon"
               variant="outline"
-              className="ml-auto h-8 w-8 rounded-full"
+              className="h-8 w-8 rounded-full"
               onClick={() => setTaskPanelHidden(v => !v)}
               aria-label={taskPanelHidden ? "Show task sidebar" : "Hide task sidebar"}
             >
