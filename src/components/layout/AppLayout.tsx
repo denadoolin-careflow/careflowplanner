@@ -28,6 +28,7 @@ import { CareFlowLogo } from "@/components/widgets/CareFlowLogo";
 import { Link } from "react-router-dom";
 import { HeaderNowStrip } from "./HeaderNowStrip";
 import { CapacityChip } from "@/components/header/CapacityChip";
+import { TrayDock } from "@/components/tray/TrayDock";
 
 export function AppLayout() {
   const { state } = useStore();
@@ -103,6 +104,7 @@ export function AppLayout() {
       <UpgradePromptHost />
       <AICaptureDialog />
       <CareyChat />
+      <TrayDock />
     </div>
   );
 }
