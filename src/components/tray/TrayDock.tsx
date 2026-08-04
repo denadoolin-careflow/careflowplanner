@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { NotebookPen, Inbox, X, Plus, Trash2, ListPlus, GripVertical, Pin } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  NotebookPen, Inbox, X, Plus, Trash2, ListPlus, GripVertical, Pin,
+  CalendarClock, Sparkles, ListChecks, Move, FileText,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { tray, useTray } from "@/lib/tray-store";
+import { tray, useTray, TRAY_TABS, type TrayTab } from "@/lib/tray-store";
 import { useStore } from "@/lib/store";
 import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
@@ -12,10 +16,51 @@ import { ROW_PX } from "@/lib/planner-metrics";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { BlockCheckbox } from "@/components/planner/BlockCheckbox";
+import { createNote } from "@/lib/notes";
+import { routines as routinesApi, useRoutines, SLOT_LABEL } from "@/lib/routines";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { format } from "date-fns";
+
+const TAB_ICON: Record<TrayTab, typeof Inbox> = {
+  notepad: NotebookPen,
+  tray: Inbox,
+  schedule: CalendarClock,
+  habits: Sparkles,
+  routines: ListChecks,
+};
+
+function fmtTime(t?: string) {
+  if (!t) return "";
+  const [h, m] = t.split(":").map(Number);
+  if (Number.isNaN(h)) return "";
+  const period = h >= 12 ? "p" : "a";
+  const h12 = ((h + 11) % 12) + 1;
+  return m ? `${h12}:${String(m).padStart(2, "0")}${period}` : `${h12}${period}`;
+}
+
+/** Small "when" summary shown on tray rows. */
+function ScheduleChip({ task }: { task: any }) {
+  const bits: string[] = [];
+  if (task.startTime) bits.push(fmtTime(task.startTime));
+  if (task.dueDate) {
+    const today = format(new Date(), "yyyy-MM-dd");
+    bits.push(task.dueDate === today ? "Today" : format(new Date(`${task.dueDate}T00:00:00`), "EEE d"));
+  }
+  if (task.estMinutes) bits.push(`${task.estMinutes}m`);
+  if (!bits.length) return null;
+  return (
+    <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+      {bits.join(" · ")}
+    </span>
+  );
+}
 
 function TrayRow({
-  id, title, onRemove, onPark, onDragActive,
-}: { id: string; title: string; onRemove?: () => void; onPark?: () => void; onDragActive?: (v: boolean) => void }) {
+  task, onRemove, onPark, onDragActive, onToggle,
+}: { task: any; onRemove?: () => void; onPark?: () => void; onDragActive?: (v: boolean) => void; onToggle: () => void }) {
+  const id = task.id as string;
+  const title = task.title as string;
   const pointer = usePlannerPointerDrag(
     () => ({ taskId: id, label: title }),
     {
@@ -33,8 +78,12 @@ function TrayRow({
       style={{ minHeight: ROW_PX }}
       className="group flex touch-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[12.5px]"
     >
+      <BlockCheckbox done={!!task.done} title={title} onToggle={onToggle} className="mt-1" />
       <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" aria-hidden />
-      <span className="min-w-0 flex-1 [overflow-wrap:anywhere] whitespace-normal break-words">{title}</span>
+      <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere] whitespace-normal break-words", task.done && "line-through opacity-60")}>
+        {title}
+      </span>
+      <ScheduleChip task={task} />
       {onPark && (
         <button
           type="button"
