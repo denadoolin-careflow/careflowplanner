@@ -10,12 +10,17 @@ export interface TrayState {
   notes: TrayNote[];
   taskIds: string[];
   open: boolean;
-  tab: "notepad" | "tray";
+  tab: TrayTab;
+  /** Free position of the floating panel (desktop only). Null → docked default. */
+  pos: { x: number; y: number } | null;
 }
+
+export type TrayTab = "notepad" | "tray" | "schedule" | "habits" | "routines";
+export const TRAY_TABS: TrayTab[] = ["notepad", "tray", "schedule", "habits", "routines"];
 
 const KEY = "careflow.tray.v1";
 
-const DEFAULT: TrayState = { notes: [], taskIds: [], open: false, tab: "notepad" };
+const DEFAULT: TrayState = { notes: [], taskIds: [], open: false, tab: "notepad", pos: null };
 
 function read(): TrayState {
   try {
@@ -26,7 +31,10 @@ function read(): TrayState {
       notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       taskIds: Array.isArray(parsed.taskIds) ? parsed.taskIds : [],
       open: !!parsed.open,
-      tab: parsed.tab === "tray" ? "tray" : "notepad",
+      tab: TRAY_TABS.includes(parsed.tab as TrayTab) ? (parsed.tab as TrayTab) : "notepad",
+      pos: parsed.pos && typeof parsed.pos.x === "number" && typeof parsed.pos.y === "number"
+        ? { x: parsed.pos.x, y: parsed.pos.y }
+        : null,
     };
   } catch { return DEFAULT; }
 }
@@ -44,6 +52,7 @@ export const tray = {
   get: () => state,
   setOpen: (open: boolean) => commit({ ...state, open }),
   setTab: (tab: TrayState["tab"]) => commit({ ...state, tab }),
+  setPos: (pos: TrayState["pos"]) => commit({ ...state, pos }),
   addNote: (text = "") => {
     const note: TrayNote = { id: crypto.randomUUID(), text, updatedAt: Date.now() };
     commit({ ...state, notes: [note, ...state.notes] });

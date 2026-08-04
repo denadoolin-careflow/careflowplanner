@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
 import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
+import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
 import { PlannerQuickCapture } from "@/components/planner/PlannerQuickCapture";
 import { PlannerMultiDayView } from "@/components/planner/PlannerMultiDayView";
 import { PlannerMonthView } from "@/components/planner/PlannerMonthView";
@@ -128,6 +129,7 @@ export default function Planner() {
   }, []);
 
   const showContextPanel = !isMobile && (view === "day" || view === "3day");
+  const showFocusPanel = !isMobile && view === "day";
   const showTaskPanel = !isMobile && !taskPanelHidden && (view === "day" || view === "3day" || view === "week");
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
 
@@ -252,6 +254,7 @@ export default function Planner() {
           gridTemplateColumns: [
             showTaskPanel ? `${taskPanelWidth}px 6px` : null,
             "minmax(0,1fr)",
+            showFocusPanel ? "230px" : null,
             showContextPanel ? "300px" : null,
           ].filter(Boolean).join(" "),
         }}
@@ -294,6 +297,7 @@ export default function Planner() {
           {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}
           {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
         </div>
+        {showFocusPanel && <PlannerFocusPanel date={day} className="min-h-0 self-start" />}
         {showContextPanel && (
           <PlannerContextPanel date={day} onChangeDate={go} />
         )}
