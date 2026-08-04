@@ -113,13 +113,22 @@ function TrayRow({
  * Notes auto-save locally; tray items can be dragged onto the planner grid.
  */
 export function TrayDock() {
-  const { open, tab, notes, taskIds } = useTray();
-  const { state, addTask } = useStore();
+  const { open, tab, notes, taskIds, pos } = useTray();
+  const { state, addTask, toggleTask, toggleHabit } = useStore();
+  const { routines: routineList } = useRoutines();
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [quick, setQuick] = useState("");
   const [dragOver, setDragOver] = useState(false);
   // While a task is being dragged out of the tray, fade the panel back so the
   // planner grid underneath stays visible and droppable.
   const [dragging, setDragging] = useState(false);
+  // Panel repositioning (desktop only).
+  const panelRef = useRef<HTMLElement | null>(null);
+  const moveRef = useRef<{ dx: number; dy: number } | null>(null);
+  const [moving, setMoving] = useState(false);
+
+  const todayIso = format(new Date(), "yyyy-MM-dd");
 
   const trayTasks = useMemo(
     () => taskIds.map(id => state.tasks.find(t => t.id === id)).filter(Boolean),
@@ -135,6 +144,15 @@ export function TrayDock() {
       !taskIds.includes(t.id)
     ).slice(0, 50),
     [state.tasks, taskIds],
+  );
+
+  // Today's scheduled tasks, ordered by start time — read-only overview + quick complete.
+  const scheduled = useMemo(
+    () => state.tasks
+      .filter((t: any) => !t.parentTaskId && t.startTime && (!t.dueDate || t.dueDate === todayIso))
+      .sort((a: any, b: any) => (a.startTime ?? "").localeCompare(b.startTime ?? ""))
+      .slice(0, 40),
+    [state.tasks, todayIso],
   );
 
   // Prune ids for tasks that no longer exist.
@@ -161,20 +179,74 @@ export function TrayDock() {
     haptics.success();
   };
 
+  const noteToNote = async (id: string, text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const [first, ...rest] = trimmed.split("\n");
+    const note = await createNote({ title: first.slice(0, 120) || "Quick note", body: rest.join("\n") || trimmed });
+    tray.removeNote(id);
+    haptics.success();
+    toast.success("Saved to Notes", { action: { label: "Open", onClick: () => navigate(`/notes/${note.id}`) } });
+  };
+
+  const startMove = (e: React.PointerEvent) => {
+    if (isMobile) return;
+    const rect = panelRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    moveRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+    setMoving(true);
+    const onMove = (ev: PointerEvent) => {
+      if (!moveRef.current) return;
+      const w = panelRef.current?.offsetWidth ?? 360;
+      const h = panelRef.current?.offsetHeight ?? 320;
+      tray.setPos({
+        x: Math.max(8, Math.min(window.innerWidth - w - 8, ev.clientX - moveRef.current.dx)),
+        y: Math.max(8, Math.min(window.innerHeight - h - 8, ev.clientY - moveRef.current.dy)),
+      });
+    };
+    const onUp = () => {
+      moveRef.current = null;
+      setMoving(false);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
   // The launcher lives in the quick-add FAB menu — nothing is rendered when closed.
   if (!open) return null;
 
+  const floating = !isMobile && pos;
+
   return (
     <section
+      ref={panelRef as any}
       aria-label="Notepad and task tray"
+      style={floating ? { left: pos!.x, top: pos!.y, right: "auto", bottom: "auto" } : undefined}
       className={cn(
         "fixed bottom-20 left-2 right-2 z-40 flex max-h-[42vh] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/95 shadow-2xl backdrop-blur-xl transition-all duration-200 sm:left-auto sm:right-4 sm:max-h-[62vh] sm:w-[360px] lg:bottom-6",
         dragging && "pointer-events-none max-h-[22vh] opacity-25",
+        moving && "select-none transition-none",
       )}
     >
       <header className="flex items-center gap-1 border-b border-border/50 p-2">
-        <div role="tablist" aria-label="Tray sections" className="flex gap-1">
-          {(["notepad", "tray"] as const).map(t => (
+        <button
+          type="button"
+          onPointerDown={startMove}
+          aria-label="Move tray panel"
+          className="hidden shrink-0 cursor-grab rounded-full p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing sm:inline-flex"
+        >
+          <Move className="h-3.5 w-3.5" />
+        </button>
+        <div
+          role="tablist"
+          aria-label="Tray sections"
+          className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {TRAY_TABS.map(t => {
+            const Icon = TAB_ICON[t];
+            return (
             <button
               key={t}
               role="tab"
@@ -182,29 +254,29 @@ export function TrayDock() {
               type="button"
               onClick={() => tray.setTab(t)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] capitalize transition-colors",
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] capitalize transition-colors",
                 tab === t ? "bg-primary/15 font-medium text-primary" : "text-muted-foreground hover:bg-muted",
               )}
             >
-              {t === "notepad" ? <NotebookPen className="h-3.5 w-3.5" /> : <Inbox className="h-3.5 w-3.5" />}
-              {t}
+              <Icon className="h-3.5 w-3.5" />
+              <span className={cn(tab !== t && "sr-only sm:not-sr-only")}>{t}</span>
               {t === "tray" && (taskIds.length + inboxTasks.length) > 0 && (
                 <span className="rounded-full bg-primary/15 px-1.5 text-[10px]">{taskIds.length + inboxTasks.length}</span>
               )}
             </button>
-          ))}
+          );})}
         </div>
         <button
           type="button"
           onClick={() => tray.setOpen(false)}
           aria-label="Close notepad and task tray"
-          className="ml-auto rounded-full p-1.5 text-muted-foreground hover:bg-muted"
+          className="ml-auto shrink-0 rounded-full p-1.5 text-muted-foreground hover:bg-muted"
         >
           <X className="h-4 w-4" />
         </button>
       </header>
 
-      {tab === "notepad" ? (
+      {tab === "notepad" && (
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-2 [-webkit-overflow-scrolling:touch]">
           <Button size="sm" variant="outline" className="w-full gap-1.5 rounded-xl" onClick={() => tray.addNote("")}>
             <Plus className="h-3.5 w-3.5" /> New note
@@ -225,6 +297,10 @@ export function TrayDock() {
               />
               <div className="mt-1 flex items-center justify-end gap-1">
                 <Button size="sm" variant="ghost" className="h-7 gap-1 rounded-full px-2 text-[11px]"
+                  onClick={() => void noteToNote(n.id, n.text)}>
+                  <FileText className="h-3.5 w-3.5" /> Save note
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 gap-1 rounded-full px-2 text-[11px]"
                   onClick={() => void noteToTask(n.id, n.text)}>
                   <ListPlus className="h-3.5 w-3.5" /> To task
                 </Button>
@@ -237,7 +313,9 @@ export function TrayDock() {
             </div>
           ))}
         </div>
-      ) : (
+      )}
+
+      {tab === "tray" && (
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
@@ -274,7 +352,8 @@ export function TrayDock() {
               </p>
               <ul className="space-y-1.5">
                 {trayTasks.map((t: any) => (
-                  <TrayRow key={t.id} id={t.id} title={t.title} onRemove={() => tray.removeTask(t.id)} onDragActive={setDragging} />
+                  <TrayRow key={t.id} task={t} onToggle={() => void toggleTask(t.id)}
+                    onRemove={() => tray.removeTask(t.id)} onDragActive={setDragging} />
                 ))}
               </ul>
               <Button size="sm" variant="ghost" className="w-full text-[11px] text-muted-foreground"
@@ -291,11 +370,73 @@ export function TrayDock() {
               </p>
               <ul className="space-y-1.5">
                 {inboxTasks.map((t: any) => (
-                  <TrayRow key={t.id} id={t.id} title={t.title} onPark={() => tray.addTask(t.id)} onDragActive={setDragging} />
+                  <TrayRow key={t.id} task={t} onToggle={() => void toggleTask(t.id)}
+                    onPark={() => tray.addTask(t.id)} onDragActive={setDragging} />
                 ))}
               </ul>
             </>
           )}
+        </div>
+      )}
+
+      {tab === "schedule" && (
+        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain p-2 [-webkit-overflow-scrolling:touch]">
+          <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Today · {scheduled.length}
+          </p>
+          {scheduled.length === 0 ? (
+            <p className="px-1 py-3 text-center text-[12px] text-muted-foreground">Nothing scheduled yet today.</p>
+          ) : scheduled.map((t: any) => (
+            <div key={t.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[12.5px]">
+              <BlockCheckbox done={!!t.done} title={t.title} onToggle={() => void toggleTask(t.id)} className="mt-1" />
+              <button type="button" onClick={() => openTaskQuickEdit(t.id)}
+                className={cn("min-w-0 flex-1 text-left [overflow-wrap:anywhere]", t.done && "line-through opacity-60")}>
+                {t.title}
+              </button>
+              <ScheduleChip task={t} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "habits" && (
+        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain p-2 [-webkit-overflow-scrolling:touch]">
+          {state.habits.length === 0 ? (
+            <p className="px-1 py-3 text-center text-[12px] text-muted-foreground">No habits yet.</p>
+          ) : state.habits.map((h: any) => {
+            const done = !!h.log?.[todayIso];
+            return (
+              <div key={h.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[12.5px]">
+                <BlockCheckbox done={done} title={h.name ?? h.title ?? "Habit"} onToggle={() => void toggleHabit(h.id)} className="mt-1" />
+                <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere]", done && "line-through opacity-60")}>
+                  {h.name ?? h.title}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === "routines" && (
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-2 [-webkit-overflow-scrolling:touch]">
+          {routineList.length === 0 ? (
+            <p className="px-1 py-3 text-center text-[12px] text-muted-foreground">No routines yet.</p>
+          ) : routineList.map(r => (
+            <div key={r.id} className="space-y-1">
+              <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {r.person_name} · {SLOT_LABEL[r.slot]}
+              </p>
+              {r.items.map(item => (
+                <div key={item.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[12.5px]">
+                  <BlockCheckbox done={!!item.done} title={item.text}
+                    onToggle={() => void routinesApi.toggleItem(r.person_name, r.slot, item.id)} className="mt-1" />
+                  <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere]", item.done && "line-through opacity-60")}>
+                    {item.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       )}
     </section>
