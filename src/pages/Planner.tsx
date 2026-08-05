@@ -203,21 +203,47 @@ export default function Planner() {
             </div>
           </div>
 
-          {view === "day" && (
-            <div className="flex items-center gap-2">
-              <PlannerPeriodTabs value={period} onChange={setPeriod} />
-              <TrayToggle className="ml-auto" />
+          <div className="flex flex-wrap items-center gap-2">
+            {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} />}
+            <TrayToggle className="ml-auto" />
+            {(view === "day" || view === "3day" || view === "week") && (
               <Button
                 size="icon"
                 variant="outline"
                 className="h-8 w-8 rounded-full"
-                onClick={() => setTaskPanelHidden(v => !v)}
-                aria-label={taskPanelHidden ? "Show task sidebar" : "Hide task sidebar"}
+                onClick={() => setPanel(view, "task", !panel.task)}
+                aria-pressed={panel.task}
+                aria-label={panel.task ? "Hide task sidebar" : "Show task sidebar"}
               >
-                {taskPanelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+                {panel.task ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
               </Button>
-            </div>
-          )}
+            )}
+            {view === "day" && (
+              <Button
+                size="icon"
+                variant="outline"
+                className={`h-8 w-8 rounded-full ${panel.focus ? "text-primary" : ""}`}
+                onClick={() => setPanel(view, "focus", !panel.focus)}
+                aria-pressed={panel.focus}
+                aria-label={panel.focus ? "Hide focus timer panel" : "Show focus timer panel"}
+              >
+                <Timer className="h-4 w-4" />
+              </Button>
+            )}
+            {(view === "day" || view === "3day") && (
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-8 w-8 rounded-full"
+                onClick={() => setPanel(view, "context", !panel.context)}
+                aria-pressed={panel.context}
+                aria-label={panel.context ? "Hide day context panel" : "Show day context panel"}
+              >
+                {panel.context ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+              </Button>
+            )}
+            <AutoScheduleSettings size="md" />
+          </div>
         </>
       )}
 
