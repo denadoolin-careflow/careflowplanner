@@ -161,28 +161,20 @@ export default function Planner() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Range</DropdownMenuLabel>
-              {([["day", "Day"], ["3day", "3 days"], ["week", "Week"], ["month", "Month"]] as const).map(([id, label]) => (
-                <DropdownMenuItem key={id} onSelect={() => setView(id)}>
-                  {label}{view === id ? " ·" : ""}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">View</DropdownMenuLabel>
-              {([["grid", "Grid"], ["schedule", "Schedule"], ["timeofday", "Time of day"]] as const).map(([id, label]) => (
-                <DropdownMenuItem key={id} onSelect={() => { setView("day"); setPeriod(id); }}>
-                  {label}{view === "day" && period === id ? " ·" : ""}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Actions</DropdownMenuLabel>
               <DropdownMenuItem onSelect={() => setPlanOpen(true)}>
                 <Sparkles className="mr-2 h-3.5 w-3.5" /> Plan my day
               </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setCaptureOpen(true)}>
+                <Plus className="mr-2 h-3.5 w-3.5" /> Add task
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => { tray.setTab("tray"); tray.setOpen(true); }}>
                 <Inbox className="mr-2 h-3.5 w-3.5" /> Task tray
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <AutoScheduleSettings size="md" />
         </div>
       ) : (
         <>
