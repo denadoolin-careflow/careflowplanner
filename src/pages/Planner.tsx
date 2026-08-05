@@ -292,7 +292,7 @@ export default function Planner() {
         <div className={isMobile ? "min-w-0" : "min-h-0"}>
           {view === "day" && period === "grid" && (
             isMobile ? (
-              <div className="h-[70vh] min-h-[420px]"><PlannerTimeline date={day} /></div>
+              <div className="h-[calc(100dvh-190px)] min-h-[360px]"><PlannerTimeline date={day} /></div>
             ) : (
               <PlannerTimeline date={day} />
             )
