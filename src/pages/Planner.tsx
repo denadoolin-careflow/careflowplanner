@@ -177,6 +177,11 @@ export default function Planner() {
           </DropdownMenu>
           <AutoScheduleSettings size="md" />
         </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <PlannerViewToggle value={view} onChange={setView} className="shrink-0" />
+          {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
+        </div>
+        </div>
       ) : (
         <>
           <div className="flex flex-wrap items-start gap-2">
