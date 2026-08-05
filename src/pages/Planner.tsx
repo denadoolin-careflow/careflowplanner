@@ -16,10 +16,12 @@ import { PlannerRhythmHeader } from "@/components/planner/PlannerRhythmHeader";
 import { PlannerPeriodTabs, usePlannerPeriod } from "@/components/planner/PlannerPeriodTabs";
 import { PlannerPeriodList } from "@/components/planner/PlannerPeriodList";
 import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
-import { usePlannerView } from "@/lib/planner-prefs";
+import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
+import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
+import { usePlannerView, usePlannerPanels } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ListTodo, Inbox, MoreHorizontal, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { ListTodo, Inbox, MoreHorizontal, Sparkles, ChevronLeft, ChevronRight, Timer, PanelRightClose, PanelRightOpen } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
