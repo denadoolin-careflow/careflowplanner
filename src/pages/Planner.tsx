@@ -127,7 +127,8 @@ export default function Planner() {
   return (
     <div className={`planner-surface flex flex-col gap-3 ${isMobile ? "pb-24" : "h-[calc(100vh-140px)] min-h-[500px]"}`}>
       {isMobile ? (
-        <div className="sticky top-0 z-30 -mx-2 flex items-center gap-1 bg-background/90 px-2 py-1.5 backdrop-blur-md">
+        <div className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
+        <div className="flex items-center gap-1">
           <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
             <SheetTrigger asChild>
               <Button size="icon" variant="outline" className="h-8 w-8 shrink-0 rounded-full" aria-label="Show tasks">
