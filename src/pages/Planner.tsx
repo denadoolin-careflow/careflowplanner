@@ -76,13 +76,8 @@ export default function Planner() {
     }
   }, [period, setPeriod]);
   const [mobileTasksOpen, setMobileTasksOpen] = useState(false);
-  const [taskPanelHidden, setTaskPanelHidden] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("careflow.planner.taskPanelHidden") === "1";
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem("careflow.planner.taskPanelHidden", taskPanelHidden ? "1" : "0"); } catch {}
-  }, [taskPanelHidden]);
+  const [panels, setPanel] = usePlannerPanels();
+  const panel = panels[view];
 
   const [taskPanelWidth, setTaskPanelWidth] = useState<number>(() => {
     if (typeof window === "undefined") return 280;
@@ -110,12 +105,6 @@ export default function Planner() {
     window.addEventListener("pointerup", onUp);
   };
 
-  // Auto-hide task panel for multi-day views to give the timeline more room.
-  useEffect(() => {
-    if (view === "3day" || view === "week") setTaskPanelHidden(true);
-    if (view === "day") setTaskPanelHidden(false);
-  }, [view]);
-
   const go = (d: Date) => navigate(`/planner/${format(d, "yyyy-MM-dd")}`);
 
   // Global hotkeys: "c" → capture · Cmd/Ctrl+K → command bar
@@ -130,9 +119,9 @@ export default function Planner() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const showContextPanel = !isMobile && (view === "day" || view === "3day");
-  const showFocusPanel = !isMobile && view === "day";
-  const showTaskPanel = !isMobile && !taskPanelHidden && (view === "day" || view === "3day" || view === "week");
+  const showContextPanel = !isMobile && panel.context && (view === "day" || view === "3day");
+  const showFocusPanel = !isMobile && panel.focus && view === "day";
+  const showTaskPanel = !isMobile && panel.task && (view === "day" || view === "3day" || view === "week");
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
 
   return (
