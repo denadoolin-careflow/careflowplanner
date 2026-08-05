@@ -7,6 +7,7 @@ const VIEW_KEY = "careflow:planner:view";
 const SORT_KEY = "careflow:planner:sort";
 const TAGS_KEY = "careflow:planner:tag-filter";
 const FOCUS_TASK_KEY = "careflow:planner:focus-task";
+const PANELS_KEY = "careflow:planner:panels";
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -33,3 +34,27 @@ export const usePlannerView = () => useLS<PlannerView>(VIEW_KEY, "day");
 export const usePlannerSort = () => useLS<PlannerSort>(SORT_KEY, "manual");
 export const usePlannerTagFilter = () => useLS<string[]>(TAGS_KEY, []);
 export const usePlannerFocusTaskId = () => useLS<string | null>(FOCUS_TASK_KEY, null);
+
+export type PlannerPanelId = "task" | "focus" | "context";
+export type PlannerPanelPrefs = Record<PlannerView, Record<PlannerPanelId, boolean>>;
+
+/** Panel visibility is remembered per range so switching views never silently overrides a choice. */
+export const DEFAULT_PLANNER_PANELS: PlannerPanelPrefs = {
+  day: { task: true, focus: true, context: true },
+  "3day": { task: false, focus: false, context: true },
+  week: { task: false, focus: false, context: false },
+  month: { task: false, focus: false, context: false },
+};
+
+export function usePlannerPanels(): [PlannerPanelPrefs, (view: PlannerView, panel: PlannerPanelId, on: boolean) => void] {
+  const [prefs, setPrefs] = useLS<PlannerPanelPrefs>(PANELS_KEY, DEFAULT_PLANNER_PANELS);
+  const merged: PlannerPanelPrefs = {
+    day: { ...DEFAULT_PLANNER_PANELS.day, ...(prefs?.day ?? {}) },
+    "3day": { ...DEFAULT_PLANNER_PANELS["3day"], ...(prefs?.["3day"] ?? {}) },
+    week: { ...DEFAULT_PLANNER_PANELS.week, ...(prefs?.week ?? {}) },
+    month: { ...DEFAULT_PLANNER_PANELS.month, ...(prefs?.month ?? {}) },
+  };
+  const set = (view: PlannerView, panel: PlannerPanelId, on: boolean) =>
+    setPrefs({ ...merged, [view]: { ...merged[view], [panel]: on } });
+  return [merged, set];
+}

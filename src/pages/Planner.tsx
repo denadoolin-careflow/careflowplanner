@@ -16,10 +16,12 @@ import { PlannerRhythmHeader } from "@/components/planner/PlannerRhythmHeader";
 import { PlannerPeriodTabs, usePlannerPeriod } from "@/components/planner/PlannerPeriodTabs";
 import { PlannerPeriodList } from "@/components/planner/PlannerPeriodList";
 import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
-import { usePlannerView } from "@/lib/planner-prefs";
+import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
+import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
+import { usePlannerView, usePlannerPanels } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ListTodo, Inbox, MoreHorizontal, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { ListTodo, Inbox, MoreHorizontal, Sparkles, ChevronLeft, ChevronRight, Timer, PanelRightClose, PanelRightOpen } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -74,13 +76,8 @@ export default function Planner() {
     }
   }, [period, setPeriod]);
   const [mobileTasksOpen, setMobileTasksOpen] = useState(false);
-  const [taskPanelHidden, setTaskPanelHidden] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("careflow.planner.taskPanelHidden") === "1";
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem("careflow.planner.taskPanelHidden", taskPanelHidden ? "1" : "0"); } catch {}
-  }, [taskPanelHidden]);
+  const [panels, setPanel] = usePlannerPanels();
+  const panel = panels[view];
 
   const [taskPanelWidth, setTaskPanelWidth] = useState<number>(() => {
     if (typeof window === "undefined") return 280;
@@ -108,12 +105,6 @@ export default function Planner() {
     window.addEventListener("pointerup", onUp);
   };
 
-  // Auto-hide task panel for multi-day views to give the timeline more room.
-  useEffect(() => {
-    if (view === "3day" || view === "week") setTaskPanelHidden(true);
-    if (view === "day") setTaskPanelHidden(false);
-  }, [view]);
-
   const go = (d: Date) => navigate(`/planner/${format(d, "yyyy-MM-dd")}`);
 
   // Global hotkeys: "c" → capture · Cmd/Ctrl+K → command bar
@@ -128,15 +119,16 @@ export default function Planner() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const showContextPanel = !isMobile && (view === "day" || view === "3day");
-  const showFocusPanel = !isMobile && view === "day";
-  const showTaskPanel = !isMobile && !taskPanelHidden && (view === "day" || view === "3day" || view === "week");
+  const showContextPanel = !isMobile && panel.context && (view === "day" || view === "3day");
+  const showFocusPanel = !isMobile && panel.focus && view === "day";
+  const showTaskPanel = !isMobile && panel.task && (view === "day" || view === "3day" || view === "week");
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
 
   return (
     <div className={`planner-surface flex flex-col gap-3 ${isMobile ? "pb-24" : "h-[calc(100vh-140px)] min-h-[500px]"}`}>
       {isMobile ? (
-        <div className="sticky top-0 z-30 -mx-2 flex items-center gap-1 bg-background/90 px-2 py-1.5 backdrop-blur-md">
+        <div className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
+        <div className="flex items-center gap-1">
           <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
             <SheetTrigger asChild>
               <Button size="icon" variant="outline" className="h-8 w-8 shrink-0 rounded-full" aria-label="Show tasks">
@@ -170,28 +162,25 @@ export default function Planner() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Range</DropdownMenuLabel>
-              {([["day", "Day"], ["3day", "3 days"], ["week", "Week"], ["month", "Month"]] as const).map(([id, label]) => (
-                <DropdownMenuItem key={id} onSelect={() => setView(id)}>
-                  {label}{view === id ? " ·" : ""}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">View</DropdownMenuLabel>
-              {([["grid", "Grid"], ["schedule", "Schedule"], ["timeofday", "Time of day"]] as const).map(([id, label]) => (
-                <DropdownMenuItem key={id} onSelect={() => { setView("day"); setPeriod(id); }}>
-                  {label}{view === "day" && period === id ? " ·" : ""}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Actions</DropdownMenuLabel>
               <DropdownMenuItem onSelect={() => setPlanOpen(true)}>
                 <Sparkles className="mr-2 h-3.5 w-3.5" /> Plan my day
               </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setCaptureOpen(true)}>
+                <Plus className="mr-2 h-3.5 w-3.5" /> Add task
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => { tray.setTab("tray"); tray.setOpen(true); }}>
                 <Inbox className="mr-2 h-3.5 w-3.5" /> Task tray
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <AutoScheduleSettings size="md" />
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <PlannerViewToggle value={view} onChange={setView} className="shrink-0" />
+          {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
+        </div>
         </div>
       ) : (
         <>
@@ -212,21 +201,47 @@ export default function Planner() {
             </div>
           </div>
 
-          {view === "day" && (
-            <div className="flex items-center gap-2">
-              <PlannerPeriodTabs value={period} onChange={setPeriod} />
-              <TrayToggle className="ml-auto" />
+          <div className="flex flex-wrap items-center gap-2">
+            {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} />}
+            <TrayToggle className="ml-auto" />
+            {(view === "day" || view === "3day" || view === "week") && (
               <Button
                 size="icon"
                 variant="outline"
                 className="h-8 w-8 rounded-full"
-                onClick={() => setTaskPanelHidden(v => !v)}
-                aria-label={taskPanelHidden ? "Show task sidebar" : "Hide task sidebar"}
+                onClick={() => setPanel(view, "task", !panel.task)}
+                aria-pressed={panel.task}
+                aria-label={panel.task ? "Hide task sidebar" : "Show task sidebar"}
               >
-                {taskPanelHidden ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+                {panel.task ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
               </Button>
-            </div>
-          )}
+            )}
+            {view === "day" && (
+              <Button
+                size="icon"
+                variant="outline"
+                className={`h-8 w-8 rounded-full ${panel.focus ? "text-primary" : ""}`}
+                onClick={() => setPanel(view, "focus", !panel.focus)}
+                aria-pressed={panel.focus}
+                aria-label={panel.focus ? "Hide focus timer panel" : "Show focus timer panel"}
+              >
+                <Timer className="h-4 w-4" />
+              </Button>
+            )}
+            {(view === "day" || view === "3day") && (
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-8 w-8 rounded-full"
+                onClick={() => setPanel(view, "context", !panel.context)}
+                aria-pressed={panel.context}
+                aria-label={panel.context ? "Hide day context panel" : "Show day context panel"}
+              >
+                {panel.context ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+              </Button>
+            )}
+            <AutoScheduleSettings size="md" />
+          </div>
         </>
       )}
 
@@ -277,7 +292,7 @@ export default function Planner() {
         <div className={isMobile ? "min-w-0" : "min-h-0"}>
           {view === "day" && period === "grid" && (
             isMobile ? (
-              <div className="h-[70vh] min-h-[420px]"><PlannerTimeline date={day} /></div>
+              <div className="h-[calc(100dvh-190px)] min-h-[360px]"><PlannerTimeline date={day} /></div>
             ) : (
               <PlannerTimeline date={day} />
             )

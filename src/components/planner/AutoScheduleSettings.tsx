@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { AutoSchedulePrefs } from "@/lib/auto-schedule-prefs";
+import { useAutoSchedulePrefs } from "@/lib/auto-schedule-prefs";
 import {
   BAND_COLOR_PRESETS, swatchClass, useBandColors,
   type BandColorId, type BandId,
@@ -66,11 +67,20 @@ function HourSelect({ value, onChange, from, to, label }: {
   );
 }
 
-export function AutoScheduleSettings({ prefs, update, reset }: {
-  prefs: AutoSchedulePrefs;
-  update: (patch: Partial<AutoSchedulePrefs>) => void;
-  reset: () => void;
+export function AutoScheduleSettings(props: {
+  /** Optional — when omitted the popover reads and writes the prefs itself. */
+  prefs?: AutoSchedulePrefs;
+  update?: (patch: Partial<AutoSchedulePrefs>) => void;
+  reset?: () => void;
+  /** Larger trigger for page headers. */
+  size?: "sm" | "md";
+  className?: string;
 }) {
+  const own = useAutoSchedulePrefs();
+  const prefs = props.prefs ?? own.prefs;
+  const update = props.update ?? own.update;
+  const reset = props.reset ?? own.reset;
+  const big = props.size === "md";
   const [bandColors, setBandColors, resetBands] = useBandColors();
   const [reminders, setReminders] = useReminderPrefs();
 
@@ -86,12 +96,16 @@ export function AutoScheduleSettings({ prefs, update, reset }: {
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant="ghost"
+          variant={big ? "outline" : "ghost"}
           size="icon"
-          className="h-7 w-7 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
-          aria-label="Auto-schedule preferences"
+          className={cn(
+            "shrink-0 rounded-full text-muted-foreground hover:text-foreground",
+            big ? "h-8 w-8" : "h-7 w-7",
+            props.className,
+          )}
+          aria-label="Planner preferences"
         >
-          <Settings2 className="h-3.5 w-3.5" />
+          <Settings2 className={big ? "h-4 w-4" : "h-3.5 w-3.5"} />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="max-h-[70vh] w-80 space-y-3 overflow-y-auto p-3">
