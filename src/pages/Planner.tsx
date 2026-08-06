@@ -334,10 +334,10 @@ export default function Planner() {
             {view === "day" && period === "timeofday" && segment !== "all" && (
               <PlannerPeriodList date={day} period={segment} />
             )}
+            {view === "3day" && <PlannerMultiDayView start={day} days={3} unified />}
+            {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}
+            {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
           </div>
-          {view === "3day" && <PlannerMultiDayView start={day} days={3} unified />}
-          {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}
-          {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
         </div>
         {showFocusPanel && <PlannerFocusPanel date={day} className="min-h-0 self-start" />}
         {showContextPanel && (
