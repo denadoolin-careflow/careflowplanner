@@ -315,24 +315,26 @@ export default function Planner() {
               />
             </div>
           )}
-          {view === "day" && period === "grid" && (
-            isMobile ? (
-              <div className="h-[calc(100dvh-250px)] min-h-[340px]"><PlannerTimeline date={day} /></div>
-            ) : (
-              <PlannerTimeline date={day} />
-            )
-          )}
-          {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
-          {view === "day" && period === "timeofday" && segment === "all" && (
-            <div className={`grid grid-cols-1 gap-3 ${isMobile ? "" : "h-full min-h-0 overflow-y-auto"}`}>
-              <PlannerPeriodList date={day} period="morning" />
-              <PlannerPeriodList date={day} period="afternoon" />
-              <PlannerPeriodList date={day} period="evening" />
-            </div>
-          )}
-          {view === "day" && period === "timeofday" && segment !== "all" && (
-            <PlannerPeriodList date={day} period={segment} />
-          )}
+          <div className={isMobile ? "min-w-0" : "min-h-0 flex-1"}>
+            {view === "day" && period === "grid" && (
+              isMobile ? (
+                <div className="h-[calc(100dvh-250px)] min-h-[340px]"><PlannerTimeline date={day} /></div>
+              ) : (
+                <PlannerTimeline date={day} />
+              )
+            )}
+            {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
+            {view === "day" && period === "timeofday" && segment === "all" && (
+              <div className={`grid grid-cols-1 gap-3 ${isMobile ? "" : "h-full min-h-0 overflow-y-auto"}`}>
+                <PlannerPeriodList date={day} period="morning" />
+                <PlannerPeriodList date={day} period="afternoon" />
+                <PlannerPeriodList date={day} period="evening" />
+              </div>
+            )}
+            {view === "day" && period === "timeofday" && segment !== "all" && (
+              <PlannerPeriodList date={day} period={segment} />
+            )}
+          </div>
           {view === "3day" && <PlannerMultiDayView start={day} days={3} unified />}
           {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}
           {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
