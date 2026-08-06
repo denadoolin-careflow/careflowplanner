@@ -141,7 +141,7 @@ export default function Planner() {
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
 
   return (
-    <div className={`planner-surface flex flex-col gap-3 ${isMobile ? "pb-24" : "h-[calc(100vh-140px)] min-h-[500px]"}`}>
+    <div className="planner-surface flex flex-col gap-3 pb-24">
       {isMobile ? (
         <div className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
         <div className="flex items-center gap-1">
@@ -280,7 +280,7 @@ export default function Planner() {
       )}
 
       <div
-        className={`grid gap-3 ${isMobile ? "" : "min-h-0 flex-1"}`}
+        className="grid items-start gap-3"
         style={{
           gridTemplateColumns: [
             showTaskPanel ? `${taskPanelWidth}px 6px` : null,
@@ -305,7 +305,7 @@ export default function Planner() {
             </div>
           </>
         )}
-        <div className={isMobile ? "min-w-0" : "flex min-h-0 flex-col"}>
+        <div className={isMobile ? "min-w-0" : "flex min-w-0 flex-col"}>
           {view === "day" && (
             <div className="mb-2 space-y-2">
               <PlannerCapacityBar date={day} />
@@ -316,17 +316,17 @@ export default function Planner() {
               />
             </div>
           )}
-          <div className={isMobile ? "min-w-0" : "min-h-0 flex-1"}>
+          <div className="min-w-0">
             {view === "day" && period === "grid" && (
               isMobile ? (
                 <div className="h-[calc(100dvh-250px)] min-h-[340px]"><PlannerTimeline date={day} /></div>
               ) : (
-                <PlannerTimeline date={day} />
+                <div className="h-[calc(100vh-260px)] min-h-[420px]"><PlannerTimeline date={day} /></div>
               )
             )}
             {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
             {view === "day" && period === "timeofday" && segment === "all" && (
-              <div className={`grid grid-cols-1 gap-3 ${isMobile ? "" : "h-full min-h-0 overflow-y-auto"}`}>
+              <div className="grid grid-cols-1 gap-3">
                 <PlannerPeriodList date={day} period="morning" />
                 <PlannerPeriodList date={day} period="afternoon" />
                 <PlannerPeriodList date={day} period="evening" />
@@ -339,8 +339,9 @@ export default function Planner() {
             {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}
             {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
           </div>
+          {view === "day" && <PlannerDayReview date={day} className="mt-3" />}
         </div>
-        {showFocusPanel && <PlannerFocusPanel date={day} className="min-h-0 self-start" />}
+        {showFocusPanel && <PlannerFocusPanel date={day} className="self-start" />}
         {showContextPanel && (
           <PlannerContextPanel date={day} onChangeDate={go} />
         )}
