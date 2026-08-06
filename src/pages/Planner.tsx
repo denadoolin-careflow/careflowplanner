@@ -19,6 +19,7 @@ import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
 import { PlannerCapacityBar } from "@/components/planner/PlannerCapacityBar";
 import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
+import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
 import { usePlannerView, usePlannerPanels } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
