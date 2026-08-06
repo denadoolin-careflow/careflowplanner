@@ -304,7 +304,7 @@ export default function Planner() {
             </div>
           </>
         )}
-        <div className={isMobile ? "min-w-0" : "min-h-0"}>
+        <div className={isMobile ? "min-w-0" : "flex min-h-0 flex-col"}>
           {view === "day" && (
             <div className="mb-2 space-y-2">
               <PlannerCapacityBar date={day} />
