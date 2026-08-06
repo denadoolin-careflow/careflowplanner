@@ -17,6 +17,8 @@ import { PlannerPeriodTabs, usePlannerPeriod } from "@/components/planner/Planne
 import { PlannerPeriodList } from "@/components/planner/PlannerPeriodList";
 import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
+import { PlannerCapacityBar } from "@/components/planner/PlannerCapacityBar";
+import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
 import { usePlannerView, usePlannerPanels } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -107,17 +109,30 @@ export default function Planner() {
 
   const go = (d: Date) => navigate(`/planner/${format(d, "yyyy-MM-dd")}`);
 
-  // Global hotkeys: "c" → capture · Cmd/Ctrl+K → command bar
+  // Global hotkeys: c capture · Cmd/Ctrl+K command bar · t today · [ / ] prev/next
+  // 1-4 range · g grid · s schedule · d time of day
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
       if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) { e.preventDefault(); setCmdOpen(o => !o); return; }
-      if (e.key === "c" || e.key === "C") { e.preventDefault(); setCaptureOpen(true); }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === "c") { e.preventDefault(); setCaptureOpen(true); return; }
+      if (k === "t") { e.preventDefault(); go(new Date()); return; }
+      if (e.key === "[") { e.preventDefault(); go(addDays(day, -1)); return; }
+      if (e.key === "]") { e.preventDefault(); go(addDays(day, 1)); return; }
+      if (e.key === "1") { e.preventDefault(); setView("day"); return; }
+      if (e.key === "2") { e.preventDefault(); setView("3day"); return; }
+      if (e.key === "3") { e.preventDefault(); setView("week"); return; }
+      if (e.key === "4") { e.preventDefault(); setView("month"); return; }
+      if (k === "g") { e.preventDefault(); setView("day"); setPeriod("grid"); return; }
+      if (k === "s") { e.preventDefault(); setView("day"); setPeriod("schedule"); return; }
+      if (k === "d") { e.preventDefault(); setView("day"); setPeriod("timeofday"); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [day, setView, setPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showContextPanel = !isMobile && panel.context && (view === "day" || view === "3day");
   const showFocusPanel = !isMobile && panel.focus && view === "day";
@@ -289,28 +304,40 @@ export default function Planner() {
             </div>
           </>
         )}
-        <div className={isMobile ? "min-w-0" : "min-h-0"}>
-          {view === "day" && period === "grid" && (
-            isMobile ? (
-              <div className="h-[calc(100dvh-190px)] min-h-[360px]"><PlannerTimeline date={day} /></div>
-            ) : (
-              <PlannerTimeline date={day} />
-            )
-          )}
-          {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
-          {view === "day" && period === "timeofday" && segment === "all" && (
-            <div className={`grid grid-cols-1 gap-3 ${isMobile ? "" : "h-full min-h-0 overflow-y-auto"}`}>
-              <PlannerPeriodList date={day} period="morning" />
-              <PlannerPeriodList date={day} period="afternoon" />
-              <PlannerPeriodList date={day} period="evening" />
+        <div className={isMobile ? "min-w-0" : "flex min-h-0 flex-col"}>
+          {view === "day" && (
+            <div className="mb-2 space-y-2">
+              <PlannerCapacityBar date={day} />
+              <PlannerEmptyDay
+                date={day}
+                onPlanMyDay={() => setPlanOpen(true)}
+                onAddTask={() => setCaptureOpen(true)}
+              />
             </div>
           )}
-          {view === "day" && period === "timeofday" && segment !== "all" && (
-            <PlannerPeriodList date={day} period={segment} />
-          )}
-          {view === "3day" && <PlannerMultiDayView start={day} days={3} unified />}
-          {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}
-          {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
+          <div className={isMobile ? "min-w-0" : "min-h-0 flex-1"}>
+            {view === "day" && period === "grid" && (
+              isMobile ? (
+                <div className="h-[calc(100dvh-250px)] min-h-[340px]"><PlannerTimeline date={day} /></div>
+              ) : (
+                <PlannerTimeline date={day} />
+              )
+            )}
+            {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
+            {view === "day" && period === "timeofday" && segment === "all" && (
+              <div className={`grid grid-cols-1 gap-3 ${isMobile ? "" : "h-full min-h-0 overflow-y-auto"}`}>
+                <PlannerPeriodList date={day} period="morning" />
+                <PlannerPeriodList date={day} period="afternoon" />
+                <PlannerPeriodList date={day} period="evening" />
+              </div>
+            )}
+            {view === "day" && period === "timeofday" && segment !== "all" && (
+              <PlannerPeriodList date={day} period={segment} />
+            )}
+            {view === "3day" && <PlannerMultiDayView start={day} days={3} unified />}
+            {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}
+            {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
+          </div>
         </div>
         {showFocusPanel && <PlannerFocusPanel date={day} className="min-h-0 self-start" />}
         {showContextPanel && (

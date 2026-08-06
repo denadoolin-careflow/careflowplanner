@@ -31,10 +31,24 @@ export function PlannerCommandBar({ open, onOpenChange, onCapture, onPlanMyDay, 
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading="Views">
-          <CommandItem onSelect={() => run(() => onSetView("day"))}><CalendarIcon className="mr-2 h-4 w-4" />Day view</CommandItem>
-          <CommandItem onSelect={() => run(() => onSetView("3day"))}><LayoutGrid className="mr-2 h-4 w-4" />3-day view</CommandItem>
-          <CommandItem onSelect={() => run(() => onSetView("week"))}><LayoutGrid className="mr-2 h-4 w-4" />Week view</CommandItem>
-          <CommandItem onSelect={() => run(() => onSetView("month"))}><LayoutGrid className="mr-2 h-4 w-4" />Month view</CommandItem>
+          <CommandItem onSelect={() => run(() => onSetView("day"))}><CalendarIcon className="mr-2 h-4 w-4" />Day view<kbd className="ml-auto text-[10px] text-muted-foreground">1</kbd></CommandItem>
+          <CommandItem onSelect={() => run(() => onSetView("3day"))}><LayoutGrid className="mr-2 h-4 w-4" />3-day view<kbd className="ml-auto text-[10px] text-muted-foreground">2</kbd></CommandItem>
+          <CommandItem onSelect={() => run(() => onSetView("week"))}><LayoutGrid className="mr-2 h-4 w-4" />Week view<kbd className="ml-auto text-[10px] text-muted-foreground">3</kbd></CommandItem>
+          <CommandItem onSelect={() => run(() => onSetView("month"))}><LayoutGrid className="mr-2 h-4 w-4" />Month view<kbd className="ml-auto text-[10px] text-muted-foreground">4</kbd></CommandItem>
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading="Shortcuts">
+          {[
+            ["c", "Capture a task"],
+            ["t", "Jump to today"],
+            ["[ / ]", "Previous / next day"],
+            ["1–4", "Day · 3-day · Week · Month"],
+            ["g / s / d", "Grid · Schedule · Time of day"],
+          ].map(([key, label]) => (
+            <CommandItem key={key} disabled className="text-muted-foreground">
+              {label}<kbd className="ml-auto text-[10px]">{key}</kbd>
+            </CommandItem>
+          ))}
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading="Jump to">
