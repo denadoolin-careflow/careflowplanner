@@ -19,7 +19,7 @@ export const PANELS: Record<PanelId, PanelDef> = {
   projects: { id: "projects", title: "Projects", icon: FolderOpen,      component: lazy(() => import("@/pages/Projects")) },
   goals:    { id: "goals",    title: "Goals",    icon: Target,          component: lazy(() => import("@/pages/Goals")) },
   areas:    { id: "areas",    title: "Areas",    icon: Compass,         component: lazy(() => import("@/pages/HomeAreas")) },
-  calendar: { id: "calendar", title: "Calendar", icon: CalendarDays,    component: lazy(() => import("@/pages/CalendarPage")) },
+  calendar: { id: "calendar", title: "Calendar", icon: CalendarDays,    component: lazy(() => import("@/pages/Planner")) },
   notes:    { id: "notes",    title: "Notes",    icon: NotebookPen,     component: lazy(() => import("@/pages/Notes")) },
   agenda:   { id: "agenda",   title: "Agenda",   icon: CalendarRange,   component: lazy(() => import("@/pages/Upcoming")) },
   meals:    { id: "meals",    title: "Meals",    icon: UtensilsCrossed, component: lazy(() => import("@/pages/Meals")) },
@@ -27,8 +27,8 @@ export const PANELS: Record<PanelId, PanelDef> = {
   routines: { id: "routines", title: "Routines", icon: Repeat,          component: lazy(() => import("@/pages/Routines")) },
   focus:    { id: "focus",    title: "Focus",    icon: Timer,           component: lazy(() => import("@/pages/PomodoroPicker")) },
   today:    { id: "today",    title: "Today",    icon: Sun,             component: lazy(() => import("@/pages/Today")) },
-  week:     { id: "week",     title: "Week",     icon: CalendarRange,   component: lazy(() => import("@/pages/Week")) },
-  month:    { id: "month",    title: "Month",    icon: CalendarDays,    component: lazy(() => import("@/pages/Month")) },
+  week:     { id: "week",     title: "Week",     icon: CalendarRange,   component: lazy(() => import("@/pages/Planner")) },
+  month:    { id: "month",    title: "Month",    icon: CalendarDays,    component: lazy(() => import("@/pages/Planner")) },
   year:     { id: "year",     title: "Year",     icon: Calendar,        component: lazy(() => import("@/pages/Year")) },
 };
 
