@@ -51,6 +51,46 @@ export function PlannerContextPanel({ date, onChangeDate }: Props) {
 }
 
 function ActiveFocusMini() {
+  return <ActiveFocusMiniInner />;
+}
+
+/** Next seven days from the shared planner feed. */
+function AgendaAhead({ date, onChangeDate }: { date: Date; onChangeDate: (d: Date) => void }) {
+  const { byDay, days } = usePlannerFeed(date, 7);
+  const upcoming = days
+    .map(key => ({ key, items: (byDay.get(key) ?? []).slice(0, 3) }))
+    .filter(d => d.items.length > 0)
+    .slice(0, 4);
+  if (!upcoming.length) return null;
+  return (
+    <section className="rounded-2xl border border-border/60 bg-card/50 p-3">
+      <header className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Ahead</header>
+      <div className="space-y-2">
+        {upcoming.map(d => (
+          <div key={d.key}>
+            <button
+              type="button"
+              onClick={() => onChangeDate(new Date(`${d.key}T12:00:00`))}
+              className="text-[11px] font-medium text-muted-foreground hover:text-foreground"
+            >
+              {format(new Date(`${d.key}T12:00:00`), "EEE, MMM d")}
+            </button>
+            <ul className="mt-0.5 space-y-0.5">
+              {d.items.map(it => (
+                <li key={it.id} className="flex items-start gap-1.5 text-[11px] [overflow-wrap:anywhere]">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: it.color }} />
+                  <span className={cn(it.done && "line-through opacity-60")}>{it.time ? `${it.time} · ` : ""}{it.title}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ActiveFocusMiniInner() {
   const s = usePomodoro();
   if (!s.taskId) return null;
   return (
