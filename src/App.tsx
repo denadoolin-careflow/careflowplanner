@@ -13,9 +13,8 @@ import { InlineTagPreviewLayer } from "@/components/tags/InlineTagPreviewLayer";
 import { MediaLightbox } from "@/components/media/MediaLightbox";
 import { IndexRedirect } from "@/components/auth/IndexRedirect";
 import Today from "./pages/Today";
-import Week from "./pages/Week";
-import Month from "./pages/Month";
 import MonthOverview from "./pages/MonthOverview";
+import PlannerRedirect from "./pages/PlannerRedirect";
 import Year from "./pages/Year";
 import Goals from "./pages/Goals";
 import Habits from "./pages/Habits";
@@ -32,7 +31,6 @@ import JournalFlow from "./pages/JournalFlow";
 import Ideas from "./pages/Ideas";
 import Tags from "./pages/Tags";
 import TagDetail from "./pages/TagDetail";
-import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
 import PomodoroPicker from "./pages/PomodoroPicker";
 import Health from "./pages/Health";
@@ -188,8 +186,10 @@ const App = () => (
                 <Route path="/planner/:date" element={<Planner />} />
                 <Route path="/check-in" element={<DailyCheckIn />} />
                 <Route path="/task-editor-styles" element={<TaskEditorStyles />} />
-                <Route path="/week" element={<Week />} />
-                <Route path="/month" element={<Month />} />
+                <Route path="/week" element={<PlannerRedirect range="week" />} />
+                <Route path="/week/:date" element={<PlannerRedirect range="week" />} />
+                <Route path="/month" element={<PlannerRedirect range="month" />} />
+                <Route path="/month/:date" element={<PlannerRedirect range="month" />} />
                <Route path="/month/overview" element={<MonthOverview />} />
                 <Route path="/year" element={<Year />} />
                 <Route path="/goals" element={<Goals />} />
@@ -216,7 +216,7 @@ const App = () => (
                 <Route path="/ideas" element={<Ideas />} />
                <Route path="/tags" element={<Tags />} />
                <Route path="/tags/:name" element={<TagDetail />} />
-                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/calendar" element={<PlannerRedirect range="month" />} />
                 <Route path="/focus" element={<PomodoroPicker />} />
                 <Route path="/memories" element={<Memories />} />
                 <Route path="/settings" element={<Settings />} />

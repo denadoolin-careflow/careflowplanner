@@ -7,6 +7,7 @@ const OPTIONS: { id: PlannerView; label: string }[] = [
   { id: "3day", label: "3 Days" },
   { id: "week", label: "Week" },
   { id: "month", label: "Month" },
+  { id: "year", label: "Year" },
 ];
 
 export function PlannerViewToggle({ value, onChange, className }: {
