@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { addDays, format, isValid, parseISO, startOfWeek } from "date-fns";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { addDays, addMonths, addYears, format, isValid, parseISO, startOfWeek } from "date-fns";
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
@@ -10,6 +10,12 @@ import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
 import { PlannerQuickCapture } from "@/components/planner/PlannerQuickCapture";
 import { PlannerMultiDayView } from "@/components/planner/PlannerMultiDayView";
 import { PlannerMonthView } from "@/components/planner/PlannerMonthView";
+import { PlannerWeekGrid } from "@/components/planner/PlannerWeekGrid";
+import { PlannerWeekBoard } from "@/components/planner/PlannerWeekBoard";
+import { PlannerYearView } from "@/components/planner/PlannerYearView";
+import { PlannerMonthOverview } from "@/components/planner/PlannerMonthOverview";
+import { PlannerKindFilter } from "@/components/planner/PlannerKindFilter";
+import { PlannerRangeModeTabs } from "@/components/planner/PlannerRangeModeTabs";
 import { PlanMyDayDialog } from "@/components/planner/PlanMyDayDialog";
 import { PlannerCommandBar } from "@/components/planner/PlannerCommandBar";
 import { PlannerRhythmHeader } from "@/components/planner/PlannerRhythmHeader";
@@ -21,7 +27,7 @@ import { PlannerCapacityBar } from "@/components/planner/PlannerCapacityBar";
 import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
 import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
-import { usePlannerView, usePlannerPanels } from "@/lib/planner-prefs";
+import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMonthMode, type PlannerView } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ListTodo, Inbox, MoreHorizontal, Sparkles, ChevronLeft, ChevronRight, Timer, PanelRightClose, PanelRightOpen } from "lucide-react";
@@ -56,6 +62,7 @@ function TrayToggle({ className }: { className?: string }) {
 export default function Planner() {
   const { date } = useParams<{ date: string }>();
   const navigate = useNavigate();
+  const [search, setSearch] = useSearchParams();
 
   const day = useMemo(() => {
     if (!date) return new Date();
@@ -67,9 +74,22 @@ export default function Planner() {
   const [planOpen, setPlanOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [view, setView] = usePlannerView();
+  const [weekMode, setWeekMode] = usePlannerWeekMode();
+  const [monthMode, setMonthMode] = usePlannerMonthMode();
   const [period, setPeriod] = usePlannerPeriod();
   const isMobile = useIsMobile();
   const [segment, setSegment] = useState<Segment>("all");
+
+  // /planner/:date?range=week — lets Week/Month/Calendar links land on the right range.
+  useEffect(() => {
+    const r = search.get("range") as PlannerView | null;
+    if (r && ["day", "3day", "week", "month", "year"].includes(r)) {
+      setView(r);
+      const next = new URLSearchParams(search);
+      next.delete("range");
+      setSearch(next, { replace: true });
+    }
+  }, [search, setSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Legacy persisted values (morning/afternoon/evening) now live inside "Time of day".
   useEffect(() => {
@@ -110,6 +130,15 @@ export default function Planner() {
 
   const go = (d: Date) => navigate(`/planner/${format(d, "yyyy-MM-dd")}`);
 
+  /** Page by the active range instead of always by a day. */
+  const step = (dir: 1 | -1) => {
+    if (view === "month") return go(addMonths(day, dir));
+    if (view === "year") return go(addYears(day, dir));
+    if (view === "week") return go(addDays(day, 7 * dir));
+    if (view === "3day") return go(addDays(day, 3 * dir));
+    return go(addDays(day, dir));
+  };
+
   // Global hotkeys: c capture · Cmd/Ctrl+K command bar · t today · [ / ] prev/next
   // 1-4 range · g grid · s schedule · d time of day
   useEffect(() => {
@@ -121,24 +150,29 @@ export default function Planner() {
       const k = e.key.toLowerCase();
       if (k === "c") { e.preventDefault(); setCaptureOpen(true); return; }
       if (k === "t") { e.preventDefault(); go(new Date()); return; }
-      if (e.key === "[") { e.preventDefault(); go(addDays(day, -1)); return; }
-      if (e.key === "]") { e.preventDefault(); go(addDays(day, 1)); return; }
+      if (e.key === "[") { e.preventDefault(); step(-1); return; }
+      if (e.key === "]") { e.preventDefault(); step(1); return; }
       if (e.key === "1") { e.preventDefault(); setView("day"); return; }
       if (e.key === "2") { e.preventDefault(); setView("3day"); return; }
       if (e.key === "3") { e.preventDefault(); setView("week"); return; }
       if (e.key === "4") { e.preventDefault(); setView("month"); return; }
+      if (e.key === "5") { e.preventDefault(); setView("year"); return; }
+      if (k === "w") { e.preventDefault(); setView("week"); return; }
+      if (k === "m") { e.preventDefault(); setView("month"); return; }
+      if (k === "y") { e.preventDefault(); setView("year"); return; }
       if (k === "g") { e.preventDefault(); setView("day"); setPeriod("grid"); return; }
       if (k === "s") { e.preventDefault(); setView("day"); setPeriod("schedule"); return; }
       if (k === "d") { e.preventDefault(); setView("day"); setPeriod("timeofday"); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [day, setView, setPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [day, view, setView, setPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showContextPanel = !isMobile && panel.context && (view === "day" || view === "3day");
   const showFocusPanel = !isMobile && panel.focus && view === "day";
   const showTaskPanel = !isMobile && panel.task && (view === "day" || view === "3day" || view === "week");
-  const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 0 }), [day]);
+  const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
+  const openDay = (d: Date) => { setView("day"); go(d); };
 
   return (
     <div className="planner-surface flex flex-col gap-3 pb-24">
@@ -157,7 +191,7 @@ export default function Planner() {
               </div>
             </SheetContent>
           </Sheet>
-          <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 rounded-full" onClick={() => go(addDays(day, -1))} aria-label="Previous day">
+          <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 rounded-full" onClick={() => step(-1)} aria-label="Previous period">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <button
@@ -166,9 +200,9 @@ export default function Planner() {
             className="min-w-0 flex-1 truncate text-center font-display text-[15px] font-semibold"
             aria-label={`${format(day, "EEEE, MMMM d")} — tap for today`}
           >
-            {format(day, "EEE, MMM d")}
+            {view === "month" ? format(day, "MMMM yyyy") : view === "year" ? format(day, "yyyy") : format(day, "EEE, MMM d")}
           </button>
-          <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 rounded-full" onClick={() => go(addDays(day, 1))} aria-label="Next day">
+          <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 rounded-full" onClick={() => step(1)} aria-label="Next period">
             <ChevronRight className="h-4 w-4" />
           </Button>
           <DropdownMenu>
@@ -196,6 +230,19 @@ export default function Planner() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <PlannerViewToggle value={view} onChange={setView} className="shrink-0" />
           {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
+          {view === "week" && (
+            <PlannerRangeModeTabs
+              value={weekMode} onChange={setWeekMode} className="shrink-0"
+              options={[{ id: "grid", label: "Grid" }, { id: "board", label: "Board" }]}
+            />
+          )}
+          {view === "month" && (
+            <PlannerRangeModeTabs
+              value={monthMode} onChange={setMonthMode} className="shrink-0"
+              options={[{ id: "calendar", label: "Calendar" }, { id: "overview", label: "Overview" }]}
+            />
+          )}
+          <PlannerKindFilter className="shrink-0" />
         </div>
         </div>
       ) : (
@@ -206,8 +253,8 @@ export default function Planner() {
                 date={day}
                 view={view}
                 onView={setView}
-                onPrev={() => go(addDays(day, -1))}
-                onNext={() => go(addDays(day, 1))}
+                onPrev={() => step(-1)}
+                onNext={() => step(1)}
                 onGoto={go}
                 onToday={() => go(new Date())}
                 onCapture={() => setCaptureOpen(true)}
@@ -219,7 +266,20 @@ export default function Planner() {
 
           <div className="flex flex-wrap items-center gap-2">
             {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} />}
-            <TrayToggle className="ml-auto" />
+            {view === "week" && (
+              <PlannerRangeModeTabs
+                value={weekMode} onChange={setWeekMode}
+                options={[{ id: "grid", label: "Grid" }, { id: "board", label: "Board" }]}
+              />
+            )}
+            {view === "month" && (
+              <PlannerRangeModeTabs
+                value={monthMode} onChange={setMonthMode}
+                options={[{ id: "calendar", label: "Calendar" }, { id: "overview", label: "Overview" }]}
+              />
+            )}
+            <PlannerKindFilter className="ml-auto" />
+            <TrayToggle />
             {(view === "day" || view === "3day" || view === "week") && (
               <Button
                 size="icon"
@@ -335,9 +395,28 @@ export default function Planner() {
             {view === "day" && period === "timeofday" && segment !== "all" && (
               <PlannerPeriodList date={day} period={segment} />
             )}
-            {view === "3day" && <PlannerMultiDayView start={day} days={3} unified />}
-            {view === "week" && <PlannerMultiDayView start={weekStart} days={7} unified />}
-            {view === "month" && <PlannerMonthView date={day} onSelectDay={(d) => { setView("day"); go(d); }} />}
+            {view === "3day" && (
+              <div className="h-[calc(100vh-280px)] min-h-[420px]">
+                <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} />
+              </div>
+            )}
+            {view === "week" && weekMode === "grid" && (
+              <div className={isMobile ? "h-[calc(100dvh-260px)] min-h-[360px]" : "h-[calc(100vh-280px)] min-h-[420px]"}>
+                <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} />
+              </div>
+            )}
+            {view === "week" && weekMode === "board" && (
+              <PlannerWeekBoard weekStart={weekStart} onSelectDay={openDay} />
+            )}
+            {view === "month" && monthMode === "calendar" && (
+              <div className={isMobile ? "min-h-[520px]" : "h-[calc(100vh-280px)] min-h-[520px]"}>
+                <PlannerMonthView date={day} onSelectDay={openDay} />
+              </div>
+            )}
+            {view === "month" && monthMode === "overview" && (
+              <PlannerMonthOverview date={day} onJumpToDate={openDay} />
+            )}
+            {view === "year" && <PlannerYearView date={day} onSelectDay={openDay} />}
           </div>
           {view === "day" && <PlannerDayReview date={day} className="mt-3" />}
         </div>

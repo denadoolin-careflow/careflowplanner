@@ -1,0 +1,98 @@
+import { useState } from "react";
+import { addDays, format, isSameDay } from "date-fns";
+import { toast } from "sonner";
+import { useStore } from "@/lib/store";
+import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
+import { PlannerCapacityBar } from "./PlannerCapacityBar";
+import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
+import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
+import { cn } from "@/lib/utils";
+
+/**
+ * Week as a planning board: one column per day with capacity, drag items
+ * between days, plus an unscheduled rail and the week review below.
+ */
+export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
+  weekStart: Date;
+  onSelectDay?: (d: Date) => void;
+  onOpenItem?: (item: PlannerFeedItem) => void;
+}) {
+  const { updateTask, updateAppointment } = useStore() as any;
+  const { byDay } = usePlannerFeed(weekStart, 7);
+  const [dragOver, setDragOver] = useState<string | null>(null);
+  const cols = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const today = new Date();
+
+  const onDrop = (targetISO: string, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(null);
+    const raw = e.dataTransfer.getData("application/x-planner-item") || e.dataTransfer.getData("text/plain");
+    if (!raw) return;
+    const [type, id] = raw.split(":");
+    if (type === "task") { updateTask(id, { dueDate: targetISO }); toast.success(`Moved to ${format(new Date(`${targetISO}T12:00:00`), "EEE, MMM d")}`); }
+    else if (type === "appointment") { updateAppointment(id, { date: targetISO }); toast.success("Appointment moved"); }
+    else toast.message("That item can't be moved from here");
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        {cols.map(d => {
+          const key = format(d, "yyyy-MM-dd");
+          const items = byDay.get(key) ?? [];
+          const isToday = isSameDay(d, today);
+          return (
+            <div
+              key={key}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(key); }}
+              onDragLeave={() => setDragOver(cur => (cur === key ? null : cur))}
+              onDrop={(e) => onDrop(key, e)}
+              className={cn(
+                "flex min-h-[160px] flex-col rounded-2xl border border-border/60 bg-card/40 p-2 transition-colors",
+                dragOver === key && "border-primary/60 bg-primary/5",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => onSelectDay?.(d)}
+                className="mb-1.5 flex items-baseline justify-between gap-2 text-left"
+              >
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(d, "EEE")}</span>
+                <span className={cn("font-display text-sm font-semibold", isToday && "text-primary")}>{format(d, "MMM d")}</span>
+              </button>
+              <PlannerCapacityBar date={d} className="mb-1.5" />
+              <div className="flex flex-1 flex-col gap-1">
+                {items.length === 0 && <p className="px-1 py-2 text-[11px] text-muted-foreground">Nothing planned</p>}
+                {items.map(it => (
+                  <button
+                    key={it.id}
+                    type="button"
+                    draggable={it.sourceRef.type === "task" || it.sourceRef.type === "appointment"}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("application/x-planner-item", `${it.sourceRef.type}:${it.sourceRef.id}`);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onClick={() => onOpenItem?.(it)}
+                    className={cn(
+                      "rounded-lg border border-border/50 px-2 py-1 text-left text-[11px] leading-snug transition-colors hover:bg-muted/50",
+                      it.done && "opacity-50 line-through",
+                    )}
+                    style={{ borderLeft: `3px solid ${it.color}` }}
+                  >
+                    <span className="block break-words">{it.title}</span>
+                    {it.time && <span className="text-[10px] text-muted-foreground">{it.time}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+        <UnscheduledTasksRail />
+        <WeekPlanningDashboard weekStart={weekStart} onJumpToDay={onSelectDay} />
+      </div>
+    </div>
+  );
+}
