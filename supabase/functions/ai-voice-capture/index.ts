@@ -55,18 +55,19 @@ const TOOL = {
 } as const;
 
 async function transcribeAudio(apiKey: string, audioBase64: string, mimeType: string): Promise<string> {
-  // OpenAI Whisper via multipart/form-data
+  // Lovable AI Gateway transcription (OpenAI-compatible multipart)
   const bin = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
   const ext = mimeType.includes("wav") ? "wav" : mimeType.includes("mp3") ? "mp3" : mimeType.includes("mp4") ? "mp4" : "webm";
   const form = new FormData();
   form.append("file", new Blob([bin], { type: mimeType }), `audio.${ext}`);
-  form.append("model", "whisper-1");
-  form.append("response_format", "json");
-  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+  form.append("model", "openai/gpt-4o-mini-transcribe");
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}` },
     body: form,
   });
+  if (res.status === 429) throw new Error("rate_limited");
+  if (res.status === 402) throw new Error("credits_exhausted");
   if (!res.ok) {
     const txt = await res.text();
     throw new Error(`transcribe_failed:${res.status}:${txt.slice(0, 200)}`);
@@ -76,11 +77,11 @@ async function transcribeAudio(apiKey: string, audioBase64: string, mimeType: st
 }
 
 async function organizeTranscript(apiKey: string, transcript: string, todayISO: string) {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "gpt-5-mini",
+      model: "google/gemini-3.6-flash",
       messages: [
         { role: "system", content: SYSTEM },
         {
@@ -109,7 +110,7 @@ Deno.serve(async (req) => {
   try {
     const __gate = await meterRequest(req, WEIGHTS.medium, corsHeaders);
     if ("response" in __gate) return __gate.response;
-    const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
     if (!LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
