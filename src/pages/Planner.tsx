@@ -167,9 +167,9 @@ export default function Planner() {
     return () => window.removeEventListener("keydown", onKey);
   }, [day, view, setView, setPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const showContextPanel = !isMobile && panel.context && (view === "day" || view === "3day");
+  const showContextPanel = !isMobile && panel.context && view !== "year";
   const showFocusPanel = !isMobile && panel.focus && view === "day";
-  const showTaskPanel = !isMobile && panel.task && (view === "day" || view === "3day" || view === "week");
+  const showTaskPanel = !isMobile && panel.task && view !== "year";
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const openDay = (d: Date) => { setView("day"); go(d); };
 
