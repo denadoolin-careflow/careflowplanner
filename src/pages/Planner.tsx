@@ -8,7 +8,6 @@ import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
 import { PlannerQuickCapture } from "@/components/planner/PlannerQuickCapture";
-import { PlannerMultiDayView } from "@/components/planner/PlannerMultiDayView";
 import { PlannerMonthView } from "@/components/planner/PlannerMonthView";
 import { PlannerWeekGrid } from "@/components/planner/PlannerWeekGrid";
 import { PlannerWeekBoard } from "@/components/planner/PlannerWeekBoard";
