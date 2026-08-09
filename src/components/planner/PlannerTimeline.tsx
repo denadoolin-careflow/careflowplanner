@@ -113,7 +113,15 @@ function assignLanes(items: ScheduledItem[]): (ScheduledItem & { lane: number; l
   return clusters.flat();
 }
 
-export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?: boolean; bare?: boolean }) {
+export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
+  date: Date;
+  compact?: boolean;
+  bare?: boolean;
+  /** Hide the built-in hour rail — the week grid supplies one shared gutter. */
+  gutterless?: boolean;
+  /** Let an outer container own vertical scrolling (multi-day grid). */
+  noScroll?: boolean;
+}) {
   const { state, updateTask, addTask, toggleTask } = useStore();
   const pomo = usePomodoro();
   const [focusTaskId] = usePlannerFocusTaskId();
@@ -700,9 +708,10 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
           {isMobile && <PlannerMobileInboxRail />}
         </div>
       )}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className={cn("flex-1", noScroll ? "overflow-visible" : "overflow-y-auto")}>
         <div className="relative flex">
           {/* Hour rail */}
+          {!gutterless && (
           <div className="w-14 shrink-0 border-r border-border/50 text-[10px] text-muted-foreground">
             {Array.from({ length: END_H - START_H }, (_, i) => {
               const h = START_H + i;
@@ -712,6 +721,7 @@ export function PlannerTimeline({ date, compact, bare }: { date: Date; compact?:
               </div>;
             })}
           </div>
+          )}
           {/* Grid */}
           <div
             ref={gridRef}
