@@ -12,6 +12,7 @@ const TAGS_KEY = "careflow:planner:tag-filter";
 const FOCUS_TASK_KEY = "careflow:planner:focus-task";
 const PANELS_KEY = "careflow:planner:panels";
 const WEEK_MODE_KEY = "careflow:planner:week-mode";
+const WEEK_HEADER_KEY = "careflow:planner:week-header";
 const MONTH_MODE_KEY = "careflow:planner:month-mode";
 
 function read<T>(key: string, fallback: T): T {
@@ -40,6 +41,9 @@ export const usePlannerSort = () => useLS<PlannerSort>(SORT_KEY, "manual");
 export const usePlannerTagFilter = () => useLS<string[]>(TAGS_KEY, []);
 export const usePlannerFocusTaskId = () => useLS<string | null>(FOCUS_TASK_KEY, null);
 export const usePlannerWeekMode = () => useLS<PlannerWeekMode>(WEEK_MODE_KEY, "grid");
+/** Week column headers: full cosmic insight vs. compact date+weather. */
+export type PlannerWeekHeaderMode = "insight" | "compact";
+export const usePlannerWeekHeaderMode = () => useLS<PlannerWeekHeaderMode>(WEEK_HEADER_KEY, "insight");
 export const usePlannerMonthMode = () => useLS<PlannerMonthMode>(MONTH_MODE_KEY, "calendar");
 
 export type PlannerPanelId = "task" | "focus" | "context";

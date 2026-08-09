@@ -1,49 +1,97 @@
+import { useEffect, useRef, useState } from "react";
 import { addDays, format, isSameDay } from "date-fns";
+import { Sparkles, Rows3 } from "lucide-react";
 import { PlannerTimeline } from "./PlannerTimeline";
 import { PlannerAllDayRow } from "./PlannerAllDayRow";
+import { WeekDayHeader } from "./WeekDayHeader";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
+import { usePlannerWeekHeaderMode } from "@/lib/planner-prefs";
+import { useKindColors, KIND_LABEL, type KindKey } from "@/lib/calendar-colors";
+import { PLANNER_START_H, PLANNER_END_H, HOUR_PX } from "@/lib/planner-metrics";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const GUTTER_W = 56;
+const LEGEND_KINDS: KindKey[] = ["task", "appt", "care", "meal", "bday", "hol", "gcal"];
+
 /** Multi-day hour grid with an all-day row fed by the shared planner feed. */
-export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay }: {
+export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCustomize }: {
   start: Date;
   days?: number;
   onOpenItem?: (item: PlannerFeedItem) => void;
   onSelectDay?: (d: Date) => void;
+  onCustomize?: () => void;
 }) {
   const cols = Array.from({ length: days }, (_, i) => addDays(start, i));
   const today = new Date();
   const { byDay } = usePlannerFeed(start, days);
+  const [headerMode, setHeaderMode] = usePlannerWeekHeaderMode();
+  const { colorOf } = useKindColors();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [nowMin, setNowMin] = useState<number | null>(null);
+  const totalMin = (PLANNER_END_H - PLANNER_START_H) * 60;
+  const todayIdx = cols.findIndex(d => isSameDay(d, today));
 
+  useEffect(() => {
+    const tick = () => {
+      const n = new Date();
+      const m = n.getHours() * 60 + n.getMinutes() - PLANNER_START_H * 60;
+      setNowMin(m >= 0 && m <= totalMin ? m : null);
+    };
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, [totalMin]);
+
+  // Open the week around the current hour.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const t = window.setTimeout(() => {
+      const mins = (new Date().getHours() - PLANNER_START_H) * 60 + new Date().getMinutes();
+      el.scrollTo({ top: Math.max(0, mins * (HOUR_PX / 60) - el.clientHeight / 3) });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [format(start, "yyyy-MM-dd")]);
+
+  const colTemplate = `${GUTTER_W}px repeat(${days}, minmax(0, 1fr))`;
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
-      <div
-        className="sticky top-0 z-10 grid border-b border-border/60 bg-card/70 backdrop-blur"
-        style={{ gridTemplateColumns: `repeat(${days}, minmax(0, 1fr))` }}
-      >
-        {cols.map(d => {
-          const key = format(d, "yyyy-MM-dd");
-          const isToday = isSameDay(d, today);
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onSelectDay?.(d)}
-              className={cn("flex flex-col items-center py-2 text-center transition-colors hover:bg-muted/40", isToday && "text-primary")}
-            >
-              <span className="text-[10px] uppercase tracking-[0.2em] opacity-80">{format(d, "EEE")}</span>
-              <span className={cn("mt-0.5 font-display text-lg font-semibold leading-none",
-                isToday && "grid h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground")}>
-                {format(d, "d")}
-              </span>
-            </button>
-          );
-        })}
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5">
+        <span className="truncate text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          {format(start, "MMM d")} – {format(addDays(start, days - 1), "MMM d")}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 rounded-full px-2.5 text-[11.5px]"
+          onClick={() => setHeaderMode(headerMode === "insight" ? "compact" : "insight")}
+          aria-label={headerMode === "insight" ? "Switch to compact week headers" : "Switch to full insight week headers"}
+        >
+          {headerMode === "insight" ? <Rows3 className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
+          {headerMode === "insight" ? "Compact" : "Full insight"}
+        </Button>
       </div>
+
+      {/* Day headers */}
       <div
-        className="grid border-b border-border/40 bg-background/40"
-        style={{ gridTemplateColumns: `repeat(${days}, minmax(0, 1fr))` }}
+        className="grid border-b border-border/60 bg-card/70 backdrop-blur"
+        style={{ gridTemplateColumns: colTemplate }}
       >
+        <div className="border-r border-border/50" />
+        {cols.map((d, i) => (
+          <div key={format(d, "yyyy-MM-dd")} className={cn("min-w-0", i > 0 && "border-l border-border/40")}>
+            <WeekDayHeader date={d} mode={headerMode} onSelect={onSelectDay} />
+          </div>
+        ))}
+      </div>
+
+      {/* All-day row */}
+      <div className="grid border-b border-border/40 bg-background/40" style={{ gridTemplateColumns: colTemplate }}>
+        <div className="flex items-center justify-end border-r border-border/50 pr-1 text-[9px] uppercase tracking-wider text-muted-foreground/70">
+          All day
+        </div>
         {cols.map((d, i) => (
           <PlannerAllDayRow
             key={format(d, "yyyy-MM-dd")}
@@ -53,12 +101,68 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay }: {
           />
         ))}
       </div>
-      <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: `repeat(${days}, minmax(0, 1fr))` }}>
-        {cols.map((d, i) => (
-          <div key={format(d, "yyyy-MM-dd")} className={cn("min-h-0 min-w-0", i > 0 && "border-l border-border/40")}>
-            <PlannerTimeline date={d} bare />
+
+      {/* Shared-gutter time grid */}
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+        <div className="relative grid" style={{ gridTemplateColumns: colTemplate }}>
+          {/* Time gutter */}
+          <div
+            className="relative shrink-0 border-r border-border/50 text-[10px] text-muted-foreground"
+            style={{ height: totalMin * (HOUR_PX / 60) }}
+          >
+            {Array.from({ length: PLANNER_END_H - PLANNER_START_H }, (_, i) => {
+              const h = PLANNER_START_H + i;
+              return (
+                <div key={h} style={{ height: HOUR_PX }} className="relative pr-1 text-right">
+                  <span className="absolute -top-2 right-1">{format(new Date(2000, 0, 1, h), "h a")}</span>
+                </div>
+              );
+            })}
+            {nowMin !== null && (
+              <span
+                className="absolute right-1 -translate-y-1/2 rounded bg-primary px-1 font-mono text-[9px] text-primary-foreground"
+                style={{ top: nowMin * (HOUR_PX / 60) }}
+              >
+                {format(new Date(), "h:mm a")}
+              </span>
+            )}
           </div>
+          {cols.map((d, i) => (
+            <div key={format(d, "yyyy-MM-dd")} className={cn("relative min-w-0", i > 0 && "border-l border-border/40", isSameDay(d, today) && "bg-primary/[0.03]")}>
+              <PlannerTimeline date={d} bare gutterless noScroll compact />
+            </div>
+          ))}
+          {/* Now line across today's column */}
+          {nowMin !== null && todayIdx >= 0 && (
+            <div
+              className="pointer-events-none absolute z-20 flex items-center"
+              style={{
+                top: nowMin * (HOUR_PX / 60),
+                left: `calc(${GUTTER_W}px + (100% - ${GUTTER_W}px) * ${todayIdx / days})`,
+                width: `calc((100% - ${GUTTER_W}px) / ${days})`,
+              }}
+              aria-hidden
+            >
+              <span className="h-2 w-2 -translate-x-1 rounded-full bg-primary shadow" />
+              <span className="h-px flex-1 bg-primary" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/60 px-3 py-1.5 text-[10px] text-muted-foreground">
+        {LEGEND_KINDS.map(k => (
+          <span key={k} className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full" style={{ background: colorOf(k) }} aria-hidden />
+            {KIND_LABEL[k]}
+          </span>
         ))}
+        {onCustomize && (
+          <button type="button" onClick={onCustomize} className="ml-auto rounded-full px-2 py-0.5 hover:text-foreground">
+            Customize view
+          </button>
+        )}
       </div>
     </div>
   );
