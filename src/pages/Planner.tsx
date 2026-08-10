@@ -174,7 +174,13 @@ export default function Planner() {
   const openDay = (d: Date) => { setView("day"); go(d); };
 
   return (
-    <div className="planner-surface flex flex-col gap-3 pb-24">
+    <div
+      className={
+        isMobile
+          ? "planner-surface flex flex-col gap-3 pb-24"
+          : "planner-surface flex h-[calc(100dvh-9rem)] min-h-[560px] flex-col gap-3 overflow-hidden"
+      }
+    >
       {isMobile ? (
         <div className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
         <div className="flex items-center gap-1">
