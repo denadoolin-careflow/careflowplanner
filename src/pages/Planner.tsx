@@ -345,7 +345,11 @@ export default function Planner() {
       )}
 
       <div
-        className="grid items-start gap-3"
+        className={
+          isMobile
+            ? "grid items-start gap-3"
+            : "grid min-h-0 flex-1 items-stretch gap-3 overflow-hidden"
+        }
         style={{
           gridTemplateColumns: [
             showTaskPanel ? `${taskPanelWidth}px 6px` : null,
@@ -357,7 +361,9 @@ export default function Planner() {
       >
         {showTaskPanel && (
           <>
-            <TaskSourcePanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
+            <div className="min-h-0 overflow-y-auto overscroll-contain pr-1">
+              <TaskSourcePanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
+            </div>
             <div
               role="separator"
               aria-orientation="vertical"
@@ -370,9 +376,9 @@ export default function Planner() {
             </div>
           </>
         )}
-        <div className={isMobile ? "min-w-0" : "flex min-w-0 flex-col"}>
+        <div className={isMobile ? "min-w-0" : "flex min-h-0 min-w-0 flex-col overflow-y-auto overscroll-contain pr-1"}>
           {view === "day" && (
-            <div className="mb-2 space-y-2">
+            <div className="mb-2 shrink-0 space-y-2">
               <PlannerCapacityBar date={day} />
               <PlannerEmptyDay
                 date={day}
@@ -381,12 +387,12 @@ export default function Planner() {
               />
             </div>
           )}
-          <div className="min-w-0">
+          <div className={isMobile ? "min-w-0" : "flex min-h-0 min-w-0 flex-1 flex-col"}>
             {view === "day" && period === "grid" && (
               isMobile ? (
                 <div className="h-[calc(100dvh-250px)] min-h-[340px]"><PlannerTimeline date={day} /></div>
               ) : (
-                <div className="h-[calc(100vh-260px)] min-h-[420px]"><PlannerTimeline date={day} /></div>
+                <div className="min-h-[420px] flex-1"><PlannerTimeline date={day} /></div>
               )
             )}
             {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
@@ -401,12 +407,12 @@ export default function Planner() {
               <PlannerPeriodList date={day} period={segment} />
             )}
             {view === "3day" && (
-              <div className="h-[calc(100vh-280px)] min-h-[420px]">
+              <div className="min-h-[420px] flex-1">
                 <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} />
               </div>
             )}
             {view === "week" && weekMode === "grid" && (
-              <div className={isMobile ? "h-[calc(100dvh-260px)] min-h-[360px]" : "h-[calc(100vh-280px)] min-h-[420px]"}>
+              <div className={isMobile ? "h-[calc(100dvh-260px)] min-h-[360px]" : "min-h-[420px] flex-1"}>
                 <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} />
               </div>
             )}
@@ -414,7 +420,7 @@ export default function Planner() {
               <PlannerWeekBoard weekStart={weekStart} onSelectDay={openDay} />
             )}
             {view === "month" && monthMode === "calendar" && (
-              <div className={isMobile ? "min-h-[520px]" : "h-[calc(100vh-280px)] min-h-[520px]"}>
+              <div className={isMobile ? "min-h-[520px]" : "min-h-[520px] flex-1"}>
                 <PlannerMonthView date={day} onSelectDay={openDay} />
               </div>
             )}
@@ -423,11 +429,17 @@ export default function Planner() {
             )}
             {view === "year" && <PlannerYearView date={day} onSelectDay={openDay} />}
           </div>
-          {view === "day" && <PlannerDayReview date={day} className="mt-3" />}
+          {view === "day" && <PlannerDayReview date={day} className="mt-3 shrink-0" />}
         </div>
-        {showFocusPanel && <PlannerFocusPanel date={day} className="self-start" />}
+        {showFocusPanel && (
+          <div className="min-h-0 overflow-y-auto overscroll-contain">
+            <PlannerFocusPanel date={day} className="self-start" />
+          </div>
+        )}
         {showContextPanel && (
-          <PlannerContextPanel date={day} onChangeDate={go} />
+          <div className="min-h-0 overflow-y-auto overscroll-contain">
+            <PlannerContextPanel date={day} onChangeDate={go} />
+          </div>
         )}
       </div>
 
