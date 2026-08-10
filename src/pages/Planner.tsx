@@ -376,7 +376,7 @@ export default function Planner() {
             </div>
           </>
         )}
-        <div className={isMobile ? "min-w-0" : "flex min-h-0 min-w-0 flex-col overflow-y-auto overscroll-contain pr-1"}>
+        <div className={isMobile ? "min-w-0" : "flex min-h-0 min-w-0 flex-col overflow-hidden"}>
           {view === "day" && (
             <div className="mb-2 shrink-0 space-y-2">
               <PlannerCapacityBar date={day} />
@@ -387,12 +387,12 @@ export default function Planner() {
               />
             </div>
           )}
-          <div className={isMobile ? "min-w-0" : "flex min-h-0 min-w-0 flex-1 flex-col"}>
+          <div className={isMobile ? "min-w-0" : "flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain pr-1"}>
             {view === "day" && period === "grid" && (
               isMobile ? (
                 <div className="h-[calc(100dvh-250px)] min-h-[340px]"><PlannerTimeline date={day} /></div>
               ) : (
-                <div className="min-h-[420px] flex-1"><PlannerTimeline date={day} /></div>
+                <div className="h-full min-h-[420px]"><PlannerTimeline date={day} /></div>
               )
             )}
             {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
@@ -407,12 +407,12 @@ export default function Planner() {
               <PlannerPeriodList date={day} period={segment} />
             )}
             {view === "3day" && (
-              <div className="min-h-[420px] flex-1">
+              <div className="h-full min-h-[420px]">
                 <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} />
               </div>
             )}
             {view === "week" && weekMode === "grid" && (
-              <div className={isMobile ? "h-[calc(100dvh-260px)] min-h-[360px]" : "min-h-[420px] flex-1"}>
+              <div className={isMobile ? "h-[calc(100dvh-260px)] min-h-[360px]" : "h-full min-h-[420px]"}>
                 <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} />
               </div>
             )}
@@ -420,7 +420,7 @@ export default function Planner() {
               <PlannerWeekBoard weekStart={weekStart} onSelectDay={openDay} />
             )}
             {view === "month" && monthMode === "calendar" && (
-              <div className={isMobile ? "min-h-[520px]" : "min-h-[520px] flex-1"}>
+              <div className={isMobile ? "min-h-[520px]" : "h-full min-h-[520px]"}>
                 <PlannerMonthView date={day} onSelectDay={openDay} />
               </div>
             )}
