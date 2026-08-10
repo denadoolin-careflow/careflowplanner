@@ -20,12 +20,13 @@ const OPTIONS: { id: PlannerPeriod; label: string; Icon: React.ComponentType<{ c
   { id: "timeofday", label: "Time of day", Icon: Clock4 },
 ];
 
-export function PlannerPeriodTabs({ value, onChange, className }: {
-  value: PlannerPeriod; onChange: (v: PlannerPeriod) => void; className?: string;
+export function PlannerPeriodTabs({ value, onChange, className, hideGrid }: {
+  value: PlannerPeriod; onChange: (v: PlannerPeriod) => void; className?: string; hideGrid?: boolean;
 }) {
+  const options = hideGrid ? OPTIONS.filter(o => o.id !== "grid") : OPTIONS;
   return (
     <div className={cn("inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-full border border-border/60 bg-background/60 p-0.5", className)}>
-      {OPTIONS.map(o => {
+      {options.map(o => {
         const active = value === o.id;
         return (
           <button key={o.id}
