@@ -105,6 +105,7 @@ export default function Planner() {
   const [captureOpen, setCaptureOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [view, setView] = usePlannerView();
   const [weekMode, setWeekMode] = usePlannerWeekMode();
   const [monthMode, setMonthMode] = usePlannerMonthMode();
@@ -143,6 +144,7 @@ export default function Planner() {
     try { window.localStorage.setItem("careflow.planner.taskPanelWidth", String(taskPanelWidth)); } catch {}
   }, [taskPanelWidth]);
   const resizeRef = useRef<{ startX: number; startW: number } | null>(null);
+  const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const onResizeStart = (e: React.PointerEvent) => {
     e.preventDefault();
     resizeRef.current = { startX: e.clientX, startW: taskPanelWidth };
@@ -172,7 +174,7 @@ export default function Planner() {
   };
 
   // Global hotkeys: c capture · Cmd/Ctrl+K command bar · t today · [ / ] prev/next
-  // 1-4 range · g grid · s schedule · d time of day
+  // 1-5 range · Shift+G/S/D day sub-views · ? shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -180,6 +182,14 @@ export default function Planner() {
       if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) { e.preventDefault(); setCmdOpen(o => !o); return; }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key.toLowerCase();
+      if (e.shiftKey) {
+        if (k === "g") { e.preventDefault(); setView("day"); setPeriod("grid"); return; }
+        if (k === "s") { e.preventDefault(); setView("day"); setPeriod("schedule"); return; }
+        if (k === "d") { e.preventDefault(); setView("day"); setPeriod("timeofday"); return; }
+        if (e.key === "?") { e.preventDefault(); setShortcutsOpen(true); return; }
+      }
+      if (e.key === "?") { e.preventDefault(); setShortcutsOpen(true); return; }
+      if (e.shiftKey) return;
       if (k === "c") { e.preventDefault(); setCaptureOpen(true); return; }
       if (k === "t") { e.preventDefault(); go(new Date()); return; }
       if (e.key === "[") { e.preventDefault(); step(-1); return; }
@@ -191,10 +201,7 @@ export default function Planner() {
       if (e.key === "5") { e.preventDefault(); setView("year"); return; }
       if (k === "w") { e.preventDefault(); setView("week"); return; }
       if (k === "m") { e.preventDefault(); setView("month"); return; }
-      if (k === "y") { e.preventDefault(); setView("year"); return; }
-      if (k === "g") { e.preventDefault(); setView("day"); setPeriod("grid"); return; }
-      if (k === "s") { e.preventDefault(); setView("day"); setPeriod("schedule"); return; }
-      if (k === "d") { e.preventDefault(); setView("day"); setPeriod("timeofday"); }
+      if (k === "y") { e.preventDefault(); setView("year"); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -202,9 +209,20 @@ export default function Planner() {
 
   const showContextPanel = !isMobile && panel.context && view !== "year";
   const showFocusPanel = !isMobile && panel.focus && view === "day";
-  const showTaskPanel = !isMobile && panel.task && view !== "year";
+  const showTaskPanel = !isMobile && panel.task;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const openDay = (d: Date) => { setView("day"); go(d); };
+
+  const scrollMode = scrollModeFor(view, period, weekMode, monthMode);
+  const isFixed = scrollMode === "fixed";
+  const mobileFillHeight = useFillHeight(mobileHeaderRef, 96, isMobile && isFixed);
+
+  const onResizeKey = useCallback((e: React.KeyboardEvent) => {
+    const stepPx = e.shiftKey ? 40 : 12;
+    if (e.key === "ArrowLeft") { e.preventDefault(); setTaskPanelWidth(w => Math.max(220, w - stepPx)); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); setTaskPanelWidth(w => Math.min(560, w + stepPx)); }
+    else if (e.key === "Home") { e.preventDefault(); setTaskPanelWidth(280); }
+  }, []);
 
   return (
     <div
