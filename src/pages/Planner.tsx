@@ -27,6 +27,7 @@ import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
 import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
 import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsSheet";
+import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMonthMode, type PlannerView } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
