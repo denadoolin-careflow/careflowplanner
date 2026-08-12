@@ -438,9 +438,14 @@ export default function Planner() {
               role="separator"
               aria-orientation="vertical"
               aria-label="Resize task panel"
+              aria-valuenow={taskPanelWidth}
+              aria-valuemin={220}
+              aria-valuemax={560}
+              tabIndex={0}
               onPointerDown={onResizeStart}
+              onKeyDown={onResizeKey}
               onDoubleClick={() => setTaskPanelWidth(280)}
-              className="group relative -mx-1 cursor-col-resize"
+              className="group relative -mx-1 cursor-col-resize rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <div className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-border/60 transition-colors group-hover:bg-primary/60" />
             </div>
@@ -457,12 +462,20 @@ export default function Planner() {
               />
             </div>
           )}
-          <div className={isMobile ? "min-w-0" : "flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain pr-1"}>
+          <div
+            className={
+              isMobile
+                ? "min-w-0"
+                : isFixed
+                  ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                  : "flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pr-1"
+            }
+          >
             {view === "day" && period === "grid" && (
               isMobile ? (
-                <div className="h-[calc(100dvh-250px)] min-h-[340px]"><PlannerTimeline date={day} /></div>
+                <div style={{ height: mobileFillHeight ?? 420 }}><PlannerTimeline date={day} /></div>
               ) : (
-                <div className="h-full min-h-[420px]"><PlannerTimeline date={day} /></div>
+                <div className="min-h-0 flex-1"><PlannerTimeline date={day} /></div>
               )
             )}
             {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
@@ -477,12 +490,12 @@ export default function Planner() {
               <PlannerPeriodList date={day} period={segment} />
             )}
             {view === "3day" && (
-              <div className="h-full min-h-[420px]">
+              <div className={isMobile ? "" : "min-h-0 flex-1"} style={isMobile ? { height: mobileFillHeight ?? 420 } : undefined}>
                 <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} />
               </div>
             )}
             {view === "week" && weekMode === "grid" && (
-              <div className={isMobile ? "h-[calc(100dvh-260px)] min-h-[360px]" : "h-full min-h-[420px]"}>
+              <div className={isMobile ? "" : "min-h-0 flex-1"} style={isMobile ? { height: mobileFillHeight ?? 420 } : undefined}>
                 <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} />
               </div>
             )}
@@ -490,7 +503,7 @@ export default function Planner() {
               <PlannerWeekBoard weekStart={weekStart} onSelectDay={openDay} />
             )}
             {view === "month" && monthMode === "calendar" && (
-              <div className={isMobile ? "min-h-[520px]" : "h-full min-h-[520px]"}>
+              <div className={isMobile ? "" : "min-h-0 flex-1"} style={isMobile ? { height: mobileFillHeight ?? 520 } : undefined}>
                 <PlannerMonthView date={day} onSelectDay={openDay} />
               </div>
             )}
@@ -498,8 +511,9 @@ export default function Planner() {
               <PlannerMonthOverview date={day} onJumpToDate={openDay} />
             )}
             {view === "year" && <PlannerYearView date={day} onSelectDay={openDay} />}
+            {view === "day" && !isFixed && <PlannerDayReview date={day} />}
           </div>
-          {view === "day" && <PlannerDayReview date={day} className="mt-3 shrink-0" />}
+          {view === "day" && isFixed && <PlannerDayReview date={day} className="mt-3 shrink-0" />}
         </div>
         {showFocusPanel && (
           <div className="min-h-0 overflow-y-auto overscroll-contain">
