@@ -145,6 +145,8 @@ export default function Planner() {
   }, [taskPanelWidth]);
   const resizeRef = useRef<{ startX: number; startW: number } | null>(null);
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const shellTopRef = useRef<HTMLDivElement>(null);
   const onResizeStart = (e: React.PointerEvent) => {
     e.preventDefault();
     resizeRef.current = { startX: e.clientX, startW: taskPanelWidth };
@@ -216,6 +218,8 @@ export default function Planner() {
   const scrollMode = scrollModeFor(view, period, weekMode, monthMode);
   const isFixed = scrollMode === "fixed";
   const mobileFillHeight = useFillHeight(mobileHeaderRef, 96, isMobile && isFixed);
+  // Desktop shell fills whatever is left under the app chrome — no magic numbers.
+  const shellHeight = useFillHeight(shellTopRef, 24, !isMobile);
 
   const onResizeKey = useCallback((e: React.KeyboardEvent) => {
     const stepPx = e.shiftKey ? 40 : 12;
