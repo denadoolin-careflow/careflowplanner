@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { addDays, addMonths, addYears, format, isValid, parseISO, startOfWeek } from "date-fns";
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
@@ -26,6 +26,7 @@ import { PlannerCapacityBar } from "@/components/planner/PlannerCapacityBar";
 import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
 import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
+import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsSheet";
 import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMonthMode, type PlannerView } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -38,6 +39,38 @@ import { tray, useTray } from "@/lib/tray-store";
 
 const SEGMENTS = ["all", "morning", "afternoon", "evening"] as const;
 type Segment = (typeof SEGMENTS)[number];
+
+/**
+ * Which views own their internal scroll ("fixed") and which flow naturally in
+ * the page body ("flowing"). Exactly one element owns the scroll per view.
+ */
+function scrollModeFor(view: PlannerView, period: string, weekMode: string, monthMode: string): "fixed" | "flowing" {
+  if (view === "day") return period === "grid" ? "fixed" : "flowing";
+  if (view === "3day") return "fixed";
+  if (view === "week") return weekMode === "grid" ? "fixed" : "flowing";
+  if (view === "month") return monthMode === "calendar" ? "fixed" : "flowing";
+  return "flowing";
+}
+
+/** Measures the space left under a sticky header so mobile views can fill it. */
+function useFillHeight(ref: React.RefObject<HTMLElement>, bottomGap: number, enabled: boolean) {
+  const [h, setH] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (!enabled) { setH(null); return; }
+    const measure = () => {
+      const el = ref.current;
+      if (!el) return;
+      const bottom = el.getBoundingClientRect().bottom;
+      setH(Math.max(320, Math.round(window.innerHeight - bottom - bottomGap)));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    const ro = new ResizeObserver(measure);
+    if (ref.current) ro.observe(ref.current);
+    return () => { window.removeEventListener("resize", measure); ro.disconnect(); };
+  }, [ref, bottomGap, enabled]);
+  return h;
+}
 
 function TrayToggle({ className }: { className?: string }) {
   const { taskIds, open } = useTray();
