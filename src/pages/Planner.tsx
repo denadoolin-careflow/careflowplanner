@@ -546,6 +546,7 @@ export default function Planner() {
       </div>
 
       <PlannerQuickCapture open={captureOpen} onOpenChange={setCaptureOpen} defaultDate={day} />
+      <PlannerShortcutsSheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <PlanMyDayDialog open={planOpen} onOpenChange={setPlanOpen} date={day} />
       <PlannerCommandBar
         open={cmdOpen}
