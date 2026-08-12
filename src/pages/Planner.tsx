@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { addDays, addMonths, addYears, format, isValid, parseISO, startOfWeek } from "date-fns";
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
@@ -26,6 +26,8 @@ import { PlannerCapacityBar } from "@/components/planner/PlannerCapacityBar";
 import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
 import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
+import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsSheet";
+import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMonthMode, type PlannerView } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -38,6 +40,38 @@ import { tray, useTray } from "@/lib/tray-store";
 
 const SEGMENTS = ["all", "morning", "afternoon", "evening"] as const;
 type Segment = (typeof SEGMENTS)[number];
+
+/**
+ * Which views own their internal scroll ("fixed") and which flow naturally in
+ * the page body ("flowing"). Exactly one element owns the scroll per view.
+ */
+function scrollModeFor(view: PlannerView, period: string, weekMode: string, monthMode: string): "fixed" | "flowing" {
+  if (view === "day") return period === "grid" ? "fixed" : "flowing";
+  if (view === "3day") return "fixed";
+  if (view === "week") return weekMode === "grid" ? "fixed" : "flowing";
+  if (view === "month") return monthMode === "calendar" ? "fixed" : "flowing";
+  return "flowing";
+}
+
+/** Measures the space left under a sticky header so mobile views can fill it. */
+function useFillHeight(ref: React.RefObject<HTMLElement>, bottomGap: number, enabled: boolean) {
+  const [h, setH] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (!enabled) { setH(null); return; }
+    const measure = () => {
+      const el = ref.current;
+      if (!el) return;
+      const bottom = el.getBoundingClientRect().bottom;
+      setH(Math.max(320, Math.round(window.innerHeight - bottom - bottomGap)));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    const ro = new ResizeObserver(measure);
+    if (ref.current) ro.observe(ref.current);
+    return () => { window.removeEventListener("resize", measure); ro.disconnect(); };
+  }, [ref, bottomGap, enabled]);
+  return h;
+}
 
 function TrayToggle({ className }: { className?: string }) {
   const { taskIds, open } = useTray();
@@ -72,6 +106,7 @@ export default function Planner() {
   const [captureOpen, setCaptureOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [view, setView] = usePlannerView();
   const [weekMode, setWeekMode] = usePlannerWeekMode();
   const [monthMode, setMonthMode] = usePlannerMonthMode();
@@ -110,6 +145,9 @@ export default function Planner() {
     try { window.localStorage.setItem("careflow.planner.taskPanelWidth", String(taskPanelWidth)); } catch {}
   }, [taskPanelWidth]);
   const resizeRef = useRef<{ startX: number; startW: number } | null>(null);
+  const mobileHeaderRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const shellTopRef = useRef<HTMLDivElement>(null);
   const onResizeStart = (e: React.PointerEvent) => {
     e.preventDefault();
     resizeRef.current = { startX: e.clientX, startW: taskPanelWidth };
@@ -139,7 +177,7 @@ export default function Planner() {
   };
 
   // Global hotkeys: c capture · Cmd/Ctrl+K command bar · t today · [ / ] prev/next
-  // 1-4 range · g grid · s schedule · d time of day
+  // 1-5 range · Shift+G/S/D day sub-views · ? shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -147,6 +185,14 @@ export default function Planner() {
       if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) { e.preventDefault(); setCmdOpen(o => !o); return; }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key.toLowerCase();
+      if (e.shiftKey) {
+        if (k === "g") { e.preventDefault(); setView("day"); setPeriod("grid"); return; }
+        if (k === "s") { e.preventDefault(); setView("day"); setPeriod("schedule"); return; }
+        if (k === "d") { e.preventDefault(); setView("day"); setPeriod("timeofday"); return; }
+        if (e.key === "?") { e.preventDefault(); setShortcutsOpen(true); return; }
+      }
+      if (e.key === "?") { e.preventDefault(); setShortcutsOpen(true); return; }
+      if (e.shiftKey) return;
       if (k === "c") { e.preventDefault(); setCaptureOpen(true); return; }
       if (k === "t") { e.preventDefault(); go(new Date()); return; }
       if (e.key === "[") { e.preventDefault(); step(-1); return; }
@@ -158,10 +204,7 @@ export default function Planner() {
       if (e.key === "5") { e.preventDefault(); setView("year"); return; }
       if (k === "w") { e.preventDefault(); setView("week"); return; }
       if (k === "m") { e.preventDefault(); setView("month"); return; }
-      if (k === "y") { e.preventDefault(); setView("year"); return; }
-      if (k === "g") { e.preventDefault(); setView("day"); setPeriod("grid"); return; }
-      if (k === "s") { e.preventDefault(); setView("day"); setPeriod("schedule"); return; }
-      if (k === "d") { e.preventDefault(); setView("day"); setPeriod("timeofday"); }
+      if (k === "y") { e.preventDefault(); setView("year"); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -169,20 +212,36 @@ export default function Planner() {
 
   const showContextPanel = !isMobile && panel.context && view !== "year";
   const showFocusPanel = !isMobile && panel.focus && view === "day";
-  const showTaskPanel = !isMobile && panel.task && view !== "year";
+  const showTaskPanel = !isMobile && panel.task;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const openDay = (d: Date) => { setView("day"); go(d); };
 
+  const scrollMode = scrollModeFor(view, period, weekMode, monthMode);
+  const isFixed = scrollMode === "fixed";
+  const mobileFillHeight = useFillHeight(mobileHeaderRef, 96, isMobile && isFixed);
+  // Desktop shell fills whatever is left under the app chrome — no magic numbers.
+  const shellHeight = useFillHeight(shellTopRef, 24, !isMobile);
+
+  const onResizeKey = useCallback((e: React.KeyboardEvent) => {
+    const stepPx = e.shiftKey ? 40 : 12;
+    if (e.key === "ArrowLeft") { e.preventDefault(); setTaskPanelWidth(w => Math.max(220, w - stepPx)); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); setTaskPanelWidth(w => Math.min(560, w + stepPx)); }
+    else if (e.key === "Home") { e.preventDefault(); setTaskPanelWidth(280); }
+  }, []);
+
   return (
     <div
+      ref={shellRef}
       className={
         isMobile
           ? "planner-surface flex flex-col gap-3 pb-24"
-          : "planner-surface flex h-[calc(100dvh-9rem)] min-h-[560px] flex-col gap-3 overflow-hidden"
+          : "planner-surface flex min-h-[560px] flex-col gap-3 overflow-hidden"
       }
+      style={!isMobile && shellHeight ? { height: shellHeight } : undefined}
     >
+      <div ref={shellTopRef} aria-hidden className="h-0" />
       {isMobile ? (
-        <div className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
+        <div ref={mobileHeaderRef} className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
         <div className="flex items-center gap-1">
           <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
             <SheetTrigger asChild>
@@ -217,6 +276,30 @@ export default function Planner() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
+              {view === "week" && (
+                <>
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Week as</DropdownMenuLabel>
+                  <DropdownMenuItem onSelect={() => setWeekMode("grid")}>
+                    {weekMode === "grid" ? "• " : ""}Grid
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setWeekMode("board")}>
+                    {weekMode === "board" ? "• " : ""}Board
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {view === "month" && (
+                <>
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Month as</DropdownMenuLabel>
+                  <DropdownMenuItem onSelect={() => setMonthMode("calendar")}>
+                    {monthMode === "calendar" ? "• " : ""}Calendar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setMonthMode("overview")}>
+                    {monthMode === "overview" ? "• " : ""}Overview
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Actions</DropdownMenuLabel>
               <DropdownMenuItem onSelect={() => setPlanOpen(true)}>
                 <Sparkles className="mr-2 h-3.5 w-3.5" /> Plan my day
@@ -235,18 +318,6 @@ export default function Planner() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <PlannerViewToggle value={view} onChange={setView} className="shrink-0" />
           {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
-          {view === "week" && (
-            <PlannerRangeModeTabs
-              value={weekMode} onChange={setWeekMode} className="shrink-0"
-              options={[{ id: "grid", label: "Grid" }, { id: "board", label: "Board" }]}
-            />
-          )}
-          {view === "month" && (
-            <PlannerRangeModeTabs
-              value={monthMode} onChange={setMonthMode} className="shrink-0"
-              options={[{ id: "calendar", label: "Calendar" }, { id: "overview", label: "Overview" }]}
-            />
-          )}
           <PlannerKindFilter className="shrink-0" />
         </div>
         </div>
@@ -285,7 +356,7 @@ export default function Planner() {
             )}
             <PlannerKindFilter className="ml-auto" />
             <TrayToggle />
-            {(view === "day" || view === "3day" || view === "week") && (
+            {(view === "day" || view === "3day" || view === "week" || view === "month" || view === "year") && (
               <Button
                 size="icon"
                 variant="outline"
@@ -322,6 +393,16 @@ export default function Planner() {
               </Button>
             )}
             <AutoScheduleSettings size="md" />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 rounded-full text-muted-foreground"
+              onClick={() => setShortcutsOpen(true)}
+              aria-label="Show keyboard shortcuts"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard className="h-4 w-4" />
+            </Button>
           </div>
         </>
       )}
@@ -368,9 +449,14 @@ export default function Planner() {
               role="separator"
               aria-orientation="vertical"
               aria-label="Resize task panel"
+              aria-valuenow={taskPanelWidth}
+              aria-valuemin={220}
+              aria-valuemax={560}
+              tabIndex={0}
               onPointerDown={onResizeStart}
+              onKeyDown={onResizeKey}
               onDoubleClick={() => setTaskPanelWidth(280)}
-              className="group relative -mx-1 cursor-col-resize"
+              className="group relative -mx-1 cursor-col-resize rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <div className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-border/60 transition-colors group-hover:bg-primary/60" />
             </div>
@@ -387,12 +473,20 @@ export default function Planner() {
               />
             </div>
           )}
-          <div className={isMobile ? "min-w-0" : "flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain pr-1"}>
+          <div
+            className={
+              isMobile
+                ? "min-w-0"
+                : isFixed
+                  ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                  : "flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pr-1"
+            }
+          >
             {view === "day" && period === "grid" && (
               isMobile ? (
-                <div className="h-[calc(100dvh-250px)] min-h-[340px]"><PlannerTimeline date={day} /></div>
+                <div style={{ height: mobileFillHeight ?? 420 }}><PlannerTimeline date={day} /></div>
               ) : (
-                <div className="h-full min-h-[420px]"><PlannerTimeline date={day} /></div>
+                <div className="min-h-0 flex-1"><PlannerTimeline date={day} /></div>
               )
             )}
             {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
@@ -407,12 +501,12 @@ export default function Planner() {
               <PlannerPeriodList date={day} period={segment} />
             )}
             {view === "3day" && (
-              <div className="h-full min-h-[420px]">
+              <div className={isMobile ? "" : "min-h-0 flex-1"} style={isMobile ? { height: mobileFillHeight ?? 420 } : undefined}>
                 <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} />
               </div>
             )}
             {view === "week" && weekMode === "grid" && (
-              <div className={isMobile ? "h-[calc(100dvh-260px)] min-h-[360px]" : "h-full min-h-[420px]"}>
+              <div className={isMobile ? "" : "min-h-0 flex-1"} style={isMobile ? { height: mobileFillHeight ?? 420 } : undefined}>
                 <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} />
               </div>
             )}
@@ -420,7 +514,7 @@ export default function Planner() {
               <PlannerWeekBoard weekStart={weekStart} onSelectDay={openDay} />
             )}
             {view === "month" && monthMode === "calendar" && (
-              <div className={isMobile ? "min-h-[520px]" : "h-full min-h-[520px]"}>
+              <div className={isMobile ? "" : "min-h-0 flex-1"} style={isMobile ? { height: mobileFillHeight ?? 520 } : undefined}>
                 <PlannerMonthView date={day} onSelectDay={openDay} />
               </div>
             )}
@@ -428,8 +522,26 @@ export default function Planner() {
               <PlannerMonthOverview date={day} onJumpToDate={openDay} />
             )}
             {view === "year" && <PlannerYearView date={day} onSelectDay={openDay} />}
+            {view === "day" && !isFixed && <PlannerDayReview date={day} />}
           </div>
-          {view === "day" && <PlannerDayReview date={day} className="mt-3 shrink-0" />}
+          {view === "day" && isFixed && (
+            isMobile ? (
+              <PlannerDayReview date={day} className="mt-3" />
+            ) : (
+              <div className="mt-3 shrink-0">
+                <CollapsibleSection
+                  storageKey="planner.dayreview.collapsed"
+                  eyebrow="Day review"
+                  title="Planned vs completed"
+                  defaultCollapsed
+                >
+                  <div className="px-2 pb-2">
+                    <PlannerDayReview date={day} />
+                  </div>
+                </CollapsibleSection>
+              </div>
+            )
+          )}
         </div>
         {showFocusPanel && (
           <div className="min-h-0 overflow-y-auto overscroll-contain">
@@ -444,6 +556,7 @@ export default function Planner() {
       </div>
 
       <PlannerQuickCapture open={captureOpen} onOpenChange={setCaptureOpen} defaultDate={day} />
+      <PlannerShortcutsSheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <PlanMyDayDialog open={planOpen} onOpenChange={setPlanOpen} date={day} />
       <PlannerCommandBar
         open={cmdOpen}
