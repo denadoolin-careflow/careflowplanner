@@ -356,7 +356,7 @@ export default function Planner() {
             )}
             <PlannerKindFilter className="ml-auto" />
             <TrayToggle />
-            {(view === "day" || view === "3day" || view === "week") && (
+            {(view === "day" || view === "3day" || view === "week" || view === "month" || view === "year") && (
               <Button
                 size="icon"
                 variant="outline"
@@ -393,6 +393,16 @@ export default function Planner() {
               </Button>
             )}
             <AutoScheduleSettings size="md" />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 rounded-full text-muted-foreground"
+              onClick={() => setShortcutsOpen(true)}
+              aria-label="Show keyboard shortcuts"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard className="h-4 w-4" />
+            </Button>
           </div>
         </>
       )}
