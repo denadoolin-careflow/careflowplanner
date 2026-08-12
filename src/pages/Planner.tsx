@@ -226,14 +226,17 @@ export default function Planner() {
 
   return (
     <div
+      ref={shellRef}
       className={
         isMobile
           ? "planner-surface flex flex-col gap-3 pb-24"
-          : "planner-surface flex h-[calc(100dvh-9rem)] min-h-[560px] flex-col gap-3 overflow-hidden"
+          : "planner-surface flex min-h-[560px] flex-col gap-3 overflow-hidden"
       }
+      style={!isMobile && shellHeight ? { height: shellHeight } : undefined}
     >
+      <div ref={shellTopRef} aria-hidden className="h-0" />
       {isMobile ? (
-        <div className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
+        <div ref={mobileHeaderRef} className="sticky top-0 z-30 -mx-2 space-y-1.5 bg-background/90 px-2 py-1.5 backdrop-blur-md">
         <div className="flex items-center gap-1">
           <Sheet open={mobileTasksOpen} onOpenChange={setMobileTasksOpen}>
             <SheetTrigger asChild>
@@ -268,6 +271,30 @@ export default function Planner() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
+              {view === "week" && (
+                <>
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Week as</DropdownMenuLabel>
+                  <DropdownMenuItem onSelect={() => setWeekMode("grid")}>
+                    {weekMode === "grid" ? "• " : ""}Grid
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setWeekMode("board")}>
+                    {weekMode === "board" ? "• " : ""}Board
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {view === "month" && (
+                <>
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Month as</DropdownMenuLabel>
+                  <DropdownMenuItem onSelect={() => setMonthMode("calendar")}>
+                    {monthMode === "calendar" ? "• " : ""}Calendar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setMonthMode("overview")}>
+                    {monthMode === "overview" ? "• " : ""}Overview
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Actions</DropdownMenuLabel>
               <DropdownMenuItem onSelect={() => setPlanOpen(true)}>
                 <Sparkles className="mr-2 h-3.5 w-3.5" /> Plan my day
@@ -286,18 +313,6 @@ export default function Planner() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <PlannerViewToggle value={view} onChange={setView} className="shrink-0" />
           {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
-          {view === "week" && (
-            <PlannerRangeModeTabs
-              value={weekMode} onChange={setWeekMode} className="shrink-0"
-              options={[{ id: "grid", label: "Grid" }, { id: "board", label: "Board" }]}
-            />
-          )}
-          {view === "month" && (
-            <PlannerRangeModeTabs
-              value={monthMode} onChange={setMonthMode} className="shrink-0"
-              options={[{ id: "calendar", label: "Calendar" }, { id: "overview", label: "Overview" }]}
-            />
-          )}
           <PlannerKindFilter className="shrink-0" />
         </div>
         </div>
