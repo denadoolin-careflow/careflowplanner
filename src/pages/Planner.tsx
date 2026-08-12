@@ -513,7 +513,24 @@ export default function Planner() {
             {view === "year" && <PlannerYearView date={day} onSelectDay={openDay} />}
             {view === "day" && !isFixed && <PlannerDayReview date={day} />}
           </div>
-          {view === "day" && isFixed && <PlannerDayReview date={day} className="mt-3 shrink-0" />}
+          {view === "day" && isFixed && (
+            isMobile ? (
+              <PlannerDayReview date={day} className="mt-3" />
+            ) : (
+              <div className="mt-3 shrink-0">
+                <CollapsibleSection
+                  storageKey="planner.dayreview.collapsed"
+                  eyebrow="Day review"
+                  title="Planned vs completed"
+                  defaultCollapsed
+                >
+                  <div className="px-2 pb-2">
+                    <PlannerDayReview date={day} />
+                  </div>
+                </CollapsibleSection>
+              </div>
+            )
+          )}
         </div>
         {showFocusPanel && (
           <div className="min-h-0 overflow-y-auto overscroll-contain">
