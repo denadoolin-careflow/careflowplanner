@@ -133,6 +133,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
   const [movePreview, setMovePreview] = useState<number | null>(null);
   const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string } | null>(null);
+  const [dragOverMin, setDragOverMin] = useState<number | null>(null);
+  const [nowVisible, setNowVisible] = useState(true);
   const suppressClickRef = useRef(false);
   const { blocks, update: updateBlock } = useTimeBlocks(iso, iso);
   const { prefs: autoPrefs, update: updateAutoPrefs, reset: resetAutoPrefs } = useAutoSchedulePrefs();
