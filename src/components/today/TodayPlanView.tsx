@@ -77,6 +77,7 @@ export function TodayPlanView({ date }: { date: Date }) {
       <section aria-label="Day plan" className="flex min-h-0 flex-col gap-2">
         {actionRow}
         {capacityHints}
+        <PlannerOverdueSection date={date} />
 
         <CollapsibleSection
           storageKey="today.mobile.section.planned.collapsed"
@@ -111,7 +112,7 @@ export function TodayPlanView({ date }: { date: Date }) {
           defaultCollapsed={false}
         >
           <div className="px-2 pb-2">
-            <div className="h-[64vh] min-h-[360px]">
+            <div className="h-[76vh] min-h-[520px]">
               <PlannerTimeline date={date} />
             </div>
           </div>
@@ -143,7 +144,7 @@ export function TodayPlanView({ date }: { date: Date }) {
 
       <div
         className="min-h-0"
-        style={{ height: "calc(100vh - 300px)", minHeight: 420 }}
+        style={{ height: "calc(100vh - 260px)", minHeight: 560 }}
       >
         {period === "grid" && <PlannerTimeline date={date} />}
         {period === "schedule" && <PlannerScheduleList date={date} />}
