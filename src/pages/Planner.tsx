@@ -516,10 +516,10 @@ export default function Planner() {
               </div>
             )
           )}
-          {!isMobile && (panel.focus && view === "day" && !roomForFocus || panel.context && view !== "year" && !roomForContext) && (
+          {!isMobile && ((panel.focus && view === "day" && !roomForFocus) || (panel.context && !roomForContext)) && (
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               {panel.focus && view === "day" && !roomForFocus && <PlannerFocusPanel date={day} />}
-              {panel.context && view !== "year" && !roomForContext && <PlannerContextPanel date={day} onChangeDate={go} />}
+              {panel.context && !roomForContext && <PlannerContextPanel date={day} onChangeDate={go} />}
             </div>
           )}
         </div>
