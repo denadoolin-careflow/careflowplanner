@@ -66,26 +66,54 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
               <PlannerCapacityBar date={d} className="mb-1.5" />
               <div className="flex flex-1 flex-col gap-1">
                 {items.length === 0 && <p className="px-1 py-2 text-[11px] text-muted-foreground">Nothing planned</p>}
-                {items.map(it => (
-                  <button
-                    key={it.id}
-                    type="button"
-                    draggable={it.sourceRef.type === "task" || it.sourceRef.type === "appointment"}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("application/x-planner-item", `${it.sourceRef.type}:${it.sourceRef.id}`);
-                      e.dataTransfer.effectAllowed = "move";
-                    }}
-                    onClick={() => onOpenItem?.(it)}
-                    className={cn(
-                      "rounded-lg border border-border/50 px-2 py-1 text-left text-[11px] leading-snug transition-colors hover:bg-muted/50",
-                      it.done && "opacity-50 line-through",
-                    )}
-                    style={{ borderLeft: `3px solid ${it.color}` }}
-                  >
-                    <span className="block break-words">{it.title}</span>
-                    {it.time && <span className="text-[10px] text-muted-foreground">{it.time}</span>}
-                  </button>
-                ))}
+                {items.map(it => {
+                  const Icon = KIND_ICONS[it.kind];
+                  const isTask = it.sourceRef.type === "task";
+                  return (
+                    <button
+                      key={it.id}
+                      type="button"
+                      draggable={it.sourceRef.type === "task" || it.sourceRef.type === "appointment"}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("application/x-planner-item", `${it.sourceRef.type}:${it.sourceRef.id}`);
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      onClick={() => onOpenItem?.(it)}
+                      className={cn(
+                        "group flex items-start gap-2 rounded-xl border border-border/50 bg-card/60 px-2 py-2 text-left text-[11px] leading-snug shadow-sm transition-all hover:bg-muted/50 hover:shadow-md",
+                        it.done && "opacity-50 line-through",
+                      )}
+                      style={{ borderLeft: `3px solid ${it.color}` }}
+                    >
+                      {isTask && (
+                        <span
+                          role="checkbox"
+                          aria-checked={!!it.done}
+                          tabIndex={0}
+                          onClick={(e) => { e.stopPropagation(); updateTask(it.sourceRef.id, { done: !it.done }); }}
+                          onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); updateTask(it.sourceRef.id, { done: !it.done }); } }}
+                          className={cn(
+                            "mt-0.5 flex h-3.5 w-3.5 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border transition-colors",
+                            it.done ? "border-transparent" : "border-muted-foreground/40 hover:border-muted-foreground/70",
+                          )}
+                          style={{ backgroundColor: it.done ? it.color : undefined }}
+                        >
+                          {it.done && <Check className="h-2.5 w-2.5 text-white" />}
+                        </span>
+                      )}
+                      <span
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                        style={{ backgroundColor: `${it.color}1f`, color: it.color }}
+                      >
+                        <Icon className="h-2.5 w-2.5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <span className="block break-words">{it.title}</span>
+                        {it.time && <span className="text-[10px] text-muted-foreground">{it.time}</span>}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
