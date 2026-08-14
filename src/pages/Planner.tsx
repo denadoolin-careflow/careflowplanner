@@ -345,7 +345,7 @@ export default function Planner() {
             {view === "week" && (
               <PlannerRangeModeTabs
                 value={weekMode} onChange={setWeekMode}
-                options={[{ id: "grid", label: "Grid" }, { id: "board", label: "Board" }]}
+                options={[{ id: "grid", label: "Grid" }, { id: "board", label: "Overview" }]}
               />
             )}
             {view === "month" && (
