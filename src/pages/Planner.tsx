@@ -126,6 +126,15 @@ export default function Planner() {
   const resizeRef = useRef<{ startX: number; startW: number } | null>(null);
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
+  const [shellWidth, setShellWidth] = useState<number>(1600);
+  useEffect(() => {
+    const el = shellRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([entry]) => setShellWidth(entry.contentRect.width));
+    ro.observe(el);
+    setShellWidth(el.getBoundingClientRect().width);
+    return () => ro.disconnect();
+  }, []);
   const shellTopRef = useRef<HTMLDivElement>(null);
   const onResizeStart = (e: React.PointerEvent) => {
     e.preventDefault();
