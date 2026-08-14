@@ -530,6 +530,24 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
 
   const totalMin = (END_H - START_H) * 60;
 
+  /** Open stretches of at least 30 minutes inside the planning window. */
+  const gaps = useMemo(() => {
+    const winStart = Math.max(0, (autoPrefs.dayStartH - START_H) * 60);
+    const winEnd = Math.min(totalMin, (autoPrefs.dayEndH - START_H) * 60);
+    const busy = items
+      .map(i => [Math.max(winStart, i.startMin), Math.min(winEnd, i.startMin + i.durMin)] as [number, number])
+      .filter(([s, e]) => e > s)
+      .sort((a, b) => a[0] - b[0]);
+    const out: { start: number; dur: number }[] = [];
+    let cursor = winStart;
+    for (const [s, e] of busy) {
+      if (s - cursor >= 30) out.push({ start: cursor, dur: s - cursor });
+      cursor = Math.max(cursor, e);
+    }
+    if (winEnd - cursor >= 30) out.push({ start: cursor, dur: winEnd - cursor });
+    return out;
+  }, [items, autoPrefs.dayStartH, autoPrefs.dayEndH, totalMin]);
+
   // ---- Conflicts ----
   const conflictMap = useMemo(() => {
     const map = new Map<string, ConflictInfo[]>();
