@@ -133,6 +133,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
   const [movePreview, setMovePreview] = useState<number | null>(null);
   const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string } | null>(null);
+  const [dragOverMin, setDragOverMin] = useState<number | null>(null);
+  const [nowVisible, setNowVisible] = useState(true);
   const suppressClickRef = useRef(false);
   const { blocks, update: updateBlock } = useTimeBlocks(iso, iso);
   const { prefs: autoPrefs, update: updateAutoPrefs, reset: resetAutoPrefs } = useAutoSchedulePrefs();
@@ -193,6 +195,19 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     const id = setInterval(tick, 60_000);
     return () => clearInterval(id);
   }, [date]);
+
+  // Keep a "Jump to now" affordance only when the current time is scrolled out of view.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || nowMin === null) { setNowVisible(true); return; }
+    const check = () => {
+      const top = nowMin * (HOUR_PX / 60);
+      setNowVisible(top >= el.scrollTop - 8 && top <= el.scrollTop + el.clientHeight + 8);
+    };
+    check();
+    el.addEventListener("scroll", check, { passive: true });
+    return () => el.removeEventListener("scroll", check);
+  }, [nowMin, noScroll]);
 
   const items = useMemo(() => {
     const out: ScheduledItem[] = [];
@@ -271,7 +286,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     history.push(entry);
     haptics.drop();
     setAnnouncement(`${task?.title ?? "Task"} scheduled at ${minTo12(absMin)}`);
-    toast.success("Scheduled");
+    toast.success(`Scheduled ${minTo12(absMin)}`, {
+      action: { label: "Undo", onClick: () => { void runUndo(); } },
+    });
   };
 
   /** Change a task's duration (and its paired time block), recorded in history. */
@@ -299,6 +316,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     history.push(entry);
     haptics.snap();
     setAnnouncement(`${task.title} set to ${nextDur} minutes`);
+    toast.success(`Duration ${nextDur}m`, {
+      action: { label: "Undo", onClick: () => { void runUndo(); } },
+    });
   };
 
   // ---- Move (reschedule) an existing block by dragging it ----
@@ -455,6 +475,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
 
   const onDrop = async (e: React.DragEvent) => {
     const id = e.dataTransfer.getData(TASK_DRAG_MIME);
+    setDragOverMin(null);
     if (!id) return;
     e.preventDefault();
     const rect = gridRef.current!.getBoundingClientRect();
@@ -477,6 +498,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
+      const rect = gridRef.current?.getBoundingClientRect();
+      if (rect) setDragOverMin(yToMin(e.clientY - rect.top));
     }
   };
 
@@ -506,6 +529,24 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   }, [resizing]);
 
   const totalMin = (END_H - START_H) * 60;
+
+  /** Open stretches of at least 30 minutes inside the planning window. */
+  const gaps = useMemo(() => {
+    const winStart = Math.max(0, (autoPrefs.dayStartH - START_H) * 60);
+    const winEnd = Math.min(totalMin, (autoPrefs.dayEndH - START_H) * 60);
+    const busy = items
+      .map(i => [Math.max(winStart, i.startMin), Math.min(winEnd, i.startMin + i.durMin)] as [number, number])
+      .filter(([s, e]) => e > s)
+      .sort((a, b) => a[0] - b[0]);
+    const out: { start: number; dur: number }[] = [];
+    let cursor = winStart;
+    for (const [s, e] of busy) {
+      if (s - cursor >= 30) out.push({ start: cursor, dur: s - cursor });
+      cursor = Math.max(cursor, e);
+    }
+    if (winEnd - cursor >= 30) out.push({ start: cursor, dur: winEnd - cursor });
+    return out;
+  }, [items, autoPrefs.dayStartH, autoPrefs.dayEndH, totalMin]);
 
   // ---- Conflicts ----
   const conflictMap = useMemo(() => {
@@ -694,7 +735,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
         <div className="space-y-2 px-3 pb-2 sm:px-4">
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1"><PlannerAtmosphereStrip date={date} /></div>
-            {nowMin !== null && (
+            {nowMin !== null && !nowVisible && (
               <button
                 type="button"
                 onClick={() => scrollToNow("smooth")}
@@ -730,6 +771,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
             style={{ height: totalMin * (HOUR_PX / 60) }}
             onDragOver={onDragOver}
             onDragEnter={() => haptics.magnet()}
+            onDragLeave={(e) => { if (e.currentTarget === e.target) setDragOverMin(null); }}
             onDrop={onDrop}
             onClick={onGridClick}
           >
@@ -783,6 +825,39 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               }}
             />
 
+            {/* Open time — tap a gap to plan into it */}
+            {gaps.map(g => (
+              <button
+                key={`gap-${g.start}`}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setQuickAdd({ x: 24, y: g.start * (HOUR_PX / 60), startAbsMin: g.start + START_H * 60, text: "" });
+                }}
+                aria-label={`${g.dur} minutes free from ${minTo12(g.start + START_H * 60)}. Add a task here.`}
+                className="group/gap absolute left-1 right-1 z-0 flex items-start justify-end rounded-md border border-dashed border-transparent px-2 pt-1 text-[9px] text-muted-foreground/0 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-muted-foreground"
+                style={{ top: g.start * (HOUR_PX / 60), height: g.dur * (HOUR_PX / 60) }}
+              >
+                <span className="rounded-full bg-background/80 px-1.5 py-0.5 font-mono opacity-0 transition-opacity group-hover/gap:opacity-100">
+                  {g.dur >= 60 ? `${Math.round((g.dur / 60) * 10) / 10}h free` : `${g.dur}m free`}
+                </span>
+              </button>
+            ))}
+
+            {/* Drop preview while dragging a task in from a rail or tray */}
+            {dragOverMin !== null && (
+              <div
+                className="pointer-events-none absolute left-0 right-0 z-30 flex items-center"
+                style={{ top: dragOverMin * (HOUR_PX / 60), height: SLOT_PX }}
+                aria-hidden
+              >
+                <span className="h-px flex-1 bg-primary/70" />
+                <span className="ml-1 rounded bg-primary/90 px-1 font-mono text-[9px] text-primary-foreground">
+                  Drop {minTo12(dragOverMin + START_H * 60)}
+                </span>
+              </div>
+            )}
+
             {/* Snap guide while dragging — lines up with the unscheduled row baseline */}
             {moving && movePreview !== null && (
               <div
@@ -792,7 +867,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               >
                 <span className="h-px flex-1 bg-primary/70" />
                 <span className="ml-1 rounded bg-primary/90 px-1 font-mono text-[9px] text-primary-foreground">
-                  {minTo12(movePreview + START_H * 60)}
+                  {minTo12(movePreview + START_H * 60)}–{minTo12(movePreview + moving.durMin + START_H * 60)} · {moving.durMin}m
                 </span>
               </div>
             )}
@@ -849,7 +924,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                     "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
-                    it.done && "opacity-60",
+                    it.done && "opacity-55 saturate-50 shadow-none",
                     hasConflict && "ring-1 ring-destructive/60",
                     isMoving && "z-30 scale-[1.02] shadow-xl ring-2 ring-primary",
                     isFocusActive && "ring-2 ring-primary ring-offset-1 ring-offset-background",
