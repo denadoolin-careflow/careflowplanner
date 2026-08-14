@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
+import { KIND_ICONS } from "./kindIcon";
+
 
 /**
  * Month calendar built on the shared planner feed: real event chips per day,
