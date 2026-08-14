@@ -735,7 +735,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
         <div className="space-y-2 px-3 pb-2 sm:px-4">
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1"><PlannerAtmosphereStrip date={date} /></div>
-            {nowMin !== null && (
+            {nowMin !== null && !nowVisible && (
               <button
                 type="button"
                 onClick={() => scrollToNow("smooth")}
@@ -771,6 +771,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
             style={{ height: totalMin * (HOUR_PX / 60) }}
             onDragOver={onDragOver}
             onDragEnter={() => haptics.magnet()}
+            onDragLeave={(e) => { if (e.currentTarget === e.target) setDragOverMin(null); }}
             onDrop={onDrop}
             onClick={onGridClick}
           >
@@ -824,6 +825,39 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               }}
             />
 
+            {/* Open time — tap a gap to plan into it */}
+            {gaps.map(g => (
+              <button
+                key={`gap-${g.start}`}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setQuickAdd({ x: 24, y: g.start * (HOUR_PX / 60), startAbsMin: g.start + START_H * 60, text: "" });
+                }}
+                aria-label={`${g.dur} minutes free from ${minTo12(g.start + START_H * 60)}. Add a task here.`}
+                className="group/gap absolute left-1 right-1 z-0 flex items-start justify-end rounded-md border border-dashed border-transparent px-2 pt-1 text-[9px] text-muted-foreground/0 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-muted-foreground"
+                style={{ top: g.start * (HOUR_PX / 60), height: g.dur * (HOUR_PX / 60) }}
+              >
+                <span className="rounded-full bg-background/80 px-1.5 py-0.5 font-mono opacity-0 transition-opacity group-hover/gap:opacity-100">
+                  {g.dur >= 60 ? `${Math.round((g.dur / 60) * 10) / 10}h free` : `${g.dur}m free`}
+                </span>
+              </button>
+            ))}
+
+            {/* Drop preview while dragging a task in from a rail or tray */}
+            {dragOverMin !== null && (
+              <div
+                className="pointer-events-none absolute left-0 right-0 z-30 flex items-center"
+                style={{ top: dragOverMin * (HOUR_PX / 60), height: SLOT_PX }}
+                aria-hidden
+              >
+                <span className="h-px flex-1 bg-primary/70" />
+                <span className="ml-1 rounded bg-primary/90 px-1 font-mono text-[9px] text-primary-foreground">
+                  Drop {minTo12(dragOverMin + START_H * 60)}
+                </span>
+              </div>
+            )}
+
             {/* Snap guide while dragging — lines up with the unscheduled row baseline */}
             {moving && movePreview !== null && (
               <div
@@ -833,7 +867,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               >
                 <span className="h-px flex-1 bg-primary/70" />
                 <span className="ml-1 rounded bg-primary/90 px-1 font-mono text-[9px] text-primary-foreground">
-                  {minTo12(movePreview + START_H * 60)}
+                  {minTo12(movePreview + START_H * 60)}–{minTo12(movePreview + moving.durMin + START_H * 60)} · {moving.durMin}m
                 </span>
               </div>
             )}
