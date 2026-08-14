@@ -47,7 +47,7 @@ export function PlannerScheduleList({ date }: { date: Date }) {
   }, [state.tasks, state.appointments, blocks, iso]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+    <div className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
       <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2.5">
         <CalendarClock className="h-4 w-4 opacity-70" />
         <div className="text-sm font-semibold">Schedule</div>

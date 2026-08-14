@@ -25,6 +25,7 @@ import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
 import { PlannerCapacityBar } from "@/components/planner/PlannerCapacityBar";
 import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
 import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
+import { PlannerOverdueSection } from "@/components/planner/PlannerOverdueSection";
 import { PlannerTimeReview } from "@/components/planner/PlannerTimeReview";
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
 import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsSheet";
@@ -45,10 +46,11 @@ type Segment = (typeof SEGMENTS)[number];
 /**
  * Grid-style views keep their own hour scroll but stay bounded so the page
  * itself is always scrollable past them — no viewport-filling boxes.
+ * Timed grids get real breathing room; the month calendar sizes to its rows.
  */
-const GRID_BOX = "h-[clamp(380px,68vh,880px)] min-h-0";
+const GRID_BOX = "h-[clamp(520px,78vh,1000px)] min-h-0";
 /** Sticky side columns scroll on their own without stretching the row. */
-const SIDE_COL = "sticky top-2 max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain";
+const SIDE_COL = "sticky top-20 max-h-[calc(100dvh-7.5rem)] overflow-y-auto overscroll-contain";
 
 function TrayToggle({ className }: { className?: string }) {
   const { taskIds, open } = useTray();
@@ -124,6 +126,15 @@ export default function Planner() {
   const resizeRef = useRef<{ startX: number; startW: number } | null>(null);
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
+  const [shellWidth, setShellWidth] = useState<number>(1600);
+  useEffect(() => {
+    const el = shellRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([entry]) => setShellWidth(entry.contentRect.width));
+    ro.observe(el);
+    setShellWidth(el.getBoundingClientRect().width);
+    return () => ro.disconnect();
+  }, []);
   const shellTopRef = useRef<HTMLDivElement>(null);
   const onResizeStart = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -187,9 +198,12 @@ export default function Planner() {
     return () => window.removeEventListener("keydown", onKey);
   }, [day, view, setView, setPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const showContextPanel = !isMobile && panel.context && view !== "year";
-  const showFocusPanel = !isMobile && panel.focus && view === "day";
-  const showTaskPanel = !isMobile && panel.task;
+  // Keep the main grid readable: drop side columns when the shell gets narrow.
+  const roomForContext = shellWidth >= 1180;
+  const roomForFocus = shellWidth >= 1400;
+  const showContextPanel = !isMobile && panel.context && view !== "year" && roomForContext;
+  const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus;
+  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const openDay = (d: Date) => { setView("day"); go(d); };
 
@@ -413,6 +427,7 @@ export default function Planner() {
         {showTaskPanel && (
           <>
             <div className={`${SIDE_COL} pr-1`}>
+              <PlannerOverdueSection date={day} className="mb-2" />
               <TaskSourcePanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
             </div>
             <div
@@ -433,6 +448,7 @@ export default function Planner() {
           </>
         )}
         <div className="flex min-w-0 flex-col">
+          {!showTaskPanel && <PlannerOverdueSection date={day} className="mb-2" />}
           {view === "day" && (
             <div className="mb-2 shrink-0 space-y-2">
               <PlannerCapacityBar date={day} />
@@ -475,9 +491,7 @@ export default function Planner() {
               </>
             )}
             {view === "month" && monthMode === "calendar" && (
-              <div className={GRID_BOX}>
-                <PlannerMonthView date={day} onSelectDay={openDay} />
-              </div>
+              <PlannerMonthView date={day} onSelectDay={openDay} />
             )}
             {view === "month" && monthMode === "overview" && (
               <PlannerMonthOverview date={day} onJumpToDate={openDay} />
@@ -501,6 +515,12 @@ export default function Planner() {
                 </CollapsibleSection>
               </div>
             )
+          )}
+          {!isMobile && ((panel.focus && view === "day" && !roomForFocus) || (panel.context && !roomForContext)) && (
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              {panel.focus && view === "day" && !roomForFocus && <PlannerFocusPanel date={day} />}
+              {panel.context && !roomForContext && <PlannerContextPanel date={day} onChangeDate={go} />}
+            </div>
           )}
         </div>
         {showFocusPanel && (
