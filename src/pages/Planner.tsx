@@ -399,7 +399,7 @@ export default function Planner() {
         className={
           isMobile
             ? "grid items-start gap-3"
-            : "grid min-h-0 flex-1 items-stretch gap-3 overflow-hidden"
+            : "grid items-start gap-3"
         }
         style={{
           gridTemplateColumns: [
@@ -412,7 +412,7 @@ export default function Planner() {
       >
         {showTaskPanel && (
           <>
-            <div className="min-h-0 overflow-y-auto overscroll-contain pr-1">
+            <div className={`${SIDE_COL} pr-1`}>
               <TaskSourcePanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
             </div>
             <div
@@ -432,7 +432,7 @@ export default function Planner() {
             </div>
           </>
         )}
-        <div className={isMobile ? "min-w-0" : "flex min-h-0 min-w-0 flex-col overflow-hidden"}>
+        <div className="flex min-w-0 flex-col">
           {view === "day" && (
             <div className="mb-2 shrink-0 space-y-2">
               <PlannerCapacityBar date={day} />
@@ -443,21 +443,9 @@ export default function Planner() {
               />
             </div>
           )}
-          <div
-            className={
-              isMobile
-                ? "min-w-0"
-                : isFixed
-                  ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-                  : "flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pr-1"
-            }
-          >
+          <div className="flex min-w-0 flex-col gap-3">
             {view === "day" && period === "grid" && (
-              isMobile ? (
-                <div style={{ height: mobileFillHeight ?? 420 }}><PlannerTimeline date={day} /></div>
-              ) : (
-                <div className="min-h-0 flex-1"><PlannerTimeline date={day} /></div>
-              )
+              <div className={GRID_BOX}><PlannerTimeline date={day} /></div>
             )}
             {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
             {view === "day" && period === "timeofday" && segment === "all" && (
@@ -471,20 +459,23 @@ export default function Planner() {
               <PlannerPeriodList date={day} period={segment} />
             )}
             {view === "3day" && (
-              <div className={isMobile ? "" : "min-h-0 flex-1"} style={isMobile ? { height: mobileFillHeight ?? 420 } : undefined}>
+              <div className={GRID_BOX}>
                 <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} />
               </div>
             )}
             {view === "week" && weekMode === "grid" && (
-              <div className={isMobile ? "" : "min-h-0 flex-1"} style={isMobile ? { height: mobileFillHeight ?? 420 } : undefined}>
+              <div className={GRID_BOX}>
                 <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} />
               </div>
             )}
             {view === "week" && weekMode === "board" && (
-              <PlannerWeekBoard weekStart={weekStart} onSelectDay={openDay} />
+              <>
+                <PlannerTimeReview from={weekStart} days={7} label="this week" />
+                <PlannerWeekBoard weekStart={weekStart} onSelectDay={openDay} />
+              </>
             )}
             {view === "month" && monthMode === "calendar" && (
-              <div className={isMobile ? "" : "min-h-0 flex-1"} style={isMobile ? { height: mobileFillHeight ?? 520 } : undefined}>
+              <div className={GRID_BOX}>
                 <PlannerMonthView date={day} onSelectDay={openDay} />
               </div>
             )}
@@ -492,9 +483,8 @@ export default function Planner() {
               <PlannerMonthOverview date={day} onJumpToDate={openDay} />
             )}
             {view === "year" && <PlannerYearView date={day} onSelectDay={openDay} />}
-            {view === "day" && !isFixed && <PlannerDayReview date={day} />}
           </div>
-          {view === "day" && isFixed && (
+          {view === "day" && (
             isMobile ? (
               <PlannerDayReview date={day} className="mt-3" />
             ) : (
@@ -514,12 +504,12 @@ export default function Planner() {
           )}
         </div>
         {showFocusPanel && (
-          <div className="min-h-0 overflow-y-auto overscroll-contain">
+          <div className={SIDE_COL}>
             <PlannerFocusPanel date={day} className="self-start" />
           </div>
         )}
         {showContextPanel && (
-          <div className="min-h-0 overflow-y-auto overscroll-contain">
+          <div className={SIDE_COL}>
             <PlannerContextPanel date={day} onChangeDate={go} />
           </div>
         )}
