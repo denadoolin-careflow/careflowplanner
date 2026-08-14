@@ -475,6 +475,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
 
   const onDrop = async (e: React.DragEvent) => {
     const id = e.dataTransfer.getData(TASK_DRAG_MIME);
+    setDragOverMin(null);
     if (!id) return;
     e.preventDefault();
     const rect = gridRef.current!.getBoundingClientRect();
@@ -497,6 +498,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     if (Array.from(e.dataTransfer.types).includes(TASK_DRAG_MIME)) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
+      const rect = gridRef.current?.getBoundingClientRect();
+      if (rect) setDragOverMin(yToMin(e.clientY - rect.top));
     }
   };
 
