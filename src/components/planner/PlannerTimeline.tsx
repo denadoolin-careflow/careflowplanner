@@ -286,7 +286,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     history.push(entry);
     haptics.drop();
     setAnnouncement(`${task?.title ?? "Task"} scheduled at ${minTo12(absMin)}`);
-    toast.success("Scheduled");
+    toast.success(`Scheduled ${minTo12(absMin)}`, {
+      action: { label: "Undo", onClick: () => { void runUndo(); } },
+    });
   };
 
   /** Change a task's duration (and its paired time block), recorded in history. */
@@ -314,6 +316,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     history.push(entry);
     haptics.snap();
     setAnnouncement(`${task.title} set to ${nextDur} minutes`);
+    toast.success(`Duration ${nextDur}m`, {
+      action: { label: "Undo", onClick: () => { void runUndo(); } },
+    });
   };
 
   // ---- Move (reschedule) an existing block by dragging it ----
