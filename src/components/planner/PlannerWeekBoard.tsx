@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { PlannerCapacityBar } from "./PlannerCapacityBar";
-import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { KIND_ICONS } from "./kindIcon";
 import { cn } from "@/lib/utils";
