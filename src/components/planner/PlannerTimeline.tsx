@@ -924,7 +924,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                     "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
                     AREA_BG[it.area ?? ""] ?? "bg-muted/60 border-border/60",
-                    it.done && "opacity-60",
+                    it.done && "opacity-55 saturate-50 shadow-none",
                     hasConflict && "ring-1 ring-destructive/60",
                     isMoving && "z-30 scale-[1.02] shadow-xl ring-2 ring-primary",
                     isFocusActive && "ring-2 ring-primary ring-offset-1 ring-offset-background",
