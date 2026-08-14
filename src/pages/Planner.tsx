@@ -45,10 +45,11 @@ type Segment = (typeof SEGMENTS)[number];
 /**
  * Grid-style views keep their own hour scroll but stay bounded so the page
  * itself is always scrollable past them — no viewport-filling boxes.
+ * Timed grids get real breathing room; the month calendar sizes to its rows.
  */
-const GRID_BOX = "h-[clamp(380px,68vh,880px)] min-h-0";
+const GRID_BOX = "h-[clamp(520px,78vh,1000px)] min-h-0";
 /** Sticky side columns scroll on their own without stretching the row. */
-const SIDE_COL = "sticky top-2 max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain";
+const SIDE_COL = "sticky top-20 max-h-[calc(100dvh-7.5rem)] overflow-y-auto overscroll-contain";
 
 function TrayToggle({ className }: { className?: string }) {
   const { taskIds, open } = useTray();
