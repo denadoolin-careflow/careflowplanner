@@ -436,6 +436,7 @@ export default function Planner() {
           </>
         )}
         <div className="flex min-w-0 flex-col">
+          {!showTaskPanel && <PlannerOverdueSection date={day} className="mb-2" />}
           {view === "day" && (
             <div className="mb-2 shrink-0 space-y-2">
               <PlannerCapacityBar date={day} />
