@@ -193,12 +193,6 @@ export default function Planner() {
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const openDay = (d: Date) => { setView("day"); go(d); };
 
-  const scrollMode = scrollModeFor(view, period, weekMode, monthMode);
-  const isFixed = scrollMode === "fixed";
-  const mobileFillHeight = useFillHeight(mobileHeaderRef, 96, isMobile && isFixed);
-  // Desktop shell fills whatever is left under the app chrome — no magic numbers.
-  const shellHeight = useFillHeight(shellTopRef, 24, !isMobile);
-
   const onResizeKey = useCallback((e: React.KeyboardEvent) => {
     const stepPx = e.shiftKey ? 40 : 12;
     if (e.key === "ArrowLeft") { e.preventDefault(); setTaskPanelWidth(w => Math.max(220, w - stepPx)); }
@@ -212,9 +206,8 @@ export default function Planner() {
       className={
         isMobile
           ? "planner-surface flex flex-col gap-3 pb-24"
-          : "planner-surface flex min-h-[560px] flex-col gap-3 overflow-hidden"
+          : "planner-surface flex flex-col gap-3 pb-10"
       }
-      style={!isMobile && shellHeight ? { height: shellHeight } : undefined}
     >
       <div ref={shellTopRef} aria-hidden className="h-0" />
       {isMobile ? (
