@@ -40,7 +40,7 @@ export function PlannerAtmosphereStrip({ date, className }: { date: Date; classN
 
   const moonPhase = getMoonPhase(date);
   const moon = MOON_INFO[moonPhase];
-  const illum = Math.round(getIllumination(date) * 100);
+  const illum = getIllumination(date);
 
   const cycle = useMemo(() => {
     try { return getPhaseInfo(date, periods, settings); } catch { return null; }

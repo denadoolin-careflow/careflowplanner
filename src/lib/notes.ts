@@ -71,6 +71,20 @@ export async function createNote(patch: Partial<Note> = {}): Promise<Note> {
   return fromRow(data);
 }
 
+/** Today's (or any day's) Daily Note, if one exists. */
+export async function getDailyNote(dateISO: string): Promise<Note | null> {
+  const { data, error } = await supabase
+    .from("notes")
+    .select("*")
+    .eq("kind", "daily")
+    .eq("date", dateISO)
+    .order("updated_at", { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  const row = (data ?? [])[0];
+  return row ? fromRow(row) : null;
+}
+
 export async function updateNote(id: string, patch: Partial<Note>): Promise<void> {
   const row: {
     title?: string; body?: string; pinned?: boolean; archived?: boolean;

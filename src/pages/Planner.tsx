@@ -23,6 +23,8 @@ import { PlannerPeriodList } from "@/components/planner/PlannerPeriodList";
 import { PlannerScheduleList } from "@/components/planner/PlannerScheduleList";
 import { PlannerViewToggle } from "@/components/planner/PlannerViewToggle";
 import { PlannerCapacityBar } from "@/components/planner/PlannerCapacityBar";
+import { PlannerMoonInsight } from "@/components/planner/PlannerMoonInsight";
+import { PlannerDayAssistant } from "@/components/planner/PlannerDayAssistant";
 import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
 import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
 import { PlannerOverdueSection } from "@/components/planner/PlannerOverdueSection";
@@ -451,6 +453,8 @@ export default function Planner() {
           {!showTaskPanel && <PlannerOverdueSection date={day} className="mb-2" />}
           {view === "day" && (
             <div className="mb-2 shrink-0 space-y-2">
+              <PlannerMoonInsight date={day} />
+              <PlannerDayAssistant date={day} />
               <PlannerCapacityBar date={day} />
               <PlannerEmptyDay
                 date={day}

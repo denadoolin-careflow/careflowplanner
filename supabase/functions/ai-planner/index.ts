@@ -54,10 +54,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
+    const LOVABLE_GATEWAY_KEY = Deno.env.get("LOVABLE_API_KEY") ?? "";
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    if (!LOVABLE_GATEWAY_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
       return new Response(JSON.stringify({ error: "Server not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     ];
 
     const callBody: any = {
-      model: "gpt-5-mini",
+      model: "google/gemini-3.6-flash",
       messages: finalMessages,
     };
     if (action !== "chat") {
@@ -151,11 +151,21 @@ Deno.serve(async (req) => {
       callBody.tool_choice = { type: "function", function: { name: "propose_plan" } };
     }
 
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify(callBody),
-    });
+    // Lovable AI Gateway, with backoff for transient rate limits.
+    let resp!: Response;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Lovable-API-Key": LOVABLE_GATEWAY_KEY,
+          "Content-Type": "application/json",
+          "X-Lovable-AIG-SDK": "fetch",
+        },
+        body: JSON.stringify(callBody),
+      });
+      if (resp.status !== 429 && resp.status < 500) break;
+      if (attempt < 3) await new Promise(r => setTimeout(r, 600 * 2 ** attempt));
+    }
 
     if (!resp.ok) {
       if (resp.status === 429) {
