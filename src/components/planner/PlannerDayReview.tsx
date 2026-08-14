@@ -4,6 +4,7 @@ import { CheckCircle2, Sparkles, NotebookPen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useStore } from "@/lib/store";
+import { PlannerTimeReview } from "./PlannerTimeReview";
 import { useBurnoutCheckIn, BURNOUT_META, type BurnoutLevel } from "@/lib/burnout-checkin";
 import { toast } from "sonner";
 
@@ -93,6 +94,8 @@ export function PlannerDayReview({ date, className }: { date: Date; className?: 
       <p className="text-[11px] text-muted-foreground">
         {Math.round(stats.doneMin / 6) / 10}h of {Math.round(stats.plannedMin / 6) / 10}h planned effort completed.
       </p>
+
+      <PlannerTimeReview from={date} days={1} label="today" />
 
       <div className="space-y-1.5">
         <p className="flex items-center gap-1.5 text-xs font-medium">
