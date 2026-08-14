@@ -120,9 +120,11 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
         })}
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
-        <UnscheduledTasksRail />
+      <div className="space-y-3">
         <WeekPlanningDashboard weekStart={weekStart} onJumpToDay={onSelectDay} />
+        <div className="[&_[data-rail-list]]:grid [&_[data-rail-list]]:gap-2 xl:[&_[data-rail-list]]:grid-cols-3 lg:[&_[data-rail-list]]:grid-cols-2">
+          <UnscheduledTasksRail />
+        </div>
       </div>
     </div>
   );
