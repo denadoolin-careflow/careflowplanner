@@ -3,12 +3,20 @@ import { format } from "date-fns";
 import { useStore } from "@/lib/store";
 import { useTimeBlocks } from "@/lib/time-blocks";
 import { useBandColors, swatchClass, type BandId } from "@/lib/planner-band-colors";
+import { ENERGY_COLOR, useDayPartEnergy, type DayPart, type Energy } from "@/lib/energy-by-part";
+import { MOODS, useDayPartMood } from "@/lib/mood-by-part";
 import { cn } from "@/lib/utils";
 
-const BANDS: { id: BandId; label: string; startH: number; endH: number }[] = [
-  { id: "morning", label: "Morning", startH: 5, endH: 12 },
-  { id: "afternoon", label: "Afternoon", startH: 12, endH: 17 },
-  { id: "evening", label: "Evening", startH: 17, endH: 22 },
+const BANDS: { id: BandId; part: DayPart; label: string; startH: number; endH: number }[] = [
+  { id: "morning", part: "morning", label: "Morning", startH: 5, endH: 12 },
+  { id: "afternoon", part: "afternoon", label: "Afternoon", startH: 12, endH: 17 },
+  { id: "evening", part: "evening", label: "Evening", startH: 17, endH: 22 },
+];
+
+const ENERGY_STEPS: { id: Energy; label: string }[] = [
+  { id: "low", label: "Low" },
+  { id: "medium", label: "Medium" },
+  { id: "high", label: "High" },
 ];
 
 function hmToMin(v?: string | null): number | null {
@@ -23,6 +31,8 @@ export function PlannerCapacityBar({ date, className }: { date: Date; className?
   const iso = format(date, "yyyy-MM-dd");
   const { blocks } = useTimeBlocks(iso, iso);
   const [colors] = useBandColors();
+  const [energy, setEnergy] = useDayPartEnergy(iso);
+  const [mood, setMood] = useDayPartMood(iso);
 
   const rows = useMemo(() => {
     const spans: { start: number; dur: number }[] = [];
@@ -88,6 +98,42 @@ export function PlannerCapacityBar({ date, className }: { date: Date; className?
                 aria-valuemax={100}
               >
                 <div className={cn("h-full rounded-full", over ? "bg-destructive" : swatchClass(colors[r.id]))} style={{ width: `${Math.max(2, pct)}%` }} />
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-0.5" aria-label={`${r.label} mood`}>
+                {MOODS.map(m => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    aria-label={`${r.label} mood ${m.label}`}
+                    aria-pressed={mood[r.part] === m.id}
+                    onClick={() => setMood(r.part, m.id)}
+                    className={cn(
+                      "rounded-full px-1 py-px text-[11px] leading-none transition",
+                      mood[r.part] === m.id ? "bg-primary/15 ring-1 ring-primary/40" : "opacity-55 hover:opacity-100",
+                    )}
+                  >
+                    {m.emoji}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-1 flex items-center gap-0.5" aria-label={`${r.label} energy`}>
+                {ENERGY_STEPS.map(e => (
+                  <button
+                    key={e.id}
+                    type="button"
+                    aria-label={`${r.label} energy ${e.label}`}
+                    aria-pressed={energy[r.part] === e.id}
+                    onClick={() => setEnergy(r.part, e.id)}
+                    className={cn(
+                      "flex-1 rounded-full border px-1 py-px text-[9.5px] leading-tight transition",
+                      energy[r.part] === e.id
+                        ? cn(ENERGY_COLOR[e.id].bg, ENERGY_COLOR[e.id].text, ENERGY_COLOR[e.id].border)
+                        : "border-border/50 text-muted-foreground/70 hover:text-foreground",
+                    )}
+                  >
+                    {e.label}
+                  </button>
+                ))}
               </div>
             </div>
           );
