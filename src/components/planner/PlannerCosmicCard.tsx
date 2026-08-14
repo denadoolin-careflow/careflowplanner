@@ -32,7 +32,7 @@ export function PlannerCosmicCard({ date, className }: { date: Date; className?:
   const moon = MOON_INFO[phase];
   const illum = getIllumination(date);
   const sign = getMoonSign(date);
-  const guide = MOON_IN_SIGN_GUIDE[sign.sign];
+  const guide = MOON_IN_SIGN_GUIDE[sign.name];
   const transits = useMemo(() => getTransitsForDate(date), [date]);
 
   const cycle = useMemo(() => {
@@ -53,7 +53,7 @@ export function PlannerCosmicCard({ date, className }: { date: Date; className?:
     setDraft("");
   };
 
-  const title = active === "moon" ? `${moon.label} in ${sign.sign}` : active?.label ?? "";
+  const title = active === "moon" ? `${moon.label} in ${sign.name}` : active?.label ?? "";
   const detail = active === "moon" ? guide.vibe : active?.detail ?? "";
   const prompt = active === "moon"
     ? `What does "${guide.vibe.toLowerCase()}" ask of you today?`
@@ -93,7 +93,7 @@ export function PlannerCosmicCard({ date, className }: { date: Date; className?:
         <span aria-hidden className="text-lg leading-none">{moon.glyph}</span>
         <div className="min-w-0 flex-1">
           <p className="font-display text-sm font-semibold [overflow-wrap:anywhere]">
-            {moon.label} in {sign.sign} <span aria-hidden>{SIGN_EMOJI[sign.sign]}</span>
+            {moon.label} in {sign.name} <span aria-hidden>{SIGN_EMOJI[sign.name]}</span>
           </p>
           <p className="text-[11px] text-muted-foreground">
             {illum}% lit · {sign.element} energy
