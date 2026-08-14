@@ -51,7 +51,7 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
               onDragLeave={() => setDragOver(cur => (cur === key ? null : cur))}
               onDrop={(e) => onDrop(key, e)}
               className={cn(
-                "flex min-h-[160px] flex-col rounded-2xl border border-border/60 bg-card/40 p-2 transition-colors",
+                "flex min-h-[260px] flex-col rounded-2xl border border-border/60 bg-card/40 p-2 transition-colors",
                 dragOver === key && "border-primary/60 bg-primary/5",
               )}
             >
@@ -64,7 +64,7 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
                 <span className={cn("font-display text-sm font-semibold", isToday && "text-primary")}>{format(d, "MMM d")}</span>
               </button>
               <PlannerCapacityBar date={d} className="mb-1.5" />
-              <div className="flex flex-1 flex-col gap-1">
+              <div className="flex max-h-[420px] flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pr-0.5">
                 {items.length === 0 && <p className="px-1 py-2 text-[11px] text-muted-foreground">Nothing planned</p>}
                 {items.map(it => {
                   const Icon = KIND_ICONS[it.kind];
