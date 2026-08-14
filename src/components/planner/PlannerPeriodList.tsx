@@ -88,7 +88,7 @@ export function PlannerPeriodList({ date, period }: { date: Date; period: DayPar
         if (id) { e.preventDefault(); dropAt(id); }
       }}
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40 transition-colors",
+        "flex h-full min-h-[220px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40 transition-colors",
         dragOver && "border-primary/60 bg-primary/5",
       )}
     >
