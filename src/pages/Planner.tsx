@@ -283,7 +283,7 @@ export default function Planner() {
                     {weekMode === "grid" ? "• " : ""}Grid
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => setWeekMode("board")}>
-                    {weekMode === "board" ? "• " : ""}Board
+                    {weekMode === "board" ? "• " : ""}Overview
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
