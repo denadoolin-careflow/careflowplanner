@@ -16,6 +16,7 @@ function MealChip({ iso, slot, label, style }: { iso: string; slot: Meal["slot"]
 
   return (
     <MealPickerPopover
+      slot={slot}
       onPick={(picked) => {
         const patch = {
           name: picked.name,

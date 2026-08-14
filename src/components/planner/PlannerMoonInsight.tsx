@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ExternalLink, Loader2, NotebookPen, RotateCcw, Save, Sparkles } from "lucide-react";
+import { ChevronDown, ExternalLink, Loader2, NotebookPen, RotateCcw, Save, Share2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +14,8 @@ import { getMoonPhase, MOON_INFO, getIllumination, daysUntilFull, daysUntilNew }
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { createNote, getDailyNote, updateNote, type Note } from "@/lib/notes";
+import { useTimeAllocation } from "@/lib/planner/time-allocation";
+import { buildMoonInsightPdf, shareOrDownloadPdf } from "@/lib/planner/moon-insight-pdf";
 import {
   DAILY_NOTE_PLACEHOLDERS,
   renderDailyNoteTemplate,
@@ -150,6 +152,34 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
   const [tplDraft, setTplDraft] = useState(template);
   useEffect(() => { setTplDraft(template); }, [template]);
 
+  // ---- Export ----
+  const allocation = useTimeAllocation(date, 1, "kind");
+  const [exporting, setExporting] = useState(false);
+
+  const exportPdf = async () => {
+    setExporting(true);
+    try {
+      const { blob, filename } = buildMoonInsightPdf({
+        date,
+        moonLabel: moon.label,
+        illumination: illum,
+        invitation: moon.invitation,
+        cycleLabel: cycleLabel || undefined,
+        journalTitle: jTitle || undefined,
+        journalBody: jBody,
+        noteTitle: note?.title || undefined,
+        noteBody: noteBody,
+        slices: allocation.slices,
+        totalPlannedMin: allocation.totalPlannedMin,
+        totalDoneMin: allocation.totalDoneMin,
+      });
+      const how = await shareOrDownloadPdf(blob, filename);
+      toast.success(how === "shared" ? "Shared your moon insight" : "Moon insight PDF saved");
+    } catch {
+      toast.error("Couldn't build the PDF");
+    } finally { setExporting(false); }
+  };
+
   const createTodayNote = async () => {
     setCreatingNote(true);
     try {
@@ -193,6 +223,17 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
 
       <CollapsibleContent>
         <div className="border-t border-border/50 p-3">
+          <div className="mb-2 flex justify-end">
+            <Button
+              size="sm" variant="outline" className="h-7 rounded-full text-[11px]"
+              disabled={exporting} onClick={() => void exportPdf()}
+            >
+              {exporting
+                ? <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                : <Share2 className="mr-1 h-3 w-3" />}
+              Export PDF
+            </Button>
+          </div>
           <Tabs defaultValue="journal">
             <TabsList className="h-8">
               <TabsTrigger value="journal" className="h-6 text-[11.5px]">Journal</TabsTrigger>

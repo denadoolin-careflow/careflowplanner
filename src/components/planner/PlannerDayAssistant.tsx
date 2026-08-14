@@ -51,11 +51,21 @@ export function PlannerDayAssistant({ date, className }: { date: Date; className
     [state.tasks, iso, blockTaskIds],
   );
 
-  const onPlace = useCallback(async (taskId: string, absMin: number) => {
-    const prev = state.tasks.find(t => t.id === taskId)?.startTime ?? null;
-    await updateTask(taskId, { startTime: minToHm(absMin) } as any);
+  const onPlace = useCallback(async (taskId: string, absMin: number, durMin?: number) => {
+    const task = state.tasks.find(t => t.id === taskId);
+    const prev = task?.startTime ?? null;
+    const prevDur = task?.estMinutes ?? null;
+    await updateTask(taskId, {
+      startTime: minToHm(absMin),
+      ...(durMin ? { estMinutes: durMin } : {}),
+    } as any);
     toast.success(`Scheduled for ${minToHm(absMin)}`, {
-      action: { label: "Undo", onClick: () => { void updateTask(taskId, { startTime: prev } as any); } },
+      action: {
+        label: "Undo",
+        onClick: () => {
+          void updateTask(taskId, { startTime: prev, ...(durMin ? { estMinutes: prevDur } : {}) } as any);
+        },
+      },
     });
   }, [state.tasks, updateTask]);
 
