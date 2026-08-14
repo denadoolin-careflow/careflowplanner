@@ -3,11 +3,13 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Heart, Clock, Sparkles, Baby, Zap, Plus, BookOpen, History } from "lucide-react";
+import { Heart, Clock, Sparkles, Baby, Zap, Plus, BookOpen, History, Loader2 } from "lucide-react";
 import { useMealsLibrary, type LibraryMeal } from "@/lib/meals-library";
 import { listFavorites, type FavoriteMeal } from "@/lib/meal-ai";
 import { useEffect } from "react";
 import { useStore } from "@/lib/store";
+import { aiInvoke } from "@/lib/ai-invoke";
+import { toast } from "sonner";
 import type { Meal } from "@/lib/types";
 
 interface PickedMeal {
@@ -19,17 +21,20 @@ interface PickedMeal {
 }
 
 export function MealPickerPopover({
-  trigger, onPick, onCreateNew,
+  trigger, onPick, onCreateNew, slot,
 }: {
   trigger: React.ReactNode;
   onPick: (m: PickedMeal) => void;
   onCreateNew?: () => void;
+  /** Meal slot this picker is filling — used to focus AI recipe generation. */
+  slot?: Meal["slot"];
 }) {
   const { state, user } = useStore();
-  const { items: library } = useMealsLibrary();
+  const { items: library, create: createLibraryMeal } = useMealsLibrary();
   const [favs, setFavs] = useState<FavoriteMeal[]>([]);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     if (open && user?.id) listFavorites(user.id).then(setFavs);
@@ -59,6 +64,48 @@ export function MealPickerPopover({
 
   const pick = (m: PickedMeal) => { onPick(m); setOpen(false); };
 
+  const query = q.trim();
+  const exactMatch = useMemo(
+    () => library.some(l => l.title.toLowerCase() === query.toLowerCase()),
+    [library, query],
+  );
+
+  const generateRecipe = async () => {
+    if (!query || generating) return;
+    setGenerating(true);
+    try {
+      const { data, error } = await aiInvoke<{ recipe?: any }>("ai-meal-recipe", {
+        body: { name: query, slot },
+      });
+      if (error) throw error;
+      const r = (data as any)?.recipe;
+      if (!r) throw new Error("No recipe came back");
+      void createLibraryMeal({
+        title: r.title ?? query,
+        description: r.description ?? null,
+        slot: slot ?? null,
+        prep_minutes: r.prep_minutes ?? null,
+        cook_minutes: r.cook_minutes ?? null,
+        servings: r.servings ?? null,
+        ingredients: r.ingredients ?? [],
+        steps: r.steps ?? [],
+        tags: r.tags ?? [],
+        icon: r.icon ?? null,
+        energy_level: r.energy_level ?? "medium",
+      });
+      toast.success(`Recipe ready for ${r.title ?? query} — saved to your library`);
+      pick({
+        name: r.title ?? query,
+        prep_minutes: r.prep_minutes ?? null,
+        ingredients: r.ingredients ?? [],
+        steps: r.steps ?? [],
+        tags: r.tags ?? [],
+      });
+    } catch (e: any) {
+      toast.error(typeof e?.message === "string" ? e.message : "Couldn't generate that recipe");
+    } finally { setGenerating(false); }
+  };
+
   const Item = ({ name, sub, onClick }: { name: string; sub?: string; onClick: () => void }) => (
     <button onClick={onClick}
       className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm transition hover:bg-primary/10">
@@ -72,6 +119,29 @@ export function MealPickerPopover({
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent align="start" className="w-80 p-3">
         <Input placeholder="Search meals…" value={q} onChange={e => setQ(e.target.value)} className="mb-2 h-8" />
+        {query && !exactMatch && (
+          <div className="mb-2 space-y-1 rounded-md border border-dashed border-border/70 p-2">
+            <button
+              onClick={() => pick({ name: query })}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition hover:bg-primary/10"
+            >
+              <Plus className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Use “{query}”</span>
+            </button>
+            <button
+              onClick={() => void generateRecipe()}
+              disabled={generating}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition hover:bg-primary/10 disabled:opacity-60"
+            >
+              {generating
+                ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                : <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" />}
+              <span className="truncate">
+                {generating ? "Writing the recipe…" : `Generate a recipe for “${query}”`}
+              </span>
+            </button>
+          </div>
+        )}
         <Tabs defaultValue="favorites">
           <TabsList className="grid w-full grid-cols-6 h-8">
             <TabsTrigger value="favorites" className="px-1"><Heart className="h-3 w-3" /></TabsTrigger>
