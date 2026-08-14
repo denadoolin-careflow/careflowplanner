@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
+import { KIND_ICONS } from "./kindIcon";
+
 
 /**
  * Month calendar built on the shared planner feed: real event chips per day,
@@ -70,24 +72,28 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                   isToday && "bg-primary font-semibold text-primary-foreground")}>{format(d, "d")}</span>
               </button>
               <div className="flex min-h-0 flex-col gap-0.5">
-                {items.slice(0, 3).map(it => (
-                  <button
-                    key={it.id}
-                    type="button"
-                    draggable={it.sourceRef.type === "task" || it.sourceRef.type === "appointment"}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("application/x-planner-item", `${it.sourceRef.type}:${it.sourceRef.id}`);
-                      e.dataTransfer.effectAllowed = "move";
-                    }}
-                    onClick={() => (onOpenItem ? onOpenItem(it) : onSelectDay(d))}
-                    title={it.title}
-                    className={cn("truncate rounded px-1 py-[1px] text-left text-[10px] leading-tight",
-                      it.done && "line-through opacity-50")}
-                    style={{ background: `${it.color}1f`, color: it.color }}
-                  >
-                    {it.time ? `${it.time} ` : ""}{it.title}
-                  </button>
-                ))}
+                {items.slice(0, 3).map(it => {
+                  const Icon = KIND_ICONS[it.kind];
+                  return (
+                    <button
+                      key={it.id}
+                      type="button"
+                      draggable={it.sourceRef.type === "task" || it.sourceRef.type === "appointment"}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("application/x-planner-item", `${it.sourceRef.type}:${it.sourceRef.id}`);
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      onClick={() => (onOpenItem ? onOpenItem(it) : onSelectDay(d))}
+                      title={it.title}
+                      className={cn("flex w-full items-center gap-1 rounded px-1 py-[1px] text-left text-[10px] leading-tight",
+                        it.done && "line-through opacity-50")}
+                      style={{ background: `${it.color}1f`, color: it.color }}
+                    >
+                      <Icon className="h-2.5 w-2.5 shrink-0" style={{ color: it.color }} />
+                      <span className="truncate">{it.time ? `${it.time} ` : ""}{it.title}</span>
+                    </button>
+                  );
+                })}
                 {items.length > 3 && (
                   <button
                     type="button"
