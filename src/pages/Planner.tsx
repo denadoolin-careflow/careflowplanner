@@ -414,6 +414,7 @@ export default function Planner() {
         {showTaskPanel && (
           <>
             <div className={`${SIDE_COL} pr-1`}>
+              <PlannerOverdueSection date={day} className="mb-2" />
               <TaskSourcePanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
             </div>
             <div
@@ -476,9 +477,7 @@ export default function Planner() {
               </>
             )}
             {view === "month" && monthMode === "calendar" && (
-              <div className={GRID_BOX}>
-                <PlannerMonthView date={day} onSelectDay={openDay} />
-              </div>
+              <PlannerMonthView date={day} onSelectDay={openDay} />
             )}
             {view === "month" && monthMode === "overview" && (
               <PlannerMonthOverview date={day} onJumpToDate={openDay} />
