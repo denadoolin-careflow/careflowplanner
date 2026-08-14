@@ -196,6 +196,19 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     return () => clearInterval(id);
   }, [date]);
 
+  // Keep a "Jump to now" affordance only when the current time is scrolled out of view.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || nowMin === null) { setNowVisible(true); return; }
+    const check = () => {
+      const top = nowMin * (HOUR_PX / 60);
+      setNowVisible(top >= el.scrollTop - 8 && top <= el.scrollTop + el.clientHeight + 8);
+    };
+    check();
+    el.addEventListener("scroll", check, { passive: true });
+    return () => el.removeEventListener("scroll", check);
+  }, [nowMin, noScroll]);
+
   const items = useMemo(() => {
     const out: ScheduledItem[] = [];
     const taskBlockMap = new Map<string, string>(); // taskId -> block start_time
