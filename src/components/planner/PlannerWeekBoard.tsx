@@ -125,6 +125,7 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
       <div className="[&>*]:w-full">
         <WeekPlanningDashboard weekStart={weekStart} onJumpToDay={onSelectDay} />
       </div>
+      {dialogs}
     </div>
   );
 }
