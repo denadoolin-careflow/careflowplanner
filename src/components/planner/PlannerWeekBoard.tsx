@@ -7,6 +7,7 @@ import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { PlannerCapacityBar } from "./PlannerCapacityBar";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { KIND_ICONS } from "./kindIcon";
+import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { cn } from "@/lib/utils";
 
 
@@ -21,6 +22,8 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
 }) {
   const { updateTask, updateAppointment } = useStore() as any;
   const { byDay } = usePlannerFeed(weekStart, 7);
+  const { open: openItem, dialogs } = usePlannerItemOpener();
+  const handleOpen = onOpenItem ?? openItem;
   const [dragOver, setDragOver] = useState<string | null>(null);
   const cols = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
@@ -77,7 +80,7 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
                         e.dataTransfer.setData("application/x-planner-item", `${it.sourceRef.type}:${it.sourceRef.id}`);
                         e.dataTransfer.effectAllowed = "move";
                       }}
-                      onClick={() => onOpenItem?.(it)}
+                      onClick={() => handleOpen(it)}
                       className={cn(
                         "group flex items-start gap-2 rounded-xl border border-border/50 bg-card/60 px-2 py-2 text-left text-[11px] leading-snug shadow-sm transition-all hover:bg-muted/50 hover:shadow-md",
                         it.done && "opacity-50 line-through",
