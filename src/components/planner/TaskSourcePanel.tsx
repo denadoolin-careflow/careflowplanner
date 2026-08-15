@@ -299,6 +299,41 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Da
               );
             })}
           </SectionBlock>
+
+          <SectionBlock id="habits" label="Habits" Icon={Sparkles} count={state.habits.length}
+            open={open.habits ?? false} onToggle={toggle}>
+            {state.habits.map((h: any) => {
+              const done = !!h.log?.[todayISO];
+              return (
+                <div key={h.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px]">
+                  <BlockCheckbox done={done} title={h.name ?? h.title ?? "Habit"} onToggle={() => void toggleHabit(h.id)} className="mt-0.5" />
+                  <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere]", done && "line-through opacity-60")}>
+                    {h.name ?? h.title}
+                  </span>
+                </div>
+              );
+            })}
+          </SectionBlock>
+
+          <SectionBlock id="routines" label="Routines" Icon={ListChecks} count={routineList.length}
+            open={open.routines ?? false} onToggle={toggle}>
+            {routineList.map(r => (
+              <div key={r.id} className="space-y-1 pb-1">
+                <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  {r.person_name} · {SLOT_LABEL[r.slot]}
+                </p>
+                {r.items.map(item => (
+                  <div key={item.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px]">
+                    <BlockCheckbox done={!!item.done} title={item.text}
+                      onToggle={() => void routinesApi.toggleItem(r.person_name, r.slot, item.id)} className="mt-0.5" />
+                    <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere]", item.done && "line-through opacity-60")}>
+                      {item.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </SectionBlock>
         </div>
       </div>
     </aside>
