@@ -34,7 +34,9 @@ export function PlannerTimeReview({ from, days, label, className }: {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Time review</p>
-          <h3 className="truncate font-display text-base font-semibold">Where {label} went</h3>
+          <h3 className="truncate font-display text-base font-semibold">
+            {tab === "rhythm" ? `Rhythm · ${label}` : `Where ${label} went`}
+          </h3>
         </div>
         <div
           role="group"
@@ -77,7 +79,9 @@ export function PlannerTimeReview({ from, days, label, className }: {
         </div>
       </div>
 
-      {slices.length === 0 ? (
+      {tab === "rhythm" ? (
+        <PlannerRhythmChart from={days === 1 ? addDays(from, -6) : from} days={days === 1 ? 7 : days} />
+      ) : slices.length === 0 ? (
         <p className="py-6 text-center text-xs text-muted-foreground">
           Nothing timed yet — schedule a few things and your balance shows up here.
         </p>
@@ -128,7 +132,7 @@ export function PlannerTimeReview({ from, days, label, className }: {
         </div>
       )}
 
-      {slices.length > 0 && (
+      {tab === "balance" && slices.length > 0 && (
         <p className="text-[11px] text-muted-foreground">
           {top.label} took {share}% of {label}; {fmtHours(totalDoneMin)} of {fmtHours(totalPlannedMin)} planned is complete.
         </p>
