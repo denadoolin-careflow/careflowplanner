@@ -2,6 +2,8 @@ import { useState } from "react";
 import { PieChart as PieIcon } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useTimeAllocation, fmtHours, type GroupBy } from "@/lib/planner/time-allocation";
+import { PlannerRhythmChart } from "./PlannerRhythmChart";
+import { addDays } from "date-fns";
 
 /** Where planned time went: a category wheel plus a planned-vs-completed graph. */
 export function PlannerTimeReview({ from, days, label, className }: {
@@ -11,6 +13,7 @@ export function PlannerTimeReview({ from, days, label, className }: {
   className?: string;
 }) {
   const [groupBy, setGroupBy] = useState<GroupBy>("kind");
+  const [tab, setTab] = useState<"balance" | "rhythm">("balance");
   const { slices, totalPlannedMin, totalDoneMin, plannedShare } = useTimeAllocation(from, days, groupBy);
 
   const top = slices[0];
@@ -35,6 +38,26 @@ export function PlannerTimeReview({ from, days, label, className }: {
         </div>
         <div
           role="group"
+          aria-label="Review mode"
+          className="inline-flex shrink-0 rounded-full border border-border/60 bg-background/60 p-0.5"
+        >
+          {(["balance", "rhythm"] as const).map(t => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              aria-pressed={tab === t}
+              className={`rounded-full px-2.5 py-1 text-[11px] capitalize transition-colors ${
+                tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+        <div
+          role="group"
+          hidden={tab !== "balance"}
           aria-label="Group categories by"
           className="inline-flex shrink-0 rounded-full border border-border/60 bg-background/60 p-0.5"
         >

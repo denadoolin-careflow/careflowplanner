@@ -16,6 +16,8 @@ import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { createNote, getDailyNote, updateNote, type Note } from "@/lib/notes";
 import { useTimeAllocation } from "@/lib/planner/time-allocation";
 import { getMoonJournalContext } from "@/lib/planner/moon-journal-prompt";
+import { useCycleDot } from "@/lib/planner/day-rhythm";
+import { MoonInsightHistory } from "./MoonInsightHistory";
 import { buildMoonInsightPdf, shareOrDownloadPdf } from "@/lib/planner/moon-insight-pdf";
 import {
   DAILY_NOTE_PLACEHOLDERS,
@@ -62,7 +64,7 @@ function SaveState({ status }: { status: "idle" | "saving" | "saved" | "error" }
  * Moon insight for the day, with a dropdown holding today's journal entry,
  * today's daily note, and the editable daily-note template.
  */
-export function PlannerMoonInsight({ date, className }: { date: Date; className?: string }) {
+export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Date; className?: string; onSelectDate?: (d: Date) => void }) {
   const iso = format(date, "yyyy-MM-dd");
   const { state, addJournal, updateJournal } = useStore();
   const { periods, settings } = useCycle();
@@ -87,6 +89,7 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
     try { return getPhaseInfo(date, periods, settings); } catch { return null; }
   }, [date, periods, settings]);
   const cycleLabel = cycle ? `${PHASE_META[cycle.phase]?.label ?? cycle.label} · day ${cycle.cycleDay}` : "";
+  const cycleDot = useCycleDot(date);
 
   // ---- Journal ----
   const entry = useMemo(
@@ -233,6 +236,14 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
                 {cosmic.elementEmoji} {cosmic.sign.element}
               </span>
               <span className="rounded-full border border-border/60 bg-muted/40 px-1.5 py-0.5">{cosmic.themeName}</span>
+              {cycleDot && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5"
+                  style={{ background: cycleDot.soft, color: cycleDot.color, borderColor: cycleDot.soft }}
+                >
+                  <span aria-hidden>{cycleDot.glyph}</span>{cycleDot.text}
+                </span>
+              )}
             </span>
           </span>
           <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
@@ -257,6 +268,7 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
               <TabsTrigger value="journal" className="h-6 text-[11.5px]">Journal</TabsTrigger>
               <TabsTrigger value="note" className="h-6 text-[11.5px]">Daily note</TabsTrigger>
               <TabsTrigger value="template" className="h-6 text-[11.5px]">Template</TabsTrigger>
+              <TabsTrigger value="history" className="h-6 text-[11.5px]">History</TabsTrigger>
             </TabsList>
 
             {/* Journal */}
@@ -375,6 +387,11 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
                   {renderDailyNoteTemplate(iso, tplDraft, { cycle: cycleLabel })}
                 </pre>
               </details>
+            </TabsContent>
+
+            {/* History */}
+            <TabsContent value="history" className="mt-3">
+              <MoonInsightHistory date={date} onSelectDate={onSelectDate} />
             </TabsContent>
           </Tabs>
         </div>
