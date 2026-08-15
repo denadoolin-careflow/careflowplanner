@@ -21,6 +21,7 @@ import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { inferArea } from "@/lib/area-infer";
 import { usePlannerHistory, type HistoryEntry } from "@/lib/planner-history";
 import { useAutoSchedulePrefs } from "@/lib/auto-schedule-prefs";
 import { AutoScheduleSettings } from "./AutoScheduleSettings";
@@ -833,7 +834,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setQuickAdd({ x: 24, y: g.start * (HOUR_PX / 60), startAbsMin: g.start + START_H * 60, text: "" });
+                  setQuickAdd({ x: 24, y: g.start * (HOUR_PX / 60), startAbsMin: g.start + START_H * 60, text: "", durMin: Math.min(g.dur, 60) });
                 }}
                 aria-label={`${g.dur} minutes free from ${minTo12(g.start + START_H * 60)}. Add a task here.`}
                 className="group/gap absolute left-1 right-1 z-0 flex items-start justify-end rounded-md border border-dashed border-transparent px-2 pt-1 text-[9px] text-muted-foreground/0 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-muted-foreground"
