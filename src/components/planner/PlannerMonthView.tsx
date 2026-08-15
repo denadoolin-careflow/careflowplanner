@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { KIND_ICONS } from "./kindIcon";
+import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { useCycleDots } from "@/lib/planner/day-rhythm";
 
 
@@ -26,6 +27,8 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
   const days: Date[] = Array.from({ length: total }, (_, i) => addDays(start, i));
   const today = new Date();
   const { byDay } = usePlannerFeed(start, total);
+  const { open: openItem, dialogs } = usePlannerItemOpener();
+  const handleOpen = (it: PlannerFeedItem) => (onOpenItem ? onOpenItem(it) : openItem(it));
   const cycles = useCycleDots(days);
   const [dragOver, setDragOver] = useState<string | null>(null);
   const todayKey = format(today, "yyyy-MM-dd");
@@ -118,7 +121,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                         e.dataTransfer.setData("application/x-planner-item", `${it.sourceRef.type}:${it.sourceRef.id}`);
                         e.dataTransfer.effectAllowed = "move";
                       }}
-                      onClick={() => (onOpenItem ? onOpenItem(it) : onSelectDay(d))}
+                      onClick={() => handleOpen(it)}
                       title={it.title}
                       className={cn("flex w-full items-center gap-1 rounded px-1 py-[2px] text-left text-[10px] leading-tight",
                         it.done && "line-through opacity-45")}
@@ -151,7 +154,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                           <button
                             key={it.id}
                             type="button"
-                            onClick={() => (onOpenItem ? onOpenItem(it) : onSelectDay(d))}
+                            onClick={() => handleOpen(it)}
                             className={cn("flex w-full items-center gap-1.5 rounded-lg px-1.5 py-1 text-left text-[11px] hover:bg-muted",
                               it.done && "line-through opacity-50")}
                           >
