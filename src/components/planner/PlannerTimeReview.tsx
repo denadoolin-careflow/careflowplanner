@@ -57,9 +57,9 @@ export function PlannerTimeReview({ from, days, label, className }: {
             </button>
           ))}
         </div>
+        {tab === "balance" && (
         <div
           role="group"
-          hidden={tab !== "balance"}
           aria-label="Group categories by"
           className="inline-flex shrink-0 rounded-full border border-border/60 bg-background/60 p-0.5"
         >
@@ -77,6 +77,7 @@ export function PlannerTimeReview({ from, days, label, className }: {
             </button>
           ))}
         </div>
+        )}
       </div>
 
       {tab === "rhythm" ? (
