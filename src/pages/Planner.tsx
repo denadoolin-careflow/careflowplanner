@@ -431,7 +431,11 @@ export default function Planner() {
           <>
             <div className={`${SIDE_COL} pr-1`}>
               <PlannerOverdueSection date={day} className="mb-2" />
-              <TaskSourcePanel selectedDate={day} onQuickAdd={() => setCaptureOpen(true)} />
+              <TaskSourcePanel
+                selectedDate={day}
+                onQuickAdd={() => setCaptureOpen(true)}
+                onCollapse={() => setPanel(view, "task", false)}
+              />
             </div>
             <div
               role="separator"
