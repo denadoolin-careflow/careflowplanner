@@ -178,6 +178,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
           );
         })}
       </div>
+      {dialogs}
     </div>
   );
 }
