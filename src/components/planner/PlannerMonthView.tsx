@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { KIND_ICONS } from "./kindIcon";
+import { useCycleDots } from "@/lib/planner/day-rhythm";
 
 
 /**
@@ -25,6 +26,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
   const days: Date[] = Array.from({ length: total }, (_, i) => addDays(start, i));
   const today = new Date();
   const { byDay } = usePlannerFeed(start, total);
+  const cycles = useCycleDots(days);
   const [dragOver, setDragOver] = useState<string | null>(null);
   const todayKey = format(today, "yyyy-MM-dd");
 
@@ -57,6 +59,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
           const allDone = completable.length > 0 && doneCount === completable.length;
           const isPast = key < todayKey;
           const hasOverdue = isPast && completable.some(it => !it.done);
+          const cyc = cycles.get(key);
           const visible = items.slice(0, 4);
           const overflow = items.slice(4);
           return (
@@ -78,10 +81,15 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                 <button
                   type="button"
                   onClick={() => onSelectDay(d)}
-                  aria-label={`Open ${format(d, "EEEE, MMMM d")}`}
+                  aria-label={[`Open ${format(d, "EEEE, MMMM d")}`, cyc?.text].filter(Boolean).join(" · ")}
+                  title={cyc?.text}
+                  className="flex items-center gap-1"
                 >
                   <span className={cn("grid h-6 w-6 place-items-center rounded-full text-[11px] hover:bg-muted",
                     isToday && "bg-primary font-semibold text-primary-foreground")}>{format(d, "d")}</span>
+                  {cyc && (
+                    <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: cyc.color }} />
+                  )}
                 </button>
                 {completable.length > 0 && (
                   <span
