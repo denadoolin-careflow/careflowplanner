@@ -8,15 +8,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { usePlannerTemplates, type PlannerTemplate, type TemplateItem } from "@/lib/planner-templates";
 import { toast } from "sonner";
+import { useCycleSuggestion } from "@/lib/planner/cycle-templates";
 
 interface Props {
   onApply: (tpl: PlannerTemplate) => void | Promise<void>;
   /** Snapshot of the current day's scheduled items, used for "Save this day". */
   buildCurrentItems: () => TemplateItem[];
+  /** Day the templates apply to — drives the cycle-phase suggestion. */
+  date?: Date;
 }
 
-export function PlannerTemplatesMenu({ onApply, buildCurrentItems }: Props) {
+export function PlannerTemplatesMenu({ onApply, buildCurrentItems, date }: Props) {
   const { templates, saved, create, remove } = usePlannerTemplates();
+  const suggestion = useCycleSuggestion(date ?? new Date());
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
@@ -44,6 +48,27 @@ export function PlannerTemplatesMenu({ onApply, buildCurrentItems }: Props) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
+        {suggestion && (
+          <>
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              Suggested for this phase
+            </DropdownMenuLabel>
+            <DropdownMenuItem
+              onSelect={(e) => { e.preventDefault(); setOpen(false); void onApply(suggestion.template); }}
+              className="flex flex-col items-start gap-0.5"
+            >
+              <span className="flex w-full items-center gap-2">
+                <span aria-hidden>{suggestion.template.icon}</span>
+                <span className="min-w-0 flex-1 truncate">{suggestion.template.name}</span>
+                <span className="text-[10px] text-muted-foreground">{suggestion.template.items.length}</span>
+              </span>
+              <span className="whitespace-normal text-[10.5px] leading-snug text-muted-foreground">
+                {suggestion.dayNudge}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">
           Fill the day with…
         </DropdownMenuLabel>
