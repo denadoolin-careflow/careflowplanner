@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format, isToday, isTomorrow } from "date-fns";
 import {
   Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun,
@@ -27,10 +27,36 @@ function GlyphIcon({
   return <Cloud className={cls} />;
 }
 
+/** Soft background tints per condition (light / dark), used to color cells. */
+const COND_TINT: Record<WeatherCondition, string> = {
+  "clear": "from-amber-200/60 to-amber-100/30 dark:from-amber-500/25 dark:to-amber-400/10",
+  "partly-cloudy": "from-sky-200/60 to-amber-100/30 dark:from-sky-500/25 dark:to-amber-400/10",
+  "cloudy": "from-slate-300/55 to-slate-200/25 dark:from-slate-500/30 dark:to-slate-400/10",
+  "fog": "from-zinc-300/55 to-zinc-200/25 dark:from-zinc-500/30 dark:to-zinc-400/10",
+  "drizzle": "from-sky-300/60 to-sky-200/25 dark:from-sky-500/30 dark:to-sky-400/10",
+  "rain": "from-blue-400/55 to-blue-200/25 dark:from-blue-500/35 dark:to-blue-400/10",
+  "snow": "from-cyan-200/60 to-slate-100/30 dark:from-cyan-400/25 dark:to-slate-300/10",
+  "thunderstorm": "from-indigo-400/55 to-violet-300/25 dark:from-indigo-500/35 dark:to-violet-400/10",
+};
+
+function nightTint(isNight?: boolean) {
+  return isNight ? "from-indigo-300/50 to-slate-200/25 dark:from-indigo-500/30 dark:to-slate-500/10" : "";
+}
+
+/** Precipitation fill: height/width scales with chance. */
+function precipTone(chance: number) {
+  if (chance >= 70) return "bg-blue-600/70";
+  if (chance >= 40) return "bg-blue-500/55";
+  if (chance >= 20) return "bg-sky-500/45";
+  return "bg-sky-400/25";
+}
+
 export function WeatherDetailCard({ className }: { className?: string }) {
   const snap = useWeatherSnapshot();
   const [unit] = useTempUnit();
   const { atmosphere } = useAtmosphere();
+  const [openHour, setOpenHour] = useState<string | null>(null);
+  const [openDay, setOpenDay] = useState<string | null>(null);
   const fmtT = (c: number) => `${unit === "F" ? cToF(c) : Math.round(c)}°`;
 
   const theme = useMemo(
@@ -142,37 +168,69 @@ export function WeatherDetailCard({ className }: { className?: string }) {
             <h4 className={cn("text-xs font-semibold uppercase tracking-wide", theme.accent)}>
               Hourly today
             </h4>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Colored by conditions — the blue fill is the chance of precipitation. Tap an hour for details.
+            </p>
             <div className="mt-2 -mx-1 overflow-x-auto">
               <div className="flex min-w-max gap-1 px-1 pb-1">
                 {hourly.map((h, i) => {
                   const label = i === 0
                     ? "Now"
                     : format(h.dateObj, h.hour === 0 || h.hour === 12 ? "h a" : "h a");
+                  const key = `${h.hour}-${i}`;
+                  const active = openHour === key;
                   return (
-                    <div
-                      key={`${h.hour}-${i}`}
-                      className="flex w-12 flex-col items-center gap-1 rounded-md bg-muted/40 px-1 py-2"
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setOpenHour(active ? null : key)}
+                      aria-pressed={active}
+                      aria-label={`${label}: ${h.conditionLabel ?? ""} ${fmtT(h.tempC)}, ${h.precipChance}% chance of precipitation`}
+                      className={cn(
+                        "relative flex w-12 flex-col items-center gap-1 overflow-hidden rounded-md bg-gradient-to-b px-1 py-2 transition",
+                        COND_TINT[h.condition] ?? COND_TINT.cloudy,
+                        nightTint(h.isNight) && h.condition === "clear" ? nightTint(h.isNight) : "",
+                        active ? "ring-2 ring-primary/60" : "hover:brightness-105",
+                      )}
                     >
-                      <span className="text-[10px] uppercase tracking-wide text-foreground/60">
+                      <span
+                        aria-hidden
+                        className={cn("pointer-events-none absolute inset-x-0 bottom-0", precipTone(h.precipChance))}
+                        style={{ height: `${Math.max(0, Math.min(100, h.precipChance))}%` }}
+                      />
+                      <span className="relative text-[10px] uppercase tracking-wide text-foreground/70">
                         {label}
                       </span>
-                      <GlyphIcon c={h.condition} isNight={h.isNight} className="h-5 w-5" />
-                      <span className="tabular-nums text-xs font-medium text-foreground/90">
+                      <GlyphIcon c={h.condition} isNight={h.isNight} className="relative h-5 w-5" />
+                      <span className="relative tabular-nums text-xs font-medium text-foreground">
                         {fmtT(h.tempC)}
                       </span>
                       <span
                         className={cn(
-                          "tabular-nums text-[10px]",
-                          h.precipChance >= 20 ? "text-sky-600 dark:text-sky-300" : "text-transparent",
+                          "relative tabular-nums text-[10px] font-medium",
+                          h.precipChance >= 20 ? "text-foreground/85" : "text-foreground/40",
                         )}
                       >
                         {h.precipChance}%
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             </div>
+            {openHour && (() => {
+              const idx = hourly.findIndex((h, i) => `${h.hour}-${i}` === openHour);
+              const h = hourly[idx];
+              if (!h) return null;
+              return (
+                <div className="mt-2 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-xs text-foreground/80">
+                  <span className="font-medium">{idx === 0 ? "Now" : format(h.dateObj, "h a")}</span>
+                  {" · "}{h.conditionLabel ?? snap.conditionLabel}
+                  {" · "}<span className="tabular-nums">{fmtT(h.tempC)}</span>
+                  {" · "}<span className="tabular-nums">{h.precipChance}% chance of precipitation</span>
+                </div>
+              );
+            })()}
           </section>
         )}
 
@@ -185,22 +243,43 @@ export function WeatherDetailCard({ className }: { className?: string }) {
             <ul className="mt-2 space-y-1">
               {upcoming.map(d => {
                 const dayLabel = isTomorrow(d.dateObj) ? "Tomorrow" : format(d.dateObj, "EEEE");
+                const active = openDay === d.date;
                 return (
-                  <li
-                    key={d.date}
-                    className="grid grid-cols-[5.5rem_1.25rem_1fr_auto] items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/40"
-                    title={d.conditionLabel}
-                  >
-                    <span className="truncate text-foreground/85">{dayLabel}</span>
-                    <GlyphIcon c={d.condition} className="h-4 w-4 text-foreground/80" />
-                    <span className="inline-flex items-center gap-1 text-xs text-foreground/60">
-                      <Droplets className="h-3 w-3" />
-                      <span className="tabular-nums">{d.precipChance}%</span>
-                    </span>
-                    <span className="tabular-nums text-xs text-foreground/80">
-                      <span className="font-medium">{fmtT(d.highC)}</span>
-                      <span className="ml-1 text-foreground/55">{fmtT(d.lowC)}</span>
-                    </span>
+                  <li key={d.date}>
+                    <button
+                      type="button"
+                      onClick={() => setOpenDay(active ? null : d.date)}
+                      aria-expanded={active}
+                      aria-label={`${dayLabel}: ${d.conditionLabel}, high ${fmtT(d.highC)}, low ${fmtT(d.lowC)}, ${d.precipChance}% chance of precipitation`}
+                      className={cn(
+                        "relative grid w-full grid-cols-[5.5rem_1.25rem_1fr_auto] items-center gap-2 overflow-hidden rounded-md bg-gradient-to-r px-2 py-1.5 text-left text-sm transition",
+                        COND_TINT[d.condition] ?? COND_TINT.cloudy,
+                        active ? "ring-2 ring-primary/60" : "hover:brightness-105",
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        className={cn("pointer-events-none absolute inset-y-0 left-0", precipTone(d.precipChance))}
+                        style={{ width: `${Math.max(0, Math.min(100, d.precipChance))}%` }}
+                      />
+                      <span className="relative truncate text-foreground/90">{dayLabel}</span>
+                      <GlyphIcon c={d.condition} className="relative h-4 w-4 text-foreground/80" />
+                      <span className="relative inline-flex items-center gap-1 text-xs text-foreground/75">
+                        <Droplets className="h-3 w-3" />
+                        <span className="tabular-nums">{d.precipChance}%</span>
+                      </span>
+                      <span className="relative tabular-nums text-xs text-foreground/85">
+                        <span className="font-medium">{fmtT(d.highC)}</span>
+                        <span className="ml-1 text-foreground/60">{fmtT(d.lowC)}</span>
+                      </span>
+                    </button>
+                    {active && (
+                      <div className="mt-1 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-xs text-foreground/80">
+                        {d.conditionLabel} · high <span className="tabular-nums">{fmtT(d.highC)}</span>,
+                        low <span className="tabular-nums">{fmtT(d.lowC)}</span> ·{" "}
+                        <span className="tabular-nums">{d.precipChance}%</span> chance of precipitation
+                      </div>
+                    )}
                   </li>
                 );
               })}
