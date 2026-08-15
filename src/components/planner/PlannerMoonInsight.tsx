@@ -159,6 +159,12 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
   const allocation = useTimeAllocation(date, 1, "kind");
   const [exporting, setExporting] = useState(false);
 
+  /** Set the journal body and queue an autosave. */
+  const applyBody = (next: string) => {
+    setJBody(next);
+    journalSave.schedule({ title: jTitle, body: next });
+  };
+
   const exportPdf = async () => {
     setExporting(true);
     try {
