@@ -3,6 +3,7 @@ import { addDays, format, isSameDay } from "date-fns";
 import { Sparkles, Rows3 } from "lucide-react";
 import { PlannerTimeline } from "./PlannerTimeline";
 import { PlannerAllDayRow } from "./PlannerAllDayRow";
+import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { WeekDayHeader } from "./WeekDayHeader";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { usePlannerWeekHeaderMode } from "@/lib/planner-prefs";
@@ -25,6 +26,8 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const cols = Array.from({ length: days }, (_, i) => addDays(start, i));
   const today = new Date();
   const { byDay } = usePlannerFeed(start, days);
+  const { open: openItem, dialogs } = usePlannerItemOpener();
+  const handleOpen = onOpenItem ?? openItem;
   const [headerMode, setHeaderMode] = usePlannerWeekHeaderMode();
   const { colorOf } = useKindColors();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -96,7 +99,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           <PlannerAllDayRow
             key={format(d, "yyyy-MM-dd")}
             items={(byDay.get(format(d, "yyyy-MM-dd")) ?? []).filter(it => it.allDay)}
-            onOpen={onOpenItem}
+            onOpen={handleOpen}
             className={cn("min-w-0", i > 0 && "border-l border-border/40")}
           />
         ))}
@@ -164,6 +167,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           </button>
         )}
       </div>
+      {dialogs}
     </div>
   );
 }

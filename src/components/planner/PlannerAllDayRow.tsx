@@ -16,6 +16,7 @@ export function PlannerAllDayRow({ items, onOpen, className }: {
           type="button"
           onClick={() => onOpen?.(it)}
           title={it.title}
+          aria-label={it.kind === "cosmic" ? `Open cosmic event ${it.title}` : `Open ${it.title}`}
           className="truncate rounded-md px-1.5 py-0.5 text-left text-[10px] leading-tight"
           style={{ background: `${it.color}22`, color: it.color }}
         >
