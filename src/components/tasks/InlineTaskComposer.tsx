@@ -3,6 +3,7 @@ import { Plus, CalendarDays, FolderOpen, Layers, Sparkles, X, Zap, Tag as TagIco
 import { format, parseISO, addDays, addMonths, nextMonday, nextSaturday } from "date-fns";
 import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
+import { inferArea } from "@/lib/area-infer";
 import { AREAS, type Area, type DayPart, type Energy, type Priority, type Task } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -71,13 +72,33 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
 
   const project = projectId ? state.projects?.find(p => p.id === projectId) : undefined;
 
+  // Auto-detected area: only used when the user hasn't picked one.
+  const areaGuess = useMemo(() => {
+    if (area) return null;
+    if (parsed?.area) return { area: parsed.area, reason: "from your text" };
+    const projectArea = (project?.areaName as Area | undefined) ?? undefined;
+    return inferArea({
+      title: parsed?.title ?? text,
+      notes,
+      tags,
+      projectArea: AREAS.includes(projectArea as Area) ? (projectArea as Area) : null,
+      sectionArea: (defaults.area as Area | undefined) ?? null,
+    });
+  }, [area, parsed, text, notes, tags, project?.areaName, defaults.area]);
+
   const submit = async () => {
     const raw = text.trim();
     if (!raw) return;
     const p = nlp ? parseTaskInput(raw) : { title: raw } as ReturnType<typeof parseTaskInput>;
     const finalProjectId = projectId
       ?? (p.projectName ? state.projects?.find(pr => pr.name.toLowerCase() === p.projectName!.toLowerCase())?.id : undefined);
-    const finalArea = area ?? p.area;
+    const finalArea = area ?? p.area ?? inferArea({
+      title: p.title || raw,
+      notes,
+      tags,
+      projectArea: (AREAS.includes(project?.areaName as Area) ? (project?.areaName as Area) : null),
+      sectionArea: (defaults.area as Area | undefined) ?? null,
+    })?.area;
     const finalDate = date ?? p.dueDate ?? defaults.dueDate;
     const finalEnergy = energy ?? p.energy ?? defaults.energy;
     const mergedTags = Array.from(new Set([
