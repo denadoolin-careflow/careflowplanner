@@ -184,7 +184,7 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
   };
 
   const createTodayNote = async () => {
-
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setCreatingNote(true);
     try {
       const body = renderDailyNoteTemplate(iso, template, { cycle: cycleLabel });
