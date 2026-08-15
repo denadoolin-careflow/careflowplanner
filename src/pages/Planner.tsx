@@ -453,7 +453,7 @@ export default function Planner() {
           {!showTaskPanel && <PlannerOverdueSection date={day} className="mb-2" />}
           {view === "day" && (
             <div className="mb-2 shrink-0 space-y-2">
-              <PlannerMoonInsight date={day} />
+              <PlannerMoonInsight date={day} onSelectDate={openDay} />
               <PlannerDayAssistant date={day} />
               <PlannerCapacityBar date={day} />
               <PlannerEmptyDay
