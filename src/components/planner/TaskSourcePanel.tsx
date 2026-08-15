@@ -46,6 +46,17 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
     inbox: true, today: true, upcoming: false, someday: false,
   });
   const [inlineText, setInlineText] = useState("");
+  const [routineDraft, setRoutineDraft] = useState<Record<string, string>>({});
+  const needle = q.trim().toLowerCase();
+  const filteredHabits = needle
+    ? (state.habits as any[]).filter(h => `${h.name ?? h.title ?? ""}`.toLowerCase().includes(needle))
+    : (state.habits as any[]);
+  const filteredRoutines = needle
+    ? routineList.filter(r =>
+        r.person_name.toLowerCase().includes(needle) ||
+        (SLOT_LABEL[r.slot] ?? "").toLowerCase().includes(needle) ||
+        r.items.some(i => i.text.toLowerCase().includes(needle)))
+    : routineList;
   const inlineParsed = inlineText ? parseTaskInput(inlineText) : null;
 
   const submitInline = async () => {
