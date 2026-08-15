@@ -19,11 +19,16 @@ export function CosmicTaskChip({ tag, dateISO, className }: {
 
   const guide = MOON_IN_SIGN_GUIDE[stamp.sign];
   const iso = dateISO ?? format(new Date(), "yyyy-MM-dd");
+  const KEY_PHASES = ["new", "first-quarter", "full", "last-quarter"];
 
   return (
     <CosmicEventPopover
       event={{
-        id: encodeEventId({ kind: "phase", date: iso, phase: stamp.phase, sign: stamp.sign }),
+        id: encodeEventId({
+          kind: "phase",
+          date: iso,
+          ...(KEY_PHASES.includes(stamp.phase) ? { phase: stamp.phase } : {}),
+        }),
         glyph: stamp.glyph,
         title: stamp.label,
         when: cosmicStampSentence(stamp),
