@@ -53,6 +53,9 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
   const [dayPart, setDayPart] = useState<DayPart | undefined>(undefined);
   const [tags, setTags] = useState<string[]>(() => defaultTags ?? defaults.tags ?? []);
   const [estMinutes, setEstMinutes] = useState<number | undefined>(defaults.estMinutes);
+  const [areaOpen, setAreaOpen] = useState(false);
+  const [energyOpen, setEnergyOpen] = useState(false);
+  const [priorityOpen, setPriorityOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
@@ -302,10 +305,12 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
             </Popover>
 
             {/* Area pill */}
-            <Popover>
+            <Popover open={areaOpen} onOpenChange={setAreaOpen}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={areaOpen}
                   aria-label={area ? `Area: ${area}` : areaGuess ? `Area auto-detected as ${areaGuess.area} (${areaGuess.reason}) — change area` : "Choose area"}
                   title={areaGuess && !area ? `Auto-detected ${areaGuess.area} · ${areaGuess.reason}` : undefined}
                   className={cn(
@@ -330,9 +335,9 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   <CommandList>
                     <CommandEmpty>No areas.</CommandEmpty>
                     <CommandGroup>
-                      <CommandItem value="No area" onSelect={() => setArea(undefined)}>No area</CommandItem>
+                      <CommandItem value="No area" onSelect={() => { setArea(undefined); setAreaOpen(false); }}>No area</CommandItem>
                       {AREAS.map(a => (
-                        <CommandItem key={a} value={a} onSelect={() => setArea(a)}>{a}</CommandItem>
+                        <CommandItem key={a} value={a} onSelect={() => { setArea(a); setAreaOpen(false); }}>{a}</CommandItem>
                       ))}
                     </CommandGroup>
                   </CommandList>
@@ -341,11 +346,14 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
             </Popover>
 
             {/* Energy pill — single popover replaces the low/med/high triplet */}
-            <Popover>
+            <Popover open={energyOpen} onOpenChange={setEnergyOpen}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
                   title="Energy (or type @low / @med / @high)"
+                  aria-haspopup="listbox"
+                  aria-expanded={energyOpen}
+                  aria-label={energy ? `Energy: ${energy}` : "Choose energy level"}
                   className={cn(
                     "inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] leading-none transition-colors",
                     energy === "low"  ? "border-transparent bg-secondary-soft text-secondary-foreground" :
@@ -364,44 +372,44 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                   )}
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-40 p-1" align="start">
-                {(["low","medium","high"] as Energy[]).map(e => {
-                  const label = e === "medium" ? "Medium" : e[0].toUpperCase() + e.slice(1);
-                  const dot = e === "low" ? "bg-secondary" : e === "high" ? "bg-warm" : "bg-primary";
-                  const active = energy === e;
-                  return (
-                    <button
-                      key={e}
-                      type="button"
-                      onClick={() => setEnergy(e)}
-                      className={cn(
-                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] transition-colors",
-                        active ? "bg-muted text-foreground" : "hover:bg-muted",
+              <PopoverContent className="w-44 p-0" align="start" aria-label="Energy level">
+                <Command loop>
+                  <CommandList>
+                    <CommandGroup>
+                      {(["low", "medium", "high"] as Energy[]).map(e => {
+                        const label = e === "medium" ? "Medium" : e[0].toUpperCase() + e.slice(1);
+                        const dot = e === "low" ? "bg-secondary" : e === "high" ? "bg-warm" : "bg-primary";
+                        return (
+                          <CommandItem
+                            key={e}
+                            value={label}
+                            aria-selected={energy === e}
+                            onSelect={() => { setEnergy(e); setEnergyOpen(false); }}
+                          >
+                            <span className={cn("mr-2 h-2 w-2 rounded-full", dot)} />
+                            <span className="flex-1">{label}</span>
+                            {energy === e && <Zap className="h-3 w-3 opacity-60" />}
+                          </CommandItem>
+                        );
+                      })}
+                      {energy && (
+                        <CommandItem value="Clear energy" onSelect={() => { setEnergy(undefined); setEnergyOpen(false); }}>
+                          <span className="text-muted-foreground">Clear</span>
+                        </CommandItem>
                       )}
-                    >
-                      <span className={cn("h-2 w-2 rounded-full", dot)} />
-                      <span className="flex-1 text-left">{label}</span>
-                      <Zap className="h-3 w-3 opacity-60" />
-                    </button>
-                  );
-                })}
-                {energy && (
-                  <button
-                    type="button"
-                    onClick={() => setEnergy(undefined)}
-                    className="mt-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[11px] text-muted-foreground hover:bg-muted"
-                  >
-                    Clear
-                  </button>
-                )}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
               </PopoverContent>
             </Popover>
 
             {/* Priority pill */}
-            <Popover>
+            <Popover open={priorityOpen} onOpenChange={setPriorityOpen}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={priorityOpen}
                   className={cn(
                     "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none transition-colors hover:bg-muted",
                     priority ? "text-foreground" : "text-muted-foreground",
@@ -429,13 +437,13 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
                         { v: "medium" as Priority, label: "Medium", dot: "bg-amber-500" },
                         { v: "low" as Priority, label: "Low", dot: "bg-emerald-500" },
                       ]).map(opt => (
-                        <CommandItem key={opt.v} value={opt.label} onSelect={() => setPriority(opt.v)}>
+                        <CommandItem key={opt.v} value={opt.label} onSelect={() => { setPriority(opt.v); setPriorityOpen(false); }}>
                           <span className={cn("mr-2 h-2 w-2 rounded-full", opt.dot)} />
                           {opt.label}
                         </CommandItem>
                       ))}
                       {priority && (
-                        <CommandItem value="Clear priority" onSelect={() => setPriority(undefined)}>
+                        <CommandItem value="Clear priority" onSelect={() => { setPriority(undefined); setPriorityOpen(false); }}>
                           <span className="text-muted-foreground">Clear</span>
                         </CommandItem>
                       )}
