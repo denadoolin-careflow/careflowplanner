@@ -262,8 +262,37 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
                 <div className="flex items-center gap-2">
                   <SaveState status={journalSave.status} />
                   <Button asChild size="sm" variant="ghost" className="h-7 rounded-full text-[11px]">
+                    <Link to="/cosmic-flow"><Stars className="mr-1 h-3 w-3" />Cosmic</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="ghost" className="h-7 rounded-full text-[11px]">
                     <Link to="/journal"><ExternalLink className="mr-1 h-3 w-3" />Open</Link>
                   </Button>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border/50 bg-muted/30 p-2">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[11px] text-muted-foreground">{cosmic.elementLine}</p>
+                  <Button
+                    size="sm" variant="outline" className="h-6 shrink-0 rounded-full text-[10.5px]"
+                    onClick={() => applyBody(jBody.trim() ? `${jBody.trim()}\n\n${cosmic.seedBody}` : cosmic.seedBody)}
+                  >
+                    <Wand2 className="mr-1 h-3 w-3" />Fill prompts
+                  </Button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {cosmic.prompts.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      title={p.text}
+                      className="rounded-full border border-border/60 bg-card px-2 py-0.5 text-[10.5px] transition-colors hover:bg-accent"
+                      onClick={() => applyBody(jBody.trim() ? `${jBody.trim()}\n\n${p.text}\n` : `${p.text}\n`)}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                  <span className="text-[10.5px] text-muted-foreground">{cosmic.keywords.join(" · ")}</span>
                 </div>
               </div>
               <Input
