@@ -184,6 +184,7 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
   };
 
   const createTodayNote = async () => {
+
     setCreatingNote(true);
     try {
       const body = renderDailyNoteTemplate(iso, template, { cycle: cycleLabel });
