@@ -12,6 +12,9 @@ import { getMoonSign, MOON_IN_SIGN_GUIDE, SIGN_EMOJI } from "@/lib/zodiac";
 import { getTransitsForDate, type Transit } from "@/lib/transits";
 import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
+import { eventsOnDay } from "@/lib/cosmic/events";
+import { encodeEventId } from "@/lib/cosmic/event-id";
+import { CosmicEventPopover, type CosmicEventInfo } from "./CosmicEventPopover";
 
 const TONE_CLASS: Record<Transit["tone"], string> = {
   soft: "border-primary/30 bg-primary/10 text-foreground",
@@ -34,6 +37,15 @@ export function PlannerCosmicCard({ date, className }: { date: Date; className?:
   const sign = getMoonSign(date);
   const guide = MOON_IN_SIGN_GUIDE[sign.name];
   const transits = useMemo(() => getTransitsForDate(date), [date]);
+  const dayEvents = useMemo(() => eventsOnDay(date), [date]);
+
+  /** Deep-link id for a transit chip, mapped onto the Cosmic Flow event scheme. */
+  const transitEventId = (t: Transit) => encodeEventId({
+    kind: t.kind === "voc" ? "voc" : t.kind === "ingress" ? "ingress" : "retrograde",
+    date: iso,
+    planet: t.planet,
+    sign: t.sign,
+  });
 
   const cycle = useMemo(() => {
     try { return getPhaseInfo(date, periods, settings); } catch { return null; }
@@ -114,20 +126,64 @@ export function PlannerCosmicCard({ date, className }: { date: Date; className?:
         <ul className="mt-2 flex flex-wrap gap-1.5">
           {transits.map(t => (
             <li key={t.id}>
-              <button
-                type="button"
-                onClick={() => openCheckIn(t)}
-                aria-label={`${t.label} — open gentle check-in`}
-                className={cn(
-                  "rounded-full border px-2 py-0.5 text-[11px] transition hover:brightness-105",
-                  TONE_CLASS[t.tone],
-                )}
+              <CosmicEventPopover
+                event={{
+                  id: transitEventId(t),
+                  glyph: t.glyph,
+                  title: t.label,
+                  when: format(date, "EEEE, MMM d"),
+                  detail: t.detail,
+                  landing: guide.vibe,
+                } satisfies CosmicEventInfo}
+                onJournal={() => openCheckIn(t)}
               >
-                <span aria-hidden className="mr-1">{t.glyph}</span>{t.label}
-              </button>
+                <button
+                  type="button"
+                  aria-label={`${t.label} — quick info`}
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 text-[11px] transition hover:brightness-105",
+                    TONE_CLASS[t.tone],
+                  )}
+                >
+                  <span aria-hidden className="mr-1">{t.glyph}</span>{t.label}
+                </button>
+              </CosmicEventPopover>
             </li>
           ))}
         </ul>
+      )}
+
+      {dayEvents.length > 0 && (
+        <div className="mt-2">
+          <p className="mb-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Cosmic events today</p>
+          <ul className="flex flex-wrap gap-1.5">
+            {dayEvents.map(ev => (
+              <li key={ev.id}>
+                <CosmicEventPopover
+                  event={{
+                    id: ev.id,
+                    glyph: ev.glyph,
+                    title: ev.title,
+                    when: format(date, "EEEE, MMM d"),
+                    detail: ev.subtitle ?? "A shift in the sky worth noticing.",
+                    landing: guide.vibe,
+                    actions: guide.actions,
+                  } satisfies CosmicEventInfo}
+                  onJournal={() => openCheckIn("moon")}
+                >
+                  <button
+                    type="button"
+                    aria-label={`${ev.title} — quick info`}
+                    className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] transition hover:brightness-105"
+                  >
+                    <span aria-hidden className="mr-1">{ev.glyph}</span>
+                    <span className="[overflow-wrap:anywhere]">{ev.title}</span>
+                  </button>
+                </CosmicEventPopover>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <Sheet open={!!active} onOpenChange={(o) => { if (!o) setActive(null); }}>
