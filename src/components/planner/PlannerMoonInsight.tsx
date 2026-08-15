@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ExternalLink, Loader2, NotebookPen, RotateCcw, Save, Share2, Sparkles } from "lucide-react";
+import { ChevronDown, ExternalLink, Loader2, NotebookPen, RotateCcw, Save, Share2, Sparkles, Stars, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +15,7 @@ import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META } from "@/lib/cycle";
 import { createNote, getDailyNote, updateNote, type Note } from "@/lib/notes";
 import { useTimeAllocation } from "@/lib/planner/time-allocation";
+import { getMoonJournalContext } from "@/lib/planner/moon-journal-prompt";
 import { buildMoonInsightPdf, shareOrDownloadPdf } from "@/lib/planner/moon-insight-pdf";
 import {
   DAILY_NOTE_PLACEHOLDERS,
@@ -79,6 +80,8 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
   const illum = getIllumination(date);
   const toFull = daysUntilFull(date);
   const toNew = daysUntilNew(date);
+
+  const cosmic = useMemo(() => getMoonJournalContext(date), [date]);
 
   const cycle = useMemo(() => {
     try { return getPhaseInfo(date, periods, settings); } catch { return null; }
@@ -156,6 +159,12 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
   const allocation = useTimeAllocation(date, 1, "kind");
   const [exporting, setExporting] = useState(false);
 
+  /** Set the journal body and queue an autosave. */
+  const applyBody = (next: string) => {
+    setJBody(next);
+    journalSave.schedule({ title: jTitle, body: next });
+  };
+
   const exportPdf = async () => {
     setExporting(true);
     try {
@@ -216,6 +225,15 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
               </span>
             </span>
             <span className="mt-0.5 block truncate text-[11.5px] text-muted-foreground">{moon.invitation}</span>
+            <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[10.5px] text-muted-foreground">
+              <span className="rounded-full border border-border/60 bg-muted/40 px-1.5 py-0.5">
+                {cosmic.sign.symbol} Moon in {cosmic.sign.name}
+              </span>
+              <span className="rounded-full border border-border/60 bg-muted/40 px-1.5 py-0.5">
+                {cosmic.elementEmoji} {cosmic.sign.element}
+              </span>
+              <span className="rounded-full border border-border/60 bg-muted/40 px-1.5 py-0.5">{cosmic.themeName}</span>
+            </span>
           </span>
           <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
         </button>
@@ -250,8 +268,37 @@ export function PlannerMoonInsight({ date, className }: { date: Date; className?
                 <div className="flex items-center gap-2">
                   <SaveState status={journalSave.status} />
                   <Button asChild size="sm" variant="ghost" className="h-7 rounded-full text-[11px]">
+                    <Link to="/cosmic-flow"><Stars className="mr-1 h-3 w-3" />Cosmic</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="ghost" className="h-7 rounded-full text-[11px]">
                     <Link to="/journal"><ExternalLink className="mr-1 h-3 w-3" />Open</Link>
                   </Button>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border/50 bg-muted/30 p-2">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[11px] text-muted-foreground">{cosmic.elementLine}</p>
+                  <Button
+                    size="sm" variant="outline" className="h-6 shrink-0 rounded-full text-[10.5px]"
+                    onClick={() => applyBody(jBody.trim() ? `${jBody.trim()}\n\n${cosmic.seedBody}` : cosmic.seedBody)}
+                  >
+                    <Wand2 className="mr-1 h-3 w-3" />Fill prompts
+                  </Button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {cosmic.prompts.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      title={p.text}
+                      className="rounded-full border border-border/60 bg-card px-2 py-0.5 text-[10.5px] transition-colors hover:bg-accent"
+                      onClick={() => applyBody(jBody.trim() ? `${jBody.trim()}\n\n${p.text}\n` : `${p.text}\n`)}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                  <span className="text-[10.5px] text-muted-foreground">{cosmic.keywords.join(" · ")}</span>
                 </div>
               </div>
               <Input
