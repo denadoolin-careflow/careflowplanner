@@ -306,13 +306,16 @@ export function InlineTaskComposer({ defaults = {}, nlp = true, placeholder = "A
               <PopoverTrigger asChild>
                 <button
                   type="button"
+                  aria-label={area ? `Area: ${area}` : areaGuess ? `Area auto-detected as ${areaGuess.area} (${areaGuess.reason}) — change area` : "Choose area"}
+                  title={areaGuess && !area ? `Auto-detected ${areaGuess.area} · ${areaGuess.reason}` : undefined}
                   className={cn(
                     "inline-flex shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 py-1 text-[11px] leading-none transition-colors hover:bg-muted",
-                    area ? "text-foreground" : "text-muted-foreground",
+                    area ? "text-foreground" : areaGuess ? "border-dashed border-primary/50 text-primary" : "text-muted-foreground",
                   )}
                 >
                   <Layers className="h-3 w-3" />
-                  {area ?? "Area"}
+                  {area ?? areaGuess?.area ?? "Area"}
+                  {!area && areaGuess && <span className="opacity-60">auto</span>}
                   {area && (
                     <X
                       className="h-3 w-3 opacity-60 hover:opacity-100"
