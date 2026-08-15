@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban } from "lucide-react";
+import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban, Sparkles, ListChecks, PanelLeftClose } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,6 +15,8 @@ import { parseTaskInput } from "@/lib/nlp-task";
 import { useHomeMaintenance, bucketOf } from "@/lib/home-maintenance";
 import { MealPickerPopover } from "@/components/meals/MealPickerPopover";
 import { MEAL_SLOTS } from "@/components/planner/PlannerMealLane";
+import { routines as routinesApi, useRoutines, SLOT_LABEL } from "@/lib/routines";
+import { BlockCheckbox } from "@/components/planner/BlockCheckbox";
 import { toast } from "sonner";
 
 interface Section {
@@ -33,9 +35,10 @@ const AREA_SET = new Set(["Family","Health","Home","Meals","Personal","Money","C
  * Areas, Projects — plus Home upkeep and the day's meals, all draggable
  * onto the time grid.
  */
-export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Date; onQuickAdd?: () => void }) {
-  const { state, addTask, addMeal, updateMeal } = useStore();
+export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { selectedDate: Date; onQuickAdd?: () => void; onCollapse?: () => void }) {
+  const { state, addTask, addMeal, updateMeal, toggleHabit } = useStore();
   const { items: maintenance } = useHomeMaintenance();
+  const { routines: routineList } = useRoutines();
   const [q, setQ] = useState("");
   const [sort, setSort] = usePlannerSort();
   const [tagFilter, setTagFilter] = usePlannerTagFilter();
@@ -134,11 +137,18 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Da
       <header className="border-b border-border/60 p-3">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold tracking-wide">Tasks</h2>
-          {onQuickAdd && (
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Open advanced capture">
-              <CommandIcon className="h-3.5 w-3.5" />
-            </Button>
-          )}
+          <div className="flex items-center gap-0.5">
+            {onQuickAdd && (
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Open advanced capture">
+                <CommandIcon className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {onCollapse && (
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onCollapse} aria-label="Collapse task sidebar">
+                <PanelLeftClose className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
         </div>
         {/* Inline quick add */}
         <div className="mb-2">
@@ -295,6 +305,41 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Da
                 />
               );
             })}
+          </SectionBlock>
+
+          <SectionBlock id="habits" label="Habits" Icon={Sparkles} count={state.habits.length}
+            open={open.habits ?? false} onToggle={toggle}>
+            {state.habits.map((h: any) => {
+              const done = !!h.log?.[todayISO];
+              return (
+                <div key={h.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px]">
+                  <BlockCheckbox done={done} title={h.name ?? h.title ?? "Habit"} onToggle={() => void toggleHabit(h.id)} className="mt-0.5" />
+                  <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere]", done && "line-through opacity-60")}>
+                    {h.name ?? h.title}
+                  </span>
+                </div>
+              );
+            })}
+          </SectionBlock>
+
+          <SectionBlock id="routines" label="Routines" Icon={ListChecks} count={routineList.length}
+            open={open.routines ?? false} onToggle={toggle}>
+            {routineList.map(r => (
+              <div key={r.id} className="space-y-1 pb-1">
+                <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  {r.person_name} · {SLOT_LABEL[r.slot]}
+                </p>
+                {r.items.map(item => (
+                  <div key={item.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px]">
+                    <BlockCheckbox done={!!item.done} title={item.text}
+                      onToggle={() => void routinesApi.toggleItem(r.person_name, r.slot, item.id)} className="mt-0.5" />
+                    <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere]", item.done && "line-through opacity-60")}>
+                      {item.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ))}
           </SectionBlock>
         </div>
       </div>
