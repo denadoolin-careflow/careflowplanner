@@ -10,6 +10,7 @@ import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { haptics } from "@/lib/haptics";
 import { usePlannerPointerDrag } from "@/lib/planner-touch-drag";
 import { format, parseISO } from "date-fns";
+import { CosmicTaskChip } from "./CosmicTaskChip";
 
 const AREA_TINTS: Record<string, string> = {
   Family: "bg-amber-400",
@@ -81,6 +82,7 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
           </span>
         )}
         {due && <span className="font-mono">{due}</span>}
+        <CosmicTaskChip tag={task.cosmicTag} dateISO={task.dueDate} />
         <button
           onClick={(e) => { e.stopPropagation(); void updateTask(task.id, { isTopThree: !task.isTopThree }); }}
           aria-label="Toggle star"
