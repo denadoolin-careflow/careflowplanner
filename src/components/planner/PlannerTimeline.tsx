@@ -132,7 +132,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   const [resizing, setResizing] = useState<{ id: string; startY: number; startDur: number } | null>(null);
   const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
   const [movePreview, setMovePreview] = useState<number | null>(null);
-  const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string } | null>(null);
+  const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string; durMin: number } | null>(null);
   const [dragOverMin, setDragOverMin] = useState<number | null>(null);
   const [nowVisible, setNowVisible] = useState(true);
   const suppressClickRef = useRef(false);
@@ -650,20 +650,21 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     const y = e.clientY - rect.top;
     const relMin = yToMin(y);
     const abs = relMin + START_H * 60;
-    setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "" });
+    setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "", durMin: 30 });
   };
 
   const submitQuickAdd = async () => {
     if (!quickAdd || !quickAdd.text.trim()) { setQuickAdd(null); return; }
     const p = parseTaskInput(quickAdd.text);
+    const guessed = p.area ?? inferArea({ title: p.title || quickAdd.text, tags: p.tags })?.area ?? "Personal";
     await addTask({
       title: p.title || quickAdd.text,
-      area: p.area ?? "Personal",
+      area: guessed,
       priority: p.priority ?? "medium",
       done: false,
       dueDate: p.dueDate ?? iso,
       startTime: p.time ?? minToHM(quickAdd.startAbsMin),
-      estMinutes: p.estMinutes ?? 30,
+      estMinutes: p.estMinutes ?? quickAdd.durMin,
       tags: p.tags,
       energy: p.energy,
       inbox: false,
