@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Leaf, Sparkles, ListTodo, Inbox } from "lucide-react";
 import { tray, useTray } from "@/lib/tray-store";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
+import { PhaseHabitNudge } from "@/components/planner/PhaseHabitNudge";
 
 /**
  * Today's planning surface — the same timeline engine the /planner page uses,
@@ -79,6 +80,7 @@ export function TodayPlanView({ date }: { date: Date }) {
         {actionRow}
         {capacityHints}
         <PlannerOverdueSection date={date} />
+        <PhaseHabitNudge date={date} />
 
         <CollapsibleSection
           storageKey="today.mobile.section.planned.collapsed"
@@ -142,6 +144,7 @@ export function TodayPlanView({ date }: { date: Date }) {
       </div>
 
       {capacityHints}
+      <PhaseHabitNudge date={date} />
 
       <div
         className="min-h-0"
