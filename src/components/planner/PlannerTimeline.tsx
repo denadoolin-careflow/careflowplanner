@@ -1028,6 +1028,36 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                     placeholder="Task title (try 'call mom #family 30m')"
                     className="h-9 text-sm"
                   />
+                  <div className="mt-2 flex flex-wrap items-center gap-1">
+                    {[15, 30, 45, 60, 90].map(d => (
+                      <button
+                        key={d}
+                        type="button"
+                        aria-pressed={quickAdd.durMin === d}
+                        onClick={() => setQuickAdd(q => q ? { ...q, durMin: d } : q)}
+                        className={cn(
+                          "rounded-full border px-2 py-0.5 text-[11px] leading-none transition-colors",
+                          quickAdd.durMin === d
+                            ? "border-transparent bg-primary text-primary-foreground"
+                            : "border-border/60 text-muted-foreground hover:bg-muted",
+                        )}
+                      >
+                        {d < 60 ? `${d}m` : `${d / 60}h`}
+                      </button>
+                    ))}
+                    {(() => {
+                      const t = quickAdd.text.trim();
+                      if (!t) return null;
+                      const p = parseTaskInput(t);
+                      const a = p.area ?? inferArea({ title: p.title || t, tags: p.tags })?.area;
+                      return a ? (
+                        <span className="ml-auto text-[10px] text-muted-foreground">
+                          {a} <span className="opacity-60">auto</span>
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-muted-foreground">Enter to add · Esc to close</p>
                 </PopoverContent>
               </Popover>
             )}
