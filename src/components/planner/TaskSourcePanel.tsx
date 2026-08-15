@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban } from "lucide-react";
+import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban, Sparkles, ListChecks } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,6 +15,8 @@ import { parseTaskInput } from "@/lib/nlp-task";
 import { useHomeMaintenance, bucketOf } from "@/lib/home-maintenance";
 import { MealPickerPopover } from "@/components/meals/MealPickerPopover";
 import { MEAL_SLOTS } from "@/components/planner/PlannerMealLane";
+import { routines as routinesApi, useRoutines, SLOT_LABEL } from "@/lib/routines";
+import { BlockCheckbox } from "@/components/planner/BlockCheckbox";
 import { toast } from "sonner";
 
 interface Section {
@@ -34,8 +36,9 @@ const AREA_SET = new Set(["Family","Health","Home","Meals","Personal","Money","C
  * onto the time grid.
  */
 export function TaskSourcePanel({ selectedDate, onQuickAdd }: { selectedDate: Date; onQuickAdd?: () => void }) {
-  const { state, addTask, addMeal, updateMeal } = useStore();
+  const { state, addTask, addMeal, updateMeal, toggleHabit } = useStore();
   const { items: maintenance } = useHomeMaintenance();
+  const { routines: routineList } = useRoutines();
   const [q, setQ] = useState("");
   const [sort, setSort] = usePlannerSort();
   const [tagFilter, setTagFilter] = usePlannerTagFilter();
