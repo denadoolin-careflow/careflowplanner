@@ -629,6 +629,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     updateTask: async (id, patch) => {
       const prev = state.tasks.find(t => t.id === id);
       const localTs = nowIso();
+      // Re-stamp the cosmic tag when a task moves to a different day and
+      // hasn't been stamped by hand.
+      if (patch.dueDate && patch.dueDate !== prev?.dueDate && patch.cosmicTag === undefined) {
+        const { cosmicTagForISO } = await import("./planner/cosmic-link");
+        const next = cosmicTagForISO(patch.dueDate);
+        if (next) patch = { ...patch, cosmicTag: next };
+      }
       setState(s => ({ ...s, tasks: s.tasks.map(t => t.id === id ? { ...t, ...patch, updatedAt: localTs } : t) }));
       // Patch-only mapping: never send columns the caller didn't ask to change.
       const values = taskPatchTo(patch);
