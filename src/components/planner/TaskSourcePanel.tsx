@@ -307,9 +307,9 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
             })}
           </SectionBlock>
 
-          <SectionBlock id="habits" label="Habits" Icon={Sparkles} count={state.habits.length}
+          <SectionBlock id="habits" label="Habits" Icon={Sparkles} count={filteredHabits.length}
             open={open.habits ?? false} onToggle={toggle}>
-            {state.habits.map((h: any) => {
+            {filteredHabits.map((h: any) => {
               const done = !!h.log?.[todayISO];
               return (
                 <div key={h.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px]">
@@ -322,9 +322,9 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
             })}
           </SectionBlock>
 
-          <SectionBlock id="routines" label="Routines" Icon={ListChecks} count={routineList.length}
+          <SectionBlock id="routines" label="Routines" Icon={ListChecks} count={filteredRoutines.length}
             open={open.routines ?? false} onToggle={toggle}>
-            {routineList.map(r => (
+            {filteredRoutines.map(r => (
               <div key={r.id} className="space-y-1 pb-1">
                 <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   {r.person_name} · {SLOT_LABEL[r.slot]}
@@ -338,6 +338,24 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
                     </span>
                   </div>
                 ))}
+                <form
+                  className="px-1"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const text = (routineDraft[r.id] ?? "").trim();
+                    if (!text) return;
+                    void routinesApi.addItem(r.person_name, r.slot, text);
+                    setRoutineDraft(d => ({ ...d, [r.id]: "" }));
+                  }}
+                >
+                  <input
+                    value={routineDraft[r.id] ?? ""}
+                    onChange={(e) => setRoutineDraft(d => ({ ...d, [r.id]: e.target.value }))}
+                    aria-label={`Add a step to ${r.person_name} ${SLOT_LABEL[r.slot]} routine`}
+                    placeholder="Add a step…"
+                    className="w-full rounded-lg border border-dashed border-border/60 bg-transparent px-2 py-1 text-[12px] outline-none placeholder:text-muted-foreground/70 focus:border-primary/50"
+                  />
+                </form>
               </div>
             ))}
           </SectionBlock>
