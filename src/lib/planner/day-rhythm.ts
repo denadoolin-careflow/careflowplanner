@@ -15,6 +15,8 @@ export interface CycleDot {
   cycleDay: number;
   /** CSS color built from the shared --phase-* tokens. */
   color: string;
+  /** Same hue at low alpha, for chip/band backgrounds. */
+  soft: string;
   /** "Luteal, day 19" */
   text: string;
 }
@@ -29,6 +31,7 @@ function toDot(info: ReturnType<typeof getPhaseInfo>): CycleDot | null {
     glyph: meta?.glyph ?? info.glyph,
     cycleDay: info.cycleDay,
     color: `hsl(var(${info.tokenVar}))`,
+    soft: `hsl(var(${info.tokenVar}) / 0.15)`,
     text: `${label}, day ${info.cycleDay}`,
   };
 }

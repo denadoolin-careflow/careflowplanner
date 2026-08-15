@@ -81,7 +81,7 @@ export function WeekDayHeader({ date, mode, onSelect }: {
           {cycle && (
             <span
               className="mt-0.5 inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] leading-tight"
-              style={{ background: `${cycle.color.replace("hsl(", "hsla(").replace(")", " / 0.14)")}`, color: cycle.color }}
+              style={{ background: cycle.soft, color: cycle.color }}
             >
               <span aria-hidden>{cycle.glyph}</span>
               <span className="truncate">{cycle.label} · d{cycle.cycleDay}</span>
