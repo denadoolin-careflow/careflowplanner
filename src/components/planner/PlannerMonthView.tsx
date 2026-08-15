@@ -127,7 +127,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                       {it.done
                         ? <Check className="h-2.5 w-2.5 shrink-0" style={{ color: it.color }} />
                         : <Icon className="h-2.5 w-2.5 shrink-0" style={{ color: it.color }} />}
-                      <span className="truncate">{it.time ? `${it.time} ` : ""}{it.title}</span>
+                      <span className="line-clamp-2 [overflow-wrap:anywhere] whitespace-normal">{it.time ? `${it.time} ` : ""}{it.title}</span>
                     </button>
                   );
                 })}
@@ -156,7 +156,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                               it.done && "line-through opacity-50")}
                           >
                             <Icon className="h-3 w-3 shrink-0" style={{ color: it.color }} />
-                            <span className="truncate">{it.time ? `${it.time} ` : ""}{it.title}</span>
+                            <span className="line-clamp-2 [overflow-wrap:anywhere] whitespace-normal">{it.time ? `${it.time} ` : ""}{it.title}</span>
                           </button>
                         );
                       })}

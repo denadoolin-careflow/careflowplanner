@@ -70,6 +70,8 @@ export interface Task {
   updatedAt?: string;
   /** CARE anchor link (default-anchor key or custom anchor key). */
   anchorKey?: string;
+  /** Cosmic stamp for the day this task was planned: "phase|Sign|Element". */
+  cosmicTag?: string;
   /** ISO timestamp for an optional follow-up reminder. Surfaces in the
    *  Notification Center when reached. */
   followUpAt?: string;

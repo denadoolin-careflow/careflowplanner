@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { ComposedChart, Area, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceArea, Legend } from "recharts";
 import { useRhythmSeries } from "@/lib/planner/time-allocation";
+import { useCompareSeries, COMPARE_OPTIONS, type CompareMode } from "@/lib/planner/compare";
 import { cn } from "@/lib/utils";
 
 /**
@@ -8,8 +10,11 @@ import { cn } from "@/lib/utils";
  */
 export function PlannerRhythmChart({ from, days, className }: { from: Date; days: number; className?: string }) {
   const { days: series, insights, hasCycle, hasLogs } = useRhythmSeries(from, days);
+  const [compare, setCompare] = useState<CompareMode>("off");
+  const cmp = useCompareSeries(from, days, compare);
+  const comparing = compare !== "off" && cmp.pastDays.length > 0;
 
-  const data = series.map(d => ({
+  const data = series.map((d, i) => ({
     name: d.label,
     Planned: d.plannedH,
     Completed: d.doneH,
@@ -18,6 +23,9 @@ export function PlannerRhythmChart({ from, days, className }: { from: Date; days
     iso: d.iso,
     moonLabel: d.moonLabel,
     cycleLabel: d.cycleLabel,
+    PastPlanned: comparing ? cmp.points[i]?.PastPlanned ?? null : null,
+    PastCompleted: comparing ? cmp.points[i]?.PastCompleted ?? null : null,
+    pastLabel: comparing ? cmp.points[i]?.pastLabel ?? null : null,
   }));
 
   // Contiguous cycle-phase runs become soft background bands.
@@ -39,6 +47,30 @@ export function PlannerRhythmChart({ from, days, className }: { from: Date; days
 
   return (
     <div className={cn("space-y-2", className)}>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Compare with</span>
+        <div className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5">
+          {COMPARE_OPTIONS.map(o => (
+            <button
+              key={o.id}
+              type="button"
+              title={o.hint}
+              aria-pressed={compare === o.id}
+              onClick={() => setCompare(o.id)}
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10.5px] font-medium transition-colors",
+                compare === o.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+        {comparing && (
+          <span className="text-[10.5px] text-muted-foreground">{cmp.windowLabel}</span>
+        )}
+      </div>
+
       <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
@@ -63,13 +95,28 @@ export function PlannerRhythmChart({ from, days, className }: { from: Date; days
               }}
               labelFormatter={(l: string) => {
                 const row = data.find(d => d.name === l);
-                return [l, row?.moonLabel, row?.cycleLabel].filter(Boolean).join(" · ");
+                return [l, row?.moonLabel, row?.cycleLabel, row?.pastLabel ? `vs ${row.pastLabel}` : null]
+                  .filter(Boolean).join(" · ");
               }}
             />
             <Legend wrapperStyle={{ fontSize: 10 }} />
             <Area type="monotone" dataKey="Moon" stroke="hsl(var(--muted-foreground))" strokeOpacity={0.5} fill="hsl(var(--muted-foreground))" fillOpacity={0.08} />
             <Bar dataKey="Planned" fill="hsl(var(--primary))" fillOpacity={0.35} radius={[4, 4, 0, 0]} />
             <Bar dataKey="Completed" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            {comparing && (
+              <Line
+                type="monotone" dataKey="PastPlanned" name="Then · planned"
+                stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="4 3"
+                dot={false} connectNulls
+              />
+            )}
+            {comparing && (
+              <Line
+                type="monotone" dataKey="PastCompleted" name="Then · completed"
+                stroke="hsl(var(--primary))" strokeOpacity={0.6} strokeWidth={1.5} strokeDasharray="2 3"
+                dot={false} connectNulls
+              />
+            )}
             {hasLogs && <Line type="monotone" dataKey="Energy" stroke="hsl(var(--phase-ovulatory))" strokeWidth={2} dot={{ r: 2 }} connectNulls />}
           </ComposedChart>
         </ResponsiveContainer>
@@ -84,6 +131,12 @@ export function PlannerRhythmChart({ from, days, className }: { from: Date; days
             </span>
           ))}
         </div>
+      )}
+
+      {comparing && cmp.summary.length > 0 && (
+        <ul className="space-y-1 rounded-xl bg-muted/50 px-2.5 py-2 text-[11.5px] text-muted-foreground">
+          {cmp.summary.map(t => <li key={t}>· {t}</li>)}
+        </ul>
       )}
 
       {insights.length > 0 ? (

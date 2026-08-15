@@ -726,7 +726,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               <Wand2 className="h-3.5 w-3.5" />
               Auto-schedule
             </Button>
-            <PlannerTemplatesMenu onApply={applyTemplate} buildCurrentItems={buildCurrentItems} />
+            <PlannerTemplatesMenu onApply={applyTemplate} buildCurrentItems={buildCurrentItems} date={date} />
             <AutoScheduleSettings prefs={autoPrefs} update={updateAutoPrefs} reset={resetAutoPrefs} />
           </div>
         </div>

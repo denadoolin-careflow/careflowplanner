@@ -66,6 +66,7 @@ const taskFrom = (r: any): Task => ({
   attachments: Array.isArray(r.attachments) ? r.attachments : [],
   updatedAt: r.updated_at ?? undefined,
   anchorKey: r.anchor_key ?? undefined,
+  cosmicTag: r.cosmic_tag ?? undefined,
   followUpAt: r.follow_up_at ?? undefined,
   followUpNote: r.follow_up_note ?? undefined,
 });
@@ -96,6 +97,7 @@ const taskTo = (t: Partial<Task>) => ({
   snoozed_until: t.snoozedUntil === undefined ? undefined : t.snoozedUntil,
   attachments: (t.attachments ?? []) as any,
   anchor_key: t.anchorKey === undefined ? undefined : (t.anchorKey ?? null),
+  cosmic_tag: t.cosmicTag === undefined ? undefined : (t.cosmicTag ?? null),
   follow_up_at: t.followUpAt === undefined ? undefined : (t.followUpAt ?? null),
   follow_up_note: t.followUpNote === undefined ? undefined : (t.followUpNote ?? null),
 });
@@ -121,6 +123,7 @@ const TASK_COLUMNS: Record<string, string> = {
   projectId: "project_id", parentTaskId: "parent_task_id", inbox: "inbox",
   resetItemId: "reset_item_id", sectionId: "section_id", snoozedUntil: "snoozed_until",
   attachments: "attachments", anchorKey: "anchor_key",
+  cosmicTag: "cosmic_tag",
   followUpAt: "follow_up_at", followUpNote: "follow_up_note",
 };
 
@@ -546,6 +549,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!uid) return;
       const { inferEnergyFromTitle } = await import("./task-energy");
       const enriched = { done: false, priority: "medium" as const, area: "Personal" as const, ...t };
+      // Stamp the sky the task was planned under, so the planner can show
+      // which items belong to which moon phase / element.
+      if (!enriched.cosmicTag) {
+        const { cosmicTagForISO } = await import("./planner/cosmic-link");
+        const stampISO = enriched.dueDate ?? todayISO();
+        enriched.cosmicTag = cosmicTagForISO(stampISO) ?? undefined;
+      }
       if (!enriched.energy) {
         const guess = inferEnergyFromTitle(enriched.title, enriched.notes);
         if (guess) enriched.energy = guess;
@@ -619,6 +629,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     updateTask: async (id, patch) => {
       const prev = state.tasks.find(t => t.id === id);
       const localTs = nowIso();
+      // Re-stamp the cosmic tag when a task moves to a different day and
+      // hasn't been stamped by hand.
+      if (patch.dueDate && patch.dueDate !== prev?.dueDate && patch.cosmicTag === undefined) {
+        const { cosmicTagForISO } = await import("./planner/cosmic-link");
+        const next = cosmicTagForISO(patch.dueDate);
+        if (next) patch = { ...patch, cosmicTag: next };
+      }
       setState(s => ({ ...s, tasks: s.tasks.map(t => t.id === id ? { ...t, ...patch, updatedAt: localTs } : t) }));
       // Patch-only mapping: never send columns the caller didn't ask to change.
       const values = taskPatchTo(patch);
