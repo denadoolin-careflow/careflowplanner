@@ -159,7 +159,9 @@ export function AnalyticsTab({ uid }: { uid: string }) {
               <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `$${Math.round(v / 1000)}k`} />
               <Tooltip
-                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12, color: "hsl(var(--card-foreground))" }}
+                itemStyle={{ color: "hsl(var(--card-foreground))" }}
+                labelStyle={{ color: "hsl(var(--card-foreground))" }}
                 formatter={(v: any) => fmtMoney(Number(v))}
               />
               <Area type="monotone" dataKey="income" stroke="#5fae89" strokeWidth={2} fill="url(#incomeGrad)" name="Income" />
@@ -184,7 +186,9 @@ export function AnalyticsTab({ uid }: { uid: string }) {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12, color: "hsl(var(--card-foreground))" }}
+                    itemStyle={{ color: "hsl(var(--card-foreground))" }}
+                    labelStyle={{ color: "hsl(var(--card-foreground))" }}
                     formatter={(v: any) => fmtMoney(Number(v))}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -209,7 +213,9 @@ export function AnalyticsTab({ uid }: { uid: string }) {
                 <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={11} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `$${Math.round(v)}`} />
                 <Tooltip
-                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12, color: "hsl(var(--card-foreground))" }}
+                  itemStyle={{ color: "hsl(var(--card-foreground))" }}
+                  labelStyle={{ color: "hsl(var(--card-foreground))" }}
                   formatter={(v: any) => fmtMoney(Number(v))}
                 />
                 <Bar dataKey="amount" fill="url(#weekdayGrad)" radius={[8, 8, 0, 0]} />
