@@ -5,6 +5,8 @@ import { useStore } from "@/lib/store";
 import { useCycleSuggestion } from "@/lib/planner/cycle-templates";
 import { useCycleDot } from "@/lib/planner/day-rhythm";
 import { getDayTheme } from "@/lib/planner/day-theme";
+import { MOON_INFO } from "@/lib/moon";
+import { ELEMENT_ARCHETYPE } from "@/lib/zodiac";
 import type { Habit } from "@/lib/types";
 import type { CyclePhase } from "@/lib/cycle";
 import type { CosmicElement } from "@/lib/planner/cosmic-link";
@@ -26,6 +28,14 @@ const ELEMENT_AFFINITY: Record<CosmicElement, Habit["category"][]> = {
   Water: ["self-care", "spiritual"],
 };
 
+/** Short affirmation per element, paired with the moon phase affirmation. */
+const ELEMENT_AFFIRMATION: Record<CosmicElement, string> = {
+  Fire: "My energy is allowed to be warm, not urgent.",
+  Earth: "Ordinary, steady care is enough today.",
+  Air: "My thoughts can settle as I move.",
+  Water: "What I feel today is welcome here.",
+};
+
 /**
  * Phase-specific habit prompt for a day: surfaces the habits that fit the
  * current cycle phase and moon element, with a one-tap check-in.
@@ -35,7 +45,9 @@ export function PhaseHabitNudge({ date, className }: { date: Date; className?: s
   const cycle = useCycleDot(date);
   const suggestion = useCycleSuggestion(date);
   const iso = format(date, "yyyy-MM-dd");
-  const element = useMemo(() => getDayTheme(date).element as CosmicElement, [date]);
+  const theme = useMemo(() => getDayTheme(date), [date]);
+  const element = theme.element as CosmicElement;
+  const moon = MOON_INFO[theme.moonPhase];
 
   const picks = useMemo(() => {
     const habits = state.habits ?? [];
@@ -64,6 +76,14 @@ export function PhaseHabitNudge({ date, className }: { date: Date; className?: s
           {suggestion.dayNudge}
         </p>
       )}
+      <p className="mt-1.5 rounded-xl border border-border/40 bg-background/40 px-2 py-1.5 text-[11.5px] italic leading-snug text-foreground/85 [overflow-wrap:anywhere]">
+        <span aria-hidden className="mr-1">{moon.glyph}</span>
+        {moon.affirmation}{" "}
+        <span className="not-italic text-muted-foreground">{ELEMENT_AFFIRMATION[element]}</span>
+        <span className="mt-0.5 block text-[10px] not-italic text-muted-foreground">
+          {moon.label} · {element} — {ELEMENT_ARCHETYPE[element]}
+        </span>
+      </p>
       <ul className="mt-2 space-y-1">
         {picks.map(h => {
           const done = !!h.log?.[iso];

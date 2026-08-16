@@ -3,10 +3,18 @@ import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Droplets
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF, dayPartSuggestion } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
-import type { WeatherCondition } from "@/lib/weather";
+import type { WeatherCondition, DayPartKey } from "@/lib/weather";
 import { elementTheme } from "@/lib/planner/element-theme";
 
 const PARTS = ["Morning", "Afternoon", "Evening"] as const;
+
+const PART_HOURS: Record<string, [number, number]> = {
+  Morning: [6, 12],
+  Afternoon: [12, 17],
+  Evening: [17, 21],
+};
+
+const hourLabel = (h: number) => `${((h + 11) % 12) + 1}${h < 12 ? "a" : "p"}`;
 
 function ConditionIcon({ condition, isNight, className }: { condition: WeatherCondition; isNight?: boolean; className?: string }) {
   const cls = cn("h-3.5 w-3.5", className);
@@ -39,9 +47,15 @@ export function PlannerWeatherStrip({ element, className }: { element?: "Fire" |
     [snap],
   );
 
+  const hoursFor = (part: DayPartKey) => {
+    const [from, to] = PART_HOURS[part] ?? [0, 24];
+    return (snap?.todayHourly ?? []).filter(h => h.hour >= from && h.hour < to);
+  };
+
   if (!snap || parts.length === 0) return null;
 
   const active = parts.find(p => p!.part === selected) ?? null;
+  const activeHours = active ? hoursFor(active.part) : [];
 
   return (
     <section
@@ -76,16 +90,38 @@ export function PlannerWeatherStrip({ element, className }: { element?: "Fire" |
                   <Droplets className="h-2.5 w-2.5" />{p.precipChance}%
                 </span>
               </span>
-              <span className="mt-1 block h-1 w-full overflow-hidden rounded-full bg-foreground/10">
-                <span
-                  className="block h-full rounded-full transition-all"
-                  style={{ width: `${Math.max(2, Math.min(100, p.precipChance))}%`, background: theme.color }}
-                />
+              <span className="mt-1 flex h-4 w-full items-end gap-[2px]" aria-hidden>
+                {hoursFor(p.part).map(h => (
+                  <span
+                    key={h.hour}
+                    className="flex-1 rounded-sm bg-foreground/10"
+                    style={{ height: `${Math.max(12, Math.min(100, h.precipChance))}%`, background: theme.color, opacity: 0.25 + (h.precipChance / 100) * 0.75 }}
+                  />
+                ))}
               </span>
             </button>
           );
         })}
       </div>
+      {active && (
+        <div className="mt-2 flex gap-1 overflow-x-auto pb-0.5">
+          {activeHours.map(h => (
+            <div
+              key={h.hour}
+              className="flex min-w-[46px] flex-1 flex-col items-center gap-0.5 rounded-lg border px-1 py-1"
+              style={{ borderColor: theme.border, background: theme.soft }}
+              title={`${hourLabel(h.hour)} · ${h.conditionLabel} · ${h.precipChance}% precip`}
+            >
+              <span className="text-[9.5px] uppercase tracking-wide text-muted-foreground">{hourLabel(h.hour)}</span>
+              <ConditionIcon condition={h.condition} isNight={h.isNight} />
+              <span className="text-[11px] font-semibold tabular-nums" style={{ color: theme.color }}>{temp(h.tempC)}</span>
+              <span className="inline-flex items-center gap-0.5 text-[9.5px] tabular-nums text-muted-foreground">
+                <Droplets className="h-2 w-2" />{h.precipChance}%
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       {active && (
         <p className="mt-1.5 text-[11px] text-muted-foreground">
           <span className="font-medium text-foreground">{active.part}</span> · {active.conditionLabel}

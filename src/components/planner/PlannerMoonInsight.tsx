@@ -282,13 +282,13 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
           <div className="mb-2 flex items-center justify-between gap-2">
             <PhaseHabitNudge date={date} className="flex-1" />
             <Button
-              size="sm" variant="outline" className="h-7 rounded-full text-[11px]"
+              size="icon" variant="outline" className="h-7 w-7 shrink-0 rounded-full"
               disabled={exporting} onClick={() => void exportPdf()}
+              title="Export PDF" aria-label="Export PDF"
             >
               {exporting
-                ? <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                : <Share2 className="mr-1 h-3 w-3" />}
-              Export PDF
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <Share2 className="h-3.5 w-3.5" />}
             </Button>
           </div>
           <Tabs defaultValue="journal">
