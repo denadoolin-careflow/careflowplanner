@@ -354,7 +354,7 @@ export default function PatternsPage({ uid }: { uid: string }) {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
                   <YAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12, color: "hsl(var(--card-foreground))" }} itemStyle={{ color: "hsl(var(--card-foreground))" }} labelStyle={{ color: "hsl(var(--card-foreground))" }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Line type="monotone" dataKey="mood" stroke="hsl(145 50% 50%)" strokeWidth={2} dot={false} connectNulls />
                   <Line type="monotone" dataKey="anxiety" stroke="hsl(20 70% 60%)" strokeWidth={2} dot={false} connectNulls />
@@ -404,7 +404,7 @@ export default function PatternsPage({ uid }: { uid: string }) {
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
                       <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
                       <YAxis type="category" dataKey="emotion" tick={{ fontSize: 11 }} width={80} />
-                      <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", fontSize: 12 }} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12, color: "hsl(var(--card-foreground))" }} itemStyle={{ color: "hsl(var(--card-foreground))" }} labelStyle={{ color: "hsl(var(--card-foreground))" }} />
                       <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
