@@ -19,6 +19,8 @@ import { getMoonJournalContext } from "@/lib/planner/moon-journal-prompt";
 import { useCycleDot } from "@/lib/planner/day-rhythm";
 import { PhaseHabitNudge } from "./PhaseHabitNudge";
 import { MoonInsightHistory } from "./MoonInsightHistory";
+import { PlannerWeatherStrip } from "./PlannerWeatherStrip";
+import { elementTheme } from "@/lib/planner/element-theme";
 import { buildMoonInsightPdf, shareOrDownloadPdf } from "@/lib/planner/moon-insight-pdf";
 import {
   DAILY_NOTE_PLACEHOLDERS,
@@ -85,6 +87,7 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
   const toNew = daysUntilNew(date);
 
   const cosmic = useMemo(() => getMoonJournalContext(date), [date]);
+  const theme = elementTheme(cosmic.sign.element);
 
   const cycle = useMemo(() => {
     try { return getPhaseInfo(date, periods, settings); } catch { return null; }
@@ -212,14 +215,25 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
   };
 
   return (
-    <Collapsible open={open} onOpenChange={toggle} className={cn("rounded-2xl border border-border/50 bg-card/70", className)}>
+    <Collapsible
+      open={open}
+      onOpenChange={toggle}
+      className={cn("rounded-2xl border bg-card/70", className)}
+      style={{ borderColor: theme.border, backgroundImage: theme.gradient }}
+    >
       <CollapsibleTrigger asChild>
         <button
           type="button"
           className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left transition-colors hover:bg-card"
           aria-label={`Moon insight — ${moon.label}. ${open ? "Collapse" : "Expand"} today's journal and note.`}
         >
-          <span aria-hidden className="text-xl leading-none">{moon.glyph}</span>
+          <span
+            aria-hidden
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg leading-none"
+            style={{ background: theme.soft, boxShadow: `inset 0 0 0 1px ${theme.border}` }}
+          >
+            {moon.glyph}
+          </span>
           <span className="min-w-0 flex-1">
             <span className="flex flex-wrap items-baseline gap-x-2">
               <span className="font-display text-sm font-semibold">{moon.label}</span>
@@ -230,13 +244,24 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
             </span>
             <span className="mt-0.5 block truncate text-[11.5px] text-muted-foreground">{moon.invitation}</span>
             <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[10.5px] text-muted-foreground">
-              <span className="rounded-full border border-border/60 bg-muted/40 px-1.5 py-0.5">
+              <span
+                className="rounded-full border px-1.5 py-0.5 font-medium"
+                style={{ background: theme.soft, borderColor: theme.border, color: theme.color }}
+              >
                 {cosmic.sign.symbol} Moon in {cosmic.sign.name}
               </span>
-              <span className="rounded-full border border-border/60 bg-muted/40 px-1.5 py-0.5">
+              <span
+                className="rounded-full border px-1.5 py-0.5 font-medium"
+                style={{ background: theme.soft, borderColor: theme.border, color: theme.color }}
+              >
                 {cosmic.elementEmoji} {cosmic.sign.element}
               </span>
-              <span className="rounded-full border border-border/60 bg-muted/40 px-1.5 py-0.5">{cosmic.themeName}</span>
+              <span
+                className="rounded-full border px-1.5 py-0.5"
+                style={{ borderColor: theme.border }}
+              >
+                {cosmic.themeName}
+              </span>
               {cycleDot && (
                 <span
                   className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5"
@@ -252,7 +277,8 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        <div className="border-t border-border/50 p-3">
+        <div className="border-t p-3" style={{ borderColor: theme.border }}>
+          <PlannerWeatherStrip element={cosmic.sign.element} className="mb-2" />
           <div className="mb-2 flex items-center justify-between gap-2">
             <PhaseHabitNudge date={date} className="flex-1" />
             <Button
