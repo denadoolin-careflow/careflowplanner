@@ -101,9 +101,9 @@ export function PlannerCapacityBar({ date, className, part, compact }: {
           return (
             <div key={r.id}>
               <div className="flex items-baseline justify-between gap-1">
-                <span className="truncate text-[10.5px] text-muted-foreground">{r.label}</span>
+                <span className="truncate text-[10.5px] text-muted-foreground">{compact ? `${hrs(r.planned)} planned` : r.label}</span>
                 <span className={cn("text-[10px] tabular-nums", over ? "text-destructive" : "text-muted-foreground/80")}>
-                  {hrs(r.planned)}
+                  {compact ? `${hrs(Math.max(0, r.available - r.planned))} free` : hrs(r.planned)}
                 </span>
               </div>
               <div
