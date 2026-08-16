@@ -17,6 +17,7 @@ import { createNote, getDailyNote, updateNote, type Note } from "@/lib/notes";
 import { useTimeAllocation } from "@/lib/planner/time-allocation";
 import { getMoonJournalContext } from "@/lib/planner/moon-journal-prompt";
 import { useCycleDot } from "@/lib/planner/day-rhythm";
+import { PhaseHabitNudge } from "./PhaseHabitNudge";
 import { MoonInsightHistory } from "./MoonInsightHistory";
 import { buildMoonInsightPdf, shareOrDownloadPdf } from "@/lib/planner/moon-insight-pdf";
 import {
@@ -252,7 +253,8 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
 
       <CollapsibleContent>
         <div className="border-t border-border/50 p-3">
-          <div className="mb-2 flex justify-end">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <PhaseHabitNudge date={date} className="flex-1" />
             <Button
               size="sm" variant="outline" className="h-7 rounded-full text-[11px]"
               disabled={exporting} onClick={() => void exportPdf()}
