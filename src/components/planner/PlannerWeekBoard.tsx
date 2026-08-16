@@ -10,6 +10,21 @@ import { KIND_ICONS } from "./kindIcon";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { cn } from "@/lib/utils";
 
+const PARTS = [
+  { part: "morning" as const, label: "Morning", startH: 5, endH: 12 },
+  { part: "afternoon" as const, label: "Afternoon", startH: 12, endH: 17 },
+  { part: "evening" as const, label: "Evening", startH: 17, endH: 24 },
+];
+
+function itemPart(it: PlannerFeedItem): "morning" | "afternoon" | "evening" | "unscheduled" {
+  if (it.allDay || !it.time) return "unscheduled";
+  const h = Number(it.time.split(":")[0]);
+  if (!Number.isFinite(h)) return "unscheduled";
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
 
 /**
  * Week as a planning board: one column per day with capacity, drag items
