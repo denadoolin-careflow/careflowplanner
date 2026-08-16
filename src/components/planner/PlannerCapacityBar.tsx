@@ -25,8 +25,14 @@ function hmToMin(v?: string | null): number | null {
   return Number.isFinite(h) ? h * 60 + (m || 0) : null;
 }
 
-/** Planned vs available minutes for the day, with a per-band breakdown. */
-export function PlannerCapacityBar({ date, className }: { date: Date; className?: string }) {
+/** Planned vs available minutes for the day, with a per-band breakdown.
+ *  Pass `part` to render just one band (compact, for time-of-day sections). */
+export function PlannerCapacityBar({ date, className, part, compact }: {
+  date: Date;
+  className?: string;
+  part?: DayPart;
+  compact?: boolean;
+}) {
   const { state } = useStore();
   const iso = format(date, "yyyy-MM-dd");
   const { blocks } = useTimeBlocks(iso, iso);
@@ -65,20 +71,31 @@ export function PlannerCapacityBar({ date, className }: { date: Date; className?
     });
   }, [state.tasks, state.appointments, blocks, iso]);
 
-  const planned = rows.reduce((s, r) => s + r.planned, 0);
-  const available = rows.reduce((s, r) => s + r.available, 0);
+  const shown = part ? rows.filter(r => r.part === part) : rows;
+  const planned = shown.reduce((s, r) => s + r.planned, 0);
+  const available = shown.reduce((s, r) => s + r.available, 0);
   const hrs = (m: number) => `${Math.round((m / 60) * 10) / 10}h`;
 
   return (
-    <section className={cn("rounded-xl border border-border/50 bg-background/60 px-3 py-2", className)} aria-label="Day capacity">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Capacity</p>
-        <p className="text-[11px] text-muted-foreground">
-          <span className="font-medium text-foreground">{hrs(planned)}</span> planned · {hrs(Math.max(0, available - planned))} free
-        </p>
-      </div>
-      <div className="mt-1.5 grid grid-cols-3 gap-2">
-        {rows.map(r => {
+    <section
+      className={cn(
+        compact
+          ? "rounded-lg border border-border/40 bg-background/40 px-2 py-1.5"
+          : "rounded-xl border border-border/50 bg-background/60 px-3 py-2",
+        className,
+      )}
+      aria-label={part ? `${part} capacity` : "Day capacity"}
+    >
+      {!compact && (
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Capacity</p>
+          <p className="text-[11px] text-muted-foreground">
+            <span className="font-medium text-foreground">{hrs(planned)}</span> planned · {hrs(Math.max(0, available - planned))} free
+          </p>
+        </div>
+      )}
+      <div className={cn(compact ? "grid grid-cols-1 gap-2" : "mt-1.5 grid grid-cols-3 gap-2")}>
+        {shown.map(r => {
           const pct = Math.min(100, Math.round((r.planned / r.available) * 100));
           const over = r.planned > r.available;
           return (
