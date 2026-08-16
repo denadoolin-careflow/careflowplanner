@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { PlannerCapacityBar } from "./PlannerCapacityBar";
+import { PlannerDaySummaryStrip } from "./PlannerDaySummaryStrip";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { KIND_ICONS } from "./kindIcon";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
@@ -80,6 +81,7 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(d, "EEE")}</span>
                 <span className={cn("font-display text-sm font-semibold", isToday && "text-primary")}>{format(d, "MMM d")}</span>
               </button>
+              <PlannerDaySummaryStrip date={d} items={items} className="mb-1.5" />
               <div className="flex max-h-[520px] flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pr-0.5">
                 {(() => {
                   const groups = { morning: [] as PlannerFeedItem[], afternoon: [] as PlannerFeedItem[], evening: [] as PlannerFeedItem[], unscheduled: [] as PlannerFeedItem[] };
@@ -134,6 +136,12 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
                   };
                   return (
                     <>
+                      {groups.unscheduled.length > 0 && (
+                        <section aria-label={`Anytime on ${format(d, "EEEE")}`} className="space-y-1">
+                          <span className="px-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Anytime</span>
+                          {groups.unscheduled.map(renderItem)}
+                        </section>
+                      )}
                       {PARTS.map(p => (
                         <section key={p.part} aria-label={`${p.label} on ${format(d, "EEEE")}`} className="space-y-1">
                           <div className="flex items-center justify-between gap-2 px-0.5">
@@ -145,12 +153,6 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
                             : groups[p.part].map(renderItem)}
                         </section>
                       ))}
-                      {groups.unscheduled.length > 0 && (
-                        <section aria-label={`Unscheduled on ${format(d, "EEEE")}`} className="space-y-1">
-                          <span className="px-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Anytime</span>
-                          {groups.unscheduled.map(renderItem)}
-                        </section>
-                      )}
                     </>
                   );
                 })()}
