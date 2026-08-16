@@ -87,7 +87,9 @@ export function PlannerRhythmChart({ from, days, className }: { from: Date; days
             <XAxis dataKey="name" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
             <YAxis tick={{ fontSize: 10 }} width={30} />
             <Tooltip
-              contentStyle={{ fontSize: 12, borderRadius: 12 }}
+              contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12, color: "hsl(var(--card-foreground))" }}
+              itemStyle={{ color: "hsl(var(--card-foreground))" }}
+              labelStyle={{ color: "hsl(var(--card-foreground))" }}
               formatter={(v: number, n: string) => {
                 if (n === "Moon") return [`${Math.round(v * 10)}% lit`, "Moon"];
                 if (n === "Energy") return [v ? `${v.toFixed(1)} / 3` : "—", "Energy"];
