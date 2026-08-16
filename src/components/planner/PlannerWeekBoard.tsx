@@ -10,6 +10,21 @@ import { KIND_ICONS } from "./kindIcon";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { cn } from "@/lib/utils";
 
+const PARTS = [
+  { part: "morning" as const, label: "Morning", startH: 5, endH: 12 },
+  { part: "afternoon" as const, label: "Afternoon", startH: 12, endH: 17 },
+  { part: "evening" as const, label: "Evening", startH: 17, endH: 24 },
+];
+
+function itemPart(it: PlannerFeedItem): "morning" | "afternoon" | "evening" | "unscheduled" {
+  if (it.allDay || !it.time) return "unscheduled";
+  const h = Number(it.time.split(":")[0]);
+  if (!Number.isFinite(h)) return "unscheduled";
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
 
 /**
  * Week as a planning board: one column per day with capacity, drag items
@@ -65,10 +80,11 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{format(d, "EEE")}</span>
                 <span className={cn("font-display text-sm font-semibold", isToday && "text-primary")}>{format(d, "MMM d")}</span>
               </button>
-              <PlannerCapacityBar date={d} className="mb-1.5" />
-              <div className="flex max-h-[420px] flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pr-0.5">
-                {items.length === 0 && <p className="px-1 py-2 text-[11px] text-muted-foreground">Nothing planned</p>}
-                {items.map(it => {
+              <div className="flex max-h-[520px] flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pr-0.5">
+                {(() => {
+                  const groups = { morning: [] as PlannerFeedItem[], afternoon: [] as PlannerFeedItem[], evening: [] as PlannerFeedItem[], unscheduled: [] as PlannerFeedItem[] };
+                  for (const it of items) groups[itemPart(it)].push(it);
+                  const renderItem = (it: PlannerFeedItem) => {
                   const Icon = KIND_ICONS[it.kind];
                   const isTask = it.sourceRef.type === "task";
                   return (
@@ -115,7 +131,29 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
                       </div>
                     </button>
                   );
-                })}
+                  };
+                  return (
+                    <>
+                      {PARTS.map(p => (
+                        <section key={p.part} aria-label={`${p.label} on ${format(d, "EEEE")}`} className="space-y-1">
+                          <div className="flex items-center justify-between gap-2 px-0.5">
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{p.label}</span>
+                          </div>
+                          <PlannerCapacityBar date={d} part={p.part} compact />
+                          {groups[p.part].length === 0
+                            ? <p className="px-1 py-1 text-[10.5px] text-muted-foreground/70">Open</p>
+                            : groups[p.part].map(renderItem)}
+                        </section>
+                      ))}
+                      {groups.unscheduled.length > 0 && (
+                        <section aria-label={`Unscheduled on ${format(d, "EEEE")}`} className="space-y-1">
+                          <span className="px-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Anytime</span>
+                          {groups.unscheduled.map(renderItem)}
+                        </section>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           );
