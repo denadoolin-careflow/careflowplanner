@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF, dayPartSuggestion } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
 import type { WeatherCondition } from "@/lib/weather";
-import { getMoonSign } from "@/lib/planner/moon-journal-prompt";
 import { elementTheme } from "@/lib/planner/element-theme";
 
 const PARTS = ["Morning", "Afternoon", "Evening"] as const;
@@ -97,4 +96,3 @@ export function PlannerWeatherStrip({ element, className }: { element?: "Fire" |
   );
 }
 
-export { getMoonSign };
