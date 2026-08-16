@@ -104,7 +104,9 @@ export function PlannerTimeReview({ from, days, label, className }: {
                 </Pie>
                 <Tooltip
                   formatter={(v: number, n: string) => [`${fmtHours(v)} (${Math.round((v / totalPlannedMin) * 100)}%)`, n]}
-                  contentStyle={{ fontSize: 12, borderRadius: 12 }}
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12, color: "hsl(var(--card-foreground))" }}
+                  itemStyle={{ color: "hsl(var(--card-foreground))" }}
+                  labelStyle={{ color: "hsl(var(--card-foreground))" }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -123,7 +125,7 @@ export function PlannerTimeReview({ from, days, label, className }: {
               <BarChart data={bars} layout="vertical" margin={{ left: 4, right: 8, top: 4, bottom: 0 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} unit="h" />
                 <YAxis type="category" dataKey="name" width={78} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                <Tooltip formatter={(v: number) => `${v}h`} contentStyle={{ fontSize: 12, borderRadius: 12 }} />
+                <Tooltip formatter={(v: number) => `${v}h`} contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12, color: "hsl(var(--card-foreground))" }} itemStyle={{ color: "hsl(var(--card-foreground))" }} labelStyle={{ color: "hsl(var(--card-foreground))" }} />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
                 <Bar dataKey="Planned" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={8} />
                 <Bar dataKey="Completed" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} barSize={8} />

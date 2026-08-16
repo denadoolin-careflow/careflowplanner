@@ -132,7 +132,9 @@ export function HabitWeeklyAnalytics() {
               <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
               <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
               <Tooltip
-                contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--popover-foreground))" }}
+                itemStyle={{ color: "hsl(var(--popover-foreground))" }}
+                labelStyle={{ color: "hsl(var(--popover-foreground))" }}
                 formatter={(v: any, _n, p: any) => [`${v}% (${p.payload.done}/${p.payload.total})`, "Done"]}
               />
               <Bar dataKey="pct" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
@@ -154,7 +156,7 @@ export function HabitWeeklyAnalytics() {
                   <Pie data={timeOfDayData} dataKey="value" nameKey="name" innerRadius={32} outerRadius={56} paddingAngle={2}>
                     {timeOfDayData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
-                  <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--popover-foreground))" }} itemStyle={{ color: "hsl(var(--popover-foreground))" }} labelStyle={{ color: "hsl(var(--popover-foreground))" }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

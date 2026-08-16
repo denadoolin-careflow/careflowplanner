@@ -141,7 +141,9 @@ export default function Insights() {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12, color: "hsl(var(--card-foreground))" }}
+                    itemStyle={{ color: "hsl(var(--card-foreground))" }}
+                    labelStyle={{ color: "hsl(var(--card-foreground))" }}
                     formatter={(v: any) => [`${v}m`, "Focus"]}
                   />
                 </PieChart>
@@ -186,7 +188,9 @@ export default function Insights() {
               />
               <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
               <Tooltip
-                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12, color: "hsl(var(--card-foreground))" }}
+                itemStyle={{ color: "hsl(var(--card-foreground))" }}
+                labelStyle={{ color: "hsl(var(--card-foreground))" }}
                 labelFormatter={(v) => format(new Date(v), "EEE, MMM d")}
                 formatter={(value: any, name: string, item: any) => {
                   if (name === "focusMinutes") {
