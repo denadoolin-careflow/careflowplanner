@@ -458,7 +458,6 @@ export default function Planner() {
           {view === "day" && (
             <div className="mb-2 shrink-0 space-y-2">
               <PlannerMoonInsight date={day} onSelectDate={openDay} />
-              <PhaseHabitNudge date={day} />
               <PlannerDayAssistant date={day} />
               <PlannerCapacityBar date={day} />
               <PlannerEmptyDay
