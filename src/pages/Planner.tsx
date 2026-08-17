@@ -553,6 +553,20 @@ export default function Planner() {
         )}
       </div>
 
+      {showFloatingTaskPanel && (
+        <FloatingPanelFrame
+          storageKey="careflow.planner.taskPanelBox"
+          title="Tasks"
+          onDock={() => setTaskFloating(false)}
+        >
+          <TaskSourcePanel
+            selectedDate={day}
+            onQuickAdd={() => setCaptureOpen(true)}
+            onCollapse={() => { setTaskFloating(false); setPanel(view, "task", false); }}
+          />
+        </FloatingPanelFrame>
+      )}
+
       <PlannerQuickCapture open={captureOpen} onOpenChange={setCaptureOpen} defaultDate={day} />
       <PlannerShortcutsSheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <PlanMyDayDialog open={planOpen} onOpenChange={setPlanOpen} date={day} />
