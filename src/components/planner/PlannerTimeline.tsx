@@ -693,7 +693,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   };
 
   const submitQuickAdd = async () => {
-    if (!quickAdd || !quickAdd.text.trim()) { setQuickAdd(null); return; }
+    if (!quickAdd) return;
+    if (quickAdd.mode !== "task") { await submitWriteBlock(); return; }
+    if (!quickAdd.text.trim()) { setQuickAdd(null); return; }
     const p = parseTaskInput(quickAdd.text);
     const guessed = p.area ?? inferArea({ title: p.title || quickAdd.text, tags: p.tags })?.area ?? "Personal";
     await addTask({
@@ -711,6 +713,27 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     haptics.success();
     toast.success("Task added");
     setQuickAdd(null);
+  };
+
+  /** Create a note or journal entry scheduled as a block at the tapped slot. */
+  const submitWriteBlock = async () => {
+    if (!quickAdd || quickAdd.mode === "task") return;
+    const kind = quickAdd.mode;
+    const title = quickAdd.text.trim() || (kind === "note" ? "Untitled note" : `Journal — ${format(date, "MMM d")}`);
+    try {
+      const target = await createWriteBlock({
+        kind,
+        title,
+        date: iso,
+        startTime: minToHM(quickAdd.startAbsMin),
+        endTime: minToHM(quickAdd.startAbsMin + quickAdd.durMin),
+      });
+      haptics.success();
+      setQuickAdd(null);
+      openWriteBlock(target);
+    } catch {
+      toast.error("Couldn't create that. Try again?");
+    }
   };
 
   return (
