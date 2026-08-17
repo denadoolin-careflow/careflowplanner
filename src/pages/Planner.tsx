@@ -240,8 +240,15 @@ export default function Planner() {
                 <ListTodo className="h-4 w-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[86vw] max-w-[360px] p-0">
+            <SheetContent
+              side="left"
+              data-planner-hide-on-drag
+              className="w-[86vw] max-w-[360px] p-0 transition-opacity duration-150"
+            >
               <div className="h-full overflow-hidden p-3">
+                <p className="pb-1.5 text-[10.5px] text-muted-foreground">
+                  Press and hold a task to drag it onto the timeline — this panel fades so you can see the grid.
+                </p>
                 <TaskSourcePanel selectedDate={day} onQuickAdd={() => { setMobileTasksOpen(false); setCaptureOpen(true); }} />
               </div>
             </SheetContent>
