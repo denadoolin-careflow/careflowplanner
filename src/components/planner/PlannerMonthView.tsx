@@ -9,6 +9,7 @@ import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { KIND_ICONS } from "./kindIcon";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { useCycleDots } from "@/lib/planner/day-rhythm";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 /**
@@ -30,6 +31,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = (it: PlannerFeedItem) => (onOpenItem ? onOpenItem(it) : openItem(it));
   const cycles = useCycleDots(days);
+  const isMobile = useIsMobile();
   const [dragOver, setDragOver] = useState<string | null>(null);
   const todayKey = format(today, "yyyy-MM-dd");
 
@@ -72,7 +74,8 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
               onDragLeave={() => setDragOver(cur => (cur === key ? null : cur))}
               onDrop={(e) => onDrop(key, e)}
               className={cn(
-                "flex min-h-[132px] flex-col gap-0.5 border-b border-r border-border/40 p-1.5 text-left transition-colors",
+                "flex flex-col gap-0.5 border-b border-r border-border/40 p-1.5 text-left transition-colors",
+                isMobile ? "min-h-[74px]" : "min-h-[132px]",
                 dim && "bg-muted/20 text-muted-foreground/60",
                 allDone && !dim && "ring-1 ring-inset ring-emerald-500/40",
                 hasOverdue && !dim && "ring-1 ring-inset ring-amber-500/40",
@@ -109,6 +112,26 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                   </span>
                 )}
               </div>
+              {isMobile ? (
+                <button
+                  type="button"
+                  onClick={() => onSelectDay(d)}
+                  aria-label={`Open ${format(d, "EEEE, MMMM d")}${items.length ? ` — ${items.length} planned` : ""}`}
+                  className="flex min-h-0 flex-1 flex-wrap content-start items-center gap-[3px] pt-1"
+                >
+                  {items.slice(0, 3).map(it => (
+                    <span
+                      key={it.id}
+                      aria-hidden
+                      className={cn("h-1.5 w-1.5 rounded-full", it.done && "opacity-40")}
+                      style={{ background: it.color }}
+                    />
+                  ))}
+                  {items.length > 3 && (
+                    <span className="text-[9px] leading-none text-muted-foreground">+{items.length - 3}</span>
+                  )}
+                </button>
+              ) : (
               <div className="flex min-h-0 flex-col gap-0.5">
                 {visible.map(it => {
                   const Icon = KIND_ICONS[it.kind];
@@ -174,6 +197,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                   </Popover>
                 )}
               </div>
+              )}
             </div>
           );
         })}
