@@ -154,6 +154,11 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse, onFloat 
                 <CommandIcon className="h-3.5 w-3.5" />
               </Button>
             )}
+            {onFloat && (
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onFloat} aria-label="Float task panel">
+                <Move className="h-3.5 w-3.5" />
+              </Button>
+            )}
             {onCollapse && (
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onCollapse} aria-label="Collapse task sidebar">
                 <PanelLeftClose className="h-3.5 w-3.5" />
