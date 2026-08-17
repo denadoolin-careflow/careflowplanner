@@ -646,6 +646,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     const target = e.target as HTMLElement;
     // Only trigger on the grid background, not on blocks or their children.
     if (target.closest("[data-planner-block]")) return;
+    // An open composer stays open: the first tap outside just closes it, so a
+    // duration choice is never lost to a stray click.
+    if (quickAdd) { setQuickAdd(null); return; }
     const rect = gridRef.current!.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const relMin = yToMin(y);
@@ -919,7 +922,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                   onKeyDown={(e) => void onBlockKeyDown(e, it)}
                   title={`${it.title} · ${timeLabel}${hasConflict ? " · overlaps another item" : ""}`}
                   onPointerDown={(e) => startMoveGesture(e, it)}
-                  onClick={() => it.kind === "task" && openTaskQuickEdit(it.id)}
+                  onClick={() => {
+                    // Never open the editor straight after a move, resize or completion.
+                    if (suppressClickRef.current) return;
+                    if (it.kind === "task") openTaskQuickEdit(it.id);
+                  }}
                   className={cn(
                     "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
