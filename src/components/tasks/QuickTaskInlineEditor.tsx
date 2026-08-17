@@ -136,7 +136,7 @@ export function QuickTaskInlineEditor({
           title: title.trim() || task.title,
           description: notes.trim() || undefined,
           date: dueDate ?? format(new Date(), "yyyy-MM-dd"),
-          memoryType: "everyday" as any,
+          memoryType: "highlight",
           tags: task.tags ?? [],
           recipientIds: recipientId ? [recipientId] : [],
         });
