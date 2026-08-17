@@ -415,19 +415,3 @@ function Section({ label, defaultOpen, children }: { label: string; defaultOpen?
     </Collapsible>
   );
 }
-
-function Pill({ active, onClick, children }: { active?: boolean; onClick?: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-2 py-0.5 text-[11px] transition-colors",
-        active ? "border-primary bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
