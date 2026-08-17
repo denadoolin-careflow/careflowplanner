@@ -975,6 +975,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                   onClick={() => {
                     // Never open the editor straight after a move, resize or completion.
                     if (suppressClickRef.current) return;
+                    if (it.kind === "write" && it.write) {
+                      openWriteBlock({ kind: it.write.kind, recordId: it.write.recordId, blockId: it.write.blockId, title: it.title });
+                      return;
+                    }
                     if (it.kind !== "task") return;
                     // Phones get the compact grid editor; desktop opens the full editor.
                     if (isMobile) openMobileBlockEditor(it.id, "sheet");
