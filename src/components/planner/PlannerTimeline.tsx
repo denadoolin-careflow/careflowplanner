@@ -54,7 +54,7 @@ const DAY_PART_START_H: Record<string, number> = { Morning: 9, Afternoon: 13, Ev
 
 interface ScheduledItem {
   id: string;
-  kind: "task" | "appt";
+  kind: "task" | "appt" | "write";
   title: string;
   startMin: number; // minutes from START_H
   durMin: number;
@@ -62,6 +62,8 @@ interface ScheduledItem {
   done?: boolean;
   color?: string;
   task?: Task;
+  /** For writing blocks: what record the block points at. */
+  write?: { kind: "note" | "journal"; recordId: string; blockId: string };
 }
 
 const AREA_BG: Record<string, string> = {
