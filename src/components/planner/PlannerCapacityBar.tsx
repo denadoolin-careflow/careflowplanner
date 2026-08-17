@@ -7,7 +7,6 @@ import { ENERGY_COLOR, useDayPartEnergy, type DayPart, type Energy } from "@/lib
 import { MOODS, useDayPartMood } from "@/lib/mood-by-part";
 import { cn } from "@/lib/utils";
 import { usePlannerCapacityLogger } from "@/lib/planner-capacity-log";
-import { useBurnoutCheckIn } from "@/lib/burnout-checkin";
 
 const BANDS: { id: BandId; part: DayPart; label: string; startH: number; endH: number }[] = [
   { id: "morning", part: "morning", label: "Morning", startH: 5, endH: 12 },
