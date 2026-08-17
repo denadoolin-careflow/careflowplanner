@@ -656,6 +656,19 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "", durMin: 30 });
   };
 
+  /** Complete a task from its block without bouncing into the editor. */
+  const toggleWithUndo = (id: string, title: string, done: boolean) => {
+    suppressClickRef.current = true;
+    window.setTimeout(() => { suppressClickRef.current = false; }, 400);
+    void toggleTask(id);
+    setAnnouncement(done ? `${title} marked not done` : `${title} completed`);
+    if (!done) {
+      toast.success(`Completed ${title}`, {
+        action: { label: "Undo", onClick: () => { void toggleTask(id); } },
+      });
+    }
+  };
+
   const submitQuickAdd = async () => {
     if (!quickAdd || !quickAdd.text.trim()) { setQuickAdd(null); return; }
     const p = parseTaskInput(quickAdd.text);
