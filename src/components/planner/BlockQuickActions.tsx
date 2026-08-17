@@ -45,6 +45,12 @@ export function BlockQuickActions({ task, asMenuItems }: Props) {
     setConfirmUnschedule(false);
   };
 
+  const startTimer = () => {
+    const mins = task.estMinutes && task.estMinutes > 0 ? task.estMinutes : 25;
+    pomodoro.startForTask({ id: task.id, title: task.title }, { focusSeconds: mins * 60 });
+    toast.success(`Timer started · ${mins}m`, { description: task.title });
+  };
+
   const actions = [
     { icon: Check, label: task.done ? "Reopen" : "Complete", onClick: () => toggleTask(task.id) },
     { icon: Timer, label: `Start timer${task.estMinutes ? ` (${task.estMinutes}m)` : ""}`, onClick: () => startTimer() },
