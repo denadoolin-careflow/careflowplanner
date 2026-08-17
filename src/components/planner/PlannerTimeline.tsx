@@ -29,7 +29,6 @@ import { ConflictPopover, type ConflictInfo } from "./ConflictPopover";
 import { DurationEditor } from "./DurationEditor";
 import { PlannerTemplatesMenu } from "./PlannerTemplatesMenu";
 import { PlannerMealLane } from "./PlannerMealLane";
-import { PlannerMobileInboxRail } from "./PlannerMobileInboxRail";
 import { PlannerAtmosphereStrip } from "./PlannerAtmosphereStrip";
 import { useBandColors, bandClass, type BandId } from "@/lib/planner-band-colors";
 import type { PlannerTemplate, TemplateItem } from "@/lib/planner-templates";
