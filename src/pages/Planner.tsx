@@ -4,6 +4,7 @@ import { addDays, addMonths, addYears, format, isValid, parseISO, startOfWeek } 
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
+import { FloatingPanelFrame } from "@/components/planner/FloatingPanelFrame";
 import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
@@ -126,6 +127,13 @@ export default function Planner() {
     try { window.localStorage.setItem("careflow.planner.taskPanelWidth", String(taskPanelWidth)); } catch {}
   }, [taskPanelWidth]);
   const resizeRef = useRef<{ startX: number; startW: number } | null>(null);
+  const [taskFloating, setTaskFloating] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("careflow.planner.taskPanelFloating") === "1";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("careflow.planner.taskPanelFloating", taskFloating ? "1" : "0"); } catch {}
+  }, [taskFloating]);
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const [shellWidth, setShellWidth] = useState<number>(1600);
@@ -205,7 +213,8 @@ export default function Planner() {
   const roomForFocus = shellWidth >= 1400;
   const showContextPanel = !isMobile && panel.context && view !== "year" && roomForContext;
   const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus;
-  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900;
+  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900 && !taskFloating;
+  const showFloatingTaskPanel = !isMobile && panel.task && taskFloating;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const openDay = (d: Date) => { setView("day"); go(d); };
 
@@ -433,6 +442,7 @@ export default function Planner() {
               <TaskSourcePanel
                 selectedDate={day}
                 onQuickAdd={() => setCaptureOpen(true)}
+                onFloat={() => setTaskFloating(true)}
                 onCollapse={() => setPanel(view, "task", false)}
               />
             </div>
@@ -542,6 +552,20 @@ export default function Planner() {
           </div>
         )}
       </div>
+
+      {showFloatingTaskPanel && (
+        <FloatingPanelFrame
+          storageKey="careflow.planner.taskPanelBox"
+          title="Tasks"
+          onDock={() => setTaskFloating(false)}
+        >
+          <TaskSourcePanel
+            selectedDate={day}
+            onQuickAdd={() => setCaptureOpen(true)}
+            onCollapse={() => { setTaskFloating(false); setPanel(view, "task", false); }}
+          />
+        </FloatingPanelFrame>
+      )}
 
       <PlannerQuickCapture open={captureOpen} onOpenChange={setCaptureOpen} defaultDate={day} />
       <PlannerShortcutsSheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />

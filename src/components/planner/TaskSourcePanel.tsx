@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban, Sparkles, ListChecks, PanelLeftClose } from "lucide-react";
+import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban, Sparkles, ListChecks, PanelLeftClose, Move } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -35,7 +35,7 @@ const AREA_SET = new Set(["Family","Health","Home","Meals","Personal","Money","C
  * Areas, Projects — plus Home upkeep and the day's meals, all draggable
  * onto the time grid.
  */
-export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { selectedDate: Date; onQuickAdd?: () => void; onCollapse?: () => void }) {
+export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse, onFloat }: { selectedDate: Date; onQuickAdd?: () => void; onCollapse?: () => void; onFloat?: () => void }) {
   const { state, addTask, addMeal, updateMeal, toggleHabit } = useStore();
   const { items: maintenance } = useHomeMaintenance();
   const { routines: routineList } = useRoutines();
@@ -152,6 +152,11 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
             {onQuickAdd && (
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Open advanced capture">
                 <CommandIcon className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {onFloat && (
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onFloat} aria-label="Float task panel">
+                <Move className="h-3.5 w-3.5" />
               </Button>
             )}
             {onCollapse && (
