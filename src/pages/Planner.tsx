@@ -438,7 +438,6 @@ export default function Planner() {
               <TaskSourcePanel
                 selectedDate={day}
                 onQuickAdd={() => setCaptureOpen(true)}
-                onFloat={() => setTaskFloating(true)}
                 onCollapse={() => setPanel(view, "task", false)}
               />
             </div>
@@ -453,9 +452,11 @@ export default function Planner() {
               onPointerDown={onResizeStart}
               onKeyDown={onResizeKey}
               onDoubleClick={() => setTaskPanelWidth(280)}
-              className="group relative -mx-1 cursor-col-resize rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              title="Drag to resize · double-click to reset"
+              className="group relative -mx-2 w-[14px] cursor-col-resize touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <div className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-border/60 transition-colors group-hover:bg-primary/60" />
+              <div className={`absolute inset-y-2 left-1/2 w-[3px] -translate-x-1/2 rounded-full transition-colors ${resizingPanel ? "bg-primary" : "bg-border/60 group-hover:bg-primary/60"}`} />
+              <div className={`absolute left-1/2 top-1/2 h-8 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/70 transition-opacity ${resizingPanel ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} aria-hidden />
             </div>
           </>
         )}
