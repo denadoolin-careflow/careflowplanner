@@ -1983,9 +1983,12 @@ export type Database = {
       daily_checkins: {
         Row: {
           ai_payload: Json | null
+          capacity_completed_min: number | null
+          capacity_day_parts: Json | null
           capacity_level: string | null
           capacity_mvd: boolean
           capacity_mvd_task_id: string | null
+          capacity_planned_min: number | null
           capture_media: Json | null
           capture_text: string | null
           chosen_intention: string | null
@@ -2001,9 +2004,12 @@ export type Database = {
         }
         Insert: {
           ai_payload?: Json | null
+          capacity_completed_min?: number | null
+          capacity_day_parts?: Json | null
           capacity_level?: string | null
           capacity_mvd?: boolean
           capacity_mvd_task_id?: string | null
+          capacity_planned_min?: number | null
           capture_media?: Json | null
           capture_text?: string | null
           chosen_intention?: string | null
@@ -2019,9 +2025,12 @@ export type Database = {
         }
         Update: {
           ai_payload?: Json | null
+          capacity_completed_min?: number | null
+          capacity_day_parts?: Json | null
           capacity_level?: string | null
           capacity_mvd?: boolean
           capacity_mvd_task_id?: string | null
+          capacity_planned_min?: number | null
           capture_media?: Json | null
           capture_text?: string | null
           chosen_intention?: string | null
