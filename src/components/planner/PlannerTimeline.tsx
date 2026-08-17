@@ -1010,6 +1010,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                         />
                       )}
                       {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
+                      {it.kind === "write" && (it.write?.kind === "journal"
+                        ? <NotebookPen className="h-3 w-3 shrink-0" />
+                        : <StickyNote className="h-3 w-3 shrink-0" />)}
                       <span className={cn("min-w-0 flex-1 truncate font-medium", it.done && "line-through")}>{it.title}</span>
                       <span className="shrink-0 font-mono text-[9px] opacity-70">{minTo12(it.startMin + START_H * 60)}</span>
                       {conflictNode}
