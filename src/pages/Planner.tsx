@@ -213,7 +213,8 @@ export default function Planner() {
   const roomForFocus = shellWidth >= 1400;
   const showContextPanel = !isMobile && panel.context && view !== "year" && roomForContext;
   const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus;
-  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900;
+  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900 && !taskFloating;
+  const showFloatingTaskPanel = !isMobile && panel.task && taskFloating;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const openDay = (d: Date) => { setView("day"); go(d); };
 
@@ -441,6 +442,7 @@ export default function Planner() {
               <TaskSourcePanel
                 selectedDate={day}
                 onQuickAdd={() => setCaptureOpen(true)}
+                onFloat={() => setTaskFloating(true)}
                 onCollapse={() => setPanel(view, "task", false)}
               />
             </div>
