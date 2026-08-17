@@ -4,7 +4,6 @@ import { addDays, addMonths, addYears, format, isValid, parseISO, startOfWeek } 
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
-import { FloatingPanelFrame } from "@/components/planner/FloatingPanelFrame";
 import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
@@ -115,6 +114,12 @@ export default function Planner() {
     }
   }, [period, setPeriod]);
   const [mobileTasksOpen, setMobileTasksOpen] = useState(false);
+  // Dropping a task from the mobile sheet onto the grid closes the sheet.
+  useEffect(() => {
+    const close = () => setMobileTasksOpen(false);
+    window.addEventListener("careflow:planner-drop", close as EventListener);
+    return () => window.removeEventListener("careflow:planner-drop", close as EventListener);
+  }, []);
   const [panels, setPanel] = usePlannerPanels();
   const panel = panels[view];
 
@@ -127,13 +132,7 @@ export default function Planner() {
     try { window.localStorage.setItem("careflow.planner.taskPanelWidth", String(taskPanelWidth)); } catch {}
   }, [taskPanelWidth]);
   const resizeRef = useRef<{ startX: number; startW: number } | null>(null);
-  const [taskFloating, setTaskFloating] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("careflow.planner.taskPanelFloating") === "1";
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem("careflow.planner.taskPanelFloating", taskFloating ? "1" : "0"); } catch {}
-  }, [taskFloating]);
+  const [resizingPanel, setResizingPanel] = useState(false);
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const [shellWidth, setShellWidth] = useState<number>(1600);
@@ -149,6 +148,8 @@ export default function Planner() {
   const onResizeStart = (e: React.PointerEvent) => {
     e.preventDefault();
     resizeRef.current = { startX: e.clientX, startW: taskPanelWidth };
+    setResizingPanel(true);
+    document.body.style.userSelect = "none";
     const onMove = (ev: PointerEvent) => {
       const r = resizeRef.current; if (!r) return;
       const next = Math.min(560, Math.max(220, r.startW + (ev.clientX - r.startX)));
@@ -158,6 +159,8 @@ export default function Planner() {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       resizeRef.current = null;
+      setResizingPanel(false);
+      document.body.style.userSelect = "";
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -213,8 +216,7 @@ export default function Planner() {
   const roomForFocus = shellWidth >= 1400;
   const showContextPanel = !isMobile && panel.context && view !== "year" && roomForContext;
   const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus;
-  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900 && !taskFloating;
-  const showFloatingTaskPanel = !isMobile && panel.task && taskFloating;
+  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const openDay = (d: Date) => { setView("day"); go(d); };
 
@@ -244,8 +246,15 @@ export default function Planner() {
                 <ListTodo className="h-4 w-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[86vw] max-w-[360px] p-0">
+            <SheetContent
+              side="left"
+              data-planner-hide-on-drag
+              className="w-[86vw] max-w-[360px] p-0 transition-opacity duration-150"
+            >
               <div className="h-full overflow-hidden p-3">
+                <p className="pb-1.5 text-[10.5px] text-muted-foreground">
+                  Press and hold a task to drag it onto the timeline — this panel fades so you can see the grid.
+                </p>
                 <TaskSourcePanel selectedDate={day} onQuickAdd={() => { setMobileTasksOpen(false); setCaptureOpen(true); }} />
               </div>
             </SheetContent>
@@ -442,7 +451,6 @@ export default function Planner() {
               <TaskSourcePanel
                 selectedDate={day}
                 onQuickAdd={() => setCaptureOpen(true)}
-                onFloat={() => setTaskFloating(true)}
                 onCollapse={() => setPanel(view, "task", false)}
               />
             </div>
@@ -457,9 +465,11 @@ export default function Planner() {
               onPointerDown={onResizeStart}
               onKeyDown={onResizeKey}
               onDoubleClick={() => setTaskPanelWidth(280)}
-              className="group relative -mx-1 cursor-col-resize rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              title="Drag to resize · double-click to reset"
+              className="group relative -mx-2 w-[14px] cursor-col-resize touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <div className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-border/60 transition-colors group-hover:bg-primary/60" />
+              <div className={`absolute inset-y-2 left-1/2 w-[3px] -translate-x-1/2 rounded-full transition-colors ${resizingPanel ? "bg-primary" : "bg-border/60 group-hover:bg-primary/60"}`} />
+              <div className={`absolute left-1/2 top-1/2 h-8 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/70 transition-opacity ${resizingPanel ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} aria-hidden />
             </div>
           </>
         )}
@@ -552,20 +562,6 @@ export default function Planner() {
           </div>
         )}
       </div>
-
-      {showFloatingTaskPanel && (
-        <FloatingPanelFrame
-          storageKey="careflow.planner.taskPanelBox"
-          title="Tasks"
-          onDock={() => setTaskFloating(false)}
-        >
-          <TaskSourcePanel
-            selectedDate={day}
-            onQuickAdd={() => setCaptureOpen(true)}
-            onCollapse={() => { setTaskFloating(false); setPanel(view, "task", false); }}
-          />
-        </FloatingPanelFrame>
-      )}
 
       <PlannerQuickCapture open={captureOpen} onOpenChange={setCaptureOpen} defaultDate={day} />
       <PlannerShortcutsSheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />

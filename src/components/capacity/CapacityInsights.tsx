@@ -1,7 +1,8 @@
 import { useMemo } from "react";
-import { Lightbulb, TrendingUp, Activity } from "lucide-react";
+import { Lightbulb, TrendingUp, Activity, CalendarClock } from "lucide-react";
 import { type Energy } from "@/lib/energy-store";
 import type { Task, Habit } from "@/lib/types";
+import { usePlannerCapacityHistory, summarizePlannerCapacity } from "@/lib/planner-capacity-log";
 
 function countByEnergy(
   map: Record<string, Energy>,
@@ -111,6 +112,10 @@ export function CapacityInsights({
     return { dayCounts, taskAvg, habitAvg, patterns };
   }, [energyMap, tasks, habits, days]);
 
+  const { rows: plannerRows } = usePlannerCapacityHistory(days);
+  const planner = useMemo(() => summarizePlannerCapacity(plannerRows), [plannerRows]);
+  const hrs = (m: number) => `${Math.round((m / 60) * 10) / 10}h`;
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2 text-center">
@@ -148,6 +153,52 @@ export function CapacityInsights({
             </li>
           ))}
         </ul>
+      </div>
+
+      <div className="rounded-lg border border-border/40 bg-muted/30 p-3">
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <CalendarClock className="h-3 w-3" /> From your planner
+        </div>
+        {planner.days === 0 ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Plan a few days on the planner and your real planned-vs-completed rhythm will show up here.
+          </p>
+        ) : (
+          <>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-md bg-background/60 px-2 py-1.5">
+                <div className="font-display text-base tabular-nums">{hrs(planner.avgPlannedMin)}</div>
+                <div className="text-[10px] text-muted-foreground">avg planned</div>
+              </div>
+              <div className="rounded-md bg-background/60 px-2 py-1.5">
+                <div className="font-display text-base tabular-nums">{hrs(planner.avgCompletedMin)}</div>
+                <div className="text-[10px] text-muted-foreground">avg completed</div>
+              </div>
+              <div className="rounded-md bg-background/60 px-2 py-1.5">
+                <div className="font-display text-base tabular-nums">{planner.followThroughPct}%</div>
+                <div className="text-[10px] text-muted-foreground">follow-through</div>
+              </div>
+            </div>
+            <ul className="mt-2 space-y-1.5 text-xs leading-snug">
+              {planner.heaviestPart && (
+                <li className="flex items-start gap-2">
+                  <TrendingUp className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                  <span>Your <strong className="capitalize">{planner.heaviestPart}</strong> is the most loaded stretch of the day.</span>
+                </li>
+              )}
+              {planner.bestLevel && (
+                <li className="flex items-start gap-2">
+                  <TrendingUp className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                  <span>You finish the most on <strong>{planner.bestLevel}</strong> capacity days.</span>
+                </li>
+              )}
+              <li className="flex items-start gap-2">
+                <TrendingUp className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                <span>Based on {planner.days} planned day{planner.days === 1 ? "" : "s"} saved from the planner.</span>
+              </li>
+            </ul>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-2 text-[11px] text-muted-foreground">

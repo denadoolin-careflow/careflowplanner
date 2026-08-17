@@ -6,6 +6,7 @@ import { useBandColors, swatchClass, type BandId } from "@/lib/planner-band-colo
 import { ENERGY_COLOR, useDayPartEnergy, type DayPart, type Energy } from "@/lib/energy-by-part";
 import { MOODS, useDayPartMood } from "@/lib/mood-by-part";
 import { cn } from "@/lib/utils";
+import { usePlannerCapacityLogger } from "@/lib/planner-capacity-log";
 
 const BANDS: { id: BandId; part: DayPart; label: string; startH: number; endH: number }[] = [
   { id: "morning", part: "morning", label: "Morning", startH: 5, endH: 12 },
@@ -74,6 +75,20 @@ export function PlannerCapacityBar({ date, className, part, compact }: {
   const shown = part ? rows.filter(r => r.part === part) : rows;
   const planned = shown.reduce((s, r) => s + r.planned, 0);
   const available = shown.reduce((s, r) => s + r.available, 0);
+
+  // Persist the day's real load so Capacity Insights can learn from the planner.
+  const completedMin = useMemo(
+    () => state.tasks
+      .filter(t => t.dueDate === iso && t.done)
+      .reduce((s, t) => s + (t.estMinutes ?? 30), 0),
+    [state.tasks, iso],
+  );
+  const dayPartLoad = useMemo(
+    () => Object.fromEntries(rows.map(r => [r.part, { planned: r.planned, available: r.available }])),
+    [rows],
+  );
+  const totalPlanned = useMemo(() => rows.reduce((s, r) => s + r.planned, 0), [rows]);
+  usePlannerCapacityLogger(iso, totalPlanned, completedMin, dayPartLoad, !part);
   const hrs = (m: number) => `${Math.round((m / 60) * 10) / 10}h`;
 
   return (

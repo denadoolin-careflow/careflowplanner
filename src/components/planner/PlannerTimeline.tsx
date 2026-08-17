@@ -29,7 +29,6 @@ import { ConflictPopover, type ConflictInfo } from "./ConflictPopover";
 import { DurationEditor } from "./DurationEditor";
 import { PlannerTemplatesMenu } from "./PlannerTemplatesMenu";
 import { PlannerMealLane } from "./PlannerMealLane";
-import { PlannerMobileInboxRail } from "./PlannerMobileInboxRail";
 import { PlannerAtmosphereStrip } from "./PlannerAtmosphereStrip";
 import { useBandColors, bandClass, type BandId } from "@/lib/planner-band-colors";
 import type { PlannerTemplate, TemplateItem } from "@/lib/planner-templates";
@@ -647,11 +646,27 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     const target = e.target as HTMLElement;
     // Only trigger on the grid background, not on blocks or their children.
     if (target.closest("[data-planner-block]")) return;
+    // An open composer stays open: the first tap outside just closes it, so a
+    // duration choice is never lost to a stray click.
+    if (quickAdd) { setQuickAdd(null); return; }
     const rect = gridRef.current!.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const relMin = yToMin(y);
     const abs = relMin + START_H * 60;
     setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "", durMin: 30 });
+  };
+
+  /** Complete a task from its block without bouncing into the editor. */
+  const toggleWithUndo = (id: string, title: string, done: boolean) => {
+    suppressClickRef.current = true;
+    window.setTimeout(() => { suppressClickRef.current = false; }, 400);
+    void toggleTask(id);
+    setAnnouncement(done ? `${title} marked not done` : `${title} completed`);
+    if (!done) {
+      toast.success(`Completed ${title}`, {
+        action: { label: "Undo", onClick: () => { void toggleTask(id); } },
+      });
+    }
   };
 
   const submitQuickAdd = async () => {
@@ -748,7 +763,6 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               </button>
             )}
           </div>
-          {isMobile && <PlannerMobileInboxRail />}
         </div>
       )}
       <div ref={scrollRef} className={cn("flex-1", noScroll ? "overflow-visible" : "overflow-y-auto")}>
@@ -846,6 +860,23 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               </button>
             ))}
 
+            {/* Live preview of the task being composed, sized by the chosen duration */}
+            {quickAdd && (() => {
+              const rel = quickAdd.startAbsMin - START_H * 60;
+              return (
+                <div
+                  className="pointer-events-none absolute left-1 right-1 z-20 overflow-hidden rounded-lg border-2 border-dashed border-primary/70 bg-primary/10 px-1.5 py-1 text-[11px] text-primary"
+                  style={{ top: rel * (HOUR_PX / 60), height: Math.max(SNAP_MIN, quickAdd.durMin) * (HOUR_PX / 60) - 2 }}
+                  aria-hidden
+                >
+                  <span className="block truncate font-mono text-[9px] opacity-80">
+                    {minTo12(quickAdd.startAbsMin)}–{minTo12(quickAdd.startAbsMin + quickAdd.durMin)} · {quickAdd.durMin}m
+                  </span>
+                  <span className="block truncate font-medium">{quickAdd.text.trim() || "New task"}</span>
+                </div>
+              );
+            })()}
+
             {/* Drop preview while dragging a task in from a rail or tray */}
             {dragOverMin !== null && (
               <div
@@ -921,7 +952,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                   onKeyDown={(e) => void onBlockKeyDown(e, it)}
                   title={`${it.title} · ${timeLabel}${hasConflict ? " · overlaps another item" : ""}`}
                   onPointerDown={(e) => startMoveGesture(e, it)}
-                  onClick={() => it.kind === "task" && openTaskQuickEdit(it.id)}
+                  onClick={() => {
+                    // Never open the editor straight after a move, resize or completion.
+                    if (suppressClickRef.current) return;
+                    if (it.kind === "task") openTaskQuickEdit(it.id);
+                  }}
                   className={cn(
                     "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                     it.kind === "task" ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer",
@@ -944,7 +979,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                         <BlockCheckbox
                           done={!!it.done}
                           title={it.title}
-                          onToggle={() => void toggleTask(it.id)}
+                          onToggle={() => toggleWithUndo(it.id, it.title, !!it.done)}
                         />
                       )}
                       {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
@@ -974,7 +1009,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                             done={!!it.done}
                             title={it.title}
                             className="mt-[1px]"
-                            onToggle={() => void toggleTask(it.id)}
+                            onToggle={() => toggleWithUndo(it.id, it.title, !!it.done)}
                           />
                         )}
                         {ic && ic.kind === "lucide" ? <ic.Icon className="mt-[1px] h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
@@ -1013,7 +1048,14 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                     style={{ left: quickAdd.x, top: quickAdd.y, width: 1, height: 1 }}
                   />
                 </PopoverAnchor>
-                <PopoverContent side="right" align="start" className="w-72 p-2">
+                <PopoverContent
+                  side="right"
+                  align="start"
+                  className="w-72 p-2"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                  onInteractOutside={(e) => e.preventDefault()}
+                  onPointerDownOutside={(e) => e.preventDefault()}
+                >
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     New task at {minTo12(quickAdd.startAbsMin)}
                   </p>
@@ -1057,7 +1099,25 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                       ) : null;
                     })()}
                   </div>
-                  <p className="mt-1.5 text-[10px] text-muted-foreground">Enter to add · Esc to close</p>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      className="h-7 flex-1 rounded-full text-[11.5px]"
+                      disabled={!quickAdd.text.trim()}
+                      onClick={() => void submitQuickAdd()}
+                    >
+                      Add at {minTo12(quickAdd.startAbsMin)} · {quickAdd.durMin}m
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 rounded-full px-2.5 text-[11.5px]"
+                      onClick={() => setQuickAdd(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-[10px] text-muted-foreground">Pick a duration first — the composer stays open until you add or cancel.</p>
                 </PopoverContent>
               </Popover>
             )}

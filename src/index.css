@@ -2980,3 +2980,11 @@ body.planner-dragging [aria-label="Pomodoro timer"] {
   pointer-events: none;
   transition: opacity 150ms ease-out;
 }
+
+/* Mobile: the task sheet becomes see-through mid-drag so the grid is visible. */
+body.planner-dragging [data-planner-hide-on-drag],
+body.planner-dragging [data-radix-dialog-overlay] {
+  opacity: 0.08 !important;
+  pointer-events: none !important;
+  transition: opacity 150ms ease-out;
+}
