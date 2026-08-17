@@ -676,7 +676,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     const y = e.clientY - rect.top;
     const relMin = yToMin(y);
     const abs = relMin + START_H * 60;
-    setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "", durMin: 30 });
+    setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "", durMin: 30, mode: "task" });
   };
 
   /** Complete a task from its block without bouncing into the editor. */
@@ -871,7 +871,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setQuickAdd({ x: 24, y: g.start * (HOUR_PX / 60), startAbsMin: g.start + START_H * 60, text: "", durMin: Math.min(g.dur, 60) });
+                  setQuickAdd({ x: 24, y: g.start * (HOUR_PX / 60), startAbsMin: g.start + START_H * 60, text: "", durMin: Math.min(g.dur, 60), mode: "task" });
                 }}
                 aria-label={`${g.dur} minutes free from ${minTo12(g.start + START_H * 60)}. Add a task here.`}
                 className="group/gap absolute left-1 right-1 z-0 flex items-start justify-end rounded-md border border-dashed border-transparent px-2 pt-1 text-[9px] text-muted-foreground/0 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-muted-foreground"
