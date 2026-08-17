@@ -283,6 +283,94 @@ export function QuickTaskInlineEditor({
         rows={2}
         className="min-h-[48px] resize-none text-xs"
       />
+
+      {/* Context: area, project, person, zone */}
+      <div className="space-y-1.5 border-t border-border/40 pt-2">
+        <FieldLabel>Area</FieldLabel>
+        <div className="flex flex-wrap gap-1">
+          {AREAS.map(a => (
+            <Pill key={a} active={area === a} onClick={() => setArea(a)}>{a}</Pill>
+          ))}
+        </div>
+
+        {(state.projects?.length ?? 0) > 0 && (
+          <>
+            <FieldLabel>Project</FieldLabel>
+            <div className="flex flex-wrap gap-1">
+              <Pill active={!projectId} onClick={() => setProjectId(undefined)}>None</Pill>
+              {(state.projects ?? []).slice(0, 12).map(p => (
+                <Pill key={p.id} active={projectId === p.id} onClick={() => setProjectId(p.id)}>{p.name}</Pill>
+              ))}
+            </div>
+          </>
+        )}
+
+        {(state.recipients?.length ?? 0) > 0 && (
+          <>
+            <FieldLabel>Caregiving for</FieldLabel>
+            <div className="flex flex-wrap gap-1">
+              <Pill active={!recipientId} onClick={() => setRecipientId(undefined)}>None</Pill>
+              {(state.recipients ?? []).map(r => (
+                <Pill key={r.id} active={recipientId === r.id} onClick={() => setRecipientId(r.id)}>{r.name}</Pill>
+              ))}
+            </div>
+          </>
+        )}
+
+        {area === "Home" && (
+          <>
+            <FieldLabel>Zone (optional)</FieldLabel>
+            <div className="flex flex-wrap gap-1">
+              {ZONES.map(z => (
+                <Pill key={z} active={zone === z} onClick={() => setZone(zone === z ? undefined : z)}>{z}</Pill>
+              ))}
+            </div>
+          </>
+        )}
+
+        {area === "Meals" && (
+          <>
+            <div className="flex items-center justify-between">
+              <FieldLabel>Recipe</FieldLabel>
+              <button
+                type="button"
+                aria-pressed={recipe !== null}
+                onClick={() => setRecipe(r => (r === null ? "" : null))}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
+                  recipe !== null ? "border-primary bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted",
+                )}
+              >
+                <ChefHat className="h-3 w-3" /> {recipe !== null ? "On" : "Off"}
+              </button>
+            </div>
+            {recipe !== null && (
+              <Textarea
+                value={recipe}
+                onChange={(e) => setRecipe(e.target.value)}
+                placeholder="Ingredients, steps, notes…"
+                rows={3}
+                className="min-h-[60px] resize-none text-xs"
+              />
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Convert */}
+      <div className="flex flex-wrap items-center gap-1 border-t border-border/40 pt-2">
+        <span className="mr-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Turn into</span>
+        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("note")}>
+          <FileText className="h-3 w-3" /> Note
+        </Button>
+        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("journal")}>
+          <BookOpen className="h-3 w-3" /> Journal
+        </Button>
+        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("memory")}>
+          <Heart className="h-3 w-3" /> Memory
+        </Button>
+      </div>
+
       <div className="flex items-center justify-end gap-1">
         {onClose && (
           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onClose} disabled={saving}>
@@ -294,5 +382,25 @@ export function QuickTaskInlineEditor({
         </Button>
       </div>
     </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{children}</div>;
+}
+
+function Pill({ active, onClick, children }: { active?: boolean; onClick?: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-2 py-0.5 text-[11px] transition-colors",
+        active ? "border-primary bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted",
+      )}
+    >
+      {children}
+    </button>
   );
 }
