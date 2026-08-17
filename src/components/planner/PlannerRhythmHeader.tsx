@@ -70,7 +70,7 @@ export function PlannerRhythmHeader(props: Props) {
           <Button size="sm" variant="secondary" className="h-8 rounded-full bg-primary/15 text-xs text-primary hover:bg-primary/25" onClick={onPlanMyDay}>
             <Sparkles className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">Plan my day</span>
           </Button>
-          <CaptureMenu onCapture={onCapture} />
+          <CaptureMenu onCapture={onCapture} writeDate={date} />
         </div>
       </div>
     </div>
