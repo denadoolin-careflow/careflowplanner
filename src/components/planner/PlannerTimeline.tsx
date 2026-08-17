@@ -338,11 +338,15 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     };
     const onUp = async (e: PointerEvent) => {
       const next = calc(e.clientY);
+      const held = moving.id;
+      const unmoved = next === moving.startMin;
       setMoving(null);
       setMovePreview(null);
       suppressClickRef.current = true;
       setTimeout(() => { suppressClickRef.current = false; }, 250);
-      if (next !== moving.startMin) await scheduleTaskAt(moving.id, next + START_H * 60);
+      if (!unmoved) { await scheduleTaskAt(held, next + START_H * 60); return; }
+      // Long-press then release without dragging → mobile quick-action menu.
+      if (isMobile && e.pointerType === "touch") openMobileBlockEditor(held, "quick");
     };
     window.addEventListener("pointermove", onMove, { passive: false });
     window.addEventListener("pointerup", onUp, { once: true });
