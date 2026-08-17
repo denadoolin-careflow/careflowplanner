@@ -1115,9 +1115,31 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                   onInteractOutside={(e) => e.preventDefault()}
                   onPointerDownOutside={(e) => e.preventDefault()}
                 >
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    New task at {minTo12(quickAdd.startAbsMin)}
-                  </p>
+                  <div className="mb-1.5 flex items-center gap-1">
+                    {([
+                      { id: "task" as const, label: "Task" },
+                      { id: "note" as const, label: "Note" },
+                      { id: "journal" as const, label: "Journal" },
+                    ]).map(m => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        aria-pressed={quickAdd.mode === m.id}
+                        onClick={() => setQuickAdd(q => q ? { ...q, mode: m.id } : q)}
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[11px] leading-none transition-colors",
+                          quickAdd.mode === m.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted/60 text-muted-foreground hover:bg-muted",
+                        )}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+                      {minTo12(quickAdd.startAbsMin)}
+                    </span>
+                  </div>
                   <Input
                     autoFocus
                     value={quickAdd.text}
@@ -1126,7 +1148,13 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                       if (e.key === "Enter") { e.preventDefault(); void submitQuickAdd(); }
                       if (e.key === "Escape") setQuickAdd(null);
                     }}
-                    placeholder="Task title (try 'call mom #family 30m')"
+                    placeholder={
+                      quickAdd.mode === "task"
+                        ? "Task title (try 'call mom #family 30m')"
+                        : quickAdd.mode === "note"
+                          ? "Note title — opens the editor"
+                          : "Journal entry title — opens the editor"
+                    }
                     className="h-9 text-sm"
                   />
                   <div className="mt-2 flex flex-wrap items-center gap-1">
@@ -1148,7 +1176,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                     ))}
                     {(() => {
                       const t = quickAdd.text.trim();
-                      if (!t) return null;
+                      if (!t || quickAdd.mode !== "task") return null;
                       const p = parseTaskInput(t);
                       const a = p.area ?? inferArea({ title: p.title || t, tags: p.tags })?.area;
                       return a ? (
@@ -1162,10 +1190,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                     <Button
                       size="sm"
                       className="h-7 flex-1 rounded-full text-[11.5px]"
-                      disabled={!quickAdd.text.trim()}
+                      disabled={quickAdd.mode === "task" && !quickAdd.text.trim()}
                       onClick={() => void submitQuickAdd()}
                     >
-                      Add at {minTo12(quickAdd.startAbsMin)} · {quickAdd.durMin}m
+                      {quickAdd.mode === "task" ? "Add" : quickAdd.mode === "note" ? "Write note" : "Journal"} at {minTo12(quickAdd.startAbsMin)} · {quickAdd.durMin}m
                     </Button>
                     <Button
                       size="sm"
@@ -1176,7 +1204,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                       Cancel
                     </Button>
                   </div>
-                  <p className="mt-1 text-[10px] text-muted-foreground">Pick a duration first — the composer stays open until you add or cancel.</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    {quickAdd.mode === "task"
+                      ? "Pick a duration first — the composer stays open until you add or cancel."
+                      : "Creates a scheduled writing block and opens the editor right here."}
+                  </p>
                 </PopoverContent>
               </Popover>
             )}
