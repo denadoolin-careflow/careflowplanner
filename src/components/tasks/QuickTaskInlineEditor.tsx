@@ -60,7 +60,7 @@ export function QuickTaskInlineEditor({
   taskId: string;
   onClose?: () => void;
 }) {
-  const { state, updateTask, toggleTask } = useStore();
+  const { state, updateTask, toggleTask, addJournal } = useStore();
   const task = state.tasks.find((t) => t.id === taskId);
   const [title, setTitle] = useState(task?.title ?? "");
   const [notes, setNotes] = useState(splitRecipe(task?.notes).base);
