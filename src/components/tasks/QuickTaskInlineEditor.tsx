@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { CalendarIcon, Minus, Plus } from "lucide-react";
+import { CalendarIcon, Minus, Plus, ChefHat, FileText, BookOpen, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,10 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { BlockCheckbox } from "@/components/planner/BlockCheckbox";
 import { resolveTaskIcon } from "@/lib/task-icons";
+import { AREAS, type Area } from "@/lib/types";
+import { createNote } from "@/lib/notes";
+import { createMemory } from "@/lib/memories";
+import { toast } from "sonner";
 
 const FRAMES = [
   { id: "morning", label: "Morning", start: "09:00", range: [5 * 60, 12 * 60] },
@@ -18,6 +22,17 @@ const FRAMES = [
 ] as const;
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
+
+const ZONES = ["Kitchen", "Bathroom", "Bedrooms", "Living", "Laundry", "Entryway", "Outdoor", "Whole home"] as const;
+const ZONE_TAG = "zone:";
+const RECIPE_MARK = "\n\n— Recipe —\n";
+
+const splitRecipe = (notes?: string): { base: string; recipe: string | null } => {
+  const raw = notes ?? "";
+  const i = raw.indexOf(RECIPE_MARK.trim());
+  if (i === -1) return { base: raw, recipe: null };
+  return { base: raw.slice(0, i).trimEnd(), recipe: raw.slice(i + RECIPE_MARK.trim().length).replace(/^\n/, "") };
+};
 
 const toMin = (t?: string) => {
   if (!t) return null;
@@ -48,7 +63,14 @@ export function QuickTaskInlineEditor({
   const { state, updateTask, toggleTask } = useStore();
   const task = state.tasks.find((t) => t.id === taskId);
   const [title, setTitle] = useState(task?.title ?? "");
-  const [notes, setNotes] = useState(task?.notes ?? "");
+  const [notes, setNotes] = useState(splitRecipe(task?.notes).base);
+  const [recipe, setRecipe] = useState<string | null>(splitRecipe(task?.notes).recipe);
+  const [area, setArea] = useState<Area>(task?.area ?? "Personal");
+  const [projectId, setProjectId] = useState<string | undefined>(task?.projectId);
+  const [recipientId, setRecipientId] = useState<string | undefined>(task?.recipientId);
+  const [zone, setZone] = useState<string | undefined>(
+    task?.tags?.find(t => t.startsWith(ZONE_TAG))?.slice(ZONE_TAG.length),
+  );
   const [dueDate, setDueDate] = useState<string | undefined>(task?.dueDate);
   const [startTime, setStartTime] = useState<string | undefined>(task?.startTime);
   const [durMin, setDurMin] = useState<number>(task?.estMinutes ?? 30);
@@ -57,7 +79,13 @@ export function QuickTaskInlineEditor({
   useEffect(() => {
     if (!task) return;
     setTitle(task.title);
-    setNotes(task.notes ?? "");
+    const s = splitRecipe(task.notes);
+    setNotes(s.base);
+    setRecipe(s.recipe);
+    setArea(task.area);
+    setProjectId(task.projectId);
+    setRecipientId(task.recipientId);
+    setZone(task.tags?.find(t => t.startsWith(ZONE_TAG))?.slice(ZONE_TAG.length));
     setDueDate(task.dueDate);
     setStartTime(task.startTime);
     setDurMin(task.estMinutes ?? 30);
@@ -74,9 +102,19 @@ export function QuickTaskInlineEditor({
   const save = async () => {
     setSaving(true);
     try {
+      const composedNotes = [notes.trim(), recipe?.trim() ? `${RECIPE_MARK.trim()}\n${recipe.trim()}` : ""]
+        .filter(Boolean).join("\n\n");
+      const tags = [
+        ...(task.tags ?? []).filter(t => !t.startsWith(ZONE_TAG)),
+        ...(zone ? [`${ZONE_TAG}${zone}`] : []),
+      ];
       await updateTask(taskId, {
         title: title.trim() || task.title,
-        notes: notes.trim() ? notes : undefined,
+        notes: composedNotes || undefined,
+        area,
+        projectId,
+        recipientId,
+        tags,
         dueDate,
         startTime: startTime || undefined,
         endTime: startMin === null ? undefined : toHHMM(startMin + durMin),
@@ -85,6 +123,43 @@ export function QuickTaskInlineEditor({
       onClose?.();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const bodyText = () => [title.trim(), notes.trim(), recipe?.trim() ? `Recipe\n${recipe.trim()}` : ""]
+    .filter(Boolean).join("\n\n");
+
+  const convert = async (kind: "note" | "journal" | "memory") => {
+    try {
+      if (kind === "memory") {
+        await createMemory({
+          title: title.trim() || task.title,
+          description: notes.trim() || undefined,
+          date: dueDate ?? format(new Date(), "yyyy-MM-dd"),
+          memoryType: "everyday" as any,
+          tags: task.tags ?? [],
+          recipientIds: recipientId ? [recipientId] : [],
+        });
+        toast.success("Saved as a memory");
+      } else if (kind === "journal") {
+        await addJournal({
+          title: title.trim() || task.title,
+          body: bodyText(),
+          date: dueDate ?? format(new Date(), "yyyy-MM-dd"),
+        });
+        toast.success("Saved to your journal");
+      } else {
+        const n = await createNote({
+          title: title.trim() || task.title,
+          body: bodyText(),
+          projectId,
+        });
+        toast.success("Saved as a note", {
+          action: { label: "Open", onClick: () => { window.location.href = `/notes/${n.id}`; } },
+        });
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not convert this task");
     }
   };
 
