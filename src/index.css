@@ -1055,21 +1055,27 @@
   margin: 0.25rem 0;
   padding: 0;
   border-radius: 6px;
+  transition: background 160ms ease;
 }
+.block-editor .ProseMirror details.cf-toggle:hover { background: hsl(var(--muted) / 0.18); }
 .block-editor .ProseMirror details.cf-toggle > summary {
   list-style: none;
   cursor: pointer;
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  padding: 6px 10px 6px 8px;
+  padding: 7px 10px 7px 8px;
   font-weight: 600;
   user-select: none;
   border-radius: 8px;
-  transition: background 140ms ease;
+  transition: background 140ms ease, color 140ms ease;
 }
 .block-editor .ProseMirror details.cf-toggle > summary:hover {
-  background: hsl(var(--muted) / 0.45);
+  background: hsl(var(--muted) / 0.5);
+}
+.block-editor .ProseMirror details.cf-toggle > summary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.45);
 }
 .block-editor .ProseMirror details.cf-toggle > summary::-webkit-details-marker { display: none; }
 .block-editor .ProseMirror details.cf-toggle > summary::marker { content: ""; }
@@ -1083,7 +1089,10 @@
   border-top: 4px solid transparent;
   border-bottom: 4px solid transparent;
   transform-origin: 30% 50%;
-  transition: transform 200ms cubic-bezier(.4, 0, .2, 1);
+  transition: transform 220ms cubic-bezier(.2, .8, .2, 1), border-left-color 160ms ease;
+}
+.block-editor .ProseMirror details.cf-toggle > summary:hover::before {
+  border-left-color: hsl(var(--primary));
 }
 .block-editor .ProseMirror details.cf-toggle[open] > summary::before {
   transform: rotate(90deg);
@@ -1096,11 +1105,25 @@
 .block-editor .ProseMirror details.cf-toggle > div[data-type="detailsContent"] {
   margin: 0.2rem 0 0.15rem 0.55rem;
   padding-left: 0.75rem;
-  border-left: 1px solid hsl(var(--border) / 0.65);
+  border-left: 1.5px solid hsl(var(--border) / 0.7);
   overflow: hidden;
+  transition: border-color 160ms ease;
+}
+.block-editor .ProseMirror details.cf-toggle:hover > div[data-type="detailsContent"] {
+  border-left-color: hsl(var(--primary) / 0.45);
 }
 .block-editor .ProseMirror details.cf-toggle[open] > div[data-type="detailsContent"] {
-  animation: cf-toggle-expand 220ms cubic-bezier(.2, .8, .2, 1) both;
+  animation: cf-toggle-expand 240ms cubic-bezier(.2, .8, .2, 1) both;
+}
+/* Larger, easier fold targets on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .block-editor .ProseMirror details.cf-toggle > summary { padding: 10px 10px 10px 6px; gap: 0.9rem; }
+  .block-editor .ProseMirror details.cf-toggle > summary::before {
+    border-left-width: 7px;
+    border-top-width: 5px;
+    border-bottom-width: 5px;
+  }
+  .block-editor .ProseMirror ul[data-type="taskList"] li > label { padding: 2px 6px 2px 0; }
 }
 /* Collapsible bullet/ordered list items — click the marker to fold */
 .block-editor .ProseMirror li {
