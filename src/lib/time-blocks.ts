@@ -54,6 +54,12 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
   }, [rangeFromISO, rangeToISO]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  // External creators (e.g. writing blocks) broadcast this so every grid reloads.
+  useEffect(() => {
+    const h = () => { void refresh(); };
+    window.addEventListener("careflow:time-blocks:changed", h);
+    return () => window.removeEventListener("careflow:time-blocks:changed", h);
+  }, [refresh]);
   // Suppress the perceived blink on first paint by not blanking blocks
   // while a subsequent range refresh is in-flight (keep stale data).
   void hasLoadedOnce;
