@@ -54,6 +54,7 @@ import {
   Table as TableIcon, Rows3, Columns3, Trash2,
   FilePlus, FolderPlus, Search as SearchIcon, StickyNote,
 } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
