@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { CalendarIcon, Minus, Plus, ChefHat, FileText, BookOpen, Heart } from "lucide-react";
+import { CalendarIcon, Minus, Plus, ChefHat, FileText, BookOpen, Heart, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { BlockCheckbox } from "@/components/planner/BlockCheckbox";
