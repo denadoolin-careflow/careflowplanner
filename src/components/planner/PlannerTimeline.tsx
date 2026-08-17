@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameDay, parseISO } from "date-fns";
 import { AlertTriangle, Redo2, Undo2, Wand2 } from "lucide-react";
+import { NotebookPen, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -18,6 +19,7 @@ import { BlockCheckbox } from "./BlockCheckbox";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { usePlannerDropListener } from "@/lib/planner-touch-drag";
 import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
+import { createWriteBlock, openWriteBlock } from "@/lib/planner/write-blocks";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { parseTaskInput } from "@/lib/nlp-task";
@@ -229,7 +231,18 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
       if (b.taskId && state.tasks.some(t => t.id === b.taskId && t.dueDate === iso)) continue;
       const s = hmToMin(b.startTime); if (s === null) continue;
       const e = hmToMin(b.endTime) ?? s + 30;
-      out.push({ id: `blk-${b.id}`, kind: "appt", title: b.title, startMin: s - START_H * 60, durMin: Math.max(15, e - s), area: "Appointments" });
+      const isWrite = b.linkType === "note" || b.linkType === "journal";
+      out.push({
+        id: `blk-${b.id}`,
+        kind: isWrite ? "write" : "appt",
+        title: b.title,
+        startMin: s - START_H * 60,
+        durMin: Math.max(15, e - s),
+        area: isWrite ? "Writing" : "Appointments",
+        write: isWrite && b.linkId
+          ? { kind: b.linkType as "note" | "journal", recordId: b.linkId, blockId: b.id }
+          : undefined,
+      });
     }
     for (const a of state.appointments) {
       if (a.date !== iso) continue;
