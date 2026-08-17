@@ -79,6 +79,7 @@ const AREA_BG: Record<string, string> = {
   "Creative Projects": "bg-fuchsia-100/70 dark:bg-fuchsia-900/30 border-fuchsia-300/60",
   Money: "bg-lime-100/70 dark:bg-lime-900/30 border-lime-300/60",
   "Holidays & Birthdays": "bg-rose-100/70 dark:bg-rose-900/30 border-rose-300/60",
+  Writing: "bg-indigo-100/70 dark:bg-indigo-900/30 border-indigo-300/60",
 };
 
 function hmToMin(hm?: string): number | null {
