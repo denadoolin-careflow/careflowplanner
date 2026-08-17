@@ -6429,6 +6429,8 @@ export type Database = {
           end_time: string
           icon: string | null
           id: string
+          link_id: string | null
+          link_type: string | null
           notes: string | null
           start_time: string
           task_id: string | null
@@ -6444,6 +6446,8 @@ export type Database = {
           end_time: string
           icon?: string | null
           id?: string
+          link_id?: string | null
+          link_type?: string | null
           notes?: string | null
           start_time: string
           task_id?: string | null
@@ -6459,6 +6463,8 @@ export type Database = {
           end_time?: string
           icon?: string | null
           id?: string
+          link_id?: string | null
+          link_type?: string | null
           notes?: string | null
           start_time?: string
           task_id?: string | null
