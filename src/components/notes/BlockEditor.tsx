@@ -717,6 +717,17 @@ function Toolbar({
     if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
     if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
   };
+  /** Fold or unfold every toggle + collapsible list item in the note. */
+  const setAllFolds = (open: boolean) => {
+    const root = editor.view.dom as HTMLElement;
+    root.querySelectorAll<HTMLDetailsElement>("details.cf-toggle").forEach(d => {
+      if (d.open !== open) (d.querySelector("summary") as HTMLElement | null)?.click();
+    });
+    root.querySelectorAll<HTMLElement>("li").forEach(li => {
+      if (!li.querySelector(":scope > ul, :scope > ol")) return;
+      li.classList.toggle("cf-collapsed", !open);
+    });
+  };
   const Divider = () => <span className="mx-1 h-5 w-px shrink-0 bg-border/60" aria-hidden />;
   const headingActive = editor.isActive("heading", { level: 1 })
     ? "H1"
