@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { CalendarIcon, Minus, Plus } from "lucide-react";
+import { CalendarIcon, Minus, Plus, ChefHat, FileText, BookOpen, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,10 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { BlockCheckbox } from "@/components/planner/BlockCheckbox";
 import { resolveTaskIcon } from "@/lib/task-icons";
+import { AREAS, type Area } from "@/lib/types";
+import { createNote } from "@/lib/notes";
+import { createMemory } from "@/lib/memories";
+import { toast } from "sonner";
 
 const FRAMES = [
   { id: "morning", label: "Morning", start: "09:00", range: [5 * 60, 12 * 60] },
@@ -18,6 +22,17 @@ const FRAMES = [
 ] as const;
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
+
+const ZONES = ["Kitchen", "Bathroom", "Bedrooms", "Living", "Laundry", "Entryway", "Outdoor", "Whole home"] as const;
+const ZONE_TAG = "zone:";
+const RECIPE_MARK = "\n\n— Recipe —\n";
+
+const splitRecipe = (notes?: string): { base: string; recipe: string | null } => {
+  const raw = notes ?? "";
+  const i = raw.indexOf(RECIPE_MARK.trim());
+  if (i === -1) return { base: raw, recipe: null };
+  return { base: raw.slice(0, i).trimEnd(), recipe: raw.slice(i + RECIPE_MARK.trim().length).replace(/^\n/, "") };
+};
 
 const toMin = (t?: string) => {
   if (!t) return null;
@@ -45,10 +60,17 @@ export function QuickTaskInlineEditor({
   taskId: string;
   onClose?: () => void;
 }) {
-  const { state, updateTask, toggleTask } = useStore();
+  const { state, updateTask, toggleTask, addJournal } = useStore();
   const task = state.tasks.find((t) => t.id === taskId);
   const [title, setTitle] = useState(task?.title ?? "");
-  const [notes, setNotes] = useState(task?.notes ?? "");
+  const [notes, setNotes] = useState(splitRecipe(task?.notes).base);
+  const [recipe, setRecipe] = useState<string | null>(splitRecipe(task?.notes).recipe);
+  const [area, setArea] = useState<Area>(task?.area ?? "Personal");
+  const [projectId, setProjectId] = useState<string | undefined>(task?.projectId);
+  const [recipientId, setRecipientId] = useState<string | undefined>(task?.recipientId);
+  const [zone, setZone] = useState<string | undefined>(
+    task?.tags?.find(t => t.startsWith(ZONE_TAG))?.slice(ZONE_TAG.length),
+  );
   const [dueDate, setDueDate] = useState<string | undefined>(task?.dueDate);
   const [startTime, setStartTime] = useState<string | undefined>(task?.startTime);
   const [durMin, setDurMin] = useState<number>(task?.estMinutes ?? 30);
@@ -57,7 +79,13 @@ export function QuickTaskInlineEditor({
   useEffect(() => {
     if (!task) return;
     setTitle(task.title);
-    setNotes(task.notes ?? "");
+    const s = splitRecipe(task.notes);
+    setNotes(s.base);
+    setRecipe(s.recipe);
+    setArea(task.area);
+    setProjectId(task.projectId);
+    setRecipientId(task.recipientId);
+    setZone(task.tags?.find(t => t.startsWith(ZONE_TAG))?.slice(ZONE_TAG.length));
     setDueDate(task.dueDate);
     setStartTime(task.startTime);
     setDurMin(task.estMinutes ?? 30);
@@ -74,9 +102,19 @@ export function QuickTaskInlineEditor({
   const save = async () => {
     setSaving(true);
     try {
+      const composedNotes = [notes.trim(), recipe?.trim() ? `${RECIPE_MARK.trim()}\n${recipe.trim()}` : ""]
+        .filter(Boolean).join("\n\n");
+      const tags = [
+        ...(task.tags ?? []).filter(t => !t.startsWith(ZONE_TAG)),
+        ...(zone ? [`${ZONE_TAG}${zone}`] : []),
+      ];
       await updateTask(taskId, {
         title: title.trim() || task.title,
-        notes: notes.trim() ? notes : undefined,
+        notes: composedNotes || undefined,
+        area,
+        projectId,
+        recipientId,
+        tags,
         dueDate,
         startTime: startTime || undefined,
         endTime: startMin === null ? undefined : toHHMM(startMin + durMin),
@@ -85,6 +123,43 @@ export function QuickTaskInlineEditor({
       onClose?.();
     } finally {
       setSaving(false);
+    }
+  };
+
+  const bodyText = () => [title.trim(), notes.trim(), recipe?.trim() ? `Recipe\n${recipe.trim()}` : ""]
+    .filter(Boolean).join("\n\n");
+
+  const convert = async (kind: "note" | "journal" | "memory") => {
+    try {
+      if (kind === "memory") {
+        await createMemory({
+          title: title.trim() || task.title,
+          description: notes.trim() || undefined,
+          date: dueDate ?? format(new Date(), "yyyy-MM-dd"),
+          memoryType: "highlight",
+          tags: task.tags ?? [],
+          recipientIds: recipientId ? [recipientId] : [],
+        });
+        toast.success("Saved as a memory");
+      } else if (kind === "journal") {
+        await addJournal({
+          title: title.trim() || task.title,
+          body: bodyText(),
+          date: dueDate ?? format(new Date(), "yyyy-MM-dd"),
+        });
+        toast.success("Saved to your journal");
+      } else {
+        const n = await createNote({
+          title: title.trim() || task.title,
+          body: bodyText(),
+          projectId,
+        });
+        toast.success("Saved as a note", {
+          action: { label: "Open", onClick: () => { window.location.href = `/notes/${n.id}`; } },
+        });
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not convert this task");
     }
   };
 
@@ -208,6 +283,94 @@ export function QuickTaskInlineEditor({
         rows={2}
         className="min-h-[48px] resize-none text-xs"
       />
+
+      {/* Context: area, project, person, zone */}
+      <div className="space-y-1.5 border-t border-border/40 pt-2">
+        <FieldLabel>Area</FieldLabel>
+        <div className="flex flex-wrap gap-1">
+          {AREAS.map(a => (
+            <Pill key={a} active={area === a} onClick={() => setArea(a)}>{a}</Pill>
+          ))}
+        </div>
+
+        {(state.projects?.length ?? 0) > 0 && (
+          <>
+            <FieldLabel>Project</FieldLabel>
+            <div className="flex flex-wrap gap-1">
+              <Pill active={!projectId} onClick={() => setProjectId(undefined)}>None</Pill>
+              {(state.projects ?? []).slice(0, 12).map(p => (
+                <Pill key={p.id} active={projectId === p.id} onClick={() => setProjectId(p.id)}>{p.name}</Pill>
+              ))}
+            </div>
+          </>
+        )}
+
+        {(state.recipients?.length ?? 0) > 0 && (
+          <>
+            <FieldLabel>Caregiving for</FieldLabel>
+            <div className="flex flex-wrap gap-1">
+              <Pill active={!recipientId} onClick={() => setRecipientId(undefined)}>None</Pill>
+              {(state.recipients ?? []).map(r => (
+                <Pill key={r.id} active={recipientId === r.id} onClick={() => setRecipientId(r.id)}>{r.name}</Pill>
+              ))}
+            </div>
+          </>
+        )}
+
+        {area === "Home" && (
+          <>
+            <FieldLabel>Zone (optional)</FieldLabel>
+            <div className="flex flex-wrap gap-1">
+              {ZONES.map(z => (
+                <Pill key={z} active={zone === z} onClick={() => setZone(zone === z ? undefined : z)}>{z}</Pill>
+              ))}
+            </div>
+          </>
+        )}
+
+        {area === "Meals" && (
+          <>
+            <div className="flex items-center justify-between">
+              <FieldLabel>Recipe</FieldLabel>
+              <button
+                type="button"
+                aria-pressed={recipe !== null}
+                onClick={() => setRecipe(r => (r === null ? "" : null))}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors",
+                  recipe !== null ? "border-primary bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted",
+                )}
+              >
+                <ChefHat className="h-3 w-3" /> {recipe !== null ? "On" : "Off"}
+              </button>
+            </div>
+            {recipe !== null && (
+              <Textarea
+                value={recipe}
+                onChange={(e) => setRecipe(e.target.value)}
+                placeholder="Ingredients, steps, notes…"
+                rows={3}
+                className="min-h-[60px] resize-none text-xs"
+              />
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Convert */}
+      <div className="flex flex-wrap items-center gap-1 border-t border-border/40 pt-2">
+        <span className="mr-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Turn into</span>
+        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("note")}>
+          <FileText className="h-3 w-3" /> Note
+        </Button>
+        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("journal")}>
+          <BookOpen className="h-3 w-3" /> Journal
+        </Button>
+        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("memory")}>
+          <Heart className="h-3 w-3" /> Memory
+        </Button>
+      </div>
+
       <div className="flex items-center justify-end gap-1">
         {onClose && (
           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onClose} disabled={saving}>
@@ -219,5 +382,25 @@ export function QuickTaskInlineEditor({
         </Button>
       </div>
     </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{children}</div>;
+}
+
+function Pill({ active, onClick, children }: { active?: boolean; onClick?: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-2 py-0.5 text-[11px] transition-colors",
+        active ? "border-primary bg-primary/15 text-primary" : "border-border/60 text-muted-foreground hover:bg-muted",
+      )}
+    >
+      {children}
+    </button>
   );
 }
