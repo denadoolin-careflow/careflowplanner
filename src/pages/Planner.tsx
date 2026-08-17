@@ -4,6 +4,7 @@ import { addDays, addMonths, addYears, format, isValid, parseISO, startOfWeek } 
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
+import { FloatingPanelFrame } from "@/components/planner/FloatingPanelFrame";
 import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
@@ -126,6 +127,13 @@ export default function Planner() {
     try { window.localStorage.setItem("careflow.planner.taskPanelWidth", String(taskPanelWidth)); } catch {}
   }, [taskPanelWidth]);
   const resizeRef = useRef<{ startX: number; startW: number } | null>(null);
+  const [taskFloating, setTaskFloating] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("careflow.planner.taskPanelFloating") === "1";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("careflow.planner.taskPanelFloating", taskFloating ? "1" : "0"); } catch {}
+  }, [taskFloating]);
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const [shellWidth, setShellWidth] = useState<number>(1600);
