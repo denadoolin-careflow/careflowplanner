@@ -287,52 +287,61 @@ export function QuickTaskInlineEditor({
         className="min-h-[48px] resize-none text-xs"
       />
 
-      {/* Context: area, project, person, zone */}
-      <div className="space-y-1.5 border-t border-border/40 pt-2">
-        <FieldLabel>Area</FieldLabel>
-        <div className="flex flex-wrap gap-1">
-          {AREAS.map(a => (
-            <Pill key={a} active={area === a} onClick={() => setArea(a)}>{a}</Pill>
-          ))}
+      {/* Context: area, project, person, zone — collapsed dropdowns */}
+      <Section label="Details" defaultOpen>
+        <div className="grid grid-cols-2 gap-1.5">
+          <div className="space-y-1">
+            <FieldLabel>Area</FieldLabel>
+            <Select value={area} onValueChange={(v) => setArea(v as Area)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent className="z-[60] max-h-64">
+                {AREAS.map(a => <SelectItem key={a} value={a} className="text-xs">{a}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {(state.projects?.length ?? 0) > 0 && (
+            <div className="space-y-1">
+              <FieldLabel>Project</FieldLabel>
+              <Select value={projectId ?? "none"} onValueChange={(v) => setProjectId(v === "none" ? undefined : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent className="z-[60] max-h-64">
+                  <SelectItem value="none" className="text-xs">None</SelectItem>
+                  {(state.projects ?? []).map(p => <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {(state.recipients?.length ?? 0) > 0 && (
+            <div className="space-y-1">
+              <FieldLabel>Caregiving for</FieldLabel>
+              <Select value={recipientId ?? "none"} onValueChange={(v) => setRecipientId(v === "none" ? undefined : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent className="z-[60] max-h-64">
+                  <SelectItem value="none" className="text-xs">None</SelectItem>
+                  {(state.recipients ?? []).map(r => <SelectItem key={r.id} value={r.id} className="text-xs">{r.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {area === "Home" && (
+            <div className="space-y-1">
+              <FieldLabel>Zone</FieldLabel>
+              <Select value={zone ?? "none"} onValueChange={(v) => setZone(v === "none" ? undefined : v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="None" /></SelectTrigger>
+                <SelectContent className="z-[60] max-h-64">
+                  <SelectItem value="none" className="text-xs">None</SelectItem>
+                  {ZONES.map(z => <SelectItem key={z} value={z} className="text-xs">{z}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
-        {(state.projects?.length ?? 0) > 0 && (
-          <>
-            <FieldLabel>Project</FieldLabel>
-            <div className="flex flex-wrap gap-1">
-              <Pill active={!projectId} onClick={() => setProjectId(undefined)}>None</Pill>
-              {(state.projects ?? []).slice(0, 12).map(p => (
-                <Pill key={p.id} active={projectId === p.id} onClick={() => setProjectId(p.id)}>{p.name}</Pill>
-              ))}
-            </div>
-          </>
-        )}
-
-        {(state.recipients?.length ?? 0) > 0 && (
-          <>
-            <FieldLabel>Caregiving for</FieldLabel>
-            <div className="flex flex-wrap gap-1">
-              <Pill active={!recipientId} onClick={() => setRecipientId(undefined)}>None</Pill>
-              {(state.recipients ?? []).map(r => (
-                <Pill key={r.id} active={recipientId === r.id} onClick={() => setRecipientId(r.id)}>{r.name}</Pill>
-              ))}
-            </div>
-          </>
-        )}
-
-        {area === "Home" && (
-          <>
-            <FieldLabel>Zone (optional)</FieldLabel>
-            <div className="flex flex-wrap gap-1">
-              {ZONES.map(z => (
-                <Pill key={z} active={zone === z} onClick={() => setZone(zone === z ? undefined : z)}>{z}</Pill>
-              ))}
-            </div>
-          </>
-        )}
-
         {area === "Meals" && (
-          <>
+          <div className="space-y-1.5 pt-1.5">
             <div className="flex items-center justify-between">
               <FieldLabel>Recipe</FieldLabel>
               <button
@@ -356,25 +365,27 @@ export function QuickTaskInlineEditor({
                 className="min-h-[60px] resize-none text-xs"
               />
             )}
-          </>
+          </div>
         )}
-      </div>
+      </Section>
 
       {/* Convert */}
-      <div className="flex flex-wrap items-center gap-1 border-t border-border/40 pt-2">
-        <span className="mr-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Turn into</span>
-        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("note")}>
-          <FileText className="h-3 w-3" /> Note
-        </Button>
-        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("journal")}>
-          <BookOpen className="h-3 w-3" /> Journal
-        </Button>
-        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("memory")}>
-          <Heart className="h-3 w-3" /> Memory
-        </Button>
+      <Section label="Turn into">
+        <div className="flex flex-wrap items-center gap-1">
+          <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("note")}>
+            <FileText className="h-3 w-3" /> Note
+          </Button>
+          <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("journal")}>
+            <BookOpen className="h-3 w-3" /> Journal
+          </Button>
+          <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-[11px]" onClick={() => void convert("memory")}>
+            <Heart className="h-3 w-3" /> Memory
+          </Button>
+        </div>
+      </Section>
       </div>
 
-      <div className="flex items-center justify-end gap-1">
+      <div className="flex shrink-0 items-center justify-end gap-1 border-t border-border/40 p-2">
         {onClose && (
           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onClose} disabled={saving}>
             Cancel
@@ -390,6 +401,19 @@ export function QuickTaskInlineEditor({
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{children}</div>;
+}
+
+function Section({ label, defaultOpen, children }: { label: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="border-t border-border/40 pt-1.5">
+      <CollapsibleTrigger className="flex w-full items-center justify-between rounded px-1 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:bg-muted/50">
+        {label}
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-1.5 pt-1.5">{children}</CollapsibleContent>
+    </Collapsible>
+  );
 }
 
 function Pill({ active, onClick, children }: { active?: boolean; onClick?: () => void; children: React.ReactNode }) {
