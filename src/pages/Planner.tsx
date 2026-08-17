@@ -114,6 +114,12 @@ export default function Planner() {
     }
   }, [period, setPeriod]);
   const [mobileTasksOpen, setMobileTasksOpen] = useState(false);
+  // Dropping a task from the mobile sheet onto the grid closes the sheet.
+  useEffect(() => {
+    const close = () => setMobileTasksOpen(false);
+    window.addEventListener("careflow:planner-drop", close as EventListener);
+    return () => window.removeEventListener("careflow:planner-drop", close as EventListener);
+  }, []);
   const [panels, setPanel] = usePlannerPanels();
   const panel = panels[view];
 

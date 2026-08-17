@@ -747,7 +747,6 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               </button>
             )}
           </div>
-          {isMobile && <PlannerMobileInboxRail />}
         </div>
       )}
       <div ref={scrollRef} className={cn("flex-1", noScroll ? "overflow-visible" : "overflow-y-auto")}>
