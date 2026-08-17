@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, addDays, addWeeks, parseISO } from "date-fns";
-import { Check, Copy, Pencil, CalendarDays, Trash2, XCircle } from "lucide-react";
+import { Check, Copy, Pencil, CalendarDays, Trash2, XCircle, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -12,6 +12,7 @@ import { ContextMenuItem, ContextMenuSeparator } from "@/components/ui/context-m
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { pomodoro } from "@/lib/pomodoro-store";
 import type { Task } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -46,6 +47,7 @@ export function BlockQuickActions({ task, asMenuItems }: Props) {
 
   const actions = [
     { icon: Check, label: task.done ? "Reopen" : "Complete", onClick: () => toggleTask(task.id) },
+    { icon: Timer, label: `Start timer${task.estMinutes ? ` (${task.estMinutes}m)` : ""}`, onClick: () => startTimer() },
     { icon: Pencil, label: "Edit", onClick: () => openTaskEditor(task.id) },
     { icon: Copy, label: "Duplicate", onClick: () => duplicate() },
     { icon: CalendarDays, label: "Move to another day", onClick: () => setDatePickerOpen(true) },
