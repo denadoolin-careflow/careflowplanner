@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { openMobileBlockEditor } from "@/lib/open-mobile-block-editor";
 import { resolveTaskIcon } from "@/lib/task-icons";
 import type { Task, Appointment } from "@/lib/types";
 import { toast } from "sonner";
