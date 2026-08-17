@@ -51,6 +51,8 @@ type Segment = (typeof SEGMENTS)[number];
  * Timed grids get real breathing room; the month calendar sizes to its rows.
  */
 const GRID_BOX = "h-[clamp(520px,78vh,1000px)] min-h-0";
+/** Phones: leave room for the sticky header, bottom nav and FAB. */
+const GRID_BOX_MOBILE = "h-[68vh] min-h-[440px]";
 /** Sticky side columns scroll on their own without stretching the row. */
 const SIDE_COL = "sticky top-20 max-h-[calc(100dvh-7.5rem)] overflow-y-auto overscroll-contain";
 
@@ -90,6 +92,8 @@ export default function Planner() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [view, setView] = usePlannerView();
   const [weekMode, setWeekMode] = usePlannerWeekMode();
+  // Phones default to the stacked Overview; the grid stays one tap away.
+  const [mobileWeekMode, setMobileWeekMode] = useState<"grid" | "board">("board");
   const [monthMode, setMonthMode] = usePlannerMonthMode();
   const [period, setPeriod] = usePlannerPeriod();
   const isMobile = useIsMobile();
@@ -218,6 +222,8 @@ export default function Planner() {
   const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus;
   const showTaskPanel = !isMobile && panel.task && shellWidth >= 900;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
+  const activeWeekMode = isMobile ? mobileWeekMode : weekMode;
+  const gridBox = isMobile ? GRID_BOX_MOBILE : GRID_BOX;
   const openDay = (d: Date) => { setView("day"); go(d); };
 
   const onResizeKey = useCallback((e: React.KeyboardEvent) => {
@@ -232,7 +238,7 @@ export default function Planner() {
       ref={shellRef}
       className={
         isMobile
-          ? "planner-surface flex flex-col gap-3 pb-24"
+          ? "planner-surface flex flex-col gap-2.5 pb-32"
           : "planner-surface flex flex-col gap-3 pb-10"
       }
     >
@@ -283,11 +289,11 @@ export default function Planner() {
               {view === "week" && (
                 <>
                   <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Week as</DropdownMenuLabel>
-                  <DropdownMenuItem onSelect={() => setWeekMode("grid")}>
-                    {weekMode === "grid" ? "• " : ""}Grid
+                  <DropdownMenuItem onSelect={() => { setMobileWeekMode("grid"); setWeekMode("grid"); }}>
+                    {activeWeekMode === "grid" ? "• " : ""}Grid
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setWeekMode("board")}>
-                    {weekMode === "board" ? "• " : ""}Overview
+                  <DropdownMenuItem onSelect={() => { setMobileWeekMode("board"); setWeekMode("board"); }}>
+                    {activeWeekMode === "board" ? "• " : ""}Overview
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
@@ -319,7 +325,10 @@ export default function Planner() {
           </DropdownMenu>
           <AutoScheduleSettings size="md" />
         </div>
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+        <div
+          className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ maskImage: "linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 22px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 22px), transparent 100%)" }}
+        >
           <PlannerViewToggle value={view} onChange={setView} className="shrink-0" />
           {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
           <PlannerKindFilter className="shrink-0" />
@@ -478,8 +487,24 @@ export default function Planner() {
           {view === "day" && (
             <div className="mb-2 shrink-0 space-y-2">
               <PlannerMoonInsight date={day} onSelectDate={openDay} />
-              <PlannerDayAssistant date={day} />
-              <PlannerCapacityBar date={day} />
+              {isMobile ? (
+                <CollapsibleSection
+                  storageKey="planner.mobile.daycontext.collapsed"
+                  eyebrow="Day context"
+                  title="Capacity & assistant"
+                  defaultCollapsed
+                >
+                  <div className="space-y-2 px-2 pb-2">
+                    <PlannerDayAssistant date={day} />
+                    <PlannerCapacityBar date={day} />
+                  </div>
+                </CollapsibleSection>
+              ) : (
+                <>
+                  <PlannerDayAssistant date={day} />
+                  <PlannerCapacityBar date={day} />
+                </>
+              )}
               <PlannerEmptyDay
                 date={day}
                 onPlanMyDay={() => setPlanOpen(true)}
@@ -489,7 +514,7 @@ export default function Planner() {
           )}
           <div className="flex min-w-0 flex-col gap-3">
             {view === "day" && period === "grid" && (
-              <div className={GRID_BOX}><PlannerTimeline date={day} /></div>
+              <div className={gridBox}><PlannerTimeline date={day} /></div>
             )}
             {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
             {view === "day" && period === "timeofday" && segment === "all" && (
@@ -503,16 +528,16 @@ export default function Planner() {
               <PlannerPeriodList date={day} period={segment} />
             )}
             {view === "3day" && (
-              <div className={GRID_BOX}>
+              <div className={gridBox}>
                 <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} />
               </div>
             )}
-            {view === "week" && weekMode === "grid" && (
-              <div className={GRID_BOX}>
+            {view === "week" && activeWeekMode === "grid" && (
+              <div className={gridBox}>
                 <PlannerWeekGrid start={weekStart} days={7} onSelectDay={openDay} />
               </div>
             )}
-            {view === "week" && weekMode === "board" && (
+            {view === "week" && activeWeekMode === "board" && (
               <>
                 <PlannerTimeReview from={weekStart} days={7} label="this week" />
                 <PlannerWeekBoard weekStart={weekStart} onSelectDay={openDay} />

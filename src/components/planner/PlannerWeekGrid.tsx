@@ -11,6 +11,7 @@ import { useKindColors, KIND_LABEL, type KindKey } from "@/lib/calendar-colors";
 import { PLANNER_START_H, PLANNER_END_H, HOUR_PX } from "@/lib/planner-metrics";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const GUTTER_W = 56;
 const LEGEND_KINDS: KindKey[] = ["task", "appt", "care", "meal", "bday", "hol", "gcal"];
@@ -29,6 +30,11 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
   const [headerMode, setHeaderMode] = usePlannerWeekHeaderMode();
+  const isMobile = useIsMobile();
+  const effectiveHeaderMode = isMobile ? "compact" : headerMode;
+  /** Phones can't fit 7 legible columns — scroll horizontally instead of collapsing. */
+  const minCol = isMobile ? (days > 3 ? 116 : 96) : 0;
+  const boardMinWidth = minCol ? GUTTER_W + days * minCol : undefined;
   const { colorOf } = useKindColors();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
@@ -57,7 +63,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
     return () => window.clearTimeout(t);
   }, [format(start, "yyyy-MM-dd")]);
 
-  const colTemplate = `${GUTTER_W}px repeat(${days}, minmax(0, 1fr))`;
+  const colTemplate = `${GUTTER_W}px repeat(${days}, minmax(${minCol}px, 1fr))`;
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
       {/* Toolbar */}
@@ -65,7 +71,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
         <span className="truncate text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
           {format(start, "MMM d")} – {format(addDays(start, days - 1), "MMM d")}
         </span>
-        <Button
+        {!isMobile && <Button
           variant="ghost"
           size="sm"
           className="h-7 gap-1.5 rounded-full px-2.5 text-[11.5px]"
@@ -74,9 +80,15 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
         >
           {headerMode === "insight" ? <Rows3 className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
           {headerMode === "insight" ? "Compact" : "Full insight"}
-        </Button>
+        </Button>}
+        {isMobile && days > 3 && (
+          <span className="text-[10.5px] text-muted-foreground">Swipe sideways for more days</span>
+        )}
       </div>
 
+      {/* Horizontal scroller keeps columns legible on narrow screens */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-contain">
+      <div className="flex min-h-0 flex-1 flex-col" style={boardMinWidth ? { minWidth: boardMinWidth } : undefined}>
       {/* Day headers */}
       <div
         className="grid border-b border-border/60 bg-card/70 backdrop-blur"
@@ -85,7 +97,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
         <div className="border-r border-border/50" />
         {cols.map((d, i) => (
           <div key={format(d, "yyyy-MM-dd")} className={cn("min-w-0", i > 0 && "border-l border-border/40")}>
-            <WeekDayHeader date={d} mode={headerMode} onSelect={onSelectDay} />
+            <WeekDayHeader date={d} mode={effectiveHeaderMode} onSelect={onSelectDay} />
           </div>
         ))}
       </div>
@@ -106,7 +118,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
 
       {/* Shared-gutter time grid */}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
         <div className="relative grid" style={{ gridTemplateColumns: colTemplate }}>
           {/* Time gutter */}
           <div
@@ -151,6 +163,8 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
             </div>
           )}
         </div>
+      </div>
+      </div>
       </div>
 
       {/* Legend */}

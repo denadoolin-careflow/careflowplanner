@@ -19,22 +19,22 @@ export function PlannerYearView({ date, onSelectDay }: { date: Date; onSelectDay
   }, [state.tasks, state.appointments, state.meals]);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
       {months.map(mo => {
         const gStart = startOfWeek(startOfMonth(mo), { weekStartsOn: 1 });
         const gEnd = endOfWeek(endOfMonth(mo), { weekStartsOn: 1 });
         const total = differenceInCalendarDays(gEnd, gStart) + 1;
         const days = Array.from({ length: total }, (_, i) => addDays(gStart, i));
         return (
-          <div key={format(mo, "yyyy-MM")} className="rounded-2xl border border-border/60 bg-card/40 p-2">
+          <div key={format(mo, "yyyy-MM")} className="rounded-2xl border border-border/60 bg-card/40 p-1.5 sm:p-2">
             <button
               type="button"
               onClick={() => onSelectDay(mo)}
-              className="mb-1 w-full text-left font-display text-sm font-semibold hover:text-primary"
+              className="mb-1 w-full truncate text-left font-display text-[13px] font-semibold hover:text-primary sm:text-sm"
             >
               {format(mo, "MMMM")}
             </button>
-            <div className="grid grid-cols-7 gap-[2px] text-center text-[9px] text-muted-foreground">
+            <div className="grid grid-cols-7 gap-[1px] text-center text-[9px] text-muted-foreground sm:gap-[2px]">
               {["M","T","W","T","F","S","S"].map((d, i) => <div key={i}>{d}</div>)}
               {days.map((d, i) => {
                 const key = format(d, "yyyy-MM-dd");
@@ -47,12 +47,12 @@ export function PlannerYearView({ date, onSelectDay }: { date: Date; onSelectDay
                     onClick={() => onSelectDay(d)}
                     aria-label={`${format(d, "MMMM d")}${n ? ` — ${n} planned` : ""}`}
                     className={cn(
-                      "aspect-square rounded text-[9px] leading-none transition-colors hover:bg-muted",
+                      "grid aspect-square place-items-center rounded text-[9px] leading-none transition-colors hover:bg-muted",
                       dim && "opacity-30",
                       isSameDay(d, today) && "bg-primary font-semibold text-primary-foreground",
                     )}
                     style={!dim && n && !isSameDay(d, today)
-                      ? { backgroundColor: `hsl(var(--primary) / ${Math.min(0.45, 0.08 + n * 0.07)})` }
+                      ? { backgroundColor: `hsl(var(--primary) / ${Math.min(0.7, 0.16 + n * 0.11)})` }
                       : undefined}
                   >
                     {format(d, "d")}
