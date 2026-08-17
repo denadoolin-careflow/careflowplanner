@@ -1043,6 +1043,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                           />
                         )}
                         {ic && ic.kind === "lucide" ? <ic.Icon className="mt-[1px] h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
+                        {it.kind === "write" && (it.write?.kind === "journal"
+                          ? <NotebookPen className="mt-[1px] h-3 w-3 shrink-0" />
+                          : <StickyNote className="mt-[1px] h-3 w-3 shrink-0" />)}
                         <span
                           className={cn("min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:break-word] [word-break:normal]", it.done && "line-through")}
                           style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: titleLines, overflow: "hidden" }}
