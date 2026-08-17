@@ -4,7 +4,6 @@ import { addDays, addMonths, addYears, format, isValid, parseISO, startOfWeek } 
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
-import { FloatingPanelFrame } from "@/components/planner/FloatingPanelFrame";
 import { PlannerTimeline } from "@/components/planner/PlannerTimeline";
 import { PlannerContextPanel } from "@/components/planner/PlannerContextPanel";
 import { PlannerFocusPanel } from "@/components/planner/PlannerFocusPanel";
@@ -127,13 +126,7 @@ export default function Planner() {
     try { window.localStorage.setItem("careflow.planner.taskPanelWidth", String(taskPanelWidth)); } catch {}
   }, [taskPanelWidth]);
   const resizeRef = useRef<{ startX: number; startW: number } | null>(null);
-  const [taskFloating, setTaskFloating] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("careflow.planner.taskPanelFloating") === "1";
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem("careflow.planner.taskPanelFloating", taskFloating ? "1" : "0"); } catch {}
-  }, [taskFloating]);
+  const [resizingPanel, setResizingPanel] = useState(false);
   const mobileHeaderRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const [shellWidth, setShellWidth] = useState<number>(1600);
@@ -149,6 +142,8 @@ export default function Planner() {
   const onResizeStart = (e: React.PointerEvent) => {
     e.preventDefault();
     resizeRef.current = { startX: e.clientX, startW: taskPanelWidth };
+    setResizingPanel(true);
+    document.body.style.userSelect = "none";
     const onMove = (ev: PointerEvent) => {
       const r = resizeRef.current; if (!r) return;
       const next = Math.min(560, Math.max(220, r.startW + (ev.clientX - r.startX)));
@@ -158,6 +153,8 @@ export default function Planner() {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       resizeRef.current = null;
+      setResizingPanel(false);
+      document.body.style.userSelect = "";
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -213,8 +210,7 @@ export default function Planner() {
   const roomForFocus = shellWidth >= 1400;
   const showContextPanel = !isMobile && panel.context && view !== "year" && roomForContext;
   const showFocusPanel = !isMobile && panel.focus && view === "day" && roomForFocus;
-  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900 && !taskFloating;
-  const showFloatingTaskPanel = !isMobile && panel.task && taskFloating;
+  const showTaskPanel = !isMobile && panel.task && shellWidth >= 900;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const openDay = (d: Date) => { setView("day"); go(d); };
 
