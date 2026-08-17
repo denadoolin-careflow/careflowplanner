@@ -4,6 +4,8 @@ import { parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { openMobileBlockEditor } from "@/lib/open-mobile-block-editor";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { AppointmentEditor } from "@/components/calendar/AppointmentEditor";
 import { TransitDetailSheet } from "@/components/cosmic/TransitDetailSheet";
 import { eventsOnDay, type CosmicEvent } from "@/lib/cosmic/events";
@@ -18,6 +20,7 @@ import type { PlannerFeedItem } from "@/lib/planner/feed";
 export function usePlannerItemOpener() {
   const { state } = useStore() as any;
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [apptId, setApptId] = useState<string | null>(null);
   const [cosmic, setCosmic] = useState<CosmicEvent | null>(null);
 
@@ -25,7 +28,8 @@ export function usePlannerItemOpener() {
     const { type, id } = item.sourceRef;
     switch (type) {
       case "task":
-        openTaskEditor(id);
+        if (isMobile) openMobileBlockEditor(id, "sheet");
+        else openTaskEditor(id);
         return;
       case "appointment":
         setApptId(id);
@@ -52,7 +56,7 @@ export function usePlannerItemOpener() {
       default:
         return;
     }
-  }, [navigate]);
+  }, [navigate, isMobile]);
 
   const appointment = useMemo(
     () => (apptId ? (state.appointments ?? []).find((a: any) => a.id === apptId) ?? null : null),
