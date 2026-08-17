@@ -55,26 +55,29 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
       style={{ minHeight: ROW_PX }}
       className={cn(
         "group flex cursor-pointer touch-none select-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px] transition-colors hover:border-primary/40 hover:bg-card",
+        "max-sm:flex-col max-sm:gap-1",
         task.done && "opacity-60",
       )}
     >
-      <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/50 opacity-0 group-hover:opacity-100" aria-hidden />
-      <button
-        onClick={(e) => { e.stopPropagation(); void toggleTask(task.id); }}
-        aria-label={task.done ? "Mark not done" : "Mark done"}
-        className={cn(
-          "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 transition-colors",
-          task.done ? "border-primary bg-primary" : "border-muted-foreground/40 hover:border-primary",
-        )}
-      >
-        {task.done && <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground" aria-hidden />}
-      </button>
-      <span className={cn("mt-0.5 h-2 w-2 shrink-0 rounded-full", tint)} aria-hidden />
-      {ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden /> : <span className="mt-0.5 shrink-0 text-sm leading-none" aria-hidden>{ic.char}</span>}
-      <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere] whitespace-normal break-words", compact && "line-clamp-1", task.done && "line-through")}>
-        {task.title}
-      </span>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 text-[10px] text-muted-foreground">
+      <div className="flex min-w-0 flex-1 items-start gap-2">
+        <GripVertical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/50 opacity-0 group-hover:opacity-100" aria-hidden />
+        <button
+          onClick={(e) => { e.stopPropagation(); void toggleTask(task.id); }}
+          aria-label={task.done ? "Mark not done" : "Mark done"}
+          className={cn(
+            "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 transition-colors",
+            task.done ? "border-primary bg-primary" : "border-muted-foreground/40 hover:border-primary",
+          )}
+        >
+          {task.done && <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground" aria-hidden />}
+        </button>
+        <span className={cn("mt-0.5 h-2 w-2 shrink-0 rounded-full", tint)} aria-hidden />
+        {ic.kind === "lucide" ? <ic.Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden /> : <span className="mt-0.5 shrink-0 text-sm leading-none" aria-hidden>{ic.char}</span>}
+        <span className={cn("min-w-0 flex-1 leading-snug [overflow-wrap:anywhere] whitespace-normal break-words", compact && "line-clamp-1", task.done && "line-through")}>
+          {task.title}
+        </span>
+      </div>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 text-[10px] text-muted-foreground max-sm:w-full max-sm:justify-start">
         {task.recurrenceType && task.recurrenceType !== "none" && <Repeat className="h-3 w-3" aria-hidden />}
         {task.estMinutes && (
           <span className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 font-mono">
