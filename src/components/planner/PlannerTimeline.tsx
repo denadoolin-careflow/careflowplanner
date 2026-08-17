@@ -860,6 +860,23 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               </button>
             ))}
 
+            {/* Live preview of the task being composed, sized by the chosen duration */}
+            {quickAdd && (() => {
+              const rel = quickAdd.startAbsMin - START_H * 60;
+              return (
+                <div
+                  className="pointer-events-none absolute left-1 right-1 z-20 overflow-hidden rounded-lg border-2 border-dashed border-primary/70 bg-primary/10 px-1.5 py-1 text-[11px] text-primary"
+                  style={{ top: rel * (HOUR_PX / 60), height: Math.max(SNAP_MIN, quickAdd.durMin) * (HOUR_PX / 60) - 2 }}
+                  aria-hidden
+                >
+                  <span className="block truncate font-mono text-[9px] opacity-80">
+                    {minTo12(quickAdd.startAbsMin)}–{minTo12(quickAdd.startAbsMin + quickAdd.durMin)} · {quickAdd.durMin}m
+                  </span>
+                  <span className="block truncate font-medium">{quickAdd.text.trim() || "New task"}</span>
+                </div>
+              );
+            })()}
+
             {/* Drop preview while dragging a task in from a rail or tray */}
             {dragOverMin !== null && (
               <div
@@ -1031,7 +1048,14 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                     style={{ left: quickAdd.x, top: quickAdd.y, width: 1, height: 1 }}
                   />
                 </PopoverAnchor>
-                <PopoverContent side="right" align="start" className="w-72 p-2">
+                <PopoverContent
+                  side="right"
+                  align="start"
+                  className="w-72 p-2"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                  onInteractOutside={(e) => e.preventDefault()}
+                  onPointerDownOutside={(e) => e.preventDefault()}
+                >
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     New task at {minTo12(quickAdd.startAbsMin)}
                   </p>
@@ -1075,7 +1099,25 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                       ) : null;
                     })()}
                   </div>
-                  <p className="mt-1.5 text-[10px] text-muted-foreground">Enter to add · Esc to close</p>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      className="h-7 flex-1 rounded-full text-[11.5px]"
+                      disabled={!quickAdd.text.trim()}
+                      onClick={() => void submitQuickAdd()}
+                    >
+                      Add at {minTo12(quickAdd.startAbsMin)} · {quickAdd.durMin}m
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 rounded-full px-2.5 text-[11.5px]"
+                      onClick={() => setQuickAdd(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-[10px] text-muted-foreground">Pick a duration first — the composer stays open until you add or cancel.</p>
                 </PopoverContent>
               </Popover>
             )}
