@@ -962,7 +962,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                         <BlockCheckbox
                           done={!!it.done}
                           title={it.title}
-                          onToggle={() => void toggleTask(it.id)}
+                          onToggle={() => toggleWithUndo(it.id, it.title, !!it.done)}
                         />
                       )}
                       {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
@@ -992,7 +992,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                             done={!!it.done}
                             title={it.title}
                             className="mt-[1px]"
-                            onToggle={() => void toggleTask(it.id)}
+                            onToggle={() => toggleWithUndo(it.id, it.title, !!it.done)}
                           />
                         )}
                         {ic && ic.kind === "lucide" ? <ic.Icon className="mt-[1px] h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
