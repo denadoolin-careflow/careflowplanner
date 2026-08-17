@@ -1,7 +1,8 @@
 import { useMemo } from "react";
-import { Lightbulb, TrendingUp, Activity } from "lucide-react";
+import { Lightbulb, TrendingUp, Activity, CalendarClock } from "lucide-react";
 import { type Energy } from "@/lib/energy-store";
 import type { Task, Habit } from "@/lib/types";
+import { usePlannerCapacityHistory, summarizePlannerCapacity } from "@/lib/planner-capacity-log";
 
 function countByEnergy(
   map: Record<string, Energy>,
