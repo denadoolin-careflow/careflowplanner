@@ -166,8 +166,8 @@ export function QuickTaskInlineEditor({
   };
 
   return (
-    <div className="space-y-2 rounded-md border border-border/60 bg-card/60 p-2" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center gap-2">
+    <div className="flex max-h-[70vh] flex-col rounded-md border border-border/60 bg-card/60" onClick={(e) => e.stopPropagation()}>
+      <div className="flex shrink-0 items-center gap-2 border-b border-border/40 p-2">
         <BlockCheckbox done={task.done} title={task.title} onToggle={() => void toggleTask(taskId)} className="h-4 w-4" />
         {icon && (icon.kind === "lucide"
           ? <icon.Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -180,6 +180,7 @@ export function QuickTaskInlineEditor({
         />
       </div>
 
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-2">
       <div className="flex flex-wrap gap-1">
         {FRAMES.map(f => (
           <button
