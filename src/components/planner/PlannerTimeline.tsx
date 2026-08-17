@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
 import { openTaskEditor } from "@/lib/open-task-editor";
+import { openMobileBlockEditor } from "@/lib/open-mobile-block-editor";
 import { resolveTaskIcon } from "@/lib/task-icons";
 import type { Task, Appointment } from "@/lib/types";
 import { toast } from "sonner";
@@ -338,11 +339,15 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     };
     const onUp = async (e: PointerEvent) => {
       const next = calc(e.clientY);
+      const held = moving.id;
+      const unmoved = next === moving.startMin;
       setMoving(null);
       setMovePreview(null);
       suppressClickRef.current = true;
       setTimeout(() => { suppressClickRef.current = false; }, 250);
-      if (next !== moving.startMin) await scheduleTaskAt(moving.id, next + START_H * 60);
+      if (!unmoved) { await scheduleTaskAt(held, next + START_H * 60); return; }
+      // Long-press then release without dragging → mobile quick-action menu.
+      if (isMobile && e.pointerType === "touch") openMobileBlockEditor(held, "quick");
     };
     window.addEventListener("pointermove", onMove, { passive: false });
     window.addEventListener("pointerup", onUp, { once: true });
@@ -954,7 +959,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                   onClick={() => {
                     // Never open the editor straight after a move, resize or completion.
                     if (suppressClickRef.current) return;
-                    if (it.kind === "task") openTaskEditor(it.id);
+                    if (it.kind !== "task") return;
+                    // Phones get the compact grid editor; desktop opens the full editor.
+                    if (isMobile) openMobileBlockEditor(it.id, "sheet");
+                    else openTaskEditor(it.id);
                   }}
                   className={cn(
                     "group absolute select-none overflow-hidden rounded-lg border px-1.5 py-1 text-[11px] shadow-sm outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",

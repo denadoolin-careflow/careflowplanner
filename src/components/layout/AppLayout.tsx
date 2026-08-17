@@ -20,6 +20,7 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 import { WhatsNewPopover } from "@/components/updates/WhatsNewPopover";
 import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
 import { GlobalTaskQuickEdit } from "@/components/tasks/GlobalTaskQuickEdit";
+import { MobileBlockEditorHost } from "@/components/planner/mobile/MobileBlockEditorHost";
 import { UpgradePromptHost } from "@/components/UpgradePromptHost";
 import { useEffect } from "react";
 import { applyAnimIntensity, readAnimIntensity } from "@/components/settings/AtmosphereFeelSection";
@@ -103,6 +104,7 @@ export function AppLayout() {
       <FocusPanel />
       <GlobalTaskEditor />
       <GlobalTaskQuickEdit />
+      <MobileBlockEditorHost />
       <UpgradePromptHost />
       <AICaptureDialog />
       <CareyChat />
