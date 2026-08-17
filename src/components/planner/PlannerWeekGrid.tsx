@@ -81,7 +81,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           {headerMode === "insight" ? <Rows3 className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
           {headerMode === "insight" ? "Compact" : "Full insight"}
         </Button>}
-        {isMobile && (
+        {isMobile && days > 3 && (
           <span className="text-[10.5px] text-muted-foreground">Swipe sideways for more days</span>
         )}
       </div>

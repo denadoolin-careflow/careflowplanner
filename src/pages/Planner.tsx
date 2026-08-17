@@ -325,7 +325,10 @@ export default function Planner() {
           </DropdownMenu>
           <AutoScheduleSettings size="md" />
         </div>
-        <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div
+          className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ maskImage: "linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 22px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 22px), transparent 100%)" }}
+        >
           <PlannerViewToggle value={view} onChange={setView} className="shrink-0" />
           {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
           <PlannerKindFilter className="shrink-0" />
