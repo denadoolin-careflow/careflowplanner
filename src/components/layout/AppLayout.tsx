@@ -22,6 +22,7 @@ import { GlobalTaskEditor } from "@/components/tasks/GlobalTaskEditor";
 import { GlobalTaskQuickEdit } from "@/components/tasks/GlobalTaskQuickEdit";
 import { MobileBlockEditorHost } from "@/components/planner/mobile/MobileBlockEditorHost";
 import { UpgradePromptHost } from "@/components/UpgradePromptHost";
+import { WriteBlockSheet } from "@/components/planner/WriteBlockSheet";
 import { useEffect } from "react";
 import { applyAnimIntensity, readAnimIntensity } from "@/components/settings/AtmosphereFeelSection";
 import { applyFontPrefs } from "@/lib/font-prefs";
@@ -105,6 +106,7 @@ export function AppLayout() {
       <GlobalTaskEditor />
       <GlobalTaskQuickEdit />
       <MobileBlockEditorHost />
+      <WriteBlockSheet />
       <UpgradePromptHost />
       <AICaptureDialog />
       <CareyChat />

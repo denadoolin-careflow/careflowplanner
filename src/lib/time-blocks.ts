@@ -12,6 +12,9 @@ export interface TimeBlock {
   color: string;       // semantic token name: primary | secondary | accent | moon | warm
   allDay: boolean;
   taskId?: string | null;
+  /** Optional link to a written record scheduled as a block. */
+  linkType?: "note" | "journal" | null;
+  linkId?: string | null;
 }
 
 const COLORS = ["primary", "secondary", "accent", "moon", "warm"] as const;
@@ -30,6 +33,8 @@ function fromRow(r: any): TimeBlock {
     color: r.color,
     allDay: r.all_day,
     taskId: r.task_id ?? null,
+    linkType: (r.link_type as "note" | "journal" | null) ?? null,
+    linkId: r.link_id ?? null,
   };
 }
 
@@ -49,6 +54,12 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
   }, [rangeFromISO, rangeToISO]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  // External creators (e.g. writing blocks) broadcast this so every grid reloads.
+  useEffect(() => {
+    const h = () => { void refresh(); };
+    window.addEventListener("careflow:time-blocks:changed", h);
+    return () => window.removeEventListener("careflow:time-blocks:changed", h);
+  }, [refresh]);
   // Suppress the perceived blink on first paint by not blanking blocks
   // while a subsequent range refresh is in-flight (keep stale data).
   void hasLoadedOnce;
@@ -67,6 +78,8 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
       color: b.color,
       all_day: b.allDay,
       task_id: b.taskId ?? null,
+      link_type: b.linkType ?? null,
+      link_id: b.linkId ?? null,
     }).select("*").single();
     if (!error && data) setBlocks(prev => [...prev, fromRow(data)]);
   };
@@ -82,6 +95,8 @@ export function useTimeBlocks(rangeFromISO?: string, rangeToISO?: string) {
     if (patch.date !== undefined) dbPatch.date = patch.date;
     if (patch.allDay !== undefined) dbPatch.all_day = patch.allDay;
     if (patch.taskId !== undefined) dbPatch.task_id = patch.taskId;
+    if (patch.linkType !== undefined) dbPatch.link_type = patch.linkType;
+    if (patch.linkId !== undefined) dbPatch.link_id = patch.linkId;
     const { data, error } = await supabase.from("time_blocks").update(dbPatch).eq("id", id).select("*").single();
     if (!error && data) setBlocks(prev => prev.map(b => b.id === id ? fromRow(data) : b));
   };

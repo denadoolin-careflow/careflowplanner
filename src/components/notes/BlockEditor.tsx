@@ -54,6 +54,7 @@ import {
   Table as TableIcon, Rows3, Columns3, Trash2,
   FilePlus, FolderPlus, Search as SearchIcon, StickyNote,
 } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -717,6 +718,17 @@ function Toolbar({
     if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
     if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
   };
+  /** Fold or unfold every toggle + collapsible list item in the note. */
+  const setAllFolds = (open: boolean) => {
+    const root = editor.view.dom as HTMLElement;
+    root.querySelectorAll<HTMLDetailsElement>("details.cf-toggle").forEach(d => {
+      if (d.open !== open) (d.querySelector("summary") as HTMLElement | null)?.click();
+    });
+    root.querySelectorAll<HTMLElement>("li").forEach(li => {
+      if (!li.querySelector(":scope > ul, :scope > ol")) return;
+      li.classList.toggle("cf-collapsed", !open);
+    });
+  };
   const Divider = () => <span className="mx-1 h-5 w-px shrink-0 bg-border/60" aria-hidden />;
   const headingActive = editor.isActive("heading", { level: 1 })
     ? "H1"
@@ -808,6 +820,8 @@ function Toolbar({
               <ToolbarButton onClick={onOpenMentions} label="Mention / link entity"><AtSign className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             )}
             <ToolbarButton active={editor.isActive("details")} onClick={() => editor.chain().focus().setDetails().run()} label="Toggle"><ChevronRight className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ToolbarButton onClick={() => setAllFolds(false)} label="Collapse all toggles"><ChevronsDownUp className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
+            <ToolbarButton onClick={() => setAllFolds(true)} label="Expand all toggles"><ChevronsUpDown className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             <ToolbarButton onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} label="Insert table"><TableIcon className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             <ToolbarButton onClick={doOutdent} label="Outdent"><IndentDecrease className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>
             <ToolbarButton onClick={doIndent} label="Indent"><IndentIncrease className="h-[18px] w-[18px]" strokeWidth={1.75} /></ToolbarButton>

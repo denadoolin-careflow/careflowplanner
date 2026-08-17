@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, isSameDay, parseISO } from "date-fns";
 import { AlertTriangle, Redo2, Undo2, Wand2 } from "lucide-react";
+import { NotebookPen, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -18,6 +19,7 @@ import { BlockCheckbox } from "./BlockCheckbox";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { usePlannerDropListener } from "@/lib/planner-touch-drag";
 import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
+import { createWriteBlock, openWriteBlock } from "@/lib/planner/write-blocks";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { parseTaskInput } from "@/lib/nlp-task";
@@ -54,7 +56,7 @@ const DAY_PART_START_H: Record<string, number> = { Morning: 9, Afternoon: 13, Ev
 
 interface ScheduledItem {
   id: string;
-  kind: "task" | "appt";
+  kind: "task" | "appt" | "write";
   title: string;
   startMin: number; // minutes from START_H
   durMin: number;
@@ -62,6 +64,8 @@ interface ScheduledItem {
   done?: boolean;
   color?: string;
   task?: Task;
+  /** For writing blocks: what record the block points at. */
+  write?: { kind: "note" | "journal"; recordId: string; blockId: string };
 }
 
 const AREA_BG: Record<string, string> = {
@@ -75,6 +79,7 @@ const AREA_BG: Record<string, string> = {
   "Creative Projects": "bg-fuchsia-100/70 dark:bg-fuchsia-900/30 border-fuchsia-300/60",
   Money: "bg-lime-100/70 dark:bg-lime-900/30 border-lime-300/60",
   "Holidays & Birthdays": "bg-rose-100/70 dark:bg-rose-900/30 border-rose-300/60",
+  Writing: "bg-indigo-100/70 dark:bg-indigo-900/30 border-indigo-300/60",
 };
 
 function hmToMin(hm?: string): number | null {
@@ -132,7 +137,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   const [resizing, setResizing] = useState<{ id: string; startY: number; startDur: number } | null>(null);
   const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
   const [movePreview, setMovePreview] = useState<number | null>(null);
-  const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string; durMin: number } | null>(null);
+  const [quickAdd, setQuickAdd] = useState<{
+    x: number; y: number; startAbsMin: number; text: string; durMin: number;
+    mode: "task" | "note" | "journal";
+  } | null>(null);
   const [dragOverMin, setDragOverMin] = useState<number | null>(null);
   const [nowVisible, setNowVisible] = useState(true);
   const suppressClickRef = useRef(false);
@@ -227,7 +235,18 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
       if (b.taskId && state.tasks.some(t => t.id === b.taskId && t.dueDate === iso)) continue;
       const s = hmToMin(b.startTime); if (s === null) continue;
       const e = hmToMin(b.endTime) ?? s + 30;
-      out.push({ id: `blk-${b.id}`, kind: "appt", title: b.title, startMin: s - START_H * 60, durMin: Math.max(15, e - s), area: "Appointments" });
+      const isWrite = b.linkType === "note" || b.linkType === "journal";
+      out.push({
+        id: `blk-${b.id}`,
+        kind: isWrite ? "write" : "appt",
+        title: b.title,
+        startMin: s - START_H * 60,
+        durMin: Math.max(15, e - s),
+        area: isWrite ? "Writing" : "Appointments",
+        write: isWrite && b.linkId
+          ? { kind: b.linkType as "note" | "journal", recordId: b.linkId, blockId: b.id }
+          : undefined,
+      });
     }
     for (const a of state.appointments) {
       if (a.date !== iso) continue;
@@ -657,7 +676,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     const y = e.clientY - rect.top;
     const relMin = yToMin(y);
     const abs = relMin + START_H * 60;
-    setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "", durMin: 30 });
+    setQuickAdd({ x: e.clientX - rect.left, y: relMin * (HOUR_PX / 60), startAbsMin: abs, text: "", durMin: 30, mode: "task" });
   };
 
   /** Complete a task from its block without bouncing into the editor. */
@@ -674,7 +693,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   };
 
   const submitQuickAdd = async () => {
-    if (!quickAdd || !quickAdd.text.trim()) { setQuickAdd(null); return; }
+    if (!quickAdd) return;
+    if (quickAdd.mode !== "task") { await submitWriteBlock(); return; }
+    if (!quickAdd.text.trim()) { setQuickAdd(null); return; }
     const p = parseTaskInput(quickAdd.text);
     const guessed = p.area ?? inferArea({ title: p.title || quickAdd.text, tags: p.tags })?.area ?? "Personal";
     await addTask({
@@ -692,6 +713,27 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     haptics.success();
     toast.success("Task added");
     setQuickAdd(null);
+  };
+
+  /** Create a note or journal entry scheduled as a block at the tapped slot. */
+  const submitWriteBlock = async () => {
+    if (!quickAdd || quickAdd.mode === "task") return;
+    const kind = quickAdd.mode;
+    const title = quickAdd.text.trim() || (kind === "note" ? "Untitled note" : `Journal — ${format(date, "MMM d")}`);
+    try {
+      const target = await createWriteBlock({
+        kind,
+        title,
+        date: iso,
+        startTime: minToHM(quickAdd.startAbsMin),
+        endTime: minToHM(quickAdd.startAbsMin + quickAdd.durMin),
+      });
+      haptics.success();
+      setQuickAdd(null);
+      openWriteBlock(target);
+    } catch {
+      toast.error("Couldn't create that. Try again?");
+    }
   };
 
   return (
@@ -852,7 +894,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setQuickAdd({ x: 24, y: g.start * (HOUR_PX / 60), startAbsMin: g.start + START_H * 60, text: "", durMin: Math.min(g.dur, 60) });
+                  setQuickAdd({ x: 24, y: g.start * (HOUR_PX / 60), startAbsMin: g.start + START_H * 60, text: "", durMin: Math.min(g.dur, 60), mode: "task" });
                 }}
                 aria-label={`${g.dur} minutes free from ${minTo12(g.start + START_H * 60)}. Add a task here.`}
                 className="group/gap absolute left-1 right-1 z-0 flex items-start justify-end rounded-md border border-dashed border-transparent px-2 pt-1 text-[9px] text-muted-foreground/0 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-muted-foreground"
@@ -959,6 +1001,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                   onClick={() => {
                     // Never open the editor straight after a move, resize or completion.
                     if (suppressClickRef.current) return;
+                    if (it.kind === "write" && it.write) {
+                      openWriteBlock({ kind: it.write.kind, recordId: it.write.recordId, blockId: it.write.blockId, title: it.title });
+                      return;
+                    }
                     if (it.kind !== "task") return;
                     // Phones get the compact grid editor; desktop opens the full editor.
                     if (isMobile) openMobileBlockEditor(it.id, "sheet");
@@ -990,6 +1036,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                         />
                       )}
                       {ic && ic.kind === "lucide" ? <ic.Icon className="h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-[11px] leading-none">{ic.char}</span>}
+                      {it.kind === "write" && (it.write?.kind === "journal"
+                        ? <NotebookPen className="h-3 w-3 shrink-0" />
+                        : <StickyNote className="h-3 w-3 shrink-0" />)}
                       <span className={cn("min-w-0 flex-1 truncate font-medium", it.done && "line-through")}>{it.title}</span>
                       <span className="shrink-0 font-mono text-[9px] opacity-70">{minTo12(it.startMin + START_H * 60)}</span>
                       {conflictNode}
@@ -1020,6 +1069,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                           />
                         )}
                         {ic && ic.kind === "lucide" ? <ic.Icon className="mt-[1px] h-3 w-3 shrink-0" /> : ic && ic.kind === "emoji" && <span className="shrink-0 text-xs leading-none">{ic.char}</span>}
+                        {it.kind === "write" && (it.write?.kind === "journal"
+                          ? <NotebookPen className="mt-[1px] h-3 w-3 shrink-0" />
+                          : <StickyNote className="mt-[1px] h-3 w-3 shrink-0" />)}
                         <span
                           className={cn("min-w-0 flex-1 whitespace-normal break-words [overflow-wrap:break-word] [word-break:normal]", it.done && "line-through")}
                           style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: titleLines, overflow: "hidden" }}
@@ -1063,9 +1115,31 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                   onInteractOutside={(e) => e.preventDefault()}
                   onPointerDownOutside={(e) => e.preventDefault()}
                 >
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    New task at {minTo12(quickAdd.startAbsMin)}
-                  </p>
+                  <div className="mb-1.5 flex items-center gap-1">
+                    {([
+                      { id: "task" as const, label: "Task" },
+                      { id: "note" as const, label: "Note" },
+                      { id: "journal" as const, label: "Journal" },
+                    ]).map(m => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        aria-pressed={quickAdd.mode === m.id}
+                        onClick={() => setQuickAdd(q => q ? { ...q, mode: m.id } : q)}
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[11px] leading-none transition-colors",
+                          quickAdd.mode === m.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted/60 text-muted-foreground hover:bg-muted",
+                        )}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+                      {minTo12(quickAdd.startAbsMin)}
+                    </span>
+                  </div>
                   <Input
                     autoFocus
                     value={quickAdd.text}
@@ -1074,7 +1148,13 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                       if (e.key === "Enter") { e.preventDefault(); void submitQuickAdd(); }
                       if (e.key === "Escape") setQuickAdd(null);
                     }}
-                    placeholder="Task title (try 'call mom #family 30m')"
+                    placeholder={
+                      quickAdd.mode === "task"
+                        ? "Task title (try 'call mom #family 30m')"
+                        : quickAdd.mode === "note"
+                          ? "Note title — opens the editor"
+                          : "Journal entry title — opens the editor"
+                    }
                     className="h-9 text-sm"
                   />
                   <div className="mt-2 flex flex-wrap items-center gap-1">
@@ -1096,7 +1176,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                     ))}
                     {(() => {
                       const t = quickAdd.text.trim();
-                      if (!t) return null;
+                      if (!t || quickAdd.mode !== "task") return null;
                       const p = parseTaskInput(t);
                       const a = p.area ?? inferArea({ title: p.title || t, tags: p.tags })?.area;
                       return a ? (
@@ -1110,10 +1190,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                     <Button
                       size="sm"
                       className="h-7 flex-1 rounded-full text-[11.5px]"
-                      disabled={!quickAdd.text.trim()}
+                      disabled={quickAdd.mode === "task" && !quickAdd.text.trim()}
                       onClick={() => void submitQuickAdd()}
                     >
-                      Add at {minTo12(quickAdd.startAbsMin)} · {quickAdd.durMin}m
+                      {quickAdd.mode === "task" ? "Add" : quickAdd.mode === "note" ? "Write note" : "Journal"} at {minTo12(quickAdd.startAbsMin)} · {quickAdd.durMin}m
                     </Button>
                     <Button
                       size="sm"
@@ -1124,7 +1204,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                       Cancel
                     </Button>
                   </div>
-                  <p className="mt-1 text-[10px] text-muted-foreground">Pick a duration first — the composer stays open until you add or cancel.</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    {quickAdd.mode === "task"
+                      ? "Pick a duration first — the composer stays open until you add or cancel."
+                      : "Creates a scheduled writing block and opens the editor right here."}
+                  </p>
                 </PopoverContent>
               </Popover>
             )}
