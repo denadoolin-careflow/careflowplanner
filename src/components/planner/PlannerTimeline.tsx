@@ -137,7 +137,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   const [resizing, setResizing] = useState<{ id: string; startY: number; startDur: number } | null>(null);
   const [moving, setMoving] = useState<{ id: string; startY: number; startMin: number; durMin: number; offsetMin: number } | null>(null);
   const [movePreview, setMovePreview] = useState<number | null>(null);
-  const [quickAdd, setQuickAdd] = useState<{ x: number; y: number; startAbsMin: number; text: string; durMin: number } | null>(null);
+  const [quickAdd, setQuickAdd] = useState<{
+    x: number; y: number; startAbsMin: number; text: string; durMin: number;
+    mode: "task" | "note" | "journal";
+  } | null>(null);
   const [dragOverMin, setDragOverMin] = useState<number | null>(null);
   const [nowVisible, setNowVisible] = useState(true);
   const suppressClickRef = useRef(false);
