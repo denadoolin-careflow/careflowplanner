@@ -828,7 +828,13 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   });
 
   const composerBody = quickAdd ? (
-    <div className="space-y-3">
+    // Portalled content still bubbles through the React tree into the grid's
+    // click/pointer handlers, so stop it here or the composer closes itself.
+    <div
+      className="space-y-3"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       {/* Mode */}
       <div className="flex items-center gap-1.5" role="group" aria-label="What to create">
         {([
