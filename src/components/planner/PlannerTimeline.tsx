@@ -156,6 +156,12 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   const [dismissedConflicts, setDismissedConflicts] = useState<string[]>([]);
   const [bandColors] = useBandColors();
   const isMobile = useIsMobile();
+  // Hourly weather for today only — shared colors/icons with the strip and capacity bar.
+  const weatherSnap = useWeatherSnapshot();
+  const hourWeather = useMemo(
+    () => (isSameDay(date, new Date()) ? byHour(weatherSnap?.todayHourly) : new Map<number, HourlyForecast>()),
+    [weatherSnap, date],
+  );
 
   // Anchor the timeline on the current hour so the day opens where you are.
   const scrollToNow = useCallback((behavior: ScrollBehavior = "auto") => {
