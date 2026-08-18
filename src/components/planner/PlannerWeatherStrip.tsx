@@ -65,17 +65,6 @@ function ConditionIcon({ condition, isNight, className, style }: { condition: We
   return <Cloud {...p} />;
 }
 
-function _unusedConditionIcon(condition: WeatherCondition, isNight: boolean, cls: string) {
-  if (condition === "clear") return isNight ? <MoonIcon className={cls} /> : <Sun className={cls} />;
-  if (condition === "partly-cloudy") return <CloudSun className={cls} />;
-  if (condition === "cloudy") return <Cloud className={cls} />;
-  if (condition === "fog") return <CloudFog className={cls} />;
-  if (condition === "drizzle") return <CloudDrizzle className={cls} />;
-  if (condition === "rain") return <CloudRain className={cls} />;
-  if (condition === "snow") return <CloudSnow className={cls} />;
-  if (condition === "thunderstorm") return <Zap className={cls} />;
-  return <Cloud className={cls} />;
-}
 
 /**
  * Interactive weather strip: tap a day part to see its detail and precipitation.
