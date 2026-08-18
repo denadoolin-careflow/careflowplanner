@@ -61,6 +61,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { linkNote, type EntityType } from "@/lib/note-links";
 import { listNotes } from "@/lib/notes";
+import { dateRefSuggestions, plannerHref } from "@/lib/notes/date-refs";
 import { supabase } from "@/integrations/supabase/client";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
