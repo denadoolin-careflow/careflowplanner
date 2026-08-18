@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BlockEditor } from "@/components/notes/BlockEditor";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   WRITE_BLOCK_EVENT,
   loadWriteRecord,
@@ -20,11 +21,13 @@ import {
  */
 export function WriteBlockSheet() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [target, setTarget] = useState<WriteBlockTarget | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -50,7 +53,7 @@ export function WriteBlockSheet() {
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     setSaving(true);
     saveTimer.current = window.setTimeout(() => {
-      void saveWriteBody(target, markdown).finally(() => setSaving(false));
+      void saveWriteBody(target, markdown).finally(() => { setSaving(false); setSavedAt(Date.now()); });
     }, 700);
   }, [target]);
 
@@ -62,6 +65,7 @@ export function WriteBlockSheet() {
   const close = () => {
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     if (target) void saveWriteBody(target, body);
+    setSavedAt(null);
     setTarget(null);
   };
 
@@ -69,7 +73,15 @@ export function WriteBlockSheet() {
 
   return (
     <Sheet open={!!target} onOpenChange={(o) => { if (!o) close(); }}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
+      <SheetContent
+        side={isMobile ? "bottom" : "right"}
+        className={
+          isMobile
+            ? "flex h-[92dvh] w-full flex-col gap-0 rounded-t-3xl p-0 pb-[env(safe-area-inset-bottom)]"
+            : "flex w-full flex-col gap-0 p-0 sm:max-w-xl"
+        }
+      >
+        {isMobile && <span aria-hidden className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-border" />}
         <SheetHeader className="space-y-2 border-b border-border/60 px-4 py-3 text-left">
           <div className="flex items-center gap-2">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
@@ -78,7 +90,13 @@ export function WriteBlockSheet() {
             <SheetTitle className="flex-1 truncate font-display text-sm">
               {isNote ? "Note" : "Journal entry"}
             </SheetTitle>
-            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+            {saving ? (
+              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
+              </span>
+            ) : savedAt ? (
+              <span className="text-[11px] text-muted-foreground">Saved</span>
+            ) : null}
             {target && (
               <Button
                 variant="ghost"
