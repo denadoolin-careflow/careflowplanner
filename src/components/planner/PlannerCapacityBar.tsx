@@ -7,6 +7,10 @@ import { ENERGY_COLOR, useDayPartEnergy, type DayPart, type Energy } from "@/lib
 import { MOODS, useDayPartMood } from "@/lib/mood-by-part";
 import { cn } from "@/lib/utils";
 import { usePlannerCapacityLogger } from "@/lib/planner-capacity-log";
+import { useWeatherSnapshot, useTempUnit, cToF } from "@/lib/weather-store";
+import { dominantCondition, condTint } from "@/lib/planner/hour-weather";
+import { ConditionIcon } from "@/components/weather/ConditionIcon";
+import { isSameDay } from "date-fns";
 
 const BANDS: { id: BandId; part: DayPart; label: string; startH: number; endH: number }[] = [
   { id: "morning", part: "morning", label: "Morning", startH: 5, endH: 12 },
@@ -40,6 +44,20 @@ export function PlannerCapacityBar({ date, className, part, compact }: {
   const [colors] = useBandColors();
   const [energy, setEnergy] = useDayPartEnergy(iso);
   const [mood, setMood] = useDayPartMood(iso);
+  const weatherSnap = useWeatherSnapshot();
+  const [unit] = useTempUnit();
+  const isToday = isSameDay(date, new Date());
+
+  /** Dominant forecast hour for each band — matches the timeline's hourly colors. */
+  const bandWeather = useMemo(() => {
+    const out: Partial<Record<BandId, ReturnType<typeof dominantCondition>>> = {};
+    if (!isToday) return out;
+    const hours = weatherSnap?.todayHourly ?? [];
+    for (const b of BANDS) {
+      out[b.id] = dominantCondition(hours.filter(h => h.hour >= b.startH && h.hour < b.endH));
+    }
+    return out;
+  }, [weatherSnap, isToday]);
 
   const rows = useMemo(() => {
     const spans: { start: number; dur: number }[] = [];
@@ -113,6 +131,8 @@ export function PlannerCapacityBar({ date, className, part, compact }: {
         {shown.map(r => {
           const pct = Math.min(100, Math.round((r.planned / r.available) * 100));
           const over = r.planned > r.available;
+          const wx = bandWeather[r.id] ?? null;
+          const tint = wx ? condTint(wx.condition, wx.isNight) : null;
           return (
             <div key={r.id}>
               <div className="flex items-baseline justify-between gap-1">
@@ -121,6 +141,18 @@ export function PlannerCapacityBar({ date, className, part, compact }: {
                   {compact ? `${hrs(Math.max(0, r.available - r.planned))} free` : hrs(r.planned)}
                 </span>
               </div>
+              {wx && tint && (
+                <div
+                  className="mt-1 inline-flex items-center gap-1 rounded-full border px-1.5 py-px text-[10px] tabular-nums dark:brightness-[1.9]"
+                  style={{ borderColor: tint.borderColor, background: tint.background, color: tint.color }}
+                  title={`${r.label} · ${wx.conditionLabel}${wx.precipChance >= 10 ? ` · ${wx.precipChance}% precip` : ""}`}
+                  aria-label={`${r.label} weather: ${wx.conditionLabel}, ${unit === "F" ? cToF(wx.tempC) : Math.round(wx.tempC)} degrees${wx.precipChance >= 10 ? `, ${wx.precipChance}% chance of precipitation` : ""}`}
+                >
+                  <ConditionIcon condition={wx.condition} isNight={wx.isNight} className="h-3 w-3" />
+                  <span>{unit === "F" ? cToF(wx.tempC) : Math.round(wx.tempC)}°</span>
+                  {wx.precipChance >= 10 && <span className="opacity-80">{wx.precipChance}%</span>}
+                </div>
+              )}
               <div
                 className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted"
                 role="progressbar"
