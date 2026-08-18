@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { LayoutGrid, CalendarClock, Clock4 } from "lucide-react";
+import { LayoutGrid, CalendarClock, Clock4, Gauge } from "lucide-react";
 
-export type PlannerPeriod = "grid" | "schedule" | "timeofday" | "morning" | "afternoon" | "evening";
+export type PlannerPeriod = "grid" | "schedule" | "timeofday" | "capacity" | "morning" | "afternoon" | "evening";
 
 const KEY = "careflow:planner:period";
 const EVT = "careflow:planner:period-change";
@@ -44,6 +44,7 @@ const OPTIONS: { id: PlannerPeriod; label: string; Icon: React.ComponentType<{ c
   { id: "grid", label: "Grid", Icon: LayoutGrid },
   { id: "schedule", label: "Schedule", Icon: CalendarClock },
   { id: "timeofday", label: "Time of day", Icon: Clock4 },
+  { id: "capacity", label: "Capacity", Icon: Gauge },
 ];
 
 export function PlannerPeriodTabs({ value, onChange, className, hideGrid }: {
