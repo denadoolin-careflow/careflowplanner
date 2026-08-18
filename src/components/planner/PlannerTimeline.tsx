@@ -1054,8 +1054,20 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
             {Array.from({ length: END_H - START_H }, (_, i) => {
               const h = START_H + i;
               const label = format(new Date(2000, 0, 1, h), "h a");
+              const wx = hourWeather.get(h);
+              const tint = hourTint(wx);
               return <div key={h} style={{ height: HOUR_PX }} className="relative pr-1 text-right">
                 <span className="absolute -top-2 right-1">{label}</span>
+                {wx && tint && (
+                  <span
+                    className="absolute left-1 top-1 dark:brightness-[1.9]"
+                    style={{ color: tint.color }}
+                    title={`${label} · ${wx.conditionLabel}${wx.precipChance >= 10 ? ` · ${wx.precipChance}% precip` : ""}`}
+                    aria-hidden
+                  >
+                    <ConditionIcon condition={wx.condition} isNight={wx.isNight} className="h-3 w-3" />
+                  </span>
+                )}
               </div>;
             })}
           </div>
@@ -1077,6 +1089,19 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
             {Array.from({ length: END_H - START_H + 1 }, (_, i) => (
               <div key={i} className="absolute left-0 right-0 border-t border-border/40" style={{ top: i * HOUR_PX }} />
             ))}
+            {/* Weather wash per hour — same condition colors as the strip and capacity bar */}
+            {Array.from({ length: END_H - START_H }, (_, i) => {
+              const tint = hourTint(hourWeather.get(START_H + i));
+              if (!tint) return null;
+              return (
+                <div
+                  key={`wx-${i}`}
+                  className="pointer-events-none absolute left-0 right-0"
+                  style={{ top: i * HOUR_PX, height: HOUR_PX, background: tint.wash }}
+                  aria-hidden
+                />
+              );
+            })}
             {/* Rhythm bands */}
             {RHYTHM_BANDS.map(b => {
               const topMin = (b.startH - START_H) * 60;
