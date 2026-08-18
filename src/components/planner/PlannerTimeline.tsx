@@ -22,6 +22,7 @@ import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
 import { createWriteBlock, openWriteBlock } from "@/lib/planner/write-blocks";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { inferArea } from "@/lib/area-infer";
 import { usePlannerHistory, type HistoryEntry } from "@/lib/planner-history";
@@ -142,6 +143,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     mode: "task" | "note" | "journal";
   } | null>(null);
   const [dragOverMin, setDragOverMin] = useState<number | null>(null);
+  /** Live range painted by press-dragging on empty grid space. */
+  const [dragCreate, setDragCreate] = useState<{ startMin: number; endMin: number } | null>(null);
+  const createRef = useRef<{ start: number; armed: boolean; moved: boolean; timer: number | null } | null>(null);
   const [nowVisible, setNowVisible] = useState(true);
   const suppressClickRef = useRef(false);
   const { blocks, update: updateBlock } = useTimeBlocks(iso, iso);
