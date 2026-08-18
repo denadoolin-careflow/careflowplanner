@@ -87,14 +87,14 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
       </div>
 
       {/* Horizontal scroller keeps columns legible on narrow screens */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-contain">
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
       <div className="flex min-h-0 flex-1 flex-col" style={boardMinWidth ? { minWidth: boardMinWidth } : undefined}>
       {/* Day headers */}
       <div
         className="grid border-b border-border/60 bg-card/70 backdrop-blur"
         style={{ gridTemplateColumns: colTemplate }}
       >
-        <div className="border-r border-border/50" />
+        <div className="sticky left-0 z-30 border-r border-border/50 bg-card/95 backdrop-blur" />
         {cols.map((d, i) => (
           <div key={format(d, "yyyy-MM-dd")} className={cn("min-w-0", i > 0 && "border-l border-border/40")}>
             <WeekDayHeader date={d} mode={effectiveHeaderMode} onSelect={onSelectDay} />
@@ -104,7 +104,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
 
       {/* All-day row */}
       <div className="grid border-b border-border/40 bg-background/40" style={{ gridTemplateColumns: colTemplate }}>
-        <div className="flex items-center justify-end border-r border-border/50 pr-1 text-[9px] uppercase tracking-wider text-muted-foreground/70">
+        <div className="sticky left-0 z-30 flex items-center justify-end border-r border-border/50 bg-card/95 pr-1 text-[9px] uppercase tracking-wider text-muted-foreground/70 backdrop-blur">
           All day
         </div>
         {cols.map((d, i) => (
@@ -122,7 +122,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
         <div className="relative grid" style={{ gridTemplateColumns: colTemplate }}>
           {/* Time gutter */}
           <div
-            className="relative shrink-0 border-r border-border/50 text-[10px] text-muted-foreground"
+            className="sticky left-0 z-20 relative shrink-0 border-r border-border/50 bg-card/95 text-[10px] text-muted-foreground backdrop-blur"
             style={{ height: totalMin * (HOUR_PX / 60) }}
           >
             {Array.from({ length: PLANNER_END_H - PLANNER_START_H }, (_, i) => {
