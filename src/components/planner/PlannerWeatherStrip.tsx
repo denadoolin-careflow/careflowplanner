@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
-import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSnow, CloudSun, Droplets, Moon as MoonIcon, Sun, Zap } from "lucide-react";
+import { Droplets } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWeatherSnapshot, useTempUnit, cToF, dayPartSuggestion } from "@/lib/weather-store";
 import { useEnsureWeather } from "@/lib/use-ensure-weather";
-import type { WeatherCondition, DayPartKey } from "@/lib/weather";
+import type { DayPartKey } from "@/lib/weather";
 import { elementTheme } from "@/lib/planner/element-theme";
+import { condTint } from "@/lib/planner/hour-weather";
+import { ConditionIcon } from "@/components/weather/ConditionIcon";
 
 const PARTS = ["Morning", "Afternoon", "Evening"] as const;
 
@@ -15,56 +17,6 @@ const PART_HOURS: Record<string, [number, number]> = {
 };
 
 const hourLabel = (h: number) => `${((h + 11) % 12) + 1}${h < 12 ? "a" : "p"}`;
-
-/** Condition-driven hue for hour cells: sunny = yellow, rain = blue, snow = grey-blue, etc. */
-const COND_HUE: Record<WeatherCondition, number> = {
-  "clear": 45,          // sunny yellow
-  "partly-cloudy": 200, // pale sky
-  "cloudy": 220,        // soft grey-blue
-  "fog": 230,           // muted grey
-  "drizzle": 205,       // light blue
-  "rain": 212,          // blue
-  "snow": 195,          // icy grey-blue
-  "thunderstorm": 265,  // violet storm
-};
-const COND_SAT: Record<WeatherCondition, number> = {
-  "clear": 92,
-  "partly-cloudy": 55,
-  "cloudy": 12,
-  "fog": 8,
-  "drizzle": 70,
-  "rain": 82,
-  "snow": 18,
-  "thunderstorm": 65,
-};
-
-function condTint(condition: WeatherCondition, isNight?: boolean) {
-  const h = COND_HUE[condition] ?? 220;
-  const s = COND_SAT[condition] ?? 20;
-  // Night clear skies read as deep indigo rather than sunshine.
-  const hue = condition === "clear" && isNight ? 245 : h;
-  const sat = condition === "clear" && isNight ? 45 : s;
-  return {
-    background: `hsl(${hue} ${sat}% 55% / 0.16)`,
-    borderColor: `hsl(${hue} ${sat}% 45% / 0.35)`,
-    color: `hsl(${hue} ${Math.min(90, sat + 10)}% 32%)`,
-  };
-}
-
-function ConditionIcon({ condition, isNight, className, style }: { condition: WeatherCondition; isNight?: boolean; className?: string; style?: React.CSSProperties }) {
-  const cls = cn("h-3.5 w-3.5", className);
-  const p = { className: cls, style };
-  if (condition === "clear") return isNight ? <MoonIcon {...p} /> : <Sun {...p} />;
-  if (condition === "partly-cloudy") return <CloudSun {...p} />;
-  if (condition === "cloudy") return <Cloud {...p} />;
-  if (condition === "fog") return <CloudFog {...p} />;
-  if (condition === "drizzle") return <CloudDrizzle {...p} />;
-  if (condition === "rain") return <CloudRain {...p} />;
-  if (condition === "snow") return <CloudSnow {...p} />;
-  if (condition === "thunderstorm") return <Zap {...p} />;
-  return <Cloud {...p} />;
-}
-
 
 /**
  * Interactive weather strip: tap a day part to see its detail and precipitation.
