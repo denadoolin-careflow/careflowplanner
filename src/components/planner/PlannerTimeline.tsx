@@ -146,6 +146,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   /** Live range painted by press-dragging on empty grid space. */
   const [dragCreate, setDragCreate] = useState<{ startMin: number; endMin: number } | null>(null);
   const createRef = useRef<{ start: number; armed: boolean; moved: boolean; timer: number | null } | null>(null);
+  /** Mirror of `dragCreate` readable from pointer handlers without re-binding. */
+  const dragRangeRef = useRef<{ startMin: number; endMin: number } | null>(null);
   const [nowVisible, setNowVisible] = useState(true);
   const suppressClickRef = useRef(false);
   const { blocks, update: updateBlock } = useTimeBlocks(iso, iso);
