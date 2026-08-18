@@ -689,7 +689,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
       st.timer = window.setTimeout(() => {
         if (!createRef.current || createRef.current.moved) return;
         createRef.current.armed = true;
-        setDragCreate({ startMin: start, endMin: start + SNAP_MIN * 2 });
+        dragRangeRef.current = { startMin: start, endMin: start + SNAP_MIN * 2 };
+        setDragCreate(dragRangeRef.current);
         haptics.magnet();
       }, 300);
     }
@@ -711,7 +712,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
       }
       ev.preventDefault();
       const a = Math.min(st2.start, cur), b = Math.max(st2.start, cur);
-      setDragCreate({ startMin: a, endMin: Math.max(a + SNAP_MIN, b) });
+      dragRangeRef.current = { startMin: a, endMin: Math.max(a + SNAP_MIN, b) };
+      setDragCreate(dragRangeRef.current);
     };
     const up = () => {
       const st2 = createRef.current;
@@ -733,6 +735,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     function cleanup() {
       if (createRef.current?.timer) window.clearTimeout(createRef.current.timer);
       createRef.current = null;
+      dragRangeRef.current = null;
       setDragCreate(null);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
