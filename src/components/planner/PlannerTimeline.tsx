@@ -677,7 +677,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   const onGridPointerDown = (e: React.PointerEvent) => {
     if (e.button > 0) return;
     const target = e.target as HTMLElement;
-    if (target.closest("[data-planner-block]") || target.closest("button")) return;
+    // Gap buttons blanket the empty grid, so painting must work on top of them.
+    if (target.closest("[data-planner-block]")) return;
+    if (target.closest("button") && !target.closest("[data-planner-gap]")) return;
     if (quickAdd) return; // click handler closes it
     const rect = gridRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -1120,6 +1122,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               <button
                 key={`gap-${g.start}`}
                 type="button"
+                data-planner-gap
                 onClick={(e) => {
                   e.stopPropagation();
                   setQuickAdd({ x: 24, y: g.start * (HOUR_PX / 60), startAbsMin: g.start + START_H * 60, text: "", durMin: Math.min(g.dur, 60), mode: "task" });
