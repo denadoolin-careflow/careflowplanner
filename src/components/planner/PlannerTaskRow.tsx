@@ -11,6 +11,7 @@ import { haptics } from "@/lib/haptics";
 import { usePlannerPointerDrag } from "@/lib/planner-touch-drag";
 import { format, parseISO } from "date-fns";
 import { CosmicTaskChip } from "./CosmicTaskChip";
+import { ActivityChip } from "./ActivityChip";
 
 const AREA_TINTS: Record<string, string> = {
   Family: "bg-amber-400",
@@ -79,6 +80,7 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
       </div>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 text-[10px] text-muted-foreground max-sm:w-full max-sm:justify-start">
         {task.recurrenceType && task.recurrenceType !== "none" && <Repeat className="h-3 w-3" aria-hidden />}
+        <ActivityChip task={task} />
         {task.estMinutes && (
           <span className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 font-mono">
             <Clock className="h-2.5 w-2.5" />{task.estMinutes}m
