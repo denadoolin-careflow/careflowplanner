@@ -47,9 +47,9 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
 
   return (
     <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
-      <div className="grid grid-cols-7 border-b border-border/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+      <div className="sticky top-0 z-10 grid grid-cols-7 border-b border-border/60 bg-card/90 text-[10px] uppercase tracking-wider text-muted-foreground backdrop-blur">
         {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
-          <div key={d} className="px-2 py-1.5">{d}</div>
+          <div key={d} className={cn("py-1.5", isMobile ? "text-center" : "px-2")}>{isMobile ? d.slice(0, 1) : d}</div>
         ))}
       </div>
       <div className="grid flex-1 auto-rows-fr grid-cols-7">
@@ -74,8 +74,8 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
               onDragLeave={() => setDragOver(cur => (cur === key ? null : cur))}
               onDrop={(e) => onDrop(key, e)}
               className={cn(
-                "flex flex-col gap-0.5 border-b border-r border-border/40 p-1.5 text-left transition-colors",
-                isMobile ? "min-h-[74px]" : "min-h-[132px]",
+                "flex flex-col border-b border-r border-border/40 text-left transition-colors",
+                isMobile ? "min-h-[62px] gap-0 p-1" : "min-h-[132px] gap-0.5 p-1.5",
                 dim && "bg-muted/20 text-muted-foreground/60",
                 allDone && !dim && "ring-1 ring-inset ring-emerald-500/40",
                 hasOverdue && !dim && "ring-1 ring-inset ring-amber-500/40",
@@ -83,7 +83,7 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
               )}
               style={load > 0 && !dim ? { backgroundColor: `hsl(var(--primary) / ${0.04 + load * 0.06})` } : undefined}
             >
-              <div className="flex items-center justify-between gap-1">
+              <div className={cn("flex items-center gap-1", isMobile ? "justify-center" : "justify-between")}>
                 <button
                   type="button"
                   onClick={() => onSelectDay(d)}
@@ -91,13 +91,14 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                   title={cyc?.text}
                   className="flex items-center gap-1"
                 >
-                  <span className={cn("grid h-6 w-6 place-items-center rounded-full text-[11px] hover:bg-muted",
+                  <span className={cn("grid place-items-center rounded-full hover:bg-muted",
+                    isMobile ? "h-6 w-6 text-[12px]" : "h-6 w-6 text-[11px]",
                     isToday && "bg-primary font-semibold text-primary-foreground")}>{format(d, "d")}</span>
                   {cyc && (
                     <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: cyc.color }} />
                   )}
                 </button>
-                {completable.length > 0 && (
+                {completable.length > 0 && !isMobile && (
                   <span
                     title={`${doneCount} of ${completable.length} complete`}
                     className={cn(
@@ -117,18 +118,32 @@ export function PlannerMonthView({ date, onSelectDay, onOpenItem }: {
                   type="button"
                   onClick={() => onSelectDay(d)}
                   aria-label={`Open ${format(d, "EEEE, MMMM d")}${items.length ? ` — ${items.length} planned` : ""}`}
-                  className="flex min-h-0 flex-1 flex-wrap content-start items-center gap-[3px] pt-1"
+                  className="flex min-h-0 flex-1 flex-col items-center justify-start gap-1 pt-1"
                 >
-                  {items.slice(0, 3).map(it => (
+                  <span className="flex items-center justify-center gap-[3px]">
+                    {items.slice(0, 4).map(it => (
+                      <span
+                        key={it.id}
+                        aria-hidden
+                        className={cn("h-1.5 w-1.5 rounded-full", it.done && "opacity-40")}
+                        style={{ background: it.color }}
+                      />
+                    ))}
+                  </span>
+                  {items.length > 4 && (
+                    <span className="text-[9px] leading-none text-muted-foreground">+{items.length - 4}</span>
+                  )}
+                  {completable.length > 0 && (
                     <span
-                      key={it.id}
-                      aria-hidden
-                      className={cn("h-1.5 w-1.5 rounded-full", it.done && "opacity-40")}
-                      style={{ background: it.color }}
-                    />
-                  ))}
-                  {items.length > 3 && (
-                    <span className="text-[9px] leading-none text-muted-foreground">+{items.length - 3}</span>
+                      className={cn(
+                        "rounded-full px-1 text-[9px] font-medium leading-[14px]",
+                        allDone ? "bg-emerald-500/15 text-emerald-600"
+                          : hasOverdue ? "bg-amber-500/15 text-amber-700"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {doneCount}/{completable.length}
+                    </span>
                   )}
                 </button>
               ) : (
