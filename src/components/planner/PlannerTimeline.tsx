@@ -22,6 +22,7 @@ import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
 import { createWriteBlock, openWriteBlock } from "@/lib/planner/write-blocks";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { inferArea } from "@/lib/area-infer";
 import { usePlannerHistory, type HistoryEntry } from "@/lib/planner-history";
@@ -142,6 +143,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     mode: "task" | "note" | "journal";
   } | null>(null);
   const [dragOverMin, setDragOverMin] = useState<number | null>(null);
+  /** Live range painted by press-dragging on empty grid space. */
+  const [dragCreate, setDragCreate] = useState<{ startMin: number; endMin: number } | null>(null);
+  const createRef = useRef<{ start: number; armed: boolean; moved: boolean; timer: number | null } | null>(null);
+  /** Mirror of `dragCreate` readable from pointer handlers without re-binding. */
+  const dragRangeRef = useRef<{ startMin: number; endMin: number } | null>(null);
   const [nowVisible, setNowVisible] = useState(true);
   const suppressClickRef = useRef(false);
   const { blocks, update: updateBlock } = useTimeBlocks(iso, iso);
@@ -663,6 +669,85 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     if (e.shiftKey) void runRedo(); else void runUndo();
   };
 
+  /**
+   * Press-drag on empty grid space paints a time range; releasing opens the
+   * composer already sized to it. Mouse/pen start painting immediately, touch
+   * needs a short press so ordinary finger scrolling still works.
+   */
+  const onGridPointerDown = (e: React.PointerEvent) => {
+    if (e.button > 0) return;
+    const target = e.target as HTMLElement;
+    // Gap buttons blanket the empty grid, so painting must work on top of them.
+    if (target.closest("[data-planner-block]")) return;
+    if (target.closest("button") && !target.closest("[data-planner-gap]")) return;
+    if (quickAdd) return; // click handler closes it
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const start = yToMin(e.clientY - rect.top);
+    const touch = e.pointerType === "touch";
+    const st = { start, armed: !touch, moved: false, timer: null as number | null };
+    createRef.current = st;
+    if (touch) {
+      st.timer = window.setTimeout(() => {
+        if (!createRef.current || createRef.current.moved) return;
+        createRef.current.armed = true;
+        dragRangeRef.current = { startMin: start, endMin: start + SNAP_MIN * 2 };
+        setDragCreate(dragRangeRef.current);
+        haptics.magnet();
+      }, 300);
+    }
+
+    const move = (ev: PointerEvent) => {
+      const st2 = createRef.current;
+      if (!st2) return;
+      const r = gridRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const cur = yToMin(ev.clientY - r.top);
+      if (!st2.armed) {
+        // Finger moved before the long-press landed → it's a scroll, bail out.
+        if (Math.abs(cur - st2.start) >= SNAP_MIN) {
+          st2.moved = true;
+          if (st2.timer) window.clearTimeout(st2.timer);
+          cleanup();
+        }
+        return;
+      }
+      ev.preventDefault();
+      const a = Math.min(st2.start, cur), b = Math.max(st2.start, cur);
+      dragRangeRef.current = { startMin: a, endMin: Math.max(a + SNAP_MIN, b) };
+      setDragCreate(dragRangeRef.current);
+    };
+    const up = () => {
+      const st2 = createRef.current;
+      const range = dragRangeRef.current;
+      cleanup();
+      if (!st2?.armed || !range || range.endMin - range.startMin < SNAP_MIN * 2) return;
+      suppressClickRef.current = true;
+      window.setTimeout(() => { suppressClickRef.current = false; }, 300);
+      haptics.success();
+      setQuickAdd({
+        x: 24,
+        y: range.startMin * (HOUR_PX / 60),
+        startAbsMin: range.startMin + START_H * 60,
+        text: "",
+        durMin: range.endMin - range.startMin,
+        mode: "task",
+      });
+    };
+    function cleanup() {
+      if (createRef.current?.timer) window.clearTimeout(createRef.current.timer);
+      createRef.current = null;
+      dragRangeRef.current = null;
+      setDragCreate(null);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", cleanup);
+    }
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", cleanup);
+  };
+
   // Tap empty grid → open quick add popover at the clicked slot.
   const onGridClick = (e: React.MouseEvent) => {
     if (suppressClickRef.current) return;
@@ -735,6 +820,156 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
       toast.error("Couldn't create that. Try again?");
     }
   };
+
+  const setStart = (deltaMin: number) => setQuickAdd(q => {
+    if (!q) return q;
+    const next = Math.min((END_H * 60) - q.durMin, Math.max(START_H * 60, q.startAbsMin + deltaMin));
+    return { ...q, startAbsMin: next };
+  });
+
+  const composerBody = quickAdd ? (
+    // Portalled content still bubbles through the React tree into the grid's
+    // click/pointer handlers, so stop it here or the composer closes itself.
+    <div
+      className="space-y-3"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      {/* Mode */}
+      <div className="flex items-center gap-1.5" role="group" aria-label="What to create">
+        {([
+          { id: "task" as const, label: "Task" },
+          { id: "note" as const, label: "Note" },
+          { id: "journal" as const, label: "Journal" },
+        ]).map(m => (
+          <button
+            key={m.id}
+            type="button"
+            aria-pressed={quickAdd.mode === m.id}
+            onClick={() => setQuickAdd(q => q ? { ...q, mode: m.id } : q)}
+            className={cn(
+              "flex-1 rounded-full px-3 text-[12px] font-medium leading-none transition-colors",
+              isMobile ? "h-11" : "h-7",
+              quickAdd.mode === m.id
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted/60 text-muted-foreground hover:bg-muted",
+            )}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      <Input
+        autoFocus={!isMobile}
+        value={quickAdd.text}
+        onChange={(e) => setQuickAdd(q => q ? { ...q, text: e.target.value } : q)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") { e.preventDefault(); void submitQuickAdd(); }
+          if (e.key === "Escape") setQuickAdd(null);
+        }}
+        placeholder={
+          quickAdd.mode === "task"
+            ? "Task title (try 'call mom #family 30m')"
+            : quickAdd.mode === "note"
+              ? "Note title — opens the editor"
+              : "Journal entry title — opens the editor"
+        }
+        className={cn("text-sm", isMobile ? "h-12 text-base" : "h-9")}
+      />
+
+      {/* Time frame */}
+      <div className="rounded-xl border border-border/60 bg-muted/30 p-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Starts</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label="Start 15 minutes earlier"
+              onClick={() => setStart(-SNAP_MIN)}
+              className={cn("grid place-items-center rounded-full border border-border/60 text-sm", isMobile ? "h-10 w-10" : "h-7 w-7")}
+            >−</button>
+            <span className="min-w-[64px] text-center font-mono text-[12px]">{minTo12(quickAdd.startAbsMin)}</span>
+            <button
+              type="button"
+              aria-label="Start 15 minutes later"
+              onClick={() => setStart(SNAP_MIN)}
+              className={cn("grid place-items-center rounded-full border border-border/60 text-sm", isMobile ? "h-10 w-10" : "h-7 w-7")}
+            >+</button>
+          </div>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {[15, 30, 45, 60, 90, 120].map(d => (
+            <button
+              key={d}
+              type="button"
+              aria-pressed={quickAdd.durMin === d}
+              onClick={() => setQuickAdd(q => q ? { ...q, durMin: d } : q)}
+              className={cn(
+                "rounded-full border px-3 text-[12px] leading-none transition-colors",
+                isMobile ? "h-10" : "h-7",
+                quickAdd.durMin === d
+                  ? "border-transparent bg-primary text-primary-foreground"
+                  : "border-border/60 text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {d < 60 ? `${d}m` : d % 60 === 0 ? `${d / 60}h` : `${Math.floor(d / 60)}h${d % 60}`}
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <label htmlFor="plnr-end-time" className="text-[11px] uppercase tracking-wide text-muted-foreground">Ends</label>
+          <input
+            id="plnr-end-time"
+            type="time"
+            step={900}
+            value={minToHM((quickAdd.startAbsMin + quickAdd.durMin) % (24 * 60))}
+            onChange={(e) => {
+              const v = hmToMin(e.target.value);
+              if (v === null) return;
+              setQuickAdd(q => q ? { ...q, durMin: Math.max(SNAP_MIN, v - q.startAbsMin) } : q);
+            }}
+            className={cn(
+              "rounded-lg border border-border/60 bg-background px-2 font-mono text-[12px]",
+              isMobile ? "h-10" : "h-7",
+            )}
+          />
+        </div>
+      </div>
+
+      {(() => {
+        const t = quickAdd.text.trim();
+        if (!t || quickAdd.mode !== "task") return null;
+        const p = parseTaskInput(t);
+        const a = p.area ?? inferArea({ title: p.title || t, tags: p.tags })?.area;
+        return a ? (
+          <p className="text-[11px] text-muted-foreground">{a} <span className="opacity-60">auto-detected</span></p>
+        ) : null;
+      })()}
+
+      <div className="flex items-center gap-2">
+        <Button
+          className={cn("flex-1 rounded-full text-[12.5px]", isMobile ? "h-12" : "h-8")}
+          disabled={quickAdd.mode === "task" && !quickAdd.text.trim()}
+          onClick={() => void submitQuickAdd()}
+        >
+          {quickAdd.mode === "task" ? "Add" : quickAdd.mode === "note" ? "Write note" : "Journal"} · {minTo12(quickAdd.startAbsMin)}–{minTo12(quickAdd.startAbsMin + quickAdd.durMin)}
+        </Button>
+        <Button
+          variant="ghost"
+          className={cn("rounded-full px-3 text-[12.5px]", isMobile ? "h-12" : "h-8")}
+          onClick={() => setQuickAdd(null)}
+        >
+          Cancel
+        </Button>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        {quickAdd.mode === "task"
+          ? "Press and drag on the grid to paint a time frame."
+          : "Creates a scheduled writing block and opens the editor right here."}
+      </p>
+    </div>
+  ) : null;
 
   return (
     <div
@@ -836,6 +1071,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
             onDragLeave={(e) => { if (e.currentTarget === e.target) setDragOverMin(null); }}
             onDrop={onDrop}
             onClick={onGridClick}
+            onPointerDown={onGridPointerDown}
           >
             {/* Hour lines */}
             {Array.from({ length: END_H - START_H + 1 }, (_, i) => (
@@ -892,6 +1128,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               <button
                 key={`gap-${g.start}`}
                 type="button"
+                data-planner-gap
                 onClick={(e) => {
                   e.stopPropagation();
                   setQuickAdd({ x: 24, y: g.start * (HOUR_PX / 60), startAbsMin: g.start + START_H * 60, text: "", durMin: Math.min(g.dur, 60), mode: "task" });
@@ -907,6 +1144,22 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
             ))}
 
             {/* Live preview of the task being composed, sized by the chosen duration */}
+            {dragCreate && (
+              <div
+                className="pointer-events-none absolute left-1 right-1 z-30 overflow-hidden rounded-lg border-2 border-dashed border-primary/70 bg-primary/15 px-1.5 py-1 text-[11px] text-primary"
+                style={{
+                  top: dragCreate.startMin * (HOUR_PX / 60),
+                  height: Math.max(SNAP_MIN, dragCreate.endMin - dragCreate.startMin) * (HOUR_PX / 60) - 2,
+                }}
+                aria-hidden
+              >
+                <span className="block truncate font-mono text-[9px] opacity-80">
+                  {minTo12(dragCreate.startMin + START_H * 60)}–{minTo12(dragCreate.endMin + START_H * 60)} · {dragCreate.endMin - dragCreate.startMin}m
+                </span>
+                <span className="block truncate font-medium">Drag to set the time frame</span>
+              </div>
+            )}
+
             {quickAdd && (() => {
               const rel = quickAdd.startAbsMin - START_H * 60;
               return (
@@ -1098,8 +1351,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               );
             })}
 
-            {/* Quick-add popover at tapped slot */}
-            {quickAdd && (
+            {/* Quick-add composer — bottom sheet on touch, popover on desktop */}
+            {quickAdd && !isMobile && (
               <Popover open onOpenChange={(o) => !o && setQuickAdd(null)}>
                 <PopoverAnchor asChild>
                   <div
@@ -1110,111 +1363,28 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                 <PopoverContent
                   side="right"
                   align="start"
-                  className="w-72 p-2"
+                  className="w-80 p-3"
                   onOpenAutoFocus={(e) => e.preventDefault()}
                   onInteractOutside={(e) => e.preventDefault()}
                   onPointerDownOutside={(e) => e.preventDefault()}
                 >
-                  <div className="mb-1.5 flex items-center gap-1">
-                    {([
-                      { id: "task" as const, label: "Task" },
-                      { id: "note" as const, label: "Note" },
-                      { id: "journal" as const, label: "Journal" },
-                    ]).map(m => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        aria-pressed={quickAdd.mode === m.id}
-                        onClick={() => setQuickAdd(q => q ? { ...q, mode: m.id } : q)}
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-[11px] leading-none transition-colors",
-                          quickAdd.mode === m.id
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted/60 text-muted-foreground hover:bg-muted",
-                        )}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">
-                      {minTo12(quickAdd.startAbsMin)}
-                    </span>
-                  </div>
-                  <Input
-                    autoFocus
-                    value={quickAdd.text}
-                    onChange={(e) => setQuickAdd(q => q ? { ...q, text: e.target.value } : q)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") { e.preventDefault(); void submitQuickAdd(); }
-                      if (e.key === "Escape") setQuickAdd(null);
-                    }}
-                    placeholder={
-                      quickAdd.mode === "task"
-                        ? "Task title (try 'call mom #family 30m')"
-                        : quickAdd.mode === "note"
-                          ? "Note title — opens the editor"
-                          : "Journal entry title — opens the editor"
-                    }
-                    className="h-9 text-sm"
-                  />
-                  <div className="mt-2 flex flex-wrap items-center gap-1">
-                    {[15, 30, 45, 60, 90].map(d => (
-                      <button
-                        key={d}
-                        type="button"
-                        aria-pressed={quickAdd.durMin === d}
-                        onClick={() => setQuickAdd(q => q ? { ...q, durMin: d } : q)}
-                        className={cn(
-                          "rounded-full border px-2 py-0.5 text-[11px] leading-none transition-colors",
-                          quickAdd.durMin === d
-                            ? "border-transparent bg-primary text-primary-foreground"
-                            : "border-border/60 text-muted-foreground hover:bg-muted",
-                        )}
-                      >
-                        {d < 60 ? `${d}m` : `${d / 60}h`}
-                      </button>
-                    ))}
-                    {(() => {
-                      const t = quickAdd.text.trim();
-                      if (!t || quickAdd.mode !== "task") return null;
-                      const p = parseTaskInput(t);
-                      const a = p.area ?? inferArea({ title: p.title || t, tags: p.tags })?.area;
-                      return a ? (
-                        <span className="ml-auto text-[10px] text-muted-foreground">
-                          {a} <span className="opacity-60">auto</span>
-                        </span>
-                      ) : null;
-                    })()}
-                  </div>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <Button
-                      size="sm"
-                      className="h-7 flex-1 rounded-full text-[11.5px]"
-                      disabled={quickAdd.mode === "task" && !quickAdd.text.trim()}
-                      onClick={() => void submitQuickAdd()}
-                    >
-                      {quickAdd.mode === "task" ? "Add" : quickAdd.mode === "note" ? "Write note" : "Journal"} at {minTo12(quickAdd.startAbsMin)} · {quickAdd.durMin}m
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 rounded-full px-2.5 text-[11.5px]"
-                      onClick={() => setQuickAdd(null)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                  <p className="mt-1 text-[10px] text-muted-foreground">
-                    {quickAdd.mode === "task"
-                      ? "Pick a duration first — the composer stays open until you add or cancel."
-                      : "Creates a scheduled writing block and opens the editor right here."}
-                  </p>
+                  {composerBody}
                 </PopoverContent>
               </Popover>
             )}
           </div>
         </div>
       </div>
+
+      {/* Mobile composer sheet — never clipped by a narrow column */}
+      <Sheet open={!!quickAdd && isMobile} onOpenChange={(o) => { if (!o) setQuickAdd(null); }}>
+        <SheetContent side="bottom" className="rounded-t-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3">
+          <SheetHeader className="mb-2 text-left">
+            <SheetTitle className="font-display text-base">New on the grid</SheetTitle>
+          </SheetHeader>
+          {composerBody}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
