@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PieChart as PieIcon } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { useTimeAllocation, fmtHours, type GroupBy } from "@/lib/planner/time-allocation";
+import { useTimeAllocation, fmtHours, GROUP_LABEL, type GroupBy } from "@/lib/planner/time-allocation";
 import { PlannerRhythmChart } from "./PlannerRhythmChart";
 import { addDays } from "date-fns";
 
@@ -63,7 +63,7 @@ export function PlannerTimeReview({ from, days, label, className }: {
           aria-label="Group categories by"
           className="inline-flex shrink-0 rounded-full border border-border/60 bg-background/60 p-0.5"
         >
-          {(["kind", "area"] as GroupBy[]).map(g => (
+          {(["kind", "area", "activity", "person", "zone"] as GroupBy[]).map(g => (
             <button
               key={g}
               type="button"
@@ -73,7 +73,7 @@ export function PlannerTimeReview({ from, days, label, className }: {
                 groupBy === g ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {g === "kind" ? "Type" : "Area"}
+              {GROUP_LABEL[g]}
             </button>
           ))}
         </div>
