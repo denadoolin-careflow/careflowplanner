@@ -287,9 +287,27 @@ export function QuickTaskInlineEditor({
         className="min-h-[48px] resize-none text-xs"
       />
 
-      {/* Context: area, project, person, zone — collapsed dropdowns */}
-      <Section label="Details" defaultOpen>
+      {/* Tracking: what kind of work this is, and who/where it's for */}
+      <Section label="Tracking" defaultOpen>
         <div className="grid grid-cols-2 gap-1.5">
+          <div className="space-y-1">
+            <FieldLabel>Activity</FieldLabel>
+            <Select value={activity ?? "none"} onValueChange={(v) => setActivity(v === "none" ? undefined : v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Not set" /></SelectTrigger>
+              <SelectContent className="z-[60] max-h-64">
+                <SelectItem value="none" className="text-xs">Not set</SelectItem>
+                {ACTIVITIES.map(a => (
+                  <SelectItem key={a.id} value={a.id} className="text-xs">
+                    <span className="flex items-center gap-1.5">
+                      <a.icon className="h-3 w-3" style={{ color: a.color }} aria-hidden />
+                      {a.label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-1">
             <FieldLabel>Area</FieldLabel>
             <Select value={area} onValueChange={(v) => setArea(v as Area)}>
@@ -326,7 +344,7 @@ export function QuickTaskInlineEditor({
             </div>
           )}
 
-          {area === "Home" && (
+          {(area === "Home" || activity === "cleaning") && (
             <div className="space-y-1">
               <FieldLabel>Zone</FieldLabel>
               <Select value={zone ?? "none"} onValueChange={(v) => setZone(v === "none" ? undefined : v)}>
@@ -339,6 +357,17 @@ export function QuickTaskInlineEditor({
             </div>
           )}
         </div>
+
+        {!activity && inferred && (
+          <button
+            type="button"
+            onClick={() => setActivity(inferred.id)}
+            className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-border/70 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          >
+            <inferred.icon className="h-3 w-3" style={{ color: inferred.color }} aria-hidden />
+            Track as {inferred.label}?
+          </button>
+        )}
 
         {area === "Meals" && (
           <div className="space-y-1.5 pt-1.5">
