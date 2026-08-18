@@ -16,6 +16,41 @@ const PART_HOURS: Record<string, [number, number]> = {
 
 const hourLabel = (h: number) => `${((h + 11) % 12) + 1}${h < 12 ? "a" : "p"}`;
 
+/** Condition-driven hue for hour cells: sunny = yellow, rain = blue, snow = grey-blue, etc. */
+const COND_HUE: Record<WeatherCondition, number> = {
+  "clear": 45,          // sunny yellow
+  "partly-cloudy": 200, // pale sky
+  "cloudy": 220,        // soft grey-blue
+  "fog": 230,           // muted grey
+  "drizzle": 205,       // light blue
+  "rain": 212,          // blue
+  "snow": 195,          // icy grey-blue
+  "thunderstorm": 265,  // violet storm
+};
+const COND_SAT: Record<WeatherCondition, number> = {
+  "clear": 92,
+  "partly-cloudy": 55,
+  "cloudy": 12,
+  "fog": 8,
+  "drizzle": 70,
+  "rain": 82,
+  "snow": 18,
+  "thunderstorm": 65,
+};
+
+function condTint(condition: WeatherCondition, isNight?: boolean) {
+  const h = COND_HUE[condition] ?? 220;
+  const s = COND_SAT[condition] ?? 20;
+  // Night clear skies read as deep indigo rather than sunshine.
+  const hue = condition === "clear" && isNight ? 245 : h;
+  const sat = condition === "clear" && isNight ? 45 : s;
+  return {
+    background: `hsl(${hue} ${sat}% 55% / 0.16)`,
+    borderColor: `hsl(${hue} ${sat}% 45% / 0.35)`,
+    color: `hsl(${hue} ${Math.min(90, sat + 10)}% 32%)`,
+  };
+}
+
 function ConditionIcon({ condition, isNight, className }: { condition: WeatherCondition; isNight?: boolean; className?: string }) {
   const cls = cn("h-3.5 w-3.5", className);
   if (condition === "clear") return isNight ? <MoonIcon className={cls} /> : <Sun className={cls} />;
@@ -105,21 +140,24 @@ export function PlannerWeatherStrip({ element, className }: { element?: "Fire" |
       </div>
       {active && (
         <div className="mt-2 flex gap-1 overflow-x-auto pb-0.5">
-          {activeHours.map(h => (
-            <div
-              key={h.hour}
-              className="flex min-w-[46px] flex-1 flex-col items-center gap-0.5 rounded-lg border px-1 py-1"
-              style={{ borderColor: theme.border, background: theme.soft }}
-              title={`${hourLabel(h.hour)} · ${h.conditionLabel} · ${h.precipChance}% precip`}
-            >
-              <span className="text-[9.5px] uppercase tracking-wide text-muted-foreground">{hourLabel(h.hour)}</span>
-              <ConditionIcon condition={h.condition} isNight={h.isNight} />
-              <span className="text-[11px] font-semibold tabular-nums" style={{ color: theme.color }}>{temp(h.tempC)}</span>
-              <span className="inline-flex items-center gap-0.5 text-[9.5px] tabular-nums text-muted-foreground">
-                <Droplets className="h-2 w-2" />{h.precipChance}%
-              </span>
-            </div>
-          ))}
+          {activeHours.map(h => {
+            const tint = condTint(h.condition, h.isNight);
+            return (
+              <div
+                key={h.hour}
+                className="flex min-w-[46px] flex-1 flex-col items-center gap-0.5 rounded-lg border px-1 py-1 dark:[&_.hour-temp]:brightness-[1.9]"
+                style={{ borderColor: tint.borderColor, background: tint.background }}
+                title={`${hourLabel(h.hour)} · ${h.conditionLabel} · ${h.precipChance}% precip`}
+              >
+                <span className="text-[9.5px] uppercase tracking-wide text-muted-foreground">{hourLabel(h.hour)}</span>
+                <ConditionIcon condition={h.condition} isNight={h.isNight} className="hour-temp" style={{ color: tint.color }} />
+                <span className="hour-temp text-[11px] font-semibold tabular-nums" style={{ color: tint.color }}>{temp(h.tempC)}</span>
+                <span className="inline-flex items-center gap-0.5 text-[9.5px] tabular-nums text-muted-foreground">
+                  <Droplets className="h-2 w-2" />{h.precipChance}%
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
       {active && (
