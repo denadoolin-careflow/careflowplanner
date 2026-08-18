@@ -1347,6 +1347,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                         {conflictNode}
                         {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
                       </div>
+                      {it.task && <ActivityChip task={it.task} className="self-start" />}
                       <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-[1.25]">
                         {it.kind === "task" && (
                           <BlockCheckbox
