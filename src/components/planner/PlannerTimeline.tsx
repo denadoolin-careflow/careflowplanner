@@ -919,6 +919,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
             onDragLeave={(e) => { if (e.currentTarget === e.target) setDragOverMin(null); }}
             onDrop={onDrop}
             onClick={onGridClick}
+            onPointerDown={onGridPointerDown}
           >
             {/* Hour lines */}
             {Array.from({ length: END_H - START_H + 1 }, (_, i) => (
@@ -990,6 +991,22 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
             ))}
 
             {/* Live preview of the task being composed, sized by the chosen duration */}
+            {dragCreate && (
+              <div
+                className="pointer-events-none absolute left-1 right-1 z-30 overflow-hidden rounded-lg border-2 border-dashed border-primary/70 bg-primary/15 px-1.5 py-1 text-[11px] text-primary"
+                style={{
+                  top: dragCreate.startMin * (HOUR_PX / 60),
+                  height: Math.max(SNAP_MIN, dragCreate.endMin - dragCreate.startMin) * (HOUR_PX / 60) - 2,
+                }}
+                aria-hidden
+              >
+                <span className="block truncate font-mono text-[9px] opacity-80">
+                  {minTo12(dragCreate.startMin + START_H * 60)}–{minTo12(dragCreate.endMin + START_H * 60)} · {dragCreate.endMin - dragCreate.startMin}m
+                </span>
+                <span className="block truncate font-medium">Drag to set the time frame</span>
+              </div>
+            )}
+
             {quickAdd && (() => {
               const rel = quickAdd.startAbsMin - START_H * 60;
               return (
