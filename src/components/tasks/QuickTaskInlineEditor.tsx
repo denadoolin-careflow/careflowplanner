@@ -97,6 +97,11 @@ export function QuickTaskInlineEditor({
   }, [taskId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const icon = useMemo(() => (task ? resolveTaskIcon(task) : null), [task?.icon, task?.title, task?.notes]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Suggest an activity from wording/area when nothing is tagged yet.
+  const inferred = useMemo(
+    () => resolveActivity({ title, notes, area, recipientId, tags: zone ? [`${ZONE_TAG}${zone}`] : [] }),
+    [title, notes, area, recipientId, zone],
+  );
 
   if (!task) return null;
 
