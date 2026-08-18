@@ -20,6 +20,7 @@ import { usePlannerFocusTaskId } from "@/lib/planner-prefs";
 import { haptics } from "@/lib/haptics";
 import { BlockQuickActions } from "./BlockQuickActions";
 import { BlockCheckbox } from "./BlockCheckbox";
+import { ActivityChip } from "./ActivityChip";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { usePlannerDropListener } from "@/lib/planner-touch-drag";
 import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
@@ -1347,6 +1348,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                         {conflictNode}
                         {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
                       </div>
+                      {it.task && <ActivityChip task={it.task} className="self-start" />}
                       <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-[1.25]">
                         {it.kind === "task" && (
                           <BlockCheckbox

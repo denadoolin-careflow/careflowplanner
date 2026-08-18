@@ -12,8 +12,17 @@ import { useCycle } from "@/lib/cycle-store";
 import { getPhaseInfo, PHASE_META, type CyclePhase } from "@/lib/cycle";
 import { getEnergyForPart, type DayPart, type Energy } from "@/lib/energy-by-part";
 import { getMoodForPart, type Mood } from "@/lib/mood-by-part";
+import { resolveActivity, readZoneTag } from "@/lib/task-tracking";
 
-export type GroupBy = "kind" | "area";
+export type GroupBy = "kind" | "area" | "activity" | "person" | "zone";
+
+export const GROUP_LABEL: Record<GroupBy, string> = {
+  kind: "Type",
+  area: "Area",
+  activity: "Activity",
+  person: "Person",
+  zone: "Zone",
+};
 
 export interface AllocationSlice {
   key: string;
@@ -30,6 +39,8 @@ export interface Allocation {
   allDayCount: number;
   /** Share of the window's waking hours (16h/day) that is planned. */
   plannedShare: number;
+  /** Number of items that could not be grouped (no activity/person/zone). */
+  untrackedCount: number;
 }
 
 const DEFAULT_MIN: Partial<Record<KindKey, number>> = { appt: 60, meal: 30, gcal: 60, care: 45 };
@@ -41,6 +52,8 @@ const toMin = (t?: string | null) => {
   return Number.isFinite(h) ? h * 60 + (m || 0) : null;
 };
 
+const UNTRACKED = "__untracked__";
+
 export function useTimeAllocation(from: Date, days: number, groupBy: GroupBy): Allocation {
   const { items } = usePlannerFeed(from, days);
   const { state } = useStore() as any;
@@ -51,9 +64,16 @@ export function useTimeAllocation(from: Date, days: number, groupBy: GroupBy): A
     return m;
   }, [state.tasks]);
 
+  const recipientById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of state.recipients ?? []) m.set(r.id, r.name);
+    return m;
+  }, [state.recipients]);
+
   return useMemo(() => {
     const byKey = new Map<string, AllocationSlice>();
     let allDayCount = 0;
+    let untrackedCount = 0;
 
     for (const it of items) {
       if (SKIP.includes(it.kind)) continue;
@@ -65,18 +85,47 @@ export function useTimeAllocation(from: Date, days: number, groupBy: GroupBy): A
       if (!minutes) minutes = task?.estMinutes ?? DEFAULT_MIN[it.kind] ?? 30;
       if (it.allDay && !task) { allDayCount += 1; if (it.kind !== "meal") continue; }
 
-      const key = groupBy === "area"
-        ? (task ? (task.area || "Unsorted") : KIND_LABEL[it.kind])
-        : it.kind;
-      const label = groupBy === "area" ? key : KIND_LABEL[it.kind];
+      let key: string;
+      let label: string;
+      let color = it.color;
 
-      const slice = byKey.get(key) ?? { key, label, color: it.color, plannedMin: 0, doneMin: 0 };
+      if (groupBy === "area") {
+        key = task ? (task.area || "Unsorted") : KIND_LABEL[it.kind];
+        label = key;
+      } else if (groupBy === "activity") {
+        const act = resolveActivity(task) ?? (it.kind === "meal" ? resolveActivity({ area: "Meals" }) : null);
+        key = act?.id ?? UNTRACKED;
+        label = act?.label ?? "Untracked";
+        color = act?.color ?? "hsl(215 15% 55%)";
+        if (!act) untrackedCount += 1;
+      } else if (groupBy === "person") {
+        const rid = task?.recipientId ?? (it.sourceRef.type === "appointment" ? undefined : undefined);
+        const name = rid ? recipientById.get(rid) : undefined;
+        key = name ?? UNTRACKED;
+        label = name ?? "Just me";
+        if (!name) untrackedCount += 1;
+      } else if (groupBy === "zone") {
+        const zone = readZoneTag(task?.tags);
+        key = zone ?? UNTRACKED;
+        label = zone ?? "No zone";
+        if (!zone) untrackedCount += 1;
+      } else {
+        key = it.kind;
+        label = KIND_LABEL[it.kind];
+      }
+
+      const slice = byKey.get(key) ?? { key, label, color, plannedMin: 0, doneMin: 0 };
       slice.plannedMin += minutes;
       if (it.done) slice.doneMin += minutes;
       byKey.set(key, slice);
     }
 
-    const slices = [...byKey.values()].sort((a, b) => b.plannedMin - a.plannedMin);
+    const slices = [...byKey.values()].sort((a, b) => {
+      // Keep the catch-all bucket last so real categories read first.
+      if (a.key === UNTRACKED) return 1;
+      if (b.key === UNTRACKED) return -1;
+      return b.plannedMin - a.plannedMin;
+    });
     const totalPlannedMin = slices.reduce((s, x) => s + x.plannedMin, 0);
     const totalDoneMin = slices.reduce((s, x) => s + x.doneMin, 0);
     const capacity = days * 16 * 60;
@@ -85,12 +134,36 @@ export function useTimeAllocation(from: Date, days: number, groupBy: GroupBy): A
       totalPlannedMin,
       totalDoneMin,
       allDayCount,
+      untrackedCount,
       plannedShare: capacity ? Math.min(1, totalPlannedMin / capacity) : 0,
     };
-  }, [items, taskById, groupBy, days]);
+  }, [items, taskById, recipientById, groupBy, days]);
 }
 
 export const fmtHours = (min: number) => `${Math.round(min / 6) / 10}h`;
+
+/** This window versus the window immediately before it, same length. */
+export function useAllocationComparison(from: Date, days: number, groupBy: GroupBy): {
+  current: Allocation;
+  previous: Allocation;
+  deltaFor: (key: string) => number;
+} {
+  const current = useTimeAllocation(from, days, groupBy);
+  const previous = useTimeAllocation(addDays(from, -days), days, groupBy);
+
+  const prevByKey = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of previous.slices) m.set(s.key, s.plannedMin);
+    return m;
+  }, [previous.slices]);
+
+  const deltaFor = (key: string) => {
+    const now = current.slices.find(s => s.key === key)?.plannedMin ?? 0;
+    return now - (prevByKey.get(key) ?? 0);
+  };
+
+  return { current, previous, deltaFor };
+}
 
 /* ------------------------------------------------------------------ */
 /* Rhythm series: planned/completed time against moon, cycle and mood  */

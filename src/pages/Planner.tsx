@@ -29,6 +29,8 @@ import { PlannerEmptyDay } from "@/components/planner/PlannerEmptyDay";
 import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
 import { PlannerOverdueSection } from "@/components/planner/PlannerOverdueSection";
 import { PlannerTimeReview } from "@/components/planner/PlannerTimeReview";
+import { PlannerCapacityView } from "@/components/planner/PlannerCapacityView";
+import { PlannerDayReferences } from "@/components/planner/PlannerDayReferences";
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
 import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsSheet";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
@@ -510,6 +512,7 @@ export default function Planner() {
                 onPlanMyDay={() => setPlanOpen(true)}
                 onAddTask={() => setCaptureOpen(true)}
               />
+              <PlannerDayReferences date={day} />
             </div>
           )}
           <div className="flex min-w-0 flex-col gap-3">
@@ -517,6 +520,9 @@ export default function Planner() {
               <div className={gridBox}><PlannerTimeline date={day} /></div>
             )}
             {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
+            {view === "day" && period === "capacity" && (
+              <PlannerCapacityView date={day} onSelectDate={openDay} />
+            )}
             {view === "day" && period === "timeofday" && segment === "all" && (
               <div className="grid grid-cols-1 gap-3">
                 <PlannerPeriodList date={day} period="morning" />

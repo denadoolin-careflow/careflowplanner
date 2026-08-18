@@ -13,6 +13,9 @@ import { cn } from "@/lib/utils";
 import { BlockCheckbox } from "@/components/planner/BlockCheckbox";
 import { resolveTaskIcon } from "@/lib/task-icons";
 import { AREAS, type Area } from "@/lib/types";
+import {
+  ACTIVITIES, ACTIVITY_TAG, ZONES, ZONE_TAG, readActivityTag, resolveActivity, withTag,
+} from "@/lib/task-tracking";
 import { createNote } from "@/lib/notes";
 import { createMemory } from "@/lib/memories";
 import { toast } from "sonner";
@@ -25,8 +28,6 @@ const FRAMES = [
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
-const ZONES = ["Kitchen", "Bathroom", "Bedrooms", "Living", "Laundry", "Entryway", "Outdoor", "Whole home"] as const;
-const ZONE_TAG = "zone:";
 const RECIPE_MARK = "\n\n— Recipe —\n";
 
 const splitRecipe = (notes?: string): { base: string; recipe: string | null } => {
@@ -73,6 +74,7 @@ export function QuickTaskInlineEditor({
   const [zone, setZone] = useState<string | undefined>(
     task?.tags?.find(t => t.startsWith(ZONE_TAG))?.slice(ZONE_TAG.length),
   );
+  const [activity, setActivity] = useState<string | undefined>(readActivityTag(task?.tags));
   const [dueDate, setDueDate] = useState<string | undefined>(task?.dueDate);
   const [startTime, setStartTime] = useState<string | undefined>(task?.startTime);
   const [durMin, setDurMin] = useState<number>(task?.estMinutes ?? 30);
@@ -88,12 +90,18 @@ export function QuickTaskInlineEditor({
     setProjectId(task.projectId);
     setRecipientId(task.recipientId);
     setZone(task.tags?.find(t => t.startsWith(ZONE_TAG))?.slice(ZONE_TAG.length));
+    setActivity(readActivityTag(task.tags));
     setDueDate(task.dueDate);
     setStartTime(task.startTime);
     setDurMin(task.estMinutes ?? 30);
   }, [taskId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const icon = useMemo(() => (task ? resolveTaskIcon(task) : null), [task?.icon, task?.title, task?.notes]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Suggest an activity from wording/area when nothing is tagged yet.
+  const inferred = useMemo(
+    () => resolveActivity({ title, notes, area, recipientId, tags: zone ? [`${ZONE_TAG}${zone}`] : [] }),
+    [title, notes, area, recipientId, zone],
+  );
 
   if (!task) return null;
 
@@ -106,10 +114,7 @@ export function QuickTaskInlineEditor({
     try {
       const composedNotes = [notes.trim(), recipe?.trim() ? `${RECIPE_MARK.trim()}\n${recipe.trim()}` : ""]
         .filter(Boolean).join("\n\n");
-      const tags = [
-        ...(task.tags ?? []).filter(t => !t.startsWith(ZONE_TAG)),
-        ...(zone ? [`${ZONE_TAG}${zone}`] : []),
-      ];
+      const tags = withTag(withTag(task.tags, ZONE_TAG, zone), ACTIVITY_TAG, activity);
       await updateTask(taskId, {
         title: title.trim() || task.title,
         notes: composedNotes || undefined,
@@ -287,9 +292,27 @@ export function QuickTaskInlineEditor({
         className="min-h-[48px] resize-none text-xs"
       />
 
-      {/* Context: area, project, person, zone — collapsed dropdowns */}
-      <Section label="Details" defaultOpen>
+      {/* Tracking: what kind of work this is, and who/where it's for */}
+      <Section label="Tracking" defaultOpen>
         <div className="grid grid-cols-2 gap-1.5">
+          <div className="space-y-1">
+            <FieldLabel>Activity</FieldLabel>
+            <Select value={activity ?? "none"} onValueChange={(v) => setActivity(v === "none" ? undefined : v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Not set" /></SelectTrigger>
+              <SelectContent className="z-[60] max-h-64">
+                <SelectItem value="none" className="text-xs">Not set</SelectItem>
+                {ACTIVITIES.map(a => (
+                  <SelectItem key={a.id} value={a.id} className="text-xs">
+                    <span className="flex items-center gap-1.5">
+                      <a.icon className="h-3 w-3" style={{ color: a.color }} aria-hidden />
+                      {a.label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-1">
             <FieldLabel>Area</FieldLabel>
             <Select value={area} onValueChange={(v) => setArea(v as Area)}>
@@ -326,7 +349,7 @@ export function QuickTaskInlineEditor({
             </div>
           )}
 
-          {area === "Home" && (
+          {(area === "Home" || activity === "cleaning") && (
             <div className="space-y-1">
               <FieldLabel>Zone</FieldLabel>
               <Select value={zone ?? "none"} onValueChange={(v) => setZone(v === "none" ? undefined : v)}>
@@ -339,6 +362,17 @@ export function QuickTaskInlineEditor({
             </div>
           )}
         </div>
+
+        {!activity && inferred && (
+          <button
+            type="button"
+            onClick={() => setActivity(inferred.id)}
+            className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-border/70 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          >
+            <inferred.icon className="h-3 w-3" style={{ color: inferred.color }} aria-hidden />
+            Track as {inferred.label}?
+          </button>
+        )}
 
         {area === "Meals" && (
           <div className="space-y-1.5 pt-1.5">

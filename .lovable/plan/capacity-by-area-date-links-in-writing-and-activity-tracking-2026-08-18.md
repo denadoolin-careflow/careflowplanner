@@ -10,7 +10,7 @@ A new full view on the planner that answers "where is my time going, and what sh
 - Range control: Day / Week / Month, reusing the planner's current period.
 - Content:
   - Stacked horizontal bars per group with planned vs completed hours, plus percent of waking time.
-  - Group-by pills: **Area**, **Activity** (cleaning, commuting, cooking, caregiving, etc.), **Person** (care recipient), **Zone** (home zone), and the existing **Type**.
+  - Group-by pills: **Area**, **Activity** (resting, working, cleaning, commuting, cooking, caregiving, etc.), **Person** (care recipient), **Zone** (home zone), and the existing **Type**.
   - A target line per area: set a weekly hour target per area, stored locally; over/under target is shown as a colored delta chip.
   - "Adjust" row actions: jump to the filtered task list for that group, or bulk-reschedule its unscheduled items.
   - Trend sparkline comparing this period to the previous one.

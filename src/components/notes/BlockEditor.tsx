@@ -61,6 +61,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { linkNote, type EntityType } from "@/lib/note-links";
 import { listNotes } from "@/lib/notes";
+import { dateRefSuggestions, plannerHref } from "@/lib/notes/date-refs";
 import { supabase } from "@/integrations/supabase/client";
 import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
@@ -1520,10 +1521,19 @@ export function BlockEditor({
         pluginKey: new PluginKey("refSuggestion"),
         getItems: (query) => {
           const q = query.trim().toLowerCase();
+          // Date references (@today, @tomorrow, @aug 20) link to the planner day.
+          const dateItems: RefItem[] = dateRefSuggestions(query).map(d => ({
+            id: d.id,
+            label: d.label,
+            type: "Date",
+            href: plannerHref(d.iso),
+            icon: CalendarDays,
+            insertText: d.label,
+          }));
           if (!q) {
             // Empty query: surface a balanced preview across groups.
             const perGroup: Record<string, number> = {};
-            const out: RefItem[] = [];
+            const out: RefItem[] = dateItems.slice(0, 3);
             for (const r of refsRef.current) {
               const n = perGroup[r.type] ?? 0;
               if (n >= 4) continue;
@@ -1540,7 +1550,7 @@ export function BlockEditor({
             scored.push({ r, s });
           }
           scored.sort((a, b) => b.s - a.s);
-          return scored.slice(0, 40).map(x => x.r);
+          return [...dateItems.slice(0, 5), ...scored.slice(0, 40).map(x => x.r)];
         },
         menuComponent: GroupedFloatingMenu,
         onSelect: (item, range, editor) => {
