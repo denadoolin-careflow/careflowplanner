@@ -51,8 +51,21 @@ function condTint(condition: WeatherCondition, isNight?: boolean) {
   };
 }
 
-function ConditionIcon({ condition, isNight, className }: { condition: WeatherCondition; isNight?: boolean; className?: string }) {
+function ConditionIcon({ condition, isNight, className, style }: { condition: WeatherCondition; isNight?: boolean; className?: string; style?: React.CSSProperties }) {
   const cls = cn("h-3.5 w-3.5", className);
+  const p = { className: cls, style };
+  if (condition === "clear") return isNight ? <MoonIcon {...p} /> : <Sun {...p} />;
+  if (condition === "partly-cloudy") return <CloudSun {...p} />;
+  if (condition === "cloudy") return <Cloud {...p} />;
+  if (condition === "fog") return <CloudFog {...p} />;
+  if (condition === "drizzle") return <CloudDrizzle {...p} />;
+  if (condition === "rain") return <CloudRain {...p} />;
+  if (condition === "snow") return <CloudSnow {...p} />;
+  if (condition === "thunderstorm") return <Zap {...p} />;
+  return <Cloud {...p} />;
+}
+
+function _unusedConditionIcon(condition: WeatherCondition, isNight: boolean, cls: string) {
   if (condition === "clear") return isNight ? <MoonIcon className={cls} /> : <Sun className={cls} />;
   if (condition === "partly-cloudy") return <CloudSun className={cls} />;
   if (condition === "cloudy") return <Cloud className={cls} />;
