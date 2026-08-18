@@ -30,6 +30,7 @@ import { PlannerDayReview } from "@/components/planner/PlannerDayReview";
 import { PlannerOverdueSection } from "@/components/planner/PlannerOverdueSection";
 import { PlannerTimeReview } from "@/components/planner/PlannerTimeReview";
 import { PlannerCapacityView } from "@/components/planner/PlannerCapacityView";
+import { PlannerDayReferences } from "@/components/planner/PlannerDayReferences";
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
 import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsSheet";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
@@ -511,6 +512,7 @@ export default function Planner() {
                 onPlanMyDay={() => setPlanOpen(true)}
                 onAddTask={() => setCaptureOpen(true)}
               />
+              <PlannerDayReferences date={day} />
             </div>
           )}
           <div className="flex min-w-0 flex-col gap-3">
