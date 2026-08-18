@@ -20,6 +20,7 @@ import { usePlannerFocusTaskId } from "@/lib/planner-prefs";
 import { haptics } from "@/lib/haptics";
 import { BlockQuickActions } from "./BlockQuickActions";
 import { BlockCheckbox } from "./BlockCheckbox";
+import { ActivityChip } from "./ActivityChip";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { usePlannerDropListener } from "@/lib/planner-touch-drag";
 import { useTimeBlocks, hmToHours } from "@/lib/time-blocks";
