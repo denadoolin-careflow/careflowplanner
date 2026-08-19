@@ -53,7 +53,8 @@ export function useActuals(from: Date, days: number): Actuals {
       }
     };
     void load();
-    return subscribeTimeEntries(() => { void load(); }, () => { alive = false; });
+    const unsub = subscribeTimeEntries(() => { void load(); });
+    return () => { alive = false; unsub(); };
   }, [fromISO, toISO]);
 
   return useMemo(() => {
