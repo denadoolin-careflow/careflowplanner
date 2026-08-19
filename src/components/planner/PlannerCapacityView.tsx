@@ -13,6 +13,7 @@ import {
 } from "@/lib/planner/time-allocation";
 import { targetMinutesForWindow, useAreaTargets } from "@/lib/planner/area-targets";
 import { resolveActivity, readZoneTag } from "@/lib/task-tracking";
+import { useActualGroups } from "@/lib/planner/actuals";
 
 type Range = "day" | "week" | "month";
 
@@ -45,10 +46,17 @@ export function PlannerCapacityView({ date, className, onSelectDate }: {
   const { current, deltaFor } = useAllocationComparison(from, days, groupBy);
   const { slices, totalPlannedMin, totalDoneMin, plannedShare, untrackedCount } = current;
   const { targetFor, setTarget } = useAreaTargets();
+  const { byKey: actualByKey, totalMin: totalActualMin, actuals } = useActualGroups(from, days, groupBy);
   const { days: rhythm } = useRhythmSeries(from, days);
 
   const maxMin = Math.max(1, ...slices.map(s => s.plannedMin));
-  const spark = rhythm.map(d => ({ name: d.label, Planned: d.plannedH, Completed: d.doneH }));
+  const spark = rhythm.map(d => ({
+    name: d.label,
+    Planned: d.plannedH,
+    Completed: d.doneH,
+    Actual: Math.round(((actuals.byDay.get(format(d.date, "yyyy-MM-dd")) ?? 0) / 360)) / 10,
+  }));
+  const totalDelta = totalActualMin - totalPlannedMin;
 
   return (
     <section aria-label="Capacity planning" className={cn("cozy-card space-y-3 p-3", className)}>
@@ -97,6 +105,15 @@ export function PlannerCapacityView({ date, className, onSelectDate }: {
         <span className="font-display text-xl font-semibold tabular-nums">{fmtHours(totalPlannedMin)}</span>
         <span className="text-[11px] text-muted-foreground">planned · {Math.round(plannedShare * 100)}% of waking hours</span>
         <span className="text-[11px] text-muted-foreground">{fmtHours(totalDoneMin)} completed</span>
+        {totalActualMin > 0 && (
+          <>
+            <span className="text-[11px] text-muted-foreground">{fmtHours(totalActualMin)} actual</span>
+            <span className={cn("rounded-full px-1.5 py-px text-[10px] tabular-nums",
+              totalDelta > 0 ? "bg-destructive/12 text-destructive" : "bg-primary/12 text-primary")}>
+              {totalDelta > 0 ? `${fmtHours(totalDelta)} over` : `${fmtHours(Math.abs(totalDelta))} under`} plan
+            </span>
+          </>
+        )}
         {untrackedCount > 0 && groupBy !== "kind" && groupBy !== "area" && (
           <span className="text-[11px] text-muted-foreground/80">{untrackedCount} untagged</span>
         )}
@@ -121,6 +138,7 @@ export function PlannerCapacityView({ date, className, onSelectDate }: {
               />
               <Area type="monotone" dataKey="Planned" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#capPlanned)" />
               <Area type="monotone" dataKey="Completed" stroke="hsl(var(--accent))" strokeWidth={1.5} fill="none" />
+              <Area type="monotone" dataKey="Actual" stroke="hsl(var(--destructive))" strokeWidth={1.5} strokeDasharray="4 3" fill="none" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -141,6 +159,7 @@ export function PlannerCapacityView({ date, className, onSelectDate }: {
               from={from}
               groupBy={groupBy}
               delta={deltaFor(s.key)}
+              actualMin={actualByKey.get(s.key) ?? 0}
               target={targetFor(groupBy, s.key)}
               onTarget={(h) => setTarget(groupBy, s.key, h)}
               onSelectDate={onSelectDate}
@@ -152,13 +171,14 @@ export function PlannerCapacityView({ date, className, onSelectDate }: {
   );
 }
 
-function CapacityRow({ slice, maxMin, days, from, groupBy, delta, target, onTarget, onSelectDate }: {
+function CapacityRow({ slice, maxMin, days, from, groupBy, delta, actualMin, target, onTarget, onSelectDate }: {
   slice: { key: string; label: string; color: string; plannedMin: number; doneMin: number };
   maxMin: number;
   days: number;
   from: Date;
   groupBy: GroupBy;
   delta: number;
+  actualMin: number;
   target: number | null;
   onTarget: (weeklyHours: number | null) => void;
   onSelectDate?: (d: Date) => void;
@@ -166,6 +186,8 @@ function CapacityRow({ slice, maxMin, days, from, groupBy, delta, target, onTarg
   const [open, setOpen] = useState(false);
   const pct = Math.round((slice.plannedMin / maxMin) * 100);
   const donePct = slice.plannedMin > 0 ? Math.round((slice.doneMin / slice.plannedMin) * 100) : 0;
+  const actualPct = Math.round((actualMin / maxMin) * 100);
+  const actualDelta = actualMin - slice.plannedMin;
   const targetMin = target ? targetMinutesForWindow(target, days) : null;
   const overBy = targetMin === null ? null : slice.plannedMin - targetMin;
 
@@ -238,8 +260,27 @@ function CapacityRow({ slice, maxMin, days, from, groupBy, delta, target, onTarg
           )}
         </div>
 
+        {actualMin > 0 && (
+          <div className="relative mt-1 h-1.5 overflow-hidden rounded-full bg-muted/60"
+            role="progressbar" aria-label={`${slice.label} actual tracked time`}
+            aria-valuenow={actualPct} aria-valuemin={0} aria-valuemax={100}>
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${Math.max(2, Math.min(100, actualPct))}%`, background: slice.color, opacity: 0.9 }}
+            />
+          </div>
+        )}
+
         <p className="mt-1 text-[10.5px] text-muted-foreground">
           {fmtHours(slice.doneMin)} completed ({donePct}%)
+          {actualMin > 0 && (
+            <span className="ml-1.5">
+              · {fmtHours(actualMin)} tracked
+              <span className={cn("ml-1", actualDelta > 0 ? "text-destructive" : "text-primary")}>
+                ({actualDelta > 0 ? `+${fmtHours(actualDelta)} over` : `${fmtHours(Math.abs(actualDelta))} under`})
+              </span>
+            </span>
+          )}
           {overBy !== null && (
             <span className={cn("ml-1.5", overBy > 0 ? "text-destructive" : "text-primary")}>
               · {overBy > 0 ? `${fmtHours(overBy)} over` : `${fmtHours(Math.abs(overBy))} under`} target

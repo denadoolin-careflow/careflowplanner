@@ -234,6 +234,12 @@ export const pomodoro = {
   setOnSessionEnd(fn: ((mode: PomodoroMode) => void) | null) { onTickEvent = fn; },
 };
 
+/** Subscribe to raw session changes (outside React). */
+export function subscribePomodoro(cb: (s: PomodoroSession) => void): () => void {
+  listeners.add(cb);
+  return () => { listeners.delete(cb); };
+}
+
 export function usePomodoro(): PomodoroSession {
   const [s, setS] = useState(state);
   useEffect(() => { listeners.add(setS); return () => { listeners.delete(setS); }; }, []);

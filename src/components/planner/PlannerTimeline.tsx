@@ -35,6 +35,7 @@ import { useAutoSchedulePrefs } from "@/lib/auto-schedule-prefs";
 import { AutoScheduleSettings } from "./AutoScheduleSettings";
 import { ConflictPopover, type ConflictInfo } from "./ConflictPopover";
 import { DurationEditor } from "./DurationEditor";
+import { useActuals, fmtMinutesShort } from "@/lib/planner/actuals";
 import { PlannerTemplatesMenu } from "./PlannerTemplatesMenu";
 import { PlannerMealLane } from "./PlannerMealLane";
 import { PlannerAtmosphereStrip } from "./PlannerAtmosphereStrip";
@@ -233,6 +234,9 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     el.addEventListener("scroll", check, { passive: true });
     return () => el.removeEventListener("scroll", check);
   }, [nowMin, noScroll]);
+
+  // Actual tracked time for this day, so blocks can show over/under.
+  const { byTask: trackedByTask } = useActuals(date, 1);
 
   const items = useMemo(() => {
     const out: ScheduledItem[] = [];
@@ -1371,6 +1375,28 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                       </div>
                     </div>
                   )}
+                  {it.kind === "task" && (trackedByTask.get(it.id) ?? 0) > 0 && (() => {
+                    const actualMin = (trackedByTask.get(it.id) ?? 0) / 60;
+                    const over = actualMin > it.durMin + 1;
+                    const pct = Math.min(100, Math.round((actualMin / Math.max(1, it.durMin)) * 100));
+                    return (
+                      <>
+                        <div
+                          aria-hidden
+                          className={cn("pointer-events-none absolute bottom-0 left-0 h-[3px] rounded-full",
+                            over ? "bg-destructive/80" : "bg-primary/70")}
+                          style={{ width: `${Math.max(4, pct)}%` }}
+                        />
+                        <span
+                          className={cn("pointer-events-none absolute right-1 top-1 rounded-full px-1 font-mono text-[8.5px] leading-[13px]",
+                            over ? "bg-destructive/15 text-destructive" : "bg-primary/12 text-primary")}
+                          title={`Tracked ${fmtMinutesShort(actualMin)} of ${fmtMinutesShort(it.durMin)} allocated`}
+                        >
+                          {fmtMinutesShort(actualMin)} / {fmtMinutesShort(it.durMin)}
+                        </span>
+                      </>
+                    );
+                  })()}
                   {it.kind === "task" && (
                     <div
                       onPointerDown={(e) => { e.stopPropagation(); haptics.snap(); setResizing({ id: it.id, startY: e.clientY, startDur: it.durMin }); }}

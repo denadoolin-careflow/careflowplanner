@@ -11,7 +11,8 @@ import {
   BAND_COLOR_PRESETS, swatchClass, useBandColors,
   type BandColorId, type BandId,
 } from "@/lib/planner-band-colors";
-import { useReminderPrefs, requestNotificationPermission } from "@/lib/reminders";
+import { useReminderPrefs, requestNotificationPermission, SNOOZE_CHOICES } from "@/lib/reminders";
+import { usePomodoroSyncPrefs } from "@/lib/pomodoro-tracking";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -83,6 +84,7 @@ export function AutoScheduleSettings(props: {
   const big = props.size === "md";
   const [bandColors, setBandColors, resetBands] = useBandColors();
   const [reminders, setReminders] = useReminderPrefs();
+  const [pomoSync, setPomoSync] = usePomodoroSyncPrefs();
 
   const toggleTaskReminders = async (on: boolean) => {
     setReminders({ tasksEnabled: on });
@@ -207,6 +209,62 @@ export function AutoScheduleSettings(props: {
               value={reminders.taskLeadMinutes}
               disabled={!reminders.tasksEnabled}
               onChange={(e) => setReminders({ taskLeadMinutes: Math.max(0, Math.min(120, Number(e.target.value) || 0)) })} />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg px-1 py-1">
+            <Label htmlFor="as-due-reminders" className="text-xs font-normal">Also remind for due-date-only tasks</Label>
+            <Switch id="as-due-reminders" checked={reminders.dueEnabled}
+              onCheckedChange={(v) => setReminders({ dueEnabled: !!v })} />
+          </div>
+          {reminders.dueEnabled && (
+            <div className="space-y-1">
+              <Label htmlFor="as-due-time" className="text-[11px] text-muted-foreground">Announce due tasks at</Label>
+              <Input id="as-due-time" type="time" className="h-8 text-xs" value={reminders.dueTime}
+                onChange={(e) => setReminders({ dueTime: e.target.value || "09:00" })} />
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">Snooze length</Label>
+            <div className="flex gap-1">
+              {SNOOZE_CHOICES.map(m => (
+                <Button key={m} type="button" size="sm" variant={reminders.snoozeMinutes === m ? "default" : "outline"}
+                  className="h-7 flex-1 text-[11px]" onClick={() => setReminders({ snoozeMinutes: m })}>
+                  {m >= 60 ? `${m / 60}h` : `${m}m`}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg px-1 py-1">
+            <Label htmlFor="as-quiet" className="text-xs font-normal">Quiet hours</Label>
+            <Switch id="as-quiet" checked={reminders.quietEnabled}
+              onCheckedChange={(v) => setReminders({ quietEnabled: !!v })} />
+          </div>
+          {reminders.quietEnabled && (
+            <div className="flex items-center gap-2">
+              <Input type="time" className="h-8 text-xs" value={reminders.quietStart}
+                aria-label="Quiet hours start"
+                onChange={(e) => setReminders({ quietStart: e.target.value || "21:00" })} />
+              <span className="text-[11px] text-muted-foreground">to</span>
+              <Input type="time" className="h-8 text-xs" value={reminders.quietEnd}
+                aria-label="Quiet hours end"
+                onChange={(e) => setReminders({ quietEnd: e.target.value || "07:00" })} />
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2 border-t border-border/60 pt-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Pomodoro &amp; tracking</p>
+          <div className="flex items-center justify-between rounded-lg px-1 py-1">
+            <Label htmlFor="as-pomo-track" className="text-xs font-normal">Focus sessions log tracked time</Label>
+            <Switch id="as-pomo-track" checked={pomoSync.trackFocus}
+              onCheckedChange={(v) => setPomoSync({ trackFocus: !!v })} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg px-1 py-1">
+            <Label htmlFor="as-pomo-start" className="text-xs font-normal">Starting a timer starts a pomodoro</Label>
+            <Switch id="as-pomo-start" checked={pomoSync.startPomodoroWithTracker}
+              onCheckedChange={(v) => setPomoSync({ startPomodoroWithTracker: !!v })} />
           </div>
         </div>
       </PopoverContent>
