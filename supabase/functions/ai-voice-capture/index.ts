@@ -54,6 +54,60 @@ const TOOL = {
   },
 } as const;
 
+const WRITE_SYSTEM = `You turn a caregiver's spoken thoughts into a clean written entry.
+Keep their voice and meaning; tidy filler words, fix grammar, and organise into
+short paragraphs (markdown, no headings unless helpful). Never invent facts.
+Return STRICT JSON only via the supplied tool.`;
+
+const WRITE_TOOL = {
+  type: "function",
+  function: {
+    name: "compose_entry",
+    description: "Compose a note or journal entry from a transcript.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Short, specific title (max 8 words)." },
+        body: { type: "string", description: "Markdown body of the entry." },
+        summary: { type: "string", description: "1 sentence gentle summary." },
+        tags: { type: "array", items: { type: "string" } },
+        mood: { type: ["string", "null"], description: "One word mood, only for journal entries." },
+      },
+      required: ["title", "body", "summary", "tags"],
+      additionalProperties: false,
+    },
+  },
+} as const;
+
+async function composeEntry(apiKey: string, transcript: string, todayISO: string, mode: "note" | "journal") {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-3.6-flash",
+      messages: [
+        { role: "system", content: WRITE_SYSTEM },
+        {
+          role: "user",
+          content: `Today is ${todayISO}. Compose a ${mode === "journal" ? "reflective journal entry (first person, warm)" : "note (clear and practical)"}.\nTranscript:\n"""${transcript}"""`,
+        },
+      ],
+      tools: [WRITE_TOOL],
+      tool_choice: { type: "function", function: { name: "compose_entry" } },
+    }),
+  });
+  if (res.status === 429) throw new Error("rate_limited");
+  if (res.status === 402) throw new Error("credits_exhausted");
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`compose_failed:${res.status}:${txt.slice(0, 200)}`);
+  }
+  const json = await res.json();
+  const call = json.choices?.[0]?.message?.tool_calls?.[0];
+  const args = call?.function?.arguments ? JSON.parse(call.function.arguments) : {};
+  return args as { title?: string; body?: string; summary?: string; tags?: string[]; mood?: string | null };
+}
+
 async function transcribeAudio(apiKey: string, audioBase64: string, mimeType: string): Promise<string> {
   // Lovable AI Gateway transcription (OpenAI-compatible multipart)
   const bin = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
@@ -132,9 +186,10 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { audioBase64, mimeType, transcript: rawTranscript } = body as {
-      audioBase64?: string; mimeType?: string; transcript?: string;
+    const { audioBase64, mimeType, transcript: rawTranscript, mode: rawMode } = body as {
+      audioBase64?: string; mimeType?: string; transcript?: string; mode?: string;
     };
+    const mode = rawMode === "note" || rawMode === "journal" ? rawMode : "tasks";
 
     const todayISO = new Date().toISOString().slice(0, 10);
 
@@ -152,9 +207,15 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    if (mode !== "tasks") {
+      const entry = await composeEntry(LOVABLE_API_KEY, transcript, todayISO, mode);
+      return new Response(JSON.stringify({ transcript, mode, entry, summary: entry.summary ?? "", tasks: [] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const organized = await organizeTranscript(LOVABLE_API_KEY, transcript, todayISO);
 
-    return new Response(JSON.stringify({ transcript, ...organized }),
+    return new Response(JSON.stringify({ transcript, mode, ...organized }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     const msg = String((e as Error).message ?? e);
