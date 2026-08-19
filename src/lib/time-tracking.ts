@@ -182,6 +182,12 @@ export function useTimeEntries(days = 7) {
   return { rows, loading };
 }
 
+/** Subscribe to active-timer changes (outside React). */
+export function subscribeTimer(cb: (t: ActiveTimer) => void): () => void {
+  listeners.add(cb);
+  return () => { listeners.delete(cb); };
+}
+
 /** Re-run a callback whenever a tracked segment is written. */
 export function subscribeTimeEntries(cb: () => void): () => void {
   entryListeners.add(cb);
