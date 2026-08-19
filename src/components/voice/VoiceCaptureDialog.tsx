@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Mic, Square, Loader2, Sparkles, RotateCcw, Wand2, Trash2 } from "lucide-react";
+import { Mic, Square, Loader2, Sparkles, RotateCcw, Wand2, Trash2, ListChecks, FileText, BookHeart } from "lucide-react";
+import { createNote } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
@@ -28,6 +29,15 @@ type ProposedTask = {
 };
 
 type Phase = "intro" | "recording" | "processing" | "review";
+type Mode = "tasks" | "note" | "journal";
+
+const MODES: { id: Mode; label: string; icon: typeof ListChecks; hint: string }[] = [
+  { id: "tasks", label: "Tasks", icon: ListChecks, hint: "Organize into to-dos" },
+  { id: "note", label: "Note", icon: FileText, hint: "Write a tidy note" },
+  { id: "journal", label: "Journal", icon: BookHeart, hint: "Reflective entry" },
+];
+
+interface ComposedEntry { title: string; body: string; tags?: string[]; mood?: string | null }
 
 function fmtElapsed(ms: number) {
   const s = Math.floor(ms / 1000);
@@ -40,7 +50,9 @@ export function VoiceCaptureDialog({
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
-  const { addTask } = useStore();
+  const { addTask, addJournal } = useStore();
+  const [mode, setMode] = useState<Mode>("tasks");
+  const [entry, setEntry] = useState<ComposedEntry | null>(null);
   const recorder = useAudioRecorder();
   const [phase, setPhase] = useState<Phase>("intro");
   const [transcript, setTranscript] = useState("");
@@ -58,7 +70,27 @@ export function VoiceCaptureDialog({
     setTranscript("");
     setSummary("");
     setProposed([]);
+    setEntry(null);
   }, [open]);
+
+  const applyResult = (data: any, fallbackTranscript: string) => {
+    setTranscript((data as any)?.transcript ?? fallbackTranscript);
+    setSummary((data as any)?.summary ?? "");
+    if (mode !== "tasks") {
+      const e = (data as any)?.entry ?? {};
+      setEntry({ title: e.title ?? "", body: e.body ?? fallbackTranscript, tags: e.tags ?? [], mood: e.mood ?? null });
+      setProposed([]);
+      return;
+    }
+    const tasks = ((data as any)?.tasks ?? []) as Omit<ProposedTask, "_selected">[];
+    setProposed(tasks.map((t) => ({
+      ...t,
+      area: (AREAS as readonly string[]).includes(t.area) ? t.area : ("Personal" as Area),
+      priority: t.priority ?? "medium",
+      status: t.status ?? "active",
+      _selected: true,
+    })));
+  };
 
   const startRecording = async () => {
     setTranscript("");
@@ -84,20 +116,10 @@ export function VoiceCaptureDialog({
         setPhase("intro");
         return;
       }
+      payload.mode = mode;
       const { data, error } = await aiInvoke("ai-voice-capture", { body: payload });
       if (error) throw error;
-      const tx = (data as any)?.transcript ?? transcript;
-      const sm = (data as any)?.summary ?? "";
-      const tasks = ((data as any)?.tasks ?? []) as Omit<ProposedTask, "_selected">[];
-      setTranscript(tx);
-      setSummary(sm);
-      setProposed(tasks.map((t) => ({
-        ...t,
-        area: (AREAS as readonly string[]).includes(t.area) ? t.area : ("Personal" as Area),
-        priority: t.priority ?? "medium",
-        status: t.status ?? "active",
-        _selected: true,
-      })));
+      applyResult(data, transcript);
       setPhase("review");
     } catch (e: any) {
       console.error("voice capture failed", e);
@@ -128,19 +150,10 @@ export function VoiceCaptureDialog({
     setPhase("processing");
     try {
       const { data, error } = await aiInvoke("ai-voice-capture", {
-        body: { transcript: transcript.trim() },
+        body: { transcript: transcript.trim(), mode },
       });
       if (error) throw error;
-      const sm = (data as any)?.summary ?? "";
-      const tasks = ((data as any)?.tasks ?? []) as Omit<ProposedTask, "_selected">[];
-      setSummary(sm);
-      setProposed(tasks.map((t) => ({
-        ...t,
-        area: (AREAS as readonly string[]).includes(t.area) ? t.area : ("Personal" as Area),
-        priority: t.priority ?? "medium",
-        status: t.status ?? "active",
-        _selected: true,
-      })));
+      applyResult(data, transcript.trim());
       setPhase("review");
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't organize that.");
@@ -155,6 +168,33 @@ export function VoiceCaptureDialog({
   const update = (i: number, patch: Partial<ProposedTask>) =>
     setProposed((prev) => prev.map((t, idx) => idx === i ? { ...t, ...patch } : t));
   const remove = (i: number) => setProposed((prev) => prev.filter((_, idx) => idx !== i));
+
+  const saveEntry = async () => {
+    if (!entry || !entry.body.trim()) { toast.error("Nothing to save yet."); return; }
+    setSaving(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      if (mode === "journal") {
+        await addJournal({
+          date: today,
+          type: "daily",
+          title: entry.title || undefined,
+          body: entry.body,
+          mood: entry.mood || undefined,
+          tags: entry.tags?.length ? entry.tags : undefined,
+        } as any);
+        toast.success("Journal entry saved");
+      } else {
+        await createNote({ title: entry.title || "Voice note", body: entry.body, kind: "note", date: today });
+        toast.success("Note saved");
+      }
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't save.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const saveAll = async () => {
     const picked = proposed.filter((t) => t._selected && t.title.trim());
@@ -205,6 +245,28 @@ export function VoiceCaptureDialog({
 
         {phase === "intro" && (
           <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Capture destination">
+              {MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={mode === m.id}
+                  onClick={() => setMode(m.id)}
+                  className={cn(
+                    "rounded-xl border px-2 py-2 text-left transition-colors",
+                    mode === m.id
+                      ? "border-primary/40 bg-primary/10"
+                      : "border-border/50 bg-card/50 hover:bg-card",
+                  )}
+                >
+                  <span className="flex items-center gap-1.5 text-xs font-medium">
+                    <m.icon className="h-3.5 w-3.5 text-primary" /> {m.label}
+                  </span>
+                  <span className="mt-0.5 block text-[10px] text-muted-foreground">{m.hint}</span>
+                </button>
+              ))}
+            </div>
             {!recorder.supported && (
               <div className="rounded-xl border border-amber-400/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
                 Your browser can't access the microphone. Type your thoughts below — we'll still organize them.
@@ -240,7 +302,7 @@ export function VoiceCaptureDialog({
                 disabled={!transcript.trim()}
                 onClick={organizeText}
               >
-                <Wand2 className="mr-1 h-3.5 w-3.5" /> Organize text
+                <Wand2 className="mr-1 h-3.5 w-3.5" /> {mode === "tasks" ? "Organize text" : `Write ${mode}`}
               </Button>
             </div>
           </div>
@@ -303,6 +365,33 @@ export function VoiceCaptureDialog({
               </Button>
             </details>
 
+            {mode !== "tasks" && entry && (
+              <div className="space-y-2">
+                <Input
+                  value={entry.title}
+                  onChange={(e) => setEntry({ ...entry, title: e.target.value })}
+                  placeholder={mode === "journal" ? "Entry title" : "Note title"}
+                  className="h-9 text-sm"
+                />
+                <Textarea
+                  rows={10}
+                  value={entry.body}
+                  onChange={(e) => setEntry({ ...entry, body: e.target.value })}
+                  className="max-h-[40vh] rounded-2xl bg-card/60 text-sm leading-relaxed"
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <Button variant="ghost" onClick={() => setPhase("intro")}>
+                    <RotateCcw className="mr-1 h-3.5 w-3.5" /> Start over
+                  </Button>
+                  <Button onClick={saveEntry} disabled={saving}>
+                    {saving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1 h-3.5 w-3.5" />}
+                    Save {mode === "journal" ? "journal entry" : "note"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {mode === "tasks" && (<>
             <div className="flex items-center justify-between text-xs">
               <label className="inline-flex items-center gap-1.5">
                 <Checkbox
@@ -395,6 +484,7 @@ export function VoiceCaptureDialog({
                 Save {selectionCount || ""} task{selectionCount === 1 ? "" : "s"}
               </Button>
             </div>
+            </>)}
           </div>
         )}
       </DialogContent>
