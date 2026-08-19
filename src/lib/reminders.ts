@@ -9,9 +9,38 @@ export interface ReminderPrefs {
   tasksEnabled: boolean;
   /** Default lead time (minutes) for scheduled tasks. */
   taskLeadMinutes: number;
+  /** Also remind for tasks that only have a due date (no start time). */
+  dueEnabled: boolean;
+  /** Time of day a due-date-only task is announced ("HH:MM"). */
+  dueTime: string;
+  /** Default snooze length in minutes. */
+  snoozeMinutes: number;
+  /** Suppress alerts inside quiet hours (wraps midnight). */
+  quietEnabled: boolean;
+  quietStart: string;
+  quietEnd: string;
 }
 
-export const DEFAULT_REMINDER_PREFS: ReminderPrefs = { tasksEnabled: true, taskLeadMinutes: 10 };
+export const DEFAULT_REMINDER_PREFS: ReminderPrefs = {
+  tasksEnabled: true,
+  taskLeadMinutes: 10,
+  dueEnabled: true,
+  dueTime: "09:00",
+  snoozeMinutes: 15,
+  quietEnabled: false,
+  quietStart: "21:00",
+  quietEnd: "07:00",
+};
+
+export const SNOOZE_CHOICES = [5, 15, 60] as const;
+
+/** Per-task lead time stored as a namespaced tag, e.g. `remind:30`. */
+export const REMIND_TAG = "remind:";
+export function readReminderLead(tags?: string[]): number | null {
+  const raw = tags?.find(t => t.startsWith(REMIND_TAG))?.slice(REMIND_TAG.length);
+  const n = raw ? Number(raw) : NaN;
+  return Number.isFinite(n) ? n : null;
+}
 const PREFS_KEY = "careflow:planner:reminder-prefs:v1";
 const prefsListeners = new Set<(p: ReminderPrefs) => void>();
 
@@ -58,6 +87,78 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
  */
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 const fired = new Set<string>();
+
+/* ---------------- Snooze + fired persistence ---------------- */
+
+const SNOOZE_KEY = "careflow:planner:reminder-snooze:v1";
+const FIRED_KEY = "careflow:planner:reminder-fired:v1";
+
+type SnoozeMap = Record<string, number>; // reminder key -> epoch ms to fire at
+
+function readJSON<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch { return fallback; }
+}
+
+let snoozes: SnoozeMap = readJSON<SnoozeMap>(SNOOZE_KEY, {});
+for (const k of readJSON<string[]>(FIRED_KEY, [])) fired.add(k);
+
+function persistSnoozes() {
+  const now = Date.now();
+  for (const [k, at] of Object.entries(snoozes)) if (at < now - 6 * 60 * 60_000) delete snoozes[k];
+  try { window.localStorage.setItem(SNOOZE_KEY, JSON.stringify(snoozes)); } catch { /* noop */ }
+}
+
+function persistFired() {
+  try { window.localStorage.setItem(FIRED_KEY, JSON.stringify([...fired].slice(-300))); } catch { /* noop */ }
+}
+
+/** Push a reminder out; the next schedule pass picks up the new time. */
+export function snoozeReminder(id: string, minutes = reminderPrefs.snoozeMinutes) {
+  snoozes[id] = Date.now() + Math.max(1, minutes) * 60_000;
+  for (const key of [...fired]) if (key.startsWith(`${id}@`)) fired.delete(key);
+  persistSnoozes();
+  persistFired();
+  rescheduleListeners.forEach(l => l());
+}
+
+export function clearReminder(id: string) {
+  delete snoozes[id];
+  persistSnoozes();
+  rescheduleListeners.forEach(l => l());
+}
+
+const rescheduleListeners = new Set<() => void>();
+export function onReminderReschedule(cb: () => void): () => void {
+  rescheduleListeners.add(cb);
+  return () => { rescheduleListeners.delete(cb); };
+}
+
+/* ---------------- Host handlers (complete / open) ---------------- */
+
+export interface ReminderHandlers {
+  onComplete?: (taskId: string) => void;
+  onOpen?: (taskId: string) => void;
+}
+let handlers: ReminderHandlers = {};
+export function setReminderHandlers(h: ReminderHandlers) { handlers = h; }
+
+const hm = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return (Number.isFinite(h) ? h : 0) * 60 + (m || 0);
+};
+
+/** True when `at` falls inside the configured quiet window. */
+export function inQuietHours(at = new Date()): boolean {
+  if (!reminderPrefs.quietEnabled) return false;
+  const mins = at.getHours() * 60 + at.getMinutes();
+  const start = hm(reminderPrefs.quietStart);
+  const end = hm(reminderPrefs.quietEnd);
+  return start <= end ? mins >= start && mins < end : mins >= start || mins < end;
+}
 let notifPermission: NotificationPermission | "unsupported" = "default";
 
 export function initReminders() {
@@ -70,10 +171,33 @@ export function initReminders() {
   }
 }
 
-function notify(title: string, body: string, tag: string) {
-  toast(`⏰ ${title}`, { description: body });
+function notify(title: string, body: string, tag: string, task?: { id: string }) {
+  if (inQuietHours()) {
+    // Hold it until quiet hours end rather than dropping it entirely.
+    if (task) snoozeReminder(task.id, 30);
+    return;
+  }
+  toast(`⏰ ${title}`, {
+    description: body,
+    duration: 15000,
+    ...(task
+      ? {
+          action: {
+            label: `Snooze ${reminderPrefs.snoozeMinutes}m`,
+            onClick: () => snoozeReminder(task.id),
+          },
+          cancel: {
+            label: "Done",
+            onClick: () => { clearReminder(task.id); handlers.onComplete?.(task.id); },
+          },
+        }
+      : {}),
+  });
   try {
-    if (notifPermission === "granted") new Notification(title, { body, tag });
+    if (notifPermission === "granted") {
+      const n = new Notification(title, { body, tag });
+      if (task) n.onclick = () => { window.focus(); handlers.onOpen?.(task.id); };
+    }
   } catch { /* ignore */ }
 }
 
@@ -109,21 +233,30 @@ export function scheduleReminders(appts: Appointment[], tasks: Task[] = []) {
 
   // Scheduled tasks (planner blocks) get the same treatment.
   if (!reminderPrefs.tasksEnabled) return;
-  const lead = Math.max(0, reminderPrefs.taskLeadMinutes);
   for (const t of tasks) {
-    if (t.done || !t.dueDate || !t.startTime) continue;
-    const start = new Date(`${t.dueDate}T${t.startTime.slice(0, 5)}:00`).getTime();
+    if (t.done || !t.dueDate) continue;
+    const timeOfDay = t.startTime ?? (reminderPrefs.dueEnabled ? reminderPrefs.dueTime : null);
+    if (!timeOfDay) continue;
+    const lead = Math.max(0, readReminderLead(t.tags) ?? reminderPrefs.taskLeadMinutes);
+    const start = new Date(`${t.dueDate}T${timeOfDay.slice(0, 5)}:00`).getTime();
     if (isNaN(start)) continue;
-    const fireAt = start - lead * 60_000;
+    const snoozedTo = snoozes[t.id];
+    const fireAt = snoozedTo && snoozedTo > now ? snoozedTo : start - lead * 60_000;
     const delta = fireAt - now;
     const key = `task-${t.id}@${fireAt}`;
     if (fired.has(key)) continue;
     if (delta < -60_000 || delta > HORIZON) continue;
     const timer = setTimeout(() => {
       fired.add(key);
-      const when = ` at ${t.startTime!.slice(0, 5)}`;
-      const copy = lead === 0 ? `Starting now${when}` : `Starts in ${lead >= 60 ? `${Math.round(lead / 60)}h` : `${lead}m`}${when}`;
-      notify(`Up next — ${t.title}`, copy, `task-${t.id}`);
+      persistFired();
+      const when = ` at ${timeOfDay.slice(0, 5)}`;
+      const snoozedNow = snoozedTo && snoozedTo > now;
+      const copy = snoozedNow
+        ? `Snoozed reminder — due${when}`
+        : lead === 0
+          ? `Starting now${when}`
+          : `Starts in ${lead >= 60 ? `${Math.round(lead / 60)}h` : `${lead}m`}${when}`;
+      notify(t.startTime ? `Up next — ${t.title}` : `Due today — ${t.title}`, copy, `task-${t.id}`, { id: t.id });
     }, Math.max(0, delta));
     timers.set(`task-${t.id}`, timer);
   }
