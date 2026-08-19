@@ -40,6 +40,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/logbook": "Everything you've completed.",
   "/projects": "Multi-step work, organized.",
   "/focus": "Pomodoro and deep-work timers.",
+  "/tracking": "Live time tracking: actual vs allocated.",
   "/automations": "Automatic actions across the app.",
   "/review": "Past reviews and reflections.",
   "/care": "The CARE loop for caregivers.",
@@ -112,6 +113,7 @@ export const NAV = [
   { to: "/seasons", label: "Seasons & Celebrations", icon: PartyPopper },
   { to: "/cosmic-flow", label: "Cosmic Flow", icon: Sparkles },
   { to: "/focus", label: "Focus", icon: Timer },
+  { to: "/tracking", label: "Time Tracking", icon: Timer },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
@@ -148,6 +150,7 @@ export const NAV_GROUPS = [
       { to: "/logbook", label: "Logbook", icon: BookOpen },
       { to: "/projects", label: "Projects", icon: FolderOpen },
       { to: "/focus", label: "Focus", icon: Timer },
+      { to: "/tracking", label: "Time Tracking", icon: Timer },
       { to: "/automations", label: "Automations", icon: Zap },
       { to: "/review", label: "Reviews Timeline", icon: BadgeCheck },
     ],
