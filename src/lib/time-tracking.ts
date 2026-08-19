@@ -77,6 +77,7 @@ async function logSegment(t: ActiveTimer, endedAt: number) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
   const started = new Date(t.startedAt);
+  try {
   await supabase.from("task_time_entries" as any).insert({
     user_id: user.id,
     task_id: t.taskId,
@@ -89,6 +90,7 @@ async function logSegment(t: ActiveTimer, endedAt: number) {
     activity: t.activity ?? null,
     area: t.area ?? null,
   } as any);
+  } catch { /* offline: keep the local timer state */ }
   notifyEntries();
 }
 
@@ -156,14 +158,20 @@ export function useTimeEntries(days = 7) {
       const since = new Date();
       since.setDate(since.getDate() - (days - 1));
       const day = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, "0")}-${String(since.getDate()).padStart(2, "0")}`;
-      const { data } = await supabase
-        .from("task_time_entries" as any)
-        .select("*")
-        .gte("day", day)
-        .order("started_at", { ascending: false });
-      if (!alive) return;
-      setRows((data ?? []) as unknown as TimeEntry[]);
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from("task_time_entries" as any)
+          .select("*")
+          .gte("day", day)
+          .order("started_at", { ascending: false });
+        if (!alive) return;
+        setRows((data ?? []) as unknown as TimeEntry[]);
+      } catch {
+        if (!alive) return;
+        setRows([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
     };
     void load();
     const relisten = () => { void load(); };
