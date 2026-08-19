@@ -6260,6 +6260,54 @@ export type Database = {
         }
         Relationships: []
       }
+      task_time_entries: {
+        Row: {
+          activity: string | null
+          area: string | null
+          created_at: string
+          day: string
+          ended_at: string | null
+          est_minutes: number | null
+          id: string
+          seconds: number
+          source: string
+          started_at: string
+          task_id: string | null
+          task_title: string
+          user_id: string
+        }
+        Insert: {
+          activity?: string | null
+          area?: string | null
+          created_at?: string
+          day?: string
+          ended_at?: string | null
+          est_minutes?: number | null
+          id?: string
+          seconds?: number
+          source?: string
+          started_at?: string
+          task_id?: string | null
+          task_title?: string
+          user_id: string
+        }
+        Update: {
+          activity?: string | null
+          area?: string | null
+          created_at?: string
+          day?: string
+          ended_at?: string | null
+          est_minutes?: number | null
+          id?: string
+          seconds?: number
+          source?: string
+          started_at?: string
+          task_id?: string | null
+          task_title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           anchor_key: string | null
