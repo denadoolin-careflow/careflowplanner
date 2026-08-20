@@ -7,6 +7,8 @@ export interface MoonInsightExport {
   moonLabel: string;
   illumination: number;
   invitation: string;
+  /** One-line planning guidance for the phase. */
+  planningTip?: string;
   cycleLabel?: string;
   journalTitle?: string;
   journalBody?: string;
