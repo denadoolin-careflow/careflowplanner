@@ -24,6 +24,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
 import { suggestAnchorForText } from "@/lib/anchor-suggest";
 import { getAnchor } from "@/lib/anchors";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileQuickAdd } from "@/components/quick-add/MobileQuickAdd";
 
 type Mode = QuickAddKind | "command" | "braindump" | "voice";
 
