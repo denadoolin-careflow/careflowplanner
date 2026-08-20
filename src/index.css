@@ -1082,17 +1082,19 @@
 .block-editor .ProseMirror details.cf-toggle > summary::before {
   content: "";
   flex: 0 0 auto;
-  margin-top: 0.5em;
-  width: 0;
-  height: 0;
-  border-left: 5px solid hsl(var(--muted-foreground) / 0.75);
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-  transform-origin: 30% 50%;
-  transition: transform 220ms cubic-bezier(.2, .8, .2, 1), border-left-color 160ms ease;
+  /* Comfortable, Craft-sized fold target with a small chevron inside it. */
+  width: 24px;
+  height: 24px;
+  margin: 0 -2px 0 -4px;
+  border-radius: 7px;
+  background-color: hsl(var(--muted-foreground) / 0.75);
+  -webkit-mask: var(--cf-chevron) no-repeat center / 10px 10px;
+  mask: var(--cf-chevron) no-repeat center / 10px 10px;
+  transform-origin: 50% 50%;
+  transition: transform 220ms cubic-bezier(.2, .8, .2, 1), background-color 160ms ease;
 }
 .block-editor .ProseMirror details.cf-toggle > summary:hover::before {
-  border-left-color: hsl(var(--primary));
+  background-color: hsl(var(--primary));
 }
 .block-editor .ProseMirror details.cf-toggle[open] > summary::before {
   transform: rotate(90deg);
@@ -1119,9 +1121,11 @@
 @media (hover: none) and (pointer: coarse) {
   .block-editor .ProseMirror details.cf-toggle > summary { padding: 10px 10px 10px 6px; gap: 0.9rem; }
   .block-editor .ProseMirror details.cf-toggle > summary::before {
-    border-left-width: 7px;
-    border-top-width: 5px;
-    border-bottom-width: 5px;
+    width: 40px;
+    height: 40px;
+    margin: -8px -4px -8px -8px;
+    -webkit-mask-size: 13px 13px;
+    mask-size: 13px 13px;
   }
   .block-editor .ProseMirror ul[data-type="taskList"] li > label { padding: 2px 6px 2px 0; }
 }
@@ -1136,10 +1140,13 @@
 }
 .block-editor .ProseMirror li:hover::marker { color: hsl(var(--primary)); }
 .block-editor .ProseMirror li.cf-collapsed > ul,
-.block-editor .ProseMirror li.cf-collapsed > ol {
+.block-editor .ProseMirror li.cf-collapsed > ol,
+.block-editor .ProseMirror li[data-collapsed="true"] > ul,
+.block-editor .ProseMirror li[data-collapsed="true"] > ol {
   display: none;
 }
-.block-editor .ProseMirror li.cf-collapsed::marker {
+.block-editor .ProseMirror li.cf-collapsed::marker,
+.block-editor .ProseMirror li[data-collapsed="true"]::marker {
   color: hsl(var(--primary));
 }
 /* ----- Tables ------------------------------------------------------- */
