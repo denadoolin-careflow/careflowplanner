@@ -69,3 +69,53 @@ export function useTimelineWheelZoom(
     return () => el.removeEventListener("wheel", onWheel);
   }, [scrollRef]);
 }
+
+/** Two-finger pinch zoom on touch devices, anchored on the pinch midpoint. */
+export function useTimelinePinchZoom(
+  scrollRef: React.RefObject<HTMLElement>,
+  zoom: number,
+  setZoom: (next: number | ((z: number) => number)) => void,
+) {
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const points = new Map<number, { x: number; y: number }>();
+    let startDist = 0;
+    let startZoom = 1;
+
+    const dist = () => {
+      const [a, b] = Array.from(points.values());
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    };
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType !== "touch") return;
+      points.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (points.size === 2) { startDist = dist(); startZoom = zoomRef.current; }
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!points.has(e.pointerId)) return;
+      points.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (points.size !== 2 || !startDist) return;
+      e.preventDefault();
+      setZoom(clamp(startZoom * (dist() / startDist)));
+    };
+    const onUp = (e: PointerEvent) => {
+      points.delete(e.pointerId);
+      if (points.size < 2) startDist = 0;
+    };
+
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      el.removeEventListener("pointerdown", onDown);
+      el.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [scrollRef, setZoom]);
+}
