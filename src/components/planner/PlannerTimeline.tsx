@@ -169,6 +169,14 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     [weatherSnap, date],
   );
 
+  // ---- Vertical zoom: every px-per-minute calc below reads these ----
+  const { zoom, setZoom, zoomBy, reset: resetZoom } = useTimelineZoom();
+  const HOUR_PX = BASE_HOUR_PX * zoom;
+  const SLOT_PX = (HOUR_PX * SNAP_MIN) / 60;
+  useTimelineWheelZoom(scrollRef, zoom, setZoom);
+
+
+
   // Anchor the timeline on the current hour so the day opens where you are.
   const scrollToNow = useCallback((behavior: ScrollBehavior = "auto") => {
     const el = scrollRef.current;
