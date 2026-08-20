@@ -1072,6 +1072,35 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
             </Button>
             <PlannerTemplatesMenu onApply={applyTemplate} buildCurrentItems={buildCurrentItems} date={date} />
             <AutoScheduleSettings prefs={autoPrefs} update={updateAutoPrefs} reset={resetAutoPrefs} />
+            <div className="ml-1 flex shrink-0 items-center rounded-full border border-border/60 bg-background/60">
+              <Button
+                variant="ghost" size="icon" className="h-7 w-7 rounded-full"
+                disabled={zoom <= MIN_ZOOM + 0.001}
+                onClick={() => zoomBy(1 / 1.25)}
+                title="Zoom out (shorter hours)"
+                aria-label="Zoom out the timeline"
+              >
+                <ZoomOut className="h-3.5 w-3.5" />
+              </Button>
+              <button
+                type="button"
+                onClick={resetZoom}
+                className="px-1 font-mono text-[10.5px] text-muted-foreground hover:text-foreground"
+                title="Reset zoom"
+                aria-label={`Timeline zoom ${Math.round(zoom * 100)} percent. Reset zoom.`}
+              >
+                {Math.round(zoom * 100)}%
+              </button>
+              <Button
+                variant="ghost" size="icon" className="h-7 w-7 rounded-full"
+                disabled={zoom >= MAX_ZOOM - 0.001}
+                onClick={() => zoomBy(1.25)}
+                title="Zoom in (taller hours)"
+                aria-label="Zoom in the timeline"
+              >
+                <ZoomIn className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
       )}
