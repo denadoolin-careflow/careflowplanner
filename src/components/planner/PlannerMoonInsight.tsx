@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ExternalLink, Loader2, NotebookPen, RotateCcw, Save, Share2, Sparkles, Stars, Wand2 } from "lucide-react";
+import { ChevronDown, Compass, ExternalLink, Loader2, NotebookPen, RotateCcw, Save, Share2, Sparkles, Stars, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
