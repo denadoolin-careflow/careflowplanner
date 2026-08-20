@@ -55,6 +55,7 @@ function useTaskFontSize() {
  */
 export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { selectedDate: Date; onQuickAdd?: () => void; onCollapse?: () => void }) {
   const { state, addTask, addMeal, updateMeal, toggleHabit } = useStore();
+  const { px: fontPx, bump: bumpFont, reset: resetFont } = useTaskFontSize();
   const { items: maintenance } = useHomeMaintenance();
   const { routines: routineList } = useRoutines();
   const [q, setQ] = useState("");
