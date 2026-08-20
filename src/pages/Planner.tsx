@@ -448,7 +448,7 @@ export default function Planner() {
         }
         style={{
           gridTemplateColumns: [
-            showTaskPanel ? `${taskPanelWidth}px 6px` : null,
+            showTaskPanel ? `${taskPanelWidth}px 12px` : null,
             "minmax(0,1fr)",
             showFocusPanel ? "230px" : null,
             showContextPanel ? "300px" : null,
