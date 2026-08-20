@@ -39,6 +39,10 @@ export const haptics = {
   warning: () => vibrate([24, 50, 24]),
   // A featherlight tick for swipe gestures and tab switches.
   swipe: () => vibrate(4),
+  // Craft-style fold feedback: a soft tick when collapsing…
+  fold: () => vibrate(5),
+  // …and a slightly brighter tap when expanding.
+  unfold: () => vibrate(10),
 };
 
 /**
