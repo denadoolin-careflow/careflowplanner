@@ -45,10 +45,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   PLANNER_START_H as START_H,
   PLANNER_END_H as END_H,
-  HOUR_PX,
+  HOUR_PX as BASE_HOUR_PX,
   SNAP_MIN,
-  SLOT_PX,
 } from "@/lib/planner-metrics";
+import { useTimelineZoom, useTimelineWheelZoom, MIN_ZOOM, MAX_ZOOM } from "@/lib/planner/use-timeline-zoom";
 
 export const RHYTHM_BANDS = [
   { id: "morning" as BandId, label: "Morning", startH: 5, endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
