@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ExternalLink, Loader2, NotebookPen, RotateCcw, Save, Share2, Sparkles, Stars, Wand2 } from "lucide-react";
+import { ChevronDown, Compass, ExternalLink, Loader2, NotebookPen, RotateCcw, Save, Share2, Sparkles, Stars, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +17,7 @@ import { createNote, getDailyNote, updateNote, type Note } from "@/lib/notes";
 import { useTimeAllocation } from "@/lib/planner/time-allocation";
 import { getMoonJournalContext } from "@/lib/planner/moon-journal-prompt";
 import { useCycleDot } from "@/lib/planner/day-rhythm";
+import { moonPlanningTip } from "@/lib/planner/moon-planning-tip";
 import { PhaseHabitNudge } from "./PhaseHabitNudge";
 import { MoonInsightHistory } from "./MoonInsightHistory";
 import { PlannerWeatherStrip } from "./PlannerWeatherStrip";
@@ -88,6 +89,7 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
 
   const cosmic = useMemo(() => getMoonJournalContext(date), [date]);
   const theme = elementTheme(cosmic.sign.element);
+  const tip = useMemo(() => moonPlanningTip(date), [date]);
 
   const cycle = useMemo(() => {
     try { return getPhaseInfo(date, periods, settings); } catch { return null; }
@@ -180,6 +182,7 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
         moonLabel: moon.label,
         illumination: illum,
         invitation: moon.invitation,
+        planningTip: tip.text,
         cycleLabel: cycleLabel || undefined,
         journalTitle: jTitle || undefined,
         journalBody: jBody,
@@ -243,6 +246,10 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
               </span>
             </span>
             <span className="mt-0.5 block truncate text-[11.5px] text-muted-foreground">{moon.invitation}</span>
+            <span className="mt-0.5 flex items-start gap-1 text-[11.5px] font-medium" style={{ color: theme.color }}>
+              <Compass aria-hidden className="mt-[3px] h-3 w-3 shrink-0" />
+              <span className="min-w-0 flex-1">{tip.text}</span>
+            </span>
             <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[10.5px] text-muted-foreground">
               <span
                 className="rounded-full border px-1.5 py-0.5 font-medium"

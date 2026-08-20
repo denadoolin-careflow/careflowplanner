@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox } from "lucide-react";
+import { Plus, X, Zap, FileText, Mic, BookHeart, ListChecks, FileUp, Camera, Loader2, NotebookPen, Inbox, CalendarRange } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDraggableFab } from "@/hooks/use-draggable-fab";
 import { haptics } from "@/lib/haptics";
@@ -49,14 +49,16 @@ export function CombinedFab() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
-  // Close when clicking outside.
+  // Close when clicking outside or pressing Escape.
   useEffect(() => {
     if (!expanded) return;
     const onDoc = (e: MouseEvent) => {
       if (!wrapRef.current?.contains(e.target as Node)) setExpanded(false);
     };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setExpanded(false); };
     window.addEventListener("mousedown", onDoc);
-    return () => window.removeEventListener("mousedown", onDoc);
+    window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("mousedown", onDoc); window.removeEventListener("keydown", onKey); };
   }, [expanded]);
 
   const close = () => setExpanded(false);
@@ -100,15 +102,16 @@ export function CombinedFab() {
   };
 
   const actions: { key: string; label: string; icon: any; onClick: () => void; accent?: boolean }[] = [
+    { key: "quick", label: "Quick add", icon: Zap, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } })); }, accent: true },
+    { key: "planner", label: "Planner", icon: CalendarRange, onClick: () => navigate("/planner"), accent: true },
     { key: "note", label: "Note", icon: FileText, onClick: () => openNewNote() },
     { key: "voice", label: "Voice", icon: Mic, onClick: () => { window.dispatchEvent(new Event("careflow:carey:open")); } },
     { key: "journal", label: "Journal", icon: BookHeart, onClick: () => navigate("/journal") },
     { key: "checklist", label: "Checklist", icon: ListChecks, onClick: () => openNewNote("- [ ] \n- [ ] \n- [ ] ") },
     { key: "notepad", label: "Notepad", icon: NotebookPen, onClick: () => { tray.setTab("notepad"); tray.setOpen(true); } },
     { key: "tray", label: "Task tray", icon: Inbox, onClick: () => { tray.setTab("tray"); tray.setOpen(true); } },
-    { key: "pdf", label: "PDF", icon: FileUp, onClick: () => pdfInputRef.current?.click() },
     { key: "photo", label: "Photo", icon: Camera, onClick: () => photoInputRef.current?.click() },
-    { key: "quick", label: "Quick add", icon: Zap, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } })); }, accent: true },
+    { key: "pdf", label: "PDF", icon: FileUp, onClick: () => pdfInputRef.current?.click() },
   ];
 
   return (
@@ -123,60 +126,73 @@ export function CombinedFab() {
              onChange={onPhotoPicked} className="hidden" aria-hidden="true" />
       <input ref={pdfInputRef} type="file" accept="application/pdf"
              onChange={onPdfPicked} className="hidden" aria-hidden="true" />
-      {/* Expanded radial menu */}
+      {/* Expanded menu — compact icon grid so it stays out of the way on phones */}
       <div
         className={cn(
-          "flex flex-col items-end gap-2 transition-all duration-200 ease-out",
+          "w-[248px] rounded-2xl border border-border/60 bg-card/95 p-2 shadow-cozy backdrop-blur transition-all duration-200 ease-out",
           expanded
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-            : "pointer-events-none translate-y-3 scale-75 opacity-0",
+            : "pointer-events-none translate-y-3 scale-90 opacity-0",
         )}
       >
-        {actions.map(({ key, label, icon: Icon, onClick, accent }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={fire(onClick)}
-            disabled={(key === "photo" && busy === "photo") || (key === "pdf" && busy === "pdf")}
-            aria-label={label}
-            title={label}
-            className={cn(
-              "group flex items-center gap-2 rounded-full border border-border/60 bg-card/95 py-1.5 pl-3 pr-1.5 text-xs font-medium text-foreground shadow-cozy backdrop-blur",
-              "transition-transform hover:scale-105 active:scale-95",
-              accent && "border-primary/40 bg-primary/10",
-              busy && ((key === "photo" && busy === "photo") || (key === "pdf" && busy === "pdf")) && "opacity-70",
-            )}
-          >
-            <span className="opacity-80 group-hover:opacity-100">{label}</span>
-            <span
-              className={cn(
-                "grid h-9 w-9 place-items-center rounded-full",
-                accent
-                  ? "bg-gradient-to-br from-secondary-foreground to-primary text-primary-foreground"
-                  : "bg-muted/60 text-foreground",
-              )}
-            >
-              {(key === "photo" && busy === "photo") || (key === "pdf" && busy === "pdf")
-                ? <Loader2 className="h-4 w-4 animate-spin" />
-                : <Icon className="h-4 w-4" />}
-            </span>
-          </button>
-        ))}
+        <div className="grid grid-cols-3 gap-1">
+          {actions.map(({ key, label, icon: Icon, onClick, accent }) => {
+            const loading = (key === "photo" && busy === "photo") || (key === "pdf" && busy === "pdf");
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={fire(onClick)}
+                disabled={loading}
+                aria-label={label}
+                title={label}
+                className={cn(
+                  "flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium text-foreground",
+                  "transition-colors hover:bg-muted/60 active:scale-95",
+                  loading && "opacity-70",
+                )}
+              >
+                <span
+                  className={cn(
+                    "grid h-9 w-9 place-items-center rounded-full",
+                    accent
+                      ? "bg-gradient-to-br from-secondary-foreground to-primary text-primary-foreground"
+                      : "bg-muted/60 text-foreground",
+                  )}
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+                </span>
+                <span className="w-full truncate text-center opacity-80">{label}</span>
+              </button>
+            );
+          })}
+        </div>
         <button
           type="button"
           onClick={fire(() => { window.dispatchEvent(new Event("careflow:carey:open")); })}
           aria-label="Ask Carey"
           title="Ask Carey"
-          className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-full bg-card shadow-[var(--shadow-glow)] ring-1 ring-border/60",
-            "transition-transform hover:scale-105 active:scale-95",
-          )}
+          className="mt-1 flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium transition-colors hover:bg-muted/60 active:scale-95"
         >
-          <CareyAvatar size={36} />
+          <CareyAvatar size={28} />
+          <span>Ask Carey</span>
         </button>
       </div>
 
-      {/* Main FAB */}
+      {/* Main FAB row — planner shortcut sits beside it for one-tap access */}
+      <div className="pointer-events-auto flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => { haptics.tap(); setExpanded(false); navigate("/planner"); }}
+          aria-label="Open planner"
+          title="Planner"
+          className={cn(
+            "grid h-11 w-11 place-items-center rounded-full border border-border/60 bg-card/95 text-foreground shadow-cozy backdrop-blur",
+            "transition-transform hover:scale-105 active:scale-95",
+          )}
+        >
+          <CalendarRange className="h-5 w-5" />
+        </button>
       <button
         type="button"
         ref={drag.ref as React.RefObject<HTMLButtonElement>}
@@ -196,6 +212,7 @@ export function CombinedFab() {
       >
         {expanded ? <X className="h-6 w-6 -rotate-45" /> : <Plus className="h-6 w-6" />}
       </button>
+      </div>
     </div>
   );
 }
