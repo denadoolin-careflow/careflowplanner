@@ -1259,9 +1259,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
               const leftPct = it.lane * widthPct;
               const isFocusActive = it.kind === "task" && ((pomo.running && pomo.taskId === it.id) || focusTaskId === it.id);
               const heightPx = Math.max(SNAP_MIN, it.durMin) * (HOUR_PX / 60) - 2;
-              const tiny = heightPx < 34;      // single-line layout
-              const short = heightPx < 56;     // no room for 2+ title lines
-              const titleLines = tiny ? 1 : short ? 1 : heightPx < 90 ? 2 : 4;
+              const tiny = heightPx < 30;      // single-line layout
+              const short = heightPx < 62;     // title first, meta inline
+              // Rows are ~13px tall; reserve the meta row only when it has its own line.
+              const titleLines = tiny ? 1 : Math.max(1, Math.floor((heightPx - (short ? 8 : 22)) / 13));
               const conflicts = conflictMap.get(it.id) ?? [];
               const hasConflict = conflicts.length > 0 && !dismissedConflicts.includes(it.id);
               const isMoving = moving?.id === it.id;
@@ -1337,8 +1338,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                       {conflictNode}
                     </div>
                   ) : (
-                    <div className="flex h-full min-w-0 flex-col gap-0.5">
-                      <div className="flex min-w-0 items-center gap-1 font-mono text-[9px] leading-none opacity-75">
+                    <div className={cn("flex h-full min-w-0 flex-col gap-0.5", short && "gap-0")}>
+                      <div className={cn(
+                        "flex min-w-0 items-center gap-1 font-mono text-[9px] leading-none opacity-75",
+                        short && "order-2 mt-auto",
+                      )}>
                         {it.kind === "task" ? (
                           <DurationEditor
                             durMin={it.durMin}
@@ -1352,8 +1356,11 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                         {conflictNode}
                         {isFocusActive && <span className="ml-auto shrink-0 rounded-full bg-primary/20 px-1 text-primary">Focus</span>}
                       </div>
-                      {it.task && <ActivityChip task={it.task} className="self-start" />}
-                      <div className="flex min-w-0 flex-1 items-start gap-1 font-medium leading-[1.25]">
+                      {it.task && !short && <ActivityChip task={it.task} className="self-start" />}
+                      <div className={cn(
+                        "flex min-w-0 items-start gap-1 font-medium leading-[1.25]",
+                        short ? "order-1 shrink-0" : "flex-1",
+                      )}>
                         {it.kind === "task" && (
                           <BlockCheckbox
                             done={!!it.done}
