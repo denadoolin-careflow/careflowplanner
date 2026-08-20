@@ -154,6 +154,21 @@ turndown.addRule("inlineEntityCard", {
     return `[[${label}]]`;
   },
 });
+// Toggles (<details>) have no markdown equivalent — turndown would otherwise
+// flatten them and dump their hidden content inline. Round-trip them as a raw
+// HTML block (with the open state) so folds survive save + reload.
+turndown.addRule("detailsToggle", {
+  filter: (node) => node.nodeName === "DETAILS",
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const summary = el.querySelector(":scope > summary");
+    const contentEl = el.querySelector(':scope > div[data-type="detailsContent"]');
+    const open = el.hasAttribute("open") && el.getAttribute("open") !== "false";
+    const summaryHtml = (summary?.innerHTML ?? "").trim();
+    const contentHtml = (contentEl?.innerHTML ?? "").trim();
+    return `\n\n<details class="cf-toggle"${open ? " open" : ""}><summary>${summaryHtml}</summary><div data-type="detailsContent">${contentHtml}</div></details>\n\n`;
+  },
+});
 
 /**
  * Marked emits GFM task lists as <ul><li><input type="checkbox" .../> text</li></ul>.
