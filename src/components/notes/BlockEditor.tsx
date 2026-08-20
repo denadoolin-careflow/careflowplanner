@@ -2154,6 +2154,62 @@ export function BlockEditor({
     if (href.startsWith("/")) { e.preventDefault(); navigate(href); }
   }, [navigate, setFoldAttr]);
 
+  // Headings hide the blocks that follow them, which CSS alone can't express —
+  // re-derive the hidden siblings from the `collapsed` attribute after renders.
+  useEffect(() => {
+    if (!editor) return;
+    const apply = () => {
+      const root = editor.view.dom as HTMLElement;
+      root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
+      root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(h => {
+        if (h.getAttribute("data-collapsed") !== "true") return;
+        const level = parseInt(h.tagName[1], 10);
+        let sib = h.nextElementSibling as HTMLElement | null;
+        while (sib) {
+          if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
+          sib.classList.add("cf-h-hidden");
+          sib = sib.nextElementSibling as HTMLElement | null;
+        }
+      });
+    };
+    apply();
+    editor.on("update", apply);
+    editor.on("selectionUpdate", apply);
+    return () => { editor.off("update", apply); editor.off("selectionUpdate", apply); };
+  }, [editor]);
+
+  // Craft-style toggle interaction: the chevron folds, the title takes the caret.
+  // Runs in the capture phase so it lands before the details node view reacts.
+  useEffect(() => {
+    if (!editor) return;
+    const root = editor.view.dom as HTMLElement;
+    const onClickCapture = (e: MouseEvent) => {
+      const summary = (e.target as HTMLElement | null)?.closest("summary") as HTMLElement | null;
+      const details = summary?.parentElement as HTMLDetailsElement | null;
+      if (!summary || !details?.classList.contains("cf-toggle")) return;
+      const coarse = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+      const zone = coarse ? 48 : 34;
+      const withinChevron = e.clientX - summary.getBoundingClientRect().left <= zone;
+      if (!withinChevron) {
+        // Tapping the title should edit it, not fold the block.
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          const at = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
+          if (at) editor.chain().focus().setTextSelection(at.pos).run();
+        } catch { /* best-effort */ }
+        return;
+      }
+      (details.open ? haptics.fold : haptics.unfold)();
+      summary.animate(
+        [{ transform: "scale(1)" }, { transform: "scale(0.985)" }, { transform: "scale(1)" }],
+        { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" },
+      );
+    };
+    root.addEventListener("click", onClickCapture, true);
+    return () => root.removeEventListener("click", onClickCapture, true);
+  }, [editor]);
+
   // Promote the currently focused task-list item into a real Task
   const promoteTaskItemToTask = useCallback(() => {
     if (!editor) return;
