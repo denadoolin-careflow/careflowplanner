@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban, Sparkles, ListChecks, PanelLeftClose } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban, Sparkles, ListChecks, PanelLeftClose, AArrowDown, AArrowUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -28,6 +28,24 @@ interface Section {
 }
 
 const AREA_SET = new Set(["Family","Health","Home","Meals","Personal","Money","Caregiving","Kids","Appointments","Creative Projects","Holidays & Birthdays"]);
+
+const FONT_KEY = "careflow.planner.taskFontPx";
+const FONT_MIN = 12;
+const FONT_MAX = 18;
+
+/** Reader-friendly text size for the task sidebar, persisted per device. */
+function useTaskFontSize() {
+  const [px, setPx] = useState<number>(() => {
+    if (typeof window === "undefined") return 13;
+    const v = Number(window.localStorage.getItem(FONT_KEY));
+    return Number.isFinite(v) && v >= FONT_MIN && v <= FONT_MAX ? v : 13;
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(FONT_KEY, String(px)); } catch { /* noop */ }
+  }, [px]);
+  const bump = (d: number) => setPx(p => Math.min(FONT_MAX, Math.max(FONT_MIN, p + d)));
+  return { px, bump, reset: () => setPx(13) };
+}
 
 /**
  * Shared task-source panel used by the Planner, Today and the Inbox planner.
