@@ -179,20 +179,8 @@ export function CombinedFab() {
         </button>
       </div>
 
-      {/* Main FAB row — planner shortcut sits beside it for one-tap access */}
+      {/* Main FAB — planner lives inside the expanded grid */}
       <div className="pointer-events-auto flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => { haptics.tap(); setExpanded(false); navigate("/planner"); }}
-          aria-label="Open planner"
-          title="Planner"
-          className={cn(
-            "grid h-11 w-11 place-items-center rounded-full border border-border/60 bg-card/95 text-foreground shadow-cozy backdrop-blur",
-            "transition-transform hover:scale-105 active:scale-95",
-          )}
-        >
-          <CalendarRange className="h-5 w-5" />
-        </button>
       <button
         type="button"
         ref={drag.ref as React.RefObject<HTMLButtonElement>}

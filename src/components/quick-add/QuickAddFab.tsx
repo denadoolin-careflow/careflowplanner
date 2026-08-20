@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Plus, Sparkles, X, CornerDownLeft, FolderOpen, Layers, Flag, Check, Mic, MicOff, Brain, Wand2 } from "lucide-react";
+import { Plus, Sparkles, X, CornerDownLeft, FolderOpen, Layers, Flag, Check, Mic, MicOff, Brain, Wand2, ChevronDown } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -24,6 +24,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { VoiceCaptureDialog } from "@/components/voice/VoiceCaptureDialog";
 import { suggestAnchorForText } from "@/lib/anchor-suggest";
 import { getAnchor } from "@/lib/anchors";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileQuickAdd } from "@/components/quick-add/MobileQuickAdd";
 
 type Mode = QuickAddKind | "command" | "braindump" | "voice";
 
@@ -41,6 +43,8 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
   const [mode, setMode] = useState<Mode>("command");
   const [palette, setPalette] = useState("");
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [fullMode, setFullMode] = useState(false);
+  const isMobile = useIsMobile();
   const drag = useDraggableFab("careflow:fab:quickadd", { right: 16, bottom: 88 });
   const { presets } = useQuickAddPresets();
 
@@ -75,7 +79,7 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const close = () => { setOpen(false); setPalette(""); setMode("command"); };
+  const close = () => { setOpen(false); setPalette(""); setMode("command"); setFullMode(false); };
 
   return (
     <>
@@ -101,7 +105,9 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
       </button>}
 
       <DialogContent className="max-w-xl p-0 overflow-hidden gap-0 border-primary/20 bg-card/95 backdrop-blur-xl">
-        {mode === "command" ? (
+        {isMobile && mode === "command" && !fullMode ? (
+          <MobileQuickAdd initialText={palette} onClose={close} onFull={() => setFullMode(true)} />
+        ) : mode === "command" ? (
           <CommandPalette
             value={palette}
             onChange={setPalette}
@@ -150,6 +156,7 @@ function CommandPalette({
   const [pickedProjectId, setPickedProjectId] = useState<string | undefined | null>(undefined); // null = explicit "no project"
   const [pickedStatus, setPickedStatus] = useState<TaskStatus | undefined>(undefined);
   const [pickedArea, setPickedArea] = useState<Area | undefined>(undefined);
+  const [showOptions, setShowOptions] = useState(false);
 
   const effectiveProject = pickedProjectId === null
     ? undefined
@@ -267,6 +274,21 @@ function CommandPalette({
             <span className="ml-auto text-[10px] text-muted-foreground">⌘↵ to add as task</span>
           </div>
         )}
+        <div className="mt-1 px-2 pb-1">
+          <button
+            type="button"
+            onClick={() => setShowOptions(v => !v)}
+            aria-expanded={showOptions}
+            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showOptions && "rotate-180")} />
+            {showOptions ? "Hide options" : "Options"}
+            {!showOptions && (pickedProjectId !== undefined || pickedStatus || pickedArea) && (
+              <span className="ml-1 rounded-full bg-primary/15 px-1.5 text-[10px] text-primary">set</span>
+            )}
+          </button>
+        </div>
+        {showOptions && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5 px-2 pb-1">
           {/* Project picker */}
           <Popover>
@@ -364,6 +386,7 @@ function CommandPalette({
             >Reset</button>
           )}
         </div>
+        )}
       </div>
 
       <CommandList className="max-h-[420px]">
