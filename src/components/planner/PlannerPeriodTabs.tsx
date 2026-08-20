@@ -52,18 +52,18 @@ export function PlannerPeriodTabs({ value, onChange, className, hideGrid }: {
 }) {
   const options = hideGrid ? OPTIONS.filter(o => o.id !== "grid") : OPTIONS;
   return (
-    <div className={cn("inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-full border border-border/60 bg-background/60 p-0.5", className)}>
+    <div className={cn("inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-border/80 bg-background/90 p-1 shadow-sm backdrop-blur-sm", className)}>
       {options.map(o => {
         const active = value === o.id;
         return (
           <button key={o.id}
             onClick={() => onChange(o.id)}
             aria-pressed={active}
-            className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
-              active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+            className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+              active ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-accent hover:text-foreground",
             )}
           >
-            <o.Icon className="h-3 w-3" />{o.label}
+            <o.Icon className="h-4 w-4" />{o.label}
           </button>
         );
       })}
