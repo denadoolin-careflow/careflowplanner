@@ -550,6 +550,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   // Resize handler
   const setDurationRef = useRef(setTaskDuration);
   setDurationRef.current = setTaskDuration;
+  // Remembers the duration a block had before it was tapped-to-minimize.
+  const preMinimizeRef = useRef<Map<string, number>>(new Map());
   useEffect(() => {
     if (!resizing) return;
     const onMove = (e: PointerEvent) => {
@@ -561,7 +563,18 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     const onUp = async (e: PointerEvent) => {
       const dy = e.clientY - resizing.startY;
       const deltaMin = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
-      const newDur = Math.max(SNAP_MIN, resizing.startDur + deltaMin);
+      let newDur = Math.max(SNAP_MIN, resizing.startDur + deltaMin);
+      // A tap (no real drag) toggles the block between minimized and its previous size.
+      if (Math.abs(dy) < 5) {
+        if (resizing.startDur > SNAP_MIN) {
+          preMinimizeRef.current.set(resizing.id, resizing.startDur);
+          newDur = SNAP_MIN;
+        } else {
+          newDur = preMinimizeRef.current.get(resizing.id) ?? 60;
+          preMinimizeRef.current.delete(resizing.id);
+        }
+        haptics.tap?.();
+      }
       await setDurationRef.current(resizing.id, newDur);
       suppressClickRef.current = true;
       setTimeout(() => { suppressClickRef.current = false; }, 200);
