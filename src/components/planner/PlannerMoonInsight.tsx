@@ -88,6 +88,7 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
 
   const cosmic = useMemo(() => getMoonJournalContext(date), [date]);
   const theme = elementTheme(cosmic.sign.element);
+  const tip = useMemo(() => moonPlanningTip(date), [date]);
 
   const cycle = useMemo(() => {
     try { return getPhaseInfo(date, periods, settings); } catch { return null; }
