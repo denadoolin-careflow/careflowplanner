@@ -17,6 +17,7 @@ import { createNote, getDailyNote, updateNote, type Note } from "@/lib/notes";
 import { useTimeAllocation } from "@/lib/planner/time-allocation";
 import { getMoonJournalContext } from "@/lib/planner/moon-journal-prompt";
 import { useCycleDot } from "@/lib/planner/day-rhythm";
+import { moonPlanningTip } from "@/lib/planner/moon-planning-tip";
 import { PhaseHabitNudge } from "./PhaseHabitNudge";
 import { MoonInsightHistory } from "./MoonInsightHistory";
 import { PlannerWeatherStrip } from "./PlannerWeatherStrip";
