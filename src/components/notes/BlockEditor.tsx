@@ -734,16 +734,27 @@ function Toolbar({
     if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
     if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
   };
-  /** Fold or unfold every toggle + collapsible list item in the note. */
+  /**
+   * Fold or unfold every toggle, collapsible list item and heading section in
+   * one document transaction, so the result persists like any other edit.
+   */
   const setAllFolds = (open: boolean) => {
-    const root = editor.view.dom as HTMLElement;
-    root.querySelectorAll<HTMLDetailsElement>("details.cf-toggle").forEach(d => {
-      if (d.open !== open) (d.querySelector("summary") as HTMLElement | null)?.click();
+    const { state, view } = editor;
+    const tr = state.tr;
+    let touched = false;
+    state.doc.descendants((node, pos) => {
+      if (node.type.name === "details" && node.attrs.open !== open) {
+        tr.setNodeMarkup(pos, undefined, { ...node.attrs, open });
+        touched = true;
+      }
+      if ((node.type.name === "listItem" || node.type.name === "heading") && !!node.attrs.collapsed === open) {
+        tr.setNodeMarkup(pos, undefined, { ...node.attrs, collapsed: !open });
+        touched = true;
+      }
+      return true;
     });
-    root.querySelectorAll<HTMLElement>("li").forEach(li => {
-      if (!li.querySelector(":scope > ul, :scope > ol")) return;
-      li.classList.toggle("cf-collapsed", !open);
-    });
+    if (touched) view.dispatch(tr);
+    (open ? haptics.unfold : haptics.fold)();
   };
   const Divider = () => <span className="mx-1 h-5 w-px shrink-0 bg-border/60" aria-hidden />;
   const headingActive = editor.isActive("heading", { level: 1 })
