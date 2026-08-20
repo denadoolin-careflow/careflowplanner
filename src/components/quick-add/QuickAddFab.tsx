@@ -273,6 +273,21 @@ function CommandPalette({
             <span className="ml-auto text-[10px] text-muted-foreground">⌘↵ to add as task</span>
           </div>
         )}
+        <div className="mt-1 px-2 pb-1">
+          <button
+            type="button"
+            onClick={() => setShowOptions(v => !v)}
+            aria-expanded={showOptions}
+            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showOptions && "rotate-180")} />
+            {showOptions ? "Hide options" : "Options"}
+            {!showOptions && (pickedProjectId !== undefined || pickedStatus || pickedArea) && (
+              <span className="ml-1 rounded-full bg-primary/15 px-1.5 text-[10px] text-primary">set</span>
+            )}
+          </button>
+        </div>
+        {showOptions && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5 px-2 pb-1">
           {/* Project picker */}
           <Popover>
