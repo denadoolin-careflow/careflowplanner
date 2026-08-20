@@ -246,6 +246,10 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
               </span>
             </span>
             <span className="mt-0.5 block truncate text-[11.5px] text-muted-foreground">{moon.invitation}</span>
+            <span className="mt-0.5 flex items-start gap-1 text-[11.5px] font-medium" style={{ color: theme.color }}>
+              <Compass aria-hidden className="mt-[3px] h-3 w-3 shrink-0" />
+              <span className="min-w-0 flex-1">{tip.text}</span>
+            </span>
             <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[10.5px] text-muted-foreground">
               <span
                 className="rounded-full border px-1.5 py-0.5 font-medium"
