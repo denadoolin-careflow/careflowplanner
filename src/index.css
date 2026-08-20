@@ -2874,7 +2874,10 @@ html[data-atmosphere="foggy-pine"] .cozy-card {
 }
 .block-editor .ProseMirror h1.cf-heading-collapsed::before,
 .block-editor .ProseMirror h2.cf-heading-collapsed::before,
-.block-editor .ProseMirror h3.cf-heading-collapsed::before {
+.block-editor .ProseMirror h3.cf-heading-collapsed::before,
+.block-editor .ProseMirror h1[data-collapsed="true"]::before,
+.block-editor .ProseMirror h2[data-collapsed="true"]::before,
+.block-editor .ProseMirror h3[data-collapsed="true"]::before {
   opacity: 0.9;
   transform: translateY(-50%) rotate(0deg);
 }
