@@ -477,10 +477,19 @@ export default function Planner() {
               onKeyDown={onResizeKey}
               onDoubleClick={() => setTaskPanelWidth(280)}
               title="Drag to resize · double-click to reset"
-              className="group relative -mx-2 w-[14px] cursor-col-resize touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="group relative z-20 -mx-1.5 w-[18px] cursor-col-resize touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <div className={`absolute inset-y-2 left-1/2 w-[3px] -translate-x-1/2 rounded-full transition-colors ${resizingPanel ? "bg-primary" : "bg-border/60 group-hover:bg-primary/60"}`} />
-              <div className={`absolute left-1/2 top-1/2 h-8 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/70 transition-opacity ${resizingPanel ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} aria-hidden />
+              <div className={`absolute inset-y-2 left-1/2 w-[3px] -translate-x-1/2 rounded-full transition-colors ${resizingPanel ? "bg-primary" : "bg-border group-hover:bg-primary/70"}`} />
+              <div
+                aria-hidden
+                className={`absolute left-1/2 top-1/2 flex h-10 w-[14px] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[3px] rounded-full border shadow-sm transition-colors ${
+                  resizingPanel ? "border-primary bg-primary/20" : "border-border/70 bg-card group-hover:border-primary/60"
+                }`}
+              >
+                <span className="h-[3px] w-[3px] rounded-full bg-muted-foreground/70" />
+                <span className="h-[3px] w-[3px] rounded-full bg-muted-foreground/70" />
+                <span className="h-[3px] w-[3px] rounded-full bg-muted-foreground/70" />
+              </div>
             </div>
           </>
         )}
