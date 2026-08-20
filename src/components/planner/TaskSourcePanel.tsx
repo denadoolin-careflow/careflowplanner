@@ -162,11 +162,30 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
   };
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+    <aside
+      style={{ ["--task-font" as any]: `${fontPx}px` }}
+      className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40"
+    >
       <header className="border-b border-border/60 p-3">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold tracking-wide">Tasks</h2>
           <div className="flex items-center gap-0.5">
+            <Button
+              size="icon" variant="ghost" className="h-7 w-7"
+              onClick={() => bumpFont(-1)} onDoubleClick={resetFont}
+              aria-label="Decrease task text size"
+              title="Smaller task text"
+            >
+              <AArrowDown className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="icon" variant="ghost" className="h-7 w-7"
+              onClick={() => bumpFont(1)} onDoubleClick={resetFont}
+              aria-label="Increase task text size"
+              title="Larger task text"
+            >
+              <AArrowUp className="h-3.5 w-3.5" />
+            </Button>
             {onQuickAdd && (
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Open advanced capture">
                 <CommandIcon className="h-3.5 w-3.5" />
