@@ -231,7 +231,7 @@ export default function Planner() {
   const onResizeKey = useCallback((e: React.KeyboardEvent) => {
     const stepPx = e.shiftKey ? 40 : 12;
     if (e.key === "ArrowLeft") { e.preventDefault(); setTaskPanelWidth(w => Math.max(220, w - stepPx)); }
-    else if (e.key === "ArrowRight") { e.preventDefault(); setTaskPanelWidth(w => Math.min(560, w + stepPx)); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); setTaskPanelWidth(w => Math.min(720, w + stepPx)); }
     else if (e.key === "Home") { e.preventDefault(); setTaskPanelWidth(280); }
   }, []);
 
