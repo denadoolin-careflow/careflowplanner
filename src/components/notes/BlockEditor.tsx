@@ -2050,6 +2050,25 @@ export function BlockEditor({
   }, []);
 
   // Open internal links via router when user clicks
+  /** Write a fold flag onto the document node that owns `dom`. */
+  const setFoldAttr = useCallback((dom: HTMLElement, typeNames: string[], value: boolean) => {
+    const ed = editorRef.current;
+    if (!ed) return false;
+    try {
+      const pos = ed.view.posAtDOM(dom, 0);
+      const $pos = ed.state.doc.resolve(pos);
+      for (let d = $pos.depth; d > 0; d--) {
+        const node = $pos.node(d);
+        if (typeNames.includes(node.type.name)) {
+          const nodePos = $pos.before(d);
+          ed.view.dispatch(ed.state.tr.setNodeMarkup(nodePos, undefined, { ...node.attrs, collapsed: value }));
+          return true;
+        }
+      }
+    } catch { /* best-effort */ }
+    return false;
+  }, []);
+
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.target as HTMLElement;
     // Toggle fit-to-page on an inline PDF embed
