@@ -180,6 +180,7 @@ export function PlannerMoonInsight({ date, className, onSelectDate }: { date: Da
         moonLabel: moon.label,
         illumination: illum,
         invitation: moon.invitation,
+        planningTip: tip.text,
         cycleLabel: cycleLabel || undefined,
         journalTitle: jTitle || undefined,
         journalBody: jBody,
