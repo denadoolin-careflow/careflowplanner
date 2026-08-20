@@ -101,7 +101,9 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
       </button>}
 
       <DialogContent className="max-w-xl p-0 overflow-hidden gap-0 border-primary/20 bg-card/95 backdrop-blur-xl">
-        {mode === "command" ? (
+        {isMobile && mode === "command" && !fullMode ? (
+          <MobileQuickAdd initialText={palette} onClose={close} onFull={() => setFullMode(true)} />
+        ) : mode === "command" ? (
           <CommandPalette
             value={palette}
             onChange={setPalette}
