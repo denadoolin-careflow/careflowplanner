@@ -156,6 +156,7 @@ function CommandPalette({
   const [pickedProjectId, setPickedProjectId] = useState<string | undefined | null>(undefined); // null = explicit "no project"
   const [pickedStatus, setPickedStatus] = useState<TaskStatus | undefined>(undefined);
   const [pickedArea, setPickedArea] = useState<Area | undefined>(undefined);
+  const [showOptions, setShowOptions] = useState(false);
 
   const effectiveProject = pickedProjectId === null
     ? undefined
