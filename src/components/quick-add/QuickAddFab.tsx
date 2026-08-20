@@ -41,6 +41,8 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
   const [mode, setMode] = useState<Mode>("command");
   const [palette, setPalette] = useState("");
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [fullMode, setFullMode] = useState(false);
+  const isMobile = useIsMobile();
   const drag = useDraggableFab("careflow:fab:quickadd", { right: 16, bottom: 88 });
   const { presets } = useQuickAddPresets();
 
