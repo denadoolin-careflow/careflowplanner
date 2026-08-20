@@ -370,6 +370,7 @@ function CommandPalette({
             >Reset</button>
           )}
         </div>
+        )}
       </div>
 
       <CommandList className="max-h-[420px]">
