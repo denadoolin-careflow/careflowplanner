@@ -1419,9 +1419,16 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                   })()}
                   {it.kind === "task" && (
                     <div
+                      role="button"
+                      tabIndex={-1}
+                      aria-label={`Resize ${it.title}; tap to ${it.durMin > SNAP_MIN ? "minimize" : "expand"}`}
+                      title="Drag to resize · tap to minimize/expand"
                       onPointerDown={(e) => { e.stopPropagation(); haptics.snap(); setResizing({ id: it.id, startY: e.clientY, startDur: it.durMin }); }}
-                      className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize touch-none opacity-0 transition-opacity hover:bg-primary/30 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 [@media(pointer:coarse)]:bg-foreground/10"
-                    />
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute bottom-0 left-0 right-0 flex h-3 items-center justify-center cursor-ns-resize touch-none opacity-0 transition-opacity hover:bg-primary/30 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 [@media(pointer:coarse)]:bg-foreground/10"
+                    >
+                      <span aria-hidden className="h-[3px] w-8 rounded-full bg-foreground/30" />
+                    </div>
                   )}
                 </div>
                   </ContextMenuTrigger>
