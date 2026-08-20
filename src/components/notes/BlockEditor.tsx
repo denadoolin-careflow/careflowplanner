@@ -1528,6 +1528,29 @@ export function BlockEditor({
     },
   }), []);
 
+  /* --------------------------------------------------------------- */
+  /*  Fold state as document attributes                              */
+  /*  Collapsing a nested bullet or a heading section used to be a   */
+  /*  CSS class on the live DOM node, which any re-render wiped.     */
+  /*  Storing it on the node keeps the fold stable while editing.    */
+  /* --------------------------------------------------------------- */
+  const foldAttributes = useMemo(() => Extension.create({
+    name: "cfFoldAttributes",
+    addGlobalAttributes() {
+      return [{
+        types: ["listItem", "heading"],
+        attributes: {
+          collapsed: {
+            default: false,
+            parseHTML: (el: HTMLElement) => el.getAttribute("data-collapsed") === "true",
+            renderHTML: (attrs: Record<string, any>) =>
+              attrs.collapsed ? { "data-collapsed": "true" } : {},
+          },
+        },
+      }];
+    },
+  }), []);
+
   const refExtension = useMemo(() => Extension.create({
     name: "refMention",
     addProseMirrorPlugins() {
