@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { haptics } from "@/lib/haptics";
 import type { Task } from "@/lib/types";
+import { TASK_DRAG_MIME } from "@/components/calendar/UnscheduledTasksRail";
+import { usePlannerPointerDrag } from "@/lib/planner-touch-drag";
+import { GripVertical } from "lucide-react";
 
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 
@@ -102,11 +105,12 @@ export function PlannerOverdueSection({ date, className }: { date?: Date; classN
           {overdue.map(t => {
             const late = t.dueDate ? differenceInCalendarDays(ref, parseISO(t.dueDate)) : 0;
             return (
-              <div
-                key={t.id}
-                className="rounded-xl border border-border/50 bg-card/70 px-2.5 py-2"
-              >
+              <OverdueRow key={t.id} task={t}>
                 <div className="flex items-start gap-2">
+                  <GripVertical
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-hidden
+                  />
                   <button
                     type="button"
                     aria-label={`Complete ${t.title}`}
@@ -159,12 +163,33 @@ export function PlannerOverdueSection({ date, className }: { date?: Date; classN
                     </PopoverContent>
                   </Popover>
                 </div>
-              </div>
+              </OverdueRow>
             );
           })}
         </div>
       )}
     </section>
+  );
+}
+
+/** Overdue card that can be dragged (mouse) or long-pressed (touch) onto the planner grid. */
+function OverdueRow({ task, children }: { task: Task; children: React.ReactNode }) {
+  const pointer = usePlannerPointerDrag(() => ({ taskId: task.id, label: task.title }));
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(TASK_DRAG_MIME, task.id);
+        e.dataTransfer.setData("text/plain", task.title);
+        e.dataTransfer.effectAllowed = "copyMove";
+        haptics.pickup?.();
+      }}
+      onPointerDown={pointer.onPointerDown}
+      title="Drag onto the grid to reschedule"
+      className="group touch-none rounded-xl border border-border/50 bg-card/70 px-2.5 py-2 cursor-grab active:cursor-grabbing"
+    >
+      {children}
+    </div>
   );
 }
 
