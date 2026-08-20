@@ -1782,7 +1782,9 @@ export function BlockEditor({
       Color,
       Highlight.configure({ multicolor: true }),
       Details.configure({ persist: true, HTMLAttributes: { class: "cf-toggle" } }),
-      DetailsSummary,
+      // `data-no-haptic` stops the global tap-haptic from double-firing on top
+      // of the deliberate fold pulse we emit below.
+      DetailsSummary.configure({ HTMLAttributes: { "data-no-haptic": "" } }),
       DetailsContent,
       Table.configure({
         resizable: true,
@@ -1809,6 +1811,7 @@ export function BlockEditor({
       hashtagExtension,
       wikiExtension,
       toggleKeymap,
+      foldAttributes,
       focusBlockExtension,
     ],
     content: bodyToHtml(body),
