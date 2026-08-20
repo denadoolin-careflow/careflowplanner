@@ -550,6 +550,8 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   // Resize handler
   const setDurationRef = useRef(setTaskDuration);
   setDurationRef.current = setTaskDuration;
+  // Remembers the duration a block had before it was tapped-to-minimize.
+  const preMinimizeRef = useRef<Map<string, number>>(new Map());
   useEffect(() => {
     if (!resizing) return;
     const onMove = (e: PointerEvent) => {
@@ -561,7 +563,18 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     const onUp = async (e: PointerEvent) => {
       const dy = e.clientY - resizing.startY;
       const deltaMin = Math.round((dy / HOUR_PX) * 60 / SNAP_MIN) * SNAP_MIN;
-      const newDur = Math.max(SNAP_MIN, resizing.startDur + deltaMin);
+      let newDur = Math.max(SNAP_MIN, resizing.startDur + deltaMin);
+      // A tap (no real drag) toggles the block between minimized and its previous size.
+      if (Math.abs(dy) < 5) {
+        if (resizing.startDur > SNAP_MIN) {
+          preMinimizeRef.current.set(resizing.id, resizing.startDur);
+          newDur = SNAP_MIN;
+        } else {
+          newDur = preMinimizeRef.current.get(resizing.id) ?? 60;
+          preMinimizeRef.current.delete(resizing.id);
+        }
+        haptics.tap?.();
+      }
       await setDurationRef.current(resizing.id, newDur);
       suppressClickRef.current = true;
       setTimeout(() => { suppressClickRef.current = false; }, 200);
@@ -1406,9 +1419,16 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
                   })()}
                   {it.kind === "task" && (
                     <div
+                      role="button"
+                      tabIndex={-1}
+                      aria-label={`Resize ${it.title}; tap to ${it.durMin > SNAP_MIN ? "minimize" : "expand"}`}
+                      title="Drag to resize · tap to minimize/expand"
                       onPointerDown={(e) => { e.stopPropagation(); haptics.snap(); setResizing({ id: it.id, startY: e.clientY, startDur: it.durMin }); }}
-                      className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize touch-none opacity-0 transition-opacity hover:bg-primary/30 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 [@media(pointer:coarse)]:bg-foreground/10"
-                    />
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute bottom-0 left-0 right-0 flex h-3 items-center justify-center cursor-ns-resize touch-none opacity-0 transition-opacity hover:bg-primary/30 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 [@media(pointer:coarse)]:bg-foreground/10"
+                    >
+                      <span aria-hidden className="h-[3px] w-8 rounded-full bg-foreground/30" />
+                    </div>
                   )}
                 </div>
                   </ContextMenuTrigger>
