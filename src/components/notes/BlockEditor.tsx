@@ -154,6 +154,21 @@ turndown.addRule("inlineEntityCard", {
     return `[[${label}]]`;
   },
 });
+// Toggles (<details>) have no markdown equivalent — turndown would otherwise
+// flatten them and dump their hidden content inline. Round-trip them as a raw
+// HTML block (with the open state) so folds survive save + reload.
+turndown.addRule("detailsToggle", {
+  filter: (node) => node.nodeName === "DETAILS",
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const summary = el.querySelector(":scope > summary");
+    const contentEl = el.querySelector(':scope > div[data-type="detailsContent"]');
+    const open = el.hasAttribute("open") && el.getAttribute("open") !== "false";
+    const summaryHtml = (summary?.innerHTML ?? "").trim();
+    const contentHtml = (contentEl?.innerHTML ?? "").trim();
+    return `\n\n<details class="cf-toggle"${open ? " open" : ""}><summary>${summaryHtml}</summary><div data-type="detailsContent">${contentHtml}</div></details>\n\n`;
+  },
+});
 
 /**
  * Marked emits GFM task lists as <ul><li><input type="checkbox" .../> text</li></ul>.
@@ -719,16 +734,27 @@ function Toolbar({
     if (editor.can().liftListItem("taskItem")) return editor.chain().focus().liftListItem("taskItem").run();
     if (editor.can().liftListItem("listItem")) return editor.chain().focus().liftListItem("listItem").run();
   };
-  /** Fold or unfold every toggle + collapsible list item in the note. */
+  /**
+   * Fold or unfold every toggle, collapsible list item and heading section in
+   * one document transaction, so the result persists like any other edit.
+   */
   const setAllFolds = (open: boolean) => {
-    const root = editor.view.dom as HTMLElement;
-    root.querySelectorAll<HTMLDetailsElement>("details.cf-toggle").forEach(d => {
-      if (d.open !== open) (d.querySelector("summary") as HTMLElement | null)?.click();
+    const { state, view } = editor;
+    const tr = state.tr;
+    let touched = false;
+    state.doc.descendants((node, pos) => {
+      if (node.type.name === "details" && node.attrs.open !== open) {
+        tr.setNodeMarkup(pos, undefined, { ...node.attrs, open });
+        touched = true;
+      }
+      if ((node.type.name === "listItem" || node.type.name === "heading") && !!node.attrs.collapsed === open) {
+        tr.setNodeMarkup(pos, undefined, { ...node.attrs, collapsed: !open });
+        touched = true;
+      }
+      return true;
     });
-    root.querySelectorAll<HTMLElement>("li").forEach(li => {
-      if (!li.querySelector(":scope > ul, :scope > ol")) return;
-      li.classList.toggle("cf-collapsed", !open);
-    });
+    if (touched) view.dispatch(tr);
+    (open ? haptics.unfold : haptics.fold)();
   };
   const Divider = () => <span className="mx-1 h-5 w-px shrink-0 bg-border/60" aria-hidden />;
   const headingActive = editor.isActive("heading", { level: 1 })
@@ -1513,6 +1539,29 @@ export function BlockEditor({
     },
   }), []);
 
+  /* --------------------------------------------------------------- */
+  /*  Fold state as document attributes                              */
+  /*  Collapsing a nested bullet or a heading section used to be a   */
+  /*  CSS class on the live DOM node, which any re-render wiped.     */
+  /*  Storing it on the node keeps the fold stable while editing.    */
+  /* --------------------------------------------------------------- */
+  const foldAttributes = useMemo(() => Extension.create({
+    name: "cfFoldAttributes",
+    addGlobalAttributes() {
+      return [{
+        types: ["listItem", "heading"],
+        attributes: {
+          collapsed: {
+            default: false,
+            parseHTML: (el: HTMLElement) => el.getAttribute("data-collapsed") === "true",
+            renderHTML: (attrs: Record<string, any>) =>
+              attrs.collapsed ? { "data-collapsed": "true" } : {},
+          },
+        },
+      }];
+    },
+  }), []);
+
   const refExtension = useMemo(() => Extension.create({
     name: "refMention",
     addProseMirrorPlugins() {
@@ -1744,7 +1793,9 @@ export function BlockEditor({
       Color,
       Highlight.configure({ multicolor: true }),
       Details.configure({ persist: true, HTMLAttributes: { class: "cf-toggle" } }),
-      DetailsSummary,
+      // `data-no-haptic` stops the global tap-haptic from double-firing on top
+      // of the deliberate fold pulse we emit below.
+      DetailsSummary.configure({ HTMLAttributes: { "data-no-haptic": "" } }),
       DetailsContent,
       Table.configure({
         resizable: true,
@@ -1771,6 +1822,7 @@ export function BlockEditor({
       hashtagExtension,
       wikiExtension,
       toggleKeymap,
+      foldAttributes,
       focusBlockExtension,
     ],
     content: bodyToHtml(body),
@@ -2009,6 +2061,25 @@ export function BlockEditor({
   }, []);
 
   // Open internal links via router when user clicks
+  /** Write a fold flag onto the document node that owns `dom`. */
+  const setFoldAttr = useCallback((dom: HTMLElement, typeNames: string[], value: boolean) => {
+    const ed = editorRef.current;
+    if (!ed) return false;
+    try {
+      const pos = ed.view.posAtDOM(dom, 0);
+      const $pos = ed.state.doc.resolve(pos);
+      for (let d = $pos.depth; d > 0; d--) {
+        const node = $pos.node(d);
+        if (typeNames.includes(node.type.name)) {
+          const nodePos = $pos.before(d);
+          ed.view.dispatch(ed.state.tr.setNodeMarkup(nodePos, undefined, { ...node.attrs, collapsed: value }));
+          return true;
+        }
+      }
+    } catch { /* best-effort */ }
+    return false;
+  }, []);
+
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = e.target as HTMLElement;
     // Toggle fit-to-page on an inline PDF embed
@@ -2066,20 +2137,12 @@ export function BlockEditor({
         // Marker sits in the left padding zone
         if (e.clientX - rect.left < 24) {
           e.preventDefault();
-          li.classList.toggle("cf-collapsed");
-          try { (navigator as any).vibrate?.(6); } catch {}
+          const next = li.getAttribute("data-collapsed") !== "true";
+          if (!setFoldAttr(li, ["listItem"], next)) li.classList.toggle("cf-collapsed", next);
+          (next ? haptics.fold : haptics.unfold)();
           return;
         }
       }
-    }
-    // Haptic + tiny scale pulse when collapsing/expanding a toggle
-    const summary = el.closest("summary");
-    if (summary && summary.parentElement?.classList.contains("cf-toggle")) {
-      haptics.tap();
-      summary.animate(
-        [{ transform: "scale(1)" }, { transform: "scale(0.985)" }, { transform: "scale(1)" }],
-        { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" },
-      );
     }
     // Click gutter of a heading (H1/H2/H3) collapses the section below it.
     if (/^H[1-3]$/.test(el.tagName) && el.closest(".ProseMirror")) {
@@ -2090,18 +2153,9 @@ export function BlockEditor({
       // clickable zone in the gutter only so it doesn't overlap heading text.
       if (dx >= -72 && dx <= -24) {
         e.preventDefault();
-        const level = parseInt(h.tagName[1], 10);
-        const collapsed = h.classList.toggle("cf-heading-collapsed");
-        let sib = h.nextElementSibling as HTMLElement | null;
-        while (sib) {
-          if (/^H[1-6]$/.test(sib.tagName)) {
-            const l = parseInt(sib.tagName[1], 10);
-            if (l <= level) break;
-          }
-          sib.classList.toggle("cf-h-hidden", collapsed);
-          sib = sib.nextElementSibling as HTMLElement | null;
-        }
-        haptics.tap();
+        const collapsed = h.getAttribute("data-collapsed") !== "true";
+        setFoldAttr(h, ["heading"], collapsed);
+        (collapsed ? haptics.fold : haptics.unfold)();
         return;
       }
     }
@@ -2109,7 +2163,63 @@ export function BlockEditor({
     if (!target) return;
     const href = target.getAttribute("href") || "";
     if (href.startsWith("/")) { e.preventDefault(); navigate(href); }
-  }, [navigate]);
+  }, [navigate, setFoldAttr]);
+
+  // Headings hide the blocks that follow them, which CSS alone can't express —
+  // re-derive the hidden siblings from the `collapsed` attribute after renders.
+  useEffect(() => {
+    if (!editor) return;
+    const apply = () => {
+      const root = editor.view.dom as HTMLElement;
+      root.querySelectorAll<HTMLElement>(".cf-h-hidden").forEach(n => n.classList.remove("cf-h-hidden"));
+      root.querySelectorAll<HTMLElement>("h1,h2,h3,h4,h5,h6").forEach(h => {
+        if (h.getAttribute("data-collapsed") !== "true") return;
+        const level = parseInt(h.tagName[1], 10);
+        let sib = h.nextElementSibling as HTMLElement | null;
+        while (sib) {
+          if (/^H[1-6]$/.test(sib.tagName) && parseInt(sib.tagName[1], 10) <= level) break;
+          sib.classList.add("cf-h-hidden");
+          sib = sib.nextElementSibling as HTMLElement | null;
+        }
+      });
+    };
+    apply();
+    editor.on("update", apply);
+    editor.on("selectionUpdate", apply);
+    return () => { editor.off("update", apply); editor.off("selectionUpdate", apply); };
+  }, [editor]);
+
+  // Craft-style toggle interaction: the chevron folds, the title takes the caret.
+  // Runs in the capture phase so it lands before the details node view reacts.
+  useEffect(() => {
+    if (!editor) return;
+    const root = editor.view.dom as HTMLElement;
+    const onClickCapture = (e: MouseEvent) => {
+      const summary = (e.target as HTMLElement | null)?.closest("summary") as HTMLElement | null;
+      const details = summary?.parentElement as HTMLDetailsElement | null;
+      if (!summary || !details?.classList.contains("cf-toggle")) return;
+      const coarse = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+      const zone = coarse ? 48 : 34;
+      const withinChevron = e.clientX - summary.getBoundingClientRect().left <= zone;
+      if (!withinChevron) {
+        // Tapping the title should edit it, not fold the block.
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          const at = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
+          if (at) editor.chain().focus().setTextSelection(at.pos).run();
+        } catch { /* best-effort */ }
+        return;
+      }
+      (details.open ? haptics.fold : haptics.unfold)();
+      summary.animate(
+        [{ transform: "scale(1)" }, { transform: "scale(0.985)" }, { transform: "scale(1)" }],
+        { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" },
+      );
+    };
+    root.addEventListener("click", onClickCapture, true);
+    return () => root.removeEventListener("click", onClickCapture, true);
+  }, [editor]);
 
   // Promote the currently focused task-list item into a real Task
   const promoteTaskItemToTask = useCallback(() => {
