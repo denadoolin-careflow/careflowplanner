@@ -4,7 +4,7 @@ import { useWeatherSnapshot } from "@/lib/weather-store";
 import type { HourlyForecast } from "@/lib/weather";
 import { byHour, hourTint } from "@/lib/planner/hour-weather";
 import { ConditionIcon } from "@/components/weather/ConditionIcon";
-import { AlertTriangle, Redo2, Undo2, Wand2 } from "lucide-react";
+import { AlertTriangle, Redo2, Undo2, Wand2, ZoomIn, ZoomOut } from "lucide-react";
 import { NotebookPen, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
