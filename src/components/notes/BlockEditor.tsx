@@ -2107,20 +2107,12 @@ export function BlockEditor({
         // Marker sits in the left padding zone
         if (e.clientX - rect.left < 24) {
           e.preventDefault();
-          li.classList.toggle("cf-collapsed");
-          try { (navigator as any).vibrate?.(6); } catch {}
+          const next = li.getAttribute("data-collapsed") !== "true";
+          if (!setFoldAttr(li, ["listItem"], next)) li.classList.toggle("cf-collapsed", next);
+          (next ? haptics.fold : haptics.unfold)();
           return;
         }
       }
-    }
-    // Haptic + tiny scale pulse when collapsing/expanding a toggle
-    const summary = el.closest("summary");
-    if (summary && summary.parentElement?.classList.contains("cf-toggle")) {
-      haptics.tap();
-      summary.animate(
-        [{ transform: "scale(1)" }, { transform: "scale(0.985)" }, { transform: "scale(1)" }],
-        { duration: 160, easing: "cubic-bezier(.2,.8,.2,1)" },
-      );
     }
     // Click gutter of a heading (H1/H2/H3) collapses the section below it.
     if (/^H[1-3]$/.test(el.tagName) && el.closest(".ProseMirror")) {
@@ -2131,18 +2123,9 @@ export function BlockEditor({
       // clickable zone in the gutter only so it doesn't overlap heading text.
       if (dx >= -72 && dx <= -24) {
         e.preventDefault();
-        const level = parseInt(h.tagName[1], 10);
-        const collapsed = h.classList.toggle("cf-heading-collapsed");
-        let sib = h.nextElementSibling as HTMLElement | null;
-        while (sib) {
-          if (/^H[1-6]$/.test(sib.tagName)) {
-            const l = parseInt(sib.tagName[1], 10);
-            if (l <= level) break;
-          }
-          sib.classList.toggle("cf-h-hidden", collapsed);
-          sib = sib.nextElementSibling as HTMLElement | null;
-        }
-        haptics.tap();
+        const collapsed = h.getAttribute("data-collapsed") !== "true";
+        setFoldAttr(h, ["heading"], collapsed);
+        (collapsed ? haptics.fold : haptics.unfold)();
         return;
       }
     }
@@ -2150,7 +2133,7 @@ export function BlockEditor({
     if (!target) return;
     const href = target.getAttribute("href") || "";
     if (href.startsWith("/")) { e.preventDefault(); navigate(href); }
-  }, [navigate]);
+  }, [navigate, setFoldAttr]);
 
   // Promote the currently focused task-list item into a real Task
   const promoteTaskItemToTask = useCallback(() => {
