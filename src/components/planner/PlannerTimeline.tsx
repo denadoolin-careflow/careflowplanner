@@ -383,11 +383,21 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
       const unmoved = next === moving.startMin;
       setMoving(null);
       setMovePreview(null);
-      suppressClickRef.current = true;
-      setTimeout(() => { suppressClickRef.current = false; }, 250);
-      if (!unmoved) { await scheduleTaskAt(held, next + START_H * 60); return; }
+      if (!unmoved) {
+        suppressClickRef.current = true;
+        setTimeout(() => { suppressClickRef.current = false; }, 250);
+        await scheduleTaskAt(held, next + START_H * 60);
+        return;
+      }
       // Long-press then release without dragging → mobile quick-action menu.
-      if (isMobile && e.pointerType === "touch") openMobileBlockEditor(held, "quick");
+      if (isMobile && e.pointerType === "touch") {
+        suppressClickRef.current = true;
+        setTimeout(() => { suppressClickRef.current = false; }, 250);
+        openMobileBlockEditor(held, "quick");
+        return;
+      }
+      // Mouse click without dragging → open the full task editor.
+      if (e.pointerType === "mouse") openTaskEditor(held);
     };
     window.addEventListener("pointermove", onMove, { passive: false });
     window.addEventListener("pointerup", onUp, { once: true });
