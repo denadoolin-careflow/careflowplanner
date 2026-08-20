@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Plus, Sparkles, X, CornerDownLeft, FolderOpen, Layers, Flag, Check, Mic, MicOff, Brain, Wand2 } from "lucide-react";
+import { Plus, Sparkles, X, CornerDownLeft, FolderOpen, Layers, Flag, Check, Mic, MicOff, Brain, Wand2, ChevronDown } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
