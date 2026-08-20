@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban, Sparkles, ListChecks, PanelLeftClose } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Plus, ChevronRight, Inbox as InboxIcon, Sun, CalendarClock, Moon, Tag, ArrowDownWideNarrow, Command as CommandIcon, Home as HomeIcon, UtensilsCrossed, FolderKanban, Sparkles, ListChecks, PanelLeftClose, AArrowDown, AArrowUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -29,6 +29,24 @@ interface Section {
 
 const AREA_SET = new Set(["Family","Health","Home","Meals","Personal","Money","Caregiving","Kids","Appointments","Creative Projects","Holidays & Birthdays"]);
 
+const FONT_KEY = "careflow.planner.taskFontPx";
+const FONT_MIN = 12;
+const FONT_MAX = 18;
+
+/** Reader-friendly text size for the task sidebar, persisted per device. */
+function useTaskFontSize() {
+  const [px, setPx] = useState<number>(() => {
+    if (typeof window === "undefined") return 13;
+    const v = Number(window.localStorage.getItem(FONT_KEY));
+    return Number.isFinite(v) && v >= FONT_MIN && v <= FONT_MAX ? v : 13;
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(FONT_KEY, String(px)); } catch { /* noop */ }
+  }, [px]);
+  const bump = (d: number) => setPx(p => Math.min(FONT_MAX, Math.max(FONT_MIN, p + d)));
+  return { px, bump, reset: () => setPx(13) };
+}
+
 /**
  * Shared task-source panel used by the Planner, Today and the Inbox planner.
  * Groups every place work can come from — Inbox, Today, Upcoming, Someday,
@@ -37,6 +55,7 @@ const AREA_SET = new Set(["Family","Health","Home","Meals","Personal","Money","C
  */
 export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { selectedDate: Date; onQuickAdd?: () => void; onCollapse?: () => void }) {
   const { state, addTask, addMeal, updateMeal, toggleHabit } = useStore();
+  const { px: fontPx, bump: bumpFont, reset: resetFont } = useTaskFontSize();
   const { items: maintenance } = useHomeMaintenance();
   const { routines: routineList } = useRoutines();
   const [q, setQ] = useState("");
@@ -144,11 +163,30 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
   };
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+    <aside
+      style={{ ["--task-font" as any]: `${fontPx}px` }}
+      className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40"
+    >
       <header className="border-b border-border/60 p-3">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="font-display text-sm font-semibold tracking-wide">Tasks</h2>
           <div className="flex items-center gap-0.5">
+            <Button
+              size="icon" variant="ghost" className="h-7 w-7"
+              onClick={() => bumpFont(-1)} onDoubleClick={resetFont}
+              aria-label="Decrease task text size"
+              title="Smaller task text"
+            >
+              <AArrowDown className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="icon" variant="ghost" className="h-7 w-7"
+              onClick={() => bumpFont(1)} onDoubleClick={resetFont}
+              aria-label="Increase task text size"
+              title="Larger task text"
+            >
+              <AArrowUp className="h-3.5 w-3.5" />
+            </Button>
             {onQuickAdd && (
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onQuickAdd} aria-label="Open advanced capture">
                 <CommandIcon className="h-3.5 w-3.5" />
@@ -280,7 +318,7 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
                 key={m.id}
                 type="button"
                 onClick={() => void scheduleHomeItem(m.title)}
-                className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[13px] hover:border-primary/40"
+                className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[length:var(--task-font,13px)] hover:border-primary/40"
               >
                 <HomeIcon className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
                 <span className="min-w-0 flex-1 truncate">{m.title}</span>
@@ -304,7 +342,7 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
                     <button
                       type="button"
                       aria-label={meal ? `Change ${slot.label}` : `Plan ${slot.label}`}
-                      className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[13px] hover:border-primary/40"
+                      className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[length:var(--task-font,13px)] hover:border-primary/40"
                     >
                       <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-yellow-500" aria-hidden />
                       <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground">{slot.label}</span>
@@ -323,7 +361,7 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
             {filteredHabits.map((h: any) => {
               const done = !!h.log?.[todayISO];
               return (
-                <div key={h.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px]">
+                <div key={h.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[length:var(--task-font,13px)]">
                   <BlockCheckbox done={done} title={h.name ?? h.title ?? "Habit"} onToggle={() => void toggleHabit(h.id)} className="mt-0.5" />
                   <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere]", done && "line-through opacity-60")}>
                     {h.name ?? h.title}
@@ -341,7 +379,7 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
                   {r.person_name} · {SLOT_LABEL[r.slot]}
                 </p>
                 {r.items.map(item => (
-                  <div key={item.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px]">
+                  <div key={item.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[length:var(--task-font,13px)]">
                     <BlockCheckbox done={!!item.done} title={item.text}
                       onToggle={() => void routinesApi.toggleItem(r.person_name, r.slot, item.id)} className="mt-0.5" />
                     <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere]", item.done && "line-through opacity-60")}>

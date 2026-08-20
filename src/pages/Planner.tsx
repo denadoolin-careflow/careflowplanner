@@ -132,7 +132,7 @@ export default function Planner() {
   const [taskPanelWidth, setTaskPanelWidth] = useState<number>(() => {
     if (typeof window === "undefined") return 280;
     const v = Number(window.localStorage.getItem("careflow.planner.taskPanelWidth"));
-    return Number.isFinite(v) && v >= 200 && v <= 560 ? v : 280;
+    return Number.isFinite(v) && v >= 200 && v <= 720 ? v : 280;
   });
   useEffect(() => {
     try { window.localStorage.setItem("careflow.planner.taskPanelWidth", String(taskPanelWidth)); } catch {}
@@ -158,7 +158,7 @@ export default function Planner() {
     document.body.style.userSelect = "none";
     const onMove = (ev: PointerEvent) => {
       const r = resizeRef.current; if (!r) return;
-      const next = Math.min(560, Math.max(220, r.startW + (ev.clientX - r.startX)));
+      const next = Math.min(720, Math.max(220, r.startW + (ev.clientX - r.startX)));
       setTaskPanelWidth(next);
     };
     const onUp = () => {
@@ -231,7 +231,7 @@ export default function Planner() {
   const onResizeKey = useCallback((e: React.KeyboardEvent) => {
     const stepPx = e.shiftKey ? 40 : 12;
     if (e.key === "ArrowLeft") { e.preventDefault(); setTaskPanelWidth(w => Math.max(220, w - stepPx)); }
-    else if (e.key === "ArrowRight") { e.preventDefault(); setTaskPanelWidth(w => Math.min(560, w + stepPx)); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); setTaskPanelWidth(w => Math.min(720, w + stepPx)); }
     else if (e.key === "Home") { e.preventDefault(); setTaskPanelWidth(280); }
   }, []);
 
@@ -471,7 +471,7 @@ export default function Planner() {
               aria-label="Resize task panel"
               aria-valuenow={taskPanelWidth}
               aria-valuemin={220}
-              aria-valuemax={560}
+              aria-valuemax={720}
               tabIndex={0}
               onPointerDown={onResizeStart}
               onKeyDown={onResizeKey}

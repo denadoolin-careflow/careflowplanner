@@ -55,7 +55,7 @@ export function PlannerTaskRow({ task, compact }: { task: Task; compact?: boolea
       onPointerDown={pointer.onPointerDown}
       style={{ minHeight: ROW_PX }}
       className={cn(
-        "group flex cursor-pointer touch-none select-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px] transition-colors hover:border-primary/40 hover:bg-card",
+        "group flex cursor-pointer touch-none select-none items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[length:var(--task-font,13px)] transition-colors hover:border-primary/40 hover:bg-card",
         "max-sm:flex-col max-sm:gap-1",
         task.done && "opacity-60",
       )}
