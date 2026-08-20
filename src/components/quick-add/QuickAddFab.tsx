@@ -79,7 +79,7 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const close = () => { setOpen(false); setPalette(""); setMode("command"); };
+  const close = () => { setOpen(false); setPalette(""); setMode("command"); setFullMode(false); };
 
   return (
     <>
