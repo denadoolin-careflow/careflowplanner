@@ -318,7 +318,7 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
                 key={m.id}
                 type="button"
                 onClick={() => void scheduleHomeItem(m.title)}
-                className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[13px] hover:border-primary/40"
+                className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[length:var(--task-font,13px)] hover:border-primary/40"
               >
                 <HomeIcon className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden />
                 <span className="min-w-0 flex-1 truncate">{m.title}</span>
@@ -342,7 +342,7 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
                     <button
                       type="button"
                       aria-label={meal ? `Change ${slot.label}` : `Plan ${slot.label}`}
-                      className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[13px] hover:border-primary/40"
+                      className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-left text-[length:var(--task-font,13px)] hover:border-primary/40"
                     >
                       <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-yellow-500" aria-hidden />
                       <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground">{slot.label}</span>
@@ -361,7 +361,7 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
             {filteredHabits.map((h: any) => {
               const done = !!h.log?.[todayISO];
               return (
-                <div key={h.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px]">
+                <div key={h.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[length:var(--task-font,13px)]">
                   <BlockCheckbox done={done} title={h.name ?? h.title ?? "Habit"} onToggle={() => void toggleHabit(h.id)} className="mt-0.5" />
                   <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere]", done && "line-through opacity-60")}>
                     {h.name ?? h.title}
@@ -379,7 +379,7 @@ export function TaskSourcePanel({ selectedDate, onQuickAdd, onCollapse }: { sele
                   {r.person_name} · {SLOT_LABEL[r.slot]}
                 </p>
                 {r.items.map(item => (
-                  <div key={item.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[13px]">
+                  <div key={item.id} className="flex items-start gap-2 rounded-lg border border-border/50 bg-card/70 px-2 py-1.5 text-[length:var(--task-font,13px)]">
                     <BlockCheckbox done={!!item.done} title={item.text}
                       onToggle={() => void routinesApi.toggleItem(r.person_name, r.slot, item.id)} className="mt-0.5" />
                     <span className={cn("min-w-0 flex-1 [overflow-wrap:anywhere]", item.done && "line-through opacity-60")}>
