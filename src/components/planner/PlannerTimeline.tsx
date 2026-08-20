@@ -48,7 +48,7 @@ import {
   HOUR_PX as BASE_HOUR_PX,
   SNAP_MIN,
 } from "@/lib/planner-metrics";
-import { useTimelineZoom, useTimelineWheelZoom, MIN_ZOOM, MAX_ZOOM } from "@/lib/planner/use-timeline-zoom";
+import { useTimelineZoom, useTimelineWheelZoom, useTimelinePinchZoom, MIN_ZOOM, MAX_ZOOM } from "@/lib/planner/use-timeline-zoom";
 
 export const RHYTHM_BANDS = [
   { id: "morning" as BandId, label: "Morning", startH: 5, endH: 12, className: "bg-amber-50/50 dark:bg-amber-950/20" },
@@ -174,6 +174,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   const HOUR_PX = BASE_HOUR_PX * zoom;
   const SLOT_PX = (HOUR_PX * SNAP_MIN) / 60;
   useTimelineWheelZoom(scrollRef, zoom, setZoom);
+  useTimelinePinchZoom(scrollRef, zoom, setZoom);
 
 
 
