@@ -51,7 +51,8 @@ export function buildMoonInsightPdf(data: MoonInsightExport): { blob: Blob; file
     [`${data.moonLabel} · ${data.illumination}% lit`, data.cycleLabel].filter(Boolean).join("  ·  "),
     11, "normal", 4,
   );
-  line(data.invitation, 11, "italic", 10);
+  line(data.invitation, 11, "italic", data.planningTip ? 4 : 10);
+  if (data.planningTip) line(`Planning: ${data.planningTip}`, 10, "normal", 10);
   rule();
 
   line("Journal", 13, "bold", 4);
