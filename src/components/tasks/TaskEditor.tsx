@@ -868,8 +868,14 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               <Card>
                 <CardHeader icon={<Tag className="h-3.5 w-3.5" />} title="Tags">
                   <TagPicker value={draft.tags ?? []} onChange={(next) => set("tags", next)} />
+                  <ItemFieldsSection
+                    entityId={draft.id ?? null}
+                    tags={draft.tags}
+                    className="mt-3"
+                  />
                 </CardHeader>
               </Card>
+
 
               {/* Project / Goal / Person */}
               <Card>
