@@ -58,8 +58,8 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
   // Listen for widget "+" broadcasts.
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ tab?: string }>).detail;
-      if (detail?.tab === "voice") { setVoiceOpen(true); haptics.pickup(); return; }
+      const detail = (e as CustomEvent<{ tab?: string; autoStart?: boolean }>).detail;
+      if (detail?.tab === "voice") { setVoiceAutoStart(!!detail.autoStart); setVoiceOpen(true); haptics.pickup(); return; }
       const next = (detail?.tab as Mode) || "command";
       openWith(next);
     };
