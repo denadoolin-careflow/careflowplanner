@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { QuickAddKind } from "@/lib/quick-add-presets";
 import { MINIMAL_KINDS, getLastQuickAddKind, setLastQuickAddKind } from "@/lib/quick-add-last";
+import { RecurrencePicker, type RecurrenceValue } from "@/components/tasks/RecurrencePicker";
 
 const META: Record<string, { label: string; icon: any; placeholder: string; cta: string }> = {
   task:        { label: "Task",    icon: CheckSquare,   placeholder: "What needs doing?",     cta: "Add task" },
@@ -43,6 +44,7 @@ export function MobileQuickAdd({
   const [date, setDate] = useState(todayISO());
   const [time, setTime] = useState("");
   const [slot, setSlot] = useState<"Breakfast" | "Lunch" | "Dinner" | "Snack">("Dinner");
+  const [repeat, setRepeat] = useState<RecurrenceValue>({});
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
@@ -70,6 +72,9 @@ export function MobileQuickAdd({
           dueDate: p.dueDate ?? (more ? date : undefined),
           tags: p.tags,
           estMinutes: p.estMinutes,
+          recurrenceType: repeat.recurrenceType ?? p.recurrenceType,
+          recurrenceInterval: repeat.recurrenceInterval ?? p.recurrenceInterval,
+          recurrenceDays: repeat.recurrenceDays ?? p.recurrenceDays,
         } as any);
         toast.success("Task added");
       } else if (kind === "appointment") {
@@ -179,6 +184,13 @@ export function MobileQuickAdd({
           )}
         </div>
       )}
+
+      {kind === "task" && more && (
+        <div className="mt-2">
+          <RecurrencePicker value={repeat} onChange={setRepeat} />
+        </div>
+      )}
+
 
       <div className="mt-3 flex items-center justify-between">
         {!showsDate ? (

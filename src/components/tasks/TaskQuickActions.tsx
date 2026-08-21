@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
 import { toast } from "sonner";
 import type { Task, Priority, Energy } from "@/lib/types";
+import { RecurrencePicker, recurrenceLabel } from "@/components/tasks/RecurrencePicker";
 
 const TIME_PRESETS = ["08:00", "12:00", "15:00", "18:00"];
 
@@ -48,6 +49,11 @@ export function TaskQuickActions({ task, className }: { task: Task; className?: 
 
   return (
     <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
+      {/* Repeat */}
+      <RecurrencePicker
+        value={task}
+        onChange={(v) => void apply(v as Partial<Task>, recurrenceLabel(v) ? `Repeats · ${recurrenceLabel(v)}` : "Repeat off")}
+      />
       {/* Time */}
       <Popover>
         <PopoverTrigger asChild>

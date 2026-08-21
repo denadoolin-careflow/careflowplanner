@@ -1,16 +1,16 @@
 /**
  * One scheduling behaviour shared by every planner surface.
  *
- * Board / List / Table drops all route through here so they honour the same
- * snap step, conflict detection and "pick another time" resolution the
- * Schedule grid already uses.
+ * Board / List / Table drops and the bulk bar all route through here so they
+ * honour the same snap step, conflict detection and resolution the Schedule
+ * grid already uses.
  */
 import { useCallback, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import {
-  busyFrom, findConflict, getSnapStep, nextFreeSlot, snapMinutesTo,
+  busyFrom, findConflict, findConflicts, getSnapStep, nextFreeSlot, snapMinutesTo,
   suggestForDayPart, toMinutes, toTime, busyLabel, type BusyBlock,
 } from "./time-snap";
 
@@ -38,15 +38,34 @@ export function readDraggedItem(e: React.DragEvent): { type: string; id: string 
   return { type: "task", id: raw };
 }
 
+export interface ConflictRow {
+  id?: string;
+  title: string;
+  range: string;
+  start: number;
+  end: number;
+  /** Only tasks can trade places — appointments stay put. */
+  swappable: boolean;
+}
+
 export interface PendingConflict {
   taskId: string;
   title: string;
   dateISO: string;
   requested: string;
+  duration: number;
   suggestion: string | null;
+  clashes: ConflictRow[];
+  /** Kept for older callers reading a single clash. */
   clashTitle: string;
   clashRange: string;
 }
+
+export type ConflictChoice =
+  | { kind: "anyway" }
+  | { kind: "suggested" }
+  | { kind: "shift" }
+  | { kind: "swap"; withId: string };
 
 export function useScheduleDrop() {
   const { state, updateTask, updateAppointment } = useStore() as any;
@@ -59,6 +78,36 @@ export function useScheduleDrop() {
     ];
     return busyFrom(rows, excludeId);
   }, [state.tasks, state.appointments]);
+
+  const taskIds = useCallback(
+    () => new Set((state.tasks ?? []).map((t: any) => t.id)),
+    [state.tasks],
+  );
+
+  const buildPending = useCallback((
+    task: any, dateISO: string, requested: string, duration: number, busy: BusyBlock[], clash: BusyBlock[],
+  ): PendingConflict => {
+    const ids = taskIds();
+    const free = nextFreeSlot(toMinutes(requested)!, duration, busy, getSnapStep());
+    return {
+      taskId: task.id,
+      title: task.title,
+      dateISO,
+      requested,
+      duration,
+      suggestion: free != null ? toTime(free) : null,
+      clashes: clash.map(c => ({
+        id: c.id,
+        title: c.title,
+        range: busyLabel(c),
+        start: c.start,
+        end: c.end,
+        swappable: !!c.id && ids.has(c.id),
+      })),
+      clashTitle: clash[0]?.title ?? "",
+      clashRange: clash[0] ? busyLabel(clash[0]) : "",
+    };
+  }, [taskIds]);
 
   /** Schedule a dragged item onto a day, optionally into a day part. */
   const schedule = useCallback((
@@ -92,31 +141,93 @@ export function useScheduleDrop() {
     }
 
     const requested = suggestForDayPart(PART_LABEL[part], duration, [], step);
-    const clash = findConflict(toMinutes(requested)!, duration, busy);
-    if (clash) {
-      const free = nextFreeSlot(toMinutes(requested)!, duration, busy, step);
-      setPending({
-        taskId: task.id,
-        title: task.title,
-        dateISO,
-        requested,
-        suggestion: free != null ? toTime(free) : null,
-        clashTitle: clash.title,
-        clashRange: busyLabel(clash),
-      });
+    const clash = findConflicts(toMinutes(requested)!, duration, busy);
+    if (clash.length) {
+      setPending(buildPending(task, dateISO, requested, duration, busy, clash));
       return;
     }
     updateTask(task.id, { dueDate: dateISO, startTime: requested });
     toast.success(`${PART_LABEL[part]} · ${requested} on ${dayLabel}`);
-  }, [state.tasks, updateTask, updateAppointment, busyForDay]);
+  }, [state.tasks, updateTask, updateAppointment, busyForDay, buildPending]);
 
-  const resolve = useCallback((choice: "anyway" | "suggested") => {
+  /**
+   * Bulk move: place several tasks on a day (optionally into a day part or an
+   * explicit time window), packing them back-to-back around what's already busy.
+   */
+  const scheduleMany = useCallback((
+    ids: string[],
+    dateISO: string,
+    opts: { part?: DayPartKey; startTime?: string; timed?: boolean } = {},
+  ) => {
+    const step = getSnapStep();
+    const busy = busyForDay(dateISO).filter(b => !ids.includes(b.id ?? ""));
+    const tasks = ids
+      .map(id => (state.tasks ?? []).find((t: any) => t.id === id))
+      .filter(Boolean);
+    if (!tasks.length) return;
+
+    const dayLabel = format(new Date(`${dateISO}T12:00:00`), "EEE, MMM d");
+    if (!opts.part && !opts.startTime) {
+      tasks.forEach((t: any) => updateTask(t.id, { dueDate: dateISO }));
+      toast.success(`${tasks.length} moved to ${dayLabel}`);
+      return;
+    }
+
+    const base = opts.startTime
+      ? snapMinutesTo(toMinutes(opts.startTime) ?? 9 * 60, step)
+      : toMinutes(suggestForDayPart(PART_LABEL[opts.part!], 30, [], step))!;
+    let cursor = base;
+    let placed = 0;
+    for (const t of tasks as any[]) {
+      const duration = Math.max(15, t.estMinutes ?? 30);
+      const slot = nextFreeSlot(cursor, duration, busy, step);
+      const start = slot ?? cursor;
+      updateTask(t.id, { dueDate: dateISO, startTime: toTime(start) });
+      busy.push({ start, end: start + duration, title: t.title, id: t.id });
+      busy.sort((a, b) => a.start - b.start);
+      cursor = start + duration;
+      placed++;
+    }
+    toast.success(`${placed} scheduled on ${dayLabel}`);
+  }, [state.tasks, updateTask, busyForDay]);
+
+  const resolve = useCallback((choice: ConflictChoice | "anyway" | "suggested") => {
     if (!pending) return;
-    const time = choice === "suggested" && pending.suggestion ? pending.suggestion : pending.requested;
+    const c: ConflictChoice = typeof choice === "string" ? { kind: choice } : choice;
+
+    if (c.kind === "swap") {
+      const other = (state.tasks ?? []).find((t: any) => t.id === c.withId);
+      const row = pending.clashes.find(r => r.id === c.withId);
+      if (other && row) {
+        updateTask(other.id, { dueDate: pending.dateISO, startTime: other.startTime ? pending.requested : undefined });
+        updateTask(pending.taskId, { dueDate: pending.dateISO, startTime: toTime(row.start) });
+        toast.success(`Swapped with ${other.title}`);
+      }
+      setPending(null);
+      return;
+    }
+
+    if (c.kind === "shift") {
+      const busy = busyForDay(pending.dateISO, pending.taskId);
+      const free = nextFreeSlot(toMinutes(pending.requested)!, pending.duration, busy, getSnapStep());
+      const time = free != null ? toTime(free) : pending.requested;
+      updateTask(pending.taskId, { dueDate: pending.dateISO, startTime: time });
+      toast.success(`Shifted to ${time}`);
+      setPending(null);
+      return;
+    }
+
+    const time = c.kind === "suggested" && pending.suggestion ? pending.suggestion : pending.requested;
     updateTask(pending.taskId, { dueDate: pending.dateISO, startTime: time });
     toast.success(`Scheduled for ${time}`);
     setPending(null);
-  }, [pending, updateTask]);
+  }, [pending, updateTask, state.tasks, busyForDay]);
 
-  return useMemo(() => ({ schedule, pending, setPending, resolve }), [schedule, pending, resolve]);
+  return useMemo(
+    () => ({ schedule, scheduleMany, pending, setPending, resolve }),
+    [schedule, scheduleMany, pending, resolve],
+  );
 }
+
+/** Re-exported so callers keep one import for conflict helpers. */
+export { findConflict };

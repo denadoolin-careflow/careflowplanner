@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { addDays, addMonths, addYears, format, isValid, parseISO, startOfWeek } from "date-fns";
+import { addDays, addMonths, addYears, differenceInCalendarDays, endOfYear, format, getDaysInMonth, isValid, parseISO, startOfMonth, startOfWeek, startOfYear } from "date-fns";
 import { Plus, Command as CommandIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskSourcePanel } from "@/components/planner/TaskSourcePanel";
@@ -37,7 +37,7 @@ import { PlannerDayReferences } from "@/components/planner/PlannerDayReferences"
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
 import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsSheet";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
-import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMobileWeekMode, usePlannerMonthMode, type PlannerView, type PlannerWeekMode } from "@/lib/planner-prefs";
+import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMobileWeekMode, usePlannerMonthMode, usePlannerRangeLayout, type PlannerView, type PlannerWeekMode } from "@/lib/planner-prefs";
 import { PlannerWeekFilterBar } from "@/components/planner/PlannerWeekFilterBar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -101,6 +101,7 @@ export default function Planner() {
   // Phones default to the stacked Overview; the grid stays one tap away.
   const [mobileWeekMode, setMobileWeekMode] = usePlannerMobileWeekMode();
   const [monthMode, setMonthMode] = usePlannerMonthMode();
+  const [rangeLayout, setRangeLayout] = usePlannerRangeLayout(view);
   const [period, setPeriod] = usePlannerPeriod();
   const isMobile = useIsMobile();
   const [segment, setSegment] = useState<Segment>("all");
@@ -229,6 +230,15 @@ export default function Planner() {
   const showTaskPanel = !isMobile && panel.task && shellWidth >= 900;
   const weekStart = useMemo(() => startOfWeek(day, { weekStartsOn: 1 }), [day]);
   const activeWeekMode = isMobile ? mobileWeekMode : weekMode;
+  // List / Table can stand in for the native day, 3-day, month, or year view.
+  const rangeStart = view === "month" ? startOfMonth(day) : view === "year" ? startOfYear(day) : day;
+  const rangeDays =
+    view === "month" ? getDaysInMonth(day)
+    : view === "year" ? differenceInCalendarDays(endOfYear(day), startOfYear(day)) + 1
+    : view === "3day" ? 3 : 1;
+  const tableScope = view === "month" ? "month" : view === "year" ? "year" : "day";
+  const altLayout = view !== "week" && rangeLayout !== "default";
+  const nativeRange = view === "week" || rangeLayout === "default";
   const gridBox = isMobile ? GRID_BOX_MOBILE : GRID_BOX;
   const openDay = (d: Date) => { setView("day"); go(d); };
 
@@ -341,7 +351,18 @@ export default function Planner() {
           style={{ maskImage: "linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 22px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 22px), transparent 100%)" }}
         >
           <PlannerViewToggle value={view} onChange={setView} className="shrink-0" />
-          {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
+          {view === "day" && rangeLayout === "default" && <PlannerPeriodTabs value={period} onChange={setPeriod} className="shrink-0" />}
+          {view !== "week" && (
+            <PlannerRangeModeTabs
+              className="shrink-0"
+              value={rangeLayout} onChange={setRangeLayout}
+              options={[
+                { id: "default", label: view === "month" ? "Month" : view === "year" ? "Year" : "Day" },
+                { id: "list", label: "List" },
+                { id: "table", label: "Table" },
+              ]}
+            />
+          )}
           <PlannerKindFilter className="shrink-0" />
         </div>
         </div>
@@ -365,7 +386,7 @@ export default function Planner() {
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {view === "day" && <PlannerPeriodTabs value={period} onChange={setPeriod} />}
+            {view === "day" && rangeLayout === "default" && <PlannerPeriodTabs value={period} onChange={setPeriod} />}
             {view === "week" && (
               <PlannerRangeModeTabs
                 value={weekMode} onChange={setWeekMode}
@@ -378,10 +399,20 @@ export default function Planner() {
                 ]}
               />
             )}
-            {view === "month" && (
+            {view === "month" && rangeLayout === "default" && (
               <PlannerRangeModeTabs
                 value={monthMode} onChange={setMonthMode}
                 options={[{ id: "calendar", label: "Calendar" }, { id: "overview", label: "Overview" }]}
+              />
+            )}
+            {view !== "week" && (
+              <PlannerRangeModeTabs
+                value={rangeLayout} onChange={setRangeLayout}
+                options={[
+                  { id: "default", label: view === "month" ? "Month" : view === "year" ? "Year" : "Day" },
+                  { id: "list", label: "List" },
+                  { id: "table", label: "Table" },
+                ]}
               />
             )}
             <PlannerKindFilter className="ml-auto" />
@@ -437,7 +468,7 @@ export default function Planner() {
         </>
       )}
 
-      {view === "day" && period === "timeofday" && (
+      {nativeRange && view === "day" && period === "timeofday" && (
         <div className="inline-flex max-w-full items-center gap-0.5 self-start overflow-x-auto rounded-full border border-border/60 bg-background/60 p-0.5">
           {SEGMENTS.map(s => (
             <button
@@ -540,27 +571,33 @@ export default function Planner() {
             </div>
           )}
           <div className="flex min-w-0 flex-col gap-3">
-            {view === "week" && activeWeekMode !== "overview" && (
+            {((view === "week" && activeWeekMode !== "overview") || altLayout) && (
               <PlannerWeekFilterBar className="shrink-0" />
             )}
-            {view === "day" && period === "grid" && (
+            {altLayout && rangeLayout === "list" && (
+              <PlannerWeekList weekStart={rangeStart} days={rangeDays} onSelectDay={openDay} />
+            )}
+            {altLayout && rangeLayout === "table" && (
+              <PlannerWeekTable weekStart={rangeStart} days={rangeDays} scope={tableScope} />
+            )}
+            {nativeRange && view === "day" && period === "grid" && (
               <div className={gridBox}><PlannerTimeline date={day} /></div>
             )}
-            {view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
-            {view === "day" && period === "capacity" && (
+            {nativeRange && view === "day" && period === "schedule" && <PlannerScheduleList date={day} />}
+            {nativeRange && view === "day" && period === "capacity" && (
               <PlannerCapacityView date={day} onSelectDate={openDay} />
             )}
-            {view === "day" && period === "timeofday" && segment === "all" && (
+            {nativeRange && view === "day" && period === "timeofday" && segment === "all" && (
               <div className="grid grid-cols-1 gap-3">
                 <PlannerPeriodList date={day} period="morning" />
                 <PlannerPeriodList date={day} period="afternoon" />
                 <PlannerPeriodList date={day} period="evening" />
               </div>
             )}
-            {view === "day" && period === "timeofday" && segment !== "all" && (
+            {nativeRange && view === "day" && period === "timeofday" && segment !== "all" && (
               <PlannerPeriodList date={day} period={segment} />
             )}
-            {view === "3day" && (
+            {nativeRange && view === "3day" && (
               <div className={gridBox}>
                 <PlannerWeekGrid start={day} days={3} onSelectDay={openDay} />
               </div>
@@ -587,13 +624,13 @@ export default function Planner() {
             {view === "week" && activeWeekMode === "table" && (
               <PlannerWeekTable weekStart={weekStart} />
             )}
-            {view === "month" && monthMode === "calendar" && (
+            {nativeRange && view === "month" && monthMode === "calendar" && (
               <PlannerMonthView date={day} onSelectDay={openDay} />
             )}
-            {view === "month" && monthMode === "overview" && (
+            {nativeRange && view === "month" && monthMode === "overview" && (
               <PlannerMonthOverview date={day} onJumpToDate={openDay} />
             )}
-            {view === "year" && <PlannerYearView date={day} onSelectDay={openDay} />}
+            {nativeRange && view === "year" && <PlannerYearView date={day} onSelectDay={openDay} />}
           </div>
           {view === "day" && (
             isMobile ? (

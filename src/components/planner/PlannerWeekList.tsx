@@ -8,6 +8,8 @@ import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
 import { useWeekFilters, filterFeedItems } from "@/lib/planner/week-filters";
 import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME } from "@/lib/planner/use-schedule-drop";
 import { KIND_ICONS } from "./kindIcon";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PlannerBulkBar } from "./PlannerBulkBar";
 import { cn } from "@/lib/utils";
 
 /** Week as one flat, time-ordered list grouped by day. */
@@ -20,7 +22,10 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
   const { updateTask } = useStore() as any;
   const { byDay } = usePlannerFeed(weekStart, days);
   const { filters } = useWeekFilters();
-  const { schedule, pending, setPending, resolve } = useScheduleDrop();
+  const { schedule, scheduleMany, pending, setPending, resolve } = useScheduleDrop();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleSel = (id: string) =>
+    setSelected(cur => { const n = new Set(cur); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [dropDay, setDropDay] = useState<string | null>(null);
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
@@ -83,6 +88,15 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
                             it.done && "opacity-50 line-through",
                           )}
                         >
+                          {isTask && (
+                            <span className="mt-0.5 shrink-0" onClick={e => e.stopPropagation()}>
+                              <Checkbox
+                                aria-label={`Select ${it.title}`}
+                                checked={selected.has(it.sourceRef.id)}
+                                onCheckedChange={() => toggleSel(it.sourceRef.id)}
+                              />
+                            </span>
+                          )}
                           {isTask ? (
                             <span
                               role="checkbox"
@@ -118,6 +132,12 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
           );
         })}
       </div>
+      <PlannerBulkBar
+        ids={Array.from(selected)}
+        anchorDate={weekStart}
+        onClear={() => setSelected(new Set())}
+        onScheduleMany={scheduleMany}
+      />
       <ScheduleConflictDialog pending={pending} onCancel={() => setPending(null)} onResolve={resolve} />
       {dialogs}
     </div>

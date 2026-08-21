@@ -28,6 +28,8 @@ function write(key: string, value: unknown) {
 
 function useLS<T>(key: string, fallback: T): [T, (v: T) => void] {
   const [val, setVal] = useState<T>(() => read(key, fallback));
+  // Keys can be dynamic (per-range prefs) — re-read when the key changes.
+  useEffect(() => { setVal(read(key, fallback)); }, [key]);
   useEffect(() => {
     const onStorage = (e: StorageEvent) => { if (e.key === key) setVal(read(key, fallback)); };
     window.addEventListener("storage", onStorage);
@@ -47,6 +49,10 @@ export type PlannerWeekHeaderMode = "insight" | "compact";
 export const usePlannerWeekHeaderMode = () => useLS<PlannerWeekHeaderMode>(WEEK_HEADER_KEY, "insight");
 /** Phones keep their own remembered week view (defaults to the stacked Board). */
 export const usePlannerMobileWeekMode = () => useLS<PlannerWeekMode>(MOBILE_WEEK_MODE_KEY, "board");
+/** Day / 3-day / month / year can each render as their native view, a list, or a table. */
+export type PlannerRangeLayout = "default" | "list" | "table";
+export const usePlannerRangeLayout = (view: PlannerView) =>
+  useLS<PlannerRangeLayout>(`careflow:planner:layout:${view}`, "default");
 export const usePlannerMonthMode = () => useLS<PlannerMonthMode>(MONTH_MODE_KEY, "calendar");
 
 export type PlannerPanelId = "task" | "focus" | "context";

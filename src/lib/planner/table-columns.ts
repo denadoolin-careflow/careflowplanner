@@ -39,11 +39,17 @@ const DEFAULT_CONFIG: TableConfig = {
   asc: true,
 };
 
-const KEY = "careflow:planner:table-columns";
+/** Layouts are remembered separately for each planner range. */
+export type TableScope = "day" | "week" | "month" | "year";
 
-function read(): TableConfig {
+const LEGACY_KEY = "careflow:planner:table-columns";
+const keyFor = (scope: TableScope) => `${LEGACY_KEY}:${scope}`;
+
+function read(scope: TableScope): TableConfig {
   try {
-    const raw = localStorage.getItem(KEY);
+    // Migration: the very first version stored one shared layout — treat it as the week layout.
+    const raw = localStorage.getItem(keyFor(scope))
+      ?? (scope === "week" ? localStorage.getItem(LEGACY_KEY) : null);
     if (!raw) return DEFAULT_CONFIG;
     const p = JSON.parse(raw) as Partial<TableConfig>;
     const order = [
@@ -62,30 +68,33 @@ function read(): TableConfig {
   }
 }
 
-const subs = new Set<(c: TableConfig) => void>();
-function publish(next: TableConfig) {
-  try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* noop */ }
-  subs.forEach(fn => fn(next));
+const subs = new Map<TableScope, Set<(c: TableConfig) => void>>();
+function publish(scope: TableScope, next: TableConfig) {
+  try { localStorage.setItem(keyFor(scope), JSON.stringify(next)); } catch { /* noop */ }
+  subs.get(scope)?.forEach(fn => fn(next));
 }
 
-export function useTableConfig() {
-  const [config, setConfig] = useState<TableConfig>(read);
+export function useTableConfig(scope: TableScope = "week") {
+  const [config, setConfig] = useState<TableConfig>(() => read(scope));
 
   useEffect(() => {
-    subs.add(setConfig);
-    return () => { subs.delete(setConfig); };
-  }, []);
+    setConfig(read(scope));
+    if (!subs.has(scope)) subs.set(scope, new Set());
+    const set = subs.get(scope)!;
+    set.add(setConfig);
+    return () => { set.delete(setConfig); };
+  }, [scope]);
 
   const toggleColumn = useCallback((id: TableColumnId) => {
-    const cur = read();
+    const cur = read(scope);
     const on = cur.visible.includes(id);
     // Keep at least one column on screen.
     if (on && cur.visible.length === 1) return;
-    publish({ ...cur, visible: on ? cur.visible.filter(c => c !== id) : [...cur.visible, id] });
-  }, []);
+    publish(scope, { ...cur, visible: on ? cur.visible.filter(c => c !== id) : [...cur.visible, id] });
+  }, [scope]);
 
   const moveColumn = useCallback((from: TableColumnId, to: TableColumnId) => {
-    const cur = read();
+    const cur = read(scope);
     if (from === to) return;
     const order = [...cur.order];
     const fi = order.indexOf(from);
@@ -93,15 +102,15 @@ export function useTableConfig() {
     if (fi < 0 || ti < 0) return;
     order.splice(fi, 1);
     order.splice(ti, 0, from);
-    publish({ ...cur, order });
-  }, []);
+    publish(scope, { ...cur, order });
+  }, [scope]);
 
   const setSort = useCallback((id: TableColumnId) => {
-    const cur = read();
-    publish(cur.sort === id ? { ...cur, asc: !cur.asc } : { ...cur, sort: id, asc: true });
-  }, []);
+    const cur = read(scope);
+    publish(scope, cur.sort === id ? { ...cur, asc: !cur.asc } : { ...cur, sort: id, asc: true });
+  }, [scope]);
 
-  const reset = useCallback(() => publish(DEFAULT_CONFIG), []);
+  const reset = useCallback(() => publish(scope, DEFAULT_CONFIG), [scope]);
 
   /** Visible columns in the user's saved order. */
   const columns = config.order.filter(c => config.visible.includes(c));
