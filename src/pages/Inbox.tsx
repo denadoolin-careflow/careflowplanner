@@ -1704,7 +1704,7 @@ function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onP
         const ids = list.map((t) => `inbox:${t.id}`);
         return (
           <div key={b}>
-            <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
+            <div className="sticky top-14 z-10 mb-1.5 flex items-center justify-between gap-2 rounded-full bg-background/80 px-1 py-1 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:top-2">
               <div className="inline-flex items-center gap-2">
                 <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1", meta.tint)}>
                   <Icon className="h-3 w-3" />
@@ -1739,7 +1739,7 @@ function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onP
             </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(b)}>
               <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {list.map((t: any) => (
                     <InboxSortableRow key={t.id} task={t} autoDayPart={autoDayPart} />
                   ))}
