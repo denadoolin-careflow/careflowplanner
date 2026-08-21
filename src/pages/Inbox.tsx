@@ -50,11 +50,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { List as ListIcon, CalendarClock } from "lucide-react";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
-  closestCenter, type DragEndEvent,
+  closestCenter, useDroppable, DragOverlay, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { ScheduleDropDialog, type SchedulePick } from "@/components/inbox/ScheduleDropDialog";
 
 export default function Inbox() {
   return (
