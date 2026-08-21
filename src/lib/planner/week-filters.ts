@@ -16,6 +16,8 @@ export interface WeekFilterState {
   priorities: Priority[];
   energies: Energy[];
   dueRange: WeekDueRange;
+  /** Tag names (lowercase-insensitive match) an item must carry. */
+  tags: string[];
   /** Hide items that are already done. */
   hideDone: boolean;
 }
@@ -26,6 +28,7 @@ export const EMPTY_WEEK_FILTERS: WeekFilterState = {
   priorities: [],
   energies: [],
   dueRange: "any",
+  tags: [],
   hideDone: false,
 };
 
@@ -60,7 +63,7 @@ export function useWeekFilters() {
     publish({ ...read(), ...p });
   }, []);
 
-  const toggleIn = useCallback(<K extends "areas" | "priorities" | "energies">(key: K, value: WeekFilterState[K][number]) => {
+  const toggleIn = useCallback(<K extends "areas" | "priorities" | "energies" | "tags">(key: K, value: WeekFilterState[K][number]) => {
     const cur = read();
     const list = cur[key] as string[];
     const next = list.includes(value as string) ? list.filter(v => v !== value) : [...list, value as string];
@@ -75,7 +78,7 @@ export function useWeekFilters() {
 export function countActive(f: WeekFilterState): number {
   return (
     (f.search.trim() ? 1 : 0) +
-    f.areas.length + f.priorities.length + f.energies.length +
+    f.areas.length + f.priorities.length + f.energies.length + f.tags.length +
     (f.dueRange !== "any" ? 1 : 0) +
     (f.hideDone ? 1 : 0)
   );
@@ -86,6 +89,7 @@ export function filterFeedItems(items: PlannerFeedItem[], f: WeekFilterState): P
   const q = f.search.trim().toLowerCase();
   const todayISO = format(new Date(), "yyyy-MM-dd");
   const hasAttrFilter = f.areas.length > 0 || f.priorities.length > 0 || f.energies.length > 0;
+  const wantTags = f.tags.map(t => t.toLowerCase());
 
   return items.filter(it => {
     if (f.hideDone && it.done) return false;
@@ -100,6 +104,11 @@ export function filterFeedItems(items: PlannerFeedItem[], f: WeekFilterState): P
       if (f.energies.length && (!it.energy || !f.energies.includes(it.energy))) return false;
     }
 
+    if (wantTags.length) {
+      const own = ((it as { tags?: string[] | null }).tags ?? []).map(t => String(t).toLowerCase());
+      if (!wantTags.every(t => own.includes(t))) return false;
+    }
+
     switch (f.dueRange) {
       case "today": return it.date === todayISO;
       case "overdue": return it.date < todayISO && !it.done;
@@ -112,7 +121,7 @@ export function filterFeedItems(items: PlannerFeedItem[], f: WeekFilterState): P
 
 /** Task-level predicate — used by the Schedule grid, which renders raw tasks. */
 export function matchesTaskFilter(
-  t: { title: string; done?: boolean; area?: Area; priority?: Priority; energy?: Energy; startTime?: string | null; dueDate?: string },
+  t: { title: string; done?: boolean; area?: Area; priority?: Priority; energy?: Energy; startTime?: string | null; dueDate?: string; tags?: string[] | null },
   f: WeekFilterState,
 ): boolean {
   const q = f.search.trim().toLowerCase();
@@ -121,6 +130,10 @@ export function matchesTaskFilter(
   if (f.areas.length && (!t.area || !f.areas.includes(t.area))) return false;
   if (f.priorities.length && (!t.priority || !f.priorities.includes(t.priority))) return false;
   if (f.energies.length && (!t.energy || !f.energies.includes(t.energy))) return false;
+  if (f.tags.length) {
+    const own = (t.tags ?? []).map(x => String(x).toLowerCase());
+    if (!f.tags.every(x => own.includes(x.toLowerCase()))) return false;
+  }
   const todayISO = format(new Date(), "yyyy-MM-dd");
   switch (f.dueRange) {
     case "today": return t.dueDate === todayISO;
