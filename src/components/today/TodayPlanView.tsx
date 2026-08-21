@@ -12,6 +12,7 @@ import { Leaf, Sparkles, ListTodo, Inbox } from "lucide-react";
 import { tray, useTray } from "@/lib/tray-store";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { PhaseHabitNudge } from "@/components/planner/PhaseHabitNudge";
+import { TodayInboxRail } from "@/components/today/TodayInboxRail";
 
 /**
  * Today's planning surface — the same timeline engine the /planner page uses,
@@ -114,7 +115,8 @@ export function TodayPlanView({ date }: { date: Date }) {
           title="Drag tasks onto the grid"
           defaultCollapsed={false}
         >
-          <div className="px-2 pb-2">
+          <div className="space-y-2 px-2 pb-2">
+            <TodayInboxRail date={date} />
             <div className="h-[76vh] min-h-[520px]">
               <PlannerTimeline date={date} />
             </div>
