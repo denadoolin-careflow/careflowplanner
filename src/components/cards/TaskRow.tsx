@@ -246,6 +246,7 @@ export function TaskRow({
       return;
     }
     if (selection.paneOpen) { selection.selectOnly(task.id); return; }
+    if (tapAction === "quickEdit") { setQuickEditOpen(true); return; }
     // Tap does nothing — expansion is via chevron, edit via double-click,
     // and the quick-edit menu is reserved for press-and-hold.
   };
