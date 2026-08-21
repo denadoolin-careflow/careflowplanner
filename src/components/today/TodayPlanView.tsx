@@ -147,6 +147,8 @@ export function TodayPlanView({ date }: { date: Date }) {
 
       {capacityHints}
       <PhaseHabitNudge date={date} />
+      {period === "grid" && <TodayInboxRail date={date} />}
+
 
       <div
         className="min-h-0"
