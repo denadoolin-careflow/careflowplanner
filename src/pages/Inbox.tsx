@@ -56,6 +56,9 @@ import {
   SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { ScheduleDropDialog, type SchedulePick } from "@/components/inbox/ScheduleDropDialog";
+import {
+  busyFrom, findConflict, getSnapStep, snapTime, suggestForDayPart, toMinutes, DAY_PART_RANGE,
+} from "@/lib/planner/time-snap";
 
 export default function Inbox() {
   return (
@@ -1352,6 +1355,8 @@ function InboxInner() {
             )}
             <SectionedInboxList
               items={items}
+              allTasks={state.tasks ?? []}
+              appointments={state.appointments ?? []}
               autoDayPart={autoDayPart}
               updateTask={updateTask}
               onAddToBucket={async (b) => {
@@ -1668,8 +1673,10 @@ function DropZone({ id, children, className, activeClassName }: {
   );
 }
 
-function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onProcess }: {
+function SectionedInboxList({ items, allTasks = [], appointments = [], autoDayPart, updateTask, onAddToBucket, onProcess }: {
   items: any[];
+  allTasks?: any[];
+  appointments?: any[];
   autoDayPart: DayPart;
   updateTask: (id: string, patch: any) => Promise<void> | void;
   onAddToBucket?: (b: Bucket) => void | Promise<void>;
@@ -1683,6 +1690,13 @@ function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onP
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pending, setPending] = useState<any | null>(null);
+  const [pendingSeed, setPendingSeed] = useState<{ date?: string; time?: string; dayPart?: DayPart } | null>(null);
+
+  /** Busy blocks (scheduled tasks + appointments) for a given day. */
+  const busyFor = useCallback((dateISO: string, excludeId?: string) => busyFrom([
+    ...allTasks.filter((t: any) => t.dueDate === dateISO && (t.startTime || t.time)),
+    ...appointments.filter((a: any) => a.date === dateISO && a.time),
+  ], excludeId), [allTasks, appointments]);
 
   // Bucket and sort by sortOrder so manual reorder persists across renders.
   const groups = useMemo(() => {
@@ -1716,7 +1730,7 @@ function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onP
 
   const applyBucketDrop = async (task: any, target: Bucket) => {
     const todayIso = format(new Date(), "yyyy-MM-dd");
-    if (target === "needsDate") { setPending(task); return; }
+    if (target === "needsDate") { setPendingSeed(null); setPending(task); return; }
     if (target === "scheduledToday") {
       await updateTask(task.id, { dueDate: todayIso, dayPart: task.dayPart ?? autoDayPart });
       haptics.snap?.(); toast("Scheduled for today", { description: task.title });
@@ -1753,9 +1767,28 @@ function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onP
     if (overId.startsWith("daypart:")) {
       const part = overId.split(":")[1] as DayPart;
       const todayIso = format(new Date(), "yyyy-MM-dd");
-      await updateTask(task.id, { dayPart: part, dueDate: task.dueDate ?? todayIso });
+      const dateISO = task.dueDate ?? todayIso;
+      const duration = task.estMinutes ?? 30;
+      const busy = busyFor(dateISO, task.id);
+      const step = getSnapStep();
+      // Keep an existing time if it already sits in this day part, else use the
+      // snapped default start for the part.
+      const existing = snapTime(task.startTime, step);
+      const [lo, hi] = DAY_PART_RANGE[part] ?? [0, 24 * 60];
+      const existingMin = toMinutes(existing);
+      const inPart = existingMin != null && existingMin >= lo && existingMin < hi;
+      const start = inPart ? existing! : suggestForDayPart(part, duration, busy, step);
+      const clash = findConflict(toMinutes(start)!, duration, busy);
+      if (clash) {
+        // Gentle warning: let the user replace the time or pick another.
+        setPendingSeed({ date: dateISO, time: start, dayPart: part });
+        setPending(task);
+        haptics.tap?.();
+        return;
+      }
+      await updateTask(task.id, { dayPart: part, dueDate: dateISO, startTime: start });
       haptics.snap?.();
-      toast(`Moved to ${part}`, { description: task.title });
+      toast(`Moved to ${part} · ${start}`, { description: task.title });
       return;
     }
 
@@ -1874,12 +1907,19 @@ function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onP
 
       <ScheduleDropDialog
         open={!!pending}
-        onOpenChange={(v) => { if (!v) setPending(null); }}
+        onOpenChange={(v) => { if (!v) { setPending(null); setPendingSeed(null); } }}
         taskTitle={pending?.title}
-        initial={{ date: pending?.dueDate, time: pending?.startTime, dayPart: (pending?.dayPart as DayPart) ?? autoDayPart }}
+        duration={pending?.estMinutes ?? 30}
+        busyFor={(d) => busyFor(d, pending?.id)}
+        initial={{
+          date: pendingSeed?.date ?? pending?.dueDate,
+          time: pendingSeed?.time ?? pending?.startTime,
+          dayPart: (pendingSeed?.dayPart ?? pending?.dayPart ?? autoDayPart) as DayPart,
+        }}
         onConfirm={async (pick: SchedulePick) => {
           const t = pending;
           setPending(null);
+          setPendingSeed(null);
           if (!t) return;
           await updateTask(t.id, { dueDate: pick.date, dayPart: pick.dayPart, startTime: pick.time ?? undefined });
           haptics.snap?.();
