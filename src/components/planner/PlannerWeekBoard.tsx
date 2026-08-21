@@ -12,6 +12,8 @@ import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
 import { useWeekFilters, filterFeedItems } from "@/lib/planner/week-filters";
 import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME, type DayPartKey } from "@/lib/planner/use-schedule-drop";
+import { useOutlineFilter } from "@/lib/planner/outline";
+import { OutlineBreadcrumb } from "./OutlineBreadcrumb";
 import { cn } from "@/lib/utils";
 
 const PARTS = [
@@ -41,13 +43,14 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashb
   /** The weekly plan dashboard now lives on the Overview tab. */
   showDashboard?: boolean;
 }) {
-  const { updateTask } = useStore() as any;
+  const { state, updateTask } = useStore() as any;
   const { byDay } = usePlannerFeed(weekStart, 7);
   const { filters } = useWeekFilters();
   const { schedule, pending, setPending, resolve } = useScheduleDrop();
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const outline = useOutlineFilter(state.tasks ?? []);
   const cols = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
 
@@ -62,10 +65,12 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashb
 
   return (
     <div className="space-y-3">
+      <OutlineBreadcrumb tasks={state.tasks ?? []} className="rounded-xl border border-border/60" />
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         {cols.map(d => {
           const key = format(d, "yyyy-MM-dd");
-          const items = filterFeedItems(byDay.get(key) ?? [], filters);
+          const items = filterFeedItems(byDay.get(key) ?? [], filters)
+            .filter(it => it.sourceRef.type !== "task" ? !outline.zoomRoot : outline.allowed(it.sourceRef.id));
           const isToday = isSameDay(d, today);
           return (
             <div
