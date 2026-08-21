@@ -114,7 +114,7 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
             onChange={setPalette}
             presets={presets}
             onPick={(k) => {
-              if (k === "voice") { setOpen(false); setVoiceOpen(true); return; }
+              if (k === "voice") { setOpen(false); setVoiceAutoStart(false); setVoiceOpen(true); return; }
               setMode(k);
             }}
             onClose={close}
@@ -124,7 +124,7 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
         )}
       </DialogContent>
     </Dialog>
-    <VoiceCaptureDialog open={voiceOpen} onOpenChange={setVoiceOpen} />
+    <VoiceCaptureDialog open={voiceOpen} autoStart={voiceAutoStart} onOpenChange={setVoiceOpen} />
     </>
   );
 }
