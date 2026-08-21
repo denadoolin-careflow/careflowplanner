@@ -519,10 +519,15 @@ export function VoiceCaptureDialog({
               <Button variant="ghost" onClick={() => setPhase("intro")}>
                 <RotateCcw className="mr-1 h-3.5 w-3.5" /> Start over
               </Button>
-              <Button onClick={saveAll} disabled={saving || selectionCount === 0}>
-                {saving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1 h-3.5 w-3.5" />}
-                Save {selectionCount || ""} task{selectionCount === 1 ? "" : "s"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={sendToQuickAdd}>
+                  <Zap className="mr-1 h-3.5 w-3.5" /> Quick add
+                </Button>
+                <Button onClick={saveAll} disabled={saving || selectionCount === 0}>
+                  {saving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1 h-3.5 w-3.5" />}
+                  Save {selectionCount || ""} task{selectionCount === 1 ? "" : "s"}
+                </Button>
+              </div>
             </div>
             </>)}
           </div>
