@@ -10,8 +10,10 @@ import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
 import { KIND_LABEL } from "@/lib/calendar-colors";
 import { useWeekFilters, filterFeedItems } from "@/lib/planner/week-filters";
 import {
-  useTableConfig, COLUMN_LABEL, ALL_COLUMNS, type TableColumnId,
+  useTableConfig, COLUMN_LABEL, ALL_COLUMNS, type TableColumnId, type TableScope,
 } from "@/lib/planner/table-columns";
+import { PlannerBulkBar } from "./PlannerBulkBar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME } from "@/lib/planner/use-schedule-drop";
 import { cn } from "@/lib/utils";
 
@@ -39,18 +41,23 @@ function sortValue(it: PlannerFeedItem, col: TableColumnId): string | number {
 }
 
 /** Week as a configurable, sortable table — dense, scannable, good for review. */
-export function PlannerWeekTable({ weekStart, days = 7, onOpenItem }: {
+export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "week" }: {
   weekStart: Date;
   days?: number;
   onOpenItem?: (item: PlannerFeedItem) => void;
+  /** Column layout + sort are remembered separately per range. */
+  scope?: TableScope;
 }) {
   const { state, updateTask } = useStore() as any;
   const { items } = usePlannerFeed(weekStart, days);
   const { filters } = useWeekFilters();
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
-  const { config, columns, toggleColumn, moveColumn, setSort, reset } = useTableConfig();
-  const { schedule, pending, setPending, resolve } = useScheduleDrop();
+  const { config, columns, toggleColumn, moveColumn, setSort, reset } = useTableConfig(scope);
+  const { schedule, scheduleMany, pending, setPending, resolve } = useScheduleDrop();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleSel = (id: string) =>
+    setSelected(cur => { const n = new Set(cur); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [dragCol, setDragCol] = useState<TableColumnId | null>(null);
   const [dropRow, setDropRow] = useState<string | null>(null);
   const today = new Date();
@@ -69,6 +76,8 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem }: {
       return dir * (typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv)));
     });
   }, [items, filters, config.sort, config.asc]);
+
+  const taskRows = useMemo(() => rows.filter(r => r.sourceRef.type === "task"), [rows]);
 
   const cell = (it: PlannerFeedItem, col: TableColumnId) => {
     switch (col) {
@@ -158,6 +167,14 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem }: {
         <table className="w-full text-[12.5px]">
           <thead className="sticky top-0 z-10 bg-card/95 text-[10px] uppercase tracking-[0.14em] text-muted-foreground backdrop-blur">
             <tr>
+              <th scope="col" className="w-9 px-2 py-2">
+                <Checkbox
+                  aria-label="Select all tasks"
+                  checked={taskRows.length > 0 && selected.size === taskRows.length}
+                  onCheckedChange={on =>
+                    setSelected(on ? new Set(taskRows.map(r => r.sourceRef.id)) : new Set())}
+                />
+              </th>
               {columns.map(col => (
                 <th
                   key={col}
@@ -185,7 +202,7 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem }: {
           </thead>
           <tbody className="divide-y divide-border/40">
             {rows.length === 0 && (
-              <tr><td colSpan={columns.length} className="px-3 py-6 text-center text-muted-foreground">Nothing matches here.</td></tr>
+              <tr><td colSpan={columns.length + 1} className="px-3 py-6 text-center text-muted-foreground">Nothing matches here.</td></tr>
             )}
             {rows.map(it => (
               <tr
@@ -212,6 +229,15 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem }: {
                   dropRow === it.id && "bg-primary/5 outline outline-1 outline-primary/40",
                 )}
               >
+                <td className="w-9 px-2 py-2" onClick={e => e.stopPropagation()}>
+                  {it.sourceRef.type === "task" && (
+                    <Checkbox
+                      aria-label={`Select ${it.title}`}
+                      checked={selected.has(it.sourceRef.id)}
+                      onCheckedChange={() => toggleSel(it.sourceRef.id)}
+                    />
+                  )}
+                </td>
                 {columns.map(col => (
                   <td key={col} className={cn("px-3 py-2", col === "when" && "whitespace-nowrap text-muted-foreground", (col === "kind" || col === "area" || col === "project" || col === "tags") && "text-muted-foreground")}>
                     {cell(it, col)}
@@ -222,6 +248,12 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem }: {
           </tbody>
         </table>
       </div>
+      <PlannerBulkBar
+        ids={Array.from(selected)}
+        anchorDate={weekStart}
+        onClear={() => setSelected(new Set())}
+        onScheduleMany={scheduleMany}
+      />
       <ScheduleConflictDialog pending={pending} onCancel={() => setPending(null)} onResolve={resolve} />
       {dialogs}
     </div>

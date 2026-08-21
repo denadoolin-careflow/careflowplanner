@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { parseTaskInput } from "@/lib/nlp-task";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { RecurrencePicker, type RecurrenceValue } from "@/components/tasks/RecurrencePicker";
 
 interface Props {
   open: boolean;
@@ -15,7 +16,8 @@ interface Props {
 export function PlannerQuickCapture({ open, onOpenChange, defaultDate }: Props) {
   const { addTask } = useStore();
   const [text, setText] = useState("");
-  useEffect(() => { if (open) setText(""); }, [open]);
+  const [repeat, setRepeat] = useState<RecurrenceValue>({});
+  useEffect(() => { if (open) { setText(""); setRepeat({}); } }, [open]);
 
   const parsed = text ? parseTaskInput(text) : null;
 
@@ -32,9 +34,9 @@ export function PlannerQuickCapture({ open, onOpenChange, defaultDate }: Props) 
       estMinutes: p.estMinutes,
       tags: p.tags,
       energy: p.energy,
-      recurrenceType: p.recurrenceType,
-      recurrenceInterval: p.recurrenceInterval,
-      recurrenceDays: p.recurrenceDays,
+      recurrenceType: repeat.recurrenceType ?? p.recurrenceType,
+      recurrenceInterval: repeat.recurrenceInterval ?? p.recurrenceInterval,
+      recurrenceDays: repeat.recurrenceDays ?? p.recurrenceDays,
       inbox: !p.dueDate && !defaultDate,
     } as any);
     toast.success("Captured");
@@ -54,6 +56,9 @@ export function PlannerQuickCapture({ open, onOpenChange, defaultDate }: Props) 
           placeholder="Try: Doctor tomorrow at 3pm #health p1 for 30m"
           className="h-11 text-base"
         />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <RecurrencePicker value={repeat} onChange={setRepeat} />
+        </div>
         {parsed && parsed.chips.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {parsed.chips.map((c, i) => (

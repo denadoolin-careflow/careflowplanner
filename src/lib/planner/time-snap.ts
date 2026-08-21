@@ -92,6 +92,12 @@ export function findConflict(startMin: number, duration: number, busy: BusyBlock
   return busy.find((b) => startMin < b.end && end > b.start) ?? null;
 }
 
+/** Every busy block overlapping [start, start+duration), in time order. */
+export function findConflicts(startMin: number, duration: number, busy: BusyBlock[]): BusyBlock[] {
+  const end = startMin + Math.max(5, duration);
+  return busy.filter((b) => startMin < b.end && end > b.start);
+}
+
 /**
  * Next free snapped start at or after `fromMin` that fits `duration`.
  * Returns null when nothing fits before the end of the day.
