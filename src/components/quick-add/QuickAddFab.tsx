@@ -43,6 +43,7 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
   const [mode, setMode] = useState<Mode>("command");
   const [palette, setPalette] = useState("");
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voiceAutoStart, setVoiceAutoStart] = useState(false);
   const [fullMode, setFullMode] = useState(false);
   const isMobile = useIsMobile();
   const drag = useDraggableFab("careflow:fab:quickadd", { right: 16, bottom: 88 });
@@ -57,8 +58,8 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
   // Listen for widget "+" broadcasts.
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ tab?: string }>).detail;
-      if (detail?.tab === "voice") { setVoiceOpen(true); haptics.pickup(); return; }
+      const detail = (e as CustomEvent<{ tab?: string; autoStart?: boolean }>).detail;
+      if (detail?.tab === "voice") { setVoiceAutoStart(!!detail.autoStart); setVoiceOpen(true); haptics.pickup(); return; }
       const next = (detail?.tab as Mode) || "command";
       openWith(next);
     };
@@ -113,7 +114,7 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
             onChange={setPalette}
             presets={presets}
             onPick={(k) => {
-              if (k === "voice") { setOpen(false); setVoiceOpen(true); return; }
+              if (k === "voice") { setOpen(false); setVoiceAutoStart(false); setVoiceOpen(true); return; }
               setMode(k);
             }}
             onClose={close}
@@ -123,7 +124,7 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
         )}
       </DialogContent>
     </Dialog>
-    <VoiceCaptureDialog open={voiceOpen} onOpenChange={setVoiceOpen} />
+    <VoiceCaptureDialog open={voiceOpen} autoStart={voiceAutoStart} onOpenChange={setVoiceOpen} />
     </>
   );
 }

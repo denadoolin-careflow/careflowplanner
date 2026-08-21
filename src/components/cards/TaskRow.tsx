@@ -83,8 +83,10 @@ const PRIORITY_STYLES: Record<Task["priority"], PriorityStyle> = {
 };
 
 export function TaskRow({
-  task, dense = false, showArea = true, draggable = false, variant = "row",
-}: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean; variant?: "row" | "card" | "ticktick" }) {
+  task, dense = false, showArea = true, draggable = false, variant = "row", tapAction = "none",
+}: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean; variant?: "row" | "card" | "ticktick";
+  /** What a plain tap on the title does. "quickEdit" opens the compact editor. */
+  tapAction?: "none" | "quickEdit" }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
   const selection = useTaskSelection();
   const isSelected = selection.isSelected(task.id);
@@ -244,6 +246,7 @@ export function TaskRow({
       return;
     }
     if (selection.paneOpen) { selection.selectOnly(task.id); return; }
+    if (tapAction === "quickEdit") { setQuickEditOpen(true); return; }
     // Tap does nothing — expansion is via chevron, edit via double-click,
     // and the quick-edit menu is reserved for press-and-hold.
   };

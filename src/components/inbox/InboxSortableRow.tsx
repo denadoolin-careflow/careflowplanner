@@ -98,7 +98,7 @@ export function InboxSortableRow({ task, autoDayPart }: Props) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <TaskRow task={task} variant="card" />
+          <TaskRow task={task} variant="card" tapAction="quickEdit" />
         </div>
         {/* Tiny native HTML5 drag handle to drop the task on schedule targets
             (e.g. Needs Scheduling card). Uses HTML5 drag so it doesn't fight

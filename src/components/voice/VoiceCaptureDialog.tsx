@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,10 +45,12 @@ function fmtElapsed(ms: number) {
 }
 
 export function VoiceCaptureDialog({
-  open, onOpenChange,
+  open, onOpenChange, autoStart = false,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  /** Start recording as soon as the dialog opens (mic prompt included). */
+  autoStart?: boolean;
 }) {
   const { addTask, addJournal } = useStore();
   const [mode, setMode] = useState<Mode>("tasks");
@@ -100,6 +102,26 @@ export function VoiceCaptureDialog({
     await recorder.start();
     if (liveDictation.supported && !liveDictation.listening) liveDictation.start();
   };
+
+  // Auto-start recording when opened from the "Voice" quick-add tile.
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (!open) { startedRef.current = false; return; }
+    if (!autoStart || startedRef.current) return;
+    startedRef.current = true;
+    void startRecording();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, autoStart]);
+
+  // Mic blocked / unavailable → fall back to the intro screen with a message.
+  useEffect(() => {
+    if (recorder.error && phase === "recording" && recorder.state === "idle") {
+      setPhase("intro");
+      toast.error(recorder.error || "Microphone unavailable — check permissions.");
+    }
+  }, [recorder.error, recorder.state, phase]);
+
+
 
   const stopAndProcess = async () => {
     if (liveDictation.listening) liveDictation.stop();
