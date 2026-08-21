@@ -45,10 +45,12 @@ function fmtElapsed(ms: number) {
 }
 
 export function VoiceCaptureDialog({
-  open, onOpenChange,
+  open, onOpenChange, autoStart = false,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  /** Start recording as soon as the dialog opens (mic prompt included). */
+  autoStart?: boolean;
 }) {
   const { addTask, addJournal } = useStore();
   const [mode, setMode] = useState<Mode>("tasks");
