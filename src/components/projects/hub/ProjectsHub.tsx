@@ -352,6 +352,8 @@ function ProjectCard({ p, metrics }: { p: Project; metrics: ReturnType<typeof us
   return (
     <Link
       to={`/projects/${p.id}`}
+      draggable
+      onDragStart={(e) => { e.dataTransfer.setData("application/x-careflow-project", p.id); e.dataTransfer.setData("text/plain", p.id); e.dataTransfer.effectAllowed = "move"; }}
       className="group relative flex flex-col overflow-hidden rounded-[22px] border bg-card/80 transition duration-300 hover:-translate-y-1"
       style={{
         borderColor: `hsl(${STUDIO.sageDeep} / 0.1)`,
