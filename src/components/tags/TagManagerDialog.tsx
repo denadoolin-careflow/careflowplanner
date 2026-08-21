@@ -107,6 +107,14 @@ export function TagManagerDialog({ open, onOpenChange }: Props) {
                       atmospherePalette={atmosphere.palette}
                     />
                     <IconGroupPicker value={draftIcon} onChange={setDraftIcon} />
+                    <SupertagEditor
+                      tag={t}
+                      defaults={draftDefaults}
+                      onDefaultsChange={setDraftDefaults}
+                      checklist={draftChecklist}
+                      onChecklistChange={setDraftChecklist}
+                    />
+
                     <div className="flex justify-end gap-2 pt-1">
                       <Button size="sm" variant="outline" onClick={() => setEditId(null)}>Cancel</Button>
                       <Button size="sm" onClick={save}><Save className="mr-1 h-3.5 w-3.5" /> Save</Button>
