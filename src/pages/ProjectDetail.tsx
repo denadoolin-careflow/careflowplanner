@@ -34,6 +34,7 @@ import { aiInvoke } from "@/lib/ai-invoke";
 import { haptics } from "@/lib/haptics";
 import type { Project, ProjectStage } from "@/lib/types";
 import { CareyButton } from "@/components/carey/CareyButton";
+import { BacklinksSection } from "@/components/common/BacklinksSection";
 
 /* ----------------------------- Atmospheres ----------------------------- */
 
@@ -122,6 +123,7 @@ export default function ProjectDetail() {
 
           <TabsContent value="notes" className="mt-0 space-y-4">
             <SoftCard><LinkedNotesPanel entityType="project" entityId={project.id} contextTitle={project.name} /></SoftCard>
+            <BacklinksSection entityType="project" entityId={project.id} />
             <SoftCard><ProjectJournalPanel projectId={project.id} projectName={project.name} /></SoftCard>
           </TabsContent>
 

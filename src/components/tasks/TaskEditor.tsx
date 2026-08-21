@@ -43,6 +43,7 @@ import { TaskAIAssistPopover } from "@/components/tasks/TaskAIAssistPopover";
 import { PomodoroDialog } from "@/components/routines/PomodoroDialog";
 import { FollowUpPopover } from "@/components/tasks/FollowUpPopover";
 import { useTaskEditorStyle } from "@/lib/task-editor-style";
+import { BacklinksSection } from "@/components/common/BacklinksSection";
 
 /** Per-style DialogContent classes. All override the shadcn defaults so the
  *  chosen style takes effect app-wide the moment the user selects it. */
@@ -790,6 +791,7 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
                   <div className="mt-3 border-t border-border/40 pt-3">
                     <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Linked notes</p>
                     <LinkedNotesPanel entityType="task" entityId={draft.id} contextTitle={draft.title} compact />
+                    <BacklinksSection entityType="task" entityId={draft.id ?? null} className="mt-2" compact />
                   </div>
                 </CardHeader>
               </Card>
