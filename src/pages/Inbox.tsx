@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useStore } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
 import {
