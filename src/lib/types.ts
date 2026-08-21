@@ -151,6 +151,8 @@ export interface Project {
   atmosphere?: string;
   focusThisWeek?: string;
   targetDate?: string;
+  /** Folder this project is filed under (ClickUp-style grouping). */
+  folderId?: string;
 }
 
 export interface Goal {
