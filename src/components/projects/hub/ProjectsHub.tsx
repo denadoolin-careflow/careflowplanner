@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { getAreaIcon } from "@/components/areas/AreaIconColorPicker";
 import { formatRelativeDate } from "@/lib/date-format";
 import { DashboardTabs } from "@/components/shared/DashboardTabs";
+import { ProjectFolderRail, PROJECT_DND_TYPE } from "./ProjectFolderRail";
 
 /** Map an area name to one of the three brand tones for banners/progress fills. */
 type BrandTone = "lavender" | "sage" | "marigold";
@@ -407,6 +408,18 @@ function ProjectCard({ p, metrics }: { p: Project; metrics: ReturnType<typeof us
   );
 }
 
+/** Shared drag payload so project cards/rows can be filed into a folder. */
+function projectDragProps(id: string) {
+  return {
+    draggable: true,
+    onDragStart: (e: React.DragEvent) => {
+      e.dataTransfer.setData(PROJECT_DND_TYPE, id);
+      e.dataTransfer.setData("text/plain", id);
+      e.dataTransfer.effectAllowed = "move";
+    },
+  };
+}
+
 function ProjectsListView({ projects, metrics }: { projects: Project[]; metrics: ReturnType<typeof useProjectMetrics> }) {
   return (
     <div className="overflow-hidden rounded-3xl border bg-card/60" style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
@@ -420,6 +433,7 @@ function ProjectsListView({ projects, metrics }: { projects: Project[]; metrics:
           <Link
             key={p.id}
             to={`/projects/${p.id}`}
+            {...projectDragProps(p.id)}
             className="grid grid-cols-[1.5fr_8rem_7rem_8rem_4rem] items-center gap-3 border-b px-5 py-3 transition last:border-b-0 hover:bg-muted/30"
             style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.08)` }}
           >
@@ -556,7 +570,7 @@ function WaitingOnShelf({ projects }: { projects: Project[] }) {
 }
 
 export default function ProjectsHub() {
-  const { state, addProject } = useStore();
+  const { state, addProject, updateProject } = useStore();
   const { atmosphere } = useAtmosphere();
   const projects = (state.projects ?? []).filter((p) => p.status !== "done");
   const metrics = useProjectMetrics();
@@ -570,13 +584,16 @@ export default function ProjectsHub() {
   const [stageFilter, setStageFilter] = useState<ProjectStage | "all">("all");
   const [healthFilter, setHealthFilter] = useState<ProjectHealth | "all">("all");
   const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [folderFilter, setFolderFilter] = useState<string>("all");
   const setViewPersist = (v: View) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch {} };
 
   const filtered = useMemo(() => projects.filter((p) =>
     (stageFilter === "all" || stageOf(p.stage) === stageFilter)
     && (healthFilter === "all" || healthOf(p.health) === healthFilter)
     && (areaFilter === "all" || p.areaName === areaFilter)
-  ), [projects, stageFilter, healthFilter, areaFilter]);
+    && (folderFilter === "all"
+      || (folderFilter === "none" ? !p.folderId : p.folderId === folderFilter))
+  ), [projects, stageFilter, healthFilter, areaFilter, folderFilter]);
 
   const focus = useMemo(() => {
     if (!projects.length) return undefined;
@@ -676,6 +693,16 @@ export default function ProjectsHub() {
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
+
+          <ProjectFolderRail
+            projects={projects}
+            value={folderFilter}
+            onChange={setFolderFilter}
+            onFileProject={async (projectId, folderId) => {
+              await updateProject(projectId, { folderId: folderId ?? undefined } as any);
+              toast.success(folderId ? "Project filed" : "Moved to Unfiled");
+            }}
+          />
 
           <div className="flex flex-wrap items-center gap-2 rounded-2xl border bg-card/60 p-2" style={{ borderColor: `hsl(${STUDIO.sageDeep} / 0.12)` }}>
             <span className="pl-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Stage</span>
