@@ -28,9 +28,17 @@ export interface PlannerFeedItem {
   color: string;
   done?: boolean;
   location?: string | null;
+  /** Task attributes (undefined for events, meals, cosmic, etc.). */
+  priority?: import("@/lib/types").Priority;
+  area?: import("@/lib/types").Area;
+  energy?: import("@/lib/types").Energy;
+  estMinutes?: number;
+  projectId?: string;
+  tags?: string[];
   /** Points back at the record so callers can open or mutate the original. */
   sourceRef: { type: FeedSource; id: string };
 }
+
 
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 const MD = (s: string) => (s ?? "").slice(5, 10);
@@ -82,7 +90,10 @@ export function usePlannerFeed(from: Date, days: number, opts: { applyFilters?: 
           kind, id: `task:${t.id}`, title: t.title, date: key,
           time: t.startTime ?? null, endTime: t.endTime ?? null,
           allDay: !t.startTime, color: colorOf(kind), done: !!t.done,
+          priority: t.priority, area: t.area, energy: t.energy,
+          estMinutes: t.estMinutes, projectId: t.projectId, tags: t.tags,
           sourceRef: { type: "task", id: t.id },
+
         });
       }
     }

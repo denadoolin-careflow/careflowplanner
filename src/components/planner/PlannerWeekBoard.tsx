@@ -9,6 +9,9 @@ import { PlannerDaySummaryStrip } from "./PlannerDaySummaryStrip";
 import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { KIND_ICONS } from "./kindIcon";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
+import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
+import { useWeekFilters, filterFeedItems } from "@/lib/planner/week-filters";
+import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME, type DayPartKey } from "@/lib/planner/use-schedule-drop";
 import { cn } from "@/lib/utils";
 
 const PARTS = [
@@ -38,23 +41,23 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashb
   /** The weekly plan dashboard now lives on the Overview tab. */
   showDashboard?: boolean;
 }) {
-  const { updateTask, updateAppointment } = useStore() as any;
+  const { updateTask } = useStore() as any;
   const { byDay } = usePlannerFeed(weekStart, 7);
+  const { filters } = useWeekFilters();
+  const { schedule, pending, setPending, resolve } = useScheduleDrop();
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
   const [dragOver, setDragOver] = useState<string | null>(null);
   const cols = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
 
-  const onDrop = (targetISO: string, e: React.DragEvent) => {
+  const onDrop = (targetISO: string, e: React.DragEvent, part?: DayPartKey) => {
     e.preventDefault();
+    e.stopPropagation();
     setDragOver(null);
-    const raw = e.dataTransfer.getData("application/x-planner-item") || e.dataTransfer.getData("text/plain");
-    if (!raw) return;
-    const [type, id] = raw.split(":");
-    if (type === "task") { updateTask(id, { dueDate: targetISO }); toast.success(`Moved to ${format(new Date(`${targetISO}T12:00:00`), "EEE, MMM d")}`); }
-    else if (type === "appointment") { updateAppointment(id, { date: targetISO }); toast.success("Appointment moved"); }
-    else toast.message("That item can't be moved from here");
+    const dragged = readDraggedItem(e);
+    if (!dragged) return;
+    schedule(dragged, targetISO, part);
   };
 
   return (
@@ -62,7 +65,7 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashb
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         {cols.map(d => {
           const key = format(d, "yyyy-MM-dd");
-          const items = byDay.get(key) ?? [];
+          const items = filterFeedItems(byDay.get(key) ?? [], filters);
           const isToday = isSameDay(d, today);
           return (
             <div
@@ -97,7 +100,7 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashb
                       type="button"
                       draggable={it.sourceRef.type === "task" || it.sourceRef.type === "appointment"}
                       onDragStart={(e) => {
-                        e.dataTransfer.setData("application/x-planner-item", `${it.sourceRef.type}:${it.sourceRef.id}`);
+                        e.dataTransfer.setData(PLANNER_ITEM_MIME, `${it.sourceRef.type}:${it.sourceRef.id}`);
                         e.dataTransfer.effectAllowed = "move";
                       }}
                       onClick={() => handleOpen(it)}
@@ -145,7 +148,13 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashb
                         </section>
                       )}
                       {PARTS.map(p => (
-                        <section key={p.part} aria-label={`${p.label} on ${format(d, "EEEE")}`} className="space-y-1">
+                        <section
+                          key={p.part}
+                          aria-label={`${p.label} on ${format(d, "EEEE")}`}
+                          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(`${key}:${p.part}`); }}
+                          onDrop={(e) => onDrop(key, e, p.part)}
+                          className={cn("space-y-1 rounded-lg", dragOver === `${key}:${p.part}` && "bg-primary/5 outline outline-1 outline-primary/40")}
+                        >
                           <div className="flex items-center justify-between gap-2 px-0.5">
                             <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{p.label}</span>
                           </div>
@@ -164,6 +173,7 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashb
         })}
       </div>
 
+      <ScheduleConflictDialog pending={pending} onCancel={() => setPending(null)} onResolve={resolve} />
       {showDashboard && (
         <div className="[&>*]:w-full">
           <WeekPlanningDashboard weekStart={weekStart} onJumpToDay={onSelectDay} />

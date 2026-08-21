@@ -125,7 +125,7 @@ function assignLanes(items: ScheduledItem[]): (ScheduledItem & { lane: number; l
   return clusters.flat();
 }
 
-export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
+export function PlannerTimeline({ date, compact, bare, gutterless, noScroll, taskFilter }: {
   date: Date;
   compact?: boolean;
   bare?: boolean;
@@ -133,7 +133,10 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
   gutterless?: boolean;
   /** Let an outer container own vertical scrolling (multi-day grid). */
   noScroll?: boolean;
+  /** Optional narrowing (weekly quick filters) applied to task blocks. */
+  taskFilter?: (t: Task) => boolean;
 }) {
+
   const { state, updateTask, addTask, toggleTask } = useStore();
   const pomo = usePomodoro();
   const [focusTaskId] = usePlannerFocusTaskId();
@@ -253,6 +256,7 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
     for (const b of blocks) if (b.taskId) taskBlockMap.set(b.taskId, b.startTime);
     for (const t of state.tasks) {
       if (!t.dueDate || t.dueDate !== iso) continue;
+      if (taskFilter && !taskFilter(t)) continue;
       // Prefer time_block schedule if the task is placed via a block on this day.
       const startFromBlock = taskBlockMap.get(t.id);
       const s = hmToMin(startFromBlock ?? t.startTime); if (s === null) continue;
@@ -285,13 +289,14 @@ export function PlannerTimeline({ date, compact, bare, gutterless, noScroll }: {
       out.push({ id: a.id, kind: "appt", title: a.title, startMin: s - START_H * 60, durMin: Math.max(15, e - s), area: "Appointments" });
     }
     return assignLanes(out);
-  }, [state.tasks, state.appointments, blocks, iso]);
+  }, [state.tasks, state.appointments, blocks, iso, taskFilter]);
 
   /** Tasks due today that have a day part but no clock time — surfaced in the band header. */
   const dayPartTasks = useMemo(() => {
     const map: Record<string, Task[]> = { morning: [], afternoon: [], evening: [] };
     for (const t of state.tasks) {
       if (t.dueDate !== iso || t.done || !t.dayPart) continue;
+      if (taskFilter && !taskFilter(t)) continue;
       if (hmToMin(t.startTime) !== null) continue;
       if (blocks.some(b => b.taskId === t.id)) continue;
       const key = t.dayPart.toLowerCase();

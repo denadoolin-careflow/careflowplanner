@@ -13,6 +13,7 @@ const FOCUS_TASK_KEY = "careflow:planner:focus-task";
 const PANELS_KEY = "careflow:planner:panels";
 const WEEK_MODE_KEY = "careflow:planner:week-mode";
 const WEEK_HEADER_KEY = "careflow:planner:week-header";
+const MOBILE_WEEK_MODE_KEY = "careflow:planner:week-mode-mobile";
 const MONTH_MODE_KEY = "careflow:planner:month-mode";
 
 function read<T>(key: string, fallback: T): T {
@@ -44,6 +45,8 @@ export const usePlannerWeekMode = () => useLS<PlannerWeekMode>(WEEK_MODE_KEY, "g
 /** Week column headers: full cosmic insight vs. compact date+weather. */
 export type PlannerWeekHeaderMode = "insight" | "compact";
 export const usePlannerWeekHeaderMode = () => useLS<PlannerWeekHeaderMode>(WEEK_HEADER_KEY, "insight");
+/** Phones keep their own remembered week view (defaults to the stacked Board). */
+export const usePlannerMobileWeekMode = () => useLS<PlannerWeekMode>(MOBILE_WEEK_MODE_KEY, "board");
 export const usePlannerMonthMode = () => useLS<PlannerMonthMode>(MONTH_MODE_KEY, "calendar");
 
 export type PlannerPanelId = "task" | "focus" | "context";
