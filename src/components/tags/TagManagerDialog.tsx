@@ -13,12 +13,14 @@ import { toast } from "sonner";
 interface Props { open: boolean; onOpenChange: (v: boolean) => void; }
 
 export function TagManagerDialog({ open, onOpenChange }: Props) {
-  const { tags, rename, recolor, remove } = useTags();
+  const { tags, rename, recolor, remove, reload } = useTags();
   const { atmosphere } = useAtmosphere();
   const [editId, setEditId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftColor, setDraftColor] = useState("");
   const [draftIcon, setDraftIcon] = useState("");
+  const [draftDefaults, setDraftDefaults] = useState<TagDefaults>({});
+  const [draftChecklist, setDraftChecklist] = useState<string[]>([]);
 
   const startEdit = (id: string) => {
     const t = tags.find((x) => x.id === id);
@@ -27,6 +29,8 @@ export function TagManagerDialog({ open, onOpenChange }: Props) {
     setDraftName(t.name);
     setDraftColor(t.color);
     setDraftIcon(t.icon);
+    setDraftDefaults(t.defaults ?? {});
+    setDraftChecklist(t.checklist ?? []);
   };
 
   const save = async () => {
@@ -34,12 +38,15 @@ export function TagManagerDialog({ open, onOpenChange }: Props) {
     try {
       await rename(editId, draftName);
       await recolor(editId, { color: draftColor, icon: draftIcon });
+      await updateTag(editId, { defaults: draftDefaults, checklist: draftChecklist });
+      await reload();
       toast.success("Tag updated");
       setEditId(null);
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't save tag");
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
