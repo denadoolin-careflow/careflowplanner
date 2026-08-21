@@ -4,11 +4,18 @@
  */
 import { useCallback, useEffect, useState } from "react";
 
-export type TableColumnId =
+export type BuiltinColumnId =
   | "when" | "item" | "kind" | "status"
   | "priority" | "area" | "energy" | "duration" | "project" | "tags";
 
-export const COLUMN_LABEL: Record<TableColumnId, string> = {
+/** Built-in columns plus dynamic `field:<tagId>:<key>` tag-field columns. */
+export type TableColumnId = BuiltinColumnId | (string & {});
+
+const isFieldCol = (id: string) => id.startsWith("field:");
+/** A column id is valid when it is built-in or a tag-field column. */
+export const isKnownColumn = (id: string) => (ALL_COLUMNS as string[]).includes(id) || isFieldCol(id);
+
+export const COLUMN_LABEL: Record<BuiltinColumnId, string> = {
   when: "When",
   item: "Item",
   kind: "Type",
@@ -21,7 +28,7 @@ export const COLUMN_LABEL: Record<TableColumnId, string> = {
   tags: "Tags",
 };
 
-export const ALL_COLUMNS: TableColumnId[] = [
+export const ALL_COLUMNS: BuiltinColumnId[] = [
   "when", "item", "kind", "status", "priority", "area", "energy", "duration", "project", "tags",
 ];
 
@@ -53,14 +60,14 @@ function read(scope: TableScope): TableConfig {
     if (!raw) return DEFAULT_CONFIG;
     const p = JSON.parse(raw) as Partial<TableConfig>;
     const order = [
-      ...(p.order ?? []).filter(c => ALL_COLUMNS.includes(c)),
+      ...(p.order ?? []).filter(isKnownColumn),
       ...ALL_COLUMNS.filter(c => !(p.order ?? []).includes(c)),
     ];
-    const visible = (p.visible ?? DEFAULT_CONFIG.visible).filter(c => ALL_COLUMNS.includes(c));
+    const visible = (p.visible ?? DEFAULT_CONFIG.visible).filter(isKnownColumn);
     return {
       order,
       visible: visible.length ? visible : DEFAULT_CONFIG.visible,
-      sort: ALL_COLUMNS.includes(p.sort as TableColumnId) ? (p.sort as TableColumnId) : "when",
+      sort: p.sort && isKnownColumn(p.sort) ? p.sort : "when",
       asc: p.asc ?? true,
     };
   } catch {

@@ -39,6 +39,7 @@ import type { NoteTitleSize } from "@/lib/editor-prefs";
 import { listNotes } from "@/lib/notes";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
+import { BacklinksSection } from "@/components/common/BacklinksSection";
 
 export default function NoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -644,6 +645,7 @@ export default function NoteDetail() {
 
       <div className="mx-auto mt-4 w-full max-w-[760px] px-2">
         <NoteLinksSidebar noteId={note.id} />
+        <BacklinksSection entityType="note" entityId={note.id} className="mt-3" />
       </div>
       </div>
       {!focusMode && !sidebarHidden && (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { addDays, format, isSameDay } from "date-fns";
-import { Check } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Maximize2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
@@ -10,6 +10,9 @@ import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME } from "@/lib/plann
 import { KIND_ICONS } from "./kindIcon";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PlannerBulkBar } from "./PlannerBulkBar";
+import { usePlannerSelection } from "@/lib/planner/selection";
+import { useOutlineFilter } from "@/lib/planner/outline";
+import { OutlineBreadcrumb } from "./OutlineBreadcrumb";
 import { cn } from "@/lib/utils";
 
 /** Week as one flat, time-ordered list grouped by day. */
@@ -19,13 +22,12 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
   onSelectDay?: (d: Date) => void;
   onOpenItem?: (item: PlannerFeedItem) => void;
 }) {
-  const { updateTask } = useStore() as any;
+  const { state, updateTask } = useStore() as any;
   const { byDay } = usePlannerFeed(weekStart, days);
   const { filters } = useWeekFilters();
   const { schedule, scheduleMany, pending, setPending, resolve } = useScheduleDrop();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const toggleSel = (id: string) =>
-    setSelected(cur => { const n = new Set(cur); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const { selected, ids: selectedIds, toggle: toggleSel, clear } = usePlannerSelection();
+  const outline = useOutlineFilter(state.tasks ?? []);
   const [dropDay, setDropDay] = useState<string | null>(null);
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
@@ -34,10 +36,13 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+      <OutlineBreadcrumb tasks={state.tasks ?? []} />
       <div className="divide-y divide-border/50">
         {cols.map(d => {
           const key = format(d, "yyyy-MM-dd");
-          const items = filterFeedItems([...(byDay.get(key) ?? [])], filters).sort((a, b) => (a.time ?? "zz").localeCompare(b.time ?? "zz"));
+          const items = filterFeedItems([...(byDay.get(key) ?? [])], filters)
+            .filter(it => it.sourceRef.type !== "task" ? !outline.zoomRoot : outline.allowed(it.sourceRef.id))
+            .sort((a, b) => (a.time ?? "zz").localeCompare(b.time ?? "zz"));
           const isToday = isSameDay(d, today);
           return (
             <section
@@ -84,7 +89,7 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
                           onClick={() => handleOpen(it)}
                           onKeyDown={e => { if (e.key === "Enter") handleOpen(it); }}
                           className={cn(
-                            "flex w-full cursor-pointer items-start gap-2.5 px-3 py-2 text-left text-[13px] transition-colors hover:bg-muted/50",
+                            "group/row flex w-full cursor-pointer items-start gap-2.5 px-3 py-2 text-left text-[13px] transition-colors hover:bg-muted/50",
                             it.done && "opacity-50 line-through",
                           )}
                         >
@@ -122,6 +127,27 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
                             {it.allDay ? "All day" : (it.time?.slice(0, 5) ?? "—")}
                           </span>
                           <span className="min-w-0 flex-1 [overflow-wrap:anywhere] whitespace-normal break-words">{it.title}</span>
+                          {isTask && outline.hasChildren(it.sourceRef.id) && (
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); outline.toggleCollapsed(it.sourceRef.id); }}
+                              aria-label={outline.isCollapsed(it.sourceRef.id) ? `Expand subtasks of ${it.title}` : `Collapse subtasks of ${it.title}`}
+                              aria-expanded={!outline.isCollapsed(it.sourceRef.id)}
+                              className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            >
+                              {outline.isCollapsed(it.sourceRef.id) ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                            </button>
+                          )}
+                          {isTask && (
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); outline.zoomTo(it.sourceRef.id); }}
+                              aria-label={`Zoom into ${it.title}`}
+                              className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100"
+                            >
+                              <Maximize2 className="h-3 w-3" />
+                            </button>
+                          )}
                         </div>
                       </li>
                     );
@@ -133,9 +159,9 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
         })}
       </div>
       <PlannerBulkBar
-        ids={Array.from(selected)}
+        ids={selectedIds}
         anchorDate={weekStart}
-        onClear={() => setSelected(new Set())}
+        onClear={clear}
         onScheduleMany={scheduleMany}
       />
       <ScheduleConflictDialog pending={pending} onCancel={() => setPending(null)} onResolve={resolve} />

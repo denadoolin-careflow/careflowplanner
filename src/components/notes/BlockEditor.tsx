@@ -54,7 +54,7 @@ import {
   Table as TableIcon, Rows3, Columns3, Trash2,
   FilePlus, FolderPlus, Search as SearchIcon, StickyNote,
 } from "lucide-react";
-import { ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import { ChevronsDownUp, ChevronsUpDown, ListFilter } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -67,6 +67,7 @@ import { useEditorPrefs, WIDTH_PX } from "@/lib/editor-prefs";
 import { WordCountFooter } from "@/components/notes/WordCountFooter";
 import { NoteLinksSidebar } from "@/components/notes/NoteLinksSidebar";
 import { InlineEntityCard } from "@/components/notes/InlineEntityCardNode";
+import { QueryBlock, DEFAULT_QUERY_FILTERS } from "@/components/notes/QueryBlockNode";
 import { useTags } from "@/hooks/use-tags";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { haptics } from "@/lib/haptics";
@@ -157,6 +158,21 @@ turndown.addRule("inlineEntityCard", {
 // Toggles (<details>) have no markdown equivalent — turndown would otherwise
 // flatten them and dump their hidden content inline. Round-trip them as a raw
 // HTML block (with the open state) so folds survive save + reload.
+// Live query embeds have no markdown form — keep them as a raw HTML block so
+// the saved view they point at survives a save + reload.
+turndown.addRule("queryBlock", {
+  filter: (node) => node.nodeName === "DIV" && (node as HTMLElement).hasAttribute("data-query-block"),
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const attrs = ["view-id", "layout", "label", "filters"]
+      .map(k => {
+        const v = el.getAttribute(`data-${k}`);
+        return v ? ` data-${k}="${v.replace(/"/g, "&quot;")}"` : "";
+      })
+      .join("");
+    return `\n\n<div data-query-block${attrs}></div>\n\n`;
+  },
+});
 turndown.addRule("detailsToggle", {
   filter: (node) => node.nodeName === "DETAILS",
   replacement: (_content, node) => {
@@ -1288,6 +1304,16 @@ export function BlockEditor({
               command: () => triggerFileUpload(),
             },
             {
+              title: "Live query",
+              icon: ListFilter,
+              keywords: ["query", "view", "embed", "open tasks", "search", "live"],
+              command: (e: Editor) =>
+                e.chain().focus().insertContent({
+                  type: "queryBlock",
+                  attrs: { viewId: null, layout: "list", label: "Open tasks", filters: DEFAULT_QUERY_FILTERS },
+                }).run(),
+            },
+            {
               title: "Add to Tasks",
               description: "Promote this checkbox to a Task (⌘⇧↵)",
               icon: ListPlus,
@@ -1812,6 +1838,7 @@ export function BlockEditor({
       }),
       FileEmbed,
       InlineEntityCard,
+      QueryBlock,
       GlobalDragHandle.configure({
         dragHandleWidth: 20,
         scrollTreshold: 50,
