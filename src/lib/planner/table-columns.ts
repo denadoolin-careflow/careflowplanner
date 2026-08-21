@@ -13,7 +13,7 @@ export type TableColumnId = BuiltinColumnId | (string & {});
 
 const isFieldCol = (id: string) => id.startsWith("field:");
 /** A column id is valid when it is built-in or a tag-field column. */
-export const isKnownColumn = (id: string) => ALL_COLUMNS.includes(id) || isFieldCol(id);
+export const isKnownColumn = (id: string) => (ALL_COLUMNS as string[]).includes(id) || isFieldCol(id);
 
 export const COLUMN_LABEL: Record<BuiltinColumnId, string> = {
   when: "When",
