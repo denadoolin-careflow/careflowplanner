@@ -594,6 +594,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (data) {
         const task = taskFrom(data);
         setState(s => ({ ...s, tasks: [task, ...s.tasks] }));
+        // Checklist template → child tasks under the new task.
+        if (checklistLines.length) {
+          try {
+            const rows = checklistLines.map(title => ({
+              user_id: uid,
+              ...taskTo({
+                title,
+                done: false,
+                area: task.area,
+                dueDate: task.dueDate,
+                parentTaskId: task.id,
+              } as any),
+            }));
+            const { data: kids } = await supabase.from("tasks").insert(rows).select();
+            if (kids?.length) {
+              const mapped = kids.map(taskFrom);
+              setState(s => ({ ...s, tasks: [...mapped, ...s.tasks] }));
+            }
+          } catch (e) { console.warn("supertag checklist failed", e); }
+        }
+
         if (task.dueDate) {
           emitScheduleEvent({
             kind: "task", id: task.id, title: task.title, date: task.dueDate,
