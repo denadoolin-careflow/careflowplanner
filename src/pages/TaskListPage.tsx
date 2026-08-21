@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, startOfWeek } from "date-fns";
 import { useStore, todayISO } from "@/lib/store";
 import { TaskRow } from "@/components/cards/TaskRow";
-import { LayoutGrid, LayoutList, CalendarDays, ChevronRight, PanelRightOpen, PanelRightClose, type LucideIcon } from "lucide-react";
+import { LayoutGrid, LayoutList, CalendarDays, ChevronRight, type LucideIcon } from "lucide-react";
 import type { Task } from "@/lib/types";
 import { QuickEntryBar } from "@/components/tasks/QuickEntryBar";
 import { TodayFocusCard } from "@/components/tasks/TodayFocusCard";
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { TaskSelectionProvider, useTaskSelection } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
-import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
+
 import { Button } from "@/components/ui/button";
 
 type Variant = "upcoming" | "anytime" | "someday" | "logbook";
@@ -86,7 +86,7 @@ export function TaskListPage({ variant, icon: Icon }: { variant: Variant; icon: 
 
 function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: LucideIcon }) {
   const { state } = useStore();
-  const { paneOpen, togglePane, setOrderedIds, clear } = useTaskSelection();
+  const { setOrderedIds, clear } = useTaskSelection();
   const [prefs, setPrefs] = useTaskListPrefs(`tlp:${variant}`);
   const [view, setView] = useState<ViewMode>(() => (localStorage.getItem(`careflow:view:${variant}`) as ViewMode) || "list");
   const [timeframe, setTimeframe] = useState<Timeframe>(() => (localStorage.getItem(`careflow:tf:${variant}`) as Timeframe) || "all");
@@ -145,16 +145,6 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
           <span className="ml-2 text-sm font-normal text-muted-foreground">{total}</span>
         </h1>
         <ViewToggle value={view} onChange={setView} />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="hidden h-8 w-8 lg:inline-flex"
-          onClick={togglePane}
-          title={paneOpen ? "Hide details pane" : "Show details pane"}
-          aria-label="Toggle details pane"
-        >
-          {paneOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-        </Button>
         <TaskListControls prefs={prefs} onChange={setPrefs} />
       </header>
 
@@ -234,7 +224,7 @@ function TaskListPageInner({ variant, icon: Icon }: { variant: Variant; icon: Lu
       </div>
       )}
       </div>
-      {paneOpen && <TaskDetailPane />}
+      
       <UnscheduledTasksRail />
     </div>
   );
