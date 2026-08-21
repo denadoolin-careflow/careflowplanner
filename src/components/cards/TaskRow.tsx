@@ -83,8 +83,10 @@ const PRIORITY_STYLES: Record<Task["priority"], PriorityStyle> = {
 };
 
 export function TaskRow({
-  task, dense = false, showArea = true, draggable = false, variant = "row",
-}: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean; variant?: "row" | "card" | "ticktick" }) {
+  task, dense = false, showArea = true, draggable = false, variant = "row", tapAction = "none",
+}: { task: Task; dense?: boolean; showArea?: boolean; draggable?: boolean; variant?: "row" | "card" | "ticktick";
+  /** What a plain tap on the title does. "quickEdit" opens the compact editor. */
+  tapAction?: "none" | "quickEdit" }) {
   const { toggleTask, deleteTask, updateTask, addTask, state } = useStore();
   const selection = useTaskSelection();
   const isSelected = selection.isSelected(task.id);
