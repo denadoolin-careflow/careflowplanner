@@ -4,6 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
+export interface TagDefaults {
+  recurrenceType?: string | null;
+  recurrenceInterval?: number | null;
+  area?: string | null;
+  priority?: string | null;
+  energy?: string | null;
+  estMinutes?: number | null;
+}
+
 export interface Tag {
   id: string;
   name: string;
@@ -11,6 +20,10 @@ export interface Tag {
   icon: string;        // lucide icon name (kebab case ok, we normalize)
   pinned?: boolean;
   description?: string | null;
+  /** Supertag: values stamped onto any item that gets this tag. */
+  defaults: TagDefaults;
+  /** Supertag: checklist template turned into child tasks. */
+  checklist: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -22,9 +35,19 @@ const fromRow = (r: any): Tag => ({
   icon: r.icon ?? DEFAULT_ICON,
   pinned: !!r.pinned,
   description: r.description ?? null,
+  defaults: {
+    recurrenceType: r.default_recurrence_type ?? null,
+    recurrenceInterval: r.default_recurrence_interval ?? null,
+    area: r.default_area ?? null,
+    priority: r.default_priority ?? null,
+    energy: r.default_energy ?? null,
+    estMinutes: r.default_est_minutes ?? null,
+  },
+  checklist: Array.isArray(r.checklist) ? r.checklist.filter((x: unknown) => typeof x === "string") : [],
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 });
+
 
 /* ------------------------------------------------------------------ */
 /*  Palette + icon presets shared by TagPicker + manager               */
@@ -120,17 +143,34 @@ export async function createTag(patch: { name: string; color?: string; icon?: st
   return fromRow(data);
 }
 
-export async function updateTag(id: string, patch: Partial<Pick<Tag, "name" | "color" | "icon" | "pinned" | "description">>): Promise<void> {
+export async function updateTag(
+  id: string,
+  patch: Partial<Pick<Tag, "name" | "color" | "icon" | "pinned" | "description" | "defaults" | "checklist">>,
+): Promise<void> {
   const row: any = {};
   if (patch.name !== undefined) row.name = normalizeTagName(patch.name);
   if (patch.color !== undefined) row.color = patch.color;
   if (patch.icon !== undefined) row.icon = patch.icon;
   if (patch.pinned !== undefined) row.pinned = patch.pinned;
   if (patch.description !== undefined) row.description = patch.description;
+  if (patch.checklist !== undefined) row.checklist = patch.checklist;
+  if (patch.defaults !== undefined) {
+    const d = patch.defaults;
+    row.default_recurrence_type = d.recurrenceType ?? null;
+    row.default_recurrence_interval = d.recurrenceInterval ?? null;
+    row.default_area = d.area ?? null;
+    row.default_priority = d.priority ?? null;
+    row.default_energy = d.energy ?? null;
+    row.default_est_minutes = d.estMinutes ?? null;
+  }
   const { error } = await supabase.from("tags" as any).update(row).eq("id", id);
   if (error) throw error;
   try { window.dispatchEvent(new Event("careflow:tags:pinned-changed")); } catch {}
 }
+
+/** Empty supertag schema — handy for ghost/placeholder tags. */
+export const EMPTY_TAG_DEFAULTS: TagDefaults = {};
+
 
 export async function deleteTag(id: string): Promise<void> {
   const { error } = await supabase.from("tags" as any).delete().eq("id", id);

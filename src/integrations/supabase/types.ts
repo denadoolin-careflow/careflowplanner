@@ -3440,6 +3440,50 @@ export type Database = {
         }
         Relationships: []
       }
+      item_field_values: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          field_key: string
+          id: string
+          tag_id: string
+          updated_at: string
+          user_id: string
+          value: Json | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type?: string
+          field_key: string
+          id?: string
+          tag_id: string
+          updated_at?: string
+          user_id?: string
+          value?: Json | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          field_key?: string
+          id?: string
+          tag_id?: string
+          updated_at?: string
+          user_id?: string
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_field_values_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           anchor_key: string | null
@@ -5961,6 +6005,45 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_views: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          layout: string
+          name: string
+          pinned: boolean
+          scope: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          layout?: string
+          name: string
+          pinned?: boolean
+          scope?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          layout?: string
+          name?: string
+          pinned?: boolean
+          scope?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       savings_goals: {
         Row: {
           category_id: string | null
@@ -6156,10 +6239,67 @@ export type Database = {
         }
         Relationships: []
       }
+      tag_fields: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          label: string
+          options: Json
+          required: boolean
+          sort_order: number
+          tag_id: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          options?: Json
+          required?: boolean
+          sort_order?: number
+          tag_id: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          options?: Json
+          required?: boolean
+          sort_order?: number
+          tag_id?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tag_fields_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tags: {
         Row: {
+          checklist: Json
           color: string | null
           created_at: string
+          default_area: string | null
+          default_energy: string | null
+          default_est_minutes: number | null
+          default_priority: string | null
+          default_recurrence_interval: number | null
+          default_recurrence_type: string | null
           description: string | null
           icon: string | null
           id: string
@@ -6169,8 +6309,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          checklist?: Json
           color?: string | null
           created_at?: string
+          default_area?: string | null
+          default_energy?: string | null
+          default_est_minutes?: number | null
+          default_priority?: string | null
+          default_recurrence_interval?: number | null
+          default_recurrence_type?: string | null
           description?: string | null
           icon?: string | null
           id?: string
@@ -6180,8 +6327,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          checklist?: Json
           color?: string | null
           created_at?: string
+          default_area?: string | null
+          default_energy?: string | null
+          default_est_minutes?: number | null
+          default_priority?: string | null
+          default_recurrence_interval?: number | null
+          default_recurrence_type?: string | null
           description?: string | null
           icon?: string | null
           id?: string

@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useWeekFilters, type WeekDueRange } from "@/lib/planner/week-filters";
+import { useTags } from "@/hooks/use-tags";
+import { SavedViewsMenu } from "./SavedViewsMenu";
+import type { SavedViewLayout, SavedViewScope } from "@/lib/saved-views";
 import type { Area, Energy, Priority } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -38,8 +41,20 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 }
 
 /** Search + quick filters shared by every weekly planner view. */
-export function PlannerWeekFilterBar({ className }: { className?: string }) {
+export function PlannerWeekFilterBar({
+  className,
+  layout = "list",
+  scope = "week",
+  onApplyLayout,
+}: {
+  className?: string;
+  layout?: SavedViewLayout;
+  scope?: SavedViewScope;
+  onApplyLayout?: (layout: SavedViewLayout, scope: SavedViewScope) => void;
+}) {
   const { filters, patch, toggleIn, reset, activeCount } = useWeekFilters();
+  const { tags } = useTags();
+  const topTags = tags.slice(0, 24);
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
@@ -114,9 +129,22 @@ export function PlannerWeekFilterBar({ className }: { className?: string }) {
             </div>
           </div>
 
+          {topTags.length > 0 && (
+            <div>
+              <p className="mb-1 text-[11px] font-medium">Tags</p>
+              <div className="flex max-h-28 flex-wrap gap-1 overflow-y-auto">
+                {topTags.map(t => (
+                  <Chip key={t.id} on={filters.tags.includes(t.name)} onClick={() => toggleIn("tags", t.name)}>{t.name}</Chip>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Chip on={filters.hideDone} onClick={() => patch({ hideDone: !filters.hideDone })}>Hide completed</Chip>
         </PopoverContent>
       </Popover>
+
+      <SavedViewsMenu layout={layout} scope={scope} onApplyLayout={onApplyLayout} />
 
       {activeCount > 0 && (
         <Button size="sm" variant="ghost" className="h-8 rounded-full text-xs text-muted-foreground" onClick={reset}>

@@ -28,6 +28,8 @@ import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { SubtaskAddMenu } from "@/components/tasks/SubtaskAddMenu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TagPicker } from "@/components/tags/TagPicker";
+import { ItemFieldsSection } from "@/components/tags/ItemFieldsSection";
+
 import { supabase } from "@/integrations/supabase/client";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { Sparkles } from "lucide-react";
@@ -868,8 +870,14 @@ export function TaskEditor({ open, onOpenChange, task, onUnschedule, unscheduleL
               <Card>
                 <CardHeader icon={<Tag className="h-3.5 w-3.5" />} title="Tags">
                   <TagPicker value={draft.tags ?? []} onChange={(next) => set("tags", next)} />
+                  <ItemFieldsSection
+                    entityId={draft.id ?? null}
+                    tags={draft.tags}
+                    className="mt-3"
+                  />
                 </CardHeader>
               </Card>
+
 
               {/* Project / Goal / Person */}
               <Card>

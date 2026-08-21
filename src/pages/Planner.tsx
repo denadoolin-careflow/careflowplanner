@@ -572,7 +572,21 @@ export default function Planner() {
           )}
           <div className="flex min-w-0 flex-col gap-3">
             {((view === "week" && activeWeekMode !== "overview") || altLayout) && (
-              <PlannerWeekFilterBar className="shrink-0" />
+              <PlannerWeekFilterBar
+                className="shrink-0"
+                layout={
+                  view === "week"
+                    ? (activeWeekMode === "grid" ? "schedule" : activeWeekMode as any)
+                    : (rangeLayout === "default" ? "schedule" : rangeLayout as any)
+                }
+                scope={view === "month" ? "month" : view === "year" ? "year" : view === "week" ? "week" : "day"}
+                onApplyLayout={(l, s) => {
+                  setView(s === "month" ? "month" : s === "year" ? "year" : s === "week" ? "week" : "day");
+                  if (s === "week") setWeekMode(l === "schedule" ? "grid" : (l as any));
+                  else setRangeLayout(l === "list" || l === "table" ? l : "default");
+                }}
+              />
+
             )}
             {altLayout && rangeLayout === "list" && (
               <PlannerWeekList weekStart={rangeStart} days={rangeDays} onSelectDay={openDay} />

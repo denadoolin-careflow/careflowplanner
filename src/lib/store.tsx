@@ -576,10 +576,45 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           if (!t.area && det.area) enriched.area = det.area as typeof enriched.area;
         }
       }
+      // Supertags: a tag can carry defaults (area, priority, energy, duration,
+      // repeat) and a checklist template. Fill in anything the user didn't set.
+      let checklistLines: string[] = [];
+      if (enriched.tags?.length) {
+        try {
+          const { getCachedTags } = await import("@/hooks/use-tags");
+          const { supertagPatch, supertagChecklist } = await import("./supertag");
+          const cached = getCachedTags();
+          const given = t as Record<string, unknown>;
+          Object.assign(enriched, supertagPatch(cached, enriched.tags, given));
+          checklistLines = supertagChecklist(cached, enriched.tags);
+        } catch { /* supertags are optional */ }
+      }
       const { data } = await supabase.from("tasks").insert({ user_id: uid, ...taskTo(enriched) }).select().single();
+
       if (data) {
         const task = taskFrom(data);
         setState(s => ({ ...s, tasks: [task, ...s.tasks] }));
+        // Checklist template → child tasks under the new task.
+        if (checklistLines.length) {
+          try {
+            const rows = checklistLines.map(title => ({
+              user_id: uid,
+              ...taskTo({
+                title,
+                done: false,
+                area: task.area,
+                dueDate: task.dueDate,
+                parentTaskId: task.id,
+              } as any),
+            }));
+            const { data: kids } = await supabase.from("tasks").insert(rows).select();
+            if (kids?.length) {
+              const mapped = kids.map(taskFrom);
+              setState(s => ({ ...s, tasks: [...mapped, ...s.tasks] }));
+            }
+          } catch (e) { console.warn("supertag checklist failed", e); }
+        }
+
         if (task.dueDate) {
           emitScheduleEvent({
             kind: "task", id: task.id, title: task.title, date: task.dueDate,
