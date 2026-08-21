@@ -11,6 +11,9 @@ import { PlannerQuickCapture } from "@/components/planner/PlannerQuickCapture";
 import { PlannerMonthView } from "@/components/planner/PlannerMonthView";
 import { PlannerWeekGrid } from "@/components/planner/PlannerWeekGrid";
 import { PlannerWeekBoard } from "@/components/planner/PlannerWeekBoard";
+import { PlannerWeekList } from "@/components/planner/PlannerWeekList";
+import { PlannerWeekTable } from "@/components/planner/PlannerWeekTable";
+import { WeekPlanningDashboard } from "@/components/calendar/WeekPlanningDashboard";
 import { PlannerYearView } from "@/components/planner/PlannerYearView";
 import { PlannerMonthOverview } from "@/components/planner/PlannerMonthOverview";
 import { PlannerKindFilter } from "@/components/planner/PlannerKindFilter";
@@ -34,7 +37,7 @@ import { PlannerDayReferences } from "@/components/planner/PlannerDayReferences"
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
 import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsSheet";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
-import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMonthMode, type PlannerView } from "@/lib/planner-prefs";
+import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMonthMode, type PlannerView, type PlannerWeekMode } from "@/lib/planner-prefs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ListTodo, Inbox, MoreHorizontal, Sparkles, ChevronLeft, ChevronRight, Timer, PanelRightClose, PanelRightOpen, Keyboard } from "lucide-react";
@@ -95,7 +98,7 @@ export default function Planner() {
   const [view, setView] = usePlannerView();
   const [weekMode, setWeekMode] = usePlannerWeekMode();
   // Phones default to the stacked Overview; the grid stays one tap away.
-  const [mobileWeekMode, setMobileWeekMode] = useState<"grid" | "board">("board");
+  const [mobileWeekMode, setMobileWeekMode] = useState<PlannerWeekMode>("board");
   const [monthMode, setMonthMode] = usePlannerMonthMode();
   const [period, setPeriod] = usePlannerPeriod();
   const isMobile = useIsMobile();
@@ -291,12 +294,17 @@ export default function Planner() {
               {view === "week" && (
                 <>
                   <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">Week as</DropdownMenuLabel>
-                  <DropdownMenuItem onSelect={() => { setMobileWeekMode("grid"); setWeekMode("grid"); }}>
-                    {activeWeekMode === "grid" ? "• " : ""}Grid
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => { setMobileWeekMode("board"); setWeekMode("board"); }}>
-                    {activeWeekMode === "board" ? "• " : ""}Overview
-                  </DropdownMenuItem>
+                  {([
+                    ["grid", "Schedule"],
+                    ["board", "Board"],
+                    ["overview", "Overview"],
+                    ["list", "List"],
+                    ["table", "Table"],
+                  ] as const).map(([id, label]) => (
+                    <DropdownMenuItem key={id} onSelect={() => { setMobileWeekMode(id); setWeekMode(id); }}>
+                      {activeWeekMode === id ? "• " : ""}{label}
+                    </DropdownMenuItem>
+                  ))}
                   <DropdownMenuSeparator />
                 </>
               )}
@@ -360,7 +368,13 @@ export default function Planner() {
             {view === "week" && (
               <PlannerRangeModeTabs
                 value={weekMode} onChange={setWeekMode}
-                options={[{ id: "grid", label: "Grid" }, { id: "board", label: "Overview" }]}
+                options={[
+                  { id: "grid", label: "Schedule" },
+                  { id: "board", label: "Board" },
+                  { id: "overview", label: "Overview" },
+                  { id: "list", label: "List" },
+                  { id: "table", label: "Table" },
+                ]}
               />
             )}
             {view === "month" && (
@@ -553,10 +567,21 @@ export default function Planner() {
               </div>
             )}
             {view === "week" && activeWeekMode === "board" && (
+              <PlannerWeekBoard weekStart={weekStart} onSelectDay={openDay} showDashboard={false} />
+            )}
+            {view === "week" && activeWeekMode === "overview" && (
               <>
                 <PlannerTimeReview from={weekStart} days={7} label="this week" />
-                <PlannerWeekBoard weekStart={weekStart} onSelectDay={openDay} />
+                <div className="[&>*]:w-full">
+                  <WeekPlanningDashboard weekStart={weekStart} onJumpToDay={openDay} />
+                </div>
               </>
+            )}
+            {view === "week" && activeWeekMode === "list" && (
+              <PlannerWeekList weekStart={weekStart} onSelectDay={openDay} />
+            )}
+            {view === "week" && activeWeekMode === "table" && (
+              <PlannerWeekTable weekStart={weekStart} />
             )}
             {view === "month" && monthMode === "calendar" && (
               <PlannerMonthView date={day} onSelectDay={openDay} />

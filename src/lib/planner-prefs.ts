@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 export type PlannerView = "day" | "3day" | "week" | "month" | "year";
 /** Per-range mode pills (Week: grid/board · Month: calendar/overview). */
-export type PlannerWeekMode = "grid" | "board";
+export type PlannerWeekMode = "grid" | "board" | "overview" | "list" | "table";
 export type PlannerMonthMode = "calendar" | "overview";
 export type PlannerSort = "manual" | "priority" | "due" | "duration" | "category" | "recent";
 
