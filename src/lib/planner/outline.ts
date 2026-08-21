@@ -103,10 +103,8 @@ export function hiddenByCollapse(tasks: OutlineTask[], collapsed: string[]): Set
 
 /** Convenience: which feed/task ids survive the current outline state. */
 export function useOutlineFilter(tasks: OutlineTask[]) {
-  const { zoomRoot, collapsed, toggleCollapsed, isCollapsed, zoomTo } = {
-    ...useOutline(),
-    collapsed: useOutline().outline.collapsed,
-  };
+  const { outline, zoomRoot, toggleCollapsed, isCollapsed, zoomTo } = useOutline();
+  const collapsed = outline.collapsed;
 
   const allowed = useMemo(() => {
     const hidden = hiddenByCollapse(tasks, collapsed);
