@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Mic, Square, Loader2, Sparkles, RotateCcw, Wand2, Trash2, ListChecks, FileText, BookHeart } from "lucide-react";
+import { Mic, Square, Loader2, Sparkles, RotateCcw, Wand2, Trash2, ListChecks, FileText, BookHeart, Zap } from "lucide-react";
 import { createNote } from "@/lib/notes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -218,6 +218,19 @@ export function VoiceCaptureDialog({
     }
   };
 
+  /** Hand the recording off to Quick Add, pre-filled and ready to tweak. */
+  const sendToQuickAdd = () => {
+    const first = proposed.find((t) => t._selected && t.title.trim()) ?? proposed[0];
+    const text = mode === "tasks"
+      ? (first?.title?.trim() || summary || transcript).trim()
+      : (entry?.body?.trim() || transcript).trim();
+    if (!text) { toast.error("Nothing captured yet."); return; }
+    onOpenChange(false);
+    window.dispatchEvent(new CustomEvent("careflow:quick-add", {
+      detail: { tab: "command", text, kind: mode === "journal" ? "journal" : "task" },
+    }));
+  };
+
   const saveAll = async () => {
     const picked = proposed.filter((t) => t._selected && t.title.trim());
     if (picked.length === 0) {
@@ -405,10 +418,15 @@ export function VoiceCaptureDialog({
                   <Button variant="ghost" onClick={() => setPhase("intro")}>
                     <RotateCcw className="mr-1 h-3.5 w-3.5" /> Start over
                   </Button>
+                  <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={sendToQuickAdd}>
+                    <Zap className="mr-1 h-3.5 w-3.5" /> Quick add
+                  </Button>
                   <Button onClick={saveEntry} disabled={saving}>
                     {saving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1 h-3.5 w-3.5" />}
                     Save {mode === "journal" ? "journal entry" : "note"}
                   </Button>
+                  </div>
                 </div>
               </div>
             )}
