@@ -50,11 +50,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { List as ListIcon, CalendarClock } from "lucide-react";
 import {
   DndContext, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
-  closestCenter, type DragEndEvent,
+  closestCenter, useDroppable, DragOverlay, type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { ScheduleDropDialog, type SchedulePick } from "@/components/inbox/ScheduleDropDialog";
 
 export default function Inbox() {
   return (
@@ -1654,6 +1655,19 @@ function InboxHeldHeader() {
   );
 }
 
+const DAY_PARTS: DayPart[] = ["Morning", "Afternoon", "Evening"];
+
+function DropZone({ id, children, className, activeClassName }: {
+  id: string; children: React.ReactNode; className?: string; activeClassName?: string;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div ref={setNodeRef} className={cn(className, isOver && activeClassName)}>
+      {children}
+    </div>
+  );
+}
+
 function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onProcess }: {
   items: any[];
   autoDayPart: DayPart;
@@ -1667,6 +1681,9 @@ function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onP
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [pending, setPending] = useState<any | null>(null);
+
   // Bucket and sort by sortOrder so manual reorder persists across renders.
   const groups = useMemo(() => {
     const map = new Map<Bucket, any[]>();
@@ -1678,77 +1695,197 @@ function SectionedInboxList({ items, autoDayPart, updateTask, onAddToBucket, onP
     return map;
   }, [items]);
 
-  const handleDragEnd = (bucket: Bucket) => async (e: DragEndEvent) => {
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
+  const byId = useMemo(() => new Map(items.map((t) => [t.id, t])), [items]);
+  const activeTask = activeId ? byId.get(activeId.replace("inbox:", "")) : null;
+
+  const bucketOf = (id: string): Bucket | null => {
+    for (const b of BUCKET_ORDER) if (groups.get(b)!.some((t) => t.id === id)) return b;
+    return null;
+  };
+
+  const reorderWithin = async (bucket: Bucket, activeSortId: string, overSortId: string) => {
     const list = groups.get(bucket)!;
     const ids = list.map((t) => `inbox:${t.id}`);
-    const oldIdx = ids.indexOf(String(active.id));
-    const newIdx = ids.indexOf(String(over.id));
+    const oldIdx = ids.indexOf(activeSortId);
+    const newIdx = ids.indexOf(overSortId);
     if (oldIdx < 0 || newIdx < 0) return;
     const reordered = arrayMove(list, oldIdx, newIdx);
-    // Re-stride sortOrder with comfortable gaps so future inserts fit between.
     haptics.snap?.();
-    await Promise.all(
-      reordered.map((t, i) => updateTask(t.id, { sortOrder: (i + 1) * 100 })),
-    );
+    await Promise.all(reordered.map((t, i) => updateTask(t.id, { sortOrder: (i + 1) * 100 })));
+  };
+
+  const applyBucketDrop = async (task: any, target: Bucket) => {
+    const todayIso = format(new Date(), "yyyy-MM-dd");
+    if (target === "needsDate") { setPending(task); return; }
+    if (target === "scheduledToday") {
+      await updateTask(task.id, { dueDate: todayIso, dayPart: task.dayPart ?? autoDayPart });
+      haptics.snap?.(); toast("Scheduled for today", { description: task.title });
+      return;
+    }
+    if (target === "ready") {
+      // "Upcoming" — auto-schedule later: next day out from today (or the day after its current date).
+      const base = task.dueDate && task.dueDate > todayIso ? task.dueDate : todayIso;
+      const next = format(addDays(parseISO(base), 1), "yyyy-MM-dd");
+      await updateTask(task.id, { dueDate: next, dayPart: task.dayPart ?? autoDayPart });
+      haptics.snap?.(); toast(`Moved to ${format(parseISO(next), "EEE, MMM d")}`, { description: task.title });
+      return;
+    }
+    if (target === "needsCategory") {
+      await updateTask(task.id, { area: undefined });
+      haptics.tap?.(); toast("Needs a category", { description: task.title });
+    }
+  };
+
+  const handleDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
+
+  const handleDragEnd = async (e: DragEndEvent) => {
+    const { active, over } = e;
+    setActiveId(null);
+    if (!over) return;
+    const activeSortId = String(active.id);
+    const taskId = activeSortId.replace("inbox:", "");
+    const task = byId.get(taskId);
+    if (!task) return;
+    const overId = String(over.id);
+    if (overId === activeSortId) return;
+
+    // Morning / Afternoon / Evening zones
+    if (overId.startsWith("daypart:")) {
+      const part = overId.split(":")[1] as DayPart;
+      const todayIso = format(new Date(), "yyyy-MM-dd");
+      await updateTask(task.id, { dayPart: part, dueDate: task.dueDate ?? todayIso });
+      haptics.snap?.();
+      toast(`Moved to ${part}`, { description: task.title });
+      return;
+    }
+
+    if (overId.startsWith("bucket:")) {
+      const target = overId.split(":")[1] as Bucket;
+      if (bucketOf(taskId) === target) return;
+      await applyBucketDrop(task, target);
+      return;
+    }
+
+    // Reorder inside a section
+    const from = bucketOf(taskId);
+    const toTask = byId.get(overId.replace("inbox:", ""));
+    const to = toTask ? bucketOf(toTask.id) : null;
+    if (!from || !to) return;
+    if (from === to) { await reorderWithin(from, activeSortId, overId); return; }
+    await applyBucketDrop(task, to);
   };
 
   return (
-    <div className="space-y-4">
-      {BUCKET_ORDER.map((b) => {
-        const list = groups.get(b)!;
-        if (list.length === 0) return null;
-        const meta = BUCKET_META[b];
-        const Icon = BUCKET_ICON[b];
-        const ids = list.map((t) => `inbox:${t.id}`);
-        return (
-          <div key={b}>
-            <div className="sticky top-14 z-10 mb-1.5 flex items-center justify-between gap-2 rounded-full bg-background/80 px-1 py-1 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:top-2">
-              <div className="inline-flex items-center gap-2">
-                <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1", meta.tint)}>
-                  <Icon className="h-3 w-3" />
-                  {meta.label}
-                  <span className="rounded-full bg-background/60 px-1.5 text-[10.5px] font-semibold">{list.length}</span>
-                </span>
-                <span className="hidden text-[11px] text-muted-foreground sm:inline">{meta.hint}</span>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
+      <div className="space-y-4">
+        {/* Time-of-day drop lanes — appear while dragging so any task can move
+            between morning / afternoon / evening. */}
+        {activeTask && (
+          <div className="sticky top-14 z-20 grid grid-cols-3 gap-2 md:top-2">
+            {DAY_PARTS.map((p) => (
+              <DropZone
+                key={p}
+                id={`daypart:${p}`}
+                className="rounded-2xl border border-dashed border-border/70 bg-background/80 p-3 text-center text-[12px] font-medium text-muted-foreground backdrop-blur transition"
+                activeClassName="border-primary bg-primary/10 text-primary"
+              >
+                {p}
+              </DropZone>
+            ))}
+          </div>
+        )}
+
+        {BUCKET_ORDER.map((b) => {
+          const list = groups.get(b)!;
+          if (list.length === 0 && !activeTask) return null;
+          const meta = BUCKET_META[b];
+          const Icon = BUCKET_ICON[b];
+          const ids = list.map((t) => `inbox:${t.id}`);
+          return (
+            <DropZone
+              key={b}
+              id={`bucket:${b}`}
+              className="rounded-2xl border border-transparent p-1 transition"
+              activeClassName="border-dashed border-primary/60 bg-primary/[0.04]"
+            >
+              <div className="sticky top-14 z-10 mb-1.5 flex items-center justify-between gap-2 rounded-full bg-background/80 px-1 py-1 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:top-2">
+                <div className="inline-flex items-center gap-2">
+                  <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1", meta.tint)}>
+                    <Icon className="h-3 w-3" />
+                    {meta.label}
+                    <span className="rounded-full bg-background/60 px-1.5 text-[10.5px] font-semibold">{list.length}</span>
+                  </span>
+                  <span className="hidden text-[11px] text-muted-foreground sm:inline">{meta.hint}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {onAddToBucket && (
+                    <button
+                      type="button"
+                      onClick={() => void onAddToBucket(b)}
+                      aria-label="Quick add to this section"
+                      title="Quick add"
+                      className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {onProcess && b !== "ready" && (
+                    <button
+                      type="button"
+                      onClick={onProcess}
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+                    >
+                      <Wand2 className="h-3 w-3" />
+                      Process
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                {onAddToBucket && (
-                  <button
-                    type="button"
-                    onClick={() => void onAddToBucket(b)}
-                    aria-label="Quick add to this section"
-                    title="Quick add"
-                    className="grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                )}
-                {onProcess && b !== "ready" && (
-                  <button
-                    type="button"
-                    onClick={onProcess}
-                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
-                  >
-                    <Wand2 className="h-3 w-3" />
-                    Process
-                  </button>
-                )}
-              </div>
-            </div>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd(b)}>
               <SortableContext items={ids} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2 sm:space-y-3">
                   {list.map((t: any) => (
                     <InboxSortableRow key={t.id} task={t} autoDayPart={autoDayPart} />
                   ))}
+                  {list.length === 0 && (
+                    <div className="rounded-xl border border-dashed border-border/60 px-3 py-4 text-center text-[11.5px] text-muted-foreground">
+                      Drop here
+                    </div>
+                  )}
                 </div>
               </SortableContext>
-            </DndContext>
+            </DropZone>
+          );
+        })}
+      </div>
+
+      <DragOverlay>
+        {activeTask ? (
+          <div className="rounded-full bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground shadow-lg">
+            {activeTask.title}
           </div>
-        );
-      })}
-    </div>
+        ) : null}
+      </DragOverlay>
+
+      <ScheduleDropDialog
+        open={!!pending}
+        onOpenChange={(v) => { if (!v) setPending(null); }}
+        taskTitle={pending?.title}
+        initial={{ date: pending?.dueDate, time: pending?.startTime, dayPart: (pending?.dayPart as DayPart) ?? autoDayPart }}
+        onConfirm={async (pick: SchedulePick) => {
+          const t = pending;
+          setPending(null);
+          if (!t) return;
+          await updateTask(t.id, { dueDate: pick.date, dayPart: pick.dayPart, startTime: pick.time ?? undefined });
+          haptics.snap?.();
+          toast(`Scheduled · ${format(parseISO(pick.date), "EEE, MMM d")}${pick.time ? ` at ${pick.time}` : ""}`, { description: t.title });
+        }}
+      />
+    </DndContext>
   );
 }
