@@ -111,6 +111,9 @@ export function NotesSideNav({
           color: fallbackColorFor(name),
           icon: "tag",
           pinned: false,
+          defaults: {},
+          checklist: [],
+
           createdAt: "",
           updatedAt: "",
         });
