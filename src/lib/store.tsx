@@ -576,7 +576,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           if (!t.area && det.area) enriched.area = det.area as typeof enriched.area;
         }
       }
+      // Supertags: a tag can carry defaults (area, priority, energy, duration,
+      // repeat) and a checklist template. Fill in anything the user didn't set.
+      let checklistLines: string[] = [];
+      if (enriched.tags?.length) {
+        try {
+          const { getCachedTags } = await import("@/hooks/use-tags");
+          const { supertagPatch, supertagChecklist } = await import("./supertag");
+          const cached = getCachedTags();
+          const given = t as Record<string, unknown>;
+          Object.assign(enriched, supertagPatch(cached, enriched.tags, given));
+          checklistLines = supertagChecklist(cached, enriched.tags);
+        } catch { /* supertags are optional */ }
+      }
       const { data } = await supabase.from("tasks").insert({ user_id: uid, ...taskTo(enriched) }).select().single();
+
       if (data) {
         const task = taskFrom(data);
         setState(s => ({ ...s, tasks: [task, ...s.tasks] }));
