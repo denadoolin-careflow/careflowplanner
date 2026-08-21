@@ -4,6 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
+export interface TagDefaults {
+  recurrenceType?: string | null;
+  recurrenceInterval?: number | null;
+  area?: string | null;
+  priority?: string | null;
+  energy?: string | null;
+  estMinutes?: number | null;
+}
+
 export interface Tag {
   id: string;
   name: string;
@@ -11,6 +20,10 @@ export interface Tag {
   icon: string;        // lucide icon name (kebab case ok, we normalize)
   pinned?: boolean;
   description?: string | null;
+  /** Supertag: values stamped onto any item that gets this tag. */
+  defaults: TagDefaults;
+  /** Supertag: checklist template turned into child tasks. */
+  checklist: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -22,9 +35,19 @@ const fromRow = (r: any): Tag => ({
   icon: r.icon ?? DEFAULT_ICON,
   pinned: !!r.pinned,
   description: r.description ?? null,
+  defaults: {
+    recurrenceType: r.default_recurrence_type ?? null,
+    recurrenceInterval: r.default_recurrence_interval ?? null,
+    area: r.default_area ?? null,
+    priority: r.default_priority ?? null,
+    energy: r.default_energy ?? null,
+    estMinutes: r.default_est_minutes ?? null,
+  },
+  checklist: Array.isArray(r.checklist) ? r.checklist.filter((x: unknown) => typeof x === "string") : [],
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 });
+
 
 /* ------------------------------------------------------------------ */
 /*  Palette + icon presets shared by TagPicker + manager               */
