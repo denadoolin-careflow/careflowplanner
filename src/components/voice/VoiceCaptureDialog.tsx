@@ -103,6 +103,26 @@ export function VoiceCaptureDialog({
     if (liveDictation.supported && !liveDictation.listening) liveDictation.start();
   };
 
+  // Auto-start recording when opened from the "Voice" quick-add tile.
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (!open) { startedRef.current = false; return; }
+    if (!autoStart || startedRef.current) return;
+    startedRef.current = true;
+    void startRecording();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, autoStart]);
+
+  // Mic blocked / unavailable → fall back to the intro screen with a message.
+  useEffect(() => {
+    if (recorder.error && phase === "recording" && recorder.state === "idle") {
+      setPhase("intro");
+      toast.error(recorder.error || "Microphone unavailable — check permissions.");
+    }
+  }, [recorder.error, recorder.state, phase]);
+
+
+
   const stopAndProcess = async () => {
     if (liveDictation.listening) liveDictation.stop();
     const result = await recorder.stop();
