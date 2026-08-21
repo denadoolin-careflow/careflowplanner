@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { addDays, format, isSameDay } from "date-fns";
 import { Sparkles, Rows3 } from "lucide-react";
 import { PlannerTimeline } from "./PlannerTimeline";
@@ -6,6 +6,7 @@ import { PlannerAllDayRow } from "./PlannerAllDayRow";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
 import { WeekDayHeader } from "./WeekDayHeader";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
+import { useWeekFilters, filterFeedItems, matchesTaskFilter } from "@/lib/planner/week-filters";
 import { usePlannerWeekHeaderMode } from "@/lib/planner-prefs";
 import { useKindColors, KIND_LABEL, type KindKey } from "@/lib/calendar-colors";
 import { PLANNER_START_H, PLANNER_END_H, HOUR_PX } from "@/lib/planner-metrics";
@@ -27,6 +28,8 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
   const cols = Array.from({ length: days }, (_, i) => addDays(start, i));
   const today = new Date();
   const { byDay } = usePlannerFeed(start, days);
+  const { filters } = useWeekFilters();
+  const taskFilter = useCallback((t: any) => matchesTaskFilter(t, filters), [filters]);
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
   const [headerMode, setHeaderMode] = usePlannerWeekHeaderMode();
@@ -110,7 +113,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
         {cols.map((d, i) => (
           <PlannerAllDayRow
             key={format(d, "yyyy-MM-dd")}
-            items={(byDay.get(format(d, "yyyy-MM-dd")) ?? []).filter(it => it.allDay)}
+            items={filterFeedItems(byDay.get(format(d, "yyyy-MM-dd")) ?? [], filters).filter(it => it.allDay)}
             onOpen={handleOpen}
             className={cn("min-w-0", i > 0 && "border-l border-border/40")}
           />
@@ -144,7 +147,7 @@ export function PlannerWeekGrid({ start, days = 7, onOpenItem, onSelectDay, onCu
           </div>
           {cols.map((d, i) => (
             <div key={format(d, "yyyy-MM-dd")} className={cn("relative min-w-0", i > 0 && "border-l border-border/40", isSameDay(d, today) && "bg-primary/[0.03]")}>
-              <PlannerTimeline date={d} bare gutterless noScroll compact />
+              <PlannerTimeline date={d} bare gutterless noScroll compact taskFilter={taskFilter} />
             </div>
           ))}
           {/* Now line across today's column */}

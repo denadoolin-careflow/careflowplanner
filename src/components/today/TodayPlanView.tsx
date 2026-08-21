@@ -13,6 +13,7 @@ import { tray, useTray } from "@/lib/tray-store";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
 import { PhaseHabitNudge } from "@/components/planner/PhaseHabitNudge";
 import { TodayInboxRail } from "@/components/today/TodayInboxRail";
+import { TodayPlannedRail } from "@/components/today/TodayPlannedRail";
 
 /**
  * Today's planning surface — the same timeline engine the /planner page uses,
@@ -116,6 +117,7 @@ export function TodayPlanView({ date }: { date: Date }) {
           defaultCollapsed={false}
         >
           <div className="space-y-2 px-2 pb-2">
+            <TodayPlannedRail date={date} />
             <TodayInboxRail date={date} />
             <div className="h-[76vh] min-h-[520px]">
               <PlannerTimeline date={date} />
@@ -147,6 +149,7 @@ export function TodayPlanView({ date }: { date: Date }) {
 
       {capacityHints}
       <PhaseHabitNudge date={date} />
+      {period === "grid" && <TodayPlannedRail date={date} />}
       {period === "grid" && <TodayInboxRail date={date} />}
 
 

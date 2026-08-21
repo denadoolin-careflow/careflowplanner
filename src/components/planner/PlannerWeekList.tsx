@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { addDays, format, isSameDay } from "date-fns";
 import { Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
 import { usePlannerItemOpener } from "./PlannerItemOpener";
+import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
+import { useWeekFilters, filterFeedItems } from "@/lib/planner/week-filters";
+import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME } from "@/lib/planner/use-schedule-drop";
 import { KIND_ICONS } from "./kindIcon";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +19,9 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
 }) {
   const { updateTask } = useStore() as any;
   const { byDay } = usePlannerFeed(weekStart, days);
+  const { filters } = useWeekFilters();
+  const { schedule, pending, setPending, resolve } = useScheduleDrop();
+  const [dropDay, setDropDay] = useState<string | null>(null);
   const { open: openItem, dialogs } = usePlannerItemOpener();
   const handleOpen = onOpenItem ?? openItem;
   const cols = Array.from({ length: days }, (_, i) => addDays(weekStart, i));
@@ -25,10 +32,22 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
       <div className="divide-y divide-border/50">
         {cols.map(d => {
           const key = format(d, "yyyy-MM-dd");
-          const items = [...(byDay.get(key) ?? [])].sort((a, b) => (a.time ?? "zz").localeCompare(b.time ?? "zz"));
+          const items = filterFeedItems([...(byDay.get(key) ?? [])], filters).sort((a, b) => (a.time ?? "zz").localeCompare(b.time ?? "zz"));
           const isToday = isSameDay(d, today);
           return (
-            <section key={key} aria-label={format(d, "EEEE, MMMM d")}>
+            <section
+              key={key}
+              aria-label={format(d, "EEEE, MMMM d")}
+              onDragOver={e => { if (Array.from(e.dataTransfer.types).includes(PLANNER_ITEM_MIME)) { e.preventDefault(); setDropDay(key); } }}
+              onDragLeave={() => setDropDay(cur => (cur === key ? null : cur))}
+              onDrop={e => {
+                e.preventDefault();
+                setDropDay(null);
+                const dragged = readDraggedItem(e);
+                if (dragged) schedule(dragged, key);
+              }}
+              className={cn(dropDay === key && "bg-primary/5 outline outline-1 outline-primary/40")}
+            >
               <button
                 type="button"
                 onClick={() => onSelectDay?.(d)}
@@ -52,6 +71,11 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
                         <div
                           role="button"
                           tabIndex={0}
+                          draggable={it.sourceRef.type === "task" || it.sourceRef.type === "appointment"}
+                          onDragStart={e => {
+                            e.dataTransfer.setData(PLANNER_ITEM_MIME, `${it.sourceRef.type}:${it.sourceRef.id}`);
+                            e.dataTransfer.effectAllowed = "move";
+                          }}
                           onClick={() => handleOpen(it)}
                           onKeyDown={e => { if (e.key === "Enter") handleOpen(it); }}
                           className={cn(
@@ -94,6 +118,7 @@ export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }
           );
         })}
       </div>
+      <ScheduleConflictDialog pending={pending} onCancel={() => setPending(null)} onResolve={resolve} />
       {dialogs}
     </div>
   );

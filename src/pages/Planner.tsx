@@ -37,7 +37,8 @@ import { PlannerDayReferences } from "@/components/planner/PlannerDayReferences"
 import { AutoScheduleSettings } from "@/components/planner/AutoScheduleSettings";
 import { PlannerShortcutsSheet } from "@/components/planner/PlannerShortcutsSheet";
 import { CollapsibleSection } from "@/components/today/CollapsibleSection";
-import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMonthMode, type PlannerView, type PlannerWeekMode } from "@/lib/planner-prefs";
+import { usePlannerView, usePlannerPanels, usePlannerWeekMode, usePlannerMobileWeekMode, usePlannerMonthMode, type PlannerView, type PlannerWeekMode } from "@/lib/planner-prefs";
+import { PlannerWeekFilterBar } from "@/components/planner/PlannerWeekFilterBar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ListTodo, Inbox, MoreHorizontal, Sparkles, ChevronLeft, ChevronRight, Timer, PanelRightClose, PanelRightOpen, Keyboard } from "lucide-react";
@@ -98,7 +99,7 @@ export default function Planner() {
   const [view, setView] = usePlannerView();
   const [weekMode, setWeekMode] = usePlannerWeekMode();
   // Phones default to the stacked Overview; the grid stays one tap away.
-  const [mobileWeekMode, setMobileWeekMode] = useState<PlannerWeekMode>("board");
+  const [mobileWeekMode, setMobileWeekMode] = usePlannerMobileWeekMode();
   const [monthMode, setMonthMode] = usePlannerMonthMode();
   const [period, setPeriod] = usePlannerPeriod();
   const isMobile = useIsMobile();
@@ -539,6 +540,9 @@ export default function Planner() {
             </div>
           )}
           <div className="flex min-w-0 flex-col gap-3">
+            {view === "week" && activeWeekMode !== "overview" && (
+              <PlannerWeekFilterBar className="shrink-0" />
+            )}
             {view === "day" && period === "grid" && (
               <div className={gridBox}><PlannerTimeline date={day} /></div>
             )}
