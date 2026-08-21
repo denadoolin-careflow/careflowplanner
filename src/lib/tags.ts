@@ -143,17 +143,34 @@ export async function createTag(patch: { name: string; color?: string; icon?: st
   return fromRow(data);
 }
 
-export async function updateTag(id: string, patch: Partial<Pick<Tag, "name" | "color" | "icon" | "pinned" | "description">>): Promise<void> {
+export async function updateTag(
+  id: string,
+  patch: Partial<Pick<Tag, "name" | "color" | "icon" | "pinned" | "description" | "defaults" | "checklist">>,
+): Promise<void> {
   const row: any = {};
   if (patch.name !== undefined) row.name = normalizeTagName(patch.name);
   if (patch.color !== undefined) row.color = patch.color;
   if (patch.icon !== undefined) row.icon = patch.icon;
   if (patch.pinned !== undefined) row.pinned = patch.pinned;
   if (patch.description !== undefined) row.description = patch.description;
+  if (patch.checklist !== undefined) row.checklist = patch.checklist;
+  if (patch.defaults !== undefined) {
+    const d = patch.defaults;
+    row.default_recurrence_type = d.recurrenceType ?? null;
+    row.default_recurrence_interval = d.recurrenceInterval ?? null;
+    row.default_area = d.area ?? null;
+    row.default_priority = d.priority ?? null;
+    row.default_energy = d.energy ?? null;
+    row.default_est_minutes = d.estMinutes ?? null;
+  }
   const { error } = await supabase.from("tags" as any).update(row).eq("id", id);
   if (error) throw error;
   try { window.dispatchEvent(new Event("careflow:tags:pinned-changed")); } catch {}
 }
+
+/** Empty supertag schema — handy for ghost/placeholder tags. */
+export const EMPTY_TAG_DEFAULTS: TagDefaults = {};
+
 
 export async function deleteTag(id: string): Promise<void> {
   const { error } = await supabase.from("tags" as any).delete().eq("id", id);
