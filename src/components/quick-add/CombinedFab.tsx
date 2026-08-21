@@ -105,7 +105,7 @@ export function CombinedFab() {
     { key: "quick", label: "Quick add", icon: Zap, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "command" } })); }, accent: true },
     { key: "planner", label: "Planner", icon: CalendarRange, onClick: () => navigate("/planner"), accent: true },
     { key: "note", label: "Note", icon: FileText, onClick: () => openNewNote() },
-    { key: "voice", label: "Voice", icon: Mic, onClick: () => { window.dispatchEvent(new Event("careflow:carey:open")); } },
+    { key: "voice", label: "Voice", icon: Mic, onClick: () => { window.dispatchEvent(new CustomEvent("careflow:quick-add", { detail: { tab: "voice", autoStart: true } })); } },
     { key: "journal", label: "Journal", icon: BookHeart, onClick: () => navigate("/journal") },
     { key: "checklist", label: "Checklist", icon: ListChecks, onClick: () => openNewNote("- [ ] \n- [ ] \n- [ ] ") },
     { key: "notepad", label: "Notepad", icon: NotebookPen, onClick: () => { tray.setTab("notepad"); tray.setOpen(true); } },
