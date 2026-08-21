@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { addDays, format, isSameDay } from "date-fns";
-import { Columns3, GripVertical } from "lucide-react";
+import { Columns3, GripVertical, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useStore } from "@/lib/store";
@@ -10,8 +10,13 @@ import { ScheduleConflictDialog } from "./ScheduleConflictDialog";
 import { KIND_LABEL } from "@/lib/calendar-colors";
 import { useWeekFilters, filterFeedItems } from "@/lib/planner/week-filters";
 import {
-  useTableConfig, COLUMN_LABEL, ALL_COLUMNS, type TableColumnId, type TableScope,
+  useTableConfig, COLUMN_LABEL, ALL_COLUMNS, type TableColumnId, type BuiltinColumnId, type TableScope,
 } from "@/lib/planner/table-columns";
+import { useFieldColumns, parseFieldColumn } from "@/lib/planner/field-columns";
+import { FieldCell } from "./FieldCell";
+import { useOutlineFilter } from "@/lib/planner/outline";
+import { OutlineBreadcrumb } from "./OutlineBreadcrumb";
+import { usePlannerSelection } from "@/lib/planner/selection";
 import { PlannerBulkBar } from "./PlannerBulkBar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useScheduleDrop, readDraggedItem, PLANNER_ITEM_MIME } from "@/lib/planner/use-schedule-drop";
@@ -20,7 +25,7 @@ import { cn } from "@/lib/utils";
 const PRIO_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
 const ENERGY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
-const COL_CLASS: Partial<Record<TableColumnId, string>> = {
+const COL_CLASS: Partial<Record<BuiltinColumnId, string>> = {
   when: "w-32", kind: "w-28", status: "w-24", priority: "w-24",
   area: "w-32", energy: "w-24", duration: "w-24", project: "w-32",
 };
@@ -55,9 +60,9 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
   const handleOpen = onOpenItem ?? openItem;
   const { config, columns, toggleColumn, moveColumn, setSort, reset } = useTableConfig(scope);
   const { schedule, scheduleMany, pending, setPending, resolve } = useScheduleDrop();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const toggleSel = (id: string) =>
-    setSelected(cur => { const n = new Set(cur); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const { selected, ids: selectedIds, toggle: toggleSel, replace, clear } = usePlannerSelection();
+  const fieldCols = useFieldColumns(filters.tags);
+  const outline = useOutlineFilter(state.tasks ?? []);
   const [dragCol, setDragCol] = useState<TableColumnId | null>(null);
   const [dropRow, setDropRow] = useState<string | null>(null);
   const today = new Date();
@@ -67,19 +72,48 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
     (state.projects ?? []).find((p: any) => p.id === id)?.name ?? "";
 
   const rows = useMemo(() => {
-    const list = filterFeedItems(items, filters);
+    const list = filterFeedItems(items, filters)
+      .filter(it => it.sourceRef.type !== "task" ? !outline.zoomRoot : outline.allowed(it.sourceRef.id));
     const dir = config.asc ? 1 : -1;
+    const isField = !!parseFieldColumn(String(config.sort));
     return list.sort((a, b) => {
-      const av = sortValue(a, config.sort);
-      const bv = sortValue(b, config.sort);
+      const av = isField ? fieldCols.sortValue(a.sourceRef.id, String(config.sort)) : sortValue(a, config.sort);
+      const bv = isField ? fieldCols.sortValue(b.sourceRef.id, String(config.sort)) : sortValue(b, config.sort);
       if (av === bv) return a.date.localeCompare(b.date) || (a.time ?? "zz").localeCompare(b.time ?? "zz");
       return dir * (typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv)));
     });
-  }, [items, filters, config.sort, config.asc]);
+  }, [items, filters, config.sort, config.asc, fieldCols, outline]);
 
   const taskRows = useMemo(() => rows.filter(r => r.sourceRef.type === "task"), [rows]);
 
+  /** Built-in columns plus whatever tag fields the active tag filter exposes. */
+  const pickable: TableColumnId[] = useMemo(() => {
+    const dynamic = fieldCols.columns.map(c => c.id);
+    const ordered = config.order.filter(c => (ALL_COLUMNS as string[]).includes(c) || dynamic.includes(c));
+    return [...ordered, ...dynamic.filter(id => !ordered.includes(id))];
+  }, [config.order, fieldCols.columns]);
+
+  const visibleColumns = useMemo(
+    () => pickable.filter(c => config.visible.includes(c)),
+    [pickable, config.visible],
+  );
+
+  const labelFor = (col: TableColumnId) =>
+    fieldCols.byId(String(col))?.label ?? COLUMN_LABEL[col as BuiltinColumnId] ?? String(col);
+
   const cell = (it: PlannerFeedItem, col: TableColumnId) => {
+    const fieldCol = fieldCols.byId(String(col));
+    if (fieldCol) {
+      const isTask = it.sourceRef.type === "task";
+      return (
+        <FieldCell
+          field={fieldCol.field}
+          value={isTask ? fieldCols.valueFor(it.sourceRef.id, fieldCol.id) : undefined}
+          disabled={!isTask}
+          onSave={v => fieldCols.save(it.sourceRef.id, fieldCol.id, v)}
+        />
+      );
+    }
     switch (col) {
       case "when": {
         const d = new Date(`${it.date}T12:00:00`);
@@ -97,6 +131,16 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
           <span className="flex items-start gap-2">
             <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: it.color }} aria-hidden />
             <span className={cn("[overflow-wrap:anywhere] whitespace-normal break-words", it.done && "line-through")}>{it.title}</span>
+            {it.sourceRef.type === "task" && (
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); outline.zoomTo(it.sourceRef.id); }}
+                aria-label={`Zoom into ${it.title}`}
+                className="ml-auto shrink-0 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100"
+              >
+                <Maximize2 className="h-3 w-3" />
+              </button>
+            )}
           </span>
         );
       case "kind": return KIND_LABEL[it.kind];
@@ -122,6 +166,7 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+      <OutlineBreadcrumb tasks={state.tasks ?? []} />
       <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
         <span className="text-sm font-semibold">Table</span>
         <span className="text-[11px] text-muted-foreground">
@@ -133,14 +178,15 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
               <Columns3 className="mr-1.5 h-3.5 w-3.5" /> Columns
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-56 p-2">
+          <PopoverContent align="end" className="w-60 p-2">
             <div className="mb-1 flex items-center justify-between px-1">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Show columns</span>
               <button type="button" className="text-[11px] text-primary hover:underline" onClick={reset}>Reset</button>
             </div>
             <div className="space-y-0.5">
-              {config.order.filter(c => ALL_COLUMNS.includes(c)).map(c => {
+              {pickable.map(c => {
                 const on = config.visible.includes(c);
+                const fc = fieldCols.byId(String(c));
                 return (
                   <button
                     key={c}
@@ -153,13 +199,18 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
                       !on && "opacity-45",
                     )}
                   >
-                    <span className="flex-1">{COLUMN_LABEL[c]}</span>
+                    <span className="flex-1 truncate">{labelFor(c)}</span>
+                    {fc && <span className="text-[10px] text-muted-foreground">#{fc.tagName}</span>}
                     {on && <span className="text-[10px] text-muted-foreground">on</span>}
                   </button>
                 );
               })}
             </div>
-            <p className="mt-1.5 px-1 text-[10px] text-muted-foreground">Drag a header to reorder columns.</p>
+            <p className="mt-1.5 px-1 text-[10px] text-muted-foreground">
+              {fieldCols.columns.length
+                ? "Tag fields appear as columns while that tag filter is on."
+                : "Filter by a tag to add its custom fields as columns."}
+            </p>
           </PopoverContent>
         </Popover>
       </div>
@@ -172,10 +223,10 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
                   aria-label="Select all tasks"
                   checked={taskRows.length > 0 && selected.size === taskRows.length}
                   onCheckedChange={on =>
-                    setSelected(on ? new Set(taskRows.map(r => r.sourceRef.id)) : new Set())}
+                    on ? replace(taskRows.map(r => r.sourceRef.id)) : clear()}
                 />
               </th>
-              {columns.map(col => (
+              {visibleColumns.map(col => (
                 <th
                   key={col}
                   scope="col"
@@ -184,7 +235,7 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
                   onDragOver={e => { if (dragCol) e.preventDefault(); }}
                   onDrop={e => { e.preventDefault(); if (dragCol) moveColumn(dragCol, col); setDragCol(null); }}
                   onDragEnd={() => setDragCol(null)}
-                  className={cn("px-3 py-2 text-left font-semibold", COL_CLASS[col], dragCol === col && "opacity-50")}
+                  className={cn("px-3 py-2 text-left font-semibold", COL_CLASS[col as BuiltinColumnId], dragCol === col && "opacity-50")}
                 >
                   <button
                     type="button"
@@ -192,9 +243,9 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
                     aria-sort={config.sort === col ? (config.asc ? "ascending" : "descending") : "none"}
                     className="inline-flex items-center gap-1 hover:text-foreground"
                   >
-                    <GripVertical className="h-3 w-3 cursor-grab opacity-40" aria-hidden />
-                    {COLUMN_LABEL[col]}
-                    {config.sort === col && <span aria-hidden>{config.asc ? "▲" : "▼"}</span>}
+                    <GripVertical className="h-3 w-3 opacity-40" aria-hidden />
+                    {labelFor(col)}
+                    {config.sort === col && <span aria-hidden>{config.asc ? "↑" : "↓"}</span>}
                   </button>
                 </th>
               ))}
@@ -202,7 +253,7 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
           </thead>
           <tbody className="divide-y divide-border/40">
             {rows.length === 0 && (
-              <tr><td colSpan={columns.length + 1} className="px-3 py-6 text-center text-muted-foreground">Nothing matches here.</td></tr>
+              <tr><td colSpan={visibleColumns.length + 1} className="px-3 py-6 text-center text-muted-foreground">Nothing matches here.</td></tr>
             )}
             {rows.map(it => (
               <tr
@@ -224,7 +275,7 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
                 }}
                 onClick={() => handleOpen(it)}
                 className={cn(
-                  "cursor-pointer transition-colors hover:bg-muted/50",
+                  "group/row cursor-pointer transition-colors hover:bg-muted/50",
                   it.done && "opacity-55",
                   dropRow === it.id && "bg-primary/5 outline outline-1 outline-primary/40",
                 )}
@@ -238,7 +289,7 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
                     />
                   )}
                 </td>
-                {columns.map(col => (
+                {visibleColumns.map(col => (
                   <td key={col} className={cn("px-3 py-2", col === "when" && "whitespace-nowrap text-muted-foreground", (col === "kind" || col === "area" || col === "project" || col === "tags") && "text-muted-foreground")}>
                     {cell(it, col)}
                   </td>
@@ -249,9 +300,9 @@ export function PlannerWeekTable({ weekStart, days = 7, onOpenItem, scope = "wee
         </table>
       </div>
       <PlannerBulkBar
-        ids={Array.from(selected)}
+        ids={selectedIds}
         anchorDate={weekStart}
-        onClear={() => setSelected(new Set())}
+        onClear={clear}
         onScheduleMany={scheduleMany}
       />
       <ScheduleConflictDialog pending={pending} onCancel={() => setPending(null)} onResolve={resolve} />
