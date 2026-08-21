@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTags } from "@/hooks/use-tags";
-import { readableTextOn } from "@/lib/tags";
+import { readableTextOn, updateTag, type TagDefaults } from "@/lib/tags";
+import { SupertagEditor } from "./SupertagEditor";
+
 import { tagIconFor } from "./tag-icon";
 import { ColorSwatchPicker, IconGroupPicker } from "./TagPicker";
 import { useAtmosphere } from "@/lib/atmospheres";
