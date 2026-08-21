@@ -45,6 +45,7 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [voiceAutoStart, setVoiceAutoStart] = useState(false);
   const [fullMode, setFullMode] = useState(false);
+  const [seedKind, setSeedKind] = useState<QuickAddKind | undefined>(undefined);
   const isMobile = useIsMobile();
   const drag = useDraggableFab("careflow:fab:quickadd", { right: 16, bottom: 88 });
   const { presets } = useQuickAddPresets();
@@ -58,8 +59,11 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
   // Listen for widget "+" broadcasts.
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ tab?: string; autoStart?: boolean }>).detail;
+      const detail = (e as CustomEvent<{ tab?: string; autoStart?: boolean; text?: string; kind?: string }>).detail;
       if (detail?.tab === "voice") { setVoiceAutoStart(!!detail.autoStart); setVoiceOpen(true); haptics.pickup(); return; }
+      // Pre-filled hand-off (e.g. from a voice recording).
+      setPalette(detail?.text ?? "");
+      setSeedKind((detail?.kind as QuickAddKind) || undefined);
       const next = (detail?.tab as Mode) || "command";
       openWith(next);
     };
@@ -80,7 +84,7 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const close = () => { setOpen(false); setPalette(""); setMode("command"); setFullMode(false); };
+  const close = () => { setOpen(false); setPalette(""); setSeedKind(undefined); setMode("command"); setFullMode(false); };
 
   return (
     <>
@@ -107,7 +111,7 @@ export function QuickAddFab({ hideButton = false }: { hideButton?: boolean } = {
 
       <DialogContent className="max-w-xl p-0 overflow-hidden gap-0 border-primary/20 bg-card/95 backdrop-blur-xl">
         {isMobile && mode === "command" && !fullMode ? (
-          <MobileQuickAdd initialText={palette} onClose={close} onFull={() => setFullMode(true)} />
+          <MobileQuickAdd initialText={palette} initialKind={seedKind} onClose={close} onFull={() => setFullMode(true)} />
         ) : mode === "command" ? (
           <CommandPalette
             value={palette}

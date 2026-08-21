@@ -27,15 +27,17 @@ const META: Record<string, { label: string; icon: any; placeholder: string; cta:
  */
 export function MobileQuickAdd({
   initialText = "",
+  initialKind,
   onClose,
   onFull,
 }: {
   initialText?: string;
+  initialKind?: QuickAddKind;
   onClose: () => void;
   onFull: () => void;
 }) {
   const { addTask, addAppointment, addJournal, addMeal, addHabit, addIdea } = useStore();
-  const [kind, setKind] = useState<QuickAddKind>(() => getLastQuickAddKind());
+  const [kind, setKind] = useState<QuickAddKind>(() => initialKind ?? getLastQuickAddKind());
   const [text, setText] = useState(initialText);
   const [more, setMore] = useState(false);
   const [date, setDate] = useState(todayISO());
