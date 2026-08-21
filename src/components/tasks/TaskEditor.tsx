@@ -28,6 +28,8 @@ import { NoteAIButton } from "@/components/notes/NoteAIButton";
 import { SubtaskAddMenu } from "@/components/tasks/SubtaskAddMenu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TagPicker } from "@/components/tags/TagPicker";
+import { ItemFieldsSection } from "@/components/tags/ItemFieldsSection";
+
 import { supabase } from "@/integrations/supabase/client";
 import { detectAreaAndProject } from "@/lib/task-auto-detect";
 import { Sparkles } from "lucide-react";
