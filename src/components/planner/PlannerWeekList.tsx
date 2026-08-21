@@ -1,0 +1,100 @@
+import { addDays, format, isSameDay } from "date-fns";
+import { Check } from "lucide-react";
+import { useStore } from "@/lib/store";
+import { usePlannerFeed, type PlannerFeedItem } from "@/lib/planner/feed";
+import { usePlannerItemOpener } from "./PlannerItemOpener";
+import { KIND_ICONS } from "./kindIcon";
+import { cn } from "@/lib/utils";
+
+/** Week as one flat, time-ordered list grouped by day. */
+export function PlannerWeekList({ weekStart, days = 7, onSelectDay, onOpenItem }: {
+  weekStart: Date;
+  days?: number;
+  onSelectDay?: (d: Date) => void;
+  onOpenItem?: (item: PlannerFeedItem) => void;
+}) {
+  const { updateTask } = useStore() as any;
+  const { byDay } = usePlannerFeed(weekStart, days);
+  const { open: openItem, dialogs } = usePlannerItemOpener();
+  const handleOpen = onOpenItem ?? openItem;
+  const cols = Array.from({ length: days }, (_, i) => addDays(weekStart, i));
+  const today = new Date();
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+      <div className="divide-y divide-border/50">
+        {cols.map(d => {
+          const key = format(d, "yyyy-MM-dd");
+          const items = [...(byDay.get(key) ?? [])].sort((a, b) => (a.time ?? "zz").localeCompare(b.time ?? "zz"));
+          const isToday = isSameDay(d, today);
+          return (
+            <section key={key} aria-label={format(d, "EEEE, MMMM d")}>
+              <button
+                type="button"
+                onClick={() => onSelectDay?.(d)}
+                className="sticky top-0 z-10 flex w-full items-baseline gap-2 border-b border-border/40 bg-card/90 px-3 py-1.5 text-left backdrop-blur"
+              >
+                <span className={cn("font-display text-sm font-semibold", isToday && "text-primary")}>
+                  {format(d, "EEEE")}
+                </span>
+                <span className="text-[11px] text-muted-foreground">{format(d, "MMM d")}</span>
+                <span className="ml-auto text-[11px] text-muted-foreground">{items.length} item{items.length === 1 ? "" : "s"}</span>
+              </button>
+              {items.length === 0 ? (
+                <p className="px-4 py-2 text-[12px] text-muted-foreground/70">Nothing planned</p>
+              ) : (
+                <ul className="divide-y divide-border/30">
+                  {items.map(it => {
+                    const Icon = KIND_ICONS[it.kind];
+                    const isTask = it.sourceRef.type === "task";
+                    return (
+                      <li key={it.id}>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleOpen(it)}
+                          onKeyDown={e => { if (e.key === "Enter") handleOpen(it); }}
+                          className={cn(
+                            "flex w-full cursor-pointer items-start gap-2.5 px-3 py-2 text-left text-[13px] transition-colors hover:bg-muted/50",
+                            it.done && "opacity-50 line-through",
+                          )}
+                        >
+                          {isTask ? (
+                            <span
+                              role="checkbox"
+                              aria-checked={!!it.done}
+                              tabIndex={0}
+                              onClick={e => { e.stopPropagation(); updateTask(it.sourceRef.id, { done: !it.done }); }}
+                              onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); updateTask(it.sourceRef.id, { done: !it.done }); } }}
+                              className={cn(
+                                "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border",
+                                it.done ? "border-transparent" : "border-muted-foreground/40 hover:border-muted-foreground/70",
+                              )}
+                              style={{ backgroundColor: it.done ? it.color : undefined }}
+                            >
+                              {it.done && <Check className="h-3 w-3 text-white" />}
+                            </span>
+                          ) : (
+                            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                              style={{ backgroundColor: `${it.color}1f`, color: it.color }}>
+                              <Icon className="h-2.5 w-2.5" />
+                            </span>
+                          )}
+                          <span className="w-14 shrink-0 pt-0.5 font-mono text-[11px] tabular-nums text-muted-foreground">
+                            {it.allDay ? "All day" : (it.time?.slice(0, 5) ?? "—")}
+                          </span>
+                          <span className="min-w-0 flex-1 [overflow-wrap:anywhere] whitespace-normal break-words">{it.title}</span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+          );
+        })}
+      </div>
+      {dialogs}
+    </div>
+  );
+}

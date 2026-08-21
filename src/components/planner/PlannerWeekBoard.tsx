@@ -31,10 +31,12 @@ function itemPart(it: PlannerFeedItem): "morning" | "afternoon" | "evening" | "u
  * Week as a planning board: one column per day with capacity, drag items
  * between days, plus an unscheduled rail and the week review below.
  */
-export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
+export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem, showDashboard = true }: {
   weekStart: Date;
   onSelectDay?: (d: Date) => void;
   onOpenItem?: (item: PlannerFeedItem) => void;
+  /** The weekly plan dashboard now lives on the Overview tab. */
+  showDashboard?: boolean;
 }) {
   const { updateTask, updateAppointment } = useStore() as any;
   const { byDay } = usePlannerFeed(weekStart, 7);
@@ -162,9 +164,11 @@ export function PlannerWeekBoard({ weekStart, onSelectDay, onOpenItem }: {
         })}
       </div>
 
-      <div className="[&>*]:w-full">
-        <WeekPlanningDashboard weekStart={weekStart} onJumpToDay={onSelectDay} />
-      </div>
+      {showDashboard && (
+        <div className="[&>*]:w-full">
+          <WeekPlanningDashboard weekStart={weekStart} onJumpToDay={onSelectDay} />
+        </div>
+      )}
       {dialogs}
     </div>
   );
