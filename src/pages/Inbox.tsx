@@ -18,7 +18,7 @@ import type { Area, Priority, TaskStatus } from "@/lib/types";
 import { UnscheduledTasksRail } from "@/components/calendar/UnscheduledTasksRail";
 import { TaskSelectionProvider, useTaskSelection } from "@/lib/task-selection";
 import { BulkActionBar } from "@/components/tasks/BulkActionBar";
-import { TaskDetailPane } from "@/components/tasks/TaskDetailPane";
+
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { aiInvoke } from "@/lib/ai-invoke";
@@ -108,7 +108,7 @@ const CATEGORIES: { icon: any; label: string; tone: string }[] = [
 function InboxInner() {
   const { state, addTask, addMeal, updateTask, deleteTask, addJournal } = useStore() as any;
   const navigate = useNavigate();
-  const { paneOpen, clear } = useTaskSelection();
+  const { clear } = useTaskSelection();
   const [draft, setDraft] = useState("");
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [extraTags, setExtraTags] = useState<string[]>([]);
@@ -1458,7 +1458,7 @@ function InboxInner() {
         </section>
       </div>
 
-      {paneOpen && <TaskDetailPane />}
+      
       <UnscheduledTasksRail />
       <ProcessInboxDialog
         open={processOpen}
