@@ -9,6 +9,7 @@ import { useStore } from "@/lib/store";
 import { listNotes, createNote, type Note } from "@/lib/notes";
 import { TagChip } from "@/components/tags/TagChip";
 import { TagNotesPanel } from "@/components/tags/TagNotesPanel";
+import { TagOutline, OUTLINE_ICONS } from "@/components/tags/TagOutline";
 import { SupertagEditor } from "@/components/tags/SupertagEditor";
 import { ColorSwatchPicker, IconGroupPicker } from "@/components/tags/TagPicker";
 import { useAtmosphere } from "@/lib/atmospheres";
@@ -29,6 +30,7 @@ export default function TagDetail() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [descDraft, setDescDraft] = useState<string>("");
   const [descEditing, setDescEditing] = useState(false);
+  const [view, setView] = useState<"outline" | "cards">("outline");
 
   const reloadNotes = () => { void listNotes().then(setNotes).catch(() => {}); };
   useEffect(() => { reloadNotes(); }, []);
@@ -186,6 +188,23 @@ export default function TagDetail() {
         )}
       </section>
 
+      <div className="flex items-center gap-1 rounded-full border border-border/60 bg-card/50 p-0.5 text-[11px] w-fit">
+        {(["outline", "cards"] as const).map(v => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setView(v)}
+            aria-pressed={view === v}
+            className={cn(
+              "rounded-full px-3 py-1 capitalize transition-colors",
+              view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
       <TagSettingsPanel
         tagName={tagName}
         tag={existing ?? null}
@@ -195,6 +214,38 @@ export default function TagDetail() {
 
 
 
+      {view === "outline" ? (
+        <TagOutline
+          tagName={tagName}
+          accent={accent}
+          onAddTask={async (title) => {
+            await addTask({ title, tags: [tagName] } as any);
+            toast.success(`Added to #${tagName}`);
+          }}
+          groups={[
+            {
+              key: "tasks", label: "Tasks", icon: OUTLINE_ICONS.task,
+              nodes: tasks.map(t => ({
+                id: t.id, title: t.title, done: t.done, editable: true,
+                meta: t.dueDate ? format(parseISO(t.dueDate), "MMM d") : undefined,
+              })),
+            },
+            {
+              key: "notes", label: "Notes", icon: OUTLINE_ICONS.note,
+              nodes: taggedNotes.map(n => ({ id: n.id, title: n.title || "Untitled", to: `/notes/${n.id}` })),
+            },
+            {
+              key: "projects", label: "Projects", icon: OUTLINE_ICONS.project,
+              nodes: projects.map(p => ({ id: p.id, title: p.name, meta: p.status ?? undefined, to: `/projects/${p.id}` })),
+            },
+            {
+              key: "grocery", label: "Grocery", icon: OUTLINE_ICONS.grocery,
+              nodes: groceries.map(g => ({ id: g.id, title: g.name, meta: g.bought ? "Bought" : (g.category ?? undefined), to: "/pantry" })),
+            },
+          ]}
+        />
+      ) : (
+      <>
       <CardSection
         title="Tasks" icon={CheckCircle2} accent={accent}
         emptyLabel="No tasks tagged yet" emptyCta="Add task"
@@ -231,6 +282,8 @@ export default function TagDetail() {
           to: `/projects/${p.id}`,
         }))}
       />
+      </>
+      )}
     </div>
   );
 }
@@ -367,7 +420,7 @@ function TagSettingsPanel({
             atmosphereName={atmosphere.name}
             atmospherePalette={atmosphere.palette}
           />
-          <IconGroupPicker value={icon} onChange={setIcon} />
+          <IconGroupPicker value={icon} onChange={setIcon} color={color} previewName={tagName} />
           <SupertagEditor
             tag={working}
             defaults={defaults}
