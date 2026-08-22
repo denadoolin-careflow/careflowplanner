@@ -1956,6 +1956,28 @@ export function BlockEditor({
     if (next !== editor.getHTML()) editor.commands.setContent(next, { emitUpdate: false });
   }, [body, editor]);
 
+  // "Remove link" from the inline chip hover popover: keep the words, drop the
+  // reference. The popover lives outside React's tree, so it signals via event.
+  useEffect(() => {
+    if (!editor) return;
+    const onUnlink = (e: Event) => {
+      const el = (e as CustomEvent).detail?.el as HTMLElement | undefined;
+      if (!el || !editor.view.dom.contains(el)) return;
+      try {
+        const pos = editor.view.posAtDOM(el, 0);
+        const len = (el.textContent ?? "").length;
+        editor.chain().focus()
+          .setTextSelection({ from: pos, to: pos + len })
+          .unsetMark("link")
+          .setTextSelection(pos + len)
+          .run();
+      } catch { /* chip no longer in the doc */ }
+    };
+    document.addEventListener("careflow:unlink-chip", onUnlink as EventListener);
+    return () => document.removeEventListener("careflow:unlink-chip", onUnlink as EventListener);
+  }, [editor]);
+
+
   // Track focus + selection so the toolbar can be context-aware.
   useEffect(() => {
     if (!editor) return;
