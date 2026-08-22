@@ -26,7 +26,7 @@ export function PlannerBulkBar({ ids, anchorDate, onClear, onScheduleMany }: {
   onClear: () => void;
   onScheduleMany: (ids: string[], dateISO: string, opts?: { part?: DayPartKey; startTime?: string }) => void;
 }) {
-  const { toggleTask, state } = useStore() as any;
+  const { toggleTask, updateTask, state } = useStore() as any;
   const [date, setDate] = useState<Date>(anchorDate);
   const [time, setTime] = useState("");
   const [dayOpen, setDayOpen] = useState(false);
@@ -36,12 +36,16 @@ export function PlannerBulkBar({ ids, anchorDate, onClear, onScheduleMany }: {
   if (ids.length === 0) return null;
 
   const complete = async () => {
-    await Promise.all(ids.map(async id => {
-      if (!state.tasks?.find((t: any) => t.id === id)?.done) await toggleTask(id);
-    }));
-    toast.success(`${ids.length} marked done`);
+    // Remember which ones we actually flipped so Undo only reverts those.
+    const flipped = ids.filter(id => !state.tasks?.find((t: any) => t.id === id)?.done);
+    await Promise.all(flipped.map(id => toggleTask(id)));
+    const { showBulkUndoToast } = await import("@/lib/task-undo");
+    showBulkUndoToast(flipped.length || ids.length, "Marked done", async () => {
+      await Promise.all(flipped.map(id => updateTask(id, { done: false }, { silent: true })));
+    });
     onClear();
   };
+
 
   const run = (opts?: { part?: DayPartKey; startTime?: string }) => {
     onScheduleMany(ids, iso, opts);
