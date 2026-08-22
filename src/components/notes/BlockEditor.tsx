@@ -1314,6 +1314,17 @@ export function BlockEditor({
                 }).run(),
             },
             {
+              title: "Grocery list",
+              description: "Live grocery list with store links",
+              icon: ShoppingCart,
+              keywords: ["grocery", "groceries", "shopping", "store", "list", "food"],
+              command: (e: Editor) =>
+                e.chain().focus().insertContent({
+                  type: "groceryBlock",
+                  attrs: { label: "Grocery list", hideBought: true },
+                }).run(),
+            },
+            {
               title: "Add to Tasks",
               description: "Promote this checkbox to a Task (⌘⇧↵)",
               icon: ListPlus,
