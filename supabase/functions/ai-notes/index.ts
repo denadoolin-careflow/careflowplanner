@@ -79,20 +79,33 @@ Deno.serve(async (req) => {
     const cfg = ACTIONS[action];
     if (!cfg) return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const apiKey = (Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) return new Response(JSON.stringify({ error: "AI not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    const payload = JSON.stringify({
+      model: "google/gemini-3.6-flash",
+      messages: [
+        { role: "system", content: cfg.system },
+        { role: "user", content: cfg.user(body, title, instruction) },
+      ],
+    });
+
+    let resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gpt-5-mini",
-        messages: [
-          { role: "system", content: cfg.system },
-          { role: "user", content: cfg.user(body, title, instruction) },
-        ],
-      }),
+      body: payload,
     });
+
+    // One bounded retry for transient rate limiting.
+    if (resp.status === 429) {
+      const wait = Number(resp.headers.get("Retry-After") ?? 2);
+      await new Promise((r) => setTimeout(r, Math.min(Math.max(wait, 1), 5) * 1000));
+      resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: payload,
+      });
+    }
 
     if (resp.status === 429) return new Response(JSON.stringify({ error: "Rate limit reached. Please try again in a moment." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (resp.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted. Add credits in Settings." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
