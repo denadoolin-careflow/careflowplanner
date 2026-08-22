@@ -130,9 +130,24 @@ export default function Tags() {
     });
   }, [tags, notes, state.tasks, state.projects, state.grocery, byName]);
 
+  const term = q.trim().toLowerCase();
+
+  /**
+   * Search reaches into the nested nodes too: a tag stays visible when its own
+   * name matches or when any child under it does. Sort and view are untouched.
+   */
+  const matchesByTag = useMemo(() => {
+    if (!term) return null;
+    const map = new Map<string, number>();
+    rows.forEach(r => {
+      const hits = childrenFor(r.name).filter(k => k.title.toLowerCase().includes(term)).length;
+      if (hits || r.name.toLowerCase().includes(term)) map.set(r.name, hits);
+    });
+    return map;
+  }, [term, rows, notes, state.tasks, state.projects, state.grocery]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    const base = term ? rows.filter(r => r.name.toLowerCase().includes(term)) : rows;
+    const base = matchesByTag ? rows.filter(r => matchesByTag.has(r.name)) : rows;
     const sorted = [...base];
     sorted.sort((a, b) => {
       switch (prefs.sort) {
@@ -143,7 +158,16 @@ export default function Tags() {
       }
     });
     return sorted;
-  }, [rows, q, prefs.sort]);
+  }, [rows, matchesByTag, prefs.sort]);
+
+  const matchedItems = useMemo(
+    () => (matchesByTag ? Array.from(matchesByTag.values()).reduce((a, b) => a + b, 0) : 0),
+    [matchesByTag],
+  );
+
+  /** While searching, any tag with matching children opens itself. */
+  const isExpanded = (name: string) =>
+    prefs.expanded.includes(name) || Boolean(matchesByTag?.get(name));
 
   const pin = async (name: string) => {
     try {
@@ -154,8 +178,15 @@ export default function Tags() {
   };
 
   const NestedList = ({ name }: { name: string }) => {
-    const kids = childrenFor(name);
-    if (!kids.length) return <p className="px-3 py-2 text-[12px] text-muted-foreground">Nothing nested under this tag yet.</p>;
+    const all = childrenFor(name);
+    const kids = term ? all.filter(k => k.title.toLowerCase().includes(term)) : all;
+    if (!kids.length) {
+      return (
+        <p className="px-3 py-2 text-[12px] text-muted-foreground">
+          {term ? "No nested items match your search." : "Nothing nested under this tag yet."}
+        </p>
+      );
+    }
     const icons = { task: CheckCircle2, note: FileText, project: Folder, grocery: ShoppingCart };
     return (
       <ul className="space-y-0.5 py-1">
@@ -169,7 +200,7 @@ export default function Tags() {
               >
                 <span aria-hidden className="ml-1 h-3 w-3 border-b border-l border-border/70" />
                 <Icon className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
-                <span className="min-w-0 flex-1 truncate">{k.title}</span>
+                <span className="min-w-0 flex-1 truncate"><Highlight text={k.title} term={term} /></span>
                 {k.meta && <span className="shrink-0 text-[10px] text-muted-foreground">{k.meta}</span>}
               </Link>
             </li>
@@ -180,7 +211,7 @@ export default function Tags() {
   };
 
   const ExpandButton = ({ name }: { name: string }) => {
-    const open = prefs.expanded.includes(name);
+    const open = isExpanded(name);
     const Icon = open ? ChevronDown : ChevronRight;
     return (
       <button
