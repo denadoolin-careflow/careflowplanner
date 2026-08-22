@@ -10,7 +10,8 @@ import {
   DEFAULT_ICON, getTopTags,
 } from "@/lib/tags";
 import { TagChip } from "./TagChip";
-import { tagIconFor, TAG_ICON_GROUPS } from "./tag-icon";
+import { tagIconFor } from "./tag-icon";
+import { TagIconPicker } from "./TagIconPicker";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { useAtmosphere } from "@/lib/atmospheres";
@@ -199,7 +200,12 @@ export function TagPicker({ value, onChange, triggerLabel = "Add tag", triggerCl
                   value={creatingColor}
                   onChange={setCreatingColor}
                 />
-                <IconGroupPicker value={creatingIcon} onChange={setCreatingIcon} />
+                <IconGroupPicker
+                  value={creatingIcon}
+                  onChange={setCreatingIcon}
+                  color={creatingColor}
+                  previewName={query.trim() || "Preview"}
+                />
               </div>
             </div>
           )}
